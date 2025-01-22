@@ -6,7 +6,7 @@ import {
     Icon,
     IconButton,
     Stack,
-    Search,
+    TextField,
     TreeView,
     Typography,
     styled,
@@ -19,6 +19,10 @@ import {
     ContentCopy,
     ExpandMore,
     LibraryAdd,
+    Search,
+    SearchOff,
+    Home,
+    Delete,
 } from '@mui/icons-material/';
 import { INPUT_BLOCK_TYPES, ActionMessages } from '@/stores';
 import { AddVariableModal } from '@/components/notebook';
@@ -27,7 +31,8 @@ import { Panel } from '@/components/workspace';
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
-    height: '100%',
+    height: 'auto',
+    maxHeight: '100%',
     width: '100%',
     paddingTop: theme.spacing(1),
 }));
@@ -109,6 +114,24 @@ const StyledTreeItemMessage = styled('div')(() => ({
     justifyContent: 'center',
 }));
 
+const StyledPageItem = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'search',
+})<{
+    /** Track if it is a search term */
+    search: boolean;
+    isselected: string;
+}>(({ isselected, search, theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    height: 'auto',
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: theme.spacing(1) + ' ' + theme.spacing(2),
+    color: search ? theme.palette.primary.main : '',
+    backgroundColor: isselected == 'true' ? 'rgba(25, 118, 210, 0.2)' : '',
+}));
+
 const PAGE_BLOCK = {
     widget: 'page',
     data: {
@@ -139,16 +162,32 @@ export const LayersPanel = observer((): JSX.Element => {
     const notification = useNotification();
     const { workspace } = useWorkspace();
     const [expanded, setExpanded] = useState<string[]>([]);
-    const [selected, setSelected] = useState<string[]>([]);
+    const [selectedLayers, setSelectedLayers] = useState<string[]>([]);
+    const [selectedPages, setSelectedPages] = useState<string>('page-1');
+    const [selectedLayer, setSelectedLayer] = useState([]);
+    const [pageHovered, setPageHovered] = useState<string>('');
     const [showSearch, setShowSearch] = useState<boolean>(false);
     const [search, setSearch] = useState<string>('');
     const [variableModal, setVariableModal] = useState('');
+    // const [allPages, setAllPage] = useState(state.getAllBlocksOfType('page'));
     const allPages = state.getAllBlocksOfType('page');
 
     useEffect(() => {
-        setExpanded(state.getAllParents(designer.selected));
-        setSelected([designer.selected]);
+        const parents = state.getAllParents(designer.selected);
+        if (parents.length) {
+            const parentPage = parents.find((parent) =>
+                parent.includes('page'),
+            );
+            selectLayer(parentPage);
+            setSelectedPages(parentPage);
+        }
+        setExpanded(parents);
     }, [designer.selected]);
+
+    useEffect(() => {
+        const block = state.blocks[selectedPages];
+        handlePageSelection(block);
+    }, []);
 
     /**
      * Render the block and it's children
@@ -256,6 +295,71 @@ export const LayersPanel = observer((): JSX.Element => {
         );
     };
 
+    const renderPage = (id: string) => {
+        const block = state.blocks[id];
+        return (
+            <StyledPageItem
+                key={block.id}
+                onClick={(e) => {
+                    handlePageSelection(block);
+                }}
+                isselected={(selectedPages === block.id).toString()}
+                search={
+                    search
+                        ? [block.widget, block.id]
+                              .join('')
+                              .toLowerCase()
+                              .indexOf(search.toLowerCase()) > -1
+                        : false
+                }
+                onMouseOver={(e) => setPageHovered(block.id)}
+                onMouseLeave={(e) => setPageHovered('')}
+            >
+                <Typography variant="subtitle1">/{id}</Typography>
+                {id == 'page-1' ? (
+                    <StyledTreeItemIcon>
+                        <Home />
+                    </StyledTreeItemIcon>
+                ) : pageHovered === block.id ? (
+                    <StyledTreeItemIcon>
+                        <Delete
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handlePageDeletion(block);
+                            }}
+                            style={{ cursor: 'pointer' }}
+                        />
+                    </StyledTreeItemIcon>
+                ) : (
+                    <></>
+                )}
+            </StyledPageItem>
+        );
+    };
+
+    const handlePageSelection = (block) => {
+        selectLayer(block.id);
+        designer.setSelected(block.id);
+        handleOnSelect(block);
+        setSelectedPages(block.id);
+    };
+
+    /*
+     * Handle the page deletion
+     */
+    const handlePageDeletion = (block) => {
+        state.dispatch({
+            message: ActionMessages.REMOVE_BLOCK,
+            payload: {
+                id: block.id,
+                keep: false,
+            },
+        });
+        if (designer.selected === block.id) {
+            designer.setSelected('');
+        }
+        removePanel(block.id);
+    };
     /** Helpers */
     /**
      * Create a new panel and highlight it
@@ -334,6 +438,16 @@ export const LayersPanel = observer((): JSX.Element => {
         }
     };
 
+    const selectLayer = (id: string) => {
+        const selectedPage = allPages.find((page) => page.id === id);
+        if (!selectedPage) return;
+        const children = [];
+        for (const s in selectedPage.slots) {
+            children.push(...selectedPage.slots[s].children);
+        }
+        setSelectedLayer(children);
+    };
+
     /**
      * Select a panel and create one if it doesn't exist
      *
@@ -348,7 +462,11 @@ export const LayersPanel = observer((): JSX.Element => {
             createPanel(id);
         }
         // set the path
-        setSelected([id]);
+        if (blockData.widget !== 'page') {
+            setSelectedLayers([id]);
+        } else {
+            setSelectedPages(id);
+        }
         // designer.setRendered(id);
     };
 
@@ -411,6 +529,64 @@ export const LayersPanel = observer((): JSX.Element => {
     };
 
     /**
+     * Select a panel if it is there. Return false if not selected.
+     *
+     * id - id of the layer
+     */
+    const removePanel = (id: string): boolean => {
+        try {
+            if (!id) {
+                return false;
+            }
+
+            let selectedNode: TabNode | null = null;
+
+            // get the model
+            const model = workspace.selectedLayout?.model;
+            if (!model) {
+                throw new Error('Missing model');
+            }
+
+            // visit the notes, and see if it exists
+            model.visitNodes((node) => {
+                // check if it is a tabNode
+                if (node instanceof TabNode) {
+                    // it needs to be a notebook-viewer
+                    const component = node.getComponent();
+                    if (component !== 'designer') {
+                        return;
+                    }
+
+                    // path and space need to match
+                    const config = node.getConfig();
+                    if (config.id !== id) {
+                        return;
+                    }
+
+                    selectedNode = node;
+                }
+            });
+
+            // create a new panel if there is no node
+            if (!selectedNode) {
+                return false;
+            }
+
+            const selectedNodeId = selectedNode.getId();
+            model.doAction(Actions.deleteTab(selectedNodeId));
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: e,
+            });
+
+            return false;
+        }
+
+        return true;
+    };
+
+    /**
      * handle the add page
      */
     const handlePageAdd = () => {
@@ -432,32 +608,76 @@ export const LayersPanel = observer((): JSX.Element => {
                             justifyContent="space-between"
                             alignItems={'center'}
                         >
-                            <Typography variant="h6">Layers</Typography>
-                            {/* <IconButton
+                            <Typography variant="h6">Pages</Typography>
+                            <IconButton
                                 className="layers-menu__add-layer-button"
                                 onClick={(e) => {
-                                    // setPopoverAnchorEl(e.currentTarget);
                                     handlePageAdd();
                                 }}
                             >
                                 <Add />
-                            </IconButton> */}
+                            </IconButton>
                         </Stack>
                     </Stack>
-                    <Stack spacing={2} width={'100%'}>
-                        <Search
-                            placeholder="Search"
-                            size="small"
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
+                </StyledMenuHeader>
+                <StyledMenuScroll>
+                    {allPages?.length ? (
+                        allPages.map((page) => renderPage(page.id))
+                    ) : (
+                        <StyledTreeItemMessage>
+                            <Typography variant="caption">No Pages</Typography>
+                        </StyledTreeItemMessage>
+                    )}
+                </StyledMenuScroll>
+            </StyledMenu>
+            <Divider />
+            <StyledMenu>
+                <StyledMenuHeader>
+                    <Stack spacing={2} paddingBottom={1} width={'100%'}>
+                        <Stack
+                            direction="row"
+                            justifyContent="space-between"
+                            alignItems={'center'}
+                        >
+                            <Typography variant="h6">Layers</Typography>
+                            {showSearch ? (
+                                <TextField
+                                    placeholder="Search"
+                                    size="small"
+                                    sx={{
+                                        width: '100%',
+                                        maxWidth: '200px',
+                                    }}
+                                    value={search}
+                                    variant="outlined"
+                                    onChange={(e) => setSearch(e.target.value)}
+                                />
+                            ) : (
+                                <>&nbsp;</>
+                            )}
+                            <IconButton
+                                color="default"
+                                size="small"
+                                onClick={() => {
+                                    setShowSearch(!showSearch);
+                                    setSearch('');
+                                }}
+                                style={{ padding: '0px' }}
+                            >
+                                {showSearch ? (
+                                    <SearchOff fontSize="medium" />
+                                ) : (
+                                    <Search fontSize="medium" />
+                                )}
+                            </IconButton>
+                        </Stack>
                     </Stack>
                 </StyledMenuHeader>
-                <Divider />
+
                 <StyledMenuScroll>
                     <TreeView
-                        multiSelect
                         expanded={expanded}
-                        selected={selected}
+                        selected={selectedLayers}
                         onNodeToggle={(
                             e: React.SyntheticEvent,
                             nodeIds: string[],
@@ -468,7 +688,7 @@ export const LayersPanel = observer((): JSX.Element => {
                             e: React.SyntheticEvent,
                             nodeIds: string[],
                         ) => {
-                            setSelected(nodeIds);
+                            setSelectedLayers(nodeIds);
                         }}
                         defaultCollapseIcon={
                             <StyledTreeItemIcon>
@@ -481,8 +701,8 @@ export const LayersPanel = observer((): JSX.Element => {
                             </StyledTreeItemIcon>
                         }
                     >
-                        {allPages?.length ? (
-                            allPages.map((page) => renderBlock(page.id))
+                        {selectedLayer?.length ? (
+                            selectedLayer.map((c) => renderBlock(c))
                         ) : (
                             <StyledTreeItemMessage>
                                 <Typography variant="caption">

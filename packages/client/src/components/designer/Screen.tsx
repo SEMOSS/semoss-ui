@@ -116,19 +116,6 @@ export const Screen = observer((props: ScreenProps) => {
     };
 
     /**
-     * Handle the mouseleave on the page. This will deselect hovered widgets
-     */
-    const handleMouseLeave = (event: React.MouseEvent) => {
-        designer.setHovered('');
-
-        // reset the placeholder / clear the ghost if is its off the screen
-        if (designer.drag.active) {
-            designer.resetPlaceholder();
-            designer.updateGhostPosition(null);
-        }
-    };
-
-    /**
      * Handle the mousemove event on the document. This will render the placeholder based on the target block.
      */
     const handleDocumentMouseMove = useCallback(
@@ -251,6 +238,10 @@ export const Screen = observer((props: ScreenProps) => {
         };
     }, [designer.drag.active, handleDocumentMouseMove]);
 
+    useEffect(() => {
+        designer.setSelected('');
+    }, [props]);
+
     const isHoveredOverSelectedBlock = useMemo(() => {
         return designer.hovered == designer.selected;
     }, [designer.hovered, designer.selected, handleMouseOver]);
@@ -266,7 +257,7 @@ export const Screen = observer((props: ScreenProps) => {
             {designer.drag.active && <Ghost />}
 
             <StyledContent off={designer.drag.active ? true : false}>
-                <StyledContentOuter onMouseLeave={handleMouseLeave}>
+                <StyledContentOuter>
                     <StyledContentInner
                         onMouseOver={handleMouseOver}
                         isHoveredOverSelectedBlock={isHoveredOverSelectedBlock}

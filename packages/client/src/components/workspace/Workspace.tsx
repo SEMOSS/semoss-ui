@@ -21,7 +21,7 @@ import { Env } from '@/env';
 import { THEME } from '@/constants';
 import { WorkspaceContext } from '@/contexts';
 import { WorkspaceStore, WorkspaceOptions } from '@/stores';
-import { usePixel, useRootStore } from '@/hooks';
+import { useDesigner, usePixel, useRootStore } from '@/hooks';
 import { LoginPopover } from '@/components/ui';
 
 import { WorkspaceOverlay } from './WorkspaceOverlay';
@@ -141,6 +141,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 
     // build the model from the layout
     const model = workspace.selectedLayout?.model;
+    const { designer } = useDesigner();
 
     const validateDependencies = usePixel(
         'ValidateUserProjectDependencies(project="' + workspace.appId + '");',
@@ -215,6 +216,40 @@ export const Workspace = observer((props: WorkspaceProps) => {
         } catch (e) {
             //noop
         }
+    };
+
+    const selectTabForEdit = (action) => {
+        console.log('action', action);
+        const model = workspace.selectedLayout?.model;
+        if (!model) {
+            throw new Error('Missing model');
+        }
+        let selectedNode: TabNode | null = null;
+        // visit the notes, and see if it exists
+        model.visitNodes((node) => {
+            // check if it is a tabNode
+            if (node instanceof TabNode) {
+                // it needs to be a notebook-viewer
+                const component = node.getComponent();
+                if (component !== 'designer') {
+                    return;
+                }
+
+                // path and space need to match
+                const id = node.getId();
+                if (id !== action.data.tabNode) {
+                    return;
+                }
+
+                selectedNode = node;
+            }
+        });
+        if (!selectedNode) return;
+        designer.setSelected(selectedNode.getConfig().id);
+    };
+
+    const handleTabDelete = () => {
+        designer.setSelected('page-1');
     };
 
     return (
@@ -292,6 +327,19 @@ export const Workspace = observer((props: WorkspaceProps) => {
                                             }}
                                             onModelChange={() => {
                                                 workspace.saveToCache();
+                                            }}
+                                            onAction={(action) => {
+                                                if (
+                                                    action.type ===
+                                                    'FlexLayout_SelectTab'
+                                                )
+                                                    selectTabForEdit(action);
+                                                if (
+                                                    action.type ===
+                                                    'FlexLayout_DeleteTab'
+                                                )
+                                                    handleTabDelete();
+                                                return action;
                                             }}
                                         />
                                     </Screen>
