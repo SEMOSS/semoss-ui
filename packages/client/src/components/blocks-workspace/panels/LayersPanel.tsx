@@ -198,13 +198,12 @@ export const LayersPanel = observer((): JSX.Element => {
         // get the block
         const block = state.blocks[id];
 
-        const variableName = state.getAlias(id);
-        const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
-
         // render each of hte c
         if (!block) {
             return null;
         }
+        const variableName = state.getAlias(id);
+        const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
 
         const WidgetIcon = registry[block.widget].icon;
 
