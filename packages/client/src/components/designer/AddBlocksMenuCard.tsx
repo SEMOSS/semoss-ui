@@ -40,6 +40,9 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
     // track if it is this one that is dragging
     const [local, setLocal] = useState(false);
 
+    // track if this is being hovered
+    const [hovered, setHovered] = useState<boolean>(false);
+
     /**
      * Handle the mousedown on the widget.
      */
@@ -51,7 +54,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 return true;
             },
             item.name,
-            item.hoverImage || item.image,
+            item.hoverImage ?? item.image,
         );
 
         // clear the hovered
@@ -163,10 +166,16 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                     title={item.hoverText ?? item.name}
                     arrow
                     placement="bottom"
+                    onOpen={() => setHovered(true)}
+                    onClose={() => setHovered(false)}
                 >
                     <div>
                         <BlockCardContent
-                            image={item.image || item.hoverImage}
+                            image={
+                                hovered
+                                    ? item.hoverImage ?? item.image
+                                    : item.image ?? item.hoverImage
+                            }
                             name={item.name}
                         />
                     </div>
