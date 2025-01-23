@@ -223,7 +223,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
     };
 
     const selectTabForEdit = (action) => {
-        console.log('action', action);
         const model = workspace.selectedLayout?.model;
         if (!model) {
             throw new Error('Missing model');

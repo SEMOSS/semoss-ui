@@ -7,6 +7,7 @@ import {
     TextField,
     Typography,
     Divider,
+    CircularProgress,
 } from '@semoss/ui';
 import { AddBlocksMenuCard, DesignerMenuItem } from '@/components/designer';
 import { Panel } from '@/components/workspace';
@@ -57,7 +58,6 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
         )} ) ] ) ;`,
     );
 
-    // TODO: Move to backend + lazyload
     // sort by section so we can show the keys when they are different
     const sortedItems: DesignerMenuItem[][] = useMemo(() => {
         const sectionRecord: Record<string, DesignerMenuItem[]> = {};
@@ -156,11 +156,19 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                             </Stack>
                         ))}
                     </StyledMenu>
-                ) : (
+                ) : ['SUCCESS', 'ERROR'].includes(status) ? (
                     <Stack padding={2}>
                         <Typography variant="subtitle2">
                             No items found
                         </Typography>
+                    </Stack>
+                ) : (
+                    <Stack
+                        height="100%"
+                        alignItems="center"
+                        justifyContent="center"
+                    >
+                        <CircularProgress />
                     </Stack>
                 )}
             </Stack>
