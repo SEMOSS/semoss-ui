@@ -5,6 +5,7 @@ import {
     Divider,
     Icon,
     IconButton,
+    Modal,
     Stack,
     TextField,
     TreeView,
@@ -12,7 +13,7 @@ import {
     styled,
     useNotification,
 } from '@semoss/ui';
-import { useBlocks, useDesigner, useWorkspace } from '@/hooks';
+import { useDesigner, useWorkspace } from '@/hooks';
 import {
     Add,
     ChevronRight,
@@ -24,9 +25,10 @@ import {
     Home,
     Delete,
 } from '@mui/icons-material/';
-import { INPUT_BLOCK_TYPES, ActionMessages } from '@/stores';
-import { AddVariableModal } from '@/components/notebook';
 import { Panel } from '@/components/workspace';
+
+import { useBlocks, INPUT_BLOCK_TYPES, ActionMessages } from '@semoss/renderer';
+// import { AddVariableModal } from '@/components/notebook';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -701,13 +703,14 @@ export const LayersPanel = observer((): JSX.Element => {
                     </TreeView>
                 </StyledMenuScroll>
                 {variableModal ? (
-                    <AddVariableModal
-                        open={true}
-                        to={variableModal}
-                        type={'block'}
-                        onClose={() => setVariableModal('')}
-                    />
-                ) : null}
+                    <Modal open={true}>FIXXX</Modal>
+                ) : // <AddVariableModal
+                //     open={true}
+                //     to={variableModal}
+                //     type={'block'}
+                //     onClose={() => setVariableModal('')}
+                // />
+                null}
             </StyledMenu>
         </Panel>
     );

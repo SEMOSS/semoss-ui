@@ -12,8 +12,10 @@ import {
 } from '@semoss/ui';
 import { Search, SearchOff } from '@mui/icons-material';
 
-import { AddBlocksMenuCard, DesignerMenuItem } from '@/components/designer';
+import { AddBlocksMenuCard } from '@/components/designer';
 import { Panel } from '@/components/workspace';
+
+import { DesignerMenuItem } from '@semoss/renderer';
 
 const StyledHeader = styled('div')(({ theme }) => ({
     display: 'flex',

@@ -21,5 +21,9 @@
         "incremental": true,
         "experimentalDecorators": true
     },
-    "include": ["./src", "./global.d.ts"]
+    "include": [
+        "./src",
+        "./global.d.ts",
+        "../../libs/renderer/src/store/state/migration"
+    ]
 }

@@ -23,7 +23,7 @@ import {
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
-import { STATE_VERSION } from './migration/MigrationManager';
+import { STATE_VERSION } from '../../../../../libs/renderer/src/store/state/migration/MigrationManager';
 
 interface StateStoreInterface {
     /** Mode */

@@ -1,6 +1,14 @@
 import { createElement, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
+    ContentCopy,
+    LibraryAdd,
+    Search,
+    SearchOff,
+} from '@mui/icons-material';
+
+import { useBlocks, INPUT_BLOCK_TYPES } from '@semoss/renderer';
+import {
     styled,
     Stack,
     Typography,
@@ -9,17 +17,10 @@ import {
     TextField,
     Collapse,
     useNotification,
+    Modal,
 } from '@semoss/ui';
-import {
-    ContentCopy,
-    LibraryAdd,
-    Search,
-    SearchOff,
-} from '@mui/icons-material';
 
-import { INPUT_BLOCK_TYPES } from '@/stores';
-import { useBlocks, useDesigner } from '@/hooks';
-
+import { useDesigner } from '@/hooks';
 import { BlockAvatar, SelectedMenuSection } from '@/components/designer';
 import { AddVariableModal } from '@/components/notebook';
 import { Panel } from '@/components/workspace';
@@ -360,13 +361,14 @@ export const SelectedBlockPanel = observer(() => {
                     )}
                 </StyledMenuScroll>
                 {addVariableModal ? (
-                    <AddVariableModal
-                        open={true}
-                        type="block"
-                        to={designer.selected}
-                        onClose={() => setAddVariableModal(false)}
-                    />
-                ) : null}
+                    <Modal open={true}>fix variable add</Modal>
+                ) : // <AddVariableModal
+                //     open={true}
+                //     type="block"
+                //     to={designer.selected}
+                //     onClose={() => setAddVariableModal(false)}
+                // />
+                null}
             </StyledMenu>
         </Panel>
     );

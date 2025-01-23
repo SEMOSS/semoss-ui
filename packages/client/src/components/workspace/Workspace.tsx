@@ -27,7 +27,6 @@ import { LoginPopover } from '@/components/ui';
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
 import { WorkspaceTabs } from './WorkspaceTabs';
-import { reaction } from 'mobx';
 import { Screen } from '../designer/Screen';
 
 const StyledViewport = styled('div')(() => ({

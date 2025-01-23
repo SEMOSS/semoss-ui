@@ -11,13 +11,18 @@ import {
     Stack,
     Search,
     Popover,
+    Modal,
 } from '@semoss/ui';
 import { Add, FilterListRounded } from '@mui/icons-material';
 
-import { useBlocks, usePixel } from '@/hooks';
-import { VARIABLE_TYPES } from '@/stores';
-import { NotebookVariable, AddVariablePopover } from '@/components/notebook';
+import { usePixel } from '@/hooks';
+import {
+    NotebookVariable,
+    // AddVariablePopover
+} from '@/components/notebook';
 import { Panel } from '@/components/workspace';
+
+import { useBlocks, VARIABLE_TYPES } from '@semoss/renderer';
 
 const StyledStack = styled(Stack)(() => ({
     maxHeight: '100%',
@@ -252,25 +257,27 @@ export const VariablesPanel = observer((): JSX.Element => {
                                 const id = keyValue[0];
                                 const variable = keyValue[1];
                                 return (
-                                    <NotebookVariable
-                                        key={id}
-                                        id={id}
-                                        variable={variable}
-                                        engines={engines}
-                                    />
+                                    <>VARIABLE</>
+                                    // <NotebookVariable
+                                    //     key={id}
+                                    //     id={id}
+                                    //     variable={variable}
+                                    //     engines={engines}
+                                    // />
                                 );
                             })}
                         </List>
                     </StyledMenuScroll>
                     {isPopoverOpen && (
-                        <AddVariablePopover
-                            open={isPopoverOpen}
-                            anchorEl={popoverAnchorEle}
-                            onClose={() => {
-                                setPopoverAnchorEl(null);
-                            }}
-                            engines={engines}
-                        />
+                        <Modal open={true}>hey</Modal>
+                        // <AddVariablePopover
+                        //     open={isPopoverOpen}
+                        //     anchorEl={popoverAnchorEle}
+                        //     onClose={() => {
+                        //         setPopoverAnchorEl(null);
+                        //     }}
+                        //     engines={engines}
+                        // />
                     )}
                 </StyledMenu>
             </StyledStack>
