@@ -132,7 +132,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                                         container
                                         spacing={2}
                                         width="100%"
-                                        paddingX={2}
+                                        paddingLeft={2}
                                     >
                                         {sectionItems.map((block) => (
                                             <Grid item key={block.name}>
