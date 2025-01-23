@@ -23,7 +23,6 @@ import {
     FileEditorPanel,
 } from '@/components/workspace';
 import { LoadingScreen } from '@/components/ui';
-import { DEFAULT_MENU, VISUALIZATION_MENU } from '@/components/designer';
 import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 import {
     VariablesPanel,
