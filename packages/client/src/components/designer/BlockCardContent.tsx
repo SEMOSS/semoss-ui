@@ -5,6 +5,8 @@ export interface BlockCardContentProps {
     image?: string;
 }
 
+export const blockCardWidth = '133px';
+
 const StyledTypography = styled(Typography)(({ theme }) => ({
     color: theme.palette.secondary.dark,
 }));
@@ -16,7 +18,7 @@ export const BlockCardContent = (props: BlockCardContentProps) => {
         <Stack
             marginX={1}
             marginY={1.5}
-            width="133px"
+            width={blockCardWidth}
             height="106px"
             alignItems="center"
             justifyContent="center"
@@ -24,7 +26,11 @@ export const BlockCardContent = (props: BlockCardContentProps) => {
             {image ? (
                 <img draggable={false} src={image} width="100%" height="100%" />
             ) : (
-                <StyledTypography variant="body2" fontWeight="medium">
+                <StyledTypography
+                    variant="body2"
+                    fontWeight="medium"
+                    align="center"
+                >
                     {name}
                 </StyledTypography>
             )}

@@ -6,7 +6,7 @@ import { ActionMessages } from '@/stores';
 import { useBlocks, useDesigner } from '@/hooks';
 
 import { DesignerMenuItem } from './menu';
-import { BlockCardContent } from './BlockCardContent';
+import { BlockCardContent, blockCardWidth } from './BlockCardContent';
 
 const StyledCard = styled(Card)({
     cursor: 'grab',
@@ -21,6 +21,7 @@ const StyledCard = styled(Card)({
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
     color: theme.palette.secondary.dark,
+    width: blockCardWidth,
 }));
 
 export interface AddBlocksMenuItemProps {
@@ -145,7 +146,11 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 
     return (
         <Stack spacing={1} alignItems="center">
-            <StyledTypography variant="body2" fontWeight="medium">
+            <StyledTypography
+                variant="body2"
+                fontWeight="medium"
+                align="center"
+            >
                 {item.name}
             </StyledTypography>
             <StyledCard onMouseDown={handleMouseDown}>
