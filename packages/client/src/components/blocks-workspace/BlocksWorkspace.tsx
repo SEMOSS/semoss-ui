@@ -341,7 +341,7 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
     } else if (component === 'viz') {
         return (
             <BlocksMenuPanel
-                title={'Add Visualization'}
+                title={'Add Visualizations'}
                 items={VISUALIZATION_MENU}
             />
         );

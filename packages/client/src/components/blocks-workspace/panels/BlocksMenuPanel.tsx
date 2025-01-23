@@ -21,12 +21,16 @@ const StyledTitle = styled('div')(({ theme }) => ({
     width: '100%',
 }));
 
-const StyledMenu = styled(Stack)(() => ({
+const StyledMenu = styled(Stack)({
     height: '100%',
     width: '100%',
     overflowY: 'auto',
     overflowX: 'hidden',
-}));
+});
+
+const StyledGridWrapper = styled('div')({
+    width: '100%',
+});
 
 export interface AddBlocksMenuProps {
     /** Title to render in the menu */
@@ -114,26 +118,31 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                         {renderedItems.map((sectionItems, index) => (
                             <Stack key={sectionItems[0].section} width="100%">
                                 {index > 0 && (
-                                    <Divider variant="fullWidth" flexItem />
+                                    <Stack paddingTop={1}>
+                                        <Divider variant="fullWidth" flexItem />
+                                    </Stack>
                                 )}
                                 <Stack padding={2}>
                                     <Typography variant="subtitle2" key={index}>
                                         {sectionItems[0].section}
                                     </Typography>
                                 </Stack>
-                                <Grid container spacing={2} width="100%">
-                                    {sectionItems.map((block, index) => (
-                                        <Grid
-                                            item
-                                            key={block.name}
-                                            style={{
-                                                backgroundColor: 'primary',
-                                            }}
-                                        >
-                                            <AddBlocksMenuCard item={block} />
-                                        </Grid>
-                                    ))}
-                                </Grid>
+                                <StyledGridWrapper>
+                                    <Grid
+                                        container
+                                        spacing={2}
+                                        width="100%"
+                                        paddingX={2}
+                                    >
+                                        {sectionItems.map((block) => (
+                                            <Grid item key={block.name}>
+                                                <AddBlocksMenuCard
+                                                    item={block}
+                                                />
+                                            </Grid>
+                                        ))}
+                                    </Grid>
+                                </StyledGridWrapper>
                             </Stack>
                         ))}
                     </StyledMenu>
