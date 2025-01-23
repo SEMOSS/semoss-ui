@@ -341,12 +341,12 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
     } else if (component === 'selected') {
         return <SelectedBlockPanel />;
     } else if (component === 'blocks') {
-        return <BlocksMenuPanel title={'Add Blocks'} items={DEFAULT_MENU} />;
+        return <BlocksMenuPanel title="Add Blocks" classification="DEFAULT" />;
     } else if (component === 'viz') {
         return (
             <BlocksMenuPanel
-                title={'Add Visualizations'}
-                items={VISUALIZATION_MENU}
+                title="Add Visualizations"
+                classification="VISUALIZATION"
             />
         );
     } else if (component === 'file-explorer') {

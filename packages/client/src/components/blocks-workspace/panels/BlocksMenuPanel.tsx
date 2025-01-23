@@ -39,20 +39,22 @@ export interface AddBlocksMenuProps {
     title: string;
 
     /** Items to add to show in the menu.  */
-    items: DesignerMenuItem[];
+    classification: string;
 }
 
 /**
  * Add Blocks to the UI
  */
 export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
-    const { title } = props;
+    const { title, classification } = props;
 
     const [search, setSearch] = useState('');
     // TODO: filters
     // const [showFilters, setShowFilters] = useState<boolean>(false);
     const { status, data } = usePixel<DesignerMenuItem[]>(
-        `ListThemeData ( tableName = "BLOCKS_TEMPLATE" );`,
+        `ListThemeData ( tableName = "BLOCKS_TEMPLATE" , filters = [ Filter ( BLOCKS_TEMPLATE__CLASSIFICATION == ${JSON.stringify(
+            classification,
+        )} ) ] ) ;`,
     );
 
     // TODO: Move to backend + lazyload
@@ -61,11 +63,10 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
         const sectionRecord: Record<string, DesignerMenuItem[]> = {};
 
         // sort items by section
-        console.log(data);
-        (data ?? []).forEach((item) => {
+        data?.forEach((item) => {
             if (!sectionRecord[item.SECTION]) sectionRecord[item.SECTION] = [];
             sectionRecord[item.SECTION].push(item);
-        });
+        }) ?? [];
 
         // sort sections by name
         return Object.keys(sectionRecord)
