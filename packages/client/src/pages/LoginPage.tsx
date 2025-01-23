@@ -496,9 +496,17 @@ export const LoginPage = observer(() => {
     const providers = [...configStore.store.config.providers];
 
     // show the or
-    const showOrDivider =
-        providers.indexOf('native') > -1 &&
-        (providers.indexOf('ms') || providers.indexOf('google'));
+    const showOrDivider = () => {
+        if (providers.indexOf('native') > -1) {
+            if (
+                providers.indexOf('ms') > -1 ||
+                providers.indexOf('google') > -1
+            ) {
+                return true;
+            }
+        }
+        return false;
+    };
 
     return (
         <>
@@ -1169,7 +1177,7 @@ export const LoginPage = observer(() => {
                                     )}
                                     {!register && (
                                         <>
-                                            {showOrDivider && (
+                                            {showOrDivider() && (
                                                 <>
                                                     <StyledDivider>
                                                         <StyledDividerBox>
