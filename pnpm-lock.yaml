@@ -229,6 +229,9 @@ importers:
       eslint-plugin-react-hooks:
         specifier: 4.6.0
         version: 4.6.0(eslint@7.32.0)
+      monaco-editor:
+        specifier: ^0.45.0
+        version: 0.45.0
       npm-run-all:
         specifier: 4.1.5
         version: 4.1.5
@@ -274,6 +277,12 @@ importers:
       tslib:
         specifier: 2.5.3
         version: 2.5.3
+      vega:
+        specifier: ^5.27.0
+        version: 5.30.0
+      vega-lite:
+        specifier: ^5.16.3
+        version: 5.23.0(vega@5.30.0)
 
   libs/sdk:
     dependencies:
@@ -21601,7 +21610,7 @@ packages:
       lodash: 4.17.21
       pretty-error: 4.0.0
       tapable: 2.2.1
-      webpack: 5.97.1(@swc/core@1.5.29)(esbuild@0.24.2)(webpack-cli@4.10.0)
+      webpack: 5.97.1(@swc/core@1.5.29)(esbuild@0.24.2)(webpack-cli@5.1.4)
     dev: true
 
   /htmlparser2@6.1.0:
@@ -24968,7 +24977,7 @@ packages:
     dependencies:
       schema-utils: 4.3.0
       tapable: 2.2.1
-      webpack: 5.97.1(@swc/core@1.5.29)(esbuild@0.24.2)(webpack-cli@4.10.0)
+      webpack: 5.97.1(@swc/core@1.5.29)(esbuild@0.24.2)(webpack-cli@5.1.4)
     dev: true
 
   /mini-svg-data-uri@1.4.4:

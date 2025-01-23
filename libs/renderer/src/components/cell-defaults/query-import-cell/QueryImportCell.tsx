@@ -1,7 +1,13 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState, Suspense, lazy } from "react";
-import { StyledSelect, StyledSelectItem } from "../shared";
-import { styled, Button, TextField, Stack, InputAdornment } from "@semoss/ui";
+import {
+    styled,
+    Button,
+    TextField,
+    Stack,
+    InputAdornment,
+    Select,
+} from "@semoss/ui";
 
 import {
     CropFree,
@@ -13,6 +19,27 @@ import { DatabaseTables } from "./DatabaseTables";
 import { ActionMessages, CellComponent, CellDef } from "../../../store";
 import { useBlocks } from "../../../hooks";
 import { usePixel } from "@semoss/sdk";
+
+const StyledSelect = styled(Select)(({ theme }) => ({
+    "& .MuiSelect-select": {
+        color: theme.palette.text.secondary,
+        display: "flex",
+        gap: theme.spacing(1),
+        alignItems: "center",
+        textOverflow: "ellipsis",
+        overflow: "hidden",
+        whiteSpace: "nowrap",
+        "&:focus": {
+            backgroundColor: "inherit !important",
+        },
+    },
+}));
+
+const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
+    display: "flex",
+    gap: theme.spacing(1),
+    color: theme.palette.text.secondary,
+}));
 
 // Reduce Initial Bundle
 const Editor = lazy(() => import("@monaco-editor/react"));

@@ -1,4 +1,3 @@
-import { StyledSelect, StyledSelectItem } from "../components";
 import {
     Avatar,
     Chip,
@@ -6,12 +5,34 @@ import {
     Stack,
     Typography,
     styled,
+    Select,
 } from "@semoss/ui";
 import { green } from "@mui/material/colors";
 import { ActionMessages } from "../../../../store";
 import { AccountTree, KeyboardArrowDown } from "@mui/icons-material";
 import { useBlocks } from "../../../../hooks";
 import React from "react";
+
+const StyledSelect = styled(Select)(({ theme }) => ({
+    "& .MuiSelect-select": {
+        color: theme.palette.text.secondary,
+        display: "flex",
+        gap: theme.spacing(1),
+        alignItems: "center",
+        textOverflow: "ellipsis",
+        overflow: "hidden",
+        whiteSpace: "nowrap",
+        "&:focus": {
+            backgroundColor: "inherit !important",
+        },
+    },
+}));
+
+const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
+    display: "flex",
+    gap: theme.spacing(1),
+    color: theme.palette.text.secondary,
+}));
 
 const TransformationChip = styled(Chip)(({ theme }) => ({
     paddingLeft: theme.spacing(0.5),

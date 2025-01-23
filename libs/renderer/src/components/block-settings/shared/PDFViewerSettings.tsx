@@ -34,17 +34,17 @@ export const PDFViewerSettings = observer(
     <D extends BlockDef = BlockDef>({ id, path }: PDFViewerSettings<D>) => {
         const { data, setData } = useBlock<PDFViewerBlockDef>(id);
         const { appId } = useParams();
-        const getAssets = runPixel<AssetFile[]>(
-            `BrowseAsset(filePath=["version/assets/"], space=["${appId}"]);`,
-        );
+        // const getAssets = runPixel<AssetFile[]>(
+        //     `BrowseAsset(filePath=["version/assets/"], space=["${appId}"]);`,
+        // );
         const [selectedPdfPath, setSelectedPdfPath] = useState(
             data?.selectedPdf || "", // Initialize with existing value
         );
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
-        const pdfFiles = React.useMemo(() => {
-            if (!getAssets.data) return [];
-            return getAssets?.data?.filter((file) => file?.type === "pdf");
-        }, [getAssets.data]);
+        // const pdfFiles = React.useMemo(() => {
+        //     if (!getAssets.data) return [];
+        //     return getAssets?.data?.filter((file) => file?.type === "pdf");
+        // }, [getAssets.data]);
 
         // Handle selection change
         const setBlockData = (newValue, optPath) => {
@@ -73,7 +73,8 @@ export const PDFViewerSettings = observer(
 
         return (
             <BaseSettingSection label="Files">
-                <Autocomplete
+                <div>Fix Autocomplete</div>
+                {/* <Autocomplete
                     options={pdfFiles}
                     value={
                         selectedPdfPath
@@ -103,7 +104,7 @@ export const PDFViewerSettings = observer(
                         />
                     )}
                     fullWidth
-                />
+                /> */}
             </BaseSettingSection>
         );
     },

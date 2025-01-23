@@ -627,177 +627,161 @@ export const DataImportFormModal = observer(
             const pixelString = `META|GetDatabaseTableStructure(database=[ \"${databaseId}\" ]);META|GetDatabaseMetamodel( database=[ \"${databaseId}\" ], options=["dataTypes","positions"]);`;
 
             runPixel(pixelString).then((pixelResponse) => {
-                const responseTableStructure =
-                    pixelResponse.pixelReturn[0].output;
-                const isResponseTableStructureGood =
-                    pixelResponse.pixelReturn[0].operationType.indexOf(
-                        "ERROR",
-                    ) === -1;
-
-                const responseTableEdgesStructure =
-                    pixelResponse.pixelReturn[1].output;
-                const isResponseTableEdgesStructureGood =
-                    pixelResponse.pixelReturn[1].operationType.indexOf(
-                        "ERROR",
-                    ) === -1;
-
-                let newTableNames = [];
-
-                if (isResponseTableStructureGood) {
-                    newTableNames = [
-                        ...responseTableStructure.reduce((set, ele) => {
-                            set.add(ele[0]);
-                            return set;
-                        }, new Set()),
-                    ];
-
-                    const tableColumnsObject = responseTableStructure.reduce(
-                        (acc, ele) => {
-                            const tableName = ele[0];
-                            const columnName = ele[1];
-                            const columnType = ele[2];
-                            const columnBoolean = ele[3];
-                            const columnName2 = ele[4];
-                            const tableName2 = ele[4];
-
-                            if (!acc[tableName]) acc[tableName] = [];
-                            acc[tableName].push({
-                                tableName,
-                                columnName,
-                                columnType,
-                                columnBoolean,
-                                columnName2,
-                                tableName2,
-                                userAlias: columnName,
-                                checked: true,
-                            });
-
-                            return acc;
-                        },
-                        {},
-                    );
-
-                    const newTableColumnsObject: Table[] = tableColumnsObject
-                        ? Object.keys(tableColumnsObject).map(
-                              (tableName, tableIdx) => ({
-                                  id: tableIdx,
-                                  name: tableName,
-                                  columns: tableColumnsObject[tableName].map(
-                                      (colObj, colIdx) => ({
-                                          id: colIdx,
-                                          tableName: tableName,
-                                          columnName: colObj.columnName,
-                                          columnType: colObj.columnType,
-                                          userAlias: colObj.userAlias,
-                                          checked: false,
-                                      }),
-                                  ),
-                              }),
-                          )
-                        : [];
-
-                    formReset({
-                        databaseSelect: databaseId,
-                        tables: newTableColumnsObject,
-                    });
-                } else {
-                    console.error("Error retrieving database tables");
-                    notification.add({
-                        color: "error",
-                        message: `Error retrieving database tables`,
-                    });
-                }
-
-                if (isResponseTableEdgesStructureGood) {
-                    const newEdgesDict =
-                        responseTableEdgesStructure.edges.reduce((acc, ele) => {
-                            const source = ele.source;
-                            const target = ele.target;
-                            const sourceColumn = ele.sourceColumn;
-                            const targetColumn = ele.targetColumn;
-
-                            if (!acc[source]) {
-                                acc[source] = {
-                                    [target]: {
-                                        sourceColumn,
-                                        targetColumn,
-                                    },
-                                };
-                            } else {
-                                acc[source][target] = {
-                                    sourceColumn,
-                                    targetColumn,
-                                };
-                            }
-
-                            if (!acc[target]) {
-                                acc[target] = {
-                                    [source]: {
-                                        sourceColumn: targetColumn,
-                                        targetColumn: sourceColumn,
-                                    },
-                                };
-                            } else {
-                                acc[target][source] = {
-                                    sourceColumn: targetColumn,
-                                    targetColumn: sourceColumn,
-                                };
-                            }
-                            return acc;
-                        }, {});
-
-                    setTableEdgesObject(newEdgesDict);
-                } else {
-                    console.error("Error retrieving database edges");
-                    notification.add({
-                        color: "error",
-                        message: `Error retrieving database tables`,
-                    });
-                }
-
-                const edges = pixelResponse.pixelReturn[1].output.edges;
-                const newTableEdges = {};
-                edges.forEach((edge) => {
-                    if (newTableEdges[edge.source]) {
-                        newTableEdges[edge.source][edge.target] = edge.relation;
-                    } else {
-                        newTableEdges[edge.source] = {
-                            [edge.target]: edge.relation,
-                        };
-                    }
-                    if (newTableEdges[edge.target]) {
-                        newTableEdges[edge.target][edge.source] = edge.relation;
-                    } else {
-                        newTableEdges[edge.target] = {
-                            [edge.source]: edge.relation,
-                        };
-                    }
-                });
-                setTableEdges(newTableEdges);
-                setIsDatabaseLoading(false);
-                setImportModalPixelWidth(IMPORT_MODAL_WIDTHS.large);
-
-                setTableNames(newTableNames);
-
-                // shown tables filtered only on init load of edit mode
-                if (editMode && !isInitLoadComplete) {
-                    const newEdges = [
-                        rootTable,
-                        ...(newTableEdges[rootTable]
-                            ? Object.keys(newTableEdges[rootTable])
-                            : []),
-                    ];
-                    setShownTables(new Set(newEdges));
-                } else {
-                    setShownTables(new Set(newTableNames));
-                }
-
-                if (!editMode || isInitLoadComplete) {
-                    setAliasesCountObj({});
-                    aliasesCountObjRef.current = {};
-                    removeJoinElement();
-                    setJoinsSet(new Set());
-                }
+                // const responseTableStructure =
+                //     pixelResponse.pixelReturn[0].output as [];
+                // const isResponseTableStructureGood =
+                //     pixelResponse.pixelReturn[0].operationType.indexOf(
+                //         "ERROR",
+                //     ) === -1;
+                // const responseTableEdgesStructure =
+                //     pixelResponse.pixelReturn[1].output;
+                // const isResponseTableEdgesStructureGood =
+                //     pixelResponse.pixelReturn[1].operationType.indexOf(
+                //         "ERROR",
+                //     ) === -1;
+                // let newTableNames = [];
+                // if (isResponseTableStructureGood) {
+                //     newTableNames = [
+                //         ...responseTableStructure.reduce((set, ele) => {
+                //             set.add(ele[0]);
+                //             return set;
+                //         }, new Set()),
+                //     ];
+                //     const tableColumnsObject = responseTableStructure.reduce(
+                //         (acc, ele) => {
+                //             const tableName = ele[0];
+                //             const columnName = ele[1];
+                //             const columnType = ele[2];
+                //             const columnBoolean = ele[3];
+                //             const columnName2 = ele[4];
+                //             const tableName2 = ele[4];
+                //             if (!acc[tableName]) acc[tableName] = [];
+                //             acc[tableName].push({
+                //                 tableName,
+                //                 columnName,
+                //                 columnType,
+                //                 columnBoolean,
+                //                 columnName2,
+                //                 tableName2,
+                //                 userAlias: columnName,
+                //                 checked: true,
+                //             });
+                //             return acc;
+                //         },
+                //         {},
+                //     );
+                //     const newTableColumnsObject: Table[] = tableColumnsObject
+                //         ? Object.keys(tableColumnsObject).map(
+                //               (tableName, tableIdx) => ({
+                //                   id: tableIdx,
+                //                   name: tableName,
+                //                   columns: tableColumnsObject[tableName].map(
+                //                       (colObj, colIdx) => ({
+                //                           id: colIdx,
+                //                           tableName: tableName,
+                //                           columnName: colObj.columnName,
+                //                           columnType: colObj.columnType,
+                //                           userAlias: colObj.userAlias,
+                //                           checked: false,
+                //                       }),
+                //                   ),
+                //               }),
+                //           )
+                //         : [];
+                //     formReset({
+                //         databaseSelect: databaseId,
+                //         tables: newTableColumnsObject,
+                //     });
+                // } else {
+                //     console.error("Error retrieving database tables");
+                //     notification.add({
+                //         color: "error",
+                //         message: `Error retrieving database tables`,
+                //     });
+                // }
+                // if (isResponseTableEdgesStructureGood) {
+                //     const newEdgesDict =
+                //         responseTableEdgesStructure.edges.reduce((acc, ele) => {
+                //             const source = ele.source;
+                //             const target = ele.target;
+                //             const sourceColumn = ele.sourceColumn;
+                //             const targetColumn = ele.targetColumn;
+                //             if (!acc[source]) {
+                //                 acc[source] = {
+                //                     [target]: {
+                //                         sourceColumn,
+                //                         targetColumn,
+                //                     },
+                //                 };
+                //             } else {
+                //                 acc[source][target] = {
+                //                     sourceColumn,
+                //                     targetColumn,
+                //                 };
+                //             }
+                //             if (!acc[target]) {
+                //                 acc[target] = {
+                //                     [source]: {
+                //                         sourceColumn: targetColumn,
+                //                         targetColumn: sourceColumn,
+                //                     },
+                //                 };
+                //             } else {
+                //                 acc[target][source] = {
+                //                     sourceColumn: targetColumn,
+                //                     targetColumn: sourceColumn,
+                //                 };
+                //             }
+                //             return acc;
+                //         }, {});
+                //     setTableEdgesObject(newEdgesDict);
+                // } else {
+                //     console.error("Error retrieving database edges");
+                //     notification.add({
+                //         color: "error",
+                //         message: `Error retrieving database tables`,
+                //     });
+                // }
+                // const edges = pixelResponse.pixelReturn[1].output.edges;
+                // const newTableEdges = {};
+                // edges.forEach((edge) => {
+                //     if (newTableEdges[edge.source]) {
+                //         newTableEdges[edge.source][edge.target] = edge.relation;
+                //     } else {
+                //         newTableEdges[edge.source] = {
+                //             [edge.target]: edge.relation,
+                //         };
+                //     }
+                //     if (newTableEdges[edge.target]) {
+                //         newTableEdges[edge.target][edge.source] = edge.relation;
+                //     } else {
+                //         newTableEdges[edge.target] = {
+                //             [edge.source]: edge.relation,
+                //         };
+                //     }
+                // });
+                // setTableEdges(newTableEdges);
+                // setIsDatabaseLoading(false);
+                // setImportModalPixelWidth(IMPORT_MODAL_WIDTHS.large);
+                // setTableNames(newTableNames);
+                // // shown tables filtered only on init load of edit mode
+                // if (editMode && !isInitLoadComplete) {
+                //     const newEdges = [
+                //         rootTable,
+                //         ...(newTableEdges[rootTable]
+                //             ? Object.keys(newTableEdges[rootTable])
+                //             : []),
+                //     ];
+                //     setShownTables(new Set(newEdges));
+                // } else {
+                //     setShownTables(new Set(newTableNames));
+                // }
+                // if (!editMode || isInitLoadComplete) {
+                //     setAliasesCountObj({});
+                //     aliasesCountObjRef.current = {};
+                //     removeJoinElement();
+                //     setJoinsSet(new Set());
+                // }
             });
 
             setAliasesCountObj({});
@@ -996,27 +980,25 @@ export const DataImportFormModal = observer(
                 pixelPartialRef.current = pixelStringPart1 + ";";
 
                 await runPixel(reactorPixel).then((response) => {
-                    const type = response.pixelReturn[0]?.operationType;
-                    const tableHeadersData =
-                        response.pixelReturn[1]?.output?.data?.headers;
-                    const tableRowsData =
-                        response.pixelReturn[1]?.output?.data?.values;
-
-                    if (type.indexOf("ERROR") != -1) {
-                        console.error("Error retrieving database tables");
-                        notification.add({
-                            color: "error",
-                            message: `Error retrieving database tables`,
-                        });
-                        setIsDatabaseLoading(false);
-                        setShowTablePreview(false);
-                        setShowEditColumns(true);
-                        return;
-                    }
-
-                    setDatabaseTableHeaders(tableHeadersData);
-                    setDatabaseTableRows(tableRowsData);
-                    setIsDatabaseLoading(false);
+                    // const type = response.pixelReturn[0]?.operationType;
+                    // const tableHeadersData =
+                    //     response.pixelReturn[1]?.output?.data?.headers;
+                    // const tableRowsData =
+                    //     response.pixelReturn[1]?.output?.data?.values;
+                    // if (type.indexOf("ERROR") != -1) {
+                    //     console.error("Error retrieving database tables");
+                    //     notification.add({
+                    //         color: "error",
+                    //         message: `Error retrieving database tables`,
+                    //     });
+                    //     setIsDatabaseLoading(false);
+                    //     setShowTablePreview(false);
+                    //     setShowEditColumns(true);
+                    //     return;
+                    // }
+                    // setDatabaseTableHeaders(tableHeadersData);
+                    // setDatabaseTableRows(tableRowsData);
+                    // setIsDatabaseLoading(false);
                 });
             } catch {
                 setIsDatabaseLoading(false);

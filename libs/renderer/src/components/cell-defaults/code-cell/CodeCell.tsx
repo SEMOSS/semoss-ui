@@ -1,6 +1,6 @@
 import { useRef, useState, Suspense, lazy } from "react";
 import { observer } from "mobx-react-lite";
-import { styled, Button, Stack } from "@semoss/ui";
+import { styled, Button, Stack, Select } from "@semoss/ui";
 import { Code, KeyboardArrowDown } from "@mui/icons-material";
 import {
     ActionMessages,
@@ -16,9 +16,28 @@ import {
     // useWorkspace
 } from "@/hooks";
 // import { LoadingScreen } from "@/components/ui";
-import { StyledSelect, StyledSelectItem } from "../shared";
 
 import { PythonIcon, RIcon } from "./icons";
+
+const StyledSelect = styled(Select)(({ theme }) => ({
+    "& .MuiSelect-select": {
+        color: theme.palette.text.secondary,
+        display: "flex",
+        gap: theme.spacing(1),
+        alignItems: "center",
+        textOverflow: "ellipsis",
+        overflow: "hidden",
+        whiteSpace: "nowrap",
+        "&:focus": {
+            backgroundColor: "inherit !important",
+        },
+    },
+}));
+const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
+    display: "flex",
+    gap: theme.spacing(1),
+    color: theme.palette.text.secondary,
+}));
 
 // Reduce Initial Bundle
 const Editor = lazy(() => import("@monaco-editor/react"));

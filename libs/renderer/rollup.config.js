@@ -21,12 +21,14 @@ export default defineConfig({
             format: "cjs",
             sourcemap: true,
             plugins: [terser()],
+            inlineDynamicImports: true,
         },
         {
             file: packageJson.module,
             format: "esm",
             sourcemap: true,
             plugins: [terser()],
+            inlineDynamicImports: true,
         },
     ],
     plugins: [
