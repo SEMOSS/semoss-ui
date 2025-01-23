@@ -23,7 +23,7 @@ import { CodeRenderer } from '@/components/code-workspace';
 import { Link } from 'react-router-dom';
 
 const StyledViewport = styled('div')(() => ({
-    height: '100vh',
+    height: '100%',
     display: 'flex',
     flexDirection: 'column',
 }));
