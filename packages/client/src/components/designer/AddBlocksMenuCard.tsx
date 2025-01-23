@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled, Card, Tooltip } from '@semoss/ui';
+import { styled, Card, Tooltip, Typography } from '@semoss/ui';
 
-import { ActionMessages } from '@/stores';
-import { useBlocks, useDesigner } from '@/hooks';
-import { THEME } from '@/constants';
+import { useDesigner } from '@/hooks';
 
-import { DesignerMenuItem } from './menu';
+import { ActionMessages, useBlocks, DesignerMenuItem } from '@semoss/renderer';
 
 const StyledCard = styled(Card)(({ theme }) => ({
     height: '100%',
@@ -142,7 +140,13 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
     return (
         <StyledCard onMouseDown={handleMouseDown}>
             <Tooltip title={`Add ${item.name}`}>
-                <img draggable={false} src={item.image || THEME.logo} />
+                {item.image ? (
+                    <img draggable={false} src={item.image} />
+                ) : (
+                    <Typography align="center" variant={'body2'}>
+                        {item.name}
+                    </Typography>
+                )}
             </Tooltip>
         </StyledCard>
     );

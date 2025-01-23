@@ -159,3 +159,6 @@ export {
     PDFViewerBlockConfig,
     // QueryBlockConfig,
 };
+
+export { DEFAULT_MENU } from "./default-menu";
+export { VISUALIZATION_MENU } from "./visualization-menu";

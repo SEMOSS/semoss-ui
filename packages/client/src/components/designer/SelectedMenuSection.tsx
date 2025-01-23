@@ -85,9 +85,8 @@ export const SelectedMenuSection = observer(
                                         {s.name}
                                     </StyledTypography>
                                 </StyledMenuSectionTitle>
-                                {/* )} */}
 
-                                <Accordion.Content>
+                                {/* <Accordion.Content>
                                     {s.children.length > 0 ? (
                                         <Stack direction="column" spacing={1}>
                                             {s.children.map((c, cIdx) => {
@@ -98,7 +97,7 @@ export const SelectedMenuSection = observer(
                                             })}
                                         </Stack>
                                     ) : null}
-                                </Accordion.Content>
+                                </Accordion.Content> */}
                             </StyledMenuSection>
                         </React.Fragment>
                     );

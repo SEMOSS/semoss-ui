@@ -33,7 +33,7 @@ import {
 } from '@mui/icons-material';
 import { ActionMessages } from '@/stores';
 import { useBlocks } from '@/hooks';
-import { NotebookAddCell } from './NotebookAddCell';
+// import { NotebookAddCell } from './NotebookAddCell';
 import { NotebookCellConsole } from './NotebookCellConsole';
 import { Operation } from './operations';
 import { copyTextToClipboard } from '@/utility';
@@ -813,10 +813,10 @@ export const NotebookCell = observer(
                             hoveredAddCellActions
                         }
                     >
-                        <NotebookAddCell
+                        {/* <NotebookAddCell
                             query={cell.query}
                             previousCellId={cell.id}
-                        />
+                        /> */}
                     </Collapse>
                 </StyledAddCellContainer>
 

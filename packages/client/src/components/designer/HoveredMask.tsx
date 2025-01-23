@@ -3,8 +3,9 @@ import { observer } from 'mobx-react-lite';
 import { Typography, styled } from '@semoss/ui';
 
 import { getRelativeSize, getRootElement, getBlockElement } from '@/stores';
-import { useBlocks, useDesigner } from '@/hooks';
+import { useDesigner } from '@/hooks';
 
+import { useBlocks } from '@semoss/renderer';
 interface StyledContainerProps {
     top: number;
     left: number;

@@ -3,16 +3,32 @@ import { BlocksRenderer, BlocksRendererProps } from "./components";
 import { Card, Stack } from "@semoss/ui";
 // import { getEngineImage } from "./utility";
 import { Typography } from "@mui/material";
+import { SerializedState } from "./store";
 
 interface RendererProps extends BlocksRendererProps {
     /**
      * Determines What Endpoint you are hitting
      */
     MODULE: string;
+
+    /**
+     * app id
+     */
+    appId?: string;
+
+    /**
+     * Predeifned state to render
+     */
+    state?: SerializedState;
+
+    /**
+     * Is this a preview
+     */
+    preview?: boolean;
 }
 
 export const Renderer = (props: RendererProps) => {
-    const { state, MODULE } = props;
+    const { appId, state, preview, MODULE } = props;
 
     Env.update({
         MODULE: MODULE || "",
@@ -26,15 +42,7 @@ export const Renderer = (props: RendererProps) => {
 
     return (
         <InsightProvider>
-            <Stack>
-                {/* <img
-                    style={{ width: "50px", height: "50px" }}
-                    src={getEngineImage("MODEL", "OPEN_AI")}
-                /> */}
-                <Typography>Testing Images Above ^ Disregard</Typography>
-
-                <BlocksRenderer state={state} />
-            </Stack>
+            <BlocksRenderer appId={appId} preview={preview} state={state} />
         </InsightProvider>
     );
 };

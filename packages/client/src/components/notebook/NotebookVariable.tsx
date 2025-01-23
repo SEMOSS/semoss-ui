@@ -19,7 +19,7 @@ import { ContentCopy, MoreVert, Delete, Edit } from '@mui/icons-material';
 import { ActionMessages } from '@/stores';
 import { useBlocks } from '@/hooks';
 import { VariablePreview } from './VariablePreview';
-import { AddVariablePopover } from './AddVariablePopover';
+// import { AddVariablePopover } from './AddVariablePopover';
 
 const StyledListItem = styled(List.Item)(() => ({
     '&.MuiListItem-root': {
@@ -393,7 +393,8 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             e.preventDefault();
                                         }}
                                     >
-                                        <AddVariablePopover
+                                        {/* TODO: FIX */}
+                                        {/* <AddVariablePopover
                                             variable={{
                                                 ...variable,
                                                 id: id,
@@ -404,7 +405,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                                 setPopoverAnchorEl(null);
                                             }}
                                             engines={engines}
-                                        />
+                                        /> */}
                                     </div>
                                 )}
                             </StyledButton>

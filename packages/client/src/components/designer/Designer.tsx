@@ -3,7 +3,9 @@ import { styled } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
 import { ErrorBoundary } from '@/components/common';
-import { Renderer } from '@/components/blocks';
+// import { Renderer } from '@/components/blocks';
+
+import { RendererEngine } from '@semoss/renderer';
 
 const StyledDiv = styled('div')(({ theme }) => ({
     height: '100%',
@@ -39,7 +41,7 @@ export const Designer = observer((props: DesignerPanelProps): JSX.Element => {
     return (
         <StyledDiv onMouseLeave={handleMouseLeave}>
             <ErrorBoundary title={'Something went wrong!'}>
-                <Renderer id={id || designer.rendered} />
+                <RendererEngine id={id || designer.rendered} />
             </ErrorBoundary>
         </StyledDiv>
     );

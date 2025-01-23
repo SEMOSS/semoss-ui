@@ -18,9 +18,11 @@ import { Env } from '@/env';
 import { WorkspaceStore } from '@/stores';
 import { useRootStore } from '@/hooks';
 import { LoadingScreen, ShareOverlay } from '@/components/ui';
-import { BlocksRenderer } from '@/components/blocks-workspace';
+// import { BlocksRenderer } from '@/components/blocks-workspace';
 import { CodeRenderer } from '@/components/code-workspace';
 import { Link } from 'react-router-dom';
+
+import { Renderer } from '@semoss/renderer';
 
 const StyledViewport = styled('div')(() => ({
     height: '100vh',
@@ -126,7 +128,7 @@ export const AppPage = observer(() => {
             </Stack>
             <StyledContent>
                 {workspace.type === 'BLOCKS' ? (
-                    <BlocksRenderer appId={appId} />
+                    <Renderer MODULE={process.env.MODULE} appId={appId} />
                 ) : null}
                 {workspace.type === 'CODE' ? (
                     <CodeRenderer appId={appId} />

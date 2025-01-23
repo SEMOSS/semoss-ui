@@ -3,9 +3,11 @@ import { observer } from 'mobx-react-lite';
 import { IconButton, Stack, useNotification, Tooltip } from '@semoss/ui';
 import { ShareRounded, SaveOutlined, PlayArrow } from '@mui/icons-material';
 
-import { useWorkspace, useRootStore, useBlocks } from '@/hooks';
+import { useWorkspace, useRootStore } from '@/hooks';
 import { PreviewOverlay } from '@/components/workspace';
 import { ShareOverlay } from '@/components/ui';
+
+import { useBlocks } from '@semoss/renderer';
 
 export const BlocksWorkspaceActions = observer(() => {
     const { state } = useBlocks();

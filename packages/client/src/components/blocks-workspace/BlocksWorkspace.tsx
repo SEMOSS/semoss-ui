@@ -4,8 +4,6 @@ import { ConstructionOutlined } from '@mui/icons-material';
 import { useNotification, styled, Typography, Stack } from '@semoss/ui';
 import { runPixel } from '@/api';
 import {
-    SerializedState,
-    StateStore,
     WorkspaceStore,
     MigrationManager,
     STATE_VERSION,
@@ -13,9 +11,6 @@ import {
     WorkspaceOptions,
 } from '@/stores';
 import { DesignerContext } from '@/contexts';
-import { DefaultCells } from '@/components/cell-defaults';
-import { DefaultBlocks } from '@/components/block-defaults';
-import { Blocks } from '@/components/blocks';
 import {
     Workspace,
     SettingsPanel,
@@ -23,7 +18,6 @@ import {
     FileEditorPanel,
 } from '@/components/workspace';
 import { LoadingScreen } from '@/components/ui';
-import { DEFAULT_MENU, VISUALIZATION_MENU } from '@/components/designer';
 import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 import {
     VariablesPanel,
@@ -34,7 +28,18 @@ import {
     NotebookExplorerPanel,
     NotebookViewerPanel,
 } from './panels';
+
 import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
+
+import {
+    DEFAULT_MENU,
+    VISUALIZATION_MENU,
+    StateStore,
+    Blocks,
+    SerializedState,
+    DefaultCells,
+    DefaultBlocks,
+} from '@semoss/renderer';
 
 const DEFAULT_BORDER_SIZE = 300;
 
