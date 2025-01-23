@@ -25,7 +25,13 @@ export {
     VARIABLE_TYPES,
     INPUT_BLOCK_TYPES,
 } from "./store";
-export type { SerializedState, Variable, BlockJSON } from "./store";
+export type {
+    SerializedState,
+    Variable,
+    BlockJSON,
+    CellStateConfig,
+    QueryState,
+} from "./store";
 
 // REGISTRY AND MENUS
 export { DefaultCells } from "./components/cell-defaults";
@@ -37,6 +43,10 @@ export {
 export type { DesignerMenuItem } from "./components/block-defaults/menu-types";
 
 export * from "./components/block-defaults";
+export * from "./components/cell-defaults";
+
+export { QueryImportCellConfig } from "./components/cell-defaults/query-import-cell";
+export { CodeCellConfig } from "./components/cell-defaults/code-cell";
 
 // HOOKS
 export { useBlocks } from "./hooks";

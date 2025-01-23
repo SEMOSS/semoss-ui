@@ -13,13 +13,11 @@ import {
     TextField,
     LinearProgress,
 } from '@semoss/ui';
-import { Variable } from '@/stores';
 import { ContentCopy, MoreVert, Delete, Edit } from '@mui/icons-material';
-
-import { ActionMessages } from '@/stores';
-import { useBlocks } from '@/hooks';
 import { VariablePreview } from './VariablePreview';
 // import { AddVariablePopover } from './AddVariablePopover';
+
+import { ActionMessages, useBlocks, Variable } from '@semoss/renderer';
 
 const StyledListItem = styled(List.Item)(() => ({
     '&.MuiListItem-root': {
@@ -393,6 +391,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             e.preventDefault();
                                         }}
                                     >
+                                        ADD VARIABLE
                                         {/* TODO: FIX */}
                                         {/* <AddVariablePopover
                                             variable={{

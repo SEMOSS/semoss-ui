@@ -257,13 +257,12 @@ export const VariablesPanel = observer((): JSX.Element => {
                                 const id = keyValue[0];
                                 const variable = keyValue[1];
                                 return (
-                                    <>VARIABLE</>
-                                    // <NotebookVariable
-                                    //     key={id}
-                                    //     id={id}
-                                    //     variable={variable}
-                                    //     engines={engines}
-                                    // />
+                                    <NotebookVariable
+                                        key={id}
+                                        id={id}
+                                        variable={variable}
+                                        engines={engines}
+                                    />
                                 );
                             })}
                         </List>

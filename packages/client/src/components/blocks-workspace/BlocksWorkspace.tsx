@@ -39,6 +39,7 @@ import {
     SerializedState,
     DefaultCells,
     DefaultBlocks,
+    SDKWrapper,
 } from '@semoss/renderer';
 
 const DEFAULT_BORDER_SIZE = 300;
@@ -462,44 +463,46 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
     }
 
     return (
-        <Blocks state={state} registry={DefaultBlocks}>
-            <DesignerContext.Provider
-                value={{
-                    designer: designer,
-                }}
-            >
-                <Workspace
-                    options={DEFAULT_OPTIONS}
-                    workspace={workspace}
-                    endTopbar={<BlocksWorkspaceActions />}
-                    alert={
-                        <StyledAlert>
-                            <Stack
-                                direction="row"
-                                padding={0}
-                                spacing={0.5}
-                                alignItems={'center'}
-                            >
-                                <ConstructionOutlined
-                                    fontSize="small"
-                                    color={'warning'}
-                                />
-                                <Typography
-                                    variant={'caption'}
-                                    fontWeight="bold"
+        <SDKWrapper MODULE={process.env.MODULE}>
+            <Blocks state={state} registry={DefaultBlocks}>
+                <DesignerContext.Provider
+                    value={{
+                        designer: designer,
+                    }}
+                >
+                    <Workspace
+                        options={DEFAULT_OPTIONS}
+                        workspace={workspace}
+                        endTopbar={<BlocksWorkspaceActions />}
+                        alert={
+                            <StyledAlert>
+                                <Stack
+                                    direction="row"
+                                    padding={0}
+                                    spacing={0.5}
+                                    alignItems={'center'}
                                 >
-                                    Note:
-                                </Typography>
-                                <Typography variant={'caption'}>
-                                    This feature is currently in alpha.
-                                </Typography>
-                            </Stack>
-                        </StyledAlert>
-                    }
-                    factory={FACTORY}
-                />
-                <BlocksWorkspaceDev />
-            </DesignerContext.Provider>
-        </Blocks>
+                                    <ConstructionOutlined
+                                        fontSize="small"
+                                        color={'warning'}
+                                    />
+                                    <Typography
+                                        variant={'caption'}
+                                        fontWeight="bold"
+                                    >
+                                        Note:
+                                    </Typography>
+                                    <Typography variant={'caption'}>
+                                        This feature is currently in alpha.
+                                    </Typography>
+                                </Stack>
+                            </StyledAlert>
+                        }
+                        factory={FACTORY}
+                    />
+                    <BlocksWorkspaceDev />
+                </DesignerContext.Provider>
+            </Blocks>
+        </SDKWrapper>
     );
 });

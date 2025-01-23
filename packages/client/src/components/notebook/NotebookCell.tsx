@@ -31,13 +31,13 @@ import {
     LowPriority,
     LibraryAdd,
 } from '@mui/icons-material';
-import { ActionMessages } from '@/stores';
-import { useBlocks } from '@/hooks';
-// import { NotebookAddCell } from './NotebookAddCell';
+import { NotebookAddCell } from './NotebookAddCell';
 import { NotebookCellConsole } from './NotebookCellConsole';
 import { Operation } from './operations';
 import { copyTextToClipboard } from '@/utility';
-import { AddVariableModal } from './AddVariableModal';
+// import { AddVariableModal } from './AddVariableModal';
+
+import { ActionMessages, useBlocks } from '@semoss/renderer';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     paddingBottom: theme.spacing(2),
@@ -813,14 +813,14 @@ export const NotebookCell = observer(
                             hoveredAddCellActions
                         }
                     >
-                        {/* <NotebookAddCell
+                        <NotebookAddCell
                             query={cell.query}
                             previousCellId={cell.id}
-                        /> */}
+                        />
                     </Collapse>
                 </StyledAddCellContainer>
 
-                <AddVariableModal
+                {/* <AddVariableModal
                     open={variableModal}
                     type={'cell'}
                     to={queryId}
@@ -828,7 +828,7 @@ export const NotebookCell = observer(
                     onClose={() => {
                         setVariableModal(false);
                     }}
-                />
+                /> */}
             </StyledStack>
         );
     },

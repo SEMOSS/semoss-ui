@@ -3,9 +3,9 @@ import { observer } from 'mobx-react-lite';
 import { Stack, TextField, Modal, Button } from '@semoss/ui';
 import { Controller, useForm } from 'react-hook-form';
 
-import { useBlocks } from '@/hooks';
-import { ActionMessages, NewCellAction } from '@/stores';
-import { DefaultCells } from '../cell-defaults';
+import { NewCellAction } from '@/stores';
+
+import { ActionMessages, DefaultCells, useBlocks } from '@semoss/renderer';
 
 type NewCellForm = {
     ID: string;
