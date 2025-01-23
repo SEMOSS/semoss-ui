@@ -145,7 +145,12 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
     }, [designer.drag.active, local, handleDocumentMouseUp]);
 
     return (
-        <Stack spacing={1} alignItems="center">
+        <Stack
+            spacing={1}
+            alignItems="center"
+            height="100%"
+            justifyContent="flex-end"
+        >
             <StyledTypography
                 variant="body2"
                 fontWeight="medium"

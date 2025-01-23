@@ -637,7 +637,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_COMPARE_LLMS,
         image: null,
-        name: 'Compare LLMs more text example etc',
+        name: 'Compare LLMs',
         json: {
             widget: 'llmComparison',
             data: {

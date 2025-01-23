@@ -21,12 +21,13 @@ const StyledTitle = styled('div')(({ theme }) => ({
     width: '100%',
 }));
 
-const StyledMenu = styled(Stack)({
+const StyledMenu = styled(Stack)(({ theme }) => ({
     height: '100%',
     width: '100%',
     overflowY: 'auto',
     overflowX: 'hidden',
-});
+    paddingBottom: theme.spacing(2),
+}));
 
 const StyledGridWrapper = styled('div')({
     width: '100%',
