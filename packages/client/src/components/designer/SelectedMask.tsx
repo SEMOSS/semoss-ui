@@ -233,19 +233,21 @@ export const SelectedMask = observer(() => {
                 opacity: designer.drag.active ? 0 : 1,
             }}
         >
-            <StyledTitle onMouseDown={handleMouseDown}>
-                <Stack direction={'row'}>
-                    <Typography variant={'body2'}>
-                        {variableName ? variableName : designer.selected}
-                    </Typography>
-                </Stack>
-                {isDraggable && (
-                    <DragIndicator
-                        fontSize="inherit"
-                        sx={{ marginLeft: '2px' }}
-                    />
-                )}
-            </StyledTitle>
+            {block && block?.widget !== 'page' && (
+                <StyledTitle onMouseDown={handleMouseDown}>
+                    <Stack direction={'row'}>
+                        <Typography variant={'body2'}>
+                            {variableName ? variableName : designer.selected}
+                        </Typography>
+                    </Stack>
+                    {isDraggable && (
+                        <DragIndicator
+                            fontSize="inherit"
+                            sx={{ marginLeft: '2px' }}
+                        />
+                    )}
+                </StyledTitle>
+            )}
         </StyledContainer>
     );
 });

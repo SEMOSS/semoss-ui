@@ -195,6 +195,7 @@ export const LandingPageTemplate: Template = {
                 },
                 widget: 'page',
                 data: {
+                    route: '',
                     style: {
                         padding: '80px',
                         fontFamily: 'roboto',
@@ -890,6 +891,6 @@ export const LandingPageTemplate: Template = {
         },
         variables: {},
         executionOrder: [],
-        version: '1.0.0-alpha.3',
+        version: '1.0.0-alpha.4',
     },
 };

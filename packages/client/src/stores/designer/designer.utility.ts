@@ -45,7 +45,6 @@ export const getRootElement = (): Element => {
     if (!rootElement) {
         throw `ERROR ::: Cannot find Root`;
     }
-
     return rootElement;
 };
 
