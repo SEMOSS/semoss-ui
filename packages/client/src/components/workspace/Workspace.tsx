@@ -141,7 +141,11 @@ export const Workspace = observer((props: WorkspaceProps) => {
 
     // build the model from the layout
     const model = workspace.selectedLayout?.model;
-    const { designer } = useDesigner();
+
+    let designer;
+    if (workspace.type === 'BLOCKS') {
+        designer = useDesigner().designer;
+    }
 
     const validateDependencies = usePixel(
         'ValidateUserProjectDependencies(project="' + workspace.appId + '");',
@@ -252,6 +256,26 @@ export const Workspace = observer((props: WorkspaceProps) => {
         designer.setSelected('page-1');
     };
 
+    const getLayoutNode = () => (
+        <Layout
+            ref={layoutRef}
+            model={model}
+            factory={(node) => {
+                return factory(node, layoutRef.current);
+            }}
+            onModelChange={() => {
+                workspace.saveToCache();
+            }}
+            onAction={(action) => {
+                if (workspace.type !== 'BLOCKS') return action;
+                if (action.type === 'FlexLayout_SelectTab')
+                    selectTabForEdit(action);
+                if (action.type === 'FlexLayout_DeleteTab') handleTabDelete();
+                return action;
+            }}
+        />
+    );
+
     return (
         <WorkspaceContext.Provider
             value={{
@@ -315,34 +339,11 @@ export const Workspace = observer((props: WorkspaceProps) => {
                         <StyledSpacer>
                             {model ? (
                                 <>
-                                    <Screen>
-                                        <Layout
-                                            ref={layoutRef}
-                                            model={model}
-                                            factory={(node) => {
-                                                return factory(
-                                                    node,
-                                                    layoutRef.current,
-                                                );
-                                            }}
-                                            onModelChange={() => {
-                                                workspace.saveToCache();
-                                            }}
-                                            onAction={(action) => {
-                                                if (
-                                                    action.type ===
-                                                    'FlexLayout_SelectTab'
-                                                )
-                                                    selectTabForEdit(action);
-                                                if (
-                                                    action.type ===
-                                                    'FlexLayout_DeleteTab'
-                                                )
-                                                    handleTabDelete();
-                                                return action;
-                                            }}
-                                        />
-                                    </Screen>
+                                    {workspace.type === 'BLOCKS' ? (
+                                        <Screen>{getLayoutNode()}</Screen>
+                                    ) : (
+                                        getLayoutNode()
+                                    )}
                                     <StyledActions
                                         direction="column"
                                         justifyContent={'center'}
