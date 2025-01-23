@@ -10,6 +10,7 @@ import {
 } from '@semoss/ui';
 import { AddBlocksMenuCard, DesignerMenuItem } from '@/components/designer';
 import { Panel } from '@/components/workspace';
+import { usePixel } from '@/hooks';
 
 const StyledTitle = styled('div')(({ theme }) => ({
     paddingTop: theme.spacing(1.5),
@@ -45,11 +46,14 @@ export interface AddBlocksMenuProps {
  * Add Blocks to the UI
  */
 export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
-    const { title, items } = props;
+    const { title } = props;
 
     const [search, setSearch] = useState('');
     // TODO: filters
     // const [showFilters, setShowFilters] = useState<boolean>(false);
+    const { status, data } = usePixel<DesignerMenuItem[]>(
+        `ListThemeData ( tableName = "BLOCKS_TEMPLATE" );`,
+    );
 
     // TODO: Move to backend + lazyload
     // sort by section so we can show the keys when they are different
@@ -57,9 +61,10 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
         const sectionRecord: Record<string, DesignerMenuItem[]> = {};
 
         // sort items by section
-        items.forEach((item) => {
-            if (!sectionRecord[item.section]) sectionRecord[item.section] = [];
-            sectionRecord[item.section].push(item);
+        console.log(data);
+        (data ?? []).forEach((item) => {
+            if (!sectionRecord[item.SECTION]) sectionRecord[item.SECTION] = [];
+            sectionRecord[item.SECTION].push(item);
         });
 
         // sort sections by name
@@ -68,10 +73,10 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
             .map((section) =>
                 // sort items within each section by name
                 sectionRecord[section].sort((a, b) =>
-                    a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
+                    a.NAME.toLowerCase().localeCompare(b.NAME.toLowerCase()),
                 ),
             );
-    }, [items]);
+    }, [data]);
 
     // get the rendered items
     const renderedItems: DesignerMenuItem[][] = useMemo(() => {
@@ -86,8 +91,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                 .map((sectionItems) =>
                     // pattern match on s
                     sectionItems.filter((item) =>
-                        item.name
-                            .replace(/[^a-z0-9]/gi, '')
+                        item.NAME.replace(/[^a-z0-9]/gi, '')
                             .toLowerCase()
                             .includes(s),
                     ),
@@ -117,7 +121,10 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                 {renderedItems.length ? (
                     <StyledMenu>
                         {renderedItems.map((sectionItems, index) => (
-                            <Stack key={sectionItems[0].section} width="100%">
+                            <Stack
+                                key={sectionItems[0].SECTION ?? 'Miscellaneous'}
+                                width="100%"
+                            >
                                 {index > 0 && (
                                     <Stack paddingTop={1}>
                                         <Divider variant="fullWidth" flexItem />
@@ -125,7 +132,8 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                                 )}
                                 <Stack padding={2}>
                                     <Typography variant="subtitle2" key={index}>
-                                        {sectionItems[0].section}
+                                        {sectionItems[0].SECTION ??
+                                            'Miscellaneous'}
                                     </Typography>
                                 </Stack>
                                 <StyledGridWrapper>
@@ -136,7 +144,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                                         paddingLeft={2}
                                     >
                                         {sectionItems.map((block) => (
-                                            <Grid item key={block.name}>
+                                            <Grid item key={block.ID}>
                                                 <AddBlocksMenuCard
                                                     item={block}
                                                 />

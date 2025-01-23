@@ -1,36 +1,24 @@
 import { BlockJSON } from '@/stores';
 
 export interface DesignerMenuItem {
-    /** Section that the item belongs to */
-    section:
-        | 'Element'
-        | 'Query'
-        | 'Input'
-        | 'Layout'
-        | 'Progress'
-        | 'Text'
-        | 'Compare LLMs'
-        | 'Mermaid'
-        | 'Area Chart'
-        | 'Bar Chart'
-        | 'General'
-        | 'Line Chart'
-        | 'Pie Chart'
-        | 'Scatter Plot'
-        | 'Theme';
+    /** Id of the item */
+    ID: string;
 
     /** Name of the item to show in the tooltip */
-    name: string;
-
-    /** Image of the item */
-    image?: string;
-
-    /** Image to display when hovering */
-    hoverImage?: string;
+    NAME: string;
 
     /** JSON of the block */
-    json: BlockJSON;
+    BLOCK_JSON: BlockJSON;
+
+    /** Image of the item */
+    IMAGE?: string;
+
+    /** Image to display when hovering */
+    HOVER_IMAGE?: string;
 
     /** Text to display on hover */
-    hoverText?: string;
+    HOVER_TEXT?: string;
+
+    /** Section that the item belongs to */
+    SECTION?: string;
 }

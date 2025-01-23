@@ -46,12 +46,12 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
     const handleMouseDown = () => {
         // set the dragged
         designer.activateDrag(
-            item.json.widget,
+            item.BLOCK_JSON.widget,
             () => {
                 return true;
             },
-            item.name,
-            item.hoverImage ?? item.image,
+            item.NAME,
+            item.HOVER_IMAGE ?? item.IMAGE,
         );
 
         // clear the hovered
@@ -88,7 +88,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                     id = state.dispatch({
                         message: ActionMessages.ADD_BLOCK,
                         payload: {
-                            json: item.json,
+                            json: item.BLOCK_JSON,
                             position: {
                                 parent: siblingWidget.parent.id,
                                 slot: siblingWidget.parent.slot,
@@ -102,7 +102,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 id = state.dispatch({
                     message: ActionMessages.ADD_BLOCK,
                     payload: {
-                        json: item.json,
+                        json: item.BLOCK_JSON,
                         position: {
                             parent: placeholderAction.id,
                             slot: placeholderAction.slot,
@@ -124,7 +124,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         // set as active
         setLocal(false);
     }, [
-        item.json,
+        item.BLOCK_JSON,
         designer.drag.active,
         designer.drag.placeholderAction,
         designer,
@@ -156,11 +156,11 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 fontWeight="medium"
                 align="center"
             >
-                {item.name}
+                {item.NAME}
             </StyledTypography>
             <StyledCard onMouseDown={handleMouseDown}>
                 <Tooltip
-                    title={item.hoverText ?? item.name}
+                    title={item.HOVER_TEXT ?? item.NAME}
                     arrow
                     placement="bottom"
                     onOpen={() => setHovered(true)}
@@ -170,10 +170,10 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                         <BlockCardContent
                             image={
                                 hovered
-                                    ? item.hoverImage ?? item.image
-                                    : item.image ?? item.hoverImage
+                                    ? item.HOVER_IMAGE ?? item.IMAGE
+                                    : item.IMAGE ?? item.HOVER_IMAGE
                             }
-                            name={item.name}
+                            name={item.NAME}
                         />
                     </div>
                 </Tooltip>
