@@ -1,5 +1,5 @@
-import { QueryState } from "../../../../../../packages/client/src/stores/state/query.state";
-import { SerializedState } from "../../../../../../packages/client/src/stores/state/state.types";
+import { SerializedState } from "../state.types";
+import { QueryState } from "../query.state";
 import { Migration } from "./migration.types";
 
 /**
