@@ -158,7 +158,7 @@ export const SETTINGS_ROUTES: {
         description: 'View and edit permissions for teams',
         icon: mdiDatabase,
         history: ['team-permissions'],
-        admin: true,
+        admin: false,
     },
     {
         title: 'Team Permissions',
@@ -167,7 +167,7 @@ export const SETTINGS_ROUTES: {
             'View member permissions, pending requests, and all other viewable settings pertaining to the team',
         icon: mdiDatabase,
         history: ['team-permissions', 'team-permissions/<id>'],
-        admin: true,
+        admin: false,
     },
     {
         title: 'Configuration',

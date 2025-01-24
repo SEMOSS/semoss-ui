@@ -142,6 +142,7 @@ export const TeamsSettingsPage = () => {
         });
 
     const watchCustom = watch('CUSTOM_GROUP');
+    const watchType = watch('TEAM_TYPE');
     const values = getValues();
 
     // To focus when getting new results
@@ -430,31 +431,36 @@ export const TeamsSettingsPage = () => {
                                         }}
                                     />
                                 </Box>
-                                <Box>
-                                    <StyledFormLabel variant="subtitle1">
-                                        Custom Group?
-                                    </StyledFormLabel>
-                                    <Controller
-                                        name={'CUSTOM_GROUP'}
-                                        control={control}
-                                        rules={{ required: false }}
-                                        render={({ field }) => {
-                                            return (
-                                                <Checkbox
-                                                    label=""
-                                                    value={
-                                                        field.value
-                                                            ? field.value
-                                                            : ''
-                                                    }
-                                                    onChange={(value) =>
-                                                        field.onChange(value)
-                                                    }
-                                                />
-                                            );
-                                        }}
-                                    />
-                                </Box>
+
+                                {!watchType && (
+                                    <Box>
+                                        <StyledFormLabel variant="subtitle1">
+                                            Custom Group?
+                                        </StyledFormLabel>
+                                        <Controller
+                                            name={'CUSTOM_GROUP'}
+                                            control={control}
+                                            rules={{ required: false }}
+                                            render={({ field }) => {
+                                                return (
+                                                    <Checkbox
+                                                        label=""
+                                                        value={
+                                                            field.value
+                                                                ? field.value
+                                                                : ''
+                                                        }
+                                                        onChange={(value) =>
+                                                            field.onChange(
+                                                                value,
+                                                            )
+                                                        }
+                                                    />
+                                                );
+                                            }}
+                                        />
+                                    </Box>
+                                )}
                             </Stack>
                         </Modal.Content>
                         <Modal.Actions>
