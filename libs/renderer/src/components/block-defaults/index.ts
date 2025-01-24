@@ -50,6 +50,7 @@ import { config as RadioBlockConfig, RadioBlockDef } from "./radio-block";
 import { config as SelectBlockConfig, SelectBlockDef } from "./select-block";
 
 import { config as TextBlockConfig, TextBlockDef } from "./text-block";
+import { config as ThemeBlockConfig, ThemeBlockDef } from "./theme-block";
 import {
     config as ToggleButtonBlockConfig,
     ToggleButtonBlockDef,
@@ -91,6 +92,7 @@ export type DefaultBlockDefinitions =
     | ProgressBlockDef
     | SelectBlockDef
     | TextBlockDef
+    | ThemeBlockDef
     | ToggleButtonBlockDef
     | UploadBlockDef
     | VegaVisualizationBlockDef
@@ -126,6 +128,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ProgressBlockConfig.widget]: ProgressBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
+    [ThemeBlockConfig.widget]: ThemeBlockConfig,
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
@@ -151,6 +154,7 @@ export {
     ProgressBlockConfig,
     SelectBlockConfig,
     TextBlockConfig,
+    ThemeBlockConfig,
     UploadBlockConfig,
     VegaVisualizationBlockConfig,
     MermaidBlockConfig,

@@ -361,14 +361,13 @@ export const SelectedBlockPanel = observer(() => {
                     )}
                 </StyledMenuScroll>
                 {addVariableModal ? (
-                    <Modal open={true}>fix variable add</Modal>
-                ) : // <AddVariableModal
-                //     open={true}
-                //     type="block"
-                //     to={designer.selected}
-                //     onClose={() => setAddVariableModal(false)}
-                // />
-                null}
+                    <AddVariableModal
+                        open={true}
+                        type="block"
+                        to={designer.selected}
+                        onClose={() => setAddVariableModal(false)}
+                    />
+                ) : null}
             </StyledMenu>
         </Panel>
     );

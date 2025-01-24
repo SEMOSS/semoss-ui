@@ -2,19 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Actions, DockLocation, TabNode } from 'flexlayout-react';
 import {
-    Divider,
-    Icon,
-    IconButton,
-    Modal,
-    Stack,
-    TextField,
-    TreeView,
-    Typography,
-    styled,
-    useNotification,
-} from '@semoss/ui';
-import { useDesigner, useWorkspace } from '@/hooks';
-import {
     Add,
     ChevronRight,
     ContentCopy,
@@ -25,10 +12,23 @@ import {
     Home,
     Delete,
 } from '@mui/icons-material/';
-import { Panel } from '@/components/workspace';
 
 import { useBlocks, INPUT_BLOCK_TYPES, ActionMessages } from '@semoss/renderer';
-// import { AddVariableModal } from '@/components/notebook';
+import {
+    Divider,
+    Icon,
+    IconButton,
+    Stack,
+    TextField,
+    TreeView,
+    Typography,
+    styled,
+    useNotification,
+} from '@semoss/ui';
+
+import { AddVariableModal } from '@/components/notebook';
+import { useDesigner, useWorkspace } from '@/hooks';
+import { Panel } from '@/components/workspace';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -703,14 +703,13 @@ export const LayersPanel = observer((): JSX.Element => {
                     </TreeView>
                 </StyledMenuScroll>
                 {variableModal ? (
-                    <Modal open={true}>FIXXX</Modal>
-                ) : // <AddVariableModal
-                //     open={true}
-                //     to={variableModal}
-                //     type={'block'}
-                //     onClose={() => setVariableModal('')}
-                // />
-                null}
+                    <AddVariableModal
+                        open={true}
+                        to={variableModal}
+                        type={'block'}
+                        onClose={() => setVariableModal('')}
+                    />
+                ) : null}
             </StyledMenu>
         </Panel>
     );

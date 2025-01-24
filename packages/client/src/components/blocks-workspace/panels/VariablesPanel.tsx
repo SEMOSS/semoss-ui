@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import { Add, FilterListRounded } from '@mui/icons-material';
+
+import { useBlocks, VARIABLE_TYPES } from '@semoss/renderer';
 import {
     Button,
     Box,
@@ -11,16 +14,11 @@ import {
     Stack,
     Search,
     Popover,
-    Modal,
 } from '@semoss/ui';
-import { Add, FilterListRounded } from '@mui/icons-material';
 
 import { usePixel } from '@/hooks';
 import { NotebookVariable, AddVariablePopover } from '@/components/notebook';
-
 import { Panel } from '@/components/workspace';
-
-import { useBlocks, VARIABLE_TYPES } from '@semoss/renderer';
 
 const StyledStack = styled(Stack)(() => ({
     maxHeight: '100%',

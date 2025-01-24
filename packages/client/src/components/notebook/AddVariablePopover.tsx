@@ -1,12 +1,9 @@
-import React, {
-    createElement,
-    useCallback,
-    useEffect,
-    useMemo,
-    useState,
-    Suspense,
-    lazy,
-} from 'react';
+import React, { useEffect, useMemo, useState, Suspense, lazy } from 'react';
+import { MoreSharp, WarningRounded } from '@mui/icons-material';
+import { JsonViewer } from '@textea/json-viewer';
+import { observer } from 'mobx-react-lite';
+import { computed } from 'mobx';
+
 import {
     Alert,
     styled,
@@ -21,7 +18,6 @@ import {
     Grid,
     Checkbox,
 } from '@semoss/ui';
-
 import {
     ActionMessages,
     SerializedState,
@@ -36,17 +32,13 @@ import {
     Renderer,
 } from '@semoss/renderer';
 
-import { observer } from 'mobx-react-lite';
-import { computed } from 'mobx';
-
+// TODO: MOVE TO SDK/UTILITY LIB
 import {
     capitalizeFirstLetter,
-    // getEngineImage,
     isOutputJSON,
     splitAtPeriod,
+    // getEngineImage,
 } from '../../utility';
-import { MoreSharp, WarningRounded } from '@mui/icons-material';
-import { JsonViewer } from '@textea/json-viewer';
 
 const Editor = lazy(() => import('@monaco-editor/react'));
 

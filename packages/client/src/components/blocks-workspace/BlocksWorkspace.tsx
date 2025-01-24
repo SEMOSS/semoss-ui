@@ -1,24 +1,33 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { ConstructionOutlined } from '@mui/icons-material';
+
 import { useNotification, styled, Typography, Stack } from '@semoss/ui';
-import { runPixel } from '@/api';
+import { Env, InsightProvider } from '@semoss/sdk';
 import {
-    WorkspaceStore,
+    DEFAULT_MENU,
+    VISUALIZATION_MENU,
+    StateStore,
+    Blocks,
+    SerializedState,
+    DefaultCells,
+    DefaultBlocks,
     MigrationManager,
     STATE_VERSION,
-    DesignerStore,
-    WorkspaceOptions,
-} from '@/stores';
+} from '@semoss/renderer';
+
+import { runPixel } from '@/api';
+import { WorkspaceStore, DesignerStore, WorkspaceOptions } from '@/stores';
 import { DesignerContext } from '@/contexts';
+import { LoadingScreen } from '@/components/ui';
+import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
+import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
 import {
     Workspace,
     SettingsPanel,
     FileExplorerPanel,
     FileEditorPanel,
 } from '@/components/workspace';
-import { LoadingScreen } from '@/components/ui';
-import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 import {
     VariablesPanel,
     BlocksMenuPanel,
@@ -28,20 +37,6 @@ import {
     NotebookExplorerPanel,
     NotebookViewerPanel,
 } from './panels';
-
-import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
-
-import { Env, InsightProvider } from '@semoss/sdk';
-
-import {
-    DEFAULT_MENU,
-    VISUALIZATION_MENU,
-    StateStore,
-    Blocks,
-    SerializedState,
-    DefaultCells,
-    DefaultBlocks,
-} from '@semoss/renderer';
 
 const DEFAULT_BORDER_SIZE = 300;
 

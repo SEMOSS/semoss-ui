@@ -2,6 +2,8 @@
  * ------------------------------------------------
  * MODULES THAT COME WITH OUR RENDERER PACKAGE
  * BE MINDFUL OF WHAT WE EXPORT
+ *
+ * TODO: clean up what gets exported
  * ------------------------------------------------
  */
 
@@ -35,6 +37,7 @@ export type {
     QueryState,
     VariableType,
     VariableWithId,
+    CellState,
 } from "./store";
 
 // REGISTRY AND MENUS
@@ -58,4 +61,4 @@ export { QueryImportCellConfig } from "./components/cell-defaults/query-import-c
 export { CodeCellConfig } from "./components/cell-defaults/code-cell";
 
 // HOOKS
-export { useBlocks } from "./hooks";
+export { useBlocks, useBlocksPixel } from "./hooks";
