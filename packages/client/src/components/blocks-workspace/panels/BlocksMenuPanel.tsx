@@ -66,7 +66,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
         data?.forEach((item) => {
             if (!sectionRecord[item.SECTION]) sectionRecord[item.SECTION] = [];
             sectionRecord[item.SECTION].push(item);
-        }) ?? [];
+        });
 
         // sort sections by name
         return Object.keys(sectionRecord)
