@@ -11,6 +11,15 @@ export const config: BlockConfig<EchartVisualizationBlockDef> = {
     widget: 'e-chart',
     type: BLOCK_TYPE_CHART,
     data: {
+        style: {
+            display: 'flex',
+            // flexDirection: 'column',
+            padding: '4px',
+            gap: '8px',
+            // flexWrap: 'wrap',
+            width: 450,
+            height: 350,
+        },
         option: {},
         variation: '',
         frame: {

@@ -23,6 +23,7 @@ import { ChartStyling } from './ChartStyling';
 import { ToggleTrendline } from './ToggleTrendline';
 import { VisualizationStyles } from './VisualizationStyles';
 import { BarChartProperties } from './BarChartProperties';
+import { SizeSettings } from '@/components/block-settings/shared';
 
 interface UpgradedVisualizationToolProps {
     id: string;
@@ -283,12 +284,24 @@ export const UpgradedVisualizationTool =
                             <InfoOutlined />
                         </ListItemButton>
                         {selectedList === 'sizing' && (
-                            <BarChartProperties
-                                id={id}
-                                mountedStatus={
-                                    mountedRef.current.componentMounted
-                                }
-                            />
+                            // <BarChartProperties
+                            //     id={id}
+                            //     mountedStatus={
+                            //         mountedRef.current.componentMounted
+                            //     }
+                            // />
+                            <>
+                                <SizeSettings
+                                    id={id}
+                                    label="Height"
+                                    path="style.height"
+                                />
+                                <SizeSettings
+                                    id={id}
+                                    label="Width"
+                                    path="style.width"
+                                />
+                            </>
                         )}
                     </StyledListItem>
                 </List>

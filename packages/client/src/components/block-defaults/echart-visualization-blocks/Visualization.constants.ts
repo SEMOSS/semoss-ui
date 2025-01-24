@@ -3,6 +3,8 @@ export const BAR_CHART_DATA = {
     CODE: 'bar-chart',
     ECHARTCODE: 'bar-e-chart',
     JSONVALUE: ['bar'],
+    HEIGHT: 350,
+    WEIGHT: 450,
 };
 export const LINE_CHART_DATA = {
     NAME: 'Line Chart',

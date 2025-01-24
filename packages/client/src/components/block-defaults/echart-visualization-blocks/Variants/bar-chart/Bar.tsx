@@ -18,9 +18,9 @@ const StyledChartContainer = styled('div')(() => ({
     minHeight: '50px',
 }));
 const StyledMainContainer = styled('div')(({ theme }) => ({
-    height: '50%',
-    width: '50%',
-    color: 'unset',
+    height: 'inherit',
+    width: 'inherit',
+    // color: 'unset',
 }));
 const StyledSubContainer = styled('div')(({ theme }) => ({}));
 
@@ -285,35 +285,11 @@ export const Bar: BlockComponent = observer(({ id }) => {
                         });
                 }
             }
-            // if(resultData['series'].length >= optionSeriesLength){
-            //     for(let seriesIdx=optionSeriesLength; seriesIdx<=resultData['series'].length; seriesIdx++){
-            //         if(resultData['series'][(seriesIdx-1)]!==undefined && resultData['series'][(seriesIdx-1)].hasOwnProperty('data')){
-            //             resultData['series'][(seriesIdx-1)]['data'] = frameData.data?.values?.map((item,index)=>{
-            //                 return { 'value': (null)};
-            //             });
-            //         }
-            //     }
-            // }
-            //resetting the old records or unmodified records
-            // if(resultData['series'][(i-1)]['data'].length){
-            //     resultData['series'][(i-1)]['data'] = resultData['series'][(i-1)].data.map((item,index)=>null);
-            // }
-            // console.log('seriesLength', optionSeriesLength);
             return resultData; //returning updated values to chart
         },
         [frameData.data.values],
     );
-    // console.log('option', data.option, frameData.data);
-    // if (
-    //     data.option.hasOwnProperty('customSettings') &&
-    //     !data.option['customSettings']['optionStateChange']
-    // )
-    // const updateFrameData = () => {
-    // if(data.frame.name && frameData.data){
-    // resultData['series'] = seriesToUpdate;
-    // data.option['series'] = [optionDataProcessed['yAxis'], ...arrayToAdd];
-    // };
-    // }
+
     //this function is automatically called, when the chart is ready
     function echartsLoaded(echartInstance) {
         if (!echartState.hasOwnProperty('chartLoaded')) {
@@ -325,23 +301,21 @@ export const Bar: BlockComponent = observer(({ id }) => {
             });
         }
     }
-    // if (frameData.data?.values?.length) {
-    //     updateFrameData();
-    // }
+
     //validating the received data.option is in string format and parse it and then assign the same to chart
     if (typeof data.option === 'string') {
         try {
             const options = JSON.parse(data.option);
             return (
-                <StyledMainContainer id={id}>
+                <StyledNoDataContainer id={id}>
                     <EChartsReact option={options} />
-                </StyledMainContainer>
+                </StyledNoDataContainer>
             );
         } catch (e) {
             return (
-                <StyledMainContainer>
+                <StyledNoDataContainer>
                     There is an issue parsing your JSON.
-                </StyledMainContainer>
+                </StyledNoDataContainer>
             );
         }
     } else {
@@ -354,6 +328,9 @@ export const Bar: BlockComponent = observer(({ id }) => {
                 <EChartsReact
                     option={resultData}
                     onChartReady={echartsLoaded}
+                    style={{
+                        height: 'inherit',
+                    }}
                 />
                 <ChartContextMenu
                     id={id}

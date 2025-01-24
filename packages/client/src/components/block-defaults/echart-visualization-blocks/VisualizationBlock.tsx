@@ -16,6 +16,13 @@ const StyledNoDataContainer = styled('div', {
     color: error ? theme.palette.error.main : 'unset',
 }));
 
+const StyledDataContainer = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'error',
+})<{ error?: boolean }>(({ error = false, theme }) => ({
+    minHeight: '50%',
+    minWidth: '50%',
+}));
+
 export interface VisualizationColumns {
     name: string;
     selector: string;
@@ -25,6 +32,15 @@ export interface VisualizationColumns {
 export interface EchartVisualizationBlockDef {
     widget: 'e-chart';
     data: {
+        style: {
+            height: number;
+            width: number;
+            display: string | undefined;
+            // flexDirection: string | undefined;
+            padding: string | undefined;
+            gap: string | undefined;
+            // flexWrap: string | undefined;
+        };
         option: {};
         frame: {
             name: string;
@@ -53,9 +69,9 @@ export const VisualizationBlock: BlockComponent = observer(({ id }) => {
     }
 
     return (
-        <StyledNoDataContainer {...attrs}>
+        <StyledDataContainer {...attrs} style={{ ...data.style }}>
             {data.variation === 'echart-bar-graph' && <Bar id={id} />}
             {data.variation === 'echart-pie-chart' && <Pie id={id}></Pie>}
-        </StyledNoDataContainer>
+        </StyledDataContainer>
     );
 });
