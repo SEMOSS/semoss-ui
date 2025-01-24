@@ -4,6 +4,7 @@ import { observer } from "mobx-react-lite";
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent } from "../../../store";
 import { Slot } from "../../../components/blocks";
+import { LoadingScreen } from "@semoss/ui";
 
 export interface PageBlockDef extends BlockDef<"page"> {
     widget: "page";
@@ -50,10 +51,10 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
             data-page
         >
             {/* TODO: Make Loading Screen relative to the Page */}
-            {/* <LoadingScreen>
+            <LoadingScreen>
                 {isLoading ? <LoadingScreen.Trigger /> : null}
                 <Slot slot={slots.content}></Slot>
-            </LoadingScreen> */}
+            </LoadingScreen>
             <Slot slot={slots.content}></Slot>
         </div>
     );

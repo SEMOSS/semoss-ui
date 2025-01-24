@@ -13,6 +13,7 @@
 
         "build-test:client": "nx run-many -t build -p @semoss/client --verbose",
         "build-dev:sdk": "npx nx run-many -t dev -p @semoss/sdk",
+        "build-dev:renderer": "npx nx run-many -t dev -p @semoss/renderer",
         "nx:dep-graph": "nx dep-graph",
         "nx:reset": "nx reset",
         "nx:generate-react-lib": "nx reset"
