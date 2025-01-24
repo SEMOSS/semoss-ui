@@ -214,31 +214,6 @@ export const debounce = (func, wait) => {
     };
 };
 
-// /**
-//  * @name getEngineImage
-//  * @params appType & appSubType
-//  * @returns image link for associated engine
-//  */
-// export const getEngineImage = (
-//     appType: string,
-//     appSubType: string,
-//     ignoreNotFound: boolean = false,
-// ) => {
-//     const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name == appSubType);
-
-//     if (!obj) {
-//         if (ignoreNotFound) {
-//             return null;
-//         } else {
-//             console.warn("No image found:", appType, appSubType);
-//             return BRAIN;
-//         }
-//     }
-
-//     debugger;
-//     return obj.icon;
-// };
-
 /**
  * Get a value from an object based on the path
  *
@@ -272,3 +247,28 @@ export const getValueByPath = <T extends object>(target: T, path: string) => {
 
     return target;
 };
+
+// /**
+//  * @name getEngineImage
+//  * @params appType & appSubType
+//  * @returns image link for associated engine
+//  */
+// export const getEngineImage = (
+//     appType: string,
+//     appSubType: string,
+//     ignoreNotFound: boolean = false,
+// ) => {
+//     const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name == appSubType);
+
+//     if (!obj) {
+//         if (ignoreNotFound) {
+//             return null;
+//         } else {
+//             console.warn("No image found:", appType, appSubType);
+//             return BRAIN;
+//         }
+//     }
+
+//     debugger;
+//     return obj.icon;
+// };

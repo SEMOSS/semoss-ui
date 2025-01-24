@@ -31,6 +31,7 @@ import {
 
 import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
 
+import { Env, InsightProvider } from '@semoss/sdk';
 import {
     DEFAULT_MENU,
     VISUALIZATION_MENU,
@@ -39,7 +40,6 @@ import {
     SerializedState,
     DefaultCells,
     DefaultBlocks,
-    SDKWrapper,
 } from '@semoss/renderer';
 
 const DEFAULT_BORDER_SIZE = 300;
@@ -462,8 +462,12 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         return <LoadingScreen.Trigger />;
     }
 
+    Env.update({
+        MODULE: process.env.MODULE || '',
+    });
+
     return (
-        <SDKWrapper MODULE={process.env.MODULE}>
+        <InsightProvider>
             <Blocks state={state} registry={DefaultBlocks}>
                 <DesignerContext.Provider
                     value={{
@@ -503,6 +507,6 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                     <BlocksWorkspaceDev />
                 </DesignerContext.Provider>
             </Blocks>
-        </SDKWrapper>
+        </InsightProvider>
     );
 });

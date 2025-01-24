@@ -637,6 +637,9 @@ importers:
       '@semoss/renderer':
         specifier: workspace:*
         version: link:../../libs/renderer
+      '@semoss/sdk':
+        specifier: workspace:*
+        version: link:../../libs/sdk
       '@semoss/ui':
         specifier: workspace:*
         version: link:../../libs/ui

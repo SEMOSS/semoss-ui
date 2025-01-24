@@ -46,22 +46,3 @@ export const Renderer = (props: RendererProps) => {
         </InsightProvider>
     );
 };
-
-interface SDKWrapperProps {
-    /**
-     * Determines What Endpoint you are hitting
-     */
-    MODULE: string;
-
-    children: React.ReactElement;
-}
-
-export const SDKWrapper = (props: SDKWrapperProps) => {
-    const { MODULE, children } = props;
-
-    Env.update({
-        MODULE: MODULE || "",
-    });
-
-    return <InsightProvider>{children}</InsightProvider>;
-};

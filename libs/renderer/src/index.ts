@@ -24,6 +24,7 @@ export {
     ActionMessages,
     VARIABLE_TYPES,
     INPUT_BLOCK_TYPES,
+    MigrationManager,
 } from "./store";
 export type {
     SerializedState,

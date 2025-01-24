@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Stack, TextField, Modal, Button } from '@semoss/ui';
 import { Controller, useForm } from 'react-hook-form';
 
-import { useBlocks } from '@/hooks';
-import { ActionMessages } from '@/stores';
+import { ActionMessages, useBlocks } from '@semoss/renderer';
+import { Stack, TextField, Modal, Button } from '@semoss/ui';
 
 type NewQueryForm = {
     ID: string;

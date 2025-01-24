@@ -233,8 +233,6 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
             }[];
         };
 
-        debugger;
-
         // there was no response, that is an error
         if (!data) {
             throw Error("No Pixel Response");

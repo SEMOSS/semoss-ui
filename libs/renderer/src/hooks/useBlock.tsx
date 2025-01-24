@@ -1,12 +1,13 @@
 import { useCallback, useMemo } from "react";
 import { computed } from "mobx";
 
-import { upload } from "../api";
 import { Paths, PathValue } from "../types";
 import { ActionMessages, Block, BlockDef, ListenerActions } from "../store";
 import { copy } from "../utility";
 
 import { useBlocks } from "./useBlocks";
+
+import { upload } from "@semoss/sdk";
 
 /**
  * useBlockReturn

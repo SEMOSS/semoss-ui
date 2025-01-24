@@ -5,9 +5,9 @@ import { useNotification, IconButton, Stack } from '@semoss/ui';
 import { NoteAddOutlined, Refresh } from '@mui/icons-material';
 
 import { useWorkspace } from '@/hooks';
+import { Panel } from '@/components/workspace';
 import { NewQueryOverlay, DeleteNotebookOverlay } from '@/components/notebook';
 import { NotebookExplorerItem } from './NotebookExplorerPanelItem';
-import { Panel } from '@/components/workspace';
 
 import { ActionMessages, useBlocks } from '@semoss/renderer';
 
