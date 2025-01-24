@@ -153,8 +153,6 @@ export const runPixelAsync = async (pixel: string, insightId?: string) => {
         throw Error("No Pixel To Execute");
     }
 
-    debugger;
-
     // build the expression
     let postData = "";
 

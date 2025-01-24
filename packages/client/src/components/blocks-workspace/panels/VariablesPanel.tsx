@@ -16,10 +16,8 @@ import {
 import { Add, FilterListRounded } from '@mui/icons-material';
 
 import { usePixel } from '@/hooks';
-import {
-    NotebookVariable,
-    // AddVariablePopover
-} from '@/components/notebook';
+import { NotebookVariable, AddVariablePopover } from '@/components/notebook';
+
 import { Panel } from '@/components/workspace';
 
 import { useBlocks, VARIABLE_TYPES } from '@semoss/renderer';
@@ -268,15 +266,14 @@ export const VariablesPanel = observer((): JSX.Element => {
                         </List>
                     </StyledMenuScroll>
                     {isPopoverOpen && (
-                        <Modal open={true}>hey</Modal>
-                        // <AddVariablePopover
-                        //     open={isPopoverOpen}
-                        //     anchorEl={popoverAnchorEle}
-                        //     onClose={() => {
-                        //         setPopoverAnchorEl(null);
-                        //     }}
-                        //     engines={engines}
-                        // />
+                        <AddVariablePopover
+                            open={isPopoverOpen}
+                            anchorEl={popoverAnchorEle}
+                            onClose={() => {
+                                setPopoverAnchorEl(null);
+                            }}
+                            engines={engines}
+                        />
                     )}
                 </StyledMenu>
             </StyledStack>

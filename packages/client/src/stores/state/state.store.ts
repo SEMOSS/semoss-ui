@@ -103,7 +103,6 @@ export class StateStore {
     };
 
     constructor(config: StateStoreConfig) {
-        // debugger;
         // save the connected insight
         this._store.insightId = config.insightId;
 

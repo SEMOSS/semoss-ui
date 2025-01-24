@@ -36,7 +36,6 @@ export const InsightProvider = (props: InsightProviderProps) => {
 
     // create the new insight on load
     const insight = useMemo(() => {
-        debugger;
         return new Insight();
     }, []);
 
@@ -86,7 +85,6 @@ export const InsightProvider = (props: InsightProviderProps) => {
     useEffect(() => {
         // initialize the insight
         insight.initialize(options).finally(() => {
-            debugger;
             // update the state
             syncInsight();
         });

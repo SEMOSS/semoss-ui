@@ -25,6 +25,7 @@ export {
     VARIABLE_TYPES,
     INPUT_BLOCK_TYPES,
     MigrationManager,
+    STATE_VERSION,
 } from "./store";
 export type {
     SerializedState,
@@ -33,6 +34,7 @@ export type {
     CellStateConfig,
     QueryState,
     VariableType,
+    VariableWithId,
 } from "./store";
 
 // REGISTRY AND MENUS
@@ -43,6 +45,11 @@ export {
     DEFAULT_MENU,
 } from "./components/block-defaults";
 export type { DesignerMenuItem } from "./components/block-defaults/menu-types";
+
+export {
+    BLOCK_TYPE_INPUT,
+    BLOCK_TYPE_COMPARE,
+} from "./components/block-defaults/block-defaults.constants";
 
 export * from "./components/block-defaults";
 export * from "./components/cell-defaults";

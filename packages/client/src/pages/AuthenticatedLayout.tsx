@@ -2,7 +2,7 @@ import { observer } from 'mobx-react-lite';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 
 import { useRootStore } from '@/hooks/';
-import { Button, Modal, Typography } from '@semoss/ui';
+import { Button, Modal } from '@semoss/ui';
 import { useState, useMemo } from 'react';
 import { WelcomeModal } from '@/components/welcome';
 import { cookieName } from '@/components/cookies';

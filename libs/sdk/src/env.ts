@@ -45,7 +45,6 @@ export class Env {
      * @param updated - updated variables
      */
     static update = (updated: Partial<(typeof Env)["_store"]> = {}) => {
-        debugger;
         if (updated.APP) {
             this._store.APP = updated.APP;
         }

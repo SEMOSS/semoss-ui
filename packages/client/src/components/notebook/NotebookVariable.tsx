@@ -11,11 +11,10 @@ import {
     useNotification,
     Tooltip,
     TextField,
-    LinearProgress,
 } from '@semoss/ui';
 import { ContentCopy, MoreVert, Delete, Edit } from '@mui/icons-material';
 import { VariablePreview } from './VariablePreview';
-// import { AddVariablePopover } from './AddVariablePopover';
+import { AddVariablePopover } from './AddVariablePopover';
 
 import { ActionMessages, useBlocks, Variable } from '@semoss/renderer';
 
@@ -28,15 +27,6 @@ const StyledListItem = styled(List.Item)(() => ({
 
 const StyledTooltip = styled(Tooltip)(() => ({
     fontWeight: 'bold',
-}));
-
-const StyledLinearProgress = styled(LinearProgress)(({ theme }) => ({
-    '&.MuiLinearProgress-root': {
-        height: '2px',
-        backgroundColor: 'transparent',
-        marginTop: '21px',
-        '.MuiLinearProgress-barColorDeterminate': {},
-    },
 }));
 
 const StyledButton = styled('button')(({ theme }) => ({
@@ -391,9 +381,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             e.preventDefault();
                                         }}
                                     >
-                                        ADD VARIABLE
-                                        {/* TODO: FIX */}
-                                        {/* <AddVariablePopover
+                                        <AddVariablePopover
                                             variable={{
                                                 ...variable,
                                                 id: id,
@@ -404,7 +392,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                                 setPopoverAnchorEl(null);
                                             }}
                                             engines={engines}
-                                        /> */}
+                                        />
                                     </div>
                                 )}
                             </StyledButton>

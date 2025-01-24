@@ -196,7 +196,6 @@ export class InsightStore {
         }
 
         try {
-            debugger;
             // reset the id based on the Environment if set
             if (Env.APP) {
                 this._store.options.appId = Env.APP;
