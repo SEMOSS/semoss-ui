@@ -25,7 +25,7 @@ import { Link } from 'react-router-dom';
 import { Renderer } from '@semoss/renderer';
 
 const StyledViewport = styled('div')(() => ({
-    height: '100vh',
+    height: '100%',
     display: 'flex',
     flexDirection: 'column',
 }));

@@ -4,8 +4,8 @@ import { observer } from 'mobx-react-lite';
 import { useBlocks } from '@semoss/renderer';
 import { Typography, styled } from '@semoss/ui';
 
-import { getRelativeSize, getRootElement, getBlockElement } from '@/stores';
 import { useDesigner } from '@/hooks';
+import { getRelativeSize, getBlockElement } from '@/stores';
 
 interface StyledContainerProps {
     top: number;
@@ -58,10 +58,17 @@ const StyledTitle = styled('div')(({ theme }) => ({
     whiteSpace: 'nowrap',
 }));
 
+interface HoveredMaskProps {
+    /** Element to bind the mask to */
+    screenEle: HTMLDivElement;
+}
+
 /**
  * Show the information of a hovered block
  */
-export const HoveredMask = observer(() => {
+export const HoveredMask = observer((props: HoveredMaskProps) => {
+    const { screenEle } = props;
+
     // create the state
     const [size, setSize] = useState<{
         top: number;
@@ -72,15 +79,11 @@ export const HoveredMask = observer(() => {
 
     // get the store
     const { designer } = useDesigner();
-    const { registry, state } = useBlocks();
-    const block = state.getBlock(designer.hovered);
+    const { state } = useBlocks();
     const variableName = state.getAlias(designer.hovered);
 
     // get the root, watch changes, and reposition the mask
     useLayoutEffect(() => {
-        // get the root element
-        const rootEle = getRootElement();
-
         // reposition the mask
         const repositionMask = () => {
             // get the block element
@@ -91,7 +94,7 @@ export const HoveredMask = observer(() => {
             }
 
             // calculate and set the side
-            const updated = getRelativeSize(blockEle, rootEle);
+            const updated = getRelativeSize(blockEle, screenEle);
             setSize(updated);
         };
 
@@ -99,7 +102,7 @@ export const HoveredMask = observer(() => {
             repositionMask();
         });
 
-        observer.observe(rootEle, {
+        observer.observe(screenEle, {
             subtree: true,
             childList: true,
         });
@@ -124,13 +127,11 @@ export const HoveredMask = observer(() => {
                 designer.hovered === designer.selected || designer.drag.active
             }
         >
-            {block?.widget !== 'page' && (
-                <StyledTitle>
-                    <Typography variant={'body2'}>
-                        {variableName ? variableName : designer.hovered}
-                    </Typography>
-                </StyledTitle>
-            )}
+            <StyledTitle>
+                <Typography variant={'body2'}>
+                    {variableName ? variableName : designer.hovered}
+                </Typography>
+            </StyledTitle>
         </StyledContainer>
     );
 });

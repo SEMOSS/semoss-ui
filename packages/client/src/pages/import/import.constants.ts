@@ -8154,7 +8154,7 @@ export const CONNECTION_OPTIONS = {
             },
             {
                 name: 'CSV',
-                disable: false,
+                disable: true,
                 icon: CSV,
                 fields: [
                     // baseUpload

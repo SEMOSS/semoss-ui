@@ -4,7 +4,7 @@ import { Designer } from '@/components/designer';
 import { Panel } from '@/components/workspace';
 
 interface DesignerPanelProps {
-    /** Id of the designer */
+    /** Id of the rendered block */
     id: string;
 }
 
