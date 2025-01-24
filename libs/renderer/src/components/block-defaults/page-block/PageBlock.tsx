@@ -55,7 +55,8 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
                 {isLoading ? <LoadingScreen.Trigger /> : null}
                 <Slot slot={slots.content}></Slot>
             </LoadingScreen>
-            <Slot slot={slots.content}></Slot>
+            {/* Remove double slot: */}
+            {/*<Slot slot={slots.content}></Slot>*/}
         </div>
     );
 });
