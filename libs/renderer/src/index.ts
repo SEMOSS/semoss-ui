@@ -32,6 +32,7 @@ export type {
     BlockJSON,
     CellStateConfig,
     QueryState,
+    VariableType,
 } from "./store";
 
 // REGISTRY AND MENUS

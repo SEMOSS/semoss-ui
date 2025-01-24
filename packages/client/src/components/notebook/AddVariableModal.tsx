@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useBlocks } from '@/hooks';
+
+import { ActionMessages, VariableType, useBlocks } from '@semoss/renderer';
 import {
     Stack,
     Typography,
@@ -8,7 +9,6 @@ import {
     Modal,
     useNotification,
 } from '@semoss/ui';
-import { ActionMessages, VariableType } from '@/stores';
 
 export interface AddVariableModalProps {
     /**
