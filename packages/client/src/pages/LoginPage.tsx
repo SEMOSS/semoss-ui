@@ -494,14 +494,33 @@ export const LoginPage = observer(() => {
 
     // get the proviers
     const providers = [...configStore.store.config.providers];
-
+    const searchValues = [
+        'ms',
+        'google',
+        'github',
+        'keycloak',
+        'salesforce',
+        'siteminder',
+        'surveymonkey',
+        'adfs',
+        'okta',
+        'saml',
+        'active_directory',
+        'linotp',
+        'cac',
+        'windows_user',
+        'api_user',
+        'twitter',
+        'dropbox',
+        'product_hunt',
+        'linkedin',
+        'surveymonkey',
+        'generic',
+    ];
     // show the or
     const showOrDivider = () => {
         if (providers.indexOf('native') > -1) {
-            if (
-                providers.indexOf('ms') > -1 ||
-                providers.indexOf('google') > -1
-            ) {
+            if (searchValues.some((value) => providers.includes(value))) {
                 return true;
             }
         }
