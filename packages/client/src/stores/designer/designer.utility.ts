@@ -34,20 +34,6 @@ export const getRelativeSize = (
     };
 };
 
-/** Root **/
-/**
- * Get the root element
- *
- * @returns the root element
- */
-export const getRootElement = (): Element => {
-    const rootElement = document.querySelector(`[data-block="root"]`);
-    if (!rootElement) {
-        throw `ERROR ::: Cannot find Root`;
-    }
-    return rootElement;
-};
-
 /** Widget **/
 /**
  * Get the block element
@@ -57,11 +43,8 @@ export const getRootElement = (): Element => {
  * @returns the element of the block if found
  */
 export const getBlockElement = (id: string): Element | null => {
-    // get the root
-    const rootElement = getRootElement();
-
     // get the block
-    return rootElement.querySelector(`[data-block="${id}"]`);
+    return document.querySelector(`[data-block="${id}"]`);
 };
 
 /**
