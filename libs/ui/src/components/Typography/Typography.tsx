@@ -2,6 +2,7 @@ import {
     Typography as MuiTypography,
     TypographyProps as MuiTypographyProps,
     SxProps,
+    Tooltip,
 } from "@mui/material";
 
 export interface TypographyProps {
@@ -51,10 +52,21 @@ export interface TypographyProps {
 }
 
 export const Typography = (props: TypographyProps) => {
-    const { sx, color, ...otherProps } = props;
+    const { sx, color, variant, ...otherProps } = props;
+
     return (
         <MuiTypography
-            sx={sx}
+            sx={{
+                ...(variant === "body1" && {
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    display: "-webkit-box",
+                    WebkitLineClamp: "2",
+                    WebkitBoxOrient: "vertical",
+                }),
+                ...sx,
+            }}
+            variant={variant}
             color={
                 color === "success"
                     ? "success.text"
