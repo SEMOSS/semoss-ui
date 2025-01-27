@@ -35,6 +35,10 @@ const StyledGridWrapper = styled('div')({
     width: '100%',
 });
 
+const StyledTypography = styled(Typography)({
+    userSelect: 'none',
+});
+
 const defaultSection = 'Miscellaneous';
 
 export interface AddBlocksMenuProps {
@@ -138,10 +142,13 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                                     </Stack>
                                 )}
                                 <Stack padding={2}>
-                                    <Typography variant="subtitle2" key={index}>
+                                    <StyledTypography
+                                        variant="subtitle2"
+                                        key={index}
+                                    >
                                         {sectionItems[0].SECTION ??
                                             defaultSection}
-                                    </Typography>
+                                    </StyledTypography>
                                 </Stack>
                                 <StyledGridWrapper>
                                     <Grid

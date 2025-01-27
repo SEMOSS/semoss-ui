@@ -9,6 +9,7 @@ export const blockCardWidth = '133px';
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
     color: theme.palette.secondary.dark,
+    userSelect: 'none',
 }));
 
 export const BlockCardContent = (props: BlockCardContentProps) => {

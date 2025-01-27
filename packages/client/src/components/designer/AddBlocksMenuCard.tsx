@@ -19,6 +19,7 @@ const StyledCard = styled(Card)({
 const StyledTypography = styled(Typography)(({ theme }) => ({
     color: theme.palette.secondary.dark,
     width: blockCardWidth,
+    userSelect: 'none',
 }));
 
 export interface AddBlocksMenuItemProps {
