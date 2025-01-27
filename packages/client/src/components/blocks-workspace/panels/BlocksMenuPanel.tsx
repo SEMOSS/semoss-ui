@@ -35,6 +35,8 @@ const StyledGridWrapper = styled('div')({
     width: '100%',
 });
 
+const defaultSection = 'Miscellaneous';
+
 export interface AddBlocksMenuProps {
     /** Title to render in the menu */
     title: string;
@@ -63,10 +65,14 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
         const sectionRecord: Record<string, DesignerMenuItem[]> = {};
 
         // sort items by section
-        data?.forEach((item) => {
-            if (!sectionRecord[item.SECTION]) sectionRecord[item.SECTION] = [];
-            sectionRecord[item.SECTION].push(item);
-        });
+        if (status === 'SUCCESS' && data) {
+            data.forEach((item) => {
+                const currentSection = item.SECTION ?? defaultSection;
+                if (!sectionRecord[currentSection])
+                    sectionRecord[currentSection] = [];
+                sectionRecord[currentSection].push(item);
+            });
+        }
 
         // sort sections by name
         return Object.keys(sectionRecord)
@@ -77,7 +83,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                     a.NAME.toLowerCase().localeCompare(b.NAME.toLowerCase()),
                 ),
             );
-    }, [data]);
+    }, [status, data]);
 
     // get the rendered items
     const renderedItems: DesignerMenuItem[][] = useMemo(() => {
@@ -123,7 +129,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                     <StyledMenu>
                         {renderedItems.map((sectionItems, index) => (
                             <Stack
-                                key={sectionItems[0].SECTION ?? 'Miscellaneous'}
+                                key={sectionItems[0].SECTION ?? defaultSection}
                                 width="100%"
                             >
                                 {index > 0 && (
@@ -134,7 +140,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                                 <Stack padding={2}>
                                     <Typography variant="subtitle2" key={index}>
                                         {sectionItems[0].SECTION ??
-                                            'Miscellaneous'}
+                                            defaultSection}
                                     </Typography>
                                 </Stack>
                                 <StyledGridWrapper>
