@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useReducer, useCallback } from 'react';
 import { useRootStore, useAPI } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 import { useNavigate } from 'react-router-dom';
+import AMAZON_S3 from '@/assets/img/Amazon_S3.png';
 
 import {
     Grid,
@@ -50,7 +51,6 @@ export interface Database {
     permission?: number;
     user_permission?: number;
 }
-
 const StyledContainer = styled('div')({
     display: 'flex',
     width: 'auto',
@@ -89,6 +89,7 @@ const StyledSearchbarDiv = styled('div')({
 const StyledAddButton = styled(Button)({
     width: '150px',
     borderRadius: '12px',
+    marginLeft: '16px ',
 });
 
 const StyledFormLabel = styled(Typography)({
@@ -121,7 +122,8 @@ export const TeamsSettingsPage = () => {
     const { adminMode } = useSettings();
     const { monolithStore, configStore } = useRootStore();
     const navigate = useNavigate();
-
+    const TypeImageObject = { native: AMAZON_S3 };
+    console.log('hello');
     const [addModal, setAddModal] = useState(false);
     const [filteredTeams, setFilteredTeams] = useState([]);
     const [state, dispatch] = useReducer(reducer, initialState);
@@ -281,6 +283,7 @@ export const TeamsSettingsPage = () => {
                             size="small"
                             ref={searchbarRef}
                         />
+
                         <StyledAddButton
                             variant="contained"
                             onClick={() => setAddModal(true)}
@@ -377,15 +380,18 @@ export const TeamsSettingsPage = () => {
                                                             ? field.value
                                                             : ''
                                                     }
-                                                    onChange={(value) =>
-                                                        field.onChange(value)
+                                                    onChange={(e) =>
+                                                        field.onChange(
+                                                            e.target.value,
+                                                        )
                                                     }
                                                     fullWidth={true}
                                                     disabled={watchCustom}
                                                 >
                                                     {loginTypes &&
-                                                        loginTypes.map(
-                                                            (val, idx) => {
+                                                        loginTypes
+                                                            .sort()
+                                                            .map((val, idx) => {
                                                                 return (
                                                                     <Select.Item
                                                                         key={
@@ -395,11 +401,35 @@ export const TeamsSettingsPage = () => {
                                                                             val
                                                                         }
                                                                     >
-                                                                        {val}
+                                                                        <Box
+                                                                            sx={{
+                                                                                display:
+                                                                                    'flex',
+                                                                                flexDirection:
+                                                                                    'row',
+                                                                                alignItems:
+                                                                                    'center',
+                                                                                gap: '8px',
+                                                                            }}
+                                                                        >
+                                                                            <img
+                                                                                src={
+                                                                                    TypeImageObject[
+                                                                                        val
+                                                                                    ]
+                                                                                }
+                                                                                style={{
+                                                                                    height: '12px',
+                                                                                    width: '12px',
+                                                                                }}
+                                                                            />
+                                                                            {
+                                                                                val
+                                                                            }
+                                                                        </Box>
                                                                     </Select.Item>
                                                                 );
-                                                            },
-                                                        )}
+                                                            })}
                                                 </Select>
                                             );
                                         }}
