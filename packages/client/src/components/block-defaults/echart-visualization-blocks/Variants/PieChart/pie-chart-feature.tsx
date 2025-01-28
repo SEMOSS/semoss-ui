@@ -10,7 +10,6 @@ import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 import { Paths, PathValue } from '@/types';
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
-import { CustomBlockColumnSettings } from './CustomBlockColumnSettings';
 import { ColorByValue } from './ColorByValue';
 
 const StyledChartContainer = styled('div')(() => ({
@@ -602,10 +601,6 @@ const E_PieChart = observer<any>(({ id, frame }) => {
                         palettes={colorPalettes}
                         onPaletteClick={handlePaletteClick}
                     />
-                    <CustomBlockColumnSettings
-                        id={id}
-                        frame={frame}
-                    ></CustomBlockColumnSettings>
                 </div>
             </StyledChartContainer>
         </Stack>
