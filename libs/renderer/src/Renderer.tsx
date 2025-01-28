@@ -1,48 +1,177 @@
-import { Env, InsightProvider } from "@semoss/sdk";
-import { BlocksRenderer, BlocksRendererProps } from "./components";
-import { Card, Stack } from "@semoss/ui";
-// import { getEngineImage } from "./utility";
-import { Typography } from "@mui/material";
-import { SerializedState } from "./store";
+import { useEffect, useState } from "react";
+import { observer } from "mobx-react-lite";
+import { useSearchParams, useLocation } from "react-router-dom";
 
-interface RendererProps extends BlocksRendererProps {
-    /**
-     * Determines What Endpoint you are hitting
-     */
-    MODULE: string;
+import { runPixel, useInsight } from "@semoss/sdk";
+import { Typography, useNotification } from "@semoss/ui";
 
-    /**
-     * app id
-     */
+import {
+    MigrationManager,
+    SerializedState,
+    STATE_VERSION,
+    StateStore,
+} from "./store/state";
+
+import { Blocks, RendererEngine } from "./components/blocks";
+import { DefaultBlocks } from "./components/block-defaults";
+import { DefaultCells } from "./components/cell-defaults";
+
+const ACTIVE = "page-1";
+
+export interface RendererProps {
+    /** App to render */
     appId?: string;
 
-    /**
-     * Predeifned state to render
-     */
+    /** State to render */
     state?: SerializedState;
 
-    /**
-     * Is this a preview
-     */
+    /** Do we want to see load screen. Ex: preview on tooltip */
     preview?: boolean;
 }
 
-export const Renderer = (props: RendererProps) => {
-    const { appId, state, preview, MODULE } = props;
+/**
+ * Render a block app
+ */
+export const Renderer = observer((props: RendererProps) => {
+    const { appId, state, preview } = props;
+    const notification = useNotification();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const { insightId, isAuthorized } = useInsight();
 
-    Env.update({
-        MODULE: MODULE || "",
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [stateStore, setStateStore] = useState<StateStore | null>();
+    const queryStringParams = new URLSearchParams(useLocation().search);
 
-        ACCESS_KEY: process.env.ACCESS_KEY || "",
+    useEffect(() => {
+        if (isAuthorized) {
+            // start the loading
+            setIsLoading(true);
 
-        SECRET_KEY: process.env.SECRET_KEY || "",
+            let stateFilter;
 
-        APP: process.env.APP || "",
-    });
+            searchParams.forEach((value, key) => {
+                if (key === "state") {
+                    stateFilter = JSON.parse(value);
+                }
+            });
+
+            // initialize a new insight
+            let pixel = "";
+            if (appId && !stateFilter) {
+                pixel = `GetAppBlocksJson ( project=["${appId}"]);`;
+            } else if (state || stateFilter) {
+                pixel = `true`;
+            } else {
+                console.error("Missing appId or state");
+            }
+
+            // ignore if there is not pixel
+            if (!pixel) {
+                return;
+            }
+
+            // load the app
+            runPixel<[SerializedState]>(pixel, "new")
+                .then(async ({ pixelReturn, errors, insightId }) => {
+                    if (errors.length) {
+                        throw new Error(errors.join(""));
+                    }
+
+                    // set the state
+                    let s: SerializedState;
+                    if (appId && !stateFilter) {
+                        s = pixelReturn[0].output;
+                    } else if (state || stateFilter) {
+                        if (stateFilter) {
+                            s = stateFilter;
+                        } else {
+                            s = state;
+                        }
+                    } else {
+                        return;
+                    }
+
+                    // ignore if there is state
+                    if (!s) {
+                        return;
+                    }
+
+                    // run migration if not up to date
+                    if (s.version !== STATE_VERSION) {
+                        const migration = new MigrationManager();
+                        s = await migration.run(s);
+                    }
+
+                    // Replace variable values with query params
+                    const params = {};
+                    queryStringParams.forEach((value, key) => {
+                        params[key] = value;
+                    });
+
+                    // create a new state store
+                    const store = new StateStore({
+                        mode: "interactive",
+                        insightId: insightId,
+                        state: s,
+                        cellRegistry: DefaultCells,
+                        initialParams: params,
+                    });
+
+                    // set it
+                    setStateStore(store);
+
+                    if (appId) {
+                        const { errors: errs } = await runPixel(
+                            `SetContext("${appId}");`,
+                            insightId,
+                        );
+
+                        if (errs.length) {
+                            notification.add({
+                                color: "error",
+                                message: errs.join(""),
+                            });
+                        }
+                    }
+
+                    if (stateFilter) {
+                        notification.add({
+                            color: "warning",
+                            message:
+                                "Please be mindful this may not represent the current state of the app, due to the filters present in the URL",
+                        });
+                    }
+                })
+                .catch((e) => {
+                    notification.add({
+                        color: "error",
+                        message: e.message,
+                    });
+
+                    console.log(e);
+                })
+                .finally(() => {
+                    // close the loading screen
+                    setIsLoading(false);
+                });
+        }
+    }, [state, appId, isAuthorized]);
+
+    if (!isAuthorized) {
+        return <>SDK NOT LOGGED IN</>;
+    }
+
+    if (!stateStore || (isLoading && !preview)) {
+        if (!preview) {
+            return <Typography variant="h6">Show Loading...</Typography>;
+        } else {
+            return <Typography variant="h6">Fetching Preview...</Typography>;
+        }
+    }
 
     return (
-        <InsightProvider>
-            <BlocksRenderer appId={appId} preview={preview} state={state} />
-        </InsightProvider>
+        <Blocks state={stateStore} registry={DefaultBlocks}>
+            <RendererEngine id={ACTIVE} />
+        </Blocks>
     );
-};
+});

@@ -27,6 +27,10 @@ import { config as InputBlockConfig, InputBlockDef } from "./input-block";
 
 import { config as LinkBlockConfig, LinkBlockDef } from "./link-block";
 import { config as LogsBlockConfig, LogsBlockDef } from "./logs-block";
+import {
+    config as LLMComparisonBlockConfig,
+    LLMComparisonBlockDef,
+} from "./llm-comparison-block";
 
 import {
     config as MarkdownBlockConfig,
@@ -84,6 +88,7 @@ export type DefaultBlockDefinitions =
     | ImageBlockDef
     | InputBlockDef
     | LinkBlockDef
+    | LLMComparisonBlockDef
     | LogsBlockDef
     | MarkdownBlockDef
     | MermaidBlockDef
@@ -118,6 +123,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ImageBlockConfig.widget]: ImageBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
     [LinkBlockConfig.widget]: LinkBlockConfig,
+    [LLMComparisonBlockConfig.widget]: LLMComparisonBlockConfig,
     [LogsBlockConfig.widget]: LogsBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
@@ -150,6 +156,7 @@ export {
     MarkdownBlockConfig,
     HTMLBlockConfig,
     PageBlockConfig,
+    LLMComparisonBlockConfig,
     LogsBlockConfig,
     ProgressBlockConfig,
     SelectBlockConfig,

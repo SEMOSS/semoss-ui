@@ -10,6 +10,7 @@ import { CodeRenderer } from '@/components/code-workspace';
 import { AppType, AppMetadata } from '@/components/app';
 
 import { Renderer } from '@semoss/renderer';
+import { InsightProvider } from '@semoss/sdk';
 
 const StyledViewport = styled('div')(() => ({
     display: 'flex',
@@ -93,7 +94,9 @@ export const SharePage = observer(() => {
         <StyledViewport>
             {type === 'CODE' ? <CodeRenderer appId={appId} /> : null}
             {type === 'BLOCKS' ? (
-                <Renderer MODULE={process.env.MODULE} appId={appId} />
+                <InsightProvider>
+                    <Renderer appId={appId} />
+                </InsightProvider>
             ) : null}
         </StyledViewport>
     );

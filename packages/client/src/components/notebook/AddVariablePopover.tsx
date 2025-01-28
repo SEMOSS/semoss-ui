@@ -39,6 +39,7 @@ import {
     splitAtPeriod,
     // getEngineImage,
 } from '../../utility';
+import { InsightProvider } from '@semoss/sdk';
 
 const Editor = lazy(() => import('@monaco-editor/react'));
 
@@ -448,7 +449,11 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                         },
                     };
 
-                    return <Renderer MODULE={process.env.MODULE} state={s} />;
+                    return (
+                        <InsightProvider>
+                            <Renderer state={s} />
+                        </InsightProvider>
+                    );
                 } else if (variableType === 'query') {
                     const query = state.getQuery(variablePointer);
 

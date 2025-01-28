@@ -11,6 +11,10 @@ export interface RendererEngineProps {
 /**
  * Render a block
  */
+
+/**
+ * TODO: Rename possibly BlockElement
+ */
 export const RendererEngine = observer(
     ({ id }: RendererEngineProps): JSX.Element => {
         // get the store and mode

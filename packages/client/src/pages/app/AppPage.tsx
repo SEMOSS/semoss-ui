@@ -23,6 +23,7 @@ import { CodeRenderer } from '@/components/code-workspace';
 import { Link } from 'react-router-dom';
 
 import { Renderer } from '@semoss/renderer';
+import { InsightProvider } from '@semoss/sdk';
 
 const StyledViewport = styled('div')(() => ({
     height: '100%',
@@ -128,7 +129,9 @@ export const AppPage = observer(() => {
             </Stack>
             <StyledContent>
                 {workspace.type === 'BLOCKS' ? (
-                    <Renderer MODULE={process.env.MODULE} appId={appId} />
+                    <InsightProvider>
+                        <Renderer appId={appId} />
+                    </InsightProvider>
                 ) : null}
                 {workspace.type === 'CODE' ? (
                     <CodeRenderer appId={appId} />

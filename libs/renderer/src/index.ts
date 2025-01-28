@@ -21,6 +21,7 @@ export { RendererEngine } from "./components/blocks";
 
 // Wrapper that gives context to hooks that interact with configs stored on JSON
 export { Blocks } from "./components/blocks/Blocks";
+
 export {
     StateStore,
     ActionMessages,
@@ -29,6 +30,7 @@ export {
     MigrationManager,
     STATE_VERSION,
 } from "./store";
+
 export type {
     SerializedState,
     Variable,

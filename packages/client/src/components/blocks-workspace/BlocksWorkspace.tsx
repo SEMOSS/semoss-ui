@@ -458,6 +458,9 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         return <LoadingScreen.Trigger />;
     }
 
+    /**
+     * Initialize insight for app building
+     */
     Env.update({
         MODULE: process.env.MODULE || '',
     });
