@@ -17,6 +17,7 @@ export interface DesignerMenuItem {
         | 'Line Chart'
         | 'Pie Chart'
         | 'Scatter Plot'
+        | 'Theme'
         | 'Echart Pie Chart'
         | 'Bar E Chart';
 

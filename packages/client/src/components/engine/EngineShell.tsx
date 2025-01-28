@@ -116,6 +116,7 @@ export const EngineShell = (props: EngineShellProps) => {
         database_date_created?: string;
         last_updated?: string;
         description?: string;
+        database_type?: string;
     }>(`GetEngineMetadata(engine=["${id}"], metaKeys=[]); `);
 
     /**
@@ -179,6 +180,7 @@ export const EngineShell = (props: EngineShellProps) => {
                                         <EditEngineDetails
                                             values={metaVals}
                                             open={edit}
+                                            engineData={data}
                                             onClose={(success) => {
                                                 // reload if successfully submitted
                                                 if (success) {

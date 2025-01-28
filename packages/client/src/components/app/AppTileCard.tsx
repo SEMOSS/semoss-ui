@@ -178,11 +178,6 @@ interface AppTileCardProps {
     href?: string;
 
     /**
-     * Link to navigate to see details
-     */
-    detailHref?: string;
-
-    /**
      * is app favorited
      */
     isFavorite?: boolean;
@@ -212,8 +207,8 @@ export const AppTileCard = (props: AppTileCardProps) => {
     const {
         app,
         background = '#DAC9F5',
+        onAction = () => null,
         href = null,
-        detailHref = '',
         isFavorite,
         favorite,
         appType,
@@ -432,7 +427,12 @@ export const AppTileCard = (props: AppTileCardProps) => {
                     {systemApp && !appDetails && <StyledPlaceholder />}
                 </Card.Content>
                 <StyledCardActions>
-                    {href ? (
+                    {!href ? (
+                        <StyledOpenButton onClick={onAction}>
+                            <p>Open</p>
+                            <OpenInNewOutlined fontSize="small" />
+                        </StyledOpenButton>
+                    ) : (
                         <Link
                             href={href}
                             rel="noopener noreferrer"
@@ -445,7 +445,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                                 <OpenInNewOutlined fontSize="small" />
                             </StyledOpenButton>
                         </Link>
-                    ) : null}
+                    )}
                     {app.project_created_by !== 'SYSTEM' ? (
                         <IconButton
                             onClick={(e) => {
@@ -476,16 +476,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
                 >
                     Copy App ID
                 </Menu.Item>
-                {detailHref && (
-                    <Menu.Item
-                        value="details"
-                        onClick={() => {
-                            navigate(detailHref);
-                        }}
-                    >
-                        View Details
-                    </Menu.Item>
-                )}
                 {app?.user_permission && app.user_permission < 2 && (
                     <Menu.Item
                         value="delete"

@@ -132,6 +132,7 @@ export const AskLLMTemplate: Template = {
                 },
                 widget: 'page',
                 data: {
+                    route: '',
                     style: {
                         padding: '24px',
                         fontFamily: 'roboto',
@@ -223,6 +224,6 @@ export const AskLLMTemplate: Template = {
             },
         },
         executionOrder: ['ask-llm'],
-        version: '1.0.0-alpha.3',
+        version: '1.0.0-alpha.4',
     },
 };

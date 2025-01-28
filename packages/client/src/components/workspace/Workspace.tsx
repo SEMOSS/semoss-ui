@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import {
@@ -12,7 +12,7 @@ import {
     Drawer,
 } from '@semoss/ui';
 // import { Drawer } from '@mui/material';
-import { Home, Menu, MenuOpen, RestartAlt } from '@mui/icons-material';
+import { Menu, MenuOpen, RestartAlt } from '@mui/icons-material';
 import { Layout, TabNode } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import './flexlayout.css';
@@ -27,7 +27,6 @@ import { LoginPopover } from '@/components/ui';
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
 import { WorkspaceTabs } from './WorkspaceTabs';
-import { reaction } from 'mobx';
 
 const StyledViewport = styled('div')(() => ({
     height: '100vh',
@@ -76,10 +75,6 @@ const StyledMenuOpenIcon = styled(MenuOpen)(() => ({
 }));
 
 const StyledMenuIcon = styled(Menu)(() => ({
-    color: 'rgba(0, 0, 0, 0.54)',
-}));
-
-const StyledHomeIcon = styled(Home)(({ theme }) => ({
     color: 'rgba(0, 0, 0, 0.54)',
 }));
 

@@ -19,7 +19,7 @@ export const AskCSVTemplate: Template = {
     lastUpdatedDate: new Date().toISOString(),
     tags: ['NLP', 'SQL', 'LLM'],
     state: {
-        version: '1.0.0-alpha.3',
+        version: '1.0.0-alpha.4',
         executionOrder: ['ask-model'],
         variables: {
             file: {
@@ -76,6 +76,7 @@ export const AskCSVTemplate: Template = {
                 widget: 'page',
                 parent: null,
                 data: {
+                    route: '',
                     style: PageBlockConfig.data.style,
                 },
                 listeners: {

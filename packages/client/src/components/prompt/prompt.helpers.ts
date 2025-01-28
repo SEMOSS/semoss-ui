@@ -402,7 +402,7 @@ export async function setBlocksAndOpenUIBuilder(
 ) {
     // create the state
     const state: SerializedState = {
-        version: '1.0.0-alpha.3',
+        version: '1.0.0-alpha.4',
         executionOrder: [],
         variables: {
             [PROMPT_QUERY_DEFINITION_ID]: {
@@ -431,6 +431,7 @@ export async function setBlocksAndOpenUIBuilder(
                 widget: 'page',
                 parent: null,
                 data: {
+                    route: '',
                     style: {
                         fontFamily: 'roboto',
                     },

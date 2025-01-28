@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled } from '@semoss/ui';
 import { useBlocks, useDesigner } from '@/hooks';
@@ -79,7 +79,7 @@ export const Screen = observer((props: ScreenProps) => {
     const { children } = props;
 
     // save the ref
-    const rootRef = useRef<HTMLDivElement | null>(null);
+    const eleRef = useRef<HTMLDivElement | null>(null);
 
     // get the designer
     const { state } = useBlocks();
@@ -120,7 +120,7 @@ export const Screen = observer((props: ScreenProps) => {
     /**
      * Handle the mouseleave on the page. This will deselect hovered widgets
      */
-    const handleMouseLeave = (event: React.MouseEvent) => {
+    const handleMouseLeave = () => {
         designer.setHovered('');
 
         // reset the placeholder / clear the ghost if is its off the screen
@@ -129,7 +129,6 @@ export const Screen = observer((props: ScreenProps) => {
             designer.updateGhostPosition(null);
         }
     };
-
     /**
      * Handle the mousemove event on the document. This will render the placeholder based on the target block.
      */
@@ -141,7 +140,7 @@ export const Screen = observer((props: ScreenProps) => {
             }
 
             // if there is not root ref ignore it
-            if (!rootRef.current) {
+            if (!eleRef.current) {
                 return;
             }
 
@@ -186,7 +185,7 @@ export const Screen = observer((props: ScreenProps) => {
                         id: id,
                         slot: slot,
                     },
-                    getRelativeSize(slotElement, rootRef.current),
+                    getRelativeSize(slotElement, eleRef.current),
                 );
 
                 return;
@@ -219,7 +218,7 @@ export const Screen = observer((props: ScreenProps) => {
                         type: 'before',
                         id: id,
                     },
-                    getRelativeSize(nearestElement, rootRef.current),
+                    getRelativeSize(nearestElement, eleRef.current),
                 );
             } else if (percent >= 70) {
                 designer.updatePlaceholder(
@@ -227,7 +226,7 @@ export const Screen = observer((props: ScreenProps) => {
                         type: 'after',
                         id: id,
                     },
-                    getRelativeSize(nearestElement, rootRef.current),
+                    getRelativeSize(nearestElement, eleRef.current),
                 );
             }
         },
@@ -252,12 +251,21 @@ export const Screen = observer((props: ScreenProps) => {
     }, [designer.hovered, designer.selected, handleMouseOver]);
 
     return (
-        <StyledContainer data-block="root" ref={rootRef}>
-            {designer.selected && <SelectedMask />}
-            {designer.hovered && <HoveredMask />}
-            {designer.selected && !designer.drag.active && (
-                <DeleteDuplicateMask />
-            )}
+        <StyledContainer ref={eleRef}>
+            {eleRef.current ? (
+                <>
+                    {designer.selected && (
+                        <SelectedMask screenEle={eleRef.current} />
+                    )}
+                    {designer.hovered && (
+                        <HoveredMask screenEle={eleRef.current} />
+                    )}
+                    {designer.selected && !designer.drag.active && (
+                        <DeleteDuplicateMask screenEle={eleRef.current} />
+                    )}
+                </>
+            ) : null}
+
             {designer.drag.active && <Placeholder />}
             {designer.drag.active && <Ghost />}
 

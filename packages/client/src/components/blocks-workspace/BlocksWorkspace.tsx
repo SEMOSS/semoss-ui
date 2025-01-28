@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { ConstructionOutlined } from '@mui/icons-material';
 import { useNotification, styled, Typography, Stack } from '@semoss/ui';
@@ -138,9 +138,11 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                 children: [
                                     {
                                         type: 'tab',
-                                        name: 'Designer',
+                                        name: 'page-1',
                                         component: 'designer',
-                                        config: {},
+                                        config: {
+                                            id: 'page-1',
+                                        },
                                     },
                                 ],
                             },
@@ -276,9 +278,11 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                 children: [
                                     {
                                         type: 'tab',
-                                        name: 'Designer',
+                                        name: 'page-1',
                                         component: 'designer',
-                                        config: {},
+                                        config: {
+                                            id: 'page-1',
+                                        },
                                         enableClose: true,
                                     },
                                 ],
@@ -327,7 +331,7 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
     const config = node.getConfig();
 
     if (component === 'designer') {
-        return <DesignerPanel />;
+        return <DesignerPanel id={config.id} />;
     } else if (component === 'variables') {
         return <VariablesPanel />;
     } else if (component === 'settings') {
