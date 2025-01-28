@@ -123,7 +123,6 @@ export const TeamsSettingsPage = () => {
     const { monolithStore, configStore } = useRootStore();
     const navigate = useNavigate();
     const TypeImageObject = { native: AMAZON_S3 };
-    console.log('hello');
     const [addModal, setAddModal] = useState(false);
     const [filteredTeams, setFilteredTeams] = useState([]);
     const [state, dispatch] = useReducer(reducer, initialState);
