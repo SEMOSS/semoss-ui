@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled, Card, Tooltip, Stack, Typography } from '@semoss/ui';
+import * as BLOCK_IMAGES from '@/assets/img/block';
 
 import { ActionMessages } from '@/stores';
 import { useBlocks, useDesigner } from '@/hooks';
@@ -21,6 +22,9 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
     width: blockCardWidth,
     userSelect: 'none',
 }));
+
+const getValidImage = (imageA: string, imageB: string): string | undefined =>
+    BLOCK_IMAGES[imageA] || BLOCK_IMAGES[imageB] || undefined;
 
 export interface AddBlocksMenuItemProps {
     /** Item that can be dragged onto the block */
@@ -52,7 +56,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 return true;
             },
             item.NAME,
-            item.HOVER_IMAGE ?? item.IMAGE,
+            getValidImage(item.HOVER_IMAGE, item.IMAGE),
         );
 
         // clear the hovered
@@ -171,8 +175,14 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                         <BlockCardContent
                             image={
                                 hovered
-                                    ? item.HOVER_IMAGE ?? item.IMAGE
-                                    : item.IMAGE ?? item.HOVER_IMAGE
+                                    ? getValidImage(
+                                          item.HOVER_IMAGE,
+                                          item.IMAGE,
+                                      )
+                                    : getValidImage(
+                                          item.IMAGE,
+                                          item.HOVER_IMAGE,
+                                      )
                             }
                             name={item.NAME}
                         />

@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { styled, Card, Stack, Typography } from '@semoss/ui';
+import { styled, Card } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
 import { DesignerStoreInterface } from '@/stores';
