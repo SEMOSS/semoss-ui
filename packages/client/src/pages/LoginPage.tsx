@@ -26,6 +26,18 @@ import { useRootStore } from '@/hooks';
 import MS from '@/assets/img/ms.png';
 import GOOGLE from '@/assets/img/google.png';
 import OKTA from '@/assets/img/okta.png';
+import GITHUB from '@/assets/img/github.png';
+import DROPBOX from '@/assets/img/dropbox.png';
+import OTHER from '@/assets/img/other.png';
+
+const LoginImages = {
+    ms: MS,
+    google: GOOGLE,
+    okta: OKTA,
+    github: GITHUB,
+    dropbox: DROPBOX,
+    other: OTHER,
+};
 
 const StyledMain = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -290,9 +302,9 @@ export const LoginPage = observer(() => {
     useEffect(() => {
         // set initial selected login type from config.
         if (configStore.store.config.providers.includes('native')) {
-            setLoginType('native');
+            setLoginType('Native');
         } else if (configStore.store.config.providers.includes('ldap')) {
-            setLoginType('ldap');
+            setLoginType('LDAP');
         } else if (configStore.store.config.providers.includes('linOtp')) {
             setLoginType('LinOTP');
         }
@@ -312,7 +324,7 @@ export const LoginPage = observer(() => {
             }
 
             if (!showOTPCodeField) {
-                if (loginType === 'native') {
+                if (loginType === 'Native') {
                     await configStore
                         .login(data.USERNAME, data.PASSWORD)
                         .then(() => {
@@ -326,7 +338,7 @@ export const LoginPage = observer(() => {
                             setIsLoading(false);
                         });
                 }
-                if (loginType === 'ldap') {
+                if (loginType === 'LDAP') {
                     await configStore
                         .loginLDAP(data.USERNAME, data.PASSWORD)
                         .then(() => {
@@ -556,7 +568,7 @@ export const LoginPage = observer(() => {
                                                 setSuccess('');
                                                 setError('');
                                             }}
-                                            selected={loginType === 'native'}
+                                            selected={loginType === 'Native'}
                                         >
                                             Native
                                         </StyledButtonGroupItem>
@@ -570,7 +582,7 @@ export const LoginPage = observer(() => {
                                                 setSuccess('');
                                                 setError('');
                                             }}
-                                            selected={loginType === 'ldap'}
+                                            selected={loginType === 'LDAP'}
                                         >
                                             LDAP
                                         </StyledButtonGroupItem>
@@ -584,7 +596,7 @@ export const LoginPage = observer(() => {
                                                 setSuccess('');
                                                 setError('');
                                             }}
-                                            selected={loginType === 'linotp'}
+                                            selected={loginType === 'LinOTP'}
                                         >
                                             LinOTP
                                         </StyledButtonGroupItem>
@@ -1150,12 +1162,7 @@ export const LoginPage = observer(() => {
                                                         onClick={login}
                                                         type="submit"
                                                     >
-                                                        Login with{' '}
-                                                        {
-                                                            loginDisplayNames[
-                                                                loginType
-                                                            ]
-                                                        }
+                                                        Login with {loginType}
                                                     </Button>
                                                     <StyledRegisterNowBox>
                                                         Don&apos;t have an
@@ -1186,67 +1193,51 @@ export const LoginPage = observer(() => {
                                                     </StyledDivider>
                                                 </>
                                             )}
-                                            {providers.indexOf('ms') > -1 && (
-                                                <StyledAction
-                                                    variant="outlined"
-                                                    onClick={() => {
-                                                        oauth('ms');
-                                                    }}
-                                                    fullWidth
-                                                >
-                                                    <StyledActionBox>
-                                                        <StyledActionImage
-                                                            src={MS}
-                                                        />
-                                                        <StyledActionText>
-                                                            Microsoft
-                                                        </StyledActionText>
-                                                    </StyledActionBox>
-                                                </StyledAction>
-                                            )}
-                                            {providers.indexOf('google') >
-                                                -1 && (
-                                                <StyledAction
-                                                    variant="outlined"
-                                                    onClick={() => {
-                                                        oauth('google');
-                                                    }}
-                                                    fullWidth
-                                                >
-                                                    <StyledActionBox>
-                                                        <StyledActionImage
-                                                            src={GOOGLE}
-                                                        />
-                                                        <StyledActionText>
-                                                            Google
-                                                        </StyledActionText>
-                                                    </StyledActionBox>
-                                                </StyledAction>
-                                            )}
-                                            {providers.indexOf('okta') > -1 && (
-                                                <StyledAction
-                                                    variant="outlined"
-                                                    onClick={() => {
-                                                        oauth('okta');
-                                                    }}
-                                                    fullWidth
-                                                >
-                                                    <StyledActionBox>
-                                                        <StyledActionImage
-                                                            src={OKTA}
-                                                        />
-                                                        <StyledActionText>
-                                                            Okta
-                                                        </StyledActionText>
-                                                        {/* <img
-                                                            src={OKTA}
-                                                            alt="okta"
-                                                            height={46}
-                                                            width="auto"
-                                                        /> */}
-                                                    </StyledActionBox>
-                                                </StyledAction>
-                                            )}
+                                            {providers.map((provider, idx) => {
+                                                if (
+                                                    provider != 'native' &&
+                                                    provider !=
+                                                        'registration' &&
+                                                    provider != 'ldap' &&
+                                                    provider != 'linotp'
+                                                ) {
+                                                    return (
+                                                        <StyledAction
+                                                            variant="outlined"
+                                                            onClick={() => {
+                                                                oauth(provider);
+                                                            }}
+                                                            fullWidth
+                                                            key={idx}
+                                                        >
+                                                            <StyledActionBox>
+                                                                <StyledActionImage
+                                                                    src={
+                                                                        LoginImages[
+                                                                            provider
+                                                                        ]
+                                                                            ? LoginImages[
+                                                                                  provider
+                                                                              ]
+                                                                            : LoginImages[
+                                                                                  'other'
+                                                                              ]
+                                                                    }
+                                                                />
+                                                                <StyledActionText>
+                                                                    {loginDisplayNames[
+                                                                        provider
+                                                                    ]
+                                                                        ? loginDisplayNames[
+                                                                              provider
+                                                                          ]
+                                                                        : provider}
+                                                                </StyledActionText>
+                                                            </StyledActionBox>
+                                                        </StyledAction>
+                                                    );
+                                                }
+                                            })}
                                         </>
                                     )}
                                 </Stack>
