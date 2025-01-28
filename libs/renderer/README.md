@@ -1,4 +1,4 @@
-### Status
+## Status
 
 Everything works as aniticipated, and we could push and app builder should work as expected.
 
@@ -15,7 +15,7 @@ Today i fixed up the last couple of blocks that were broken.
 -   [x] LLM Compare Block (Lot of TS errors)
 -   [ ] Data Import (DataImportFormModal) (Lot of TS errors)
 
-### How to build locally and test
+## How to build locally and test
 
 Clean slate
 
@@ -25,20 +25,23 @@ Then run:
 
 `pnpm run dev:client`
 
-Routes:
+__*Routes to test*__:
 
 Use - `http://localhost:9090/semoss-ui/packages/client/dist/#/app/5698389c-3ba8-4846-b915-d69b0245acc6`
+
 Share - `http://localhost:9090/semoss-ui/packages/client/dist/#/s/5698389c-3ba8-4846-b915-d69b0245acc6`
+
 Edit - `http://localhost:9090/semoss-ui/packages/client/dist/#/workspace/5698389c-3ba8-4846-b915-d69b0245acc6`
+
 Testing - `http://localhost:9090/semoss-ui/packages/client/dist/#/test-renderer`
 
-### How to use as a lib
+## How to use as a lib
 
 When using the `<Renderer />` from the lib to view an app (interactive) - very easy to use just import Renderer and pass necessary props
 
 To edit, you will have to import modules from the lib to be able to manipulate state
 
-### Tasks
+## Tasks
 
 1. When using our blocks workspace from within `packages/client` I export things like state store, notebook store, useBlocks to be able to manipulate within our workspace take look at our panels in workspace.
 
@@ -50,7 +53,7 @@ To edit, you will have to import modules from the lib to be able to manipulate s
 
 For now I kept all the tightly coupled code in the renderer lib (state, notebook store).
 
-### Plan of action
+## Plan of action
 
 I think we would make solid progress with one more week at it (40 hours, uninterupted)
 
