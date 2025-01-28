@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { Add } from "@mui/icons-material";
 // import { toJS } from "mobx";
 
-// import { runPixel } from "@semoss/sdk";
+import { runPixel } from "@semoss/sdk";
 import {
     styled,
     Stack,
@@ -88,7 +88,7 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
     const command = cell.parameters.command;
 
     useEffect(() => {
-        // fetchAllModels();
+        fetchAllModels();
 
         if (Object.keys(variants).length === 0) {
             // Create a 'default variant' for the user to configure
@@ -114,6 +114,27 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
             });
         }
     }, []);
+
+    const fetchAllModels = async () => {
+        const pixel = `MyEngines(engineTypes=["MODEL"])`;
+        const res = await runPixel(pixel);
+
+        const list = res.pixelReturn[0].output as Array<{
+            database_subtype: string;
+            database_type: string;
+            database_name: string;
+            database_id: string;
+            app_name: string;
+        }>;
+
+        const modelled = list.map((model) => {
+            return {
+                name: model.database_name,
+                id: model.database_id,
+            };
+        });
+        setAllModels(modelled);
+    };
 
     const handleChange = (newValue, path) => {
         if (cell.isLoading) {
