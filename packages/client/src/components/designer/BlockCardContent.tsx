@@ -1,4 +1,5 @@
 import { Stack, styled, Typography } from '@semoss/ui';
+import * as BLOCK_IMAGES from '@/assets/img/block';
 
 export interface BlockCardContentProps {
     name?: string;
@@ -24,8 +25,13 @@ export const BlockCardContent = (props: BlockCardContentProps) => {
             alignItems="center"
             justifyContent="center"
         >
-            {image ? (
-                <img draggable={false} src={image} width="100%" height="100%" />
+            {image && BLOCK_IMAGES[image] ? (
+                <img
+                    draggable={false}
+                    src={BLOCK_IMAGES[image]}
+                    width="100%"
+                    height="100%"
+                />
             ) : (
                 <StyledTypography
                     variant="body2"
