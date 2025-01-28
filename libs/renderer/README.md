@@ -17,11 +17,20 @@ Today i fixed up the last couple of blocks that were broken.
 
 ### How to build locally and test
 
-Force install all modules (likely have to delete node_mods and the pnpm-lock in the root)
+Clean slate
+
+-   Force install all modules (likely have to delete node_mods and the pnpm-lock in the root)
 
 Then run:
 
-``
+`pnpm run dev:client`
+
+Routes:
+
+Use - `http://localhost:9090/semoss-ui/packages/client/dist/#/app/5698389c-3ba8-4846-b915-d69b0245acc6`
+Share - `http://localhost:9090/semoss-ui/packages/client/dist/#/s/5698389c-3ba8-4846-b915-d69b0245acc6`
+Edit - `http://localhost:9090/semoss-ui/packages/client/dist/#/workspace/5698389c-3ba8-4846-b915-d69b0245acc6`
+Testing - `http://localhost:9090/semoss-ui/packages/client/dist/#/test-renderer`
 
 ### How to use as a lib
 
@@ -45,6 +54,8 @@ For now I kept all the tightly coupled code in the renderer lib (state, notebook
 
 I think we would make solid progress with one more week at it (40 hours, uninterupted)
 
+We can package this thing up on npm today ( but i don't think we should yet ) this cleanup will be pretty beneficial. I want to say a week or two weeks
+
 -   [ ] I can continue this week and try to move notebook code, Which i'll likely continue tomorrow. ( I can try to get done by end of week ).  
-        OR
--   [ ] Find dev (Ashley if time permits) to work on this above in the background (will make sure this stays up to date with changes on dev)
+         OR
+-   [ ] Find dev (Ashley if time permits) to work on this above in the background (will make sure this stays up to date with changes on dev, i saw you pushed up bug fixes and will make sure they get in)

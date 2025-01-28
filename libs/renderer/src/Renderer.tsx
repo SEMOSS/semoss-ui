@@ -170,8 +170,10 @@ export const Renderer = observer((props: RendererProps) => {
     }
 
     return (
-        <Blocks state={stateStore} registry={DefaultBlocks}>
-            <RendererEngine id={ACTIVE} />
-        </Blocks>
+        <>
+            <Blocks state={stateStore} registry={DefaultBlocks}>
+                <RendererEngine id={ACTIVE} />
+            </Blocks>
+        </>
     );
 });
