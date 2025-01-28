@@ -203,7 +203,44 @@ export class StateStore {
 
         return null;
     }
+    getVisualizationBlockSelector(id: string) {
+        if (this._store.blocks[id]) {
+            //get the options JSON of the selected block
+            let blockJSON = this._store.blocks[id].data.option;
 
+            //initialize the selector string
+            let selector = 'Select(';
+
+            //if there are no fields, return null
+            if (!blockJSON['_state']) return null;
+
+            //get the fields
+            let selectorFields = blockJSON['_state']['fields'];
+
+            //  get the value and tooltip properties
+            let dynamicYAndTooltipSet = [
+                ...new Set([
+                    ...selectorFields['Value'],
+                    ...selectorFields['tooltip'],
+                ]),
+            ];
+
+            // start forming the selector string
+            selector += `${selectorFields['Label'][0]}`;
+
+            // add dynamic y axis and tooltip fields to the selector string
+            let averageCollection = '';
+            for (let i = 0; i < dynamicYAndTooltipSet.length; i++) {
+                averageCollection += `, Average(${dynamicYAndTooltipSet[i]})`;
+                selector += `, Average(${dynamicYAndTooltipSet[i]})`;
+            }
+
+            selector += `).as([${selectorFields['Label'][0]}${averageCollection}])|Group(${selectorFields['Label'][0]})|Sort(${selectorFields['Label'][0]})`;
+            return selector;
+        }
+
+        return null;
+    }
     /**
      * Gets the variable by it's pointer
      * @param pointer

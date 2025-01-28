@@ -106,8 +106,9 @@ export const VISUALIZATION_MENU_INITIAL: DesignerMenuItem[] = [
                         '#deeaee',
                     ],
                     title: {
-                        text: 'Referer of a Website',
+                        text: '',
                         left: 'center',
+                        show: true,
                         textStyle: {
                             fontSize: 18,
                             color: '#ff6f61',
@@ -116,9 +117,10 @@ export const VISUALIZATION_MENU_INITIAL: DesignerMenuItem[] = [
                     },
                     tooltip: {
                         trigger: 'item',
+                        show: false,
                     },
                     legend: {
-                        show: true,
+                        show: false,
                         orient: 'vertical',
                         left: 'left',
                         top: 'top',
@@ -160,7 +162,34 @@ export const VISUALIZATION_MENU_INITIAL: DesignerMenuItem[] = [
                             },
                         },
                     ],
+                    reset: {
+                        radius: '50%',
+                        title: {
+                            text: '',
+                            left: 'center',
+                            show: true,
+                            textStyle: {
+                                fontSize: 18,
+                                color: '#ff6f61',
+                                fontWeight: 'normal',
+                                fontFamily: '',
+                            },
+                        },
+                        label: {
+                            show: true,
+                            position: 'outside',
+                            fontSize: 10,
+                            color: '#000000',
+                            backgroundColor: '',
+                            rotate: 0,
+                            fontFamily: '',
+                        },
+                        labelLine: {
+                            length: 30,
+                        },
+                    },
                 },
+
                 specJson: JSON.stringify(
                     {
                         $schema: '',
@@ -180,7 +209,7 @@ export const VISUALIZATION_MENU_INITIAL: DesignerMenuItem[] = [
                                 { a: 'I', b: 52 },
                             ],
                         },
-                        mark: 'bar',
+                        mark: 'pie',
                         encoding: {
                             x: { field: 'a', type: 'ordinal' },
                             y: { field: 'b', type: 'quantitative' },
