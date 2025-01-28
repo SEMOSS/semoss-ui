@@ -730,17 +730,19 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
                     title: {
                         text: 'Referer of a Website',
                         left: 'center',
+                        show: true,
                         textStyle: {
                             fontSize: 18,
                             color: '#ff6f61',
                             fontWeight: 'normal',
+                            fontFamily: '',
                         },
                     },
                     tooltip: {
                         trigger: 'item',
                     },
                     legend: {
-                        show: true,
+                        show: false,
                         orient: 'vertical',
                         left: 'left',
                         top: 'top',
@@ -783,6 +785,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
                         },
                     ],
                 },
+
                 specJson: JSON.stringify(
                     {
                         $schema: '',

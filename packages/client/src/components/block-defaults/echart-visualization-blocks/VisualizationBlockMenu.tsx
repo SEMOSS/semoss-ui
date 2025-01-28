@@ -9,6 +9,7 @@ import { useBlock } from '@/hooks';
 import { useState } from 'react';
 import { UpgradedVisualizationTool } from './Variants/bar-chart/UpgradedVisualizationTool';
 import { FrameOperations } from './Variants/bar-chart/FrameOperations';
+import { FrameOperationsPie } from './Variants/PieChart/FrameOperationsPie';
 
 const StyledContainer = styled('div')(() => ({
     maxHeight: '50vh',
@@ -65,7 +66,15 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
             <StyledContainer>
                 {selectedTab === 'Data' && (
                     <StyledSubSection>
-                        <FrameOperations id={id} updateFrame={updateFrame} />
+                        {data.variation === 'echart-bar-graph' && (
+                            <FrameOperations
+                                id={id}
+                                updateFrame={updateFrame}
+                            />
+                        )}
+                        {data.variation === 'echart-pie-chart' && (
+                            <FrameOperationsPie id={id} path={'option'} />
+                        )}
                     </StyledSubSection>
                 )}
                 {selectedTab === 'Tools' && (

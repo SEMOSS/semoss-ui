@@ -9,9 +9,7 @@ import { Button, Select, Stack, styled, TextField } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 import { Paths, PathValue } from '@/types';
-import { CustomizeValueLabels } from './CustomizeValueLabels';
-import { CustomizeTitle } from './CustomTitle';
-import { EchartVisualizationBlockDef } from './echartblocks';
+import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 import { CustomBlockColumnSettings } from './CustomBlockColumnSettings';
 import { ColorByValue } from './ColorByValue';
 
@@ -590,14 +588,6 @@ const E_PieChart = observer<any>(({ id, frame }) => {
                     Display Value Labels
                 </Button>
                 <div>
-                    <CustomizeValueLabels
-                        updateChart={updateCustonValueLabels}
-                        option={data.option}
-                    ></CustomizeValueLabels>
-                    <CustomizeTitle
-                        updateChart={updateCustonTitle}
-                        data={data}
-                    ></CustomizeTitle>
                     <ColorByValue
                         updateChart={updateColorByValue}
                         option={data.option}
