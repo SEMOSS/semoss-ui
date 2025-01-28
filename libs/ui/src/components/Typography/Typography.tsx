@@ -58,20 +58,11 @@ export const Typography = (props: TypographyProps) => {
     const [isTruncated, setIsTruncated] = useState(false);
 
     useEffect(() => {
-        const checkTruncation = () => {
-            const element = typographyRef.current;
-            if (!element || typeof children !== "string") return;
+        const element = typographyRef.current;
+        if (!element || typeof children !== "string") return;
 
-            // console.log(`Text: "${children}", Scroll height: ${element.scrollHeight}, Client height: ${element.clientHeight}`)
-
-            setIsTruncated(element.scrollHeight > element.clientHeight);
-        };
-
-        checkTruncation();
-        window.addEventListener("resize", checkTruncation);
-
-        return () => window.removeEventListener("resize", checkTruncation);
-    }, [children]);
+        setIsTruncated(element.scrollHeight > element.clientHeight);
+    }, [children, variant]);
 
     const typographyComponent = (
         <MuiTypography
