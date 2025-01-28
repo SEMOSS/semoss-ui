@@ -1,5 +1,9 @@
 import { createContext } from "react";
-import { Control, UseFormHandleSubmit } from "react-hook-form";
+import {
+    Control,
+    UseFormGetValues,
+    UseFormHandleSubmit,
+} from "react-hook-form";
 
 import { TypeLlmComparisonForm, TypeLlmConfig } from "../../../../types";
 
@@ -11,7 +15,8 @@ export type LLMComparisonContextType = {
     /** React Hook Form methods stored for nested components' access */
     control: Control<TypeLlmComparisonForm, unknown> | null;
 
-    getValues: null | ((str?: string) => unknown);
+    // getValues: null | ((str?: string) => unknown);
+    getValues: null | UseFormGetValues<TypeLlmComparisonForm>;
 
     setValue: null | ((str: string, val: unknown) => void);
 

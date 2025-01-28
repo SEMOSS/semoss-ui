@@ -127,10 +127,12 @@ export const ConfigureSubMenu = observer(() => {
             },
         });
 
+        const name = editorVariantName.toLowerCase();
+
         notification.add({
             color: "success",
             message: `Successfully saved ${
-                editorVariantName.toLowerCase === "default"
+                name === "default"
                     ? "Default Variant"
                     : `Variant ${editorVariantName.toUpperCase()}`
             }`,

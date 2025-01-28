@@ -1,11 +1,19 @@
-import { TypeLlmConfig, TypeLlmComparisonForm } from "@/components/workspace";
+import { TypeLlmConfig, TypeLlmComparisonForm } from "../../../types";
 
 /**
  * METHODS ==================================================================
  */
 
 // Models the payload of available 'model' engines for the LLM Comparison UI
-export const modelEngineOutput = (output: any[]): TypeLlmConfig[] => {
+export const modelEngineOutput = (
+    output: {
+        database_subtype: string;
+        database_type: string;
+        database_name: string;
+        database_id: string;
+        app_name: string;
+    }[],
+): TypeLlmConfig[] => {
     return output.map((data) => {
         return {
             alias: data.app_name,

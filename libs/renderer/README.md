@@ -1,16 +1,50 @@
-Everything works as aniticpated and as it did before minus two components which we are fixing.
+### Status
 
--   LLM Compare BLOCK
--   Data Import (DataImportFormModal)
+Everything works as aniticipated, and we could push and app builder should work as expected.
 
-Seems to build as anticipated.
+Builds in local development environment as anticipated.
 
-I kept all the tightly coupled code in the renderer lib.
+Also ran our prod command with no build errors
 
-When using Renderer as solely visual and as an app (interactive) - very easy to use just import Renderer and pass necessary props
+`npx nx run-many -t build -p @semoss/client --verbose`
 
-When you want to modify our state, as we do in BlocksWorkspace ( possibly can import this as its own component ), thats where we export quite a bit in order to interact state blocks and notebook.
+(looking at our git actions from a couple of days ago it builds correctly as well)
 
-Notebook will have to move to a seperate lib as well ( just want to put all in renderer until we do so - next step )
+Today i fixed up the last couple of blocks that were broken.
 
-Will try to find dev to continue working through this, just will have to make sure this stays up to date with state changes
+-   [x] LLM Compare Block (Lot of TS errors)
+-   [ ] Data Import (DataImportFormModal) (Lot of TS errors)
+
+### How to build locally and test
+
+Force install all modules (likely have to delete node_mods and the pnpm-lock in the root)
+
+Then run:
+
+``
+
+### How to use as a lib
+
+When using the `<Renderer />` from the lib to view an app (interactive) - very easy to use just import Renderer and pass necessary props
+
+To edit, you will have to import modules from the lib to be able to manipulate state
+
+### Tasks
+
+1. When using our blocks workspace from within `packages/client` I export things like state store, notebook store, useBlocks to be able to manipulate within our workspace take look at our panels in workspace.
+
+-   [ ] The components used to manipulate state in our workspace should move ( but they arent hurting anything rn )
+
+2. Whats needed next is to move our coupled notebook from within render out
+
+-   [ ] Isolate notebook into its own lib (may be a heavy lift)
+
+For now I kept all the tightly coupled code in the renderer lib (state, notebook store).
+
+### Plan of action
+
+I think we would make solid progress with one more week at it (40 hours, uninterupted)
+
+-   [ ] I can continue this week and try to move notebook code, Which i'll likely continue tomorrow. ( I can try to get done by end of week ).  
+        OR
+-   [ ] Find dev (Ashley if time permits) to work on this above in the background (will make sure this stays up to date with changes on dev)
