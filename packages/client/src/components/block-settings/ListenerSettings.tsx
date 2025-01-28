@@ -18,6 +18,17 @@ import {
 } from '@mui/icons-material';
 
 import { ListenerActionOverlay } from './ListenerActionOverlay';
+import { toJS } from 'mobx';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import {
+    SortableContext,
+    useSortable,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { restrictToParentElement } from '@dnd-kit/modifiers';
+import { useMemo } from 'react';
+import { Box } from '@mui/material';
 
 const StyledStatusIconContainer = styled('div')(() => ({
     height: '100%',
@@ -63,6 +74,7 @@ export const ListenerSettings = observer(
         const { listeners, setListener } = useBlockSettings(id);
         const { workspace } = useWorkspace();
         const notification = useNotification();
+        const blockListeners: ListenerActions[] = toJS(listeners)[listener];
 
         /**
          * Open the overlay to create a edit action
@@ -135,59 +147,177 @@ export const ListenerSettings = observer(
             setListener(listener, updated);
         };
 
+        /**
+         * Handle drag end
+         * @param event - event object from dnd context
+         */
+        const handleDragEnd = ({ active, over }) => {
+            if (!active || !over) {
+                console.error('Invalid item!');
+                return;
+            }
+
+            // If the active item is over a different item, swap them
+            if (over && active.id !== over.id) {
+                const oldIndex = Number(active.id);
+                const newIndex = Number(over.id);
+
+                // copy it
+                const updated = [...listeners[listener]];
+                // remove it
+                const [removed] = updated.splice(oldIndex, 1);
+                // add it at the new location
+                updated.splice(newIndex, 0, removed);
+                // update the data
+                setListener(listener, updated);
+            }
+        };
+
+        // Sortable encapsulation elements based on the sortable context
+        const SortableItems = ({
+            id,
+            children,
+        }: {
+            id: string;
+            children: React.ReactNode;
+        }) => {
+            // Use the sortable context
+            const { attributes, listeners, setNodeRef, transform, transition } =
+                useSortable({ id });
+
+            // Apply styles to the list items based on their state
+            const style: React.CSSProperties = {
+                transform: CSS.Transform.toString(transform),
+                transition,
+                cursor: 'grab',
+            };
+
+            return (
+                <Box
+                    key={`action-${id}`}
+                    ref={setNodeRef}
+                    {...attributes}
+                    {...listeners}
+                    sx={style}
+                >
+                    {children}
+                </Box>
+            );
+        };
+
+        // Transform items for sortable list
+        const transformedItems = useMemo(() => {
+            return (blockListeners ? blockListeners : []).map(
+                (item, index) => ({
+                    id: index.toString(),
+                    content: item.payload['queryId']
+                        ? item.payload['queryId']
+                        : item.payload['name'],
+                    original: item, // Keep reference to the original item
+                }),
+            );
+        }, [blockListeners]);
+
         return (
             <>
-                <List disablePadding={true}>
-                    {listeners[listener]?.map((a, aIdx) => (
-                        <List.Item
-                            dense={true}
-                            key={aIdx}
-                            secondaryAction={
-                                <>
-                                    <IconButton
-                                        size="small"
-                                        color="primary"
-                                        onClick={() => runAction(a)}
-                                    >
-                                        <PlayCircleOutlineRounded
-                                            fontSize="medium"
-                                            color={'inherit'}
-                                        />
-                                    </IconButton>
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => openActionOverlay(aIdx)}
-                                    >
-                                        <Edit />
-                                    </IconButton>
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => deleteListener(aIdx)}
-                                    >
-                                        <Delete />
-                                    </IconButton>
-                                </>
-                            }
-                        >
-                            <StyledStatusIconContainer>
-                                {getQueryStatusIcon(a)}
-                            </StyledStatusIconContainer>
-                            <List.ItemText
-                                disableTypography={true}
-                                primary={
-                                    <Typography
-                                        variant="body2"
-                                        noWrap={true}
-                                        title={ACTIONS_DISPLAY[a.message]}
-                                    >
-                                        {ACTIONS_DISPLAY[a.message]}
-                                    </Typography>
-                                }
-                            />
-                        </List.Item>
-                    ))}
-                </List>
-
+                <DndContext
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                    modifiers={[restrictToParentElement]}
+                >
+                    <SortableContext
+                        items={transformedItems?.map((item) => item.id)}
+                        strategy={verticalListSortingStrategy}
+                    >
+                        <List>
+                            {transformedItems?.map(
+                                ({ id, content, original: a }, aIdx) => (
+                                    <SortableItems key={id} id={id}>
+                                        <List.Item
+                                            dense={true}
+                                            secondaryAction={
+                                                <>
+                                                    <IconButton
+                                                        size="small"
+                                                        color="primary"
+                                                        onClick={() =>
+                                                            runAction(a)
+                                                        }
+                                                        onPointerDown={(e) =>
+                                                            e.stopPropagation()
+                                                        }
+                                                    >
+                                                        <PlayCircleOutlineRounded
+                                                            fontSize="medium"
+                                                            color={'inherit'}
+                                                        />
+                                                    </IconButton>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() =>
+                                                            openActionOverlay(
+                                                                aIdx,
+                                                            )
+                                                        }
+                                                        onPointerDown={(e) =>
+                                                            e.stopPropagation()
+                                                        }
+                                                    >
+                                                        <Edit />
+                                                    </IconButton>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() =>
+                                                            deleteListener(aIdx)
+                                                        }
+                                                        onPointerDown={(e) =>
+                                                            e.stopPropagation()
+                                                        }
+                                                    >
+                                                        <Delete />
+                                                    </IconButton>
+                                                </>
+                                            }
+                                        >
+                                            <StyledStatusIconContainer>
+                                                {getQueryStatusIcon(a)}
+                                            </StyledStatusIconContainer>
+                                            <List.ItemText
+                                                disableTypography={true}
+                                                primary={
+                                                    <Typography
+                                                        variant="body2"
+                                                        noWrap={true}
+                                                        title={
+                                                            ACTIONS_DISPLAY[
+                                                                a.message
+                                                            ]
+                                                        }
+                                                    >
+                                                        {
+                                                            ACTIONS_DISPLAY[
+                                                                a.message
+                                                            ]
+                                                        }
+                                                    </Typography>
+                                                }
+                                                secondary={
+                                                    <Typography
+                                                        variant="caption"
+                                                        noWrap={true}
+                                                        title={content}
+                                                    >
+                                                        {content}
+                                                    </Typography>
+                                                }
+                                            />
+                                        </List.Item>
+                                    </SortableItems>
+                                ),
+                            )}
+                        </List>
+                    </SortableContext>
+                </DndContext>
                 <Button
                     fullWidth={true}
                     variant={'outlined'}

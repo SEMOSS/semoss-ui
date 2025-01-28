@@ -1051,7 +1051,7 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
-                            fieldName: 'OPEN_AI_API_KEY',
+                            fieldName: 'OPEN_AI_KEY',
                             label: 'Azure Open AI API Key',
                             defaultValue: '',
                             options: {
@@ -1094,7 +1094,7 @@ export const CONNECTION_OPTIONS = {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue:
-                                "from genai_client import AzureOpenAiEmbedder;${VAR_NAME} = AzureOpenAiEmbedder(model_name = '${MODEL}', endpoint = '${ENDPOINT}', api_key = '${OPEN_AI_API_KEY}', api_version = '${API_VERSION}')",
+                                "from genai_client import AzureOpenAiEmbedder;${VAR_NAME} = AzureOpenAiEmbedder(model_name = '${MODEL}', endpoint = '${ENDPOINT}', api_key = '${OPEN_AI_KEY}', api_version = '${API_VERSION}')",
                             options: {
                                 component: 'text-field',
                             },
