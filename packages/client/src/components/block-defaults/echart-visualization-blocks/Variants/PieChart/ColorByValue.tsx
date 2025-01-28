@@ -18,7 +18,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useBlockSettings, useFrame } from '@/hooks';
-import { EchartVisualizationBlockDef } from './echartblocks';
+import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 import { Delete } from '@mui/icons-material';
 const StyledSelect = styled(Select)(() => ({
     width: '100%',
