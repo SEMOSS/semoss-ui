@@ -63,10 +63,95 @@ export const FrameOperations = observer<FrameOperationsProps>(
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
+        let [frameOperationState, setFrameOperationState] = useState<
+            'initial' | 'updated'
+        >('initial');
+
         // options for the autocomplete
         const options = getFrames.status === 'SUCCESS' ? getFrames.data : [];
 
         const frameHeaders = useFrameHeaders(data.frame?.name);
+
+        const columnsSelector = useMemo(() => {
+            return frameHeaders.data.list.map((item) => {
+                return {
+                    name: item.alias,
+                    selector: item.header,
+                    width: undefined,
+                };
+            });
+        }, [frameHeaders]);
+
+        const initialUpdateOfData = () => {
+            if (data.frame.name === '') return;
+            const option =
+                typeof value === 'string' ? JSON.parse(value) : value;
+            // console.log(option, 'xAxis');
+            // return;
+            let xAxisData = option['xAxis']['pixelvalue'] || [];
+            let yAxisData = option['yAxis']['pixelvalue'] || [];
+            let recentValue = xAxisData.slice(-1) || [];
+            let columnsToUpdate = [];
+            let name = columnsSelector.find(
+                (col) => col.selector === recentValue[0],
+            );
+            let initialColumns = { ...fieldsData };
+            initialColumns['xaxis'] = [
+                {
+                    ['name']: name?.name || '',
+                    ['selector']: recentValue,
+                    ['width']: undefined,
+                },
+            ];
+            columnsToUpdate = [
+                {
+                    name: name?.name,
+                    selector: recentValue[0],
+                },
+            ];
+            option['xAxis'] = {
+                ...option['xAxis'],
+                ['name']: name?.name || '',
+                ['pixelname']: name?.name || '',
+                ['pixelvalue']: recentValue || '',
+            };
+            let pixelName = [],
+                pixelValue = [];
+            yAxisData.forEach((item, index) => {
+                let name = columnsSelector.find((col) => col.selector === item);
+                initialColumns['yaxis'].push({
+                    ['name']: name?.name || '',
+                    ['selector']: item,
+                    ['width']: undefined,
+                });
+                columnsToUpdate.push({
+                    name: name?.name || '',
+                    selector: item,
+                });
+                pixelName.push(name?.name);
+                pixelValue.push(item);
+            });
+            option['yAxis'] = {
+                ...option['yAxis'],
+                ['name']: pixelName[0],
+                ['pixelname']: pixelName,
+                ['pixelvalue']: pixelValue,
+            };
+            for (let i = 0; i < pixelName.length; i++) {
+                option['series'][i] = {
+                    ...option['series'][i],
+                    data: [],
+                    name: pixelName[i],
+                    type: 'bar',
+                };
+            }
+            setFieldsData(initialColumns);
+            let selectedValuesData = { ...selectedValues };
+            selectedValuesData.xAxis = recentValue;
+            selectedValuesData.yAxis = yAxisData;
+            setSelectedValues(selectedValuesData);
+            dispatchData(option);
+        };
 
         function syncHeaders() {
             const columns = frameHeaders.data.list.map((item) => {
@@ -77,6 +162,7 @@ export const FrameOperations = observer<FrameOperationsProps>(
                 };
             });
             setColumnsData(columns);
+            // initialUpdateOfData();
         }
 
         // get the value of the input (wrapped in usememo because of path prop)
@@ -99,12 +185,27 @@ export const FrameOperations = observer<FrameOperationsProps>(
             setValue(computedValue);
         }, [computedValue]);
 
+        useEffect(() => {
+            let option = typeof value === 'string' ? JSON.parse(value) : value;
+            if (
+                frameOperationState === 'initial' &&
+                data.frame.name !== '' &&
+                option['xAxis'] != undefined &&
+                option['xAxis'].hasOwnProperty('pixelvalue') &&
+                option['yAxis'] != undefined &&
+                option['yAxis'].hasOwnProperty('pixelvalue')
+            ) {
+                initialUpdateOfData();
+                setFrameOperationState('updated');
+            }
+        }, [value]);
+
         function updateFields(axis, event) {
             let value = event.target.value || [];
             let columns = { ...fieldsData };
             if (axis === 'xaxis') {
                 let recentValue = value.slice(-1) || [];
-                let name = columnsData.find(
+                let name = columnsSelector.find(
                     (col) => col.selector === recentValue[0],
                 );
                 columns['xaxis'] = [
@@ -130,7 +231,9 @@ export const FrameOperations = observer<FrameOperationsProps>(
             if (axis === 'yaxis') {
                 columns['yaxis'] = [];
                 value.forEach((item, index) => {
-                    let name = columnsData.find((col) => col.selector === item);
+                    let name = columnsSelector.find(
+                        (col) => col.selector === item,
+                    );
                     columns['yaxis'].push({
                         ['name']: name?.name || '',
                         ['selector']: item,
@@ -161,12 +264,15 @@ export const FrameOperations = observer<FrameOperationsProps>(
                         BAR_CHART_DATA.JSONVALUE.includes(item.type),
                     ) || 0;
                 let columnsmerged = [];
-                tempVal['xAxis'] = {
-                    ...tempVal['xAxis'],
-                    ['name']: columns['xaxis'][0].name || '',
-                    ['pixelname']: columns['xaxis'][0].name || '',
-                    ['pixelvalue']: columns['xaxis'][0].selector || '',
-                };
+                if (columns['xaxis'].length) {
+                    tempVal['xAxis'] = {
+                        ...tempVal['xAxis'],
+                        ['name']: columns['xaxis'][0].name || '',
+                        ['pixelname']: columns['xaxis'][0].name || '',
+                        ['pixelvalue']: columns['xaxis'][0].selector || '',
+                    };
+                }
+
                 columnsmerged = [
                     {
                         name: columns['xaxis'][0].name || '',
@@ -183,12 +289,14 @@ export const FrameOperations = observer<FrameOperationsProps>(
                         selector: columItem.selector,
                     });
                 });
-                tempVal['yAxis'] = {
-                    ...tempVal['yAxis'],
-                    ['name']: columns['yaxis'][0]?.name,
-                    ['pixelname']: pixelName,
-                    ['pixelvalue']: pixelValue,
-                };
+                if (columns['yaxis'].length) {
+                    tempVal['yAxis'] = {
+                        ...tempVal['yAxis'],
+                        ['name']: columns['yaxis'][0]?.name,
+                        ['pixelname']: pixelName,
+                        ['pixelvalue']: pixelValue,
+                    };
+                }
                 for (let i = 0; i < columns['yaxis'].length; i++) {
                     tempVal['series'][i] = {
                         ...tempVal['series'][i],
@@ -206,8 +314,8 @@ export const FrameOperations = observer<FrameOperationsProps>(
                 // console.log('yAxisData', yAxisData);
             }
             console.log(columns, 'columns');
-            let name = columnsData.find((col) => col.selector === value);
-            console.log(columnsData, axis, value, 'updateFields');
+            let name = columnsSelector.find((col) => col.selector === value);
+            console.log(columnsSelector, axis, value, 'updateFields');
         }
         function dispatchData(option) {
             if (timeoutRef.current) {
@@ -222,7 +330,7 @@ export const FrameOperations = observer<FrameOperationsProps>(
                 } catch (e) {
                     console.log(e);
                 }
-            }, 300);
+            }, 100);
         }
         return (
             <>
@@ -268,7 +376,7 @@ export const FrameOperations = observer<FrameOperationsProps>(
                             multiple: true,
                         }}
                         value={
-                            columnsData.length > 0
+                            columnsSelector.length > 0
                                 ? selectedValues['xAxis'] ?? []
                                 : []
                         }
@@ -277,7 +385,7 @@ export const FrameOperations = observer<FrameOperationsProps>(
                         <Select.Item key="-1" value="">
                             Select X Axis Field
                         </Select.Item>
-                        {columnsData?.map((label, index) => {
+                        {columnsSelector?.map((label, index) => {
                             return (
                                 <Select.Item value={label.selector} key={index}>
                                     {label.name}
@@ -295,7 +403,7 @@ export const FrameOperations = observer<FrameOperationsProps>(
                             multiple: true,
                         }}
                         value={
-                            columnsData.length > 0
+                            columnsSelector.length > 0
                                 ? selectedValues['yAxis'] ?? []
                                 : []
                         }
@@ -304,7 +412,7 @@ export const FrameOperations = observer<FrameOperationsProps>(
                         <Select.Item key="-1" value="">
                             Select Y Axis Field
                         </Select.Item>
-                        {columnsData?.map((label, index) => {
+                        {columnsSelector?.map((label, index) => {
                             return (
                                 <Select.Item value={label.selector} key={index}>
                                     {label.name}

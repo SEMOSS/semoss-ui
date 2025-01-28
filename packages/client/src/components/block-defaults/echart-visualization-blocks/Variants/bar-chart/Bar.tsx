@@ -51,7 +51,7 @@ export const Bar: BlockComponent = observer(({ id }) => {
             timer = setTimeout(() => fn(...args), delay);
         };
     }
-    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data } = useBlock<EchartVisualizationBlockDef>(id);
     const [echartState, setEchartState] = useState<any>({});
     const [selectedChart, setSelectedChart] = useState<any>({});
     const { state } = useBlocks();
@@ -230,9 +230,9 @@ export const Bar: BlockComponent = observer(({ id }) => {
     }
     //update frame values to the series data when frame values are changed
     const receiveValueswithCorrections = useCallback(
-        (dataOption: unknown) => {
+        (resultData: unknown) => {
             // const optionDataProcessed = processReceivedData(frameData.data);
-            resultData = dataOption;
+            // resultData = dataOption;
             let frameDataIndex = 0;
             //setting xaxis data
             resultData['xAxis']['data'] = frameData.data?.values?.map(
