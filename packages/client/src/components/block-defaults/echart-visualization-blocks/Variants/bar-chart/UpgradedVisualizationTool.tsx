@@ -331,27 +331,29 @@ export const UpgradedVisualizationTool =
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
-                        <ListItemButton
-                            onClick={(e) =>
-                                setSelectedList((prevList) =>
-                                    prevList === 'tooltip' ? '' : 'tooltip',
-                                )
-                            }
-                            selected={selectedList === 'tooltip'}
-                        >
-                            <ListItemIcon>
-                                <ImageIcon
-                                    fontSize="large"
-                                    color={
-                                        selectedList === 'tooltip'
-                                            ? 'primary'
-                                            : 'disabled'
-                                    }
-                                />
-                            </ListItemIcon>
-                            <ListItemText primary="Tooltip" />
-                            <InfoOutlined />
-                        </ListItemButton>
+                        {data.variation === 'echart-pie-chart' && (
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === 'tooltip' ? '' : 'tooltip',
+                                    )
+                                }
+                                selected={selectedList === 'tooltip'}
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList === 'tooltip'
+                                                ? 'primary'
+                                                : 'disabled'
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary="Tooltip" />
+                                <InfoOutlined />
+                            </ListItemButton>
+                        )}
                         {selectedList === 'tooltip' && (
                             <CustomTooltip id={id} path={'option'} />
                         )}
