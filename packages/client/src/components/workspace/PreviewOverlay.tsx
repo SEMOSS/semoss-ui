@@ -2,7 +2,6 @@ import { observer } from 'mobx-react-lite';
 import { Button, Modal, styled } from '@semoss/ui';
 import { SerializedState } from '@/stores';
 import { BlocksRenderer } from '../blocks-workspace';
-import { useNavigate } from 'react-router-dom';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     height: '60vh',
@@ -20,7 +19,6 @@ interface PreviewOverlayProps {
 
 export const PreviewOverlay = observer((props: PreviewOverlayProps) => {
     const { state, onClose = () => null } = props;
-    const navigate = useNavigate();
 
     return (
         <>
@@ -33,7 +31,6 @@ export const PreviewOverlay = observer((props: PreviewOverlayProps) => {
             <Modal.Actions>
                 <Button
                     onClick={() => {
-                        navigate('..', { relative: 'path' });
                         onClose();
                     }}
                 >
