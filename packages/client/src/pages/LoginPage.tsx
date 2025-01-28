@@ -495,6 +495,9 @@ export const LoginPage = observer(() => {
     // get the proviers
     const providers = [...configStore.store.config.providers];
 
+    // get the provider display names
+    const loginDisplayNames = configStore.store.config.loginMethodDisplayNames;
+
     // show the or
     const showOrDivider =
         providers.indexOf('native') > -1 &&
@@ -1147,7 +1150,12 @@ export const LoginPage = observer(() => {
                                                         onClick={login}
                                                         type="submit"
                                                     >
-                                                        Login with {loginType}
+                                                        Login with{' '}
+                                                        {
+                                                            loginDisplayNames[
+                                                                loginType
+                                                            ]
+                                                        }
                                                     </Button>
                                                     <StyledRegisterNowBox>
                                                         Don&apos;t have an

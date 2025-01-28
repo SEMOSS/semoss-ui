@@ -61,6 +61,10 @@ interface ConfigStoreInterface {
          * List of available providers (logins) that are available
          */
         providers: string[];
+        //** Display Names for the providers (logins) that are available  */
+        loginMethodDisplayNames: {
+            provider: string;
+        };
         version: {
             datetime: string;
             version: string;
@@ -90,6 +94,9 @@ export class ConfigStore {
             databaseMetaKeys: [],
             projectMetaKeys: [],
             providers: [],
+            loginMethodDisplayNames: {
+                provider: '',
+            },
             version: {
                 version: '',
                 datetime: '',
