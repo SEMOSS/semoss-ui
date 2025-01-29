@@ -31,6 +31,7 @@ export class MonolithStore {
             .get<{
                 logins: { [key: string]: unknown };
                 loginsAllowed: { [key: string]: boolean };
+                loginMethodDisplayNames: { [key: string]: string };
                 [key: string]: unknown;
             }>(`${Env.MODULE}/api/config`)
             .catch((error) => {

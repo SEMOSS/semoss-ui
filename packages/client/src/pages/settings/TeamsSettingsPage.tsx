@@ -3,6 +3,10 @@ import { useRootStore, useAPI } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 import { useNavigate } from 'react-router-dom';
 import AMAZON_S3 from '@/assets/img/Amazon_S3.png';
+import newGoogle from '@/assets/img/google.png';
+import Github from '@/assets/img/github.png';
+import Okta from '@/assets/img/okta.png';
+import Dropbox from '@/assets/img/dropbox.png';
 
 import {
     Grid,
@@ -26,6 +30,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { TextField } from '@mui/material';
 import { TeamTileCard } from './GenericTeamCard';
 import { toJS } from 'mobx';
+import { Google } from '@mui/icons-material';
 
 export interface DBMember {
     ID: string;
@@ -122,7 +127,14 @@ export const TeamsSettingsPage = () => {
     const { adminMode } = useSettings();
     const { monolithStore, configStore } = useRootStore();
     const navigate = useNavigate();
-    const TypeImageObject = { native: AMAZON_S3 };
+    const TypeImageObject = {
+        native: AMAZON_S3,
+        google: newGoogle,
+        github: Github,
+        okta: Okta,
+        dropbox: Dropbox,
+    };
+
     const [addModal, setAddModal] = useState(false);
     const [filteredTeams, setFilteredTeams] = useState([]);
     const [state, dispatch] = useReducer(reducer, initialState);
@@ -253,7 +265,9 @@ export const TeamsSettingsPage = () => {
     });
 
     const loginTypes = configStore.store.config.providers;
-
+    const loginMethodDisplayNames =
+        configStore.store.config.loginMethodDisplayNames;
+    const finalList = ['Custom', ...loginTypes];
     return (
         <>
             <StyledBackdrop open={getTeams.status !== 'SUCCESS'}>
@@ -387,9 +401,19 @@ export const TeamsSettingsPage = () => {
                                                     fullWidth={true}
                                                     disabled={watchCustom}
                                                 >
-                                                    {loginTypes &&
-                                                        loginTypes
+                                                    {finalList &&
+                                                        finalList
                                                             .sort()
+                                                            .filter(
+                                                                (element) =>
+                                                                    ![
+                                                                        'native',
+                                                                        'registration',
+                                                                    ].includes(
+                                                                        element,
+                                                                    ),
+                                                            )
+
                                                             .map((val, idx) => {
                                                                 return (
                                                                     <Select.Item
@@ -422,9 +446,10 @@ export const TeamsSettingsPage = () => {
                                                                                     width: '12px',
                                                                                 }}
                                                                             />
-                                                                            {
+                                                                            {loginMethodDisplayNames[
                                                                                 val
-                                                                            }
+                                                                            ] ??
+                                                                                val}
                                                                         </Box>
                                                                     </Select.Item>
                                                                 );
