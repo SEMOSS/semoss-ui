@@ -120,7 +120,6 @@ type NewTeamForm = {
     TEAM_NAME: string;
     TEAM_DESCRIPTION: string;
     TEAM_TYPE: string;
-    CUSTOM_GROUP: boolean;
 };
 
 export const TeamsSettingsPage = () => {
@@ -216,23 +215,36 @@ export const TeamsSettingsPage = () => {
             if (!state) {
                 throw new Error(`State is missing`);
             }
+            const newResponse =
+                data.TEAM_TYPE === 'Custom'
+                    ? monolithStore.addTeam(
+                          data.TEAM_NAME,
+                          data.TEAM_DESCRIPTION,
+                          true,
+                      )
+                    : monolithStore.addTeam(
+                          data.TEAM_NAME,
+                          data.TEAM_DESCRIPTION,
+                          false,
+                          data.TEAM_TYPE,
+                      );
 
-            const isCustom = watchCustom
-                ? monolithStore.addTeam(
-                      data.TEAM_NAME,
-                      data.TEAM_DESCRIPTION,
-                      true,
-                      data.TEAM_TYPE,
-                  )
-                : monolithStore.addTeam(
-                      data.TEAM_NAME,
-                      data.TEAM_DESCRIPTION,
-                      false,
-                      data.TEAM_TYPE,
-                  );
+            // const response = watchCustom
+            //     ? monolithStore.addTeam(
+            //           data.TEAM_NAME,
+            //           data.TEAM_DESCRIPTION,
+            //           true,
+            //           data.TEAM_TYPE,
+            //       )
+            //     : monolithStore.addTeam(
+            //           data.TEAM_NAME,
+            //           data.TEAM_DESCRIPTION,
+            //           false,
+            //           data.TEAM_TYPE,
+            //       );
 
             // create the team
-            isCustom.then(() => {
+            newResponse.then(() => {
                 dispatch({
                     type: 'field',
                     field: 'databases',
@@ -267,7 +279,7 @@ export const TeamsSettingsPage = () => {
     const loginTypes = configStore.store.config.providers;
     const loginMethodDisplayNames =
         configStore.store.config.loginMethodDisplayNames;
-    const finalList = ['Custom', ...loginTypes];
+    // const finalList = ['Custom', ...loginTypes];
     return (
         <>
             <StyledBackdrop open={getTeams.status !== 'SUCCESS'}>
@@ -401,59 +413,56 @@ export const TeamsSettingsPage = () => {
                                                     fullWidth={true}
                                                     disabled={watchCustom}
                                                 >
-                                                    {finalList &&
-                                                        finalList
-                                                            .sort()
-                                                            .filter(
-                                                                (element) =>
-                                                                    ![
-                                                                        'native',
-                                                                        'registration',
-                                                                    ].includes(
-                                                                        element,
-                                                                    ),
-                                                            )
-
-                                                            .map((val, idx) => {
-                                                                return (
-                                                                    <Select.Item
-                                                                        key={
-                                                                            idx
-                                                                        }
-                                                                        value={
-                                                                            val
-                                                                        }
+                                                    {loginTypes &&
+                                                        [
+                                                            'Custom',
+                                                            ...loginTypes
+                                                                .sort()
+                                                                .filter(
+                                                                    (element) =>
+                                                                        ![
+                                                                            'native',
+                                                                            'registration',
+                                                                        ].includes(
+                                                                            element,
+                                                                        ),
+                                                                ),
+                                                        ].map((val, idx) => {
+                                                            return (
+                                                                <Select.Item
+                                                                    key={idx}
+                                                                    value={val}
+                                                                >
+                                                                    <Box
+                                                                        sx={{
+                                                                            display:
+                                                                                'flex',
+                                                                            flexDirection:
+                                                                                'row',
+                                                                            alignItems:
+                                                                                'center',
+                                                                            gap: '8px',
+                                                                        }}
                                                                     >
-                                                                        <Box
-                                                                            sx={{
-                                                                                display:
-                                                                                    'flex',
-                                                                                flexDirection:
-                                                                                    'row',
-                                                                                alignItems:
-                                                                                    'center',
-                                                                                gap: '8px',
+                                                                        <img
+                                                                            src={
+                                                                                TypeImageObject[
+                                                                                    val
+                                                                                ]
+                                                                            }
+                                                                            style={{
+                                                                                height: '12px',
+                                                                                width: '12px',
                                                                             }}
-                                                                        >
-                                                                            <img
-                                                                                src={
-                                                                                    TypeImageObject[
-                                                                                        val
-                                                                                    ]
-                                                                                }
-                                                                                style={{
-                                                                                    height: '12px',
-                                                                                    width: '12px',
-                                                                                }}
-                                                                            />
-                                                                            {loginMethodDisplayNames[
-                                                                                val
-                                                                            ] ??
-                                                                                val}
-                                                                        </Box>
-                                                                    </Select.Item>
-                                                                );
-                                                            })}
+                                                                        />
+                                                                        {loginMethodDisplayNames[
+                                                                            val
+                                                                        ] ??
+                                                                            val}
+                                                                    </Box>
+                                                                </Select.Item>
+                                                            );
+                                                        })}
                                                 </Select>
                                             );
                                         }}
@@ -486,7 +495,8 @@ export const TeamsSettingsPage = () => {
                                     />
                                 </Box>
 
-                                {!watchType && (
+                                {/* {!watchType && (
+                                    
                                     <Box>
                                         <StyledFormLabel variant="subtitle1">
                                             Custom Group?
@@ -514,7 +524,7 @@ export const TeamsSettingsPage = () => {
                                             }}
                                         />
                                     </Box>
-                                )}
+                                )} */}
                             </Stack>
                         </Modal.Content>
                         <Modal.Actions>
