@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import axios, { isAxiosError } from 'axios';
 import { Env } from '@/env';
 import { RootStore } from '@/stores';
@@ -48,6 +48,7 @@ axios.interceptors.response.use(
 const _store = new RootStore();
 
 export const App = () => {
+    const [configuration, setConfiguration] = useState(false);
     useEffect(() => {
         // load the environment from the document (production)
         try {
@@ -67,9 +68,19 @@ export const App = () => {
             // noop
         }
 
-        // intialize it
-        _store.configStore.initialize();
+        if (!configuration) {
+            setConfiguration(true);
+        } else {
+            setConfiguration(false);
+        }
     }, []);
+
+    useEffect(() => {
+        // intialize it
+        if (configuration) {
+            _store.configStore.initialize();
+        }
+    }, [configuration]);
 
     //  NCRT ASK - (https://play.semoss.org/ncrt/SemossWeb/packages/client/dist/#!/)
     if (window.location.href.includes('client/dist/#!/')) {
