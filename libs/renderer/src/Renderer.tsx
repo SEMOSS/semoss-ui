@@ -3,18 +3,17 @@ import { observer } from "mobx-react-lite";
 import { useSearchParams, useLocation } from "react-router-dom";
 
 import { runPixel, useInsight } from "@semoss/sdk";
-import { Typography, useNotification } from "@semoss/ui";
+import { Button, Typography, useNotification } from "@semoss/ui";
 
+import { Blocks, RendererEngine } from "./components/blocks";
+import { DefaultBlocks } from "./components/block-defaults";
+import { DefaultCells } from "./components/cell-defaults";
 import {
     MigrationManager,
     SerializedState,
     STATE_VERSION,
     StateStore,
 } from "./store/state";
-
-import { Blocks, RendererEngine } from "./components/blocks";
-import { DefaultBlocks } from "./components/block-defaults";
-import { DefaultCells } from "./components/cell-defaults";
 
 const ACTIVE = "page-1";
 
@@ -41,6 +40,8 @@ export const Renderer = observer((props: RendererProps) => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [stateStore, setStateStore] = useState<StateStore | null>();
     const queryStringParams = new URLSearchParams(useLocation().search);
+
+    const [homePage, setHomePage] = useState();
 
     useEffect(() => {
         if (isAuthorized) {
@@ -91,15 +92,22 @@ export const Renderer = observer((props: RendererProps) => {
                         return;
                     }
 
-                    // ignore if there is state
-                    if (!s) {
-                        return;
-                    }
-
                     // run migration if not up to date
                     if (s.version !== STATE_VERSION) {
                         const migration = new MigrationManager();
                         s = await migration.run(s);
+                    }
+
+                    // Check ValidateProjectDependencies
+
+                    // if false
+                    // pop modal up
+
+                    // if true
+
+                    // ignore if there is state
+                    if (!s) {
+                        return;
                     }
 
                     // Replace variable values with query params

@@ -13,7 +13,8 @@ Also ran our prod command with no build errors
 Today i fixed up the last couple of blocks that were broken.
 
 -   [x] LLM Compare Block (Lot of TS errors)
--   [ ] Data Import (DataImportFormModal) (Lot of TS errors)
+-   [x] Data Import (DataImportFormModal) (Lot of TS errors)
+-   [ ] Listener Settings
 
 ## How to build locally and test
 
@@ -25,7 +26,7 @@ Then run:
 
 `pnpm run dev:client`
 
-__*Routes to test*__:
+**_Routes to test_**:
 
 Use - `http://localhost:9090/semoss-ui/packages/client/dist/#/app/5698389c-3ba8-4846-b915-d69b0245acc6`
 

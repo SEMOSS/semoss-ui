@@ -15,6 +15,7 @@ import {
     ColumnTypeTransformationCellConfig,
     ColumnTypeTransformationCellDef,
 } from "./column-type-transformation-cell";
+import { DataImportCellConfig, DataImportCellDef } from "./data-import-cell";
 import {
     DateDifferenceTransformationCellConfig,
     DateDifferenceTransformationCellDef,
@@ -51,7 +52,7 @@ import { TransformationCellDef } from "./shared";
 export type DefaultCellDefinitions =
     | CodeCellDef
     | QueryImportCellDef
-    // | DataImportCellDef
+    | DataImportCellDef
     | TransformationCellDef
     | UppercaseTransformationCellDef
     | UpdateRowTransformationCellDef
@@ -67,7 +68,7 @@ export type DefaultCellDefinitions =
 export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     [CodeCellConfig.widget]: CodeCellConfig,
     [QueryImportCellConfig.widget]: QueryImportCellConfig,
-    // [DataImportCellConfig.widget]: DataImportCellConfig,
+    [DataImportCellConfig.widget]: DataImportCellConfig,
     [UppercaseTransformationCellConfig.widget]:
         UppercaseTransformationCellConfig,
     [UpdateRowTransformationCellConfig.widget]:

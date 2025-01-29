@@ -40,6 +40,7 @@ export type {
     VariableType,
     VariableWithId,
     CellState,
+    NewCellAction,
 } from "./store";
 
 // REGISTRY AND MENUS
@@ -61,6 +62,9 @@ export * from "./components/cell-defaults";
 
 export { QueryImportCellConfig } from "./components/cell-defaults/query-import-cell";
 export { CodeCellConfig } from "./components/cell-defaults/code-cell";
+export { DataImportCellConfig } from "./components/cell-defaults/data-import-cell";
+
+export { DataImportFormModal } from "./components/shared/DataImportFormModal";
 
 // HOOKS
 export { useBlocks, useBlocksPixel } from "./hooks";

@@ -20,8 +20,8 @@ import {
     TransformationCells,
     QueryImportCellConfig,
     CodeCellConfig,
+    DataImportFormModal,
 } from '@semoss/renderer';
-// import { DataImportFormModal } from './DataImportFormModal';
 
 import { NewCellAction } from '@/stores';
 import {
@@ -327,16 +327,15 @@ export const NotebookAddCell = observer(
                     <Modal
                         open={setIsDataImportModalOpen as unknown as boolean}
                     >
-                        FIX DATA IMPORT MODAL
+                        <DataImportFormModal
+                            setIsDataImportModalOpen={setIsDataImportModalOpen}
+                            query={query}
+                            previousCellId={previousCellId}
+                            cell={null}
+                            editMode={false}
+                        />
                     </Modal>
                 )}
-                {/* <DataImportFormModal
-                    setIsDataImportModalOpen={setIsDataImportModalOpen}
-                    query={query}
-                    previousCellId={previousCellId}
-                    cell={null}
-                    editMode={false}
-                /> */}
             </>
         );
     },
