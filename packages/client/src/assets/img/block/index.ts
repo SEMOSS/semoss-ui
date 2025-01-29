@@ -36,6 +36,7 @@ export { default as LOGS_HOVER } from './Logs_Hover.png';
 export { default as MARKDOWN_ACTIVE } from './Markdown_Active.png';
 export { default as MARKDOWN_HOVER } from './Markdown_Hover.png';
 export { default as MERMAIDJS_ACTIVE } from './MermaidJs_Active.png';
+export { default as MERMAIDJS_HOVER } from './MermaidJs_Hover.png';
 export { default as PARAGRAPH_ACTIVE } from './Paragraph_Active.png';
 export { default as PARAGRAPH_HOVER } from './Paragraph_Hover.png';
 export { default as PDF_ACTIVE } from './PDF_Active.png';
