@@ -1,3 +1,4 @@
+import { SerializedState } from "../store";
 import { useDebounced } from "./useDebounced";
 // import BRAIN from "../assets/BRAIN.png";
 // import { ENGINE_IMAGES } from "../constants";
@@ -248,27 +249,22 @@ export const getValueByPath = <T extends object>(target: T, path: string) => {
     return target;
 };
 
-// /**
-//  * @name getEngineImage
-//  * @params appType & appSubType
-//  * @returns image link for associated engine
-//  */
-// export const getEngineImage = (
-//     appType: string,
-//     appSubType: string,
-//     ignoreNotFound: boolean = false,
-// ) => {
-//     const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name == appSubType);
+export const getHomePage = (state: SerializedState) => {
+    let active = "";
+    const blocks = state.blocks;
 
-//     if (!obj) {
-//         if (ignoreNotFound) {
-//             return null;
-//         } else {
-//             console.warn("No image found:", appType, appSubType);
-//             return BRAIN;
-//         }
-//     }
+    Object.entries(blocks).forEach((kv) => {
+        const id = kv[0];
+        const json = kv[1] as { widget: string };
 
-//     debugger;
-//     return obj.icon;
-// };
+        if (json.widget === "page") {
+            active = id;
+        }
+    });
+
+    if (active) {
+        return active;
+    }
+
+    return "page-1";
+};

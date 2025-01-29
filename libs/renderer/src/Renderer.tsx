@@ -8,14 +8,13 @@ import { Button, Typography, useNotification } from "@semoss/ui";
 import { Blocks, RendererEngine } from "./components/blocks";
 import { DefaultBlocks } from "./components/block-defaults";
 import { DefaultCells } from "./components/cell-defaults";
+import { getHomePage } from "./utility";
 import {
     MigrationManager,
     SerializedState,
     STATE_VERSION,
     StateStore,
 } from "./store/state";
-
-const ACTIVE = "page-1";
 
 export interface RendererProps {
     /** App to render */
@@ -41,7 +40,7 @@ export const Renderer = observer((props: RendererProps) => {
     const [stateStore, setStateStore] = useState<StateStore | null>();
     const queryStringParams = new URLSearchParams(useLocation().search);
 
-    const [homePage, setHomePage] = useState();
+    const [homePage, setHomePage] = useState("");
 
     useEffect(() => {
         if (isAuthorized) {
@@ -92,23 +91,19 @@ export const Renderer = observer((props: RendererProps) => {
                         return;
                     }
 
+                    // ignore if there is state
+                    if (!s) {
+                        return;
+                    }
+
                     // run migration if not up to date
                     if (s.version !== STATE_VERSION) {
                         const migration = new MigrationManager();
                         s = await migration.run(s);
                     }
 
-                    // Check ValidateProjectDependencies
-
-                    // if false
-                    // pop modal up
-
-                    // if true
-
-                    // ignore if there is state
-                    if (!s) {
-                        return;
-                    }
+                    const active = await getHomePage(s);
+                    setHomePage(active);
 
                     // Replace variable values with query params
                     const params = {};
@@ -180,7 +175,7 @@ export const Renderer = observer((props: RendererProps) => {
     return (
         <>
             <Blocks state={stateStore} registry={DefaultBlocks}>
-                <RendererEngine id={ACTIVE} />
+                <RendererEngine id={homePage} />
             </Blocks>
         </>
     );
