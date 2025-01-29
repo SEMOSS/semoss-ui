@@ -368,7 +368,7 @@ export const FileTable = (props: FileTableProps) => {
                             />
                         </Table.Cell>
                         <Table.Cell size="small">Name</Table.Cell>
-                        <Table.Cell size="small">Date Modified</Table.Cell>
+                        <Table.Cell size="small">Date Uploaded</Table.Cell>
                         <Table.Cell size="small">Size</Table.Cell>
                         <Table.Cell size="small">Action</Table.Cell>
                     </Table.Head>
