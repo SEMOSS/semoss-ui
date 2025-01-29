@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
+
+import { ActionMessages, useBlocks } from '@semoss/renderer';
 import { styled, Card, Tooltip, Typography } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
-
-import { ActionMessages, useBlocks, DesignerMenuItem } from '@semoss/renderer';
+import { DesignerMenuItem } from '../blocks-workspace/menus/menu-types';
 
 const StyledCard = styled(Card)(({ theme }) => ({
     height: '100%',

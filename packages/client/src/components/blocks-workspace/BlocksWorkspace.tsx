@@ -5,8 +5,6 @@ import { ConstructionOutlined } from '@mui/icons-material';
 import { useNotification, styled, Typography, Stack } from '@semoss/ui';
 import { Env, InsightProvider } from '@semoss/sdk';
 import {
-    DEFAULT_MENU,
-    VISUALIZATION_MENU,
     StateStore,
     Blocks,
     SerializedState,
@@ -37,6 +35,8 @@ import {
     NotebookExplorerPanel,
     NotebookViewerPanel,
 } from './panels';
+import { DEFAULT_MENU } from './menus/default-menu';
+import { VISUALIZATION_MENU } from './menus/visualization-menu';
 
 const DEFAULT_BORDER_SIZE = 300;
 

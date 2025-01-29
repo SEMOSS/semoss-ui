@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-
 import { Search, SearchOff } from '@mui/icons-material';
-import { DesignerMenuItem } from '@semoss/renderer';
+
 import {
     styled,
     Grid,
@@ -13,6 +12,7 @@ import {
     Divider,
 } from '@semoss/ui';
 
+import { DesignerMenuItem } from '../menus/menu-types';
 import { AddBlocksMenuCard } from '@/components/designer';
 import { Panel } from '@/components/workspace';
 
