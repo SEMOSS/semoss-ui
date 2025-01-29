@@ -14,7 +14,7 @@ Today i fixed up the last couple of blocks that were broken.
 
 -   [x] LLM Compare Block (Lot of TS errors)
 -   [x] Data Import (DataImportFormModal) (Lot of TS errors)
--   [ ] Listener Settings
+-   [x] Listener Settings
 
 ## How to build locally and test
 

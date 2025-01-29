@@ -1,15 +1,5 @@
+import { useState } from "react";
 import { observer } from "mobx-react-lite";
-import {
-    Typography,
-    IconButton,
-    Button,
-    List,
-    useNotification,
-    styled,
-} from "@semoss/ui";
-
-import { useBlockSettings, useBlocks } from "../../hooks";
-import { ACTIONS_DISPLAY, BlockDef, ListenerActions } from "../../store";
 import {
     Add,
     Delete,
@@ -17,6 +7,18 @@ import {
     PlayCircleOutlineRounded,
 } from "@mui/icons-material";
 
+import {
+    Typography,
+    IconButton,
+    Button,
+    List,
+    useNotification,
+    styled,
+    Modal,
+} from "@semoss/ui";
+
+import { useBlockSettings, useBlocks } from "../../hooks";
+import { ACTIONS_DISPLAY, BlockDef, ListenerActions } from "../../store";
 import { ListenerActionOverlay } from "./ListenerActionOverlay";
 
 const StyledStatusIconContainer = styled("div")(() => ({
@@ -61,8 +63,10 @@ export const ListenerSettings = observer(
     }: ListenerSettingsProps<D>) => {
         const { state } = useBlocks();
         const { listeners, setListener } = useBlockSettings(id);
-        // const { workspace } = useWorkspace();
         const notification = useNotification();
+
+        const [actionIndex, setActionIndex] = useState(-1);
+        const [openModal, setOpenModal] = useState(false);
 
         /**
          * Open the overlay to create a edit action
@@ -108,16 +112,8 @@ export const ListenerSettings = observer(
          * @param actionIdx - index of the action to edit. Will create a new one if -1
          */
         const openActionOverlay = (actionIdx = -1) => {
-            // workspace.openOverlay(() => {
-            //     return (
-            //         <ListenerActionOverlay
-            //             id={id}
-            //             listener={listener}
-            //             actionIdx={actionIdx}
-            //             onClose={() => workspace.closeOverlay()}
-            //         />
-            //     );
-            // });
+            setActionIndex(actionIdx);
+            setOpenModal(true);
         };
 
         /**
@@ -197,6 +193,14 @@ export const ListenerSettings = observer(
                 >
                     New Action
                 </Button>
+                <Modal open={openModal} fullWidth={true}>
+                    <ListenerActionOverlay
+                        id={id}
+                        listener={listener}
+                        actionIdx={actionIndex}
+                        onClose={() => setOpenModal(false)}
+                    />
+                </Modal>
             </>
         );
     },
