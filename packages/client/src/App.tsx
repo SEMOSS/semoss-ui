@@ -68,11 +68,7 @@ export const App = () => {
             // noop
         }
 
-        if (!configuration) {
-            setConfiguration(true);
-        } else {
-            setConfiguration(false);
-        }
+        setConfiguration(true);
     }, []);
 
     useEffect(() => {
