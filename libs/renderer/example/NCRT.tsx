@@ -1,5 +1,5 @@
 import React from "react";
-import { DefaultBlocks } from "./components/block-defaults";
+// import { DefaultBlocks } from "./components/block-defaults";
 
 const App = () => {
     return (
@@ -14,7 +14,7 @@ const App = () => {
 
 const PageTwo = () => {
     const customRegistry = {
-        ...DefaultBlocks,
+        // ...DefaultBlocks,
     };
     return (
         <div>
@@ -25,7 +25,7 @@ const PageTwo = () => {
 };
 
 const customRegistry = {
-    ...DefaultBlocks,
+    // ...DefaultBlocks,
 };
 const NCRTPage = () => {
     return (
