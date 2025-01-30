@@ -67,6 +67,14 @@ interface ConfigStoreInterface {
             datetime: string;
             version: string;
         };
+        /**
+         * Track if r is enabled
+         */
+        r: boolean;
+        /**
+         * Track if python is enabled
+         */
+        python: boolean;
         [key: string]: unknown;
     };
 }
@@ -97,6 +105,8 @@ export class ConfigStore {
                 version: '',
                 datetime: '',
             },
+            r: true,
+            python: true,
         },
     };
     private _generalReactors: Array<string> = [];
