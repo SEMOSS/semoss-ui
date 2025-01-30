@@ -38,6 +38,7 @@ export const Help = observer((): JSX.Element => {
         setAnchorEl(event.currentTarget);
     };
     const handleHelpClose = () => {
+        console.log(HELP, 'maan');
         setAnchorEl(null);
     };
 
@@ -80,7 +81,7 @@ export const Help = observer((): JSX.Element => {
                 onClick={handleHelpClick}
                 size="small"
             >
-                Help
+                Helps
             </StyledButton>
             <Menu
                 // id="help-menu"
@@ -97,7 +98,7 @@ export const Help = observer((): JSX.Element => {
                     horizontal: 'right',
                 }}
             >
-                {HELP.order.map((key, i) => {
+                {/* {HELP.order.map((key, i) => {
                     const v = HELP.values[key];
 
                     if (v) {
@@ -118,8 +119,8 @@ export const Help = observer((): JSX.Element => {
                             </MenuItem>
                         );
                     }
-                })}
-                {/* <MenuItem>
+                })} */}
+                <MenuItem>
                     <span>
                         <StyledLink
                             href="https://workshop.cfg.deloitte.com/docs/category/app-creation-guides"
@@ -138,7 +139,7 @@ export const Help = observer((): JSX.Element => {
                 </MenuItem>
                 <MenuItem onClick={handleHelpClose} disabled>
                     Feedback
-                </MenuItem> */}
+                </MenuItem>
             </Menu>
         </StyledContainer>
     );
