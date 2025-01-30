@@ -2,9 +2,7 @@ import {
     Typography as MuiTypography,
     TypographyProps as MuiTypographyProps,
     SxProps,
-    Tooltip,
 } from "@mui/material";
-import { useRef, useState, useEffect } from "react";
 
 export interface TypographyProps {
     /** custom style object */
@@ -53,31 +51,11 @@ export interface TypographyProps {
 }
 
 export const Typography = (props: TypographyProps) => {
-    const { sx, color, variant, children, ...otherProps } = props;
-    const typographyRef = useRef<HTMLElement>(null);
-    const [isTruncated, setIsTruncated] = useState(false);
+    const { sx, color, ...otherProps } = props;
 
-    useEffect(() => {
-        const element = typographyRef.current;
-        if (!element || typeof children !== "string") return;
-
-        setIsTruncated(element.scrollHeight > element.clientHeight);
-    }, [children, variant]);
-
-    const typographyComponent = (
+    return (
         <MuiTypography
-            ref={typographyRef}
-            sx={{
-                ...(variant === "body1" && {
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    display: "-webkit-box",
-                    WebkitLineClamp: "2",
-                    WebkitBoxOrient: "vertical",
-                }),
-                ...sx,
-            }}
-            variant={variant}
+            sx={sx}
             color={
                 color === "success"
                     ? "success.text"
@@ -92,18 +70,6 @@ export const Typography = (props: TypographyProps) => {
                     : color
             }
             {...otherProps}
-        >
-            {children}
-        </MuiTypography>
+        />
     );
-
-    if (variant === "body1" && typeof children === "string" && isTruncated) {
-        return (
-            <Tooltip title={children} placement="top-start">
-                {typographyComponent}
-            </Tooltip>
-        );
-    }
-
-    return typographyComponent;
 };
