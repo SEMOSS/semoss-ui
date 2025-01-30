@@ -1,6 +1,8 @@
 import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
+import { LoadingScreen } from "@semoss/ui";
+
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent } from "../../../store";
 import { Slot } from "../../../components/blocks";
@@ -50,11 +52,10 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
             data-page
         >
             {/* TODO: Make Loading Screen relative to the Page */}
-            {/* <LoadingScreen>
+            <LoadingScreen>
                 {isLoading ? <LoadingScreen.Trigger /> : null}
                 <Slot slot={slots.content}></Slot>
-            </LoadingScreen> */}
-            <Slot slot={slots.content}></Slot>
+            </LoadingScreen>
         </div>
     );
 });

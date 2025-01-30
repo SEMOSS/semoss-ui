@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
+
 import {
     Avatar,
     styled,
@@ -14,7 +15,7 @@ import {
 } from '@semoss/ui';
 import { EditOutlined, ShareRounded } from '@mui/icons-material';
 
-import { Env } from '@/env';
+import { Env } from '@semoss/sdk';
 import { WorkspaceStore } from '@/stores';
 import { useRootStore } from '@/hooks';
 import { LoadingScreen, ShareOverlay } from '@/components/ui';
@@ -77,6 +78,15 @@ export const AppPage = observer(() => {
         return <LoadingScreen.Trigger description="Initializing app" />;
     }
 
+    /**
+     * Initialize insight for app building
+     */
+    if (workspace.type === 'BLOCKS') {
+        Env.update({
+            MODULE: process.env.MODULE || '',
+        });
+    }
+
     return (
         <StyledViewport>
             <Stack
@@ -129,9 +139,11 @@ export const AppPage = observer(() => {
             </Stack>
             <StyledContent>
                 {workspace.type === 'BLOCKS' ? (
-                    <InsightProvider>
-                        <Renderer appId={appId} />
-                    </InsightProvider>
+                    <>
+                        <InsightProvider>
+                            <Renderer appId={appId} />
+                        </InsightProvider>
+                    </>
                 ) : null}
                 {workspace.type === 'CODE' ? (
                     <CodeRenderer appId={appId} />

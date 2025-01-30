@@ -23,7 +23,10 @@ export interface RendererProps {
     /** State to render */
     state?: SerializedState;
 
-    /** Do we want to see load screen. Ex: preview on tooltip */
+    /**
+     * TODO: REMOVE
+     * Do we want to see load screen. Ex: preview on tooltip
+     * */
     preview?: boolean;
 }
 

@@ -10,7 +10,7 @@ import { CodeRenderer } from '@/components/code-workspace';
 import { AppType, AppMetadata } from '@/components/app';
 
 import { Renderer } from '@semoss/renderer';
-import { InsightProvider } from '@semoss/sdk';
+import { Env, InsightProvider } from '@semoss/sdk';
 
 const StyledViewport = styled('div')(() => ({
     display: 'flex',
@@ -89,6 +89,13 @@ export const SharePage = observer(() => {
     if (!type) {
         return <LoadingScreen.Trigger description="Initializing app" />;
     }
+
+    /**
+     * Initialize insight for app building
+     */
+    Env.update({
+        MODULE: process.env.MODULE || '',
+    });
 
     return (
         <StyledViewport>

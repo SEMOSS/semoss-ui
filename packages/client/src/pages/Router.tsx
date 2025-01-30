@@ -21,7 +21,6 @@ import { CookieNotice } from './legal/CookieNotice';
 import { PrivacyNotice } from './legal/PrivacyNotice';
 
 import { WorkspacePage } from './WorkspacePage';
-import { TestPage } from './TestPage';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
@@ -66,9 +65,6 @@ export const Router = observer(() => {
                 <Route path="s/:appId/*" element={<SharePage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
-            {process.env.NODE_ENV === 'development' && (
-                <Route path="/test-ncrt" element={<TestPage />} />
-            )}
             {showCookieNotice && (
                 <Route path="/cookie-notice" element={<CookieNotice />} />
             )}

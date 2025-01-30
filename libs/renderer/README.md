@@ -4,7 +4,7 @@
 
 # Get Started
 
-Have an idea on what you would like to build in a no code environment. Go to our Drag and Drop App Builder to build out your UI and Backend, get started here [Click Get Started on the Drag and Drop Card](https://workshop.cfg.deloitte.com/cfg-ai-demo/SemossWeb/packages/client/dist/#/app/new)
+Have an idea on what you would like to build in a no code environment. Go to our Drag and Drop App Builder to build out your UI and Backend.
 
 Once you have fully built out your app, within our no code envrionment.
 

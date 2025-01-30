@@ -21,7 +21,7 @@ interface PreviewOverlayProps {
 
 export const PreviewOverlay = observer((props: PreviewOverlayProps) => {
     const { state, onClose = () => null } = props;
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
 
     return (
         <>
@@ -36,7 +36,7 @@ export const PreviewOverlay = observer((props: PreviewOverlayProps) => {
             <Modal.Actions>
                 <Button
                     onClick={() => {
-                        navigate('..', { relative: 'path' });
+                        // navigate('..', { relative: 'path' });
                         onClose();
                     }}
                 >
