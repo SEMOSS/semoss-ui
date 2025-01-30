@@ -681,11 +681,11 @@ export const UserTable = (props: UserTableProps) => {
                                                             )}
                                                         </Table.Cell>
                                                         <Table.Cell>
-                                                            {user?.usage_restriction ===
+                                                            {user?.model_usage_restriction ===
                                                                 'compute' &&
                                                                 `${user?.model_max_response_time?.toLocaleString()} ms`}
 
-                                                            {user?.usage_restriction ===
+                                                            {user?.model_usage_restriction ===
                                                                 'token' &&
                                                                 `${user?.model_max_tokens?.toLocaleString()}`}
                                                         </Table.Cell>
