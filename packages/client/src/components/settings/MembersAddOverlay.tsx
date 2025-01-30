@@ -170,6 +170,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
     const debouncedSearch = useDebounceValue(search);
 
     const usageRestritctionTypes: Record<string, string> = {
+        null: 'None',
         token: 'Token',
         compute: 'Compute time',
     };
@@ -794,26 +795,28 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                     </Select>
                                 </Stack>
                             )}
-                            <Select
-                                label="Frequency"
-                                value={frequency}
-                                onChange={(e) => {
-                                    setFrequency(e.target.value);
-                                }}
-                            >
-                                {Object.entries(frequencyTypes).map(
-                                    (option, i) => {
-                                        return (
-                                            <Select.Item
-                                                value={option[0]}
-                                                key={i}
-                                            >
-                                                {option[1]}
-                                            </Select.Item>
-                                        );
-                                    },
-                                )}
-                            </Select>
+                            {restriction !== 'null' && (
+                                <Select
+                                    label="Frequency"
+                                    value={frequency}
+                                    onChange={(e) => {
+                                        setFrequency(e.target.value);
+                                    }}
+                                >
+                                    {Object.entries(frequencyTypes).map(
+                                        (option, i) => {
+                                            return (
+                                                <Select.Item
+                                                    value={option[0]}
+                                                    key={i}
+                                                >
+                                                    {option[1]}
+                                                </Select.Item>
+                                            );
+                                        },
+                                    )}
+                                </Select>
+                            )}
                         </Stack>
                     </>
                 )}

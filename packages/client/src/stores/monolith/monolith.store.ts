@@ -2771,6 +2771,9 @@ export class MonolithStore {
         }
 
         if (user.usage_restriction) {
+            if (user.model_usage_restriction === 'null') {
+                user.model_usage_restriction = null;
+            }
             newUserInfo +=
                 '&model_usage_restriction=' +
                 encodeURIComponent(user.model_usage_restriction);

@@ -205,6 +205,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
     }));
 
     const usageRestritctionTypes: Record<string, string> = {
+        null: 'None',
         token: 'Token',
         compute: 'Compute time',
     };
@@ -286,6 +287,128 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
             <form onSubmit={editUser}>
                 <StyledModalContent>
                     <StyledForm>
+                        <Typography variant="subtitle1">Credentials</Typography>
+                        <Stack direction={'column'} gap={1}>
+                            <Controller
+                                name="type"
+                                control={control}
+                                rules={{}}
+                                render={({ field }) => {
+                                    return (
+                                        <Select
+                                            label="Type"
+                                            disabled={isNewUser ? false : true}
+                                            value={
+                                                field.value ? field.value : ''
+                                            }
+                                            onChange={(e) => {
+                                                field.onChange(e.target.value);
+                                            }}
+                                        >
+                                            {providers.map((option, i) => {
+                                                return (
+                                                    <Select.Item
+                                                        value={option.provider}
+                                                        key={i}
+                                                    >
+                                                        {option.name}
+                                                    </Select.Item>
+                                                );
+                                            })}
+                                        </Select>
+                                    );
+                                }}
+                            />
+                            <Controller
+                                name="id"
+                                // disabled={isNewUser ? false : true}
+                                control={control}
+                                rules={{}}
+                                render={({ field }) => {
+                                    return (
+                                        <TextField
+                                            label="User Id"
+                                            disabled={isNewUser ? false : true}
+                                            value={
+                                                field.value ? field.value : ''
+                                            }
+                                            onChange={(e) => {
+                                                field.onChange(e.target.value);
+                                            }}
+                                        ></TextField>
+                                    );
+                                }}
+                            />
+                            <Controller
+                                name="username"
+                                // disabled={!isNewUser && user?.type === 'Native' ? true : false}
+                                control={control}
+                                rules={{}}
+                                render={({ field }) => {
+                                    return (
+                                        <TextField
+                                            label="Username"
+                                            disabled={
+                                                !isNewUser &&
+                                                user?.type === 'Native'
+                                                    ? true
+                                                    : false
+                                            }
+                                            value={
+                                                field.value ? field.value : ''
+                                            }
+                                            onChange={(e) => {
+                                                field.onChange(e.target.value);
+                                            }}
+                                        ></TextField>
+                                    );
+                                }}
+                            />
+                        </Stack>
+                        {type === 'Native' && (
+                            <>
+                                <Controller
+                                    name="password"
+                                    control={control}
+                                    rules={{
+                                        required: false,
+                                        minLength: 8,
+                                        validate: (value) =>
+                                            passwordValidate(value),
+                                    }}
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                label="Password"
+                                                type="password"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                onChange={(e) => {
+                                                    field.onChange(
+                                                        e.target.value,
+                                                    );
+                                                }}
+                                            ></TextField>
+                                        );
+                                    }}
+                                />
+
+                                {errors.password && (
+                                    <Typography
+                                        variant={'caption'}
+                                        color={'error'}
+                                    >
+                                        Note: Password must have one letter, one
+                                        capital, one number, one special
+                                        character, and be a minimum of 8
+                                        characters.
+                                    </Typography>
+                                )}
+                            </>
+                        )}
                         <Typography variant="subtitle1">Details</Typography>
                         <Stack direction={'column'} gap={1}>
                             <Controller
@@ -403,119 +526,6 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                 />
                             </Stack>
                         </Stack>
-
-                        <Typography variant="subtitle1">Credentials</Typography>
-                        <Stack direction={'column'} gap={1}>
-                            <Controller
-                                name="type"
-                                control={control}
-                                rules={{}}
-                                render={({ field }) => {
-                                    return (
-                                        <Select
-                                            label="Type"
-                                            value={
-                                                field.value ? field.value : ''
-                                            }
-                                            onChange={(e) => {
-                                                field.onChange(e.target.value);
-                                            }}
-                                        >
-                                            {providers.map((option, i) => {
-                                                return (
-                                                    <Select.Item
-                                                        value={option.provider}
-                                                        key={i}
-                                                    >
-                                                        {option.name}
-                                                    </Select.Item>
-                                                );
-                                            })}
-                                        </Select>
-                                    );
-                                }}
-                            />
-                            <Controller
-                                name="id"
-                                control={control}
-                                rules={{}}
-                                render={({ field }) => {
-                                    return (
-                                        <TextField
-                                            label="User Id"
-                                            value={
-                                                field.value ? field.value : ''
-                                            }
-                                            onChange={(e) => {
-                                                field.onChange(e.target.value);
-                                            }}
-                                        ></TextField>
-                                    );
-                                }}
-                            />
-                            <Controller
-                                name="username"
-                                control={control}
-                                rules={{}}
-                                render={({ field }) => {
-                                    return (
-                                        <TextField
-                                            label="Username"
-                                            value={
-                                                field.value ? field.value : ''
-                                            }
-                                            onChange={(e) => {
-                                                field.onChange(e.target.value);
-                                            }}
-                                        ></TextField>
-                                    );
-                                }}
-                            />
-                        </Stack>
-                        {type === 'Native' && (
-                            <>
-                                <Controller
-                                    name="password"
-                                    control={control}
-                                    rules={{
-                                        required: false,
-                                        minLength: 8,
-                                        validate: (value) =>
-                                            passwordValidate(value),
-                                    }}
-                                    render={({ field }) => {
-                                        return (
-                                            <TextField
-                                                label="Password"
-                                                type="password"
-                                                value={
-                                                    field.value
-                                                        ? field.value
-                                                        : ''
-                                                }
-                                                onChange={(e) => {
-                                                    field.onChange(
-                                                        e.target.value,
-                                                    );
-                                                }}
-                                            ></TextField>
-                                        );
-                                    }}
-                                />
-
-                                {errors.password && (
-                                    <Typography
-                                        variant={'caption'}
-                                        color={'error'}
-                                    >
-                                        Note: Password must have one letter, one
-                                        capital, one number, one special
-                                        character, and be a minimum of 8
-                                        characters.
-                                    </Typography>
-                                )}
-                            </>
-                        )}
                         <Typography variant="subtitle1">
                             Model Limit Restrictions
                         </Typography>
@@ -631,23 +641,29 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                     />
                                 </Stack>
                             )}
-                            <Controller
-                                name="model_usage_frequency"
-                                control={control}
-                                rules={{}}
-                                render={({ field }) => {
-                                    return (
-                                        <Select
-                                            label="Frequency"
-                                            value={
-                                                field.value ? field.value : ''
-                                            }
-                                            onChange={(e) => {
-                                                field.onChange(e.target.value);
-                                            }}
-                                        >
-                                            {Object.entries(frequencyTypes).map(
-                                                (option, i) => {
+                            {limitType !== 'null' && (
+                                <Controller
+                                    name="model_usage_frequency"
+                                    control={control}
+                                    rules={{}}
+                                    render={({ field }) => {
+                                        return (
+                                            <Select
+                                                label="Frequency"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                onChange={(e) => {
+                                                    field.onChange(
+                                                        e.target.value,
+                                                    );
+                                                }}
+                                            >
+                                                {Object.entries(
+                                                    frequencyTypes,
+                                                ).map((option, i) => {
                                                     return (
                                                         <Select.Item
                                                             value={option[0]}
@@ -656,12 +672,12 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                                             {option[1]}
                                                         </Select.Item>
                                                     );
-                                                },
-                                            )}
-                                        </Select>
-                                    );
-                                }}
-                            />
+                                                })}
+                                            </Select>
+                                        );
+                                    }}
+                                />
+                            )}
                         </Stack>
 
                         <StyledPermissions variant="subtitle1">
