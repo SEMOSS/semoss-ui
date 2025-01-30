@@ -2650,6 +2650,10 @@ export class MonolithStore {
                     phoneextension?: string;
                     countrycode?: string;
                     username?: string;
+                    usage_restriction?: string;
+                    usage_frequency?: string;
+                    max_tokens?: number;
+                    max_response_time?: number;
                 }[]
             >(url, {
                 params: {
@@ -2684,6 +2688,8 @@ export class MonolithStore {
             url += 'admin/';
         }
         url += 'user/editUser';
+
+        console.log(user);
 
         postData += 'user=' + encodeURIComponent(JSON.stringify(user));
 
@@ -2762,6 +2768,24 @@ export class MonolithStore {
         }
         if (user.password) {
             newUserInfo += '&password=' + encodeURIComponent(user.password);
+        }
+
+        if (user.usage_restriction) {
+            newUserInfo +=
+                '&usage_restriction=' +
+                encodeURIComponent(user.usage_restriction);
+        }
+        if (user.usage_frequency) {
+            newUserInfo +=
+                '&usage_frequency=' + encodeURIComponent(user.usage_frequency);
+        }
+        if (user.max_tokens) {
+            newUserInfo += '&max_tokens=' + encodeURIComponent(user.max_tokens);
+        }
+        if (user.max_response_time) {
+            newUserInfo +=
+                '&max_response_time=' +
+                encodeURIComponent(user.max_response_time);
         }
 
         const response = await axios.post<boolean>(url, newUserInfo, {
