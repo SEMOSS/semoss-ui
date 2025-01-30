@@ -10,6 +10,7 @@ import del from "rollup-plugin-delete";
 import { defineConfig } from "rollup";
 import { terser } from "rollup-plugin-terser";
 import json from "@rollup/plugin-json";
+import babel from "@rollup/plugin-babel";
 
 import packageJson from "./package.json";
 
@@ -47,6 +48,27 @@ export default defineConfig({
         }),
         postcss(),
         bundleSize(),
+        babel({
+            presets: [
+                [
+                    "@nx/react/babel",
+                    {
+                        runtime: "automatic",
+                        useBuiltIns: "usage",
+                    },
+                ],
+                [
+                    "@babel/preset-env",
+                    {
+                        targets: {
+                            chrome: 100,
+                        },
+                    },
+                ],
+                ["@babel/preset-react", { runtime: "automatic" }],
+                "@babel/preset-typescript",
+            ],
+        }),
     ],
     external: [
         "react",

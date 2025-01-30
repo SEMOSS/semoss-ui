@@ -1,7 +1,7 @@
 import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
-import { LoadingScreen } from "@semoss/ui";
+import { LoadingScreen, Button } from "@semoss/ui";
 
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent } from "../../../store";
