@@ -149,11 +149,11 @@ export const TeamsSettingsPage = () => {
                 TEAM_NAME: '',
                 TEAM_DESCRIPTION: '',
                 TEAM_TYPE: '',
-                CUSTOM_GROUP: false,
+                //CUSTOM_GROUP: false,
             },
         });
 
-    const watchCustom = watch('CUSTOM_GROUP');
+    //const watchCustom = watch('CUSTOM_GROUP');
     const watchType = watch('TEAM_TYPE');
     const values = getValues();
 
@@ -164,14 +164,14 @@ export const TeamsSettingsPage = () => {
     const getTeams = useAPI(['getTeams', true]);
 
     // clear value if customGroup is true
-    useEffect(() => {
-        if (watchCustom) {
-            reset({
-                ...values,
-                TEAM_TYPE: '',
-            });
-        }
-    }, [watchCustom]);
+    // useEffect(() => {
+    //     if (watchCustom) {
+    //         reset({
+    //             ...values,
+    //             TEAM_TYPE: '',
+    //         });
+    //     }
+    // }, [watchCustom]);
 
     //** reset dataMode if adminMode is toggled */
     useEffect(() => {
@@ -411,7 +411,6 @@ export const TeamsSettingsPage = () => {
                                                         )
                                                     }
                                                     fullWidth={true}
-                                                    disabled={watchCustom}
                                                 >
                                                     {loginTypes &&
                                                         [
