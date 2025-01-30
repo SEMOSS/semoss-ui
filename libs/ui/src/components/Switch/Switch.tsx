@@ -1,7 +1,10 @@
 import { ReactNode } from "react";
 import { Switch as MuiSwitch, SxProps, styled } from "@mui/material";
 
-const StyledSwitch = styled(MuiSwitch)(({ theme }) => ({
+const StyledSwitch = styled(MuiSwitch)(({ theme, size }) => ({
+    width: size === "small" ? "42px" : "52px",
+    height: size === "small" ? "24px" : "32px",
+    padding: size === "small" ? "7px" : "0px",
     "& .MuiSwitch-switchBase": {
         padding: 0,
         margin: "4px",
@@ -29,6 +32,8 @@ const StyledSwitch = styled(MuiSwitch)(({ theme }) => ({
 
     "& .MuiSwitch-thumb": {
         boxSizing: "border-box",
+        width: size === "medium" ? "24px" : "16px",
+        height: size === "medium" ? "24px" : "16px",
         color: theme.palette.background.paper,
     },
 
@@ -112,6 +117,6 @@ export interface SwitchProps {
 }
 
 export const Switch = (props: SwitchProps) => {
-    const { sx, size } = props;
+    const { sx, size = "medium" } = props;
     return <StyledSwitch sx={sx} size={size} {...props} />;
 };

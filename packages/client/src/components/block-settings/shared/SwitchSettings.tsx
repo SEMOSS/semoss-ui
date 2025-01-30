@@ -138,7 +138,12 @@ export const SwitchSettings = observer(
                             </Tooltip>
                         )}
                     </Stack>
-                    <Stack direction="row" justifyContent="end">
+                    <Stack
+                        direction="row"
+                        justifyContent="end"
+                        height="16px"
+                        alignItems="center"
+                    >
                         <Switch
                             checked={value}
                             onChange={() => {
