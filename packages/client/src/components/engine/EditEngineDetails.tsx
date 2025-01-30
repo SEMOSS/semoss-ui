@@ -285,7 +285,7 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
                                         value={model.app_id}
                                         key={model.app_id + '_modId'}
                                     >
-                                        <>{model.app_name}</>
+                                        {model.app_name as string}
                                     </Select.Item>
                                 );
                             })}
@@ -429,7 +429,13 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
                                             >
                                                 freeSolo={true}
                                                 multiple={true}
-                                                label={label}
+                                                renderInput={(params) => (
+                                                    <TextField
+                                                        {...params}
+                                                        label={label}
+                                                        helperText="Press enter to add tag"
+                                                    />
+                                                )}
                                                 options={
                                                     filterOptions[metakey]
                                                         ? filterOptions[metakey]
