@@ -61,10 +61,10 @@ interface User {
     phone?: string;
     phoneextension?: string;
     username?: string;
-    usage_restriction?: string;
-    usage_frequency?: string;
-    max_tokens?: number;
-    max_response_time?: number;
+    model_usage_restriction?: string;
+    model_usage_frequency?: string;
+    model_max_tokens?: number;
+    model_max_response_time?: number;
     unit?: string;
 }
 
@@ -84,10 +84,10 @@ interface EditUserForm {
     exporter: boolean;
     publisher: boolean;
     type: string;
-    usage_restriction?: string;
-    usage_frequency?: string;
-    max_tokens?: number;
-    max_response_time?: number;
+    model_usage_restriction?: string;
+    model_usage_frequency?: string;
+    model_max_tokens?: number;
+    model_max_response_time?: number;
     unit?: string;
 }
 
@@ -180,10 +180,10 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
             exporter: user?.exporter,
             publisher: user?.exporter,
             type: user?.type,
-            usage_restriction: user?.usage_restriction,
-            usage_frequency: user?.usage_frequency,
-            max_tokens: user?.max_tokens,
-            max_response_time: user?.max_response_time,
+            model_usage_restriction: user?.model_usage_restriction,
+            model_usage_frequency: user?.model_usage_frequency,
+            model_max_tokens: user?.model_max_tokens,
+            model_max_response_time: user?.model_max_response_time,
         },
     });
 
@@ -195,7 +195,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
     }, [user, open]);
 
     const type = watch('type', '');
-    const limitType = watch('usage_restriction', '');
+    const limitType = watch('model_usage_restriction', '');
     const email = watch('email');
 
     // TODO: Standardize
@@ -521,7 +521,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                         </Typography>
                         <Stack direction={'column'} gap={1}>
                             <Controller
-                                name="usage_restriction"
+                                name="model_usage_restriction"
                                 control={control}
                                 rules={{ required: true }}
                                 render={({ field }) => {
@@ -553,7 +553,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                             />
                             {limitType === 'token' && (
                                 <Controller
-                                    name="max_tokens"
+                                    name="model_max_tokens"
                                     control={control}
                                     rules={{ required: true }}
                                     render={({ field }) => {
@@ -578,7 +578,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                             {limitType === 'compute' && (
                                 <Stack direction={'row'} gap={1}>
                                     <Controller
-                                        name="max_response_time"
+                                        name="model_max_response_time"
                                         control={control}
                                         rules={{ required: true }}
                                         render={({ field }) => {
@@ -632,7 +632,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                 </Stack>
                             )}
                             <Controller
-                                name="usage_frequency"
+                                name="model_usage_frequency"
                                 control={control}
                                 rules={{}}
                                 render={({ field }) => {

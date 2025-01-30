@@ -677,21 +677,21 @@ export const UserTable = (props: UserTableProps) => {
                                                         </Table.Cell>
                                                         <Table.Cell>
                                                             {formatModelLimitValue(
-                                                                user?.usage_restriction,
+                                                                user?.model_usage_restriction,
                                                             )}
                                                         </Table.Cell>
                                                         <Table.Cell>
                                                             {user?.usage_restriction ===
                                                                 'compute' &&
-                                                                `${user?.max_response_time?.toLocaleString()} ms`}
+                                                                `${user?.model_max_response_time?.toLocaleString()} ms`}
 
                                                             {user?.usage_restriction ===
                                                                 'token' &&
-                                                                `${user?.max_tokens?.toLocaleString()}`}
+                                                                `${user?.model_max_tokens?.toLocaleString()}`}
                                                         </Table.Cell>
                                                         <Table.Cell>
                                                             {formatModelLimitValue(
-                                                                user?.usage_frequency,
+                                                                user?.model_usage_frequency,
                                                             )}
                                                         </Table.Cell>
                                                         <Table.Cell>

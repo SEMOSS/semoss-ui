@@ -2772,20 +2772,23 @@ export class MonolithStore {
 
         if (user.usage_restriction) {
             newUserInfo +=
-                '&usage_restriction=' +
-                encodeURIComponent(user.usage_restriction);
+                '&model_usage_restriction=' +
+                encodeURIComponent(user.model_usage_restriction);
         }
         if (user.usage_frequency) {
             newUserInfo +=
-                '&usage_frequency=' + encodeURIComponent(user.usage_frequency);
+                '&model_usage_frequency=' +
+                encodeURIComponent(user.model_usage_frequency);
         }
         if (user.max_tokens) {
-            newUserInfo += '&max_tokens=' + encodeURIComponent(user.max_tokens);
+            newUserInfo +=
+                '&model_max_tokens=' +
+                encodeURIComponent(user.model_max_tokens);
         }
         if (user.max_response_time) {
             newUserInfo +=
-                '&max_response_time=' +
-                encodeURIComponent(user.max_response_time);
+                '&model_max_response_time=' +
+                encodeURIComponent(user.model_max_response_time);
         }
 
         const response = await axios.post<boolean>(url, newUserInfo, {
