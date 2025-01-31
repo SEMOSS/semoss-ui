@@ -433,7 +433,7 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
                                                     <TextField
                                                         {...params}
                                                         label={label}
-                                                        helperText="Press enter to add tag"
+                                                        helperText={`Press enter to add ${label.toLocaleLowerCase()}`}
                                                     />
                                                 )}
                                                 options={
