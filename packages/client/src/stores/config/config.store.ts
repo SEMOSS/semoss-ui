@@ -230,6 +230,7 @@ export class ConfigStore {
                             name: string;
                             email: string;
                             admin: boolean;
+                            userEpoch: string;
                         };
                     } & {
                         userEpoch: string;
@@ -256,10 +257,15 @@ export class ConfigStore {
                     admin: false,
                 };
 
-                // set the userEpoch
                 // TODO: Refactor and clean-up the userEpoc
-                this._store.userEpoch = output.userEpoch;
-                delete output.userEpoch;
+                if (output && Object.keys(output).length > 0) {
+                    const u = output[Object.keys(output)[0]];
+
+                    if (u.userEpoch) {
+                        this._store.userEpoch = u.userEpoch;
+                        delete u.userEpoch;
+                    }
+                }
 
                 // get the user based on provider
                 if (output['SAML']) {
