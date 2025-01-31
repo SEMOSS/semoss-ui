@@ -667,12 +667,16 @@ export const DataImportFormModal = observer(
                 let newTableNames = [];
 
                 if (isResponseTableStructureGood) {
-                    newTableNames = [
-                        ...responseTableStructure.reduce((set, ele) => {
-                            set.add(ele[0]);
-                            return set;
-                        }, new Set()),
-                    ];
+                    // Extract unique table names without using a Set
+                    newTableNames = responseTableStructure.reduce(
+                        (acc, ele) => {
+                            if (!acc.includes(ele[0])) {
+                                acc.push(ele[0]);
+                            }
+                            return acc;
+                        },
+                        [],
+                    );
 
                     const tableColumnsObject = responseTableStructure.reduce(
                         (acc, ele) => {

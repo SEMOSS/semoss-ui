@@ -10,14 +10,7 @@ import {
 } from "../../../store";
 import { runPixel } from "@semoss/sdk";
 
-// import { runPixel } from "@/api";
 // import { LoadingScreen } from "@/components/ui";
-// import {
-//     useBlocks,
-//     useLLM,
-//     useWorkspace
-// } from "@/hooks";
-
 import { useBlocks } from "../../../hooks";
 
 import { PythonIcon, RIcon } from "./icons";
