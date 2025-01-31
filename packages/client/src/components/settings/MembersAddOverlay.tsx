@@ -263,7 +263,8 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 return {
                     userid: m.id,
                     permission: quickUpdate ? quickUpdate : 'OWNER',
-                    usageRestriction: restriction,
+                    usageRestriction:
+                        restriction === 'null' ? null : restriction,
                     usageFrequency: frequency,
                     ...(restriction === 'token' && {
                         maxTokens: Number(maxTokens),
@@ -357,7 +358,8 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                         name: m.name,
                         type: m.type,
                         username: m.username,
-                        usageRestriction: restriction,
+                        usageRestriction:
+                            restriction === 'null' ? null : restriction,
                         usageFrequency: frequency,
                         ...(restriction === 'token' && {
                             maxTokens: Number(maxTokens),
