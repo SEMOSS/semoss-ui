@@ -316,10 +316,23 @@ export const MembersTable = (props: MembersTableProps) => {
         try {
             // construct requests for post data
             const requests = members.map((m) => {
-                return {
+                const json = {
                     userid: m.id,
                     permission: quickUpdate ? quickUpdate : 'OWNER',
                 };
+
+                // FOR MODELS
+                if (
+                    m.max_response_time ||
+                    m.usage_restriction ||
+                    m.usage_frequency
+                ) {
+                    // TODO: WE NEED CONSISTENCY, VERSUS HOW WE RECIEVE FROM BACKEND AND HOW WE SEND
+                    json['maxResponseTime'] = m.max_response_time;
+                    json['usageRestriction'] = m.usage_restriction;
+                    json['usageFrequency'] = m.usage_frequency;
+                }
+                return json;
             });
 
             if (requests.length === 0) {

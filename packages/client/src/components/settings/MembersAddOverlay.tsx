@@ -255,24 +255,44 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
      * @param quickUpdate
      * @returns
      */
-    const updateUser = async (members, quickUpdate) => {
+    const updateUser = async (members) => {
         let success = false;
         try {
             // construct requests for post data
             const requests = members.map((m) => {
-                return {
+                const json = {
                     userid: m.id,
-                    permission: quickUpdate ? quickUpdate : 'OWNER',
-                    usageRestriction:
-                        restriction === 'null' ? null : restriction,
-                    usageFrequency: frequency,
-                    ...(restriction === 'token' && {
-                        maxTokens: Number(maxTokens),
-                    }),
-                    ...(restriction === 'compute' && {
-                        maxResponseTime: Number(maxTime),
-                    }),
+                    permission: permissionMapper[selectedRole],
                 };
+
+                // FOR MODELS
+                if (restriction !== 'null') {
+                    json['usageRestriction'] = restriction;
+                }
+
+                if (frequency) {
+                    json['usageFrequency'] = frequency;
+                }
+
+                if (restriction === 'token') {
+                    json['maxTokens'] = Number(maxTokens);
+                }
+
+                if (restriction === 'compute') {
+                    json['maxResponseTime'] = Number(maxTime);
+                }
+
+                // usageRestriction:
+                //     restriction === 'null' ? null : restriction,
+                // usageFrequency: frequency,
+                // ...(restriction === 'token' && {
+                //     maxTokens: Number(maxTokens),
+                // }),
+                // ...(restriction === 'compute' && {
+                //     maxResponseTime: Number(maxTime),
+                // }),
+
+                return json;
             });
 
             if (requests.length === 0) {
@@ -849,7 +869,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                         color="primary"
                         disabled={!selectedRole}
                         onClick={() => {
-                            updateUser([user], user.permission);
+                            updateUser([user]);
                         }}
                     >
                         Update
