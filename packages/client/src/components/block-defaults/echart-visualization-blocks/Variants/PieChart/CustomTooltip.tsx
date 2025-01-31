@@ -2,7 +2,7 @@ import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { Paths, PathValue } from '@/types';
 import { getValueByPath } from '@/utility';
-import { Slider, styled, Switch, TextField, Typography } from '@semoss/ui';
+import { styled, Switch, Typography } from '@semoss/ui';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
@@ -23,7 +23,6 @@ const StyledAxisDiv = styled('div')<{
     flexDirection: 'row',
     padding: '0.5rem',
 }));
-
 const StyledTypography = styled(Typography)({
     paddingLeft: '10px',
 });
@@ -38,32 +37,30 @@ export const CustomTooltip = observer(
                 if (!data) {
                     return '';
                 }
-
                 const v = getValueByPath(data, path);
                 if (typeof v === 'undefined') {
                     return '';
                 } else if (typeof v === 'string') {
                     return v;
                 }
-
                 return JSON.stringify(v, null, 2);
             });
         }, [data, path]).get();
         useEffect(() => {
             setValue(computedValue);
         }, [computedValue, data]);
-
         useEffect(() => {
             if (data.hasOwnProperty('option')) {
-                reinitializeFeatures(data.option);
+                reInitializeFeatures(data.option);
             }
         }, [id]);
-
-        const reinitializeFeatures = (options) => {
+        //Reinitialize the feature when the chart is loaded
+        const reInitializeFeatures = (options) => {
             if (options.hasOwnProperty('tooltip')) {
                 setShowTooltip(options['tooltip']['show']);
             }
         };
+        //Handle the change event for the toggle switch
         const showTooltip = (e) => {
             let option = JSON.parse(value);
             setShowTooltip(!showTooltips);

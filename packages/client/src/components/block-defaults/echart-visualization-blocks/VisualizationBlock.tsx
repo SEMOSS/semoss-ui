@@ -4,7 +4,7 @@ import { useBlock } from '@/hooks';
 import { BlockComponent } from '@/stores';
 import { styled } from '@mui/material';
 import { Bar } from './Variants/bar-chart/Bar';
-import { Pie } from './Variants/PieChart/echartblocks';
+import { Pie } from './Variants/PieChart/Pie';
 
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',

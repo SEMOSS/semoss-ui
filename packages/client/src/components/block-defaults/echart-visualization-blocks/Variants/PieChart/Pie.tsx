@@ -3,9 +3,8 @@ import { useBlock, useFrame, useBlocks } from '@/hooks';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BlockComponent } from '@/stores';
 import { styled } from '@mui/material';
-import * as echarts from 'echarts';
 import ReactECharts from 'echarts-for-react';
-import { EchartVisualizationBlockDef } from '../../../echart-visualization-blocks';
+import { EchartVisualizationBlockDef } from '../..';
 import { CustomContextMenu } from './CustomContextMenu';
 import { PathValue } from '@/types';
 import { getValueByPath } from '@/utility';
@@ -26,8 +25,7 @@ const StyledNoDataContainer = styled('div', {
 }));
 
 export const Pie: BlockComponent = observer(({ id }) => {
-    const { data, attrs, setData } = useBlock<EchartVisualizationBlockDef>(id);
-    const { state } = useBlocks();
+    const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
         mouseY: number;
@@ -36,8 +34,46 @@ export const Pie: BlockComponent = observer(({ id }) => {
 
     // get the frame
     const frame = useFrame(data?.frame?.name, {
-        selector: state.getVisualizationBlockSelector(id),
+        selector: getVisualizationBlockSelector(id),
     });
+    function getVisualizationBlockSelector(id: string) {
+        if (id) {
+            //get the options JSON of the selected block
+            //let blockJSON = this._store.blocks[id].data.option;
+            let blockJSON = data.option;
+            //initialize the selector string
+            let selector = 'Select(';
+
+            //if there are no fields, return null
+            if (!blockJSON['_state']) return null;
+
+            //get the fields
+            let selectorFields = blockJSON['_state']['fields'];
+
+            //  get the value and tooltip properties
+            let dynamicYAndTooltipSet = [
+                ...new Set([
+                    ...selectorFields['Value'],
+                    ...selectorFields['tooltip'],
+                ]),
+            ];
+
+            // start forming the selector string
+            selector += `${selectorFields['Label'][0]}`;
+
+            // add dynamic y axis and tooltip fields to the selector string
+            let averageCollection = '';
+            for (let i = 0; i < dynamicYAndTooltipSet.length; i++) {
+                averageCollection += `, Average(${dynamicYAndTooltipSet[i]})`;
+                selector += `, Average(${dynamicYAndTooltipSet[i]})`;
+            }
+
+            selector += `).as([${selectorFields['Label'][0]}${averageCollection}])|Group(${selectorFields['Label'][0]})|Sort(${selectorFields['Label'][0]})`;
+            return selector;
+        }
+
+        return null;
+    }
     const [value, setValue] = useState<any>({});
     //Trying out different approach for TrendLine, work in progress
     const computedValue = useMemo(() => {
@@ -63,7 +99,6 @@ export const Pie: BlockComponent = observer(({ id }) => {
             if (processedFrameData) {
                 computedValue1['series'][0]['data'] = processedFrameData;
             }
-            setData('option', processedFrameData, true);
             setValue(processedFrameData);
         }
     }, [computedValue]);
@@ -81,17 +116,14 @@ export const Pie: BlockComponent = observer(({ id }) => {
                     header.replace('Average_', ''),
                 );
                 //format the data points to match the echart specification
-                //resultData['xAxis']['data'] = valuesDataSet.map((x) => x[0]);
                 resultData['series'][0]['data'] = valuesDataSet.map(
                     ([name, value]) => ({ name, value }),
                 );
-                console.log(resultData['series'], 'ResultData');
                 valuesDataSet.map((x) => x.shift());
                 headersDataSet.shift();
             } else {
                 delete resultData['tooltip']['formatter'];
             }
-            setData('option', resultData as PathValue<any, any>);
             return resultData;
         },
         [frame.data.values],
@@ -103,31 +135,11 @@ export const Pie: BlockComponent = observer(({ id }) => {
             timer = setTimeout(() => fn(...args), delay);
         };
     }
-    const handleSelection = debounce((value: any, name: any) => {
-        // update the frame
-        frame.filter(`SetFrameFilter(${name}==[${value}])`);
-    }, 2000);
-    const echartsLoaded = (chart) => {
-        chart.on('brushSelected', (params) => {
-            let selectedData = params.batch[0].selected[0].dataIndex;
-            const currentOption = chart.getOption();
-            let labelData = currentOption.series[0].data;
-            const filteredLabels = selectedData.map(
-                (index) => labelData[index].label.formatter,
-            );
-            if (filteredLabels.length > 0) {
-                handleSelection(
-                    filteredLabels,
-                    currentOption.series[0].label.name,
-                );
-            }
-        });
-    };
     const onClickChart = {
         contextmenu: (params) => {
             //  let currentOption = chart.getOption();
             if (params.data) {
-                let labelName = data.option['series'][0]['name'];
+                let labelName = data.option['_state']['fields']['Label'][0];
                 setContextMenu(
                     contextMenu === null
                         ? {
@@ -135,7 +147,7 @@ export const Pie: BlockComponent = observer(({ id }) => {
                               mouseY: params.event.event.clientY,
                               value: {
                                   label: labelName,
-                                  value: params.data.value,
+                                  value: params.data.name,
                               },
                           }
                         : // repeated contextmenu when it is already open closes it with Chrome 84 on Ubuntu
@@ -158,9 +170,6 @@ export const Pie: BlockComponent = observer(({ id }) => {
                 <StyledChartContainer {...attrs}>
                     <ReactECharts
                         option={lineOptions}
-                        onChartReady={(chart) => {
-                            echartsLoaded(chart);
-                        }}
                         onEvents={onClickChart}
                     />
                 </StyledChartContainer>
@@ -178,13 +187,7 @@ export const Pie: BlockComponent = observer(({ id }) => {
             : data.option;
         return (
             <StyledChartContainer {...attrs}>
-                <ReactECharts
-                    option={formatedOption}
-                    onChartReady={(chart) => {
-                        echartsLoaded(chart);
-                    }}
-                    onEvents={onClickChart}
-                />
+                <ReactECharts option={formatedOption} onEvents={onClickChart} />
                 <CustomContextMenu
                     id={id}
                     frame={frame}

@@ -28,6 +28,7 @@ import { ToogleDonut } from '../PieChart/ToggleDonut';
 import { PieTitle } from '../PieChart/PieTitle';
 import { PieValueLabel } from '../PieChart/PieValueLabel';
 import { SizeSettings } from '@/components/block-settings/shared';
+import { PieLegend } from '../PieChart/PieLegend';
 
 interface UpgradedVisualizationToolProps {
     id: string;
@@ -286,29 +287,27 @@ export const UpgradedVisualizationTool =
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
-                        {data.variation === 'echart-bar-graph' && (
-                            <ListItemButton
-                                onClick={(e) =>
-                                    setSelectedList((prevList) =>
-                                        prevList === 'sizing' ? '' : 'sizing',
-                                    )
-                                }
-                                selected={selectedList === 'sizing'}
-                            >
-                                <ListItemIcon>
-                                    <ImageIcon
-                                        fontSize="large"
-                                        color={
-                                            selectedList === 'sizing'
-                                                ? 'primary'
-                                                : 'disabled'
-                                        }
-                                    />
-                                </ListItemIcon>
-                                <ListItemText primary="Sizing" />
-                                <InfoOutlined />
-                            </ListItemButton>
-                        )}
+                        <ListItemButton
+                            onClick={(e) =>
+                                setSelectedList((prevList) =>
+                                    prevList === 'sizing' ? '' : 'sizing',
+                                )
+                            }
+                            selected={selectedList === 'sizing'}
+                        >
+                            <ListItemIcon>
+                                <ImageIcon
+                                    fontSize="large"
+                                    color={
+                                        selectedList === 'sizing'
+                                            ? 'primary'
+                                            : 'disabled'
+                                    }
+                                />
+                            </ListItemIcon>
+                            <ListItemText primary="Sizing" />
+                            <InfoOutlined />
+                        </ListItemButton>
                         {selectedList === 'sizing' && (
                             // <BarChartProperties
                             //     id={id}
@@ -356,6 +355,34 @@ export const UpgradedVisualizationTool =
                         )}
                         {selectedList === 'tooltip' && (
                             <CustomTooltip id={id} path={'option'} />
+                        )}
+                    </StyledListItem>
+                    <StyledListItem disablePadding>
+                        {data.variation === 'echart-pie-chart' && (
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === 'legend' ? '' : 'legend',
+                                    )
+                                }
+                                selected={selectedList === 'legend'}
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList === 'legend'
+                                                ? 'primary'
+                                                : 'disabled'
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary="Legend" />
+                                <InfoOutlined />
+                            </ListItemButton>
+                        )}
+                        {selectedList === 'legend' && (
+                            <PieLegend id={id} path={'option'} />
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>

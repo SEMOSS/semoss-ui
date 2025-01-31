@@ -80,7 +80,6 @@ export const FrameOperationsPie = observer(
         }, [computedValue]);
 
         useEffect(() => {
-            console.log('frame change', data);
             // if (data) {
             const json: PathValue<D['data'], typeof path> =
                 JSON.parse(computedValue);
@@ -148,7 +147,6 @@ export const FrameOperationsPie = observer(
         };
 
         const handleRemoveLines = (removedChips, segment) => {
-            console.log(removedChips);
             let tempValue = JSON.parse(value);
             if (segment === 'Label') {
                 setLabel([]);
@@ -185,9 +183,6 @@ export const FrameOperationsPie = observer(
                 ...tempValue['_state']['fields'],
                 [segment]: [segment].filter((x) => x != removedChips),
             };
-
-            // console.log("TEST temp >> ", tempValue);
-
             // set the value
             setValue(JSON.stringify(tempValue));
             dispatchData(tempValue);

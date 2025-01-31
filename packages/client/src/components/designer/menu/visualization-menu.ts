@@ -49,7 +49,10 @@ import {
 } from '@/components/block-defaults/mermaid-block';
 
 import { DesignerMenuItem } from './menu.types';
-import { BAR_CHART_DATA } from '@/components/block-defaults/echart-visualization-blocks/Visualization.constants';
+import {
+    BAR_CHART_DATA,
+    PIE_CHART_DATA,
+} from '@/components/block-defaults/echart-visualization-blocks/Visualization.constants';
 
 const SECTION_GENERAL_VISUALIZATION = 'General';
 const SECTION_MERMAID = 'Mermaid';
@@ -87,6 +90,15 @@ export const VISUALIZATION_MENU_INITIAL: DesignerMenuItem[] = [
             widget: 'e-chart',
             data: {
                 variation: 'echart-pie-chart',
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '4px',
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                    width: PIE_CHART_DATA.WEIGHT + 'px',
+                    height: PIE_CHART_DATA.HEIGHT + 'px',
+                },
                 option: {
                     dataset: {
                         source: [
@@ -125,9 +137,8 @@ export const VISUALIZATION_MENU_INITIAL: DesignerMenuItem[] = [
                         left: 'left',
                         top: 'top',
                         textStyle: {
-                            fontSize: 20,
-                            color: '',
-                            backgroundColor: '',
+                            fontSize: 10,
+                            color: '#000000',
                         },
                     },
                     series: [

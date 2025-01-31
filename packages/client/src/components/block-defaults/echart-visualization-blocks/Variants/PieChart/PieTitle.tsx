@@ -3,7 +3,6 @@ import { Block, BlockDef } from '@/stores';
 import { Paths, PathValue } from '@/types';
 import { getValueByPath } from '@/utility';
 import {
-    Slider,
     styled,
     Switch,
     TextField,
@@ -14,6 +13,11 @@ import {
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
+import {
+    FontFamily,
+    FontWeights,
+    Title_Alignment,
+} from '../../Visualization.constants';
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
@@ -46,9 +50,6 @@ const StyledAxisColDiv = styled('div')<{
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: '100%',
 }));
-const StyledTypography = styled(Typography)({
-    paddingLeft: '10px',
-});
 const StyledSelect = styled(Select)(() => ({
     width: '100%',
 }));
@@ -64,61 +65,26 @@ export const PieTitle = observer(
             weight: 'normal',
             family: '',
         });
-        const Alignment = ['left', 'right', 'center'];
-        const fontWeights = [
-            'bold',
-            'normal',
-            '100',
-            '200',
-            '300',
-            '400',
-            '500',
-            '600',
-            '700',
-            '800',
-            '900',
-        ];
-        const fontFamily = [
-            'Arail',
-            'Arail Black',
-            'Arail Narrow',
-            'Calibri',
-            'Century Gothic',
-            'Comic Sans MS',
-            'Courier New',
-            'Garamond',
-            'Georgia',
-            'Helvetica',
-            'Inter',
-            'Open Sans',
-            'Sans-Serif',
-            'Segoe UI',
-            'Times New Roman',
-            'Verdana',
-        ];
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
                     return '';
                 }
-
                 const v = getValueByPath(data, path);
                 if (typeof v === 'undefined') {
                     return '';
                 } else if (typeof v === 'string') {
                     return v;
                 }
-
                 return JSON.stringify(v, null, 2);
             });
         }, [data, path]).get();
         useEffect(() => {
             setValue(computedValue);
         }, [computedValue, data]);
-
         useEffect(() => {
             if (data.hasOwnProperty('option')) {
-                reinitializeFeatures(data.option);
+                reInitializeFeatures(data.option);
             }
         }, [id]);
         useEffect(() => {
@@ -126,6 +92,8 @@ export const PieTitle = observer(
                 retainLocalState(data.option);
             }
         }, [showTitle]);
+        //Retain the local state of the feature on toggle switch and on reset button
+        //With the local state we will be displaying the values in the fields
         const retainLocalState = (options) => {
             setTitle((prev) => ({
                 ...prev,
@@ -136,10 +104,12 @@ export const PieTitle = observer(
                 family: options['title']['textStyle']['fontFamily'],
             }));
         };
-        const reinitializeFeatures = (options) => {
+        //Reinitialize the feature when the chart is loaded
+        const reInitializeFeatures = (options) => {
             setShowTitle(options['title'].show ?? true);
         };
-        function handleInputChange(e, title, inputValue) {
+        //Handle the change event for any Title input
+        function handleInputChange(title, inputValue) {
             let option = JSON.parse(value);
             if (title === 'showTitle') {
                 option['title'].show = inputValue;
@@ -177,6 +147,8 @@ export const PieTitle = observer(
             }
             setData(path, option as PathValue<D['data'], typeof path>);
         }
+        //Reset the feature to the default values
+        //The default values are set in the reset object in the option
         function handleReset() {
             let option = JSON.parse(value);
             option['title'].show = option['reset']['title']['show'];
@@ -197,7 +169,7 @@ export const PieTitle = observer(
                     <Switch
                         checked={showTitle}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            handleInputChange(e, 'showTitle', e.target.checked)
+                            handleInputChange('showTitle', e.target.checked)
                         }
                         title="Show Title"
                     />
@@ -214,11 +186,7 @@ export const PieTitle = observer(
                             name="name"
                             value={title?.name}
                             onChange={(e) =>
-                                handleInputChange(
-                                    e,
-                                    'titleName',
-                                    e.target.value,
-                                )
+                                handleInputChange('titleName', e.target.value)
                             }
                         />
                     </StyledAxisColDiv>
@@ -237,7 +205,6 @@ export const PieTitle = observer(
                             value={title?.alignment}
                             onChange={(e) =>
                                 handleInputChange(
-                                    e,
                                     'titleAlignment',
                                     e.target.value,
                                 )
@@ -246,7 +213,7 @@ export const PieTitle = observer(
                             <Select.Item key="-1" value="">
                                 Select
                             </Select.Item>
-                            {Alignment.map((label, index) => {
+                            {Title_Alignment.map((label, index) => {
                                 return (
                                     <Select.Item value={label} key={index}>
                                         {label}
@@ -267,11 +234,7 @@ export const PieTitle = observer(
                             name="size"
                             value={title?.size}
                             onChange={(e) =>
-                                handleInputChange(
-                                    e,
-                                    'titleSize',
-                                    e.target.value,
-                                )
+                                handleInputChange('titleSize', e.target.value)
                             }
                         />
                     </StyledAxisColDiv>
@@ -289,17 +252,13 @@ export const PieTitle = observer(
                             name="fontWeight"
                             value={title?.weight}
                             onChange={(e) =>
-                                handleInputChange(
-                                    e,
-                                    'titleWeight',
-                                    e.target.value,
-                                )
+                                handleInputChange('titleWeight', e.target.value)
                             }
                         >
                             <Select.Item key="-1" value="">
                                 Select
                             </Select.Item>
-                            {fontWeights.map((label, index) => {
+                            {FontWeights.map((label, index) => {
                                 return (
                                     <Select.Item value={label} key={index}>
                                         {label}
@@ -322,17 +281,13 @@ export const PieTitle = observer(
                             name="fontFamily"
                             value={title?.family}
                             onChange={(e) =>
-                                handleInputChange(
-                                    e,
-                                    'titleFamily',
-                                    e.target.value,
-                                )
+                                handleInputChange('titleFamily', e.target.value)
                             }
                         >
                             <Select.Item key="-1" value="">
                                 Select
                             </Select.Item>
-                            {fontFamily.map((label, index) => {
+                            {FontFamily.map((label, index) => {
                                 return (
                                     <Select.Item value={label} key={index}>
                                         {label}

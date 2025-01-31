@@ -14,6 +14,7 @@ import {
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { FontFamily, Pie_Alignment } from '../../Visualization.constants';
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
@@ -55,9 +56,6 @@ const StyledAxisSpan = styled('span')<{
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: '100%',
 }));
-const StyledTypography = styled(Typography)({
-    paddingLeft: '10px',
-});
 const StyledSelect = styled(Select)(() => ({
     width: '100%',
 }));
@@ -75,61 +73,27 @@ export const PieValueLabel = observer(
             rotateLabelMinValue: 0,
             rotateLabelMaxValue: 360,
         });
-        const Alignment = ['inside', 'outside'];
-        const fontWeights = [
-            'bold',
-            'normal',
-            '100',
-            '200',
-            '300',
-            '400',
-            '500',
-            '600',
-            '700',
-            '800',
-            '900',
-        ];
-        const fontFamily = [
-            'Arail',
-            'Arail Black',
-            'Arail Narrow',
-            'Calibri',
-            'Century Gothic',
-            'Comic Sans MS',
-            'Courier New',
-            'Garamond',
-            'Georgia',
-            'Helvetica',
-            'Inter',
-            'Open Sans',
-            'Sans-Serif',
-            'Segoe UI',
-            'Times New Roman',
-            'Verdana',
-        ];
+
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
                     return '';
                 }
-
                 const v = getValueByPath(data, path);
                 if (typeof v === 'undefined') {
                     return '';
                 } else if (typeof v === 'string') {
                     return v;
                 }
-
                 return JSON.stringify(v, null, 2);
             });
         }, [data, path]).get();
         useEffect(() => {
             setValue(computedValue);
         }, [computedValue, data]);
-
         useEffect(() => {
             if (data.hasOwnProperty('option')) {
-                reinitializeFeatures(data.option);
+                reInitializeFeatures(data.option);
             }
         }, [id]);
         useEffect(() => {
@@ -137,6 +101,8 @@ export const PieValueLabel = observer(
                 retainLocalState(data.option);
             }
         }, [showValueLabel]);
+        //Retain the local state of the feature on toggle switch and on reset button
+        //With the local state we will be displaying the values in the fields
         const retainLocalState = (options) => {
             setvalueLabel((prev) => ({
                 ...prev,
@@ -147,10 +113,12 @@ export const PieValueLabel = observer(
                 rotate: options['series'][0]['label']['rotate'],
             }));
         };
-        const reinitializeFeatures = (options) => {
+        //Reinitialize the feature when the chart is loaded
+        const reInitializeFeatures = (options) => {
             setShowValueLabel(options['series'][0]['label'].show ?? true);
         };
-        function handleInputChange(e, title, inputValue) {
+        //Handle the change event for any Value Label input
+        function handleInputChange(title, inputValue) {
             let option = JSON.parse(value);
             if (title === 'showValueLabel') {
                 option['series'][0]['label'].show = inputValue;
@@ -188,6 +156,8 @@ export const PieValueLabel = observer(
             }
             setData(path, option as PathValue<D['data'], typeof path>);
         }
+        //Retain the local state of the feature on reset button
+        //The default values are set in the reset object in the option
         function handleReset() {
             let option = JSON.parse(value);
             option['series'][0]['label'].show =
@@ -212,7 +182,6 @@ export const PieValueLabel = observer(
                         checked={showValueLabel}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                             handleInputChange(
-                                e,
                                 'showValueLabel',
                                 e.target.checked,
                             )
@@ -235,7 +204,6 @@ export const PieValueLabel = observer(
                             value={valueLabel?.position}
                             onChange={(e) =>
                                 handleInputChange(
-                                    e,
                                     'labelPosition',
                                     e.target.value,
                                 )
@@ -244,7 +212,7 @@ export const PieValueLabel = observer(
                             <Select.Item key="-1" value="">
                                 Select
                             </Select.Item>
-                            {Alignment.map((label, index) => {
+                            {Pie_Alignment.map((label, index) => {
                                 return (
                                     <Select.Item value={label} key={index}>
                                         {label}
@@ -254,7 +222,6 @@ export const PieValueLabel = observer(
                         </StyledSelect>
                     </StyledAxisColDiv>
                 )}
-                {/* Rotate slider needs to be added labelPostion*/}
                 {showValueLabel && (
                     <StyledAxisColDiv
                         display="flex"
@@ -270,11 +237,7 @@ export const PieValueLabel = observer(
                             max={valueLabel.rotateLabelMaxValue}
                             valueLabelDisplay="on"
                             onChange={(event, newValue) =>
-                                handleInputChange(
-                                    event,
-                                    'labelRotate',
-                                    newValue,
-                                )
+                                handleInputChange('labelRotate', newValue)
                             }
                         />
                         <StyledAxisSpan
@@ -298,11 +261,7 @@ export const PieValueLabel = observer(
                             name="size"
                             value={valueLabel?.size}
                             onChange={(e) =>
-                                handleInputChange(
-                                    e,
-                                    'labelSize',
-                                    e.target.value,
-                                )
+                                handleInputChange('labelSize', e.target.value)
                             }
                         />
                     </StyledAxisColDiv>
@@ -320,11 +279,7 @@ export const PieValueLabel = observer(
                             name="length"
                             value={valueLabel?.lineLength}
                             onChange={(e) =>
-                                handleInputChange(
-                                    e,
-                                    'labelLength',
-                                    e.target.value,
-                                )
+                                handleInputChange('labelLength', e.target.value)
                             }
                         />
                     </StyledAxisColDiv>
@@ -342,17 +297,13 @@ export const PieValueLabel = observer(
                             name="fontFamily"
                             value={valueLabel?.family}
                             onChange={(e) =>
-                                handleInputChange(
-                                    e,
-                                    'labelFamily',
-                                    e.target.value,
-                                )
+                                handleInputChange('labelFamily', e.target.value)
                             }
                         >
                             <Select.Item key="-1" value="">
                                 Select
                             </Select.Item>
-                            {fontFamily.map((label, index) => {
+                            {FontFamily.map((label, index) => {
                                 return (
                                     <Select.Item value={label} key={index}>
                                         {label}
