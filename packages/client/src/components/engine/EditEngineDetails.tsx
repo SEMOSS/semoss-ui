@@ -360,6 +360,7 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
                                 </StyledEditorContainer>
                             );
                         } else if (display_options === 'textarea') {
+                            const isDescription = metakey === 'description';
                             return (
                                 <Controller
                                     key={metakey}
@@ -380,6 +381,16 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
                                                     field.onChange(
                                                         e.target.value,
                                                     )
+                                                }
+                                                InputLabelProps={
+                                                    isDescription
+                                                        ? { shrink: true }
+                                                        : undefined
+                                                }
+                                                placeholder={
+                                                    isDescription
+                                                        ? 'TBD'
+                                                        : undefined
                                                 }
                                             />
                                         );
@@ -433,7 +444,7 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
                                                     <TextField
                                                         {...params}
                                                         label={label}
-                                                        helperText={`Press enter to add ${label.toLocaleLowerCase()}`}
+                                                        helperText={`Press enter to add ${metakey}`}
                                                     />
                                                 )}
                                                 options={
