@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import CustomAccordianBlock from './CustomAccordianBlock';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { BAR_CHART_DATA, LINE_CHART_DATA } from '../../Visualization.constants';
-import { useBlockSettings } from '@/hooks';
+import { useBlock, useBlocks, useBlockSettings } from '@/hooks';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
 import { PathValue } from '@/types';

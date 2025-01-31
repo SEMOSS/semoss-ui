@@ -35,7 +35,7 @@ interface EChartVisualizationColumns {
 export const VisualizationStyles = observer<EChartVisualizationColumns>(
     ({ updateChart, chartType, option, id }) => {
         const [styleData, setStyleData] = useState({
-            barwidth: 45,
+            barwidth: 10,
             minBarWidth: 1,
             maxBarWidth: 45,
             barColour: '#5470c6',
@@ -52,6 +52,9 @@ export const VisualizationStyles = observer<EChartVisualizationColumns>(
             { label: 'Diamond', value: 'diamond' },
             { label: 'Pin', value: 'pin' },
         ];
+        const [stylesUpdated, setStylesUpdated] = useState<
+            'initial' | 'updated'
+        >('initial');
         // get the value of the input (wrapped in usememo because of path prop)
         const computedValue = useMemo(() => {
             return computed(() => {
@@ -93,7 +96,7 @@ export const VisualizationStyles = observer<EChartVisualizationColumns>(
                             ['barwidth']:
                                 option['series'][barChartDataIndex][
                                     'barWidth'
-                                ] ?? 45,
+                                ] ?? 10,
                         };
                     }
                     if (
@@ -122,6 +125,12 @@ export const VisualizationStyles = observer<EChartVisualizationColumns>(
             }
         }, []);
 
+        useEffect(() => {
+            if (stylesUpdated === 'updated') {
+                updateChartData(styleData);
+            }
+        }, [styleData]);
+
         function getFilteredSeriesIndex() {
             let index = [];
             let seriesAvailable: any[] = data.option['series'].filter((item) =>
@@ -135,6 +144,7 @@ export const VisualizationStyles = observer<EChartVisualizationColumns>(
 
         //handles bar width changes and updates the value to state
         function handleInputChange(event, newValue) {
+            if (stylesUpdated === 'initial') setStylesUpdated('updated');
             setStyleData((prevStyleData) => {
                 return {
                     ...prevStyleData,
@@ -227,27 +237,11 @@ export const VisualizationStyles = observer<EChartVisualizationColumns>(
                         onChange={(e) => handleBarColourChange(e)}
                     />
                 </StyledBarStylesContainer>
-                <StyledBarStylesContainer
-                    display="flex"
-                    justifyContent="center"
-                >
-                    <Button onClick={(e) => updateChartData(styleData)}>
-                        Execute
-                    </Button>
-                </StyledBarStylesContainer>
             </StyledBarStylesContainer>
         );
         return (
-            <StyledBarStylesContainer>
-                <StyledBarStylesContainer width="100%">
-                    {/* <CustomAccordianBlock
-                    accordianExpanded={false}
-                    accordianSummaryProps={<ExpandMoreIcon />}
-                    accordianSummary={'Bar Chart Style'}
-                    accordianDetails={accordionDetails}
-                /> */}
-                    {accordionDetails}
-                </StyledBarStylesContainer>
+            <StyledBarStylesContainer width="100%">
+                {accordionDetails}
             </StyledBarStylesContainer>
         );
     },

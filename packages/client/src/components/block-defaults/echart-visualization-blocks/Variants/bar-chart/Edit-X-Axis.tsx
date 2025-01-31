@@ -47,32 +47,35 @@ const StyledAxisSpan = styled('span')<{
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: '100%',
 }));
+const INITIAL_XAXIS_STATE = {
+    showAxis: true,
+    xaxistitle: '',
+    xaxisTitleFontSize: 18,
+    centerAlignText: false,
+    titleGapValue: 15,
+    titleGapMinValue: 1,
+    titleGapMaxValue: 100,
+    showXAxisLine: true,
+    showXAxisLineTicks: false,
+    showXAxisValues: true,
+    showXAxisLabels: true,
+    showXAxisAllLabels: false,
+    showAllLabels: false,
+    labelFontSize: 12,
+    rotate: 0,
+    rotateLabelMinValue: 0,
+    rotateLabelMaxValue: 360,
+    format: '',
+    numberDelimiter: '',
+    showxAxisZoom: false,
+};
 //Changing the X axis styling like title, rotate and changing the labels
 export const EditXAxis = ({ updateChart, chartType, option, id }) => {
     const { data, setData } = useBlockSettings<any>(id);
-    const [xaxisState, setXaxisState] = useState({
-        showAxis: true,
-        xaxistitle: '',
-        xaxisTitleFontSize: 18,
-        centerAlignText: false,
-        titleGapValue: 15,
-        titleGapMinValue: 1,
-        titleGapMaxValue: 100,
-        showXAxisLine: true,
-        showXAxisLineTicks: false,
-        showXAxisValues: true,
-        showXAxisLabels: true,
-        showXAxisAllLabels: false,
-        showAllLabels: false,
-        labelFontSize: 12,
-        rotate: 0,
-        rotateLabelMinValue: 0,
-        rotateLabelMaxValue: 360,
-        // prependLabelValue: '',
-        // appendLabelValue: '',
-        format: '',
-        numberDelimiter: '',
-    });
+    const [xaxisState, setXaxisState] = useState(INITIAL_XAXIS_STATE);
+    const [xAxisDataUpdated, setXAxisDataUpdated] = useState<
+        'initial' | 'updated'
+    >('initial');
     const [value, setValue] = useState(data.option);
     const path = 'option';
     // get the value of the input (wrapped in usememo because of path prop)
@@ -113,10 +116,9 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
             rotate: 0,
             rotateLabelMinValue: 0,
             rotateLabelMaxValue: 360,
-            // prependLabelValue: '',
-            // appendLabelValue: '',
             format: '',
             numberDelimiter: '',
+            showxAxisZoom: false,
         };
         if (option.hasOwnProperty(axis) && option[axis]) {
             xAxisStateData.xaxistitle = option[axis].hasOwnProperty('name')
@@ -169,16 +171,6 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
                 ].hasOwnProperty('rotate')
                     ? option[axis]['axisLabel']['rotate']
                     : 0;
-                /*xAxisStateData.prependLabelValue = option[axis][
-                    'axisLabel'
-                ].hasOwnProperty('prependValue')
-                    ? option[axis]['axisLabel']['prependValue']
-                    : '';
-                xAxisStateData.appendLabelValue = option[axis][
-                    'axisLabel'
-                ].hasOwnProperty('appendValue')
-                    ? option[axis]['axisLabel']['appendValue']
-                    : '';*/
             }
         }
         setXaxisState((prevState) => {
@@ -189,7 +181,14 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
         });
     }, []);
 
+    useEffect(() => {
+        if (xAxisDataUpdated === 'updated') {
+            updateChartData();
+        }
+    }, [xaxisState]);
+
     function handleInputChange(e, title, directVal = undefined) {
+        if (xAxisDataUpdated === 'initial') setXAxisDataUpdated('updated');
         if (directVal != undefined) {
             setXaxisState((prevXaxisState) => {
                 return {
@@ -216,6 +215,7 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
             labelFontSize: xaxisState.labelFontSize,
             rotate: xaxisState.rotate,
             showXAxisLineTicks: xaxisState.showXAxisLineTicks,
+            showxAxisZoom: xaxisState.showxAxisZoom,
         };
         let option = typeof value === 'string' ? JSON.parse(value) : value;
         let optionUpdated = option;
@@ -285,9 +285,38 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
                     },
                 };
             }
+            if (axisData.hasOwnProperty('showxAxisZoom')) {
+                if (option['dataZoom']) {
+                    let xAxisPosition = option['dataZoom'].findIndex((opt) =>
+                        opt.hasOwnProperty('xAxisIndex'),
+                    );
+                    if (xAxisPosition > -1) {
+                        option['dataZoom'][xAxisPosition].show =
+                            axisData.showxAxisZoom;
+                    } else {
+                        option['dataZoom'].push({
+                            type: 'slider',
+                            xAxisIndex: [0],
+                            show: axisData.showxAxisZoom,
+                        });
+                    }
+                } else {
+                    option = {
+                        ...option,
+                        ['dataZoom']: {
+                            show: axisData.showxAxisZoom,
+                            type: 'slider',
+                            xAxisIndex: [0],
+                        },
+                    };
+                }
+            }
             optionUpdated = option;
             runStateUpdateCustom(optionUpdated);
         }
+    }
+    function resetToInitialState() {
+        setXaxisState(INITIAL_XAXIS_STATE);
     }
     function runStateUpdateCustom(optionUpdated: any) {
         setTimeout(() => {
@@ -301,7 +330,7 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
 
     const accordionDetails = (
         <StyledAxisDiv>
-            <StyledAxisDiv display="flex" justifyContent="space-around">
+            <StyledAxisDiv display="flex" justifyContent="space-between">
                 <Switch
                     defaultChecked={xaxisState.showAxis ?? undefined}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -312,7 +341,7 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
                 <label>Show Axis Title</label>
             </StyledAxisDiv>
             {xaxisState.showAxis && (
-                <StyledAxisColDiv display="flex" justifyContent="space-around">
+                <StyledAxisColDiv display="flex" justifyContent="space-between">
                     <label htmlFor="xaxis-title">Set Axis Title</label>
                     <StyledTextField
                         id="xaxis-title"
@@ -322,7 +351,7 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
                 </StyledAxisColDiv>
             )}
             {xaxisState.showAxis && (
-                <StyledAxisColDiv display="flex" justifyContent="space-around">
+                <StyledAxisColDiv display="flex" justifyContent="space-between">
                     <label htmlFor="xaxis-edit-title-font-size">
                         Edit Axis Title Font Size
                     </label>
@@ -336,47 +365,7 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
                     />
                 </StyledAxisColDiv>
             )}
-            {/* <StyledAxisDiv>
-                <label>X Axis Title Gap</label>
-                <Slider
-                    aria-label="Always visible"
-                    value={xaxisState.titleGapValue}
-                    min={xaxisState.titleGapMinValue}
-                    max={xaxisState.titleGapMaxValue}
-                    valueLabelDisplay="on"
-                    onChange={(event, newValue) =>
-                        handleInputChange(event, 'titleGapValue', newValue)
-                    }
-                />
-                <StyledAxisSpan
-                    display="flex"
-                    justifyContent="space-between"
-                    width="100%"
-                >
-                    <span>{xaxisState.titleGapMinValue}</span>
-                    <span>{xaxisState.titleGapMaxValue}</span>
-                </StyledAxisSpan>
-            </StyledAxisDiv>
-
-            <StyledAxisDiv>
-                <Checkbox
-                    id="show-xaxis-line"
-                    // defaultChecked={xaxisState.showXAxisLine}
-                    // onChange={(e) =>
-                    //     handleInputChange(
-                    //         e,
-                    //         'showXAxisLine',
-                    //         !xaxisState.showXAxisLine,
-                    //     )
-                    // }
-                    checked={xaxisState.showXAxisLine}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        handleInputChange(e, 'showXAxisLine', e.target.checked)
-                    }
-                />
-                <label htmlFor="show-xaxis-line">Show XAxis Line</label>
-            </StyledAxisDiv> */}
-            <StyledAxisDiv display="flex" justifyContent="space-around">
+            <StyledAxisDiv display="flex" justifyContent="space-between">
                 <Switch
                     defaultChecked={xaxisState.showXAxisLabels ?? undefined}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -391,7 +380,7 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
                 <label htmlFor="show-xaxis-labels">Show XAxis Labels</label>
             </StyledAxisDiv>
             {xaxisState.showXAxisLabels && (
-                <StyledAxisColDiv display="flex" justifyContent="space-around">
+                <StyledAxisColDiv display="flex" justifyContent="space-between">
                     <label htmlFor="set-font-size">Edit Label Font Size:</label>
                     <StyledTextField
                         id="set-font-size"
@@ -402,7 +391,7 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
                 </StyledAxisColDiv>
             )}
             {xaxisState.showXAxisLabels && (
-                <StyledAxisColDiv display="flex" justifyContent="space-around">
+                <StyledAxisColDiv display="flex" justifyContent="space-between">
                     <label htmlFor="rotate-label">Rotate X-Axis Values:</label>
                     <Slider
                         aria-label="Always visible"
@@ -425,7 +414,7 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
                 </StyledAxisColDiv>
             )}
 
-            <StyledAxisDiv display="flex" justifyContent="space-around">
+            <StyledAxisDiv display="flex" justifyContent="space-between">
                 <Switch
                     defaultChecked={xaxisState.showXAxisLineTicks ?? undefined}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -439,20 +428,26 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
                 />
                 <label htmlFor="show-xaxis-line">Show XAxis Line Ticks</label>
             </StyledAxisDiv>
-            <StyledAxisDiv display="flex" justifyContent="center">
-                <Button type="button" onClick={(e) => updateChartData()}>
-                    Execute
+            <StyledAxisDiv display="flex" justifyContent="space-between">
+                <Switch
+                    checked={xaxisState.showxAxisZoom ?? undefined}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        handleInputChange(e, 'showxAxisZoom', e.target.checked)
+                    }
+                    title="Show / Hide X-Axis Zoom"
+                />
+                <label htmlFor="show-xaxis-zoom">Show / Hide X-Axis Zoom</label>
+            </StyledAxisDiv>
+            <StyledAxisDiv justifyContent="end" display="flex">
+                <Button
+                    color="primary"
+                    variant="contained"
+                    onClick={resetToInitialState}
+                >
+                    Reset
                 </Button>
             </StyledAxisDiv>
         </StyledAxisDiv>
     );
-    return (
-        // <CustomAccordianBlock
-        //     accordianExpanded={false}
-        //     accordianSummaryProps={<ExpandMoreIcon />}
-        //     accordianSummary={'Edit X Axis'}
-        //     accordianDetails={accordionDetails}
-        // />
-        <>{accordionDetails}</>
-    );
+    return <>{accordionDetails}</>;
 };

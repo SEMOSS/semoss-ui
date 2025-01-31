@@ -79,23 +79,6 @@ export const BarChartProperties = observer<BarChartPropertiesProps>(
         }
 
         function updateChart() {
-            // let workingPageElement = document.getElementById(workingPage);
-            // let canvasElement: any =
-            //     workingPageElement.getElementsByTagName('CANVAS')[0] || null;
-            // if (canvasElement === null) return;
-            // let instance = null;
-            // while (instance == null) {
-            //     let instanceReceived = echarts.getInstanceByDom(canvasElement);
-            //     if (instanceReceived) {
-            //         instance = instanceReceived;
-            //         if (canvasElement.id === id) {
-            //             instance = null;
-            //         }
-            //         break;
-            //     }
-            //     canvasElement = canvasElement.parentElement;
-            // }
-            // echartInstance.current = instance;
             let dataBlockElement: any = document.querySelector(
                 `div#${workingPage} div[data-block="${id}"]`,
             );
@@ -146,14 +129,6 @@ export const BarChartProperties = observer<BarChartPropertiesProps>(
             </StyledDataContainer>
         );
 
-        return (
-            // <CustomAccordianBlock
-            //     accordianExpanded={false}
-            //     accordianSummaryProps={<ExpandMoreIcon />}
-            //     accordianSummary={'Chart Properties'}
-            //     accordianDetails={accordionDetails}
-            // />
-            <>{accordionDetails}</>
-        );
+        return <>{accordionDetails}</>;
     },
 );

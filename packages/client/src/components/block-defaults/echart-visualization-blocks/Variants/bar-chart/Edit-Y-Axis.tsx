@@ -53,32 +53,35 @@ const StyledAxisSpan = styled('span')<{
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: '100%',
 }));
+const INITIAL_YAXIS_STATE = {
+    showAxis: true,
+    yaxistitle: '',
+    yaxisTitleFontSize: 18,
+    centerAlignText: false,
+    titleGapValue: 15,
+    titleGapMinValue: 1,
+    titleGapMaxValue: 100,
+    showYAxisLine: true,
+    showYAxisLineTicks: false,
+    showYAxisValues: true,
+    showYAxisLabels: true,
+    showYAxisAllLabels: false,
+    showAllLabels: false,
+    labelFontSize: 12,
+    rotate: 0,
+    rotateLabelMinValue: 0,
+    rotateLabelMaxValue: 360,
+    format: '',
+    numberDelimiter: '',
+    showYAxisZoom: true,
+};
 //Changing the Y axis styling like title, rotate and changing the labels
 export const EditYAxis = ({ updateChart, chartType, option, id }) => {
     const { data, setData } = useBlockSettings<any>(id);
-    const [yaxisState, setYaxisState] = useState({
-        showAxis: true,
-        yaxistitle: '',
-        yaxisTitleFontSize: 18,
-        centerAlignText: false,
-        titleGapValue: 15,
-        titleGapMinValue: 1,
-        titleGapMaxValue: 100,
-        showYAxisLine: true,
-        showYAxisLineTicks: false,
-        showYAxisValues: true,
-        showYAxisLabels: true,
-        showYAxisAllLabels: false,
-        showAllLabels: false,
-        labelFontSize: 12,
-        rotate: 0,
-        rotateLabelMinValue: 0,
-        rotateLabelMaxValue: 360,
-        // prependLabelValue: '',
-        // appendLabelValue: '',
-        format: '',
-        numberDelimiter: '',
-    });
+    const [yaxisState, setYaxisState] = useState(INITIAL_YAXIS_STATE);
+    const [yAxisDataUpdated, setYAxisDataUpdated] = useState<
+        'initial' | 'updated'
+    >('initial');
     let axisValue = 'yAxis';
     const [value, setValue] = useState(data.option);
     const path = 'option';
@@ -121,10 +124,9 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
             rotate: 0,
             rotateLabelMinValue: 0,
             rotateLabelMaxValue: 360,
-            // prependLabelValue: '',
-            // appendLabelValue: '',
             format: '',
             numberDelimiter: '',
+            showYAxisZoom: true,
         };
         if (option.hasOwnProperty(axis) && option[axis]) {
             yAxisStateData.yaxistitle = option[axis].hasOwnProperty('name')
@@ -161,7 +163,6 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
                 ].hasOwnProperty('show')
                     ? option[axis]['axisLabel'].show
                     : true;
-                // yAxisStateData.showAllLabels = option[axis]['axisLabel'].hasOwnProperty('interval') && option[axis]['axisLabel'].hasOwnProperty('show') ? (option[axis]['axisLabel'].hasOwnProperty('interval')) : false;
                 yAxisStateData.labelFontSize = option[axis][
                     'axisLabel'
                 ].hasOwnProperty('fontSize')
@@ -172,16 +173,27 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
                 ].hasOwnProperty('rotate')
                     ? option[axis]['axisLabel']['rotate']
                     : 0;
-                /*yAxisStateData.prependLabelValue = option[axis][
-                    'axisLabel'
-                ].hasOwnProperty('prependValue')
-                    ? option[axis]['axisLabel']['prependValue']
-                    : '';
-                yAxisStateData.appendLabelValue = option[axis][
-                    'axisLabel'
-                ].hasOwnProperty('appendValue')
-                    ? option[axis]['axisLabel']['appendValue']
-                    : '';*/
+            }
+            if (option['dataZoom']) {
+                let yAxisPosition = option['dataZoom'].findIndex((opt) =>
+                    opt.hasOwnProperty('yAxisIndex'),
+                );
+                console.log(yAxisPosition, 'yAxisPosition');
+                if (yAxisPosition > -1) {
+                    yAxisStateData.showYAxisZoom = option['dataZoom'][
+                        yAxisPosition
+                    ].hasOwnProperty('show')
+                        ? option['dataZoom'][yAxisPosition].show
+                        : false;
+                    console.log(
+                        'yaxiszoom',
+                        option['dataZoom'][yAxisPosition].hasOwnProperty(
+                            'show',
+                        ),
+                        option['dataZoom'][yAxisPosition].show,
+                        false,
+                    );
+                }
             }
         }
         setYaxisState((prevState) => {
@@ -191,6 +203,16 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
             };
         });
     }, []);
+
+    useEffect(() => {
+        if (yAxisDataUpdated === 'updated') {
+            updateChartData();
+        }
+    }, [yaxisState]);
+
+    function resetToInitialState() {
+        setYaxisState(INITIAL_YAXIS_STATE);
+    }
 
     function updateChartData() {
         let axis = 'yAxis';
@@ -202,6 +224,7 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
             labelFontSize: yaxisState.labelFontSize,
             rotate: yaxisState.rotate,
             showYAxisLineTicks: yaxisState.showYAxisLineTicks,
+            showYAxisZoom: yaxisState.showYAxisZoom,
         };
         let option = typeof value === 'string' ? JSON.parse(value) : value;
         let optionUpdated = option;
@@ -271,6 +294,32 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
                     },
                 };
             }
+            if (axisData.hasOwnProperty('showYAxisZoom')) {
+                if (option['dataZoom']) {
+                    let xAxisPosition = option['dataZoom'].findIndex((opt) =>
+                        opt.hasOwnProperty('yAxisIndex'),
+                    );
+                    if (xAxisPosition > -1) {
+                        option['dataZoom'][xAxisPosition].show =
+                            axisData.showYAxisZoom;
+                    } else {
+                        option['dataZoom'].push({
+                            type: 'slider',
+                            yAxisIndex: [0],
+                            show: axisData.showYAxisZoom,
+                        });
+                    }
+                } else {
+                    option = {
+                        ...option,
+                        ['dataZoom']: {
+                            show: axisData.showYAxisZoom,
+                            type: 'slider',
+                            yAxisIndex: [0],
+                        },
+                    };
+                }
+            }
             optionUpdated = option;
             runStateUpdateCustom(optionUpdated);
         }
@@ -286,7 +335,7 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
     }
 
     function handleInputChange(e, title, directVal = undefined) {
-        console.log(e, 'event');
+        if (yAxisDataUpdated === 'initial') setYAxisDataUpdated('updated');
         if (directVal != undefined) {
             setYaxisState((prevXaxisState) => {
                 return {
@@ -306,7 +355,7 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
 
     const accordionDetails = (
         <StyledAxisDiv style={{ padding: '0.95rem' }}>
-            <StyledAxisDiv display="flex" justifyContent="space-around">
+            <StyledAxisDiv display="flex" justifyContent="space-between">
                 <Switch
                     defaultChecked={yaxisState.showAxis ?? undefined}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -327,7 +376,7 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
                 </StyledAxisDiv>
             )}
             {yaxisState.showAxis && (
-                <StyledAxisColDiv display="flex" justifyContent="space-around">
+                <StyledAxisColDiv display="flex" justifyContent="space-between">
                     <label htmlFor="xaxis-edit-title-font-size">
                         Edit Axis Title Font Size
                     </label>
@@ -342,7 +391,7 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
                 </StyledAxisColDiv>
             )}
 
-            <StyledAxisDiv display="flex" justifyContent="space-around">
+            <StyledAxisDiv display="flex" justifyContent="space-between">
                 <Switch
                     defaultChecked={yaxisState.showYAxisLabels ?? undefined}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -357,7 +406,7 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
                 <label htmlFor="show-xaxis-labels">Show YAxis Labels</label>
             </StyledAxisDiv>
             {yaxisState.showYAxisLabels && (
-                <StyledAxisColDiv display="flex" justifyContent="space-around">
+                <StyledAxisColDiv display="flex" justifyContent="space-between">
                     <label htmlFor="set-font-size">Edit Label Font Size:</label>
                     <StyledTextField
                         id="set-font-size"
@@ -368,7 +417,7 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
                 </StyledAxisColDiv>
             )}
             {yaxisState.showYAxisLabels && (
-                <StyledAxisColDiv display="flex" justifyContent="space-around">
+                <StyledAxisColDiv display="flex" justifyContent="space-between">
                     <label htmlFor="rotate-label">Rotate X-Axis Values:</label>
                     <Slider
                         aria-label="Always visible"
@@ -391,7 +440,7 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
                 </StyledAxisColDiv>
             )}
 
-            <StyledAxisDiv>
+            <StyledAxisDiv display="flex" justifyContent="space-between">
                 <Switch
                     defaultChecked={yaxisState.showYAxisLineTicks}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -406,9 +455,23 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
                 <label htmlFor="show-yaxis-line">Show YAxis Line Ticks</label>
             </StyledAxisDiv>
 
-            <StyledAxisDiv display="flex" justifyContent="center">
-                <Button type="button" onClick={(e) => updateChartData()}>
-                    Execute
+            <StyledAxisDiv display="flex" justifyContent="space-between">
+                <Switch
+                    checked={yaxisState.showYAxisZoom ?? undefined}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        handleInputChange(e, 'showYAxisZoom', e.target.checked)
+                    }
+                    title="Show / Hide Y-Axis Zoom"
+                />
+                <label htmlFor="show-xaxis-zoom">Show / Hide Y-Axis Zoom</label>
+            </StyledAxisDiv>
+            <StyledAxisDiv justifyContent="end" display="flex">
+                <Button
+                    color="primary"
+                    variant="contained"
+                    onClick={resetToInitialState}
+                >
+                    Reset
                 </Button>
             </StyledAxisDiv>
         </StyledAxisDiv>

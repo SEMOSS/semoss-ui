@@ -29,7 +29,7 @@ import { PieTitle } from '../PieChart/PieTitle';
 import { PieValueLabel } from '../PieChart/PieValueLabel';
 import { SizeSettings } from '@/components/block-settings/shared';
 import { PieLegend } from '../PieChart/PieLegend';
-
+import { Legend } from './Legend';
 interface UpgradedVisualizationToolProps {
     id: string;
 }
@@ -285,6 +285,34 @@ export const UpgradedVisualizationTool =
                                 chartType={BAR_CHART_DATA.JSONVALUE[0]}
                             />
                         )}
+                    </StyledListItem>
+                    <StyledListItem disablePadding>
+                        {data.variation === 'echart-bar-graph' && (
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === 'barlegend'
+                                            ? ''
+                                            : 'barlegend',
+                                    )
+                                }
+                                selected={selectedList === 'barlegend'}
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList === 'barlegend'
+                                                ? 'primary'
+                                                : 'disabled'
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary="Legend" />
+                                <InfoOutlined />
+                            </ListItemButton>
+                        )}
+                        {selectedList === 'barlegend' && <Legend id={id} />}
                     </StyledListItem>
                     <StyledListItem disablePadding>
                         <ListItemButton

@@ -63,6 +63,8 @@ export const FrameOperations = observer<FrameOperationsProps>(
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
+        let dataColumnsRef = useRef<any>([]);
+
         let [frameOperationState, setFrameOperationState] = useState<
             'initial' | 'updated'
         >('initial');
@@ -98,21 +100,21 @@ export const FrameOperations = observer<FrameOperationsProps>(
             let initialColumns = { ...fieldsData };
             initialColumns['xaxis'] = [
                 {
-                    ['name']: name?.name || '',
+                    ['name']: name?.name || option['xAxis']['pixelname'],
                     ['selector']: recentValue,
                     ['width']: undefined,
                 },
             ];
             columnsToUpdate = [
                 {
-                    name: name?.name,
+                    name: name?.name || option['xAxis']['pixelname'],
                     selector: recentValue[0],
                 },
             ];
             option['xAxis'] = {
                 ...option['xAxis'],
-                ['name']: name?.name || '',
-                ['pixelname']: name?.name || '',
+                ['name']: name?.name || option['xAxis']['pixelname'],
+                ['pixelname']: name?.name || option['xAxis']['pixelname'],
                 ['pixelvalue']: recentValue || '',
             };
             let pixelName = [],
@@ -120,15 +122,17 @@ export const FrameOperations = observer<FrameOperationsProps>(
             yAxisData.forEach((item, index) => {
                 let name = columnsSelector.find((col) => col.selector === item);
                 initialColumns['yaxis'].push({
-                    ['name']: name?.name || '',
+                    ['name']: name?.name || option['yAxis']['pixelname'][index],
                     ['selector']: item,
                     ['width']: undefined,
                 });
                 columnsToUpdate.push({
-                    name: name?.name || '',
+                    name: name?.name || option['yAxis']['pixelname'][index],
                     selector: item,
                 });
-                pixelName.push(name?.name);
+                pixelName.push(
+                    name?.name || option['yAxis']['pixelname'][index],
+                );
                 pixelValue.push(item);
             });
             option['yAxis'] = {
@@ -143,6 +147,12 @@ export const FrameOperations = observer<FrameOperationsProps>(
                     data: [],
                     name: pixelName[i],
                     type: 'bar',
+                };
+            }
+            if (option.hasOwnProperty('tooltip')) {
+                option['tooltip'] = {
+                    ...option['tooltip'],
+                    ['show']: !option['tooltip']['show'],
                 };
             }
             setFieldsData(initialColumns);
@@ -198,7 +208,7 @@ export const FrameOperations = observer<FrameOperationsProps>(
                 initialUpdateOfData();
                 setFrameOperationState('updated');
             }
-        }, [value]);
+        }, [columnsSelector]);
 
         function updateFields(axis, event) {
             let value = event.target.value || [];
@@ -302,16 +312,12 @@ export const FrameOperations = observer<FrameOperationsProps>(
                         ...tempVal['series'][i],
                         data: [],
                         name: columns['yaxis'][i].name,
-                        // i === 0
-                        //     ? columns['xaxis'][0].name
-                        //     : columns['yaxis'][i].name,
                         type: 'bar',
                     };
                 }
                 console.log('state', tempVal);
                 dispatchData(tempVal);
                 setData('columns', columnsmerged);
-                // console.log('yAxisData', yAxisData);
             }
             console.log(columns, 'columns');
             let name = columnsSelector.find((col) => col.selector === value);

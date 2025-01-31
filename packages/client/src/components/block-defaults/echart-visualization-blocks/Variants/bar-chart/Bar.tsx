@@ -19,7 +19,7 @@ const StyledChartContainer = styled('div')(() => ({
 }));
 const StyledMainContainer = styled('div')(({ theme }) => ({
     height: 'inherit',
-    width: 'inherit',
+    // width: 'inherit',
     // color: 'unset',
 }));
 const StyledSubContainer = styled('div')(({ theme }) => ({}));
@@ -43,7 +43,12 @@ export interface EChartColumns {
     width: string;
 }
 
-export const Bar: BlockComponent = observer(({ id }) => {
+interface BarProps {
+    id: string;
+    updateChartData: any;
+}
+
+export const Bar: any = observer<BarProps>(({ id, updateChartData }) => {
     function debounce(fn, delay) {
         let timer;
         return (...args) => {
@@ -51,17 +56,38 @@ export const Bar: BlockComponent = observer(({ id }) => {
             timer = setTimeout(() => fn(...args), delay);
         };
     }
-    const { data } = useBlock<EchartVisualizationBlockDef>(id);
+    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
     const [echartState, setEchartState] = useState<any>({});
     const [selectedChart, setSelectedChart] = useState<any>({});
+    const [contextMenu, setContextMenu] = useState<{
+        mouseX: number;
+        mouseY: number;
+        value: unknown;
+    } | null>(null);
+    const [value, setValue] = useState({});
     const { state } = useBlocks();
     let resultData: unknown = {};
-    console.log('state', state);
 
     echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
     window.onresize = () => {
         console.log('resize detected');
     };
+
+    const selector = `Select(${data.columns
+        ?.map((c, index) => {
+            //Converting Y axis columns to Average by default
+            return index > 0 ? `Average(${c.selector})` : c.selector;
+        })
+        .join(', ')}).as([${data.columns
+        ?.map((c, index) => {
+            return c.name;
+        })
+        .join(', ')}])|Group(${data.columns?.[0]?.name})`;
+
+    const frameData = useFrame(data.frame.name, {
+        selector: selector,
+    });
+
     //run perform operations when the echarts component is loaded
     useEffect(() => {
         let limit = 200,
@@ -89,119 +115,16 @@ export const Bar: BlockComponent = observer(({ id }) => {
             if (Object.keys(selectedChart).length == 0) {
                 setSelectedChart(echartInstance);
             }
-            echartInstance.getZr().on('contextmenu', function (params) {
-                console.log('contextmenu', 'rightclicked');
-                if (chartOperationData.current.brushSelected !== null) {
-                    chartOperationData.current.contextMenu = {
-                        mouseX: params.event.clientX,
-                        mouseY: params.event.clientY,
-                        column: chartOperationData.current.yAxisColumn,
-                        value: chartOperationData.current.brushSelected,
-                    };
-                    handleSelection(
-                        chartOperationData.current.yAxisColumn.name,
-                        chartOperationData.current.brushSelected,
-                    );
-                } else {
-                    chartOperationData.current.contextMenu = null;
-                }
-            });
-            echartInstance.on('contextmenu', function (params) {
-                console.log(params, 'right click');
-                if (chartOperationData.current.brushSelected === null) {
-                    let dataIndex = params.dataIndex;
-                    let option = data.option;
-                    chartOperationData.current.yAxisColumn = {
-                        name: option['xAxis']['pixelname'] ?? '',
-                        selector: option['xAxis']['pixelvalue'] ?? '',
-                        width: undefined,
-                    };
-                    chartOperationData.current.contextMenu = {
-                        mouseX: params['event']?.event?.clientX,
-                        mouseY: params['event']?.event?.clientY,
-                        column: chartOperationData.current.yAxisColumn,
-                        value: option['xAxis']['data'][dataIndex],
-                    };
-                    handleSelection(
-                        chartOperationData.current.yAxisColumn.name,
-                        chartOperationData.current.brushSelected,
-                    );
-                }
-            });
             echartInstance.on('click', function (e) {
                 console.log('click event');
                 return;
             });
-            echartInstance.on('brushselected', function (params) {
-                let dataIndex = [];
-                let seriesIndex = -1;
-                let selectedData = [];
-                if (
-                    params.hasOwnProperty('batch') &&
-                    params?.batch?.length > 0
-                ) {
-                    params.batch.forEach((item) => {
-                        selectedData = item.selected;
-                        if (Array.isArray(selectedData)) {
-                            selectedData.forEach((selectedItem) => {
-                                dataIndex = selectedItem.dataIndex;
-                                seriesIndex = selectedItem.seriesIndex;
-                            });
-                        }
-                    });
-                }
-                let option = data.option;
-                if (
-                    seriesIndex > -1 &&
-                    dataIndex.length > 0 &&
-                    selectedData.length > 0
-                ) {
-                    //This is for x Axis values filtering
-                    let axisData = option['xAxis']['data'];
-                    let axisFilteredData = axisData.filter((item, index) =>
-                        dataIndex.includes(index),
-                    );
-                    console.log(axisFilteredData, 'filteredData');
-                    let axisFilteredValues = [];
-                    axisFilteredData.forEach((item, index) => {
-                        if (
-                            typeof item === 'string' ||
-                            typeof item === 'number'
-                        ) {
-                            axisFilteredValues.push(item);
-                        } else {
-                            if (item.hasOwnProperty('value') && item?.value) {
-                                axisFilteredValues.push(item.value);
-                            }
-                        }
-                    });
-                    chartOperationData.current.brushSelected =
-                        axisFilteredValues || [];
-                    chartOperationData.current.yAxisColumn = {
-                        ...chartOperationData.current.yAxisColumn,
-                        name: option['xAxis']['pixelname'],
-                        selector: option['xAxis']['pixelname'],
-                    };
-                }
+            echartInstance.getZr().on('click', function (e) {
+                console.log('click event');
+                return;
             });
         }
-    }, [echartState]);
-
-    const path = 'option';
-    const selector = `Select(${data.columns
-        ?.map((c, index) => {
-            //Converting Y axis columns to Average by default
-            return index > 0 ? `Average(${c.selector})` : c.selector;
-        })
-        .join(', ')}).as([${data.columns
-        ?.map((c, index) => {
-            return c.name;
-        })
-        .join(', ')}])|Group(${data.columns?.[0]?.name})`;
-
-    const frameData = useFrame(data.frame.name, {
-        selector: selector,
-    });
+    }, [echartState, frameData.data.values]);
 
     //Based on the brushselection data filter query will run in a specific debounce time
     const handleSelection = debounce((column, value) => {
@@ -228,11 +151,12 @@ export const Bar: BlockComponent = observer(({ id }) => {
             }),
         };
     }
+    function getData() {
+        return data.option;
+    }
     //update frame values to the series data when frame values are changed
     const receiveValueswithCorrections = useCallback(
         (resultData: unknown) => {
-            // const optionDataProcessed = processReceivedData(frameData.data);
-            // resultData = dataOption;
             let frameDataIndex = 0;
             //setting xaxis data
             resultData['xAxis']['data'] = frameData.data?.values?.map(
@@ -242,10 +166,10 @@ export const Bar: BlockComponent = observer(({ id }) => {
             );
             let optionSeriesLength = frameData.data.headers.length;
             frameDataIndex++;
-            let seriesIndex =
-                resultData['series'].findIndex((item) =>
-                    BAR_CHART_DATA.JSONVALUE.includes(item.type),
-                ) || 0;
+            // let seriesIndex =
+            //     resultData['series'].findIndex((item) =>
+            //         BAR_CHART_DATA.JSONVALUE.includes(item.type),
+            //     ) || 0;
             //setting all values to all existing series to null, to restore the chart to initial state so new values will be updated
             for (
                 let seriesIdx = 0;
@@ -275,10 +199,6 @@ export const Bar: BlockComponent = observer(({ id }) => {
                         'toggleTrendLineObject',
                     )
                 ) {
-                    console.log('frameData Values');
-                    frameData.data?.values?.forEach((item, index) => {
-                        console.log({ value: item[i] ?? null });
-                    });
                     resultData['series'][i - 1]['data'] =
                         frameData.data?.values?.map((item, index) => {
                             return { value: item[i] ?? null };
@@ -301,6 +221,68 @@ export const Bar: BlockComponent = observer(({ id }) => {
             });
         }
     }
+    const onClickChart = {
+        contextmenu: (params) => {
+            //  let currentOption = chart.getOption();
+            if (params.data) {
+                let xAxisName = data.option['xAxis']['pixelvalue'][0];
+                let xAxisValue =
+                    typeof data.option['xAxis']['data'][params.dataIndex] ==
+                        'object' &&
+                    data.option['xAxis']['data'][
+                        params.dataIndex
+                    ].hasOwnProperty('value')
+                        ? data.option['xAxis']['data'][params.dataIndex][
+                              'value'
+                          ]
+                        : data.option['xAxis']['data'][params.dataIndex];
+                setContextMenu(
+                    contextMenu === null
+                        ? {
+                              mouseX: params.event.event.clientX,
+                              mouseY: params.event.event.clientY,
+                              value: {
+                                  name: xAxisName,
+                                  value: xAxisValue,
+                              },
+                          }
+                        : // repeated contextmenu when it is already open closes it with Chrome 84 on Ubuntu
+                          // Other native context menus might behave different.
+                          // With this behavior we prevent contextmenu from the backdrop to re-locale existing context menus.
+                          null,
+                );
+                params.event.event.preventDefault();
+            } else {
+                params.event.event.preventDefault();
+            }
+        },
+        brushend: (params) => {
+            let batch = params.batch;
+            let xAxisName = data.option['xAxis']['pixelvalue'][0];
+            let xAxisValue = chartOperationData.current.brushSelected.map(
+                (item) =>
+                    typeof item === 'object' && item.hasOwnProperty('value')
+                        ? item['value']
+                        : item,
+            );
+            frameData.filter(
+                `SetFrameFilter(${xAxisName}==${JSON.stringify(xAxisValue)})`,
+            );
+        },
+        brushselected: (params) => {
+            let batch = params.batch;
+            if (batch.length) {
+                let firstBatch = batch[0];
+                let selectedData = firstBatch.selected;
+                let firstSelectedData = selectedData[0] || [];
+                let xAxisData = data.option['xAxis']['data'].filter(
+                    (item, index) =>
+                        firstSelectedData.dataIndex.includes(index),
+                );
+                chartOperationData.current.brushSelected = xAxisData;
+            }
+        },
+    };
 
     //validating the received data.option is in string format and parse it and then assign the same to chart
     if (typeof data.option === 'string') {
@@ -328,19 +310,22 @@ export const Bar: BlockComponent = observer(({ id }) => {
                 <EChartsReact
                     option={resultData}
                     onChartReady={echartsLoaded}
+                    onEvents={onClickChart}
                     style={{
                         height: 'inherit',
+                        // width: 'inherit'
                     }}
                 />
                 <ChartContextMenu
                     id={id}
                     frame={frameData}
-                    contextMenu={chartOperationData.current.contextMenu}
+                    contextMenu={contextMenu}
                     chartInstance={chartOperationData.current.chartInstance}
                     onClose={() => {
                         chartOperationData.current.contextMenu = null;
                         chartOperationData.current.yAxisColumn = null;
                         chartOperationData.current.brushSelected = null;
+                        setContextMenu(null);
                     }}
                 />
             </StyledMainContainer>

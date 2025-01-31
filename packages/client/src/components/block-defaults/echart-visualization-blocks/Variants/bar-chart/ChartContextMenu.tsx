@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
-import { useBlock, useFrame } from '@/hooks';
+import { useBlock, useBlockSettings, useFrame } from '@/hooks';
 import { Menu, MenuItem } from '@mui/material';
 import { PathValue } from 'react-hook-form';
 import { useEffect, useRef } from 'react';
@@ -11,12 +11,8 @@ export interface ChartContextMenuProps {
     contextMenu: {
         mouseX: number;
         mouseY: number;
-        column: {
-            name: string;
-            selector: string;
-            // width: string;
-        };
-        value: unknown[];
+        value: any;
+        // value: unknown[];
     } | null;
     chartInstance: any;
     onClose: () => void;
@@ -25,6 +21,7 @@ export interface ChartContextMenuProps {
 export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
     ({ id, frame, contextMenu, chartInstance, onClose }) => {
         const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
+        // const { setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
         let currentOperation = useRef({
             unfilterActive: false,
             filterActive: false,
@@ -170,8 +167,8 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                         onClick={() => {
                             frame.filter(
                                 `SetFrameFilter(${
-                                    contextMenu.column.selector
-                                }==${JSON.stringify(contextMenu.value)})`,
+                                    contextMenu.value.name
+                                }==${JSON.stringify(contextMenu.value.value)})`,
                             );
                             let optionUp = data.option;
                             const reUpdate = data.option['series'];
@@ -185,23 +182,19 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                             onClose();
                         }}
                     >
-                        Filter {contextMenu.column.name} ==
+                        Filter {contextMenu.value.name} ==
                         {typeof contextMenu.value === 'string'
                             ? contextMenu.value
-                            : JSON.stringify(contextMenu.value)}
+                            : JSON.stringify(contextMenu.value.value)}
                     </MenuItem>
                 ) : null}
-                {/* {contextMenu &&
-                !data.contextMenu?.hideExclude &&
-                contextMenu.value.length === 1 ? (
+                {contextMenu && !data.contextMenu?.hideExclude ? (
                     <MenuItem
                         dense={true}
                         value={'exclude'}
                         onClick={() => {
                             frame.filter(
-                                `SetFrameFilter(${
-                                    contextMenu.column.selector
-                                }!="${contextMenu.value.toString()}")`,
+                                `SetFrameFilter(${contextMenu.value.name}!="${contextMenu.value.value}")`,
                             );
                             let optionUp = data.option;
                             const reUpdate = data.option['series'];
@@ -215,9 +208,10 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                             onClose();
                         }}
                     >
-                        Exclude {contextMenu.column.name} != {contextMenu?.value}
+                        Exclude {contextMenu.value.name} !={' '}
+                        {contextMenu?.value?.value}
                     </MenuItem>
-                ) : null} */}
+                ) : null}
             </Menu>
         );
     },
