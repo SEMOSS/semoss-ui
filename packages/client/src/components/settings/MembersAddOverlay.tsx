@@ -789,6 +789,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                 <TextField
                                     label="Max Tokens"
                                     value={maxTokens}
+                                    type="number"
                                     onChange={(e) => {
                                         setMaxTokens(e.target.value);
                                     }}
@@ -799,6 +800,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                     <TextField
                                         label="Max Response Time"
                                         value={maxTime}
+                                        type="number"
                                         onChange={(e) => {
                                             setMaxTime(e.target.value);
                                         }}

@@ -2689,8 +2689,6 @@ export class MonolithStore {
         }
         url += 'user/editUser';
 
-        console.log(user);
-
         postData += 'user=' + encodeURIComponent(JSON.stringify(user));
 
         const response = await axios
@@ -2748,21 +2746,39 @@ export class MonolithStore {
         }
         url += 'user/registerUser';
 
-        let newUserInfo =
-            'userId=' +
-            encodeURIComponent(user.id) +
-            '&admin=' +
-            encodeURIComponent(user.admin) +
-            '&publisher=' +
-            encodeURIComponent(user.publisher) +
-            '&exporter=' +
-            encodeURIComponent(user.exporter) +
-            '&name=' +
-            encodeURIComponent(user.name);
+        let newUserInfo = '';
+
+        if (user.id) {
+            newUserInfo += 'userId=' + encodeURIComponent(user.id);
+        }
+        if (user.admin) {
+            newUserInfo += '&admin=' + encodeURIComponent(user.admin);
+        }
+        if (user.publisher) {
+            newUserInfo += '&publisher=' + encodeURIComponent(user.publisher);
+        }
+
+        if (user.exporter) {
+            newUserInfo += '&exporter=' + encodeURIComponent(user.exporter);
+        }
+
+        if (user.name) {
+            newUserInfo += '&name=' + encodeURIComponent(user.name);
+        }
 
         if (user.email) {
             newUserInfo += '&email=' + encodeURIComponent(user.email);
         }
+
+        if (user.phone) {
+            newUserInfo += '&phone=' + encodeURIComponent(user.phone);
+        }
+
+        if (user.phoneextension) {
+            newUserInfo +=
+                '&phoneextension=' + encodeURIComponent(user.phoneextension);
+        }
+
         if (user.type) {
             newUserInfo += '&type=' + encodeURIComponent(user.type);
         }
@@ -2770,27 +2786,26 @@ export class MonolithStore {
             newUserInfo += '&password=' + encodeURIComponent(user.password);
         }
 
-        if (user.usage_restriction) {
+        if (user.model_usage_restriction) {
             if (user.model_usage_restriction === 'null') {
                 user.model_usage_restriction = null;
             }
             newUserInfo +=
-                '&model_usage_restriction=' +
+                '&modelUsageRestriction=' +
                 encodeURIComponent(user.model_usage_restriction);
         }
-        if (user.usage_frequency) {
+        if (user.model_usage_frequency) {
             newUserInfo +=
-                '&model_usage_frequency=' +
+                '&modelUsageFrequency=' +
                 encodeURIComponent(user.model_usage_frequency);
         }
-        if (user.max_tokens) {
+        if (user.model_max_tokens) {
             newUserInfo +=
-                '&model_max_tokens=' +
-                encodeURIComponent(user.model_max_tokens);
+                '&modelMaxTokens=' + encodeURIComponent(user.model_max_tokens);
         }
-        if (user.max_response_time) {
+        if (user.model_max_response_time) {
             newUserInfo +=
-                '&model_max_response_time=' +
+                '&modelMaxResponseTime=' +
                 encodeURIComponent(user.model_max_response_time);
         }
 

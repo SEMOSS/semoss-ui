@@ -575,6 +575,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                                         ? field.value
                                                         : ''
                                                 }
+                                                type="number"
                                                 onChange={(e) => {
                                                     field.onChange(
                                                         Number(e.target.value),
@@ -600,6 +601,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                                             ? field.value
                                                             : ''
                                                     }
+                                                    type="number"
                                                     onChange={(e) => {
                                                         field.onChange(
                                                             Number(
