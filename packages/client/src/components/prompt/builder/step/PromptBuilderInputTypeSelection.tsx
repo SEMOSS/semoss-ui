@@ -44,6 +44,7 @@ export const PromptBuilderInputTypeSelection = (props: {
         inputType: string,
         inputTypeMeta: string | null,
     ) => void;
+    setInputLabel: (inputTokenIndex: number, inputLabel: string) => void;
 }) => {
     const showMetaAutocomplete =
         props.inputType === INPUT_TYPE_VECTOR ||
@@ -106,6 +107,16 @@ export const PromptBuilderInputTypeSelection = (props: {
             </Grid>
             <Grid item xs={9} md={6}>
                 <Stack spacing={2}>
+                    <TextField
+                        label="Input Label"
+                        variant="outlined"
+                        onChange={(e) => {
+                            props.setInputLabel(
+                                props.inputToken.index,
+                                e.target.value,
+                            );
+                        }}
+                    />
                     <Autocomplete
                         fullWidth
                         disableClearable

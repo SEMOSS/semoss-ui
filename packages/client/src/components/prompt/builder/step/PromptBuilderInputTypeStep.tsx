@@ -122,8 +122,22 @@ export const PromptBuilderInputTypeStep = (props: {
         const inputTypesDup = {
             ...inputTypes,
             [inputTokenIndex]: {
+                ...inputTypes[inputTokenIndex],
                 type: inputType,
                 meta: inputTypeMeta,
+            },
+        };
+
+        setInputTypes(inputTypesDup);
+        props.setBuilderValue('inputTypes', inputTypesDup);
+    };
+
+    const setInputLabel = (inputTokenIndex: number, inputLabel: string) => {
+        const inputTypesDup = {
+            ...inputTypes,
+            [inputTokenIndex]: {
+                ...inputTypes[inputTokenIndex],
+                label: inputLabel,
             },
         };
 
@@ -157,6 +171,7 @@ export const PromptBuilderInputTypeStep = (props: {
                         cfgLibraryVectorDbs={cfgLibraryVectorDbs}
                         cfgLibraryDatabases={cfgLibraryDatabases}
                         setInputType={setInputType}
+                        setInputLabel={setInputLabel}
                     />
                 ))}
             </StyledStack>
