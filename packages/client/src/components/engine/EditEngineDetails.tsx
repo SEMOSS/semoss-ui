@@ -389,7 +389,7 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
                                                 }
                                                 placeholder={
                                                     isDescription
-                                                        ? 'TBD'
+                                                        ? `Please provide a description for this ${type.toLocaleLowerCase()} to help others find it and understand how to use it.`
                                                         : undefined
                                                 }
                                             />
