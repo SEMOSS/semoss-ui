@@ -7,6 +7,18 @@ import newGoogle from '@/assets/img/google.png';
 import Github from '@/assets/img/github.png';
 import Okta from '@/assets/img/okta.png';
 import Dropbox from '@/assets/img/dropbox.png';
+import ADFS from '@/assets/img/adfs_microsoft (1).png';
+import Gitlab from '@/assets/img/dropbox.png';
+import Keycloak from '@/assets/img/keycloak.png';
+import Linkedin from '@/assets/img/linkedin.png';
+import Microsoft from '@/assets/img/microsoft.png';
+import ProductHunt from '@/assets/img/product_hunt.png';
+import Salesforce from '@/assets/img/salesforce.png';
+import Saml from '@/assets/img/saml.png';
+import Siteminder from '@/assets/img/siteminder.png';
+import Surverymonkey from '@/assets/img/surveymonkey.png';
+import Twitter from '@/assets/img/x_twitter.png';
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 
 import {
     Grid,
@@ -132,6 +144,17 @@ export const TeamsSettingsPage = () => {
         github: Github,
         okta: Okta,
         dropbox: Dropbox,
+        adfs: ADFS,
+        gitlab: Gitlab,
+        keycloak: Keycloak,
+        linkedin: Linkedin,
+        ms: Microsoft,
+        product_hunt: ProductHunt,
+        salesforce: Salesforce,
+        saml: Saml,
+        siteminder: Siteminder,
+        surveymonkey: Surverymonkey,
+        twitter: Twitter,
     };
 
     const [addModal, setAddModal] = useState(false);
@@ -443,17 +466,23 @@ export const TeamsSettingsPage = () => {
                                                                             gap: '8px',
                                                                         }}
                                                                     >
-                                                                        <img
-                                                                            src={
-                                                                                TypeImageObject[
-                                                                                    val
-                                                                                ]
-                                                                            }
-                                                                            style={{
-                                                                                height: '12px',
-                                                                                width: '12px',
-                                                                            }}
-                                                                        />
+                                                                        {TypeImageObject[
+                                                                            val
+                                                                        ] ? (
+                                                                            <img
+                                                                                src={
+                                                                                    TypeImageObject[
+                                                                                        val
+                                                                                    ]
+                                                                                }
+                                                                                style={{
+                                                                                    height: '12px',
+                                                                                    width: '12px',
+                                                                                }}
+                                                                            />
+                                                                        ) : (
+                                                                            <PeopleAltIcon />
+                                                                        )}
                                                                         {loginMethodDisplayNames[
                                                                             val
                                                                         ] ??

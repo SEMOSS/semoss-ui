@@ -243,6 +243,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
         monolithStore
             .getTeamEngines(
                 groupId,
+                groupType,
                 limit,
                 enginesPage * limit - limit, // offset
                 searchFilter,
@@ -488,6 +489,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
             monolithStore
                 .getTeamEngines(
                     groupId,
+                    groupType,
                     limit,
                     enginesPage * limit - limit, // offset
                     searchFilter,
@@ -499,6 +501,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
             monolithStore
                 .getTeamEngines(
                     groupId,
+                    groupType,
                     100,
                     0, // offset
                     searchFilter,

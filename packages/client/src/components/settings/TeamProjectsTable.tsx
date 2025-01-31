@@ -246,6 +246,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
         monolithStore
             .getTeamProjects(
                 groupId,
+                groupType,
                 limit,
                 projectsPage * limit - limit, // offset
                 searchFilter,
@@ -493,6 +494,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
             monolithStore
                 .getTeamProjects(
                     groupId,
+                    groupType,
                     limit,
                     projectsPage * limit - limit, // offset
                     searchFilter,
@@ -505,6 +507,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
             monolithStore
                 .getTeamProjects(
                     groupId,
+                    groupType,
                     100,
                     0, // offset
                     searchFilter,
