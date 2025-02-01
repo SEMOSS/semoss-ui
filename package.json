@@ -6,16 +6,17 @@
         "preinstall": "npx only-allow pnpm",
         "prepare": "husky install",
         "fix": "pnpm run --filter=@semoss/legacy --filter=@semoss/ui --filter=@semoss/client fix",
+        
         "dev": "npx nx run-many -t dev -p @semoss/ui @semoss/sdk @semoss/renderer @semoss/client @semoss/legacy",
         "dev:client": "nx run @semoss/client:dev",
         "dev:legacy": "nx run @semoss/legacy:dev",
-        "build": "npx nx run-many -t build -p @semoss/client @semoss/legacy",
+        "dev:example": "nx run @semoss/example:dev",
 
-        "build-test:client": "nx run-many -t build -p @semoss/client --verbose",
-        "build-dev:sdk": "npx nx run-many -t dev -p @semoss/sdk",
         "nx:dep-graph": "nx dep-graph",
         "nx:reset": "nx reset",
-        "nx:generate-react-lib": "nx reset"
+        "nx:generate-react-lib": "nx reset",
+
+        "build": "npx nx run-many -t build -p @semoss/client @semoss/legacy"
     },
     "author": "",
     "license": "Apache-2.0",

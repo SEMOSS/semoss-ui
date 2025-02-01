@@ -10,11 +10,15 @@ import del from "rollup-plugin-delete";
 import { defineConfig } from "rollup";
 import { terser } from "rollup-plugin-terser";
 import json from "@rollup/plugin-json";
+import babel from "@rollup/plugin-babel";
+import serve from "rollup-plugin-serve"
+import replace from "@rollup/plugin-replace";
 
 import packageJson from "./package.json";
+import livereload from "rollup-plugin-livereload";
 
 export default defineConfig({
-    input: "src/index.ts",
+    input: "src/index.tsx",
     output: [
         {
             file: packageJson.main,
@@ -37,23 +41,24 @@ export default defineConfig({
             tsconfig: "./tsconfig.json",
             outputToFilesystem: true,
         }),
+        replace({
+          "process.env.NODE_ENV": JSON.stringify("development"),
+          preventAssignment: true,
+      }),
         json(),
         resolve(),
         commonjs(),
-        image(),
-        url({
-            include: ["**/*.png", "**/*.jpg", "**/*.svg"],
-            limit: 8192,
-        }),
         postcss(),
         bundleSize(),
+        serve({
+          open: true,
+          contentBase: ['', 'dist'],
+          port: 1122,
+        }),
+        livereload({ watch: ['dist']})
     ],
     external: [
-        "react",
-        "react-dom",
-        "@mui/material",
-        "@mui/icons-material",
-        "@emotion/react",
-        "@emotion/styled",
+        // "react",
+        // "react-dom",
     ],
 });
