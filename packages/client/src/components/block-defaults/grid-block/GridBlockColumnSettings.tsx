@@ -1,6 +1,4 @@
 import { observer } from 'mobx-react-lite';
-import { DragDropContext, Droppable } from 'react-beautiful-dnd';
-
 import {
     Autocomplete,
     IconButton,
@@ -15,7 +13,15 @@ import { GridBlockDef } from './GridBlock';
 import { GridBlockColumnSettingsItem } from './GridBlockColumnSettingsItem';
 import { Sync } from '@mui/icons-material';
 import { GridBlockColumn } from './grid-block.types';
-import { Stack } from '@mui/material';
+import { Stack, Box } from '@mui/material';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import {
+    SortableContext,
+    useSortable,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { restrictToParentElement } from '@dnd-kit/modifiers';
 
 interface GridBlockColumnSettingsProps {
     /** Id of the block */
@@ -83,21 +89,34 @@ export const GridBlockColumnSettings = observer(
          * @param startDragIndex
          * @param stopDragIndex
          */
-        const reorderColumns = (
-            startDragIndex: number,
-            stopDragIndex: number,
-        ) => {
-            // get the columns
-            const columns = [...data.columns];
+        const handleDragEnd = ({ active, over }) => {
+            if (!active || !over) {
+                console.error('Invalid item!');
+                return;
+            }
 
-            // remove it
-            const [removed] = columns.splice(startDragIndex, 1);
+            // If the active item is over a different item, swap them
+            if (over && active.id !== over.id) {
+                const oldIndex = Number(
+                    columns.findIndex(
+                        (column) => column.selector === active.id,
+                    ),
+                );
+                const newIndex = Number(
+                    columns.findIndex((column) => column.selector === over.id),
+                );
+                // get the columns
+                const gridColumns = [...data.columns];
 
-            // add it at the new location
-            columns.splice(stopDragIndex, 0, removed);
+                // remove it
+                const [removed] = gridColumns.splice(oldIndex, 1);
 
-            // update the data
-            setData('columns', columns);
+                // add it at the new location
+                gridColumns.splice(newIndex, 0, removed);
+
+                // update the data
+                setData('columns', gridColumns);
+            }
         };
 
         // options for the autocomplete
@@ -137,41 +156,37 @@ export const GridBlockColumnSettings = observer(
                         <Sync />
                     </IconButton>
                 </BaseSettingSection>
-                <Stack direction={'column'} width={'100%'} overflow={'hjdden'}>
-                    <DragDropContext
-                        onDragEnd={(result) => {
-                            // ingnore if no destination
-                            if (!result.destination) {
-                                return;
-                            }
-
-                            // swap
-                            reorderColumns(
-                                result.source.index,
-                                result.destination.index,
-                            );
-                        }}
+                <Stack direction={'column'} width={'100%'} overflow={'hidden'}>
+                    <DndContext
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                        modifiers={[restrictToParentElement]}
                     >
-                        <Droppable droppableId="droppable">
-                            {(provided) => (
-                                <List
-                                    sx={{
-                                        width: '100%',
-                                    }}
-                                    ref={provided.innerRef}
-                                    {...provided.droppableProps}
-                                >
-                                    {columns.map((c, cIdx) => {
-                                        return (
+                        <SortableContext
+                            items={columns?.map((item) => item.selector)}
+                            strategy={verticalListSortingStrategy}
+                        >
+                            <List
+                                sx={{
+                                    width: '100%',
+                                }}
+                            >
+                                {columns.map((c, cIdx) => {
+                                    return (
+                                        <SortableItems
+                                            key={c.selector}
+                                            id={c.selector}
+                                        >
                                             <GridBlockColumnSettingsItem
                                                 id={id}
                                                 key={cIdx}
                                                 column={c}
                                                 index={cIdx}
                                             />
-                                        );
-                                    })}
-                                    {/* <List.Item
+                                        </SortableItems>
+                                    );
+                                })}
+                                {/* <List.Item
                                         ref={provided.innerRef}
                                         {...provided.draggableProps}
                                         {...provided.dragHandleProps}
@@ -180,12 +195,42 @@ export const GridBlockColumnSettings = observer(
                                     >
                                         <List.ItemText primary={'Add Column'} />
                                     </List.Item> */}
-                                </List>
-                            )}
-                        </Droppable>
-                    </DragDropContext>
+                            </List>
+                        </SortableContext>
+                    </DndContext>
                 </Stack>
             </>
         );
     },
 );
+
+const SortableItems = ({
+    id,
+    children,
+}: {
+    id: string;
+    children: React.ReactNode;
+}) => {
+    // Use the sortable context
+    const { attributes, listeners, setNodeRef, transform, transition } =
+        useSortable({ id });
+
+    // Apply styles to the list items based on their state
+    const style: React.CSSProperties = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        cursor: 'grab',
+    };
+
+    return (
+        <Box
+            key={`action-${id}`}
+            ref={setNodeRef}
+            {...attributes}
+            {...listeners}
+            sx={style}
+        >
+            {children}
+        </Box>
+    );
+};

@@ -11,7 +11,7 @@ export const BASE_PAGE_BLOCKS = {
                 gap: '8px',
                 fontFamily: 'roboto',
             },
-            route: 'page-1',
+            route: '',
         },
         listeners: {
             onPageLoad: [],

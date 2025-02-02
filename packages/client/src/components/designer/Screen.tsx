@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled } from '@semoss/ui';
 import { useBlocks, useDesigner } from '@/hooks';
@@ -22,7 +22,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
     height: '100%',
     display: 'flex',
     flexGrow: 1,
-    // padding: `${theme.spacing(2.5)} ${theme.spacing(2)}`,
+    padding: `${theme.spacing(2.5)} ${theme.spacing(2)}`,
     overflow: 'auto',
 }));
 
@@ -40,7 +40,7 @@ const StyledContent = styled('div', {
 }));
 
 const StyledContentOuter = styled('div')(({ theme }) => ({
-    // padding: theme.spacing(1),
+    padding: theme.spacing(1),
     display: 'flex',
     flex: 1,
     minWidth: '100%',
@@ -77,7 +77,7 @@ export const Screen = observer((props: ScreenProps) => {
     const { children } = props;
 
     // save the ref
-    const rootRef = useRef<HTMLDivElement | null>(null);
+    const eleRef = useRef<HTMLDivElement | null>(null);
 
     // get the designer
     const { state } = useBlocks();
@@ -116,6 +116,18 @@ export const Screen = observer((props: ScreenProps) => {
     };
 
     /**
+     * Handle the mouseleave on the page. This will deselect hovered widgets
+     */
+    const handleMouseLeave = () => {
+        designer.setHovered('');
+
+        // reset the placeholder / clear the ghost if is its off the screen
+        if (designer.drag.active) {
+            designer.resetPlaceholder();
+            designer.updateGhostPosition(null);
+        }
+    };
+    /**
      * Handle the mousemove event on the document. This will render the placeholder based on the target block.
      */
     const handleDocumentMouseMove = useCallback(
@@ -126,7 +138,7 @@ export const Screen = observer((props: ScreenProps) => {
             }
 
             // if there is not root ref ignore it
-            if (!rootRef.current) {
+            if (!eleRef.current) {
                 return;
             }
 
@@ -164,9 +176,6 @@ export const Screen = observer((props: ScreenProps) => {
                     return;
                 }
 
-                // check if the block is in the root
-                if (!rootRef.current.contains(nearestElement)) return;
-
                 // update
                 designer.updatePlaceholder(
                     {
@@ -174,7 +183,7 @@ export const Screen = observer((props: ScreenProps) => {
                         id: id,
                         slot: slot,
                     },
-                    getRelativeSize(slotElement, rootRef.current),
+                    getRelativeSize(slotElement, eleRef.current),
                 );
 
                 return;
@@ -184,7 +193,7 @@ export const Screen = observer((props: ScreenProps) => {
             const block = state.getBlock(id);
 
             // if there is no parent, we cannot add
-            if (!block?.parent) {
+            if (!block.parent) {
                 return;
             }
 
@@ -201,16 +210,13 @@ export const Screen = observer((props: ScreenProps) => {
                     100,
             );
 
-            // check if the block is in the root
-            if (!rootRef.current.contains(nearestElement)) return;
-
             if (percent <= 30) {
                 designer.updatePlaceholder(
                     {
                         type: 'before',
                         id: id,
                     },
-                    getRelativeSize(nearestElement, rootRef.current),
+                    getRelativeSize(nearestElement, eleRef.current),
                 );
             } else if (percent >= 70) {
                 designer.updatePlaceholder(
@@ -218,7 +224,7 @@ export const Screen = observer((props: ScreenProps) => {
                         type: 'after',
                         id: id,
                     },
-                    getRelativeSize(nearestElement, rootRef.current),
+                    getRelativeSize(nearestElement, eleRef.current),
                 );
             }
         },
@@ -238,26 +244,31 @@ export const Screen = observer((props: ScreenProps) => {
         };
     }, [designer.drag.active, handleDocumentMouseMove]);
 
-    useEffect(() => {
-        designer.setSelected('');
-    }, [props]);
-
     const isHoveredOverSelectedBlock = useMemo(() => {
         return designer.hovered == designer.selected;
     }, [designer.hovered, designer.selected, handleMouseOver]);
 
     return (
-        <StyledContainer data-block="root" ref={rootRef} className="dnd-screen">
-            {designer.selected && <SelectedMask />}
-            {designer.hovered && <HoveredMask />}
-            {designer.selected && !designer.drag.active && (
-                <DeleteDuplicateMask />
-            )}
+        <StyledContainer ref={eleRef}>
+            {eleRef.current ? (
+                <>
+                    {designer.selected && (
+                        <SelectedMask screenEle={eleRef.current} />
+                    )}
+                    {designer.hovered && (
+                        <HoveredMask screenEle={eleRef.current} />
+                    )}
+                    {designer.selected && !designer.drag.active && (
+                        <DeleteDuplicateMask screenEle={eleRef.current} />
+                    )}
+                </>
+            ) : null}
+
             {designer.drag.active && <Placeholder />}
             {designer.drag.active && <Ghost />}
 
             <StyledContent off={designer.drag.active ? true : false}>
-                <StyledContentOuter>
+                <StyledContentOuter onMouseLeave={handleMouseLeave}>
                     <StyledContentInner
                         onMouseOver={handleMouseOver}
                         isHoveredOverSelectedBlock={isHoveredOverSelectedBlock}

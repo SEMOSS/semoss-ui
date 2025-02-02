@@ -28,6 +28,6 @@ export const VARIABLE_TYPES = [
 ];
 
 export const ACTIONS_DISPLAY = {
-    [ActionMessages.RUN_QUERY]: 'Run Query',
+    [ActionMessages.RUN_QUERY]: 'Run Notebook',
     [ActionMessages.DISPATCH_EVENT]: 'Dispatch Event',
 };
