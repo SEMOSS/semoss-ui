@@ -9,7 +9,8 @@
         "dev": "npx nx run-many -t dev -p @semoss/ui @semoss/client @semoss/legacy",
         "dev:client": "nx run @semoss/client:dev",
         "dev:legacy": "nx run @semoss/legacy:dev",
-        "build": "npx nx run-many -t build -p @semoss/client @semoss/legacy"
+        "build": "npx nx run-many -t build -p @semoss/client @semoss/legacy",
+        "update-components": "node scripts/scan-components.mjs"
     },
     "author": "",
     "license": "Apache-2.0",

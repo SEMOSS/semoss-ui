@@ -32,6 +32,7 @@ import BLOCK_RADIO from '@/assets/img/BLOCK_RADIO.png';
 import HTML_BLOCK from '@/assets/img/HTML_BLOCK_SM.png';
 import BLOCK_MODAL from '@/assets/img/BLOCK_MODAL.png';
 import BLOCK_THEME from '@/assets/img/BLOCK_THEME.png';
+import BLOCK_CUSTOM from '@/assets/img/BLOCK_CUSTOM.png';
 
 const SECTION_ELEMENT = 'Element';
 const SECTION_INPUT = 'Input';
@@ -688,6 +689,21 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        image: BLOCK_CUSTOM, // You can add an icon later
+        name: 'Custom Component',
+        json: {
+            widget: 'dynamic-component',
+            data: {
+                style: {},
+                componentPath: '',
+                componentProps: {},
+            },
+            listeners: {},
+            slots: {},
         },
     },
 ];

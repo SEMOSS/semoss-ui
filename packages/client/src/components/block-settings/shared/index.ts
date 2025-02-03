@@ -16,3 +16,4 @@ export { SelectOptionsSettings } from './SelectOptionsSettings';
 export { SelectSettings } from './SelectSettings';
 export { PDFViewerSettings } from './PDFViewerSettings';
 export { SwitchSettings } from './SwitchSettings';
+export { PropInputSettings } from './PropInputSettings';

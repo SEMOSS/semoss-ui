@@ -62,6 +62,11 @@ import {
 } from './pdfViewer-block';
 import { config as ThemeBlockConfig, ThemeBlockDef } from './theme-block';
 
+import {
+    config as DynamicComponentBlockConfig,
+    DynamicComponentBlockDef,
+} from './dynamic-component-block';
+
 export type DefaultBlockDefinitions =
     | AudioBlockDef
     | AudioInputBlockDef
@@ -96,7 +101,8 @@ export type DefaultBlockDefinitions =
     | ModalBlockDef
     | RadioBlockDef
     | PDFViewerBlockDef
-    | ThemeBlockDef;
+    | ThemeBlockDef
+    | DynamicComponentBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AudioBlockConfig.widget]: AudioBlockConfig,
@@ -127,6 +133,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
     [ThemeBlockConfig.widget]: ThemeBlockConfig,
+    [DynamicComponentBlockConfig.widget]: DynamicComponentBlockConfig,
 };
 
 export {
@@ -154,4 +161,5 @@ export {
     RadioBlockConfig,
     PDFViewerBlockConfig,
     ThemeBlockConfig,
+    DynamicComponentBlockConfig,
 };
