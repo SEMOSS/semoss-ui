@@ -196,11 +196,28 @@ export const FileTable = (props: FileTableProps) => {
             });
 
             // Embedding the File
-            await monolithStore.runQuery(`
+            const response = await monolithStore.runQuery(`
                 CreateEmbeddingsFromDocuments( engine= "${id}", filePaths= [${fileLocations}])
             `);
+
+            const { output, operationType } = response.pixelReturn[0];
+
+            if (operationType.indexOf('ERROR') === -1) {
+                notification.add({
+                    color: 'success',
+                    message: `Successfully added document`,
+                });
+            } else {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+            }
         } catch (e) {
-            console.error(e);
+            notification.add({
+                color: 'error',
+                message: String(e),
+            });
         } finally {
             //turn off loading
             getFileDetails.refresh();
@@ -214,9 +231,23 @@ export const FileTable = (props: FileTableProps) => {
         const { fileName } = file;
         setIsLoading(true);
         try {
-            await monolithStore.runQuery(`
+            const response = await monolithStore.runQuery(`
             RemoveDocumentFromVectorDatabase(engine = "${id}", fileNames=["${fileName}"])
             `);
+
+            const { output, operationType } = response.pixelReturn[0];
+
+            if (operationType.indexOf('ERROR') === -1) {
+                notification.add({
+                    color: 'success',
+                    message: `Successfully removed document`,
+                });
+            } else {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+            }
         } catch (e) {
             notification.add({
                 color: 'warning',
@@ -245,9 +276,23 @@ export const FileTable = (props: FileTableProps) => {
         });
 
         try {
-            await monolithStore.runQuery(`
+            const response = await monolithStore.runQuery(`
                 RemoveDocumentFromVectorDatabase(engine = "${id}", fileNames=[${fileArray}])
             `);
+
+            const { output, operationType } = response.pixelReturn[0];
+
+            if (operationType.indexOf('ERROR') === -1) {
+                notification.add({
+                    color: 'success',
+                    message: `Successfully removed document`,
+                });
+            } else {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+            }
         } catch (e) {
             notification.add({
                 color: 'warning',
@@ -368,7 +413,7 @@ export const FileTable = (props: FileTableProps) => {
                             />
                         </Table.Cell>
                         <Table.Cell size="small">Name</Table.Cell>
-                        <Table.Cell size="small">Date Modified</Table.Cell>
+                        <Table.Cell size="small">Date Uploaded</Table.Cell>
                         <Table.Cell size="small">Size</Table.Cell>
                         <Table.Cell size="small">Action</Table.Cell>
                     </Table.Head>

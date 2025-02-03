@@ -1,3 +1,4 @@
+import React from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
@@ -5,6 +6,7 @@ import { BlockComponent } from '@/stores';
 
 import { VisualizationSpec, createClassFromSpec } from 'react-vega';
 import { styled } from '@mui/material';
+import { FixedVegaChartProps } from 'react-vega/lib/createClassFromSpec';
 
 const StyledChartContainer = styled('div')(() => ({
     width: 'fit-content',
@@ -46,7 +48,9 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
         try {
             const specJson = JSON.parse(data.specJson);
 
-            const Chart = createClassFromSpec({ spec: specJson });
+            const Chart = createClassFromSpec({
+                spec: specJson,
+            }) as unknown as React.FunctionComponent<FixedVegaChartProps>;
 
             return (
                 <StyledChartContainer {...attrs}>
@@ -61,7 +65,9 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
             );
         }
     } else {
-        const Chart = createClassFromSpec({ spec: data.specJson });
+        const Chart = createClassFromSpec({
+            spec: data.specJson,
+        }) as unknown as React.FunctionComponent<FixedVegaChartProps>;
 
         return (
             <StyledChartContainer {...attrs}>

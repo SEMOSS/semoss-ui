@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { ConstructionOutlined } from '@mui/icons-material';
 import { useNotification, styled, Typography, Stack } from '@semoss/ui';
@@ -57,143 +57,8 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
         isOpen: false,
     },
     layout: {
-        selected: 'ui',
+        selected: 'dev',
         available: {
-            ui: {
-                id: 'ui',
-                name: 'UI',
-                data: {
-                    global: { tabEnableClose: false },
-                    borders: [
-                        {
-                            type: 'border',
-                            location: 'left',
-                            selected: 0,
-                            size: DEFAULT_BORDER_SIZE,
-                            children: [
-                                {
-                                    type: 'tab',
-                                    name: 'Blocks',
-                                    component: 'blocks',
-                                    config: {},
-                                    enableDrag: false,
-                                    helpText:
-                                        'UI components that can be used to display for your app',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Visualizations',
-                                    component: 'viz',
-                                    config: {},
-                                    enableDrag: false,
-                                    helpText:
-                                        'Visualizations to be used within the designer',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Layers',
-                                    component: 'layers',
-                                    config: {},
-                                    enableDrag: false,
-                                    helpText:
-                                        'Hierarchy for UI elements within the designer',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Variables',
-                                    component: 'variables',
-                                    config: {},
-                                    enableDrag: false,
-                                    helpText:
-                                        'Parameters that are used within blocks and notebooks',
-                                },
-                            ],
-                        },
-                        {
-                            type: 'border',
-                            location: 'right',
-                            size: DEFAULT_BORDER_SIZE,
-                            children: [
-                                {
-                                    type: 'tab',
-                                    name: 'Block Settings',
-                                    component: 'selected',
-                                    config: {},
-                                    enableDrag: false,
-                                    helpText:
-                                        'Settings for UI component you have selected',
-                                    // icon: '@/assets/favicon.svg',
-                                },
-                            ],
-                        },
-                    ],
-                    layout: {
-                        type: 'row',
-                        weight: 100,
-                        children: [
-                            {
-                                type: 'tabset',
-                                weight: 100,
-                                selected: 0,
-                                children: [
-                                    {
-                                        type: 'tab',
-                                        name: 'Designer',
-                                        component: 'designer',
-                                        config: {},
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                },
-            },
-            'data-science': {
-                id: 'data-science',
-                name: 'Data',
-                data: {
-                    global: { tabEnableClose: false },
-                    borders: [
-                        {
-                            type: 'border',
-                            location: 'left',
-                            selected: 0,
-                            size: DEFAULT_BORDER_SIZE,
-                            children: [
-                                {
-                                    type: 'tab',
-                                    name: 'Notebooks',
-                                    component: 'notebook-explorer',
-                                    config: {},
-                                    enableDrag: false,
-                                    helpText:
-                                        'Notebooks associated with the app',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Variables',
-                                    component: 'variables',
-                                    config: {},
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Files',
-                                    component: 'file-explorer',
-                                    config: {},
-                                    enableDrag: false,
-                                    helpText:
-                                        'Files that are stored at app level',
-                                },
-                            ],
-                        },
-                    ],
-                    layout: {
-                        type: 'row',
-                        weight: 100,
-                        children: [],
-                    },
-                },
-            },
             dev: {
                 id: 'dev',
                 name: 'Dev',
@@ -253,6 +118,13 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                     helpText:
                                         'Notebooks associated with the app',
                                 },
+                            ],
+                        },
+                        {
+                            type: 'border',
+                            location: 'right',
+                            size: DEFAULT_BORDER_SIZE,
+                            children: [
                                 {
                                     type: 'tab',
                                     name: 'Block Settings',
@@ -276,9 +148,11 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                 children: [
                                     {
                                         type: 'tab',
-                                        name: 'Designer',
+                                        name: 'page-1',
                                         component: 'designer',
-                                        config: {},
+                                        config: {
+                                            id: 'page-1',
+                                        },
                                         enableClose: true,
                                     },
                                 ],
@@ -327,7 +201,7 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
     const config = node.getConfig();
 
     if (component === 'designer') {
-        return <DesignerPanel />;
+        return <DesignerPanel id={config.id} />;
     } else if (component === 'variables') {
         return <VariablesPanel />;
     } else if (component === 'settings') {

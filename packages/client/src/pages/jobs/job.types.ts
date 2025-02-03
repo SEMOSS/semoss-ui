@@ -5,6 +5,17 @@ export interface JobBuilder {
     tags: string[];
     cronExpression: string;
     cronTz: string;
+    smtpHost: string | null;
+    smtpPort: string | null;
+    subject: string | null;
+    jobType: string | null;
+    to: string[];
+    cc: string[];
+    bcc: string[];
+    from: string | null;
+    message: string | null;
+    username: string | null;
+    password: string | null;
 }
 
 export interface PixelReturnJob {
@@ -20,6 +31,17 @@ export interface PixelReturnJob {
     recipeParameters: string;
     jobTags: string;
     cronTz: string;
+    smtpHost: string;
+    smtpPort: string;
+    subject: string;
+    jobType: string;
+    to: string;
+    cc: string;
+    bcc: string;
+    from: string;
+    message: string;
+    username: string;
+    password: string;
 }
 
 export interface JobUIState {
@@ -83,6 +105,17 @@ export interface Job {
     isActive: boolean;
     group: string;
     pixel: string;
+    smtpHost: string;
+    smtpPort: string;
+    subject: string;
+    jobType: string;
+    to: string[];
+    cc: string[];
+    bcc: string[];
+    from: string;
+    message: string;
+    username: string;
+    password: string;
 }
 
 export interface HistoryJob {
@@ -103,6 +136,20 @@ export interface HistoryPaginationProps {
     rowsPerPage?: number;
     search?: string;
     reload?: boolean;
+}
+
+export interface SendEmailJob {
+    smtpHost: string;
+    smtpPort: string;
+    subject: string;
+    jobType: string;
+    to: string;
+    cc: string;
+    bcc: string;
+    from: string;
+    message: string;
+    username: string;
+    password: string;
 }
 
 export type Frequencies = 'Daily' | 'Weekly' | 'Monthly' | 'Yearly';
@@ -129,3 +176,5 @@ export type Month =
     | 'October'
     | 'November'
     | 'December';
+
+export type JobTypes = 'Custom Job' | 'Send Email';

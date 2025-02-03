@@ -91,7 +91,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                                 type: placeholderAction.type,
                             },
                         },
-                    });
+                    }) as string;
                 }
             } else if (placeholderAction.type === 'replace') {
                 id = state.dispatch({
@@ -103,7 +103,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                             slot: placeholderAction.slot,
                         },
                     },
-                });
+                }) as string;
             }
         }
 

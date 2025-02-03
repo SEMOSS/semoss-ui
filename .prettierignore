@@ -2,3 +2,5 @@
 **/dist/*
 **/widget-resources/*
 core/resources/*
+/.nx/cache
+/.nx/workspace-data

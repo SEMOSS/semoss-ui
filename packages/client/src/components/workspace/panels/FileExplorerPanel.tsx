@@ -188,7 +188,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
             const name = path.split('/').pop();
 
             // add to layout
-            layout.addTabWithDragAndDrop(name, {
+            layout.addTabWithDragAndDrop(event as unknown as DragEvent, {
                 type: 'tab',
                 name: name,
                 component: 'file-editor',

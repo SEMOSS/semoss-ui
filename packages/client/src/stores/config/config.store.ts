@@ -65,6 +65,14 @@ interface ConfigStoreInterface {
             datetime: string;
             version: string;
         };
+        /**
+         * Track if r is enabled
+         */
+        r: boolean;
+        /**
+         * Track if python is enabled
+         */
+        python: boolean;
         [key: string]: unknown;
     };
 }
@@ -94,6 +102,8 @@ export class ConfigStore {
                 version: '',
                 datetime: '',
             },
+            r: true,
+            python: true,
         },
     };
     private _generalReactors: Array<string> = [];
@@ -247,7 +257,9 @@ export class ConfigStore {
                 };
 
                 // set the userEpoch
+                // TODO: Refactor and clean-up the userEpoc
                 this._store.userEpoch = output.userEpoch;
+                delete output.userEpoch;
 
                 // get the user based on provider
                 if (output['SAML']) {
@@ -255,6 +267,7 @@ export class ConfigStore {
                 } else if (output['NATIVE']) {
                     user = output['NATIVE'];
                 } else if (output && Object.keys(output).length > 0) {
+                    // This is a hack...since we don't have a single user
                     user = output[Object.keys(output)[0]];
                 }
 

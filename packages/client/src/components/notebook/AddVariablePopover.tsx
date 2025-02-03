@@ -422,7 +422,6 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                     const s: SerializedState = {
                         version: STATE_VERSION,
                         executionOrder: [],
-                        dependencies: {},
                         variables: {},
                         queries: {},
                         blocks: {
@@ -458,7 +457,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                         },
                     };
 
-                    return <BlocksRenderer state={s} />;
+                    return <BlocksRenderer state={s} preview={true} />;
                 } else if (variableType === 'query') {
                     const query = state.getQuery(variablePointer);
 
