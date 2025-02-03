@@ -60,8 +60,12 @@ interface User {
     email?: string;
     phone?: string;
     phoneextension?: string;
-    countrycode?: string;
     username?: string;
+    model_usage_restriction?: string;
+    model_usage_frequency?: string;
+    model_max_tokens?: number;
+    model_max_response_time?: number;
+    unit?: string;
 }
 
 interface EditUserForm {
@@ -80,6 +84,11 @@ interface EditUserForm {
     exporter: boolean;
     publisher: boolean;
     type: string;
+    model_usage_restriction?: string;
+    model_usage_frequency?: string;
+    model_max_tokens?: number;
+    model_max_response_time?: number;
+    unit?: string;
 }
 
 const capitalize = (input: string) => {
@@ -167,11 +176,14 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
             email: user?.email,
             phone: user?.phone,
             phoneextension: user?.phoneextension,
-            countrycode: user?.countrycode,
             admin: user?.admin,
             exporter: user?.exporter,
             publisher: user?.exporter,
             type: user?.type,
+            model_usage_restriction: user?.model_usage_restriction,
+            model_usage_frequency: user?.model_usage_frequency,
+            model_max_tokens: user?.model_max_tokens,
+            model_max_response_time: user?.model_max_response_time,
         },
     });
 
@@ -183,6 +195,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
     }, [user, open]);
 
     const type = watch('type', '');
+    const limitType = watch('model_usage_restriction', '');
     const email = watch('email');
 
     // TODO: Standardize
@@ -190,6 +203,18 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
         name: capitalize(val),
         provider: capitalize(val),
     }));
+
+    const usageRestritctionTypes: Record<string, string> = {
+        null: 'None',
+        token: 'Token',
+        compute: 'Compute time',
+    };
+    const frequencyTypes: Record<string, string> = {
+        DAY: 'Daily',
+        WEEK: 'Weekly',
+        MONTH: 'Monthly',
+    };
+    const unitTypes: string[] = ['milliseconds'];
 
     /**
      * Create / edit the user
@@ -256,198 +281,90 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 
     return (
         <Modal open={open} maxWidth="lg">
-            <Modal.Title>Add Users</Modal.Title>
+            <Modal.Title>
+                {isNewUser ? 'Add Member' : 'Edit Member'}
+            </Modal.Title>
             <form onSubmit={editUser}>
                 <StyledModalContent>
                     <StyledForm>
-                        <Typography variant="subtitle1">Details</Typography>
-                        <Controller
-                            name={'name'}
-                            control={control}
-                            rules={{
-                                required: true,
-                            }}
-                            render={({ field }) => {
-                                return (
-                                    <TextField
-                                        label="Name"
-                                        value={field.value ? field.value : ''}
-                                        onChange={(e) =>
-                                            field.onChange(e.target.value)
-                                        }
-                                    ></TextField>
-                                );
-                            }}
-                        />
-                        <Controller
-                            name={'email'}
-                            control={control}
-                            rules={{
-                                required: true,
-                            }}
-                            render={({ field }) => {
-                                return (
-                                    <TextField
-                                        label="Email"
-                                        value={field.value ? field.value : ''}
-                                        onChange={(e) =>
-                                            field.onChange(e.target.value)
-                                        }
-                                        type="email"
-                                    ></TextField>
-                                );
-                            }}
-                        />
-                        <Stack direction={'row'} gap={1}>
+                        <Typography variant="subtitle1">Credentials</Typography>
+                        <Stack direction={'column'} gap={1}>
                             <Controller
-                                name={'countrycode'}
+                                name="type"
                                 control={control}
-                                rules={{
-                                    pattern: /^[+0-9]{0,6}$/,
-                                }}
+                                rules={{}}
                                 render={({ field }) => {
                                     return (
-                                        <StyledCountryCodeExt
-                                            label="Country Code"
+                                        <Select
+                                            label="Type"
+                                            disabled={isNewUser ? false : true}
                                             value={
                                                 field.value ? field.value : ''
                                             }
-                                            onChange={(e) =>
-                                                field.onChange(e.target.value)
-                                            }
-                                        ></StyledCountryCodeExt>
+                                            onChange={(e) => {
+                                                field.onChange(e.target.value);
+                                            }}
+                                        >
+                                            {providers.map((option, i) => {
+                                                return (
+                                                    <Select.Item
+                                                        value={option.provider}
+                                                        key={i}
+                                                    >
+                                                        {option.name}
+                                                    </Select.Item>
+                                                );
+                                            })}
+                                        </Select>
                                     );
                                 }}
                             />
                             <Controller
-                                name="phone"
+                                name="id"
+                                // disabled={isNewUser ? false : true}
                                 control={control}
-                                rules={{
-                                    validate: (value) => {
-                                        if (value == '') {
-                                            return true;
-                                        }
-                                        numberValidate(value);
-                                    },
-                                    pattern: {
-                                        value: /^\(\d{3}\) \d{3}-\d{4}$|^\d{3}-\d{3}-\d{4}$|^\d{10}$/,
-                                        message:
-                                            'Phone number must be in the format (XXX) XXX-XXXX or XXX-XXX-XXXX',
-                                    },
-                                }}
+                                rules={{}}
                                 render={({ field }) => {
                                     return (
-                                        <Stack>
-                                            <StyledPhoneNumber
-                                                label="Phone Number"
-                                                fullWidth
-                                                value={
-                                                    field.value
-                                                        ? field.value
-                                                        : ''
-                                                }
-                                                onChange={(e) =>
-                                                    field.onChange(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                            ></StyledPhoneNumber>
-                                            {errors.phone && (
-                                                <Typography
-                                                    variant={'caption'}
-                                                    color={'error'}
-                                                >
-                                                    Note: Phone number must be
-                                                    in the format (XXX) XXX-XXXX
-                                                    or XXX-XXX-XXXX
-                                                </Typography>
-                                            )}
-                                        </Stack>
+                                        <TextField
+                                            label="User Id"
+                                            disabled={isNewUser ? false : true}
+                                            value={
+                                                field.value ? field.value : ''
+                                            }
+                                            onChange={(e) => {
+                                                field.onChange(e.target.value);
+                                            }}
+                                        ></TextField>
                                     );
                                 }}
                             />
                             <Controller
-                                name="phoneextension"
+                                name="username"
+                                // disabled={!isNewUser && user?.type === 'Native' ? true : false}
                                 control={control}
-                                rules={{
-                                    pattern: /^[+0-9]{0,6}$/,
-                                }}
+                                rules={{}}
                                 render={({ field }) => {
                                     return (
-                                        <StyledCountryCodeExt
-                                            label="Ext"
+                                        <TextField
+                                            label="Username"
+                                            disabled={
+                                                !isNewUser &&
+                                                user?.type === 'Native'
+                                                    ? true
+                                                    : false
+                                            }
                                             value={
                                                 field.value ? field.value : ''
                                             }
-                                            onChange={(e) =>
-                                                field.onChange(e.target.value)
-                                            }
-                                        ></StyledCountryCodeExt>
+                                            onChange={(e) => {
+                                                field.onChange(e.target.value);
+                                            }}
+                                        ></TextField>
                                     );
                                 }}
                             />
                         </Stack>
-
-                        <Typography variant="subtitle1">Credentials</Typography>
-                        <Controller
-                            name="type"
-                            control={control}
-                            rules={{}}
-                            render={({ field }) => {
-                                return (
-                                    <Select
-                                        label="Type"
-                                        value={field.value ? field.value : ''}
-                                        onChange={(e) => {
-                                            field.onChange(e.target.value);
-                                        }}
-                                    >
-                                        {providers.map((option, i) => {
-                                            return (
-                                                <Select.Item
-                                                    value={option.provider}
-                                                    key={i}
-                                                >
-                                                    {option.name}
-                                                </Select.Item>
-                                            );
-                                        })}
-                                    </Select>
-                                );
-                            }}
-                        />
-                        <Controller
-                            name="id"
-                            control={control}
-                            rules={{}}
-                            render={({ field }) => {
-                                return (
-                                    <TextField
-                                        label="User Id"
-                                        value={field.value ? field.value : ''}
-                                        onChange={(e) => {
-                                            field.onChange(e.target.value);
-                                        }}
-                                    ></TextField>
-                                );
-                            }}
-                        />
-                        <Controller
-                            name="username"
-                            control={control}
-                            rules={{}}
-                            render={({ field }) => {
-                                return (
-                                    <TextField
-                                        label="Username"
-                                        value={field.value ? field.value : ''}
-                                        onChange={(e) => {
-                                            field.onChange(e.target.value);
-                                        }}
-                                    ></TextField>
-                                );
-                            }}
-                        />
                         {type === 'Native' && (
                             <>
                                 <Controller
@@ -492,8 +409,281 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                 )}
                             </>
                         )}
+                        <Typography variant="subtitle1">Details</Typography>
+                        <Stack direction={'column'} gap={1}>
+                            <Controller
+                                name={'name'}
+                                control={control}
+                                rules={{
+                                    required: true,
+                                }}
+                                render={({ field }) => {
+                                    return (
+                                        <TextField
+                                            label="Name"
+                                            value={
+                                                field.value ? field.value : ''
+                                            }
+                                            onChange={(e) =>
+                                                field.onChange(e.target.value)
+                                            }
+                                        ></TextField>
+                                    );
+                                }}
+                            />
+                            <Controller
+                                name={'email'}
+                                control={control}
+                                rules={{
+                                    required: true,
+                                }}
+                                render={({ field }) => {
+                                    return (
+                                        <TextField
+                                            label="Email"
+                                            value={
+                                                field.value ? field.value : ''
+                                            }
+                                            onChange={(e) =>
+                                                field.onChange(e.target.value)
+                                            }
+                                            type="email"
+                                        ></TextField>
+                                    );
+                                }}
+                            />
+                            <Stack direction={'row'} gap={1}>
+                                <Controller
+                                    name="phone"
+                                    control={control}
+                                    rules={{
+                                        validate: (value) => {
+                                            if (value == '') {
+                                                return true;
+                                            }
+                                            numberValidate(value);
+                                        },
+                                        pattern: {
+                                            value: /^\(\d{3}\) \d{3}-\d{4}$|^\d{3}-\d{3}-\d{4}$|^\d{10}$/,
+                                            message:
+                                                'Phone number must be in the format (XXX) XXX-XXXX or XXX-XXX-XXXX',
+                                        },
+                                    }}
+                                    render={({ field }) => {
+                                        return (
+                                            <Stack>
+                                                <StyledPhoneNumber
+                                                    label="Phone Number"
+                                                    fullWidth
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        field.onChange(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                ></StyledPhoneNumber>
+                                                {errors.phone && (
+                                                    <Typography
+                                                        variant={'caption'}
+                                                        color={'error'}
+                                                    >
+                                                        Note: Phone number must
+                                                        be in the format (XXX)
+                                                        XXX-XXXX or XXX-XXX-XXXX
+                                                    </Typography>
+                                                )}
+                                            </Stack>
+                                        );
+                                    }}
+                                />
+                                <Controller
+                                    name="phoneextension"
+                                    control={control}
+                                    rules={{
+                                        pattern: /^[+0-9]{0,6}$/,
+                                    }}
+                                    render={({ field }) => {
+                                        return (
+                                            <StyledCountryCodeExt
+                                                label="Extension"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                onChange={(e) =>
+                                                    field.onChange(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            ></StyledCountryCodeExt>
+                                        );
+                                    }}
+                                />
+                            </Stack>
+                        </Stack>
+                        <Typography variant="subtitle1">
+                            Model Limit Restrictions
+                        </Typography>
+                        <Stack direction={'column'} gap={1}>
+                            <Controller
+                                name="model_usage_restriction"
+                                control={control}
+                                rules={{ required: true }}
+                                render={({ field }) => {
+                                    return (
+                                        <Select
+                                            label="Limit Type"
+                                            value={
+                                                field.value ? field.value : ''
+                                            }
+                                            onChange={(e) => {
+                                                field.onChange(e.target.value);
+                                            }}
+                                        >
+                                            {Object.entries(
+                                                usageRestritctionTypes,
+                                            ).map((option, i) => {
+                                                return (
+                                                    <Select.Item
+                                                        value={option[0]}
+                                                        key={i}
+                                                    >
+                                                        {option[1]}
+                                                    </Select.Item>
+                                                );
+                                            })}
+                                        </Select>
+                                    );
+                                }}
+                            />
+                            {limitType === 'token' && (
+                                <Controller
+                                    name="model_max_tokens"
+                                    control={control}
+                                    rules={{ required: true }}
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                label="Max Tokens"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                type="number"
+                                                onChange={(e) => {
+                                                    field.onChange(
+                                                        Number(e.target.value),
+                                                    );
+                                                }}
+                                            ></TextField>
+                                        );
+                                    }}
+                                />
+                            )}
+                            {limitType === 'compute' && (
+                                <Stack direction={'row'} gap={1}>
+                                    <Controller
+                                        name="model_max_response_time"
+                                        control={control}
+                                        rules={{ required: true }}
+                                        render={({ field }) => {
+                                            return (
+                                                <TextField
+                                                    label="Max Response Time"
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    type="number"
+                                                    onChange={(e) => {
+                                                        field.onChange(
+                                                            Number(
+                                                                e.target.value,
+                                                            ),
+                                                        );
+                                                    }}
+                                                ></TextField>
+                                            );
+                                        }}
+                                    />
+                                    <Controller
+                                        name="unit"
+                                        control={control}
+                                        rules={{}}
+                                        render={({ field }) => {
+                                            return (
+                                                <Select
+                                                    label="Unit"
+                                                    value={unitTypes[0]}
+                                                >
+                                                    {unitTypes.map(
+                                                        (option, i) => {
+                                                            return (
+                                                                <Select.Item
+                                                                    value={
+                                                                        option
+                                                                    }
+                                                                    key={i}
+                                                                >
+                                                                    {option}
+                                                                </Select.Item>
+                                                            );
+                                                        },
+                                                    )}
+                                                </Select>
+                                            );
+                                        }}
+                                    />
+                                </Stack>
+                            )}
+                            {limitType !== 'null' && (
+                                <Controller
+                                    name="model_usage_frequency"
+                                    control={control}
+                                    rules={{}}
+                                    render={({ field }) => {
+                                        return (
+                                            <Select
+                                                label="Frequency"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                onChange={(e) => {
+                                                    field.onChange(
+                                                        e.target.value,
+                                                    );
+                                                }}
+                                            >
+                                                {Object.entries(
+                                                    frequencyTypes,
+                                                ).map((option, i) => {
+                                                    return (
+                                                        <Select.Item
+                                                            value={option[0]}
+                                                            key={i}
+                                                        >
+                                                            {option[1]}
+                                                        </Select.Item>
+                                                    );
+                                                })}
+                                            </Select>
+                                        );
+                                    }}
+                                />
+                            )}
+                        </Stack>
+
                         <StyledPermissions variant="subtitle1">
-                            <strong>Permissions</strong>
+                            Permissions
                         </StyledPermissions>
 
                         <StyledList>

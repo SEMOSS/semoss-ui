@@ -10,10 +10,10 @@ import {
     RadioGroup,
     Typography,
     Search,
-    Stack,
     useNotification,
+    Box,
 } from '@semoss/ui';
-import { Delete } from '@mui/icons-material';
+import { Add, Delete, Edit } from '@mui/icons-material';
 import { AxiosResponse } from 'axios';
 
 import { ALL_TYPES } from '@/types';
@@ -23,20 +23,11 @@ import { SETTINGS_PROVISIONED_USER } from './settings.types';
 
 import { MembersDeleteOverlay } from './MembersDeleteOverlay';
 import { MembersAddOverlay } from './MembersAddOverlay';
-
-const UserInfoTableCell = styled(Table.Cell)({
-    display: 'flex',
-    alignItems: 'center',
-    height: '84px',
-});
+import SearchIcon from '@mui/icons-material/Search';
 
 const AvatarWrapper = styled('div')({
     display: 'inline-block',
     width: '50px',
-});
-
-const NameIDWrapper = styled('div')({
-    display: 'inline-block',
 });
 
 const StyledMemberContent = styled('div')({
@@ -163,6 +154,12 @@ const StyledCheckbox = styled(Checkbox)({
     paddingBottom: '0px',
 });
 
+const StyledCenteredBox = styled(Box)({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+});
+
 // maps for permissions,
 const permissionMapper = {
     1: 'Author', // BE: 'DISPLAY'
@@ -174,6 +171,20 @@ const permissionMapper = {
     3: 'Read-Only', // BE: 'DISPLAY'
     READ_ONLY: 'Read-Only', // BE: 'DISPLAY'
     'Read-Only': 'READ_ONLY', // DISPLAY: BE
+};
+
+const formatModelLimitValue = (input: string) => {
+    if (input !== undefined) {
+        const mappings: Record<string, string> = {
+            TOKEN: 'Token',
+            COMPUTE: 'Compute time',
+            DAY: 'Daily',
+            WEEK: 'Weekly',
+            MONTH: 'Monthly',
+        };
+        return mappings[input.toUpperCase()] || input;
+    }
+    return '';
 };
 
 interface MembersTableProps {
@@ -193,6 +204,21 @@ interface MembersTableProps {
     onChange?: () => void;
 }
 
+interface User {
+    id: string;
+    type: string;
+    name: string;
+    email: string;
+    permission_granted_by_type: string;
+    permission_granted_by: string;
+    permission: string;
+    date_added: string;
+    usage_restriction?: string;
+    usage_frequency?: string;
+    max_tokens?: number;
+    max_response_time?: number;
+}
+
 export const MembersTable = (props: MembersTableProps) => {
     const { id, type, onChange = () => null } = props;
 
@@ -204,6 +230,7 @@ export const MembersTable = (props: MembersTableProps) => {
     const [page, setPage] = useState<number>(0);
     const [rowsPerPage, setRowsPerPage] = useState<number>(5);
     const [search, setSearch] = useState<string>('');
+    const [isSearch, setIsSearch] = useState<boolean>(false);
     const [permissionFilter, setPermissionFilter] = useState<string>('');
     const [selectedMembers, setSelectedMembers] = useState<
         SETTINGS_PROVISIONED_USER[]
@@ -221,6 +248,7 @@ export const MembersTable = (props: MembersTableProps) => {
 
     /** Add Member State */
     const [addMembersModal, setAddMembersModal] = useState<boolean>(false);
+    const [addModalUser, setAddModalUser] = useState<User | null>(null);
 
     const memberSearchRef = useRef(undefined);
 
@@ -288,10 +316,25 @@ export const MembersTable = (props: MembersTableProps) => {
         try {
             // construct requests for post data
             const requests = members.map((m) => {
-                return {
+                const json = {
                     userid: m.id,
                     permission: quickUpdate ? quickUpdate : 'OWNER',
                 };
+
+                // FOR MODELS
+                if (
+                    m.max_response_time ||
+                    m.usage_restriction ||
+                    m.usage_frequency ||
+                    m.max_tokens
+                ) {
+                    // TODO: WE NEED CONSISTENCY, VERSUS HOW WE RECIEVE FROM BACKEND AND HOW WE SEND
+                    json['maxResponseTime'] = m.max_response_time;
+                    json['usageRestriction'] = m.usage_restriction;
+                    json['usageFrequency'] = m.usage_frequency;
+                    json['maxTokens'] = m.max_tokens;
+                }
+                return json;
             });
 
             if (requests.length === 0) {
@@ -448,15 +491,23 @@ export const MembersTable = (props: MembersTableProps) => {
                         </StyledTableTitleMemberContainer>
 
                         <StyledSearchButtonContainer>
-                            <Search
-                                inputRef={memberSearchRef}
-                                placeholder="Search Members"
-                                size="small"
-                                value={search}
-                                onChange={(e) => {
-                                    setSearch(e.target.value);
-                                }}
-                            />
+                            {isSearch ? (
+                                <Search
+                                    inputRef={memberSearchRef}
+                                    placeholder="Search Members"
+                                    size="small"
+                                    value={search}
+                                    onChange={(e) => {
+                                        setSearch(e.target.value);
+                                    }}
+                                />
+                            ) : (
+                                <IconButton
+                                    onClick={() => setIsSearch(!isSearch)}
+                                >
+                                    <SearchIcon />
+                                </IconButton>
+                            )}
                         </StyledSearchButtonContainer>
 
                         <StyledDeleteSelectedContainer>
@@ -481,7 +532,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                     openAddMembersModal();
                                 }}
                             >
-                                Add Members
+                                <StyledCenteredBox>
+                                    <Add />
+                                    Add Members
+                                </StyledCenteredBox>
                             </Button>
                         </StyledAddMemberContainer>
                     </StyledTableTitleContainer>
@@ -531,11 +585,21 @@ export const MembersTable = (props: MembersTableProps) => {
                                             <Table.Cell size="small">
                                                 Permission
                                             </Table.Cell>
+                                            {type === 'MODEL' && (
+                                                <>
+                                                    <Table.Cell size="small">
+                                                        Model Limit Type
+                                                    </Table.Cell>
+                                                    <Table.Cell size="small">
+                                                        Limit Value
+                                                    </Table.Cell>
+                                                    <Table.Cell size="small">
+                                                        Frequency
+                                                    </Table.Cell>
+                                                </>
+                                            )}
                                             <Table.Cell size="small">
-                                                Permission Date
-                                            </Table.Cell>
-                                            <Table.Cell size="small">
-                                                &nbsp;
+                                                Actions
                                             </Table.Cell>
                                         </Table.Row>
                                     </Table.Head>
@@ -601,25 +665,16 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                 }}
                                                             />
                                                         </StyledTableCell>
-                                                        <UserInfoTableCell
-                                                            size="medium"
-                                                            component="td"
-                                                            scope="row"
-                                                        >
-                                                            <AvatarWrapper>
-                                                                <Avatar>
-                                                                    {user.name[0].toUpperCase()}
-                                                                </Avatar>
-                                                            </AvatarWrapper>
-                                                            <NameIDWrapper>
-                                                                <Stack>
-                                                                    {user.name}
-                                                                </Stack>
-                                                                <Stack>
-                                                                    {`${user.type} ID: ${user.id}`}
-                                                                </Stack>
-                                                            </NameIDWrapper>
-                                                        </UserInfoTableCell>
+                                                        <Table.Cell>
+                                                            <StyledCenteredBox>
+                                                                <AvatarWrapper>
+                                                                    <Avatar>
+                                                                        {user.name[0].toUpperCase()}
+                                                                    </Avatar>
+                                                                </AvatarWrapper>
+                                                                {user.name}
+                                                            </StyledCenteredBox>
+                                                        </Table.Cell>
                                                         <Table.Cell size="medium">
                                                             <RadioGroup
                                                                 row
@@ -656,10 +711,46 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                 />
                                                             </RadioGroup>
                                                         </Table.Cell>
+                                                        {type === 'MODEL' && (
+                                                            <>
+                                                                <Table.Cell>
+                                                                    {formatModelLimitValue(
+                                                                        user.usage_restriction,
+                                                                    )}
+                                                                </Table.Cell>
+                                                                <Table.Cell>
+                                                                    {user?.usage_restriction ===
+                                                                        'compute' &&
+                                                                        `${user.max_response_time?.toLocaleString()} ms`}
+
+                                                                    {user?.usage_restriction ===
+                                                                        'token' &&
+                                                                        `${user.max_tokens?.toLocaleString()}`}
+                                                                </Table.Cell>
+                                                                <Table.Cell>
+                                                                    {formatModelLimitValue(
+                                                                        user.usage_frequency,
+                                                                    )}
+                                                                </Table.Cell>
+                                                            </>
+                                                        )}
                                                         <Table.Cell size="medium">
-                                                            Not Available
-                                                        </Table.Cell>
-                                                        <Table.Cell size="medium">
+                                                            <IconButton
+                                                                onClick={() => {
+                                                                    setAddMembersModal(
+                                                                        true,
+                                                                    );
+
+                                                                    setAddModalUser(
+                                                                        user,
+                                                                    );
+                                                                    console.log(
+                                                                        user,
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <Edit />
+                                                            </IconButton>
                                                             <IconButton
                                                                 onClick={() => {
                                                                     openDeleteMembersModal(
@@ -711,6 +802,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                         disabled={isLoading}
                                         variant={'contained'}
                                         onClick={() => {
+                                            setAddModalUser(null);
                                             openAddMembersModal();
                                         }}
                                     >
@@ -748,6 +840,8 @@ export const MembersTable = (props: MembersTableProps) => {
                 type={type}
                 id={id}
                 open={addMembersModal}
+                user={addModalUser}
+                setAddModalUser={setAddModalUser}
                 onClose={(success) => {
                     // clear out the deleted members
                     setAddMembersModal(false);
@@ -760,6 +854,7 @@ export const MembersTable = (props: MembersTableProps) => {
                         getMembers.refresh();
                     }
                 }}
+                onChange={() => onChange()}
             />
         </StyledMemberContent>
     );
