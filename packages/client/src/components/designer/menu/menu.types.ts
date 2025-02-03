@@ -17,6 +17,7 @@ export interface DesignerMenuItem {
         | 'Line Chart'
         | 'Pie Chart'
         | 'Scatter Plot'
+        | 'Bar E Chart'
         | 'Theme';
 
     /** Name of the item to show in the tooltip */

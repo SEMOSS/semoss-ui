@@ -57,6 +57,7 @@ const SECTION_BAR_CHART = 'Bar Chart';
 const SECTION_LINE_CHART = 'Line Chart';
 const SECTION_PIE_CHART = 'Pie Chart';
 const SECTION_SCATTER_PLOTS = 'Scatter Plot';
+const SECTION_ECHART_BAR_CHART = 'Bar E Chart';
 
 /**
  * Show the visualizations in the menu
@@ -701,6 +702,92 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
             widget: 'mermaid',
             data: {
                 text: BLOCK_DIAGRAM,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ECHART_BAR_CHART,
+        image: BAR_CHART,
+        name: '',
+        json: {
+            widget: 'e-chart',
+            data: {
+                variation: 'echart-bar-graph',
+                option: {
+                    xAxis: {
+                        type: 'category',
+                        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    },
+                    yAxis: {
+                        type: 'value',
+                    },
+                    series: [
+                        {
+                            name: 'Category',
+                            data: [
+                                {
+                                    value: 120,
+                                },
+                                200,
+                                150,
+                                80,
+                                70,
+                                110,
+                                130,
+                            ],
+                            type: 'bar',
+                            labelLine: {
+                                show: true,
+                            },
+                        },
+                    ],
+                    tooltip: {
+                        show: true,
+                        trigger: 'axis',
+                        axisPointer: {
+                            type: 'shadow',
+                            label: {
+                                show: true,
+                            },
+                        },
+                        alwaysShowContent: true,
+                    },
+                    dataZoom: [
+                        {
+                            show: true,
+                            start: 0,
+                            end: 100,
+                            yAxisIndex: 0,
+                        },
+                    ],
+                    brush: {
+                        toolbox: ['rect', 'polygon'],
+                    },
+                    toolbox: {
+                        show: true,
+                        feature: {
+                            dataZoom: {
+                                show: true,
+                            },
+                        },
+                    },
+                    title: {
+                        text: 'Bar Graph',
+                        show: true,
+                        left: 'left',
+                        textStyle: {
+                            color: '#000000',
+                            fontWeight: 'bold',
+                            fontFamily: 'Arial Narrow',
+                            fontSize: 12,
+                        },
+                    },
+                },
+                frame: {
+                    name: '',
+                },
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],

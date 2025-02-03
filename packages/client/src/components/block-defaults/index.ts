@@ -60,6 +60,10 @@ import {
     config as PDFViewerBlockConfig,
     PDFViewerBlockDef,
 } from './pdfViewer-block';
+import {
+    config as EchartVisualizationBlockConfig,
+    EchartVisualizationBlockDef,
+} from './echart-visualization-blocks';
 import { config as ThemeBlockConfig, ThemeBlockDef } from './theme-block';
 
 export type DefaultBlockDefinitions =
@@ -96,6 +100,7 @@ export type DefaultBlockDefinitions =
     | ModalBlockDef
     | RadioBlockDef
     | PDFViewerBlockDef
+    | EchartVisualizationBlockDef
     | ThemeBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
@@ -126,6 +131,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [RadioBlockConfig.widget]: RadioBlockConfig,
     [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
+    [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
     [ThemeBlockConfig.widget]: ThemeBlockConfig,
 };
 
@@ -153,5 +159,6 @@ export {
     ModalBlockConfig,
     RadioBlockConfig,
     PDFViewerBlockConfig,
+    EchartVisualizationBlockConfig,
     ThemeBlockConfig,
 };
