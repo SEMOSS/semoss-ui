@@ -10,7 +10,6 @@ export { default as COMPARE_LLM_ACTIVE } from './Compare_LLM_Active.png';
 export { default as COMPARE_LLM_HOVER } from './Compare_LLM_Hover.png';
 export { default as CONTAINER_ACTIVE } from './Container_Active.png';
 export { default as CONTAINER_HOVER } from './Container_Hover.png';
-export { default as DEFAULT_BLOCK_ACTIVE } from './Default_Block_Active.png';
 export { default as H1_ACTIVE } from './H1_Active.png';
 export { default as H1_HOVER } from './H1_Hover.png';
 export { default as H2_ACTIVE } from './H2_Active.png';
