@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useSearchParams, useLocation } from "react-router-dom";
 
 import { runPixel, useInsight } from "@semoss/sdk";
-import { Button, Typography, useNotification } from "@semoss/ui";
+import { Button, Notification, Typography, useNotification } from "@semoss/ui";
 
 import { Blocks, RendererEngine } from "./components/blocks";
 import { DefaultBlocks } from "./components/block-defaults";
@@ -15,6 +15,8 @@ import {
     STATE_VERSION,
     StateStore,
 } from "./store/state";
+
+// TODO: Add component library notification component
 
 export interface RendererProps {
     /** App to render */
@@ -35,7 +37,7 @@ export interface RendererProps {
  */
 export const Renderer = observer((props: RendererProps) => {
     const { appId, state, preview } = props;
-    const notification = useNotification();
+    // const notification = useNotification();
     const [searchParams, setSearchParams] = useSearchParams();
     const { insightId, isAuthorized } = useInsight();
 
@@ -133,26 +135,26 @@ export const Renderer = observer((props: RendererProps) => {
                         );
 
                         if (errs.length) {
-                            notification.add({
-                                color: "error",
-                                message: errs.join(""),
-                            });
+                            // notification.add({
+                            //     color: "error",
+                            //     message: errs.join(""),
+                            // });
                         }
                     }
 
                     if (stateFilter) {
-                        notification.add({
-                            color: "warning",
-                            message:
-                                "Please be mindful this may not represent the current state of the app, due to the filters present in the URL",
-                        });
+                        // notification.add({
+                        //     color: "warning",
+                        //     message:
+                        //         "Please be mindful this may not represent the current state of the app, due to the filters present in the URL",
+                        // });
                     }
                 })
                 .catch((e) => {
-                    notification.add({
-                        color: "error",
-                        message: e.message,
-                    });
+                    // notification.add({
+                    //     color: "error",
+                    //     message: e.message,
+                    // });
 
                     console.log(e);
                 })
@@ -176,10 +178,10 @@ export const Renderer = observer((props: RendererProps) => {
     }
 
     return (
-        <>
+        <Notification>
             <Blocks state={stateStore} registry={DefaultBlocks}>
                 <RendererEngine id={homePage} />
             </Blocks>
-        </>
+        </Notification>
     );
 });

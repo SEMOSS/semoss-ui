@@ -979,6 +979,214 @@ importers:
         specifier: 2.5.3
         version: 2.5.3
 
+  packages/experiment:
+    dependencies:
+      '@emotion/react':
+        specifier: ^11.11.1
+        version: 11.14.0(@types/react@18.3.1)(react@18.3.1)
+      '@emotion/styled':
+        specifier: ^11.11.0
+        version: 11.14.0(@emotion/react@11.14.0)(@types/react@18.3.1)(react@18.3.1)
+      '@mdi/js':
+        specifier: ^6.9.96
+        version: 6.9.96
+      '@mdi/react':
+        specifier: ^1.6.1
+        version: 1.6.1
+      '@monaco-editor/react':
+        specifier: ^4.5.1
+        version: 4.6.0(monaco-editor@0.45.0)(react-dom@18.3.1)(react@18.3.1)
+      '@mui/icons-material':
+        specifier: ^5.11.16
+        version: 5.16.14(@mui/material@5.16.14)(@types/react@18.3.1)(react@18.3.1)
+      '@mui/material':
+        specifier: ^5.13.5
+        version: 5.16.14(@emotion/react@11.14.0)(@emotion/styled@11.14.0)(@types/react@18.3.1)(react-dom@18.3.1)(react@18.3.1)
+      '@mui/x-data-grid':
+        specifier: ^7.1.0
+        version: 7.24.1(@emotion/react@11.14.0)(@emotion/styled@11.14.0)(@mui/material@5.16.14)(@mui/system@6.4.2)(@types/react@18.3.1)(react-dom@18.3.1)(react@18.3.1)
+      '@semoss/renderer':
+        specifier: workspace:*
+        version: link:../../libs/renderer
+      '@semoss/sdk':
+        specifier: workspace:*
+        version: link:../../libs/sdk
+      '@semoss/ui':
+        specifier: workspace:*
+        version: link:../../libs/ui
+      '@textea/json-viewer':
+        specifier: ^4.0.0
+        version: 4.0.1(@emotion/react@11.14.0)(@emotion/styled@11.14.0)(@mui/material@5.16.14)(@types/react@18.3.1)(react-dom@18.3.1)(react@18.3.1)
+      '@xyflow/react':
+        specifier: ^12.0.4
+        version: 12.4.2(@types/react@18.3.1)(react-dom@18.3.1)(react@18.3.1)
+      axios:
+        specifier: ^1.5.0
+        version: 1.7.9
+      dayjs:
+        specifier: ^1.11.4
+        version: 1.11.8
+      dompurify:
+        specifier: ^2.3.10
+        version: 2.5.8
+      flexlayout-react:
+        specifier: ^0.8.1
+        version: 0.8.1(react-dom@18.3.1)(react@18.3.1)
+      marked:
+        specifier: ^4.0.18
+        version: 4.3.0
+      mobx:
+        specifier: 6.3.7
+        version: 6.3.7
+      mobx-react-lite:
+        specifier: ^3.4.0
+        version: 3.4.3(mobx@6.3.7)(react-dom@18.3.1)(react@18.3.1)
+      monaco-editor:
+        specifier: ^0.45.0
+        version: 0.45.0
+      nanoid:
+        specifier: ^5.0.6
+        version: 5.0.9
+      node-sql-parser:
+        specifier: ^4.18.0
+        version: 4.18.0
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-beautiful-dnd:
+        specifier: ^13.1.1
+        version: 13.1.1(react-dom@18.3.1)(react@18.3.1)
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+      react-hook-form:
+        specifier: ^7.34.2
+        version: 7.54.2(react@18.3.1)
+      react-markdown:
+        specifier: 9.0.1
+        version: 9.0.1(@types/react@18.3.1)(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.3.0
+        version: 6.29.0(react-dom@18.3.1)(react@18.3.1)
+      react-vega:
+        specifier: ^7.6.0
+        version: 7.6.0(react@18.3.1)(vega-lite@5.23.0)(vega@5.31.0)
+      remark-gfm:
+        specifier: ^4.0.0
+        version: 4.0.0
+      vega:
+        specifier: ^5.27.0
+        version: 5.31.0
+      vega-lite:
+        specifier: ^5.16.3
+        version: 5.23.0(vega@5.31.0)
+    devDependencies:
+      '@babel/preset-react':
+        specifier: ^7.25.9
+        version: 7.26.3(@babel/core@7.22.5)
+      '@cypress/code-coverage':
+        specifier: ^3.12.33
+        version: 3.13.11(@babel/core@7.22.5)(@babel/preset-env@7.22.5)(babel-loader@9.1.2)(cypress@13.17.0)(webpack@5.97.1)
+      '@cypress/webpack-preprocessor':
+        specifier: ^6.0.1
+        version: 6.0.2(@babel/core@7.22.5)(@babel/preset-env@7.22.5)(babel-loader@9.1.2)(webpack@5.97.1)
+      '@types/node':
+        specifier: ^16.11.47
+        version: 16.18.125
+      '@types/react':
+        specifier: 18.3.1
+        version: 18.3.1
+      '@types/react-dom':
+        specifier: 18.3.0
+        version: 18.3.0
+      '@types/react-router-dom':
+        specifier: ^5.3.3
+        version: 5.3.3
+      '@types/webpack':
+        specifier: ^5.28.0
+        version: 5.28.5(@swc/core@1.5.29)(esbuild@0.24.2)(webpack-cli@4.10.0)
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^5.32.0
+        version: 5.59.11(@typescript-eslint/parser@5.59.11)(eslint@8.57.1)(typescript@4.9.5)
+      '@typescript-eslint/parser':
+        specifier: ^5.32.0
+        version: 5.59.11(eslint@8.57.1)(typescript@4.9.5)
+      babel-loader:
+        specifier: 9.1.2
+        version: 9.1.2(@babel/core@7.22.5)(webpack@5.97.1)
+      babel-plugin-istanbul:
+        specifier: ^6.1.1
+        version: 6.1.1
+      css-loader:
+        specifier: ^6.7.1
+        version: 6.11.0(webpack@5.97.1)
+      cypress:
+        specifier: ^13.7.1
+        version: 13.17.0
+      dotenv:
+        specifier: ^16.0.1
+        version: 16.4.7
+      eslint:
+        specifier: ^8.21.0
+        version: 8.57.1
+      eslint-config-prettier:
+        specifier: ^8.5.0
+        version: 8.8.0(eslint@8.57.1)
+      eslint-plugin-prettier:
+        specifier: ^4.2.1
+        version: 4.2.1(eslint-config-prettier@8.8.0)(eslint@8.57.1)(prettier@2.8.8)
+      eslint-plugin-react:
+        specifier: ^7.30.1
+        version: 7.32.2(eslint@8.57.1)
+      html-webpack-plugin:
+        specifier: ^5.5.0
+        version: 5.6.3(webpack@5.97.1)
+      identity-obj-proxy:
+        specifier: ^3.0.0
+        version: 3.0.0
+      mini-css-extract-plugin:
+        specifier: ^2.6.1
+        version: 2.9.2(webpack@5.97.1)
+      monaco-editor-webpack-plugin:
+        specifier: ^7.1.0
+        version: 7.1.0(monaco-editor@0.45.0)(webpack@5.97.1)
+      npm-run-all:
+        specifier: ^4.1.5
+        version: 4.1.5
+      prettier:
+        specifier: ^2.4.1
+        version: 2.8.8
+      raw-loader:
+        specifier: ^4.0.2
+        version: 4.0.2(webpack@5.97.1)
+      style-loader:
+        specifier: ^3.3.1
+        version: 3.3.4(webpack@5.97.1)
+      terser-webpack-plugin:
+        specifier: ^5.3.10
+        version: 5.3.11(@swc/core@1.5.29)(esbuild@0.24.2)(webpack@5.97.1)
+      ts-loader:
+        specifier: ^9.3.1
+        version: 9.5.2(typescript@4.9.5)(webpack@5.97.1)
+      tslib:
+        specifier: ^2.4.0
+        version: 2.5.3
+      typescript:
+        specifier: ^4.7.4
+        version: 4.9.5
+      webpack:
+        specifier: ^5.74.0
+        version: 5.97.1(@swc/core@1.5.29)(esbuild@0.24.2)(webpack-cli@4.10.0)
+      webpack-bundle-analyzer:
+        specifier: ^4.10.2
+        version: 4.10.2
+      webpack-cli:
+        specifier: ^4.10.0
+        version: 4.10.0(webpack-bundle-analyzer@4.10.2)(webpack-dev-server@4.15.2)(webpack@5.97.1)
+      webpack-dev-server:
+        specifier: ^4.9.3
+        version: 4.15.2(webpack-cli@4.10.0)(webpack@5.97.1)
+
   packages/legacy:
     dependencies:
       '@mdi/js':
@@ -14764,7 +14972,7 @@ packages:
   /@types/react-dom@18.3.0:
     resolution: {integrity: sha512-EhwApuTmMBmXuFOikhQLIBUn6uFg81SwLMOAUgodJF14SOBOCMdU04gDoYi0WOJJHD144TL32z4yDqCW3dnkQg==}
     dependencies:
-      '@types/react': 18.3.1
+      '@types/react': 17.0.83
     dev: true
 
   /@types/react-redux@7.1.34:

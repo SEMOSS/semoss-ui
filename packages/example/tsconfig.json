@@ -1,23 +1,26 @@
 {
     "compilerOptions": {
-      "target": "es5",
-      "paths": {
-        "@semoss/renderer": ["../../libs/renderer/src/index.ts"],
-        "@semoss/sdk": ["../../libs/sdk/src/index.ts"]
-      },
-      "lib": ["dom", "dom.iterable", "esnext"],
-      "allowJs": true,
-      "skipLibCheck": true,
-      "esModuleInterop": true,
-      "allowSyntheticDefaultImports": true,
-      "strict": true,
-      "forceConsistentCasingInFileNames": true,
-      "module": "esnext",
-      "moduleResolution": "node",
-      "resolveJsonModule": true,
-      "isolatedModules": true,
-      "noEmit": true,
-      "jsx": "react-jsx"
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["./src/*"],
+            "@semoss/ui": ["../../libs/ui/src/index.ts"],
+            "@semoss/renderer": ["../../libs/renderer/src/index.ts"],
+            "@semoss/sdk": ["../../libs/sdk/src/index.ts"]
+        },
+        "target": "es6",
+        "lib": ["dom", "dom.iterable", "esnext"],
+        "allowJs": true,
+        "skipLibCheck": true,
+        "strict": false,
+        "forceConsistentCasingInFileNames": true,
+        "esModuleInterop": true,
+        "module": "esnext",
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "jsx": "react-jsx",
+        "incremental": true,
+        "experimentalDecorators": true
     },
-    "include": ["src"]
-  }
+    "include": ["./src", "./global.d.ts"]
+}

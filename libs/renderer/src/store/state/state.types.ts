@@ -116,7 +116,7 @@ export type Block<D extends BlockDef = BlockDef> = D extends D
           widget: D["widget"];
 
           /** Parent of the block */
-          parent: {
+          parent?: {
               /** Parent ID of the block */
               id: string;
 
