@@ -14,7 +14,7 @@
 
         "nx:dep-graph": "nx dep-graph",
         "nx:reset": "nx reset",
-        "nx:generate-react-lib": "echo \"create nx library for a react project using a template\"",
+        "nx:generate-react-lib": "echo \"TODO: create a nx generator for react rollup/webpack library\"",
 
         "build": "npx nx run-many -t build -p @semoss/client @semoss/legacy"
     },
