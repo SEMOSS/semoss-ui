@@ -2270,7 +2270,7 @@ const state: SerializedState = {
 
 export const Ncrt = () => {
     Env.update({
-        MODULE: 'vha-supply',
+        MODULE: 'Monolith',
     });
 
     return (

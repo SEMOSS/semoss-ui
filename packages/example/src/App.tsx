@@ -1,13 +1,13 @@
 import React from 'react';
 import { Routes, Route, HashRouter } from 'react-router-dom';
 
-import { Ncrt } from './use-cases';
+import { HomePage } from './HomePage';
 
 export const App = () => {
     return (
         <HashRouter>
             <Routes>
-                <Route path="/" element={<Ncrt />} />
+                <Route path="/" element={<HomePage />} />
             </Routes>
         </HashRouter>
     );

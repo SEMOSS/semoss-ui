@@ -1,6 +1,6 @@
 # Development
 
-# Common errors
+## Common errors
 
 Unable to find `@semoss/sdk`, the sdk library hasn't been built for local development
 
