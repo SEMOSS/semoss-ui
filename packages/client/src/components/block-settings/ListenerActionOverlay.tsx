@@ -27,6 +27,8 @@ interface ActionOverlayProps<D extends BlockDef = BlockDef> {
      */
     listener: Extract<keyof D['listeners'], string>;
 
+    isSyncOn: boolean;
+
     /**
      * Index of the action to update
      */
@@ -40,7 +42,13 @@ type ListenerActionForm = ListenerActions;
 
 export const ListenerActionOverlay = observer(
     <D extends BlockDef = BlockDef>(props: ActionOverlayProps<D>) => {
-        const { id, listener, actionIdx = -1, onClose = () => null } = props;
+        const {
+            id,
+            listener,
+            isSyncOn,
+            actionIdx = -1,
+            onClose = () => null,
+        } = props;
 
         const { state } = useBlocks();
         const { listeners, setListener } = useBlockSettings(id);
@@ -71,6 +79,7 @@ export const ListenerActionOverlay = observer(
                     message: ActionMessages.RUN_QUERY,
                     payload: {
                         queryId: '',
+                        detail: {},
                     },
                 },
             });
@@ -82,7 +91,14 @@ export const ListenerActionOverlay = observer(
          * Allow user to submit the data
          */
         const onSubmit = handleSubmit((a: ListenerActionForm) => {
-            const updated = listeners[listener] ? [...listeners[listener]] : [];
+            let updated = listeners[listener] ? [...listeners[listener]] : [];
+            updated = updated.map((l) => {
+                l.payload['detail'] = {
+                    isSync: isSyncOn,
+                    ...l.payload['detail'],
+                };
+                return l;
+            });
 
             if (actionIdx === -1) {
                 // add the new one
@@ -107,6 +123,7 @@ export const ListenerActionOverlay = observer(
                 message: ActionMessages.RUN_QUERY,
                 payload: {
                     queryId: '',
+                    detail: {},
                 },
             };
 
@@ -122,11 +139,12 @@ export const ListenerActionOverlay = observer(
             if (message === ActionMessages.RUN_QUERY) {
                 setValue('payload', {
                     queryId: '',
+                    detail: { isSync: isSyncOn },
                 });
             } else if (message === ActionMessages.DISPATCH_EVENT) {
                 setValue('payload', {
                     name: '',
-                    detail: {},
+                    detail: { isSync: isSyncOn },
                 });
             }
         }, [message]);

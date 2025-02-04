@@ -44,3 +44,27 @@ export const cancellablePromise = <R>(
         },
     };
 };
+
+/**
+ * Ignore the result of a promise
+ * @param executor - function that returns a promise
+ * @returns
+ */
+export const syncronousPromise = <R>(
+    executor: () => Promise<R>,
+): {
+    promise: Promise<R>;
+    cancel: () => void;
+} => {
+    return {
+        promise: new Promise<R>((resolve, reject) => {
+            try {
+                const response = executor();
+                return resolve(response);
+            } catch (err) {
+                return reject(err);
+            }
+        }),
+        cancel: () => {},
+    };
+};

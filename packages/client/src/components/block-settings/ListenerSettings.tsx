@@ -6,6 +6,7 @@ import {
     List,
     useNotification,
     styled,
+    Checkbox,
 } from '@semoss/ui';
 
 import { useBlockSettings, useBlocks, useWorkspace } from '@/hooks';
@@ -27,7 +28,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToParentElement } from '@dnd-kit/modifiers';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Box } from '@mui/material';
 
 const StyledStatusIconContainer = styled('div')(() => ({
@@ -75,6 +76,14 @@ export const ListenerSettings = observer(
         const { workspace } = useWorkspace();
         const notification = useNotification();
         const blockListeners: ListenerActions[] = toJS(listeners)[listener];
+        const [isSyncOn, setIsSyncOn] = useState<boolean>(false);
+
+        useEffect(() => {
+            if (blockListeners.length && blockListeners[0].payload.detail) {
+                let ele = blockListeners[0];
+                setIsSyncOn(ele.payload.detail['isSync'] as boolean);
+            }
+        }, [id]);
 
         /**
          * Open the overlay to create a edit action
@@ -126,6 +135,7 @@ export const ListenerSettings = observer(
                         id={id}
                         listener={listener}
                         actionIdx={actionIdx}
+                        isSyncOn={isSyncOn}
                         onClose={() => workspace.closeOverlay()}
                     />
                 );
@@ -220,6 +230,11 @@ export const ListenerSettings = observer(
 
         return (
             <>
+                <Checkbox
+                    checked={isSyncOn}
+                    onChange={() => setIsSyncOn(!isSyncOn)}
+                    label="Run notebooks synchronously"
+                />
                 <DndContext
                     collisionDetection={closestCenter}
                     onDragEnd={handleDragEnd}
