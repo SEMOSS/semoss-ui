@@ -2,33 +2,6 @@
 
 @semoss\sdk is a small utility package that accelerates the process of building an app.
 
-## 🔄 Migration Guide
-
-### For Users Migrating from @semoss/sdk-react
-
-If you are a user migrating from [@semoss/sdk-react] to [@semoss/sdk-react], this section will help you with the transition.
-
-#### Key Change
-
--   React hooks, contexts, and utilities have been moved to our centralized javascript software development kit
-
-#### Migration Steps
-
-1. Uninstall the old package `@semoss/sdk-react`
-2. Swap import statements, any module that was once imported from `@semoss/sdk-react` can now be imported from `@semoss/sdk`
-
-Eg.
-
-```
-import { useInsight } from '@semoss/sdk-react'
-```
-
-Should now import as such:
-
-```
-import { useInsight } from '@semoss/sdk'
-```
-
 ## Getting Started:
 
 First, install the sdk using a package manager (or your favorite cdn):
@@ -194,6 +167,33 @@ const download = (path) => {
     // log the output
     console.log(output);
 };
+```
+
+## 🔄 Migration Guide
+
+### For Users Migrating from @semoss/sdk-react
+
+If you are a user migrating from [@semoss/sdk-react] to [@semoss/sdk-react], this section will help you with the transition.
+
+#### Key Change
+
+-   React hooks, contexts, and utilities have been moved to our centralized javascript software development kit
+
+#### Migration Steps
+
+1. Uninstall the old package `@semoss/sdk-react`
+2. Swap import statements, any module that was once imported from `@semoss/sdk-react` can now be imported from `@semoss/sdk`
+
+Eg.
+
+```
+import { useInsight } from '@semoss/sdk-react'
+```
+
+Should now import as such:
+
+```
+import { useInsight } from '@semoss/sdk'
 ```
 
 ## Tips and Tricks
