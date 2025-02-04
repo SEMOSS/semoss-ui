@@ -11,9 +11,8 @@ import { getValueByPath } from '@/utility';
 import { computed } from 'mobx';
 
 const StyledChartContainer = styled('div')(() => ({
-    // width: 'fit-content',
-    minWidth: '50px',
-    minHeight: '50px',
+    height: 'inherit',
+    //width: 'inherit',
 }));
 
 const StyledNoDataContainer = styled('div', {
@@ -187,7 +186,14 @@ export const Pie: BlockComponent = observer(({ id }) => {
             : data.option;
         return (
             <StyledChartContainer {...attrs}>
-                <ReactECharts option={formatedOption} onEvents={onClickChart} />
+                <ReactECharts
+                    option={formatedOption}
+                    onEvents={onClickChart}
+                    style={{
+                        height: 'inherit',
+                        //width: 'inherit'
+                    }}
+                />
                 <CustomContextMenu
                     id={id}
                     frame={frame}
