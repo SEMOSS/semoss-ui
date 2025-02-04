@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useBlockSettings } from '@/hooks';
 import { observer } from 'mobx-react-lite';
-import { List, styled } from '@semoss/ui';
+import { List, Stack, styled } from '@semoss/ui';
 // import { ListItemButton } from "@semoss/ui/dist/components/List/ListItemButton";
 // import { ListItemIcon } from "@semoss/ui/dist/components/List/ListItemIcon";
 // import { ListItemText } from "@semoss/ui/dist/components/List/ListItemText";
@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { InfoOutlined } from '@mui/icons-material';
 import { EchartVisualizationBlockDef } from '../../EchartVisualizationBlock';
+import { ColorPalatteSettings } from '@/components/block-settings/shared/ColorPalatteSettings';
 
 interface UpgradedVisualizationToolProps {
     id: string;
@@ -31,7 +32,7 @@ export const UpgradedVisualizationTool =
         return (
             <>
                 <List style={{ width: '100%' }}>
-                    <ListItem disablePadding>
+                    <StyledListItem disablePadding>
                         <ListItemButton
                             onClick={(e) =>
                                 setSelectedList((prevList) =>
@@ -55,7 +56,20 @@ export const UpgradedVisualizationTool =
                             <ListItemText primary="Colour Palette" />
                             <InfoOutlined />
                         </ListItemButton>
-                    </ListItem>
+                        {selectedList === 'colourpalette' && (
+                            <Stack
+                                width={'100%'}
+                                style={{ padding: '0.95%', width: 'inherit' }}
+                            >
+                                <ColorPalatteSettings
+                                    id={id}
+                                    path="option"
+                                    width={'100%'}
+                                    height={'100%'}
+                                />
+                            </Stack>
+                        )}
+                    </StyledListItem>
                     <StyledListItem disablePadding>
                         <ListItemButton
                             onClick={(e) =>
