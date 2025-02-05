@@ -457,7 +457,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                         },
                     };
 
-                    return <BlocksRenderer state={s} />;
+                    return <BlocksRenderer state={s} preview={true} />;
                 } else if (variableType === 'query') {
                     const query = state.getQuery(variablePointer);
 

@@ -1,5 +1,9 @@
 import { BlockConfig } from '@/stores';
-import { InputSettings } from '@/components/block-settings';
+import {
+    InputSettings,
+    SelectInputSettings,
+    SwitchSettings,
+} from '@/components/block-settings';
 
 import {
     buildTextAlignSection,
@@ -9,6 +13,7 @@ import {
 import { LinkBlockDef, LinkBlock } from './LinkBlock';
 import { Link } from '@mui/icons-material';
 import { BLOCK_TYPE_ACTION } from '../block-defaults.constants';
+import { useBlocks } from '@/hooks';
 
 // export the config for the block
 export const config: BlockConfig<LinkBlockDef> = {
@@ -22,6 +27,7 @@ export const config: BlockConfig<LinkBlockDef> = {
         },
         href: '',
         text: 'Insert text',
+        isExternal: false,
     },
     listeners: {},
     slots: {},
@@ -33,18 +39,39 @@ export const config: BlockConfig<LinkBlockDef> = {
             children: [
                 {
                     description: 'Destination',
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Destination"
-                            path="href"
-                        />
-                    ),
+                    render: ({ id }) => {
+                        const { state } = useBlocks();
+                        const allPagesOptions = state
+                            .getAllBlocksOfType('page')
+                            .map((pd) => ({
+                                value: pd.data.route as string,
+                                display: pd.data.route as string,
+                            }));
+                        return (
+                            <SelectInputSettings
+                                id={id}
+                                label="href"
+                                path="href"
+                                options={allPagesOptions}
+                                resizeOnSet
+                            />
+                        );
+                    },
                 },
                 {
                     description: 'Text',
                     render: ({ id }) => (
                         <InputSettings id={id} label="Text" path="text" />
+                    ),
+                },
+                {
+                    description: 'External link',
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label="Enable External Link"
+                            path="isExternal"
+                        />
                     ),
                 },
             ],

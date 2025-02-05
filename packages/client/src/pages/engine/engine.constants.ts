@@ -75,8 +75,8 @@ export const ENGINE_ROUTES: {
                 restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
             },
             {
-                name: 'Settings',
-                path: 'settings',
+                name: 'Access Control',
+                path: 'access-control',
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
             },
@@ -109,8 +109,8 @@ export const ENGINE_ROUTES: {
                 restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
             },
             {
-                name: 'Settings',
-                path: 'settings',
+                name: 'Access Control',
+                path: 'access-control',
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
             },
@@ -161,8 +161,8 @@ export const ENGINE_ROUTES: {
             //     restrict: ['EDIT', 'OWNER'],
             // },
             {
-                name: 'Settings',
-                path: 'settings',
+                name: 'Access Control',
+                path: 'access-control',
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
             },
@@ -195,8 +195,8 @@ export const ENGINE_ROUTES: {
                 restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
             },
             {
-                name: 'Settings',
-                path: 'settings',
+                name: 'Access Control',
+                path: 'access-control',
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
             },

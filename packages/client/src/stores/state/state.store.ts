@@ -192,6 +192,32 @@ export class StateStore {
     }
 
     /**
+     * Get all blocks of a specific type
+     * @param type - type of the block to get
+     * @returns all blocks of the specific type
+     */
+    getAllBlocksOfType(type: string) {
+        return Object.values(this._store.blocks).filter(
+            (block) => block.widget === type,
+        );
+    }
+
+    /**
+     * Get all parents of a block
+     * @param nodeId - id of the block to get the parents of
+     * @returns all parents of the block
+     */
+    getAllParents(nodeId: string) {
+        let selected = nodeId;
+        const parents = [];
+        while (selected) {
+            parents.push(selected);
+            selected = this._store.blocks[selected]?.parent?.id;
+        }
+        return parents;
+    }
+
+    /**
      * Get a specific queries's state
      * @param id - id of the queries to get
      * @returns the specific block information
@@ -609,6 +635,8 @@ export class StateStore {
 
         // add the data
         block.data = json.data;
+        // Defaulting the route to the block id
+        block.data.route = id;
 
         // add the listeners
         block.listeners = json.listeners;

@@ -7,7 +7,6 @@ import { ContentCopy, Delete } from '@mui/icons-material';
 import {
     ActionMessages,
     getRelativeSize,
-    getRootElement,
     getBlockElement,
     BlockJSON,
 } from '@/stores';
@@ -39,211 +38,218 @@ const StyledButtonGroupButton = styled(Button)(() => ({
         '0 0 0 0 rgba(0,0,0,0), 0 0 0 0 rgba(0,0,0,0), 0px 1px 5px 0px rgba(0,0,0,0.12)',
 }));
 
-export const DeleteDuplicateMask = observer(() => {
-    // create the state
-    const [size, setSize] = useState<{
-        top: number;
-        left: number;
-        height: number;
-        width: number;
-    } | null>(null);
+interface DeleteDuplicateMaskProps {
+    /** Element to bind the mask to */
+    screenEle: HTMLDivElement;
+}
 
-    // get the store
-    const { registry, state } = useBlocks();
-    const { designer } = useDesigner();
+export const DeleteDuplicateMask = observer(
+    (props: DeleteDuplicateMaskProps) => {
+        const { screenEle } = props;
 
-    // get the block
-    const block = state.getBlock(designer.selected);
+        // create the state
+        const [size, setSize] = useState<{
+            top: number;
+            left: number;
+            height: number;
+            width: number;
+        } | null>(null);
 
-    // check if it is visible
-    const isVisible =
-        block && registry[block.widget] && block.widget !== 'page';
+        // get the store
+        const { registry, state } = useBlocks();
+        const { designer } = useDesigner();
 
-    // get the root, watch changes, and reposition the mask
-    useLayoutEffect(() => {
-        if (!isVisible) {
-            return;
-        }
+        // get the block
+        const block = state.getBlock(designer.selected);
 
-        // get the root element
-        const rootEle = getRootElement();
+        // check if it is visible
+        const isVisible =
+            block && registry[block.widget] && block.widget !== 'page';
 
-        // reposition the mask
-        const repositionMask = () => {
-            // get the block element
-            const blockEle = getBlockElement(designer.selected);
-
-            if (!blockEle) {
+        // get the root, watch changes, and reposition the mask
+        useLayoutEffect(() => {
+            if (!isVisible) {
                 return;
             }
 
-            // calculate and set the side
-            const updated = getRelativeSize(blockEle, rootEle);
-            setSize(updated);
-        };
+            // reposition the mask
+            const repositionMask = () => {
+                // get the block element
+                const blockEle = getBlockElement(designer.selected);
 
-        const observer = new MutationObserver(() => {
-            repositionMask();
-        });
+                if (!blockEle) {
+                    return;
+                }
 
-        observer.observe(rootEle, {
-            subtree: true,
-            childList: true,
-        });
-
-        // reposition it
-        repositionMask();
-
-        return () => observer.disconnect();
-    }, [designer.selected, isVisible]);
-
-    if (!size || !isVisible) {
-        return <></>;
-    }
-
-    const getStyle = () => {
-        // get position of page root block element
-        const rootElement = getRootElement();
-        const rootElementSize = rootElement.getBoundingClientRect();
-        // get position of selected block element
-        const selectedElement = getBlockElement(designer.selected);
-        const selectedElementSize = selectedElement.getBoundingClientRect();
-
-        // check for overflow
-        const hasLeftOverflow =
-            rootElementSize.left === selectedElementSize.left &&
-            selectedElementSize.width < STYLED_BUTTON_GROUP_BUTTON_WIDTH * 2;
-        const hasRightOverflow =
-            rootElementSize.right === selectedElementSize.right &&
-            selectedElementSize.width < STYLED_BUTTON_GROUP_BUTTON_WIDTH * 2;
-
-        const leftValue =
-            size.left + size.width / 2 - STYLED_BUTTON_GROUP_BUTTON_WIDTH;
-        let left: string;
-        if (hasRightOverflow) {
-            left = `${
-                leftValue -
-                (STYLED_BUTTON_GROUP_BUTTON_WIDTH * 2 -
-                    selectedElementSize.width) +
-                8
-            }px`;
-        } else if (hasLeftOverflow) {
-            left = `${size.left - 8}px`;
-        } else {
-            left = `${leftValue}px`;
-        }
-
-        const top = size.top + size.height;
-
-        return { top, left };
-    };
-
-    const onClear = () => {
-        // dispatch the event
-        state.dispatch({
-            message: ActionMessages.REMOVE_BLOCK,
-            payload: {
-                id: designer.selected,
-                keep: true,
-            },
-        });
-
-        // clear the selected value
-        designer.setSelected('');
-    };
-
-    /**
-     * Delete the block
-     */
-    const onDelete = () => {
-        // dispatch the event
-        state.dispatch({
-            message: ActionMessages.REMOVE_BLOCK,
-            payload: {
-                id: designer.selected,
-                keep: false,
-            },
-        });
-
-        // clear the selected value
-        designer.setSelected('');
-    };
-
-    const onDuplicate = async () => {
-        // get the json for the block to add
-        const getJsonForBlock = (id: string) => {
-            const block = state.blocks[id];
-
-            const blockJson = {
-                widget: toJS(block.widget),
-                data: toJS(block.data),
-                listeners: toJS(block.listeners),
-                slots: {},
+                // calculate and set the side
+                const updated = getRelativeSize(blockEle, screenEle);
+                setSize(updated);
             };
 
-            // generate the slots
-            for (const slot in block.slots) {
-                if (block.slots[slot]) {
-                    blockJson.slots[slot] = block.slots[slot].children.map(
-                        (childId) => {
-                            return getJsonForBlock(childId);
-                        },
-                    );
-                }
+            const observer = new MutationObserver(() => {
+                repositionMask();
+            });
+
+            observer.observe(screenEle, {
+                subtree: true,
+                childList: true,
+            });
+
+            // reposition it
+            repositionMask();
+
+            return () => observer.disconnect();
+        }, [designer.selected, isVisible]);
+
+        if (!size || !isVisible) {
+            return <></>;
+        }
+
+        const getStyle = () => {
+            // get position of page root block element
+            const screenElementSize = screenEle.getBoundingClientRect();
+            // get position of selected block element
+            const selectedElement = getBlockElement(designer.selected);
+            const selectedElementSize = selectedElement.getBoundingClientRect();
+
+            // check for overflow
+            const hasLeftOverflow =
+                screenElementSize.left === selectedElementSize.left &&
+                selectedElementSize.width <
+                    STYLED_BUTTON_GROUP_BUTTON_WIDTH * 2;
+            const hasRightOverflow =
+                screenElementSize.right === selectedElementSize.right &&
+                selectedElementSize.width <
+                    STYLED_BUTTON_GROUP_BUTTON_WIDTH * 2;
+
+            const leftValue =
+                size.left + size.width / 2 - STYLED_BUTTON_GROUP_BUTTON_WIDTH;
+            let left: string;
+            if (hasRightOverflow) {
+                left = `${
+                    leftValue -
+                    (STYLED_BUTTON_GROUP_BUTTON_WIDTH * 2 -
+                        selectedElementSize.width) +
+                    8
+                }px`;
+            } else if (hasLeftOverflow) {
+                left = `${size.left - 8}px`;
+            } else {
+                left = `${leftValue}px`;
             }
 
-            // return it
-            return blockJson;
+            const top = size.top + size.height;
+
+            return { top, left };
         };
 
-        const position = block?.parent?.id
-            ? {
-                  parent: block.parent.id,
-                  slot: block.parent.slot,
-                  sibling: block.id,
-                  type: 'after',
-              }
-            : undefined;
+        const onClear = () => {
+            // dispatch the event
+            state.dispatch({
+                message: ActionMessages.REMOVE_BLOCK,
+                payload: {
+                    id: designer.selected,
+                    keep: true,
+                },
+            });
 
-        const id = await state.dispatch({
-            message: ActionMessages.ADD_BLOCK,
-            payload: {
-                json: getJsonForBlock(block.id) as BlockJSON,
-                position: position,
-            },
-        });
+            // clear the selected value
+            designer.setSelected('');
+        };
 
-        designer.setSelected(id ? (id as string) : '');
-    };
+        /**
+         * Delete the block
+         */
+        const onDelete = () => {
+            // dispatch the event
+            state.dispatch({
+                message: ActionMessages.REMOVE_BLOCK,
+                payload: {
+                    id: designer.selected,
+                    keep: false,
+                },
+            });
 
-    // TODO: revisit these actions for the base page once multiple pages/routing is enabled
+            // clear the selected value
+            designer.setSelected('');
+        };
 
-    return (
-        <StyledContainer id="delete-duplicate-mask" style={getStyle()}>
-            <StyledButtonGroup>
-                <StyledButtonGroupButton
-                    color="inherit"
-                    size="small"
-                    startIcon={<ContentCopy />}
-                    variant="contained"
-                    onClick={onDuplicate}
-                >
-                    Duplicate
-                </StyledButtonGroupButton>
-                <StyledButtonGroupButton
-                    color="inherit"
-                    size="small"
-                    startIcon={<Delete />}
-                    variant="contained"
-                    onClick={
-                        designer.rendered === designer.selected
-                            ? onClear
-                            : onDelete
+        const onDuplicate = async () => {
+            // get the json for the block to add
+            const getJsonForBlock = (id: string) => {
+                const block = state.blocks[id];
+
+                const blockJson = {
+                    widget: toJS(block.widget),
+                    data: toJS(block.data),
+                    listeners: toJS(block.listeners),
+                    slots: {},
+                };
+
+                // generate the slots
+                for (const slot in block.slots) {
+                    if (block.slots[slot]) {
+                        blockJson.slots[slot] = block.slots[slot].children.map(
+                            (childId) => {
+                                return getJsonForBlock(childId);
+                            },
+                        );
                     }
-                >
-                    Delete
-                </StyledButtonGroupButton>
-            </StyledButtonGroup>
-        </StyledContainer>
-    );
-});
+                }
+
+                // return it
+                return blockJson;
+            };
+
+            const position = block?.parent?.id
+                ? {
+                      parent: block.parent.id,
+                      slot: block.parent.slot,
+                      sibling: block.id,
+                      type: 'after',
+                  }
+                : undefined;
+
+            const id = await state.dispatch({
+                message: ActionMessages.ADD_BLOCK,
+                payload: {
+                    json: getJsonForBlock(block.id) as BlockJSON,
+                    position: position,
+                },
+            });
+
+            designer.setSelected(id ? (id as string) : '');
+        };
+
+        // TODO: revisit these actions for the base page once multiple pages/routing is enabled
+
+        return (
+            <StyledContainer id="delete-duplicate-mask" style={getStyle()}>
+                <StyledButtonGroup>
+                    <StyledButtonGroupButton
+                        color="inherit"
+                        size="small"
+                        startIcon={<ContentCopy />}
+                        variant="contained"
+                        onClick={onDuplicate}
+                    >
+                        Duplicate
+                    </StyledButtonGroupButton>
+                    <StyledButtonGroupButton
+                        color="inherit"
+                        size="small"
+                        startIcon={<Delete />}
+                        variant="contained"
+                        onClick={
+                            designer.rendered === designer.selected
+                                ? onClear
+                                : onDelete
+                        }
+                    >
+                        Delete
+                    </StyledButtonGroupButton>
+                </StyledButtonGroup>
+            </StyledContainer>
+        );
+    },
+);

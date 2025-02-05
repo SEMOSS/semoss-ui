@@ -102,6 +102,15 @@ export const EngineLayout = (props: EngineLayoutProps) => {
         ])}); `,
     );
 
+    const { data: llmModels } = usePixel<
+        {
+            database_name: string;
+            database_id: string;
+        }[]
+    >(
+        `MyEngines( metaKeys = ["tag","domain","data classification","data restrictions","description"] , metaFilters = [ {} ] , filterWord=[""], userT = [true], engineTypes=['MODEL'],  offset=[0], limit=[15]) ;`,
+    );
+
     // convert the data into an object
     const values = useMemo(() => {
         if (engineMetaStatus !== 'SUCCESS') {
@@ -205,6 +214,7 @@ export const EngineLayout = (props: EngineLayoutProps) => {
                 role: getUserEnginePermission.data.permission,
                 refresh: engineMetaRefresh,
                 metaVals: values, // Needed so edit button can be in header
+                llmModels: llmModels,
             }}
         >
             <EngineShell>

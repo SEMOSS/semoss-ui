@@ -532,6 +532,7 @@ export const BlocksGuideTemplate: Template = {
                 },
                 widget: 'page',
                 data: {
+                    route: '',
                     style: {
                         padding: '24px',
                         fontFamily: 'roboto',
@@ -816,6 +817,6 @@ export const BlocksGuideTemplate: Template = {
             },
         },
         executionOrder: ['default', 'python_code', 'py-code'],
-        version: '1.0.0-alpha.3',
+        version: '1.0.0-alpha.4',
     },
 };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { TextField } from '@semoss/ui';
@@ -7,9 +7,16 @@ import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
-import { Button, IconButton, Stack } from '@mui/material';
+import { Button, IconButton, Stack, Box } from '@mui/material';
 import { Add, Delete, DragIndicator } from '@mui/icons-material';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import {
+    SortableContext,
+    useSortable,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { restrictToParentElement } from '@dnd-kit/modifiers';
 
 interface OptionsSettingsProps<D extends BlockDef = BlockDef> {
     /**
@@ -29,8 +36,11 @@ export const OptionsSettings = observer(
 
         // track the value
         const [options, setOptions] = useState<
-            Array<{ display: string; value: string }>
-        >([{ display: '', value: '' }]);
+            Array<{ display: string; value: string; id: string }>
+        >([{ display: '', value: '', id: '' }]);
+
+        // track the dragging state
+        const [isDragging, setIsDragging] = useState<boolean>(false);
 
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -55,23 +65,36 @@ export const OptionsSettings = observer(
 
         // update the value whenever the computed one changes
         useEffect(() => {
-            setOptions(computedValue);
+            // add unique id to the options
+            let modifiedOptions = (computedValue || []).map(
+                (option, index) => ({
+                    ...option,
+                    id: `drag-item-${index}`,
+                }),
+            );
+            setOptions(modifiedOptions);
         }, [computedValue]);
 
         /**
          * Sync the data on change
          */
         const onChangeCustomOption = (
-            currentOptions: Array<{ display: string; value: string }>,
+            currentOptions: Array<{
+                display: string;
+                value: string;
+                id: string;
+            }>,
             optionIndex: number,
             display: string,
             value: string,
+            id: string,
         ) => {
             // set the value
             const newOptions = [...currentOptions];
             newOptions[optionIndex] = {
                 display: display,
                 value: value,
+                id: id,
             };
             setOptions(newOptions);
 
@@ -122,13 +145,29 @@ export const OptionsSettings = observer(
             }, 300);
         };
 
-        const reorder = (startIndex: number, endIndex: number) => {
+        const reorder = ({ active, over }: { active: any; over: any }) => {
+            setIsDragging(false);
             if (!options.length) {
                 return;
             }
+
+            if (active === over) {
+                console.log('Invalid drop!');
+                return;
+            }
+
+            // find the index of the active and over items in the options array
+            const oldIndex = Number(
+                options.findIndex((option) => option.id === active.id),
+            );
+            const newIndex = Number(
+                options.findIndex((option) => option.id === over.id),
+            );
+
+            // Remove the item from the old index and add it to the new index
             const newOptions = Array.from(options);
-            const [removed] = newOptions.splice(startIndex, 1);
-            newOptions.splice(endIndex, 0, removed);
+            const [removed] = newOptions.splice(oldIndex, 1);
+            newOptions.splice(newIndex, 0, removed);
 
             setOptions(newOptions);
 
@@ -153,126 +192,95 @@ export const OptionsSettings = observer(
         return (
             <BaseSettingSection label="Options">
                 <Stack spacing={1}>
-                    <DragDropContext
-                        onDragEnd={(result) => {
-                            if (!result.destination) {
-                                return;
-                            }
-                            reorder(
-                                result.source.index,
-                                result.destination.index,
-                            );
-                        }}
+                    <DndContext
+                        collisionDetection={closestCenter}
+                        onDragEnd={reorder}
+                        onDragStart={() => setIsDragging(true)}
+                        modifiers={[restrictToParentElement]}
                     >
-                        <Droppable droppableId="droppable">
-                            {(provided) => (
-                                <Stack
-                                    gap={1}
-                                    ref={provided.innerRef}
-                                    {...provided.droppableProps}
-                                >
-                                    {Array.from(
-                                        options,
-                                        (
-                                            option: {
-                                                display: string;
-                                                value: string;
-                                            },
-                                            i,
-                                        ) => {
-                                            return (
-                                                <Draggable
-                                                    key={`draggable-${i}`}
-                                                    draggableId={`draggable-${i}`}
-                                                    index={i}
-                                                >
-                                                    {(provided, snapshot) => (
-                                                        <Stack
-                                                            direction="row"
-                                                            alignItems="center"
-                                                            gap={1}
-                                                            key={i}
-                                                            ref={
-                                                                provided.innerRef
-                                                            }
-                                                            {...provided.dragHandleProps}
-                                                            {...provided.draggableProps}
-                                                        >
-                                                            <TextField
-                                                                disabled={
-                                                                    snapshot.isDragging
-                                                                }
-                                                                fullWidth
-                                                                value={
-                                                                    option.display
-                                                                }
-                                                                onChange={(
-                                                                    e,
-                                                                ) => {
-                                                                    // sync the data on change
-                                                                    onChangeCustomOption(
-                                                                        options,
-                                                                        i,
-                                                                        e.target
-                                                                            .value,
-                                                                        option.value,
-                                                                    );
-                                                                }}
-                                                                placeholder="Display"
-                                                                size="small"
-                                                                variant="outlined"
-                                                                autoComplete="off"
-                                                            />
-                                                            <TextField
-                                                                disabled={
-                                                                    snapshot.isDragging
-                                                                }
-                                                                fullWidth
-                                                                value={
-                                                                    option.value
-                                                                }
-                                                                onChange={(
-                                                                    e,
-                                                                ) => {
-                                                                    // sync the data on change
-                                                                    onChangeCustomOption(
-                                                                        options,
-                                                                        i,
-                                                                        option.display,
-                                                                        e.target
-                                                                            .value,
-                                                                    );
-                                                                }}
-                                                                placeholder="Value"
-                                                                size="small"
-                                                                variant="outlined"
-                                                                autoComplete="off"
-                                                            />
-                                                            <IconButton
-                                                                disabled={
-                                                                    snapshot.isDragging
-                                                                }
-                                                                size="small"
-                                                                onClick={() =>
-                                                                    onRemoveCustomOption(
-                                                                        i,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Delete />
-                                                            </IconButton>
-                                                            <DragIndicator />
-                                                        </Stack>
-                                                    )}
-                                                </Draggable>
-                                            );
+                        <SortableContext
+                            items={options.map((option) => option.id)}
+                            strategy={verticalListSortingStrategy}
+                        >
+                            <Stack gap={1}>
+                                {Array.from(
+                                    options,
+                                    (
+                                        option: {
+                                            display: string;
+                                            value: string;
+                                            id: string;
                                         },
-                                    )}
-                                    {provided.placeholder}
-                                </Stack>
-                            )}
-                        </Droppable>
-                    </DragDropContext>
+                                        i,
+                                    ) => {
+                                        return (
+                                            <SortableItems
+                                                key={option.id}
+                                                id={option.id}
+                                            >
+                                                <Stack
+                                                    direction="row"
+                                                    alignItems="center"
+                                                    gap={1}
+                                                    key={option.id}
+                                                >
+                                                    <TextField
+                                                        disabled={isDragging}
+                                                        fullWidth
+                                                        value={option.display}
+                                                        onChange={(e) => {
+                                                            // sync the data on change
+                                                            onChangeCustomOption(
+                                                                options,
+                                                                i,
+                                                                e.target.value,
+                                                                option.value,
+                                                                option.id,
+                                                            );
+                                                        }}
+                                                        placeholder="Display"
+                                                        size="small"
+                                                        variant="outlined"
+                                                        autoComplete="off"
+                                                    />
+                                                    <TextField
+                                                        disabled={isDragging}
+                                                        fullWidth
+                                                        value={option.value}
+                                                        onChange={(e) => {
+                                                            // sync the data on change
+                                                            onChangeCustomOption(
+                                                                options,
+                                                                i,
+                                                                option.display,
+                                                                e.target.value,
+                                                                option.id,
+                                                            );
+                                                        }}
+                                                        placeholder="Value"
+                                                        size="small"
+                                                        variant="outlined"
+                                                        autoComplete="off"
+                                                    />
+                                                    <IconButton
+                                                        disabled={isDragging}
+                                                        size="small"
+                                                        onClick={() =>
+                                                            onRemoveCustomOption(
+                                                                i,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Delete />
+                                                    </IconButton>
+                                                </Stack>
+                                            </SortableItems>
+                                        );
+                                    },
+                                )}
+                            </Stack>
+                        </SortableContext>
+                    </DndContext>
                     <Stack
                         alignItems="center"
                         justifyContent="center"
@@ -284,7 +292,7 @@ export const OptionsSettings = observer(
                             onClick={() =>
                                 setOptions([
                                     ...options,
-                                    { display: '', value: '' },
+                                    { display: '', value: '', id: '' },
                                 ])
                             }
                             startIcon={<Add />}
@@ -297,3 +305,40 @@ export const OptionsSettings = observer(
         );
     },
 );
+
+const SortableItems = ({
+    id,
+    children,
+}: {
+    id: string;
+    children: React.ReactNode;
+}) => {
+    const { attributes, listeners, setNodeRef, transform, transition } =
+        useSortable({ id });
+
+    const style: React.CSSProperties = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        cursor: 'grab',
+    };
+
+    return (
+        <Box
+            ref={setNodeRef}
+            sx={style}
+            display={'flex'}
+            gap={1}
+            alignItems={'center'}
+        >
+            {children}
+            <Box
+                {...attributes}
+                {...listeners}
+                display={'flex'}
+                alignItems={'center'}
+            >
+                <DragIndicator />
+            </Box>
+        </Box>
+    );
+};

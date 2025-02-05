@@ -29,7 +29,13 @@ export const PreviewOverlay = observer((props: PreviewOverlayProps) => {
                 </StyledContainer>
             </Modal.Content>
             <Modal.Actions>
-                <Button onClick={() => onClose()}>Cancel</Button>
+                <Button
+                    onClick={() => {
+                        onClose();
+                    }}
+                >
+                    Cancel
+                </Button>
             </Modal.Actions>
         </>
     );
