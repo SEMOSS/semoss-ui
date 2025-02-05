@@ -1,22 +1,11 @@
 import { observer } from 'mobx-react-lite';
-import { DragDropContext, Droppable } from 'react-beautiful-dnd';
-
 import {
     Autocomplete,
     IconButton,
-    List,
-    Select,
     TextField,
     useNotification,
-    MenuItem,
-    Typography,
 } from '@semoss/ui';
-import {
-    useBlockSettings,
-    useBlocksPixel,
-    useFrame,
-    useFrameHeaders,
-} from '@/hooks';
+import { useBlockSettings, useBlocksPixel, useFrameHeaders } from '@/hooks';
 import { BaseSettingSection } from '@/components/block-settings';
 import { Sync } from '@mui/icons-material';
 
@@ -24,12 +13,10 @@ import { Stack } from '@mui/material';
 import { GridBlockColumn } from '../../grid-block/grid-block.types';
 import { useEffect, useMemo, useState } from 'react';
 import { EchartVisualizationBlockDef } from '../EchartVisualizationBlock';
-import { ScatterPlotBlockSettingsItem } from './ScatterPlotBlockSettingsItem';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
-import { Paths, PathValue } from '@/types';
+import { Paths } from '@/types';
 import { Block, BlockDef } from '@/stores';
-import path from 'path';
 
 interface ScatterPlotBlockSettingsProps<D extends BlockDef = BlockDef> {
     /** Id of the block */
@@ -78,41 +65,65 @@ export const ScatterPlotBlockSettings = observer(
             setValue(computedValue);
         }, [computedValue]);
         useEffect(() => {
-            // if (data) {
             const json = JSON.parse(computedValue);
             let state = json['_state'];
             if (state && state.hasOwnProperty('fields')) {
                 reinitializeStates(state['fields']);
             }
-            //else {
-            //     json['_state'] = {};
-            //     setXAxisValue([]);
-            //     setYAxisValue([]);
-            //     setTooltip([]);
-            //     setValue(JSON.stringify(json, null, 2));
-            // }
-            // }
         }, [id]);
+        /**
+         * Reinitializes the state of the scatter plot block settings.
+         * @param {Object} state - The state to reinitialize with.
+         */
         const reinitializeStates = (state) => {
-            state.XAxis && setXAxisValue(state.XAxis);
-            state.YAxis && setYAxisValue(state.YAxis);
-            state.tooltip && setTooltip(state.tooltip ?? '');
-            state.label && setDataLabel(state.label ?? '');
-            state.size && setSize(state.size ?? '');
-            state.color && setColor(state.color ?? '');
+            // XAxis
+            if (state.XAxis) {
+                setXAxisValue(state.XAxis);
+            }
+            // YAxis
+            if (state.YAxis) {
+                setYAxisValue(state.YAxis);
+            }
+            // tooltip
+            if (state.tooltip) {
+                setTooltip(state.tooltip ?? '');
+            }
+            // label
+            if (state.label) {
+                setDataLabel(state.label ?? '');
+            }
+            // size
+            if (state.size) {
+                setSize(state.size ?? '');
+            }
+            // color
+            if (state.color) {
+                setColor(state.color ?? '');
+            }
         };
         // get headers associated with the selected frames
         const frameHeaders = useFrameHeaders(data?.frame?.name);
-        console.log(frameHeaders, 'FrameHeaders');
         const fields = frameHeaders.data.list.map((field) => field.alias) || [];
 
+        /**
+         * Handles the change in label selection.
+         * Updates the state and data with the selected label and its data type.
+         *
+         * @param {string} label - The selected label alias.
+         */
         const handleChangeLabel = (label) => {
+            // Parse the current value from JSON
             let tempValue = JSON.parse(value);
+
+            // Find the field associated with the selected label alias
             const filteredArray = frameHeaders.data.list.find(
                 (item) => item.alias == label,
             );
-            console.log(filteredArray, 'filteredArray');
+
+            // Get the data type of the selected label
             const labelDataType = filteredArray.dataType;
+
+            // Initialize or update the '_state' property with the selected label and its data type
             tempValue['_state'] =
                 tempValue['_state'] &&
                 Object.keys(tempValue['_state']).length > 0
@@ -123,21 +134,38 @@ export const ScatterPlotBlockSettings = observer(
                 label: label,
                 labelDataType: labelDataType,
             };
+
+            // Update the series label name
             tempValue['series'][0]['label']['name'] = label;
-            // const spec = data.option;
-            // spec['series'][0]['label']['name'] = event.target.value;
+
+            // Update the label in the state
             setDataLabel(label);
+
+            // Convert the updated value back to a JSON string
             setValue(JSON.stringify(tempValue));
+
+            // Update the data with the new option
             setData('option', tempValue);
         };
 
+        /**
+         * Updates the X Axis settings based on the selected alias.
+         *
+         * @param {string} xaxis - The selected X Axis alias.
+         */
         const handleChangeXAxis = (xaxis) => {
+            // Parse the current value from JSON
             let tempValue = JSON.parse(value);
+
+            // Find the field associated with the selected X Axis alias
             const filteredArray = frameHeaders.data.list.find(
                 (item) => item.alias == xaxis,
             );
-            console.log(filteredArray, 'filteredArray');
+
+            // Get the data type of the selected X Axis
             const XAxisDataType = filteredArray.dataType;
+
+            // Initialize or update the '_state' property with the selected X Axis and its data type
             tempValue['_state'] =
                 tempValue['_state'] &&
                 Object.keys(tempValue['_state']).length > 0
@@ -148,20 +176,41 @@ export const ScatterPlotBlockSettings = observer(
                 XAxis: xaxis,
                 XAxisDataType: XAxisDataType,
             };
+
+            // Update the X Axis value in the state
             setXAxisValue(xaxis);
+
+            // Update the X Axis name and pixel name in the chart options
             tempValue['xAxis']['name'] = xaxis;
             tempValue['xAxis']['pixelName'] = xaxis;
+
+            // Convert the updated value back to a JSON string
             setValue(JSON.stringify(tempValue));
+
+            // Update the data with the new option
             setData('option', tempValue);
         };
+        /**
+         * Updates the Y Axis settings based on the selected alias.
+         *
+         * @param {string} yaxis - The selected Y Axis alias.
+         */
         const handleChangeYAxis = (yaxis) => {
+            // Update the Y Axis value in the state
             setYAxisValue(yaxis);
+
+            // Parse the current value from JSON
             let tempValue = JSON.parse(value);
+
+            // Find the field associated with the selected Y Axis alias
             const filteredArray = frameHeaders.data.list.find(
                 (item) => item.alias == yaxis,
             );
-            console.log(filteredArray, 'filteredArray');
+
+            // Get the data type of the selected Y Axis
             const YAxisDataType = filteredArray.dataType;
+
+            // Initialize or update the '_state' property with the selected Y Axis and its data type
             tempValue['_state'] =
                 tempValue['_state'] &&
                 Object.keys(tempValue['_state']).length > 0
@@ -172,18 +221,35 @@ export const ScatterPlotBlockSettings = observer(
                 YAxis: yaxis,
                 YAxisDataType: YAxisDataType,
             };
+
+            // Update the Y Axis name and pixel name in the chart options
             tempValue['yAxis']['name'] = yaxis;
             tempValue['yAxis']['pixelName'] = yaxis;
+
+            // Convert the updated value back to a JSON string
             setValue(JSON.stringify(tempValue));
+
+            // Update the data with the new option
             setData('option', tempValue);
         };
+        /**
+         * Updates the color settings based on the selected alias.
+         *
+         * @param {string} colors - The selected color alias.
+         */
         const handleChangeColor = (colors) => {
+            // Parse the current value from JSON
             let tempValue = JSON.parse(value);
+
+            // Find the field associated with the selected color alias
             const filteredArray = frameHeaders.data.list.find(
                 (item) => item.alias == colors,
             );
-            console.log(filteredArray, 'filteredArray');
+
+            // Get the data type of the selected color
             const colorDataType = filteredArray.dataType;
+
+            // Initialize or update the '_state' property with the selected color and its data type
             tempValue['_state'] =
                 tempValue['_state'] &&
                 Object.keys(tempValue['_state']).length > 0
@@ -194,19 +260,34 @@ export const ScatterPlotBlockSettings = observer(
                 color: colors,
                 colorDataType: colorDataType,
             };
-            // const spec = data.option;
-            // spec['series'][0]['label']['name'] = event.target.value;
+
+            // Update the color value in the state
             setColor(colors);
+
+            // Convert the updated value back to a JSON string
             setValue(JSON.stringify(tempValue));
+
+            // Update the data with the new option
             setData('option', tempValue);
         };
+        /**
+         * Updates the size settings based on the selected alias.
+         *
+         * @param {string} size - The selected size alias.
+         */
         const handleChangeSize = (size) => {
+            // Parse the current value from JSON
             let tempValue = JSON.parse(value);
+
+            // Find the field associated with the selected size alias
             const filteredArray = frameHeaders.data.list.find(
                 (item) => item.alias == size,
             );
-            console.log(filteredArray, 'filteredArray');
+
+            // Get the data type of the selected size
             const sizeDataType = filteredArray.dataType;
+
+            // Initialize or update the '_state' property with the selected size and its data type
             tempValue['_state'] =
                 tempValue['_state'] &&
                 Object.keys(tempValue['_state']).length > 0
@@ -217,17 +298,34 @@ export const ScatterPlotBlockSettings = observer(
                 size: size,
                 sizeDataType: sizeDataType,
             };
+
+            // Update the size value in the state
             setSize(size);
+
+            // Convert the updated value back to a JSON string
             setValue(JSON.stringify(tempValue));
+
+            // Update the data with the new option
             setData('option', tempValue);
         };
+        /**
+         * Updates the tooltip settings based on the selected alias.
+         *
+         * @param {string} tooltips - The selected tooltip alias.
+         */
         const handleChangeTooltip = (tooltips) => {
+            // Parse the current value from JSON
             let tempValue = JSON.parse(value);
+
+            // Find the field associated with the selected tooltip alias
             const filteredArray = frameHeaders.data.list.find(
                 (item) => item.alias == tooltips,
             );
-            console.log(filteredArray, 'filteredArray');
+
+            // Get the data type of the selected tooltip
             const tooltipDataType = filteredArray.dataType;
+
+            // Initialize or update the '_state' property with the selected tooltip and its data type
             tempValue['_state'] =
                 tempValue['_state'] &&
                 Object.keys(tempValue['_state']).length > 0
@@ -238,13 +336,108 @@ export const ScatterPlotBlockSettings = observer(
                 tooltip: tooltips,
                 tooltipDataType: tooltipDataType,
             };
-            // const spec = data.option;
-            // spec['series'][0]['label']['name'] = event.target.value;
+
+            // Update the tooltip value in the state
             setTooltip(tooltips);
+
+            // Convert the updated value back to a JSON string
             setValue(JSON.stringify(tempValue));
+
+            // Update the data with the new option
             setData('option', tempValue);
         };
 
+        /**
+         * Remove the specified segment from the option object.
+         *
+         * @param {string} segment - The segment to remove, can be 'label', 'xAxis', 'yAxis', 'size', 'color', or 'tooltip'.
+         */
+        const handleRemoveOption = (segment: string) => {
+            // Parse the current value from JSON
+            let tempValue = JSON.parse(value);
+
+            // Switch on the segment to remove the correct field from the option object
+            switch (segment) {
+                case 'label':
+                    // Reset the label value in the state
+                    setDataLabel('');
+                    // Remove the label field from the option object
+                    const newFields = { ...tempValue };
+                    delete newFields['_state']['fields'].label;
+                    delete newFields['_state']['fields'].labelDataType;
+                    // Convert the updated value back to a JSON string
+                    setValue(JSON.stringify(newFields));
+                    // Update the data with the new option
+                    setData('option', newFields);
+                    break;
+                case 'xAxis':
+                    // Reset the X-axis value in the state
+                    setXAxisValue('');
+                    // Remove the X-axis field from the option object
+                    const newXAxisFields = { ...tempValue };
+                    delete newXAxisFields['_state']['fields'].XAxis;
+                    delete newXAxisFields['_state']['fields'].XAxisDataType;
+                    newXAxisFields['xAxis']['pixelName'] = ''; // Reset the X-axis pixel name
+                    newXAxisFields['xAxis']['name'] = ''; // Reset the X-axis name
+                    // Convert the updated value back to a JSON string
+                    setValue(JSON.stringify(newXAxisFields));
+                    // Update the data with the new option
+                    setData('option', newXAxisFields);
+                    break;
+                case 'yAxis':
+                    // Reset the Y-axis value in the state
+                    setYAxisValue('');
+                    // Remove the Y-axis field from the option object
+                    const newYAxisFields = { ...tempValue };
+                    delete newYAxisFields['_state']['fields'].YAxis;
+                    delete newYAxisFields['_state']['fields'].YAxisDataType;
+                    newYAxisFields['yAxis']['pixelName'] = ''; // Reset the Y-axis pixel name
+                    newYAxisFields['yAxis']['name'] = ''; // Reset the Y-axis name
+                    // Convert the updated value back to a JSON string
+                    setValue(JSON.stringify(newYAxisFields));
+                    // Update the data with the new option
+                    setData('option', newYAxisFields);
+                    break;
+                case 'size':
+                    // Reset the size value in the state
+                    setSize('');
+                    // Remove the size field from the option object
+                    const newSizeFields = { ...tempValue };
+                    delete newSizeFields['_state']['fields'].size;
+                    delete newSizeFields['_state']['fields'].sizeDataType;
+                    // Convert the updated value back to a JSON string
+                    setValue(JSON.stringify(newSizeFields));
+                    // Update the data with the new option
+                    setData('option', newSizeFields);
+                    break;
+                case 'color':
+                    // Reset the color value in the state
+                    setColor('');
+                    // Remove the color field from the option object
+                    const newColorFields = { ...tempValue };
+                    delete newColorFields['_state']['fields'].color;
+                    delete newColorFields['_state']['fields'].colorDataType;
+                    // Convert the updated value back to a JSON string
+                    setValue(JSON.stringify(newColorFields));
+                    // Update the data with the new option
+                    setData('option', newColorFields);
+                    break;
+                case 'tooltip':
+                    // Reset the tooltip value in the state
+                    setTooltip('');
+                    // Remove the tooltip field from the option object
+                    const newTooltipFields = { ...tempValue };
+                    delete newTooltipFields['_state']['fields'].tooltip;
+                    delete newTooltipFields['_state']['fields'].tooltipDataType;
+                    // Convert the updated value back to a JSON string
+                    setValue(JSON.stringify(newTooltipFields));
+                    // Update the data with the new option
+                    setData('option', newTooltipFields);
+                    break;
+                default:
+                    break;
+            }
+        };
         /**
          * Sync the columns with the frame headers
          */
@@ -285,36 +478,11 @@ export const ScatterPlotBlockSettings = observer(
             }
         };
 
-        /**
-         * Reorder columns
-         * @param startDragIndex
-         * @param stopDragIndex
-         */
-        const reorderColumns = (
-            startDragIndex: number,
-            stopDragIndex: number,
-        ) => {
-            // get the columns
-            const columns = [...data?.columns];
-
-            // remove it
-            const [removed] = columns.splice(startDragIndex, 1);
-
-            // add it at the new location
-            columns.splice(stopDragIndex, 0, removed);
-
-            // update the data
-            setData('columns', columns);
-        };
-
         // options for the autocomplete
         const options = getFrames.status === 'SUCCESS' ? getFrames?.data : [];
 
-        // columns to render
-        const columns = data?.columns || [];
-
         return (
-            <>
+            <Stack>
                 <BaseSettingSection label="Frame">
                     <Autocomplete
                         fullWidth
@@ -348,7 +516,7 @@ export const ScatterPlotBlockSettings = observer(
                 </BaseSettingSection>
 
                 <Stack>
-                    <BaseSettingSection label="label">
+                    <BaseSettingSection label="Label">
                         <Autocomplete
                             size="small"
                             fullWidth
@@ -359,9 +527,11 @@ export const ScatterPlotBlockSettings = observer(
                             getOptionLabel={(option) => {
                                 return option;
                             }}
-                            onChange={(_, value) => {
+                            onChange={(_, value, reason) => {
                                 // update the frame
-                                handleChangeLabel(value);
+                                if (reason === 'clear')
+                                    handleRemoveOption('label');
+                                else handleChangeLabel(value);
                             }}
                             freeSolo={false}
                             renderInput={(params) => (
@@ -385,9 +555,11 @@ export const ScatterPlotBlockSettings = observer(
                             getOptionLabel={(option) => {
                                 return option;
                             }}
-                            onChange={(_, value) => {
+                            onChange={(_, value, reason) => {
                                 // update the frame
-                                handleChangeXAxis(value);
+                                if (reason === 'clear')
+                                    handleRemoveOption('xAxis');
+                                else handleChangeXAxis(value);
                             }}
                             freeSolo={false}
                             renderInput={(params) => (
@@ -411,9 +583,11 @@ export const ScatterPlotBlockSettings = observer(
                             getOptionLabel={(option) => {
                                 return option;
                             }}
-                            onChange={(_, value) => {
+                            onChange={(_, value, reason) => {
                                 // update the frame
-                                handleChangeYAxis(value);
+                                if (reason === 'clear')
+                                    handleRemoveOption('yAxis');
+                                else handleChangeYAxis(value);
                             }}
                             freeSolo={false}
                             renderInput={(params) => (
@@ -426,7 +600,7 @@ export const ScatterPlotBlockSettings = observer(
                             )}
                         />
                     </BaseSettingSection>
-                    <BaseSettingSection label="size">
+                    <BaseSettingSection label="Size">
                         <Autocomplete
                             size="small"
                             fullWidth
@@ -437,9 +611,11 @@ export const ScatterPlotBlockSettings = observer(
                             getOptionLabel={(option) => {
                                 return option;
                             }}
-                            onChange={(_, value) => {
+                            onChange={(_, value, reason) => {
                                 // update the frame
-                                handleChangeSize(value);
+                                if (reason == 'clear')
+                                    handleRemoveOption('size');
+                                else handleChangeSize(value);
                             }}
                             freeSolo={false}
                             renderInput={(params) => (
@@ -452,7 +628,7 @@ export const ScatterPlotBlockSettings = observer(
                             )}
                         />
                     </BaseSettingSection>
-                    <BaseSettingSection label="color">
+                    <BaseSettingSection label="Color">
                         <Autocomplete
                             size="small"
                             fullWidth
@@ -463,9 +639,11 @@ export const ScatterPlotBlockSettings = observer(
                             getOptionLabel={(option) => {
                                 return option;
                             }}
-                            onChange={(_, value) => {
+                            onChange={(_, value, reason) => {
                                 // update the frame
-                                handleChangeColor(value);
+                                if (reason === 'clear')
+                                    handleRemoveOption('color');
+                                else handleChangeColor(value);
                             }}
                             freeSolo={false}
                             renderInput={(params) => (
@@ -489,9 +667,11 @@ export const ScatterPlotBlockSettings = observer(
                             getOptionLabel={(option) => {
                                 return option;
                             }}
-                            onChange={(_, value) => {
+                            onChange={(_, value, reason) => {
                                 // update the frame
-                                handleChangeTooltip(value);
+                                if (reason === 'clear')
+                                    handleRemoveOption('tooltip');
+                                else handleChangeTooltip(value);
                             }}
                             freeSolo={false}
                             renderInput={(params) => (
@@ -505,46 +685,7 @@ export const ScatterPlotBlockSettings = observer(
                         />
                     </BaseSettingSection>
                 </Stack>
-                {/* <Stack direction={'column'} width={'100%'} overflow={'hjdden'}>
-                    <DragDropContext
-                        onDragEnd={(result) => {
-                            // ingnore if no destination
-                            if (!result.destination) {
-                                return;
-                            }
-
-                            // swap
-                            reorderColumns(
-                                result.source.index,
-                                result.destination.index,
-                            );
-                        }}
-                    >
-                        <Droppable droppableId="droppable">
-                            {(provided) => (
-                                <List
-                                    sx={{
-                                        width: '100%',
-                                    }}
-                                    ref={provided.innerRef}
-                                    {...provided.droppableProps}
-                                >
-                                    {columns.map((c, cIdx) => {
-                                        return (
-                                            <ScatterPlotBlockSettingsItem
-                                                id={id}
-                                                key={cIdx}
-                                                column={c}
-                                                index={cIdx}
-                                            />
-                                        );
-                                    })}
-                                </List>
-                            )}
-                        </Droppable>
-                    </DragDropContext>
-                </Stack> */}
-            </>
+            </Stack>
         );
     },
 );

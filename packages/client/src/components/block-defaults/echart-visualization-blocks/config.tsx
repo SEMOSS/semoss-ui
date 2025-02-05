@@ -6,13 +6,15 @@ import {
     EchartVisualizationBlockDef,
 } from './EchartVisualizationBlock';
 import { EchartVisualizationBlockMenu } from './EchartVisualizationBlockMenu';
-import { ScatterPlotBlockSettings } from './ScatterPlot.tsx/ScatterPlotBlockSettings';
-import { ChartFeatures } from './ScatterPlot.tsx/ChartFeatures';
 
 export const config: BlockConfig<EchartVisualizationBlockDef> = {
     widget: 'e-chart',
     type: BLOCK_TYPE_CHART,
     data: {
+        style: {
+            height: 500,
+            width: 400,
+        },
         option: {},
         variation: '',
         frame: {
@@ -31,34 +33,12 @@ export const config: BlockConfig<EchartVisualizationBlockDef> = {
     icon: Insights,
     contentMenu: [
         {
-            name: 'JSON Settings',
+            name: 'Settings',
             children: [
                 {
                     description: 'Columns',
                     render: ({ id }) => (
                         <EchartVisualizationBlockMenu id={id} />
-                    ),
-                },
-            ],
-        },
-        {
-            name: 'Block Settings',
-            children: [
-                {
-                    description: 'Block Settings',
-                    render: ({ id }) => (
-                        <ScatterPlotBlockSettings id={id} path={'option'} />
-                    ),
-                },
-            ],
-        },
-        {
-            name: 'Chart Features',
-            children: [
-                {
-                    description: 'Chart Features',
-                    render: ({ id }) => (
-                        <ChartFeatures id={id} path={'option'} />
                     ),
                 },
             ],

@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { useBlockSettings } from '@/hooks';
 import { observer } from 'mobx-react-lite';
-import { List, styled } from '@semoss/ui';
-// import { ListItemButton } from "@semoss/ui/dist/components/List/ListItemButton";
-// import { ListItemIcon } from "@semoss/ui/dist/components/List/ListItemIcon";
-// import { ListItemText } from "@semoss/ui/dist/components/List/ListItemText";
+import { List, Stack, styled } from '@semoss/ui';
 import ImageIcon from '@mui/icons-material/Image';
 import {
     ListItem,
@@ -14,6 +11,13 @@ import {
 } from '@mui/material';
 import { InfoOutlined } from '@mui/icons-material';
 import { EchartVisualizationBlockDef } from '../../EchartVisualizationBlock';
+import { EditXAxisScatterPlot } from '../../ScatterPlot.tsx/EditXAxisScatterPlot';
+import { EditYAxisScatterPlot } from '../../ScatterPlot.tsx/EditYAxisScatterPlot';
+import { TooltipScatterPlot } from '../../ScatterPlot.tsx/TooltipScatterPlot';
+import { ValueLabelScatterPlot } from '../../ScatterPlot.tsx/ValueLabelScatterPlot';
+import { SizeSettings } from '@/components/block-settings';
+import { ScatterPlotSymbol } from '../../ScatterPlot.tsx/ScatterPlotSymbol';
+import { ScatterPlotChartTitle } from '../../ScatterPlot.tsx/ScatterPlotChartTitle';
 
 interface UpgradedVisualizationToolProps {
     id: string;
@@ -30,7 +34,7 @@ export const UpgradedVisualizationTool =
         const [selectedList, setSelectedList] = useState('');
         return (
             <>
-                <List style={{ width: '100%' }}>
+                <List style={{ width: '100%', height: '100vh' }}>
                     <ListItem disablePadding>
                         <ListItemButton
                             onClick={(e) =>
@@ -81,7 +85,7 @@ export const UpgradedVisualizationTool =
                             <InfoOutlined />
                         </ListItemButton>
                         {selectedList === 'colourbyvalue' && (
-                            <p>Colour By Value Component</p>
+                            <p>color by value component</p>
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
@@ -107,7 +111,10 @@ export const UpgradedVisualizationTool =
                             <InfoOutlined />
                         </ListItemButton>
                         {selectedList === 'editxaxis' && (
-                            <p>Edit X Axis Component</p>
+                            <EditXAxisScatterPlot
+                                id={id}
+                                path={'option'}
+                            ></EditXAxisScatterPlot>
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
@@ -133,7 +140,10 @@ export const UpgradedVisualizationTool =
                             <InfoOutlined />
                         </ListItemButton>
                         {selectedList === 'edityaxis' && (
-                            <p>Edit Y Axis Component</p>
+                            <EditYAxisScatterPlot
+                                id={id}
+                                path={'option'}
+                            ></EditYAxisScatterPlot>
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
@@ -161,61 +171,134 @@ export const UpgradedVisualizationTool =
                             <InfoOutlined />
                         </ListItemButton>
                         {selectedList === 'valuelabel' && (
-                            <p>Value Labels Component</p>
+                            <ValueLabelScatterPlot
+                                id={id}
+                                path={'option'}
+                            ></ValueLabelScatterPlot>
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
                         <ListItemButton
                             onClick={(e) =>
                                 setSelectedList((prevList) =>
-                                    prevList === 'barstyle' ? '' : 'barstyle',
+                                    prevList === 'tooltips' ? '' : 'tooltips',
                                 )
                             }
-                            selected={selectedList === 'barstyle'}
+                            selected={selectedList === 'tooltips'}
                         >
                             <ListItemIcon>
                                 <ImageIcon
                                     fontSize="large"
                                     color={
-                                        selectedList === 'barstyle'
+                                        selectedList === 'tooltips'
                                             ? 'primary'
                                             : 'disabled'
                                     }
                                 />
                             </ListItemIcon>
-                            <ListItemText primary="Bar Style" />
+                            <ListItemText primary="Tooltips" />
                             <InfoOutlined />
                         </ListItemButton>
-                        {selectedList === 'barstyle' && (
-                            <p>Bar Chart Styles Component</p>
+                        {selectedList === 'tooltips' && (
+                            <TooltipScatterPlot
+                                id={id}
+                                path={'option'}
+                            ></TooltipScatterPlot>
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
                         <ListItemButton
                             onClick={(e) =>
                                 setSelectedList((prevList) =>
-                                    prevList === 'trendlines'
-                                        ? ''
-                                        : 'trendlines',
+                                    prevList === 'resizing' ? '' : 'resizing',
                                 )
                             }
-                            selected={selectedList === 'trendlines'}
+                            selected={selectedList === 'resizing'}
                         >
                             <ListItemIcon>
                                 <ImageIcon
                                     fontSize="large"
                                     color={
-                                        selectedList === 'trendlines'
+                                        selectedList === 'resizing'
                                             ? 'primary'
                                             : 'disabled'
                                     }
                                 />
                             </ListItemIcon>
-                            <ListItemText primary="Trendlines" />
+                            <ListItemText primary="Resizing" />
                             <InfoOutlined />
                         </ListItemButton>
-                        {selectedList === 'trendlines' && (
-                            <p>Trendlines component</p>
+                        {selectedList === 'resizing' && (
+                            <Stack>
+                                <SizeSettings
+                                    id={id}
+                                    label={'Height'}
+                                    path={'style.height'}
+                                ></SizeSettings>
+                                <SizeSettings
+                                    id={id}
+                                    label={'Width'}
+                                    path={'style.width'}
+                                ></SizeSettings>
+                            </Stack>
+                        )}
+                    </StyledListItem>
+                    <StyledListItem disablePadding>
+                        <ListItemButton
+                            onClick={(e) =>
+                                setSelectedList((prevList) =>
+                                    prevList === 'symbol' ? '' : 'symbol',
+                                )
+                            }
+                            selected={selectedList === 'symbol'}
+                        >
+                            <ListItemIcon>
+                                <ImageIcon
+                                    fontSize="large"
+                                    color={
+                                        selectedList === 'symbol'
+                                            ? 'primary'
+                                            : 'disabled'
+                                    }
+                                />
+                            </ListItemIcon>
+                            <ListItemText primary="Symbol" />
+                            <InfoOutlined />
+                        </ListItemButton>
+                        {selectedList === 'symbol' && (
+                            <ScatterPlotSymbol
+                                id={id}
+                                path={'option'}
+                            ></ScatterPlotSymbol>
+                        )}
+                    </StyledListItem>
+                    <StyledListItem disablePadding>
+                        <ListItemButton
+                            onClick={(e) =>
+                                setSelectedList((prevList) =>
+                                    prevList === 'title' ? '' : 'title',
+                                )
+                            }
+                            selected={selectedList === 'title'}
+                        >
+                            <ListItemIcon>
+                                <ImageIcon
+                                    fontSize="large"
+                                    color={
+                                        selectedList === 'title'
+                                            ? 'primary'
+                                            : 'disabled'
+                                    }
+                                />
+                            </ListItemIcon>
+                            <ListItemText primary="Chart Title" />
+                            <InfoOutlined />
+                        </ListItemButton>
+                        {selectedList === 'title' && (
+                            <ScatterPlotChartTitle
+                                id={id}
+                                path={'option'}
+                            ></ScatterPlotChartTitle>
                         )}
                     </StyledListItem>
                 </List>

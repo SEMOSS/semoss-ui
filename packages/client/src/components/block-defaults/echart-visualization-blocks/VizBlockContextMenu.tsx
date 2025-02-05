@@ -1,9 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import { Menu, MenuItem } from '@mui/material';
-
 import { useBlock, useFrame } from '@/hooks';
-
-import { GridBlockColumn } from '../grid-block/grid-block.types';
 import { EchartVisualizationBlockDef } from './EchartVisualizationBlock';
 
 export interface VizBlockContextMenuProps {

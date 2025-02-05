@@ -803,6 +803,10 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
             widget: 'e-chart',
             data: {
                 variation: 'echart-scatter-plots',
+                style: {
+                    height: 500,
+                    width: 400,
+                },
                 option: {
                     title: {
                         text: '',
@@ -830,8 +834,9 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                             fontSize: 12,
                         },
                         axisLabel: {
+                            show: true,
                             rotate: 0,
-                            fontSize: 12,
+                            fontSize: 11,
                             color: '#000000',
                         },
                     },
@@ -851,6 +856,7 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                             fontSize: 12,
                         },
                         axisLabel: {
+                            show: true,
                             rotate: 0,
                             fontSize: 12,
                             color: '#000000',
@@ -893,6 +899,57 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                         },
                         outBrush: {
                             color: 'rgba(0, 0, 0, 0.1)', // Color for points outside the brushed region
+                        },
+                    },
+                    reset: {
+                        axis: {
+                            xaxis: {
+                                show: true,
+                                axisLine: {
+                                    show: true,
+                                },
+                                axisTick: {
+                                    show: true,
+                                    alignWithLabel: true,
+                                },
+                                nameTextStyle: {
+                                    fontSize: 18,
+                                },
+                                axisLabel: {
+                                    show: true,
+                                    rotate: 0,
+                                    fontSize: 11,
+                                    color: '#000000',
+                                },
+                            },
+                            yaxis: {
+                                show: true,
+                                axisLine: {
+                                    show: true,
+                                },
+                                axisTick: {
+                                    show: true,
+                                    alignWithLabel: true,
+                                },
+                                nameTextStyle: {
+                                    fontSize: 12,
+                                },
+                                axisLabel: {
+                                    show: true,
+                                    rotate: 0,
+                                    fontSize: 12,
+                                    color: '#000000',
+                                },
+                            },
+                        },
+                        label: {
+                            show: true,
+                            rotate: 0,
+                            name: '',
+                            position: 'top',
+                            fontFamily: 'sans-serif',
+                            fontSize: 12,
+                            color: '#000000',
                         },
                     },
                 },

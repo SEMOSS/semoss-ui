@@ -23,6 +23,10 @@ export interface EChartColumns {
 export interface EchartVisualizationBlockDef {
     widget: 'e-chart';
     data: {
+        style: {
+            height: number;
+            width: number;
+        };
         option: {};
         frame: {
             name: string;
@@ -68,7 +72,7 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
         }
     } else {
         return (
-            <StyledNoDataContainer {...attrs}>
+            <StyledNoDataContainer {...attrs} style={{ ...data.style }}>
                 {data.variation === 'echart-bar-graph' && <Bar id={id} />}
                 {data.variation === 'echart-scatter-plots' && (
                     <ScatterPlotBlock id={id} />

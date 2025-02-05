@@ -2,12 +2,12 @@ import { BlockComponent } from '@/stores';
 import { Stack, styled, ToggleTabsGroup } from '@semoss/ui';
 import {
     AIGenerationSettings,
-    CodeEditorSettings,
     JsonSettings,
 } from '@/components/block-settings';
 import { useBlock } from '@/hooks';
 import { useState } from 'react';
 import { UpgradedVisualizationTool } from './Variants/bar-chart/UpgradedVisualizationTool';
+import { ScatterPlotBlockSettings } from './ScatterPlot.tsx/ScatterPlotBlockSettings';
 
 const StyledContainer = styled('div')(() => ({
     maxHeight: '50vh',
@@ -62,12 +62,16 @@ export const EchartVisualizationBlockMenu: BlockComponent = ({ id }) => {
             <StyledContainer>
                 {selectedTab === 'Data' && (
                     <StyledSubSection>
-                        <span>Data Tab Selected</span>
+                        {/* Render ScatterPlotBlockSettings component when 'Data' tab is selected */}
+                        <ScatterPlotBlockSettings
+                            id={id}
+                            path={'option'}
+                        ></ScatterPlotBlockSettings>
                     </StyledSubSection>
                 )}
                 {selectedTab === 'Tools' && (
                     <StyledToolsSection>
-                        {/* <VisualizationTool id={id} showTool={true} /> */}
+                        {/* Render UpgradedVisualizationTool component when 'Tools' tab is selected */}
                         <UpgradedVisualizationTool id={id} />
                     </StyledToolsSection>
                 )}
