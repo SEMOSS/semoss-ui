@@ -6,7 +6,9 @@ import { useBlockSettings, useBlocks } from '@/hooks';
 import { getValueByPath } from '@/utility';
 import { Block, BlockDef, QueryState } from '@/stores';
 import { DefaultBlocks } from '@/components/block-defaults';
-import { Box, Button, Popover, Stack } from '@semoss/ui';
+import { Box, Button, Popover, Stack, styled } from '@semoss/ui';
+import { SketchPicker } from 'react-color';
+import './ColorPalette.css';
 
 interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
     /**
@@ -26,16 +28,50 @@ interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
      */
     width: string;
 }
+const varr = '"Test variable"';
+// const StyledChartContainer = styled(SketchPicker)(
+//     '.custom-sketch-picker .flexbox-fix:nth-child(4)::before',
+//     () => ({
+//         content: varr,
+//         display: 'block',
+//         fontSize:'12px',
+//         fontWeight: 'bold',
+//         color: 'black',
+//         padding: '5px',
+//     }),
+// );
+
+const StyledChartContainer = styled(SketchPicker)({
+    '.custom-sketch-picker .flexbox-fix::before': {
+        marginLeft: '32px',
+        content: varr,
+        display: 'block',
+        fontSize: '12px',
+        fontWeight: 'bold',
+        color: 'black',
+    },
+    '.custom-sketch-picker .flexbox-fix:last-child div': {
+        width: '24px !important' /* Set the width of the color circle */,
+        height: '24px !important' /* Set the height of the color circle */,
+        borderRadius: '50% !important' /* Makes only preset colors circular */,
+        overflow: 'hidden',
+    },
+});
 
 export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
     ({ id, path, height, width }) => {
         const [showPopover, setShowPopover] =
             useState<HTMLButtonElement | null>(null);
+        const [color, setColor] = useState('#000000');
         function handleClick(event: MouseEvent<HTMLButtonElement>) {
             setShowPopover(event.currentTarget);
         }
         function handleClose() {
             setShowPopover(null);
+        }
+        function handleColorChange(e) {
+            console.log(e.rgb);
+            setColor(e.rgb);
         }
         const open = Boolean(showPopover);
         return (
@@ -57,15 +93,10 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                         horizontal: 'left',
                     }}
                 >
-                    <Box
-                        sx={{
-                            padding: 2,
-                            width: '25%',
-                            maxWidth: '35%',
-                        }}
-                    >
-                        The content of the Popover.
-                    </Box>
+                    <StyledChartContainer
+                        onChange={handleColorChange}
+                        color={color}
+                    ></StyledChartContainer>
                 </Popover>
             </div>
         );
