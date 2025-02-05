@@ -94,8 +94,8 @@ export const ListenerActionOverlay = observer(
             let updated = listeners[listener] ? [...listeners[listener]] : [];
             updated = updated.map((l) => {
                 l.payload['detail'] = {
-                    isSync: isSyncOn,
                     ...l.payload['detail'],
+                    isSync: Boolean(isSyncOn),
                 };
                 return l;
             });

@@ -1194,12 +1194,12 @@ export class StateStore {
         const key = `query--${queryId}`;
 
         // cancel a previous command
-        if (this._utils.queryPromises[key] && detail.isSync === false) {
+        if (this._utils.queryPromises[key] && detail?.isSync === false) {
             this._utils.queryPromises[key].cancel();
         }
 
         // setup the promise
-        const p = detail.isSync
+        const p = detail?.isSync
             ? syncronousPromise(async () => {
                   await q._run(detail);
                   return true;
@@ -1215,7 +1215,7 @@ export class StateStore {
             console.error('ERROR:', e);
         });
 
-        if (detail.isSync) {
+        if (detail?.isSync) {
             return p.promise;
         }
     };
