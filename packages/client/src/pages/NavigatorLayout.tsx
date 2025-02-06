@@ -122,7 +122,7 @@ export const NavigatorLayout = observer(() => {
                         </StyledSidebarItem>
                     </Tooltip>
                 ))}
-                <Tooltip title={`Open Prompt Hub`} placement="right">
+                {/* <Tooltip title={`Open Prompt Hub`} placement="right">
                     <StyledSidebarItem
                         to={'/prompt'}
                         selected={!!matchPath('prompt/*', pathname)}
@@ -132,7 +132,7 @@ export const NavigatorLayout = observer(() => {
                             <ArticleOutlined />
                         </Icon>
                     </StyledSidebarItem>
-                </Tooltip>
+                </Tooltip> */}
                 <Stack flex={1}>&nbsp;</Stack>
                 <Tooltip title={`Open Settings`} placement="right">
                     <StyledSidebarItem
