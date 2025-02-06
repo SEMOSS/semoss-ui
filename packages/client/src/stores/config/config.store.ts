@@ -60,7 +60,18 @@ interface ConfigStoreInterface {
         /**
          * List of available providers (logins) that are available
          */
-        providers: string[];
+        availableProviders: {
+            provider: string;
+            name: string;
+            isOauth: boolean;
+        }[];
+        /**
+         * Track if native registration is allowed (username/pw)
+         */
+        nativeRegistration: boolean;
+        /**
+         * Version of the app
+         */
         version: {
             datetime: string;
             version: string;
@@ -97,7 +108,8 @@ export class ConfigStore {
         config: {
             databaseMetaKeys: [],
             projectMetaKeys: [],
-            providers: [],
+            availableProviders: [],
+            nativeRegistration: false,
             version: {
                 version: '',
                 datetime: '',
@@ -174,14 +186,6 @@ export class ConfigStore {
                     this._store.user.loggedIn = true;
                 }
 
-                // save the providers
-                this._store.config.providers = [];
-                for (const provider in data.loginsAllowed) {
-                    if (data.loginsAllowed[provider]) {
-                        this._store.config.providers.push(provider);
-                    }
-                }
-
                 // save the other config data
                 for (const key in data) {
                     this._store.config[key] = data[key];
@@ -230,6 +234,7 @@ export class ConfigStore {
                             name: string;
                             email: string;
                             admin: boolean;
+                            userEpoch: string;
                         };
                     } & {
                         userEpoch: string;
@@ -256,10 +261,15 @@ export class ConfigStore {
                     admin: false,
                 };
 
-                // set the userEpoch
                 // TODO: Refactor and clean-up the userEpoc
-                this._store.userEpoch = output.userEpoch;
-                delete output.userEpoch;
+                if (output && Object.keys(output).length > 0) {
+                    const u = output[Object.keys(output)[0]];
+
+                    if (u.userEpoch) {
+                        this._store.userEpoch = u.userEpoch;
+                        delete u.userEpoch;
+                    }
+                }
 
                 // get the user based on provider
                 if (output['SAML']) {

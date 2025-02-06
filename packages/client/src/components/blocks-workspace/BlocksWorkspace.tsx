@@ -337,30 +337,6 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                     options={DEFAULT_OPTIONS}
                     workspace={workspace}
                     endTopbar={<BlocksWorkspaceActions />}
-                    alert={
-                        <StyledAlert>
-                            <Stack
-                                direction="row"
-                                padding={0}
-                                spacing={0.5}
-                                alignItems={'center'}
-                            >
-                                <ConstructionOutlined
-                                    fontSize="small"
-                                    color={'warning'}
-                                />
-                                <Typography
-                                    variant={'caption'}
-                                    fontWeight="bold"
-                                >
-                                    Note:
-                                </Typography>
-                                <Typography variant={'caption'}>
-                                    This feature is currently in alpha.
-                                </Typography>
-                            </Stack>
-                        </StyledAlert>
-                    }
                     factory={FACTORY}
                 />
                 <BlocksWorkspaceDev />

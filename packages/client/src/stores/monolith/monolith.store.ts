@@ -30,7 +30,14 @@ export class MonolithStore {
         const response = await axios
             .get<{
                 logins: { [key: string]: unknown };
-                loginsAllowed: { [key: string]: boolean };
+                /**
+                 * List of available providers (logins) that are available
+                 */
+                availableProviders: {
+                    provider: string;
+                    name: string;
+                    isOauth: boolean;
+                }[];
                 [key: string]: unknown;
             }>(`${Env.MODULE}/api/config`)
             .catch((error) => {
@@ -2650,6 +2657,10 @@ export class MonolithStore {
                     phoneextension?: string;
                     countrycode?: string;
                     username?: string;
+                    usage_restriction?: string;
+                    usage_frequency?: string;
+                    max_tokens?: number;
+                    max_response_time?: number;
                 }[]
             >(url, {
                 params: {
@@ -2742,26 +2753,67 @@ export class MonolithStore {
         }
         url += 'user/registerUser';
 
-        let newUserInfo =
-            'userId=' +
-            encodeURIComponent(user.id) +
-            '&admin=' +
-            encodeURIComponent(user.admin) +
-            '&publisher=' +
-            encodeURIComponent(user.publisher) +
-            '&exporter=' +
-            encodeURIComponent(user.exporter) +
-            '&name=' +
-            encodeURIComponent(user.name);
+        let newUserInfo = '';
+
+        if (user.id) {
+            newUserInfo += 'userId=' + encodeURIComponent(user.id);
+        }
+        if (user.admin) {
+            newUserInfo += '&admin=' + encodeURIComponent(user.admin);
+        }
+        if (user.publisher) {
+            newUserInfo += '&publisher=' + encodeURIComponent(user.publisher);
+        }
+
+        if (user.exporter) {
+            newUserInfo += '&exporter=' + encodeURIComponent(user.exporter);
+        }
+
+        if (user.name) {
+            newUserInfo += '&name=' + encodeURIComponent(user.name);
+        }
 
         if (user.email) {
             newUserInfo += '&email=' + encodeURIComponent(user.email);
         }
+
+        if (user.phone) {
+            newUserInfo += '&phone=' + encodeURIComponent(user.phone);
+        }
+
+        if (user.phoneextension) {
+            newUserInfo +=
+                '&phoneextension=' + encodeURIComponent(user.phoneextension);
+        }
+
         if (user.type) {
             newUserInfo += '&type=' + encodeURIComponent(user.type);
         }
         if (user.password) {
             newUserInfo += '&password=' + encodeURIComponent(user.password);
+        }
+
+        if (user.model_usage_restriction) {
+            if (user.model_usage_restriction === 'null') {
+                user.model_usage_restriction = null;
+            }
+            newUserInfo +=
+                '&modelUsageRestriction=' +
+                encodeURIComponent(user.model_usage_restriction);
+        }
+        if (user.model_usage_frequency) {
+            newUserInfo +=
+                '&modelUsageFrequency=' +
+                encodeURIComponent(user.model_usage_frequency);
+        }
+        if (user.model_max_tokens) {
+            newUserInfo +=
+                '&modelMaxTokens=' + encodeURIComponent(user.model_max_tokens);
+        }
+        if (user.model_max_response_time) {
+            newUserInfo +=
+                '&modelMaxResponseTime=' +
+                encodeURIComponent(user.model_max_response_time);
         }
 
         const response = await axios.post<boolean>(url, newUserInfo, {

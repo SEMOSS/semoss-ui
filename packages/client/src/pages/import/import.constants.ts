@@ -7487,16 +7487,6 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'VECTORS',
-                        label: 'Vector',
-                        defaultValue: null,
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
                         fieldName: 'KEEP_INPUT_OUTPUT',
                         label: 'Record Questions and Responses',
                         defaultValue: 'false',
