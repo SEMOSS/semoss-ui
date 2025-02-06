@@ -25,6 +25,7 @@ import { PieValueLabel } from '../PieChart/PieValueLabel';
 import { SizeSettings } from '@/components/block-settings/shared';
 import { PieLegend } from '../PieChart/PieLegend';
 import { Legend } from './Legend';
+import { ChartStyling } from './ChartStyling';
 //upgraded visualization tool props
 interface UpgradedVisualizationToolProps {
     id: string;
@@ -229,6 +230,46 @@ export const UpgradedVisualizationTool =
                                 id={id}
                                 option={data.option}
                                 chartType={BAR_CHART_DATA.JSONVALUE[0]}
+                                updateChart={updateChart}
+                            />
+                        )}
+                    </StyledListItem>
+                    <StyledListItem disablePadding>
+                        {data.variation === 'echart-bar-graph' && (
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === 'chartstyle'
+                                            ? ''
+                                            : 'chartstyle',
+                                    )
+                                }
+                                selected={selectedList === 'chartstyle'}
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList === 'chartstyle'
+                                                ? 'primary'
+                                                : 'disabled'
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary="Chart Style" />
+                                <InfoOutlined />
+                            </ListItemButton>
+                        )}
+                        {selectedList === 'chartstyle' && (
+                            // <VisualizationStyles
+                            //     id={id}
+                            //     option={data.option}
+                            //     chartType={BAR_CHART_DATA.JSONVALUE[0]}
+                            //     updateChart={updateChart}
+                            // />
+                            <ChartStyling
+                                option={data.option}
+                                id={id}
                                 updateChart={updateChart}
                             />
                         )}
