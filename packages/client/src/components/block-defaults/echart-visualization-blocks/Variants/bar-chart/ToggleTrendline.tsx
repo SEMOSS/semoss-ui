@@ -1,21 +1,20 @@
-import { Button, Select, styled, Switch } from '@semoss/ui';
+import { Button, Select, styled } from '@semoss/ui';
 import { useEffect, useMemo, useState } from 'react';
-import CustomAccordianBlock from './CustomAccordianBlock';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { BAR_CHART_DATA, LINE_CHART_DATA } from '../../Visualization.constants';
-import { useBlock, useBlocks, useBlockSettings } from '@/hooks';
+import { useBlockSettings } from '@/hooks';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
 import { PathValue } from '@/types';
-
+//styled select field with width to 100%
 const StyledSelect = styled(Select)(() => ({
     width: '100%',
 }));
 
 export const ToggleTrendline = ({ options, updateChart, chartType, id }) => {
-    const [toggleTrendlines, setToggleTrendlines] = useState('');
-    const { data, setData } = useBlockSettings<any>(id);
+    const [toggleTrendlines, setToggleTrendlines] = useState(''); //contains toggle trendlines tool state
+    const { data, setData } = useBlockSettings<any>(id); //chart block data and setdata
     const [value, setValue] = useState(data.option);
+    //different trendlines option to draw lines over bar graph in different format
     const trendLineOptions = [
         { label: 'Smooth', value: 'smooth' },
         { label: 'Exact', value: 'exact' },
@@ -23,6 +22,7 @@ export const ToggleTrendline = ({ options, updateChart, chartType, id }) => {
         { label: 'Step(Middle)', value: 'step_middle' },
         { label: 'Step(End)', value: 'step_end' },
     ];
+    //json property to change when toggle trendlines option is changed
     const path = 'option';
     // get the value of the input (wrapped in usememo because of path prop)
     const computedValue = useMemo(() => {
@@ -39,9 +39,11 @@ export const ToggleTrendline = ({ options, updateChart, chartType, id }) => {
             return JSON.stringify(v, null, 2);
         });
     }, [data, path]).get();
+    //update the value, when data is changed
     useEffect(() => {
         setValue(computedValue);
     }, [computedValue]);
+    //handles initial setting of toggle trendlines data
     useEffect(() => {
         if (BAR_CHART_DATA.JSONVALUE.includes(chartType)) {
             let seriesIndex = options['series'].findIndex(
@@ -76,11 +78,13 @@ export const ToggleTrendline = ({ options, updateChart, chartType, id }) => {
             }
         }
     }, []);
+    // when toggle trendline option is changed, below method will be called
     function handleToggleTrendLine(e) {
         setToggleTrendlines((prevTrendLine) => {
             return e.target.value;
         });
     }
+    //getting the indexes for drawing lines over bar chart
     function getFilteredSeriesIndex() {
         let index = [];
         let seriesAvailable: any[] = data.option['series'].filter((item) =>
@@ -91,6 +95,7 @@ export const ToggleTrendline = ({ options, updateChart, chartType, id }) => {
         });
         return index;
     }
+    //update chart data when toggle trendlines is changed and execute button is clicked
     function updateChartData(trendLinesSelected) {
         let option = typeof value === 'string' ? JSON.parse(value) : value;
         let optionUpdated = option;
@@ -141,14 +146,7 @@ export const ToggleTrendline = ({ options, updateChart, chartType, id }) => {
                         sourceObjectIndex: displayPositionIndex,
                     };
 
-                    option['series'] = [
-                        // ...option['series'].slice(0, displayPositionIndex + 1),
-                        // toggleLineData,
-                        // ...option['series'].slice(displayPositionIndex + 1),
-                        ...option['series'],
-                        toggleLineData,
-                    ];
-                    console.log(option['series'], 'line not exists');
+                    option['series'] = [...option['series'], toggleLineData];
                 }
             });
             runStateUpdate(option);
@@ -159,11 +157,10 @@ export const ToggleTrendline = ({ options, updateChart, chartType, id }) => {
                     item.hasOwnProperty('toggleTrendLineObject'),
             );
             runDisplayPositionData(displayPositionData);
-            // removeLineObject();
         }
         optionUpdated = option;
-        // runStateUpdate(optionUpdated);
     }
+    //setting value of line chart to null when no trendline option is selected
     function runDisplayPositionData(displayPositionData) {
         let option = typeof value === 'string' ? JSON.parse(value) : value;
         let seriesOption = option['series'];
@@ -182,6 +179,7 @@ export const ToggleTrendline = ({ options, updateChart, chartType, id }) => {
         runStateUpdate(option);
         removeLineObject();
     }
+    //removing the line object when the series is updated line type and toggleTrendlineObject
     function removeLineObject() {
         setTimeout(() => {
             let option = typeof value === 'string' ? JSON.parse(value) : value;
@@ -192,15 +190,11 @@ export const ToggleTrendline = ({ options, updateChart, chartType, id }) => {
                         item.hasOwnProperty('toggleTrendLineObject')
                     ),
             );
-            let displayPositionIndex = option['series'].findIndex(
-                (item) =>
-                    item.type === 'line' &&
-                    item.hasOwnProperty('toggleTrendLineObject'),
-            );
             option['series'] = displayPositionData;
             runStateUpdate(option);
         }, 300);
     }
+    //running the option update of a chart
     function runStateUpdate(updatedOption) {
         setTimeout(() => {
             try {
@@ -254,13 +248,5 @@ export const ToggleTrendline = ({ options, updateChart, chartType, id }) => {
             </div>
         </div>
     );
-    return (
-        // <CustomAccordianBlock
-        //     accordianExpanded={false}
-        //     accordianSummaryProps={<ExpandMoreIcon />}
-        //     accordianSummary={'Toggle Trendline'}
-        //     accordianDetails={trendlineData}
-        // />
-        <>{trendlineData}</>
-    );
+    return <>{trendlineData}</>;
 };

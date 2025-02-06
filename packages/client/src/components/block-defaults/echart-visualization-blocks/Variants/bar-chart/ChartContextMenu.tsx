@@ -12,7 +12,6 @@ export interface ChartContextMenuProps {
         mouseX: number;
         mouseY: number;
         value: any;
-        // value: unknown[];
     } | null;
     chartInstance: any;
     onClose: () => void;
@@ -21,7 +20,6 @@ export interface ChartContextMenuProps {
 export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
     ({ id, frame, contextMenu, chartInstance, onClose }) => {
         const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
-        // const { setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
         let currentOperation = useRef({
             unfilterActive: false,
             filterActive: false,
@@ -30,6 +28,7 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
         //Checking the current action state for filtering and unfiltering to set and update the data to chart using setoption and setData
         useEffect(() => {
             if (frame.isLoading === false && frame.error === undefined) {
+                //in contextmenu, when the unfilter is made active
                 if (currentOperation.current.unfilterActive) {
                     try {
                         let optionDataProcessed = processReceivedData(
@@ -44,10 +43,9 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                             chartInstance.setOption(data.option);
                             currentOperation.current.unfilterActive = false;
                         }
-                    } catch (e) {
-                        console.log(e);
-                    }
+                    } catch (e) {}
                 }
+                //in contextmenu, when the filter is made active
                 if (currentOperation.current.filterActive) {
                     try {
                         let optionDataProcessed = processReceivedData(
@@ -67,10 +65,9 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                             };
                             disableSelection();
                         }
-                    } catch (e) {
-                        console.log(e);
-                    }
+                    } catch (e) {}
                 }
+                //in contextmenu, when the exclude is made active
                 if (currentOperation.current.excludeActive) {
                     try {
                         let optionDataProcessed = processReceivedData(
@@ -90,9 +87,7 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                             };
                             disableSelection();
                         }
-                    } catch (e) {
-                        console.log(e);
-                    }
+                    } catch (e) {}
                 }
             }
         }, [frame.data]);
@@ -116,7 +111,6 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                 }),
             };
         }
-        console.log(contextMenu, data.contextMenu);
         return (
             <Menu
                 open={contextMenu !== null}
@@ -149,10 +143,7 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                                     optionUp as PathValue<any, any>,
                                 );
                                 currentOperation.current.unfilterActive = true;
-                                // checkUnfilterOperation(data.option);
-                            } catch (e) {
-                                console.log(e);
-                            }
+                            } catch (e) {}
 
                             onClose();
                         }}
@@ -178,7 +169,6 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                             };
                             setData('option', optionUp as PathValue<any, any>);
                             currentOperation.current.filterActive = true;
-                            // runSeriesUpdate(reUpdate);
                             onClose();
                         }}
                     >
@@ -204,7 +194,6 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                             };
                             setData('option', optionUp as PathValue<any, any>);
                             currentOperation.current.excludeActive = true;
-                            // runSeriesUpdate(reUpdate);
                             onClose();
                         }}
                     >

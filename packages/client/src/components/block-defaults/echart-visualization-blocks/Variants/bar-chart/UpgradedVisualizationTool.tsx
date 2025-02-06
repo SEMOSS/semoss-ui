@@ -1,10 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useBlockSettings } from '@/hooks';
 import { observer } from 'mobx-react-lite';
 import { List, styled } from '@semoss/ui';
-// import { ListItemButton } from "@semoss/ui/dist/components/List/ListItemButton";
-// import { ListItemIcon } from "@semoss/ui/dist/components/List/ListItemIcon";
-// import { ListItemText } from "@semoss/ui/dist/components/List/ListItemText";
 import ImageIcon from '@mui/icons-material/Image';
 import {
     ListItem,
@@ -19,10 +16,8 @@ import { EditXAxis } from './Edit-X-Axis';
 import { BAR_CHART_DATA } from '../../Visualization.constants';
 import { EditYAxis } from './Edit-Y-Axis';
 import { CustomizeValueLabels } from './CustomizeValueLabels';
-import { ChartStyling } from './ChartStyling';
 import { ToggleTrendline } from './ToggleTrendline';
 import { VisualizationStyles } from './VisualizationStyles';
-import { BarChartProperties } from './BarChartProperties';
 import { CustomTooltip } from '../PieChart/CustomTooltip';
 import { ToogleDonut } from '../PieChart/ToggleDonut';
 import { PieTitle } from '../PieChart/PieTitle';
@@ -30,10 +25,11 @@ import { PieValueLabel } from '../PieChart/PieValueLabel';
 import { SizeSettings } from '@/components/block-settings/shared';
 import { PieLegend } from '../PieChart/PieLegend';
 import { Legend } from './Legend';
+//upgraded visualization tool props
 interface UpgradedVisualizationToolProps {
     id: string;
 }
-
+//Styled list item with contents type display
 const StyledListItem = styled(ListItem)(({}) => ({
     display: 'contents !important',
 }));
@@ -42,18 +38,15 @@ export const UpgradedVisualizationTool =
     observer<UpgradedVisualizationToolProps>(({ id }) => {
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
-        const [selectedList, setSelectedList] = useState('');
-        let mountedRef = useRef({ componentMounted: false });
-        useEffect(() => {
-            mountedRef.current.componentMounted = true;
-            return () => {
-                mountedRef.current.componentMounted = false;
-            };
-        }, []);
+        const [selectedList, setSelectedList] = useState(''); // maintain the current selected list, for expansion and collapsing
         function updateChart() {}
         return (
             <>
                 <List style={{ width: '100%' }}>
+                    {/* 
+                    Custom section to handle bar chart components for respective menu section 
+                    BAR Chart Menu for tools start here
+                    */}
                     {data.variation === 'echart-bar-graph' && (
                         <ListItem disablePadding>
                             <ListItemButton
@@ -138,12 +131,7 @@ export const UpgradedVisualizationTool =
                             </ListItemButton>
                         )}
                         {selectedList === 'editxaxis' && (
-                            <EditXAxis
-                                id={id}
-                                option={data.option}
-                                updateChart={updateChart}
-                                chartType={BAR_CHART_DATA.JSONVALUE[0]}
-                            />
+                            <EditXAxis id={id} option={data.option} />
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
@@ -173,12 +161,7 @@ export const UpgradedVisualizationTool =
                             </ListItemButton>
                         )}
                         {selectedList === 'edityaxis' && (
-                            <EditYAxis
-                                id={id}
-                                option={data.option}
-                                updateChart={updateChart}
-                                chartType={BAR_CHART_DATA.JSONVALUE[0]}
-                            />
+                            <EditYAxis id={id} option={data.option} />
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
@@ -212,7 +195,6 @@ export const UpgradedVisualizationTool =
                                 id={id}
                                 option={data.option}
                                 chartType={BAR_CHART_DATA.JSONVALUE[0]}
-                                updateChart={updateChart}
                             />
                         )}
                     </StyledListItem>
@@ -337,12 +319,6 @@ export const UpgradedVisualizationTool =
                             <InfoOutlined />
                         </ListItemButton>
                         {selectedList === 'sizing' && (
-                            // <BarChartProperties
-                            //     id={id}
-                            //     mountedStatus={
-                            //         mountedRef.current.componentMounted
-                            //     }
-                            // />
                             <>
                                 <SizeSettings
                                     id={id}
@@ -357,6 +333,11 @@ export const UpgradedVisualizationTool =
                             </>
                         )}
                     </StyledListItem>
+                    {/* 
+                        BAR Chart Menu for tools completes here
+                        Custom section to handle pie chart components for respective menu section 
+                        Pie Chart Menu for tools starts here
+                    */}
                     <StyledListItem disablePadding>
                         {data.variation === 'echart-pie-chart' && (
                             <ListItemButton
@@ -501,6 +482,7 @@ export const UpgradedVisualizationTool =
                             <PieValueLabel id={id} path={'option'} />
                         )}
                     </StyledListItem>
+                    {/* Pie Chart menu for tools completes here */}
                 </List>
             </>
         );

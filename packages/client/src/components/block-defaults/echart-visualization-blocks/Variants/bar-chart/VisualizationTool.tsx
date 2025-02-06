@@ -1,9 +1,8 @@
-import { useBlock, useBlocks, useBlockSettings, usePixel } from '@/hooks';
-import { Button, Stack, styled, Switch } from '@semoss/ui';
+import { useBlocks, useBlockSettings } from '@/hooks';
+import { Stack, styled, Switch } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Paths, PathValue } from '@/types';
-import { ActionMessages } from '@/stores';
+import { PathValue } from '@/types';
 import { BAR_CHART_DATA, LINE_CHART_DATA } from '../../Visualization.constants';
 import { CustomizeValueLabels } from './CustomizeValueLabels';
 import { ToggleTrendline } from './ToggleTrendline';

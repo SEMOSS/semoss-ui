@@ -5,24 +5,27 @@ import { styled, Switch } from '@semoss/ui';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
-
+//the wrapper container for holding legend tool
 const StyledContainer = styled('div')<{
     display?: string;
     justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
+    padding?: string;
+}>(({ theme, display, justifyContent, padding }) => ({
     width: '100%',
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
+    padding: padding ?? undefined,
 }));
-
+//legend component props
 interface legendProps {
     id: string;
 }
-
+//Legend component
 export const Legend = observer<legendProps>(({ id }) => {
-    const { data, setData } = useBlockSettings<any>(id);
+    const { data, setData } = useBlockSettings<any>(id); //current chart's data option
     const [value, setValue] = useState({});
     const [isLegendShown, setIsLegendShown] = useState<boolean>(false);
+    //path variable to fetch the chart data
     const path = 'option';
     // get the value of the input (wrapped in usememo because of path prop)
     const computedValue = useMemo(() => {
@@ -39,9 +42,11 @@ export const Legend = observer<legendProps>(({ id }) => {
             return JSON.stringify(v, null, 2);
         });
     }, [data, path]).get();
+    //update the value to the most recent value from the state
     useEffect(() => {
         setValue(computedValue);
     }, [computedValue]);
+    //retain the legend value from the current state
     useEffect(() => {
         let option = typeof value === 'string' ? JSON.parse(value) : value;
         let legendShown = isLegendShown;
@@ -52,7 +57,7 @@ export const Legend = observer<legendProps>(({ id }) => {
         }
         setIsLegendShown(legendShown);
     }, []);
-
+    //handles legend toggle input changes
     function handleInputChange(fieldName, newVal) {
         setIsLegendShown((prevProps) => {
             return newVal;
@@ -89,7 +94,11 @@ export const Legend = observer<legendProps>(({ id }) => {
     }
     return (
         <>
-            <StyledContainer display="inline-block">
+            <StyledContainer
+                display="flex"
+                justifyContent="space-around"
+                padding="0.9rem"
+            >
                 <Switch
                     checked={isLegendShown}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => {

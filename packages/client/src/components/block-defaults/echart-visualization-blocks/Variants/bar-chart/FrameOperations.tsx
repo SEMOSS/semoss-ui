@@ -1,45 +1,35 @@
-import {
-    useBlockSettings,
-    useBlocksPixel,
-    useFrame,
-    useFrameHeaders,
-} from '@/hooks';
+import { useBlockSettings, useBlocksPixel, useFrameHeaders } from '@/hooks';
 import { Autocomplete, Button, Select, styled, TextField } from '@semoss/ui';
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { BAR_CHART_DATA } from '../../Visualization.constants';
 import { PathValue } from '@/types';
 import { Sync } from '@mui/icons-material';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
-
+//frame operations component props structure
 export interface FrameOperationsProps {
     id: string;
     updateFrame: (option) => void;
 }
-
+// a styled section to maintain the basic styles for every element in the component
 const StyledSubSection = styled('div')(() => ({
     display: 'flex',
     justifyContent: 'center',
-    // border: '1px solid gray',
     padding: '0.5rem',
     width: '100%',
 }));
+//dropdown section with custom styling
 const StyledDropDownSection = styled('div')(() => ({
     display: 'flex',
     justifyContent: 'center',
     padding: '0.5rem',
 }));
+//select section with full width
 const StyledSelect = styled(Select)(() => ({
     width: '100%',
 }));
-
-interface pixelColumn {
-    name: string;
-    selector: string;
-    width: undefined;
-}
 
 export const FrameOperations = observer<FrameOperationsProps>(
     ({ id, updateFrame }) => {
@@ -63,17 +53,15 @@ export const FrameOperations = observer<FrameOperationsProps>(
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-        let dataColumnsRef = useRef<any>([]);
-
         let [frameOperationState, setFrameOperationState] = useState<
             'initial' | 'updated'
         >('initial');
 
         // options for the autocomplete
         const options = getFrames.status === 'SUCCESS' ? getFrames.data : [];
-
+        // using frameheaders hook to get the header details for the selected frame
         const frameHeaders = useFrameHeaders(data.frame?.name);
-
+        // fetch custom details about headers like alias, header, etc and assign to the variable for using it whenever required
         const columnsSelector = useMemo(() => {
             return frameHeaders.data.list.map((item) => {
                 return {
@@ -83,15 +71,13 @@ export const FrameOperations = observer<FrameOperationsProps>(
                 };
             });
         }, [frameHeaders]);
-
+        //this function is called to update the chart whenever x and y axis data is present
         const initialUpdateOfData = () => {
             if (data.frame.name === '') return;
             const option =
                 typeof value === 'string' ? JSON.parse(value) : value;
-            // console.log(option, 'xAxis');
-            // return;
-            let xAxisData = option['xAxis']['pixelvalue'] || [];
-            let yAxisData = option['yAxis']['pixelvalue'] || [];
+            let xAxisData = option['xAxis']['pixelvalue'] || []; //fetch data from xaxis
+            let yAxisData = option['yAxis']['pixelvalue'] || []; //fetch data from yaxis
             let recentValue = xAxisData.slice(-1) || [];
             let columnsToUpdate = [];
             let name = columnsSelector.find(
@@ -162,7 +148,7 @@ export const FrameOperations = observer<FrameOperationsProps>(
             setSelectedValues(selectedValuesData);
             dispatchData(option);
         };
-
+        //additional function to trigger a sync, when a frame is newly selected
         function syncHeaders() {
             const columns = frameHeaders.data.list.map((item) => {
                 return {
@@ -172,7 +158,6 @@ export const FrameOperations = observer<FrameOperationsProps>(
                 };
             });
             setColumnsData(columns);
-            // initialUpdateOfData();
         }
 
         // get the value of the input (wrapped in usememo because of path prop)
@@ -190,11 +175,11 @@ export const FrameOperations = observer<FrameOperationsProps>(
                 return JSON.stringify(v, null, 2);
             });
         }, [data, path]).get();
-
+        //update the local state value when computed value is getting updated
         useEffect(() => {
             setValue(computedValue);
         }, [computedValue]);
-
+        //trying to check for updating the fields, when x and y axis is getting updated
         useEffect(() => {
             let option = typeof value === 'string' ? JSON.parse(value) : value;
             if (
@@ -209,7 +194,7 @@ export const FrameOperations = observer<FrameOperationsProps>(
                 setFrameOperationState('updated');
             }
         }, [columnsSelector]);
-
+        //update the x and y axis fields when a field change is detected, and update data.columns, at both x and y axis values are set
         function updateFields(axis, event) {
             let value = event.target.value || [];
             let columns = { ...fieldsData };
@@ -315,13 +300,9 @@ export const FrameOperations = observer<FrameOperationsProps>(
                         type: 'bar',
                     };
                 }
-                console.log('state', tempVal);
                 dispatchData(tempVal);
                 setData('columns', columnsmerged);
             }
-            console.log(columns, 'columns');
-            let name = columnsSelector.find((col) => col.selector === value);
-            console.log(columnsSelector, axis, value, 'updateFields');
         }
         function dispatchData(option) {
             if (timeoutRef.current) {
@@ -357,7 +338,6 @@ export const FrameOperations = observer<FrameOperationsProps>(
                         onChange={(_, value) => {
                             // update the frame
                             setData('frame.name', value);
-                            // setFrameName(value);
                         }}
                         freeSolo={false}
                         renderInput={(params) => (

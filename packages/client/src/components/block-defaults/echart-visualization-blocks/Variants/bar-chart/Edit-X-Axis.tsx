@@ -1,82 +1,65 @@
 import { useState, useEffect, ChangeEvent, useMemo } from 'react';
-import CustomAccordianBlock from './CustomAccordianBlock';
-import {
-    Button,
-    Checkbox,
-    Slider,
-    styled,
-    Switch,
-    TextField,
-} from '@semoss/ui';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { Button, Slider, styled, Switch, TextField } from '@semoss/ui';
 import { useBlockSettings } from '@/hooks';
 import { PathValue } from '@/types';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
-
+// Axis div styling for switch type fields, to show labels and fields in a row
 const StyledAxisDiv = styled('div')<{
     display?: string;
     justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
+}>(({ display, justifyContent }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: 'row',
     padding: '0.5rem',
 }));
-
+// Axis div styling for input type fields, to show labels and fields in a column
 const StyledAxisColDiv = styled('div')<{
     display?: string;
     justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
+}>(({ display, justifyContent }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: 'column',
     padding: '0.5rem',
 }));
-
+// Axis div styling for span type fields
 const StyledAxisSpan = styled('span')<{
     display?: string;
     justifyContent?: string;
     width?: string;
-}>(({ theme, display, justifyContent, width }) => ({
+}>(({ display, justifyContent, width }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     width: width ?? undefined,
 }));
-
+// Axis div styling for text fields
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: '100%',
 }));
+//Initial xaxis state used for restoring
 const INITIAL_XAXIS_STATE = {
     showAxis: true,
     xaxistitle: '',
     xaxisTitleFontSize: 18,
-    centerAlignText: false,
-    titleGapValue: 15,
-    titleGapMinValue: 1,
-    titleGapMaxValue: 100,
-    showXAxisLine: true,
     showXAxisLineTicks: false,
-    showXAxisValues: true,
     showXAxisLabels: true,
-    showXAxisAllLabels: false,
-    showAllLabels: false,
     labelFontSize: 12,
     rotate: 0,
     rotateLabelMinValue: 0,
     rotateLabelMaxValue: 360,
-    format: '',
-    numberDelimiter: '',
     showxAxisZoom: false,
 };
 //Changing the X axis styling like title, rotate and changing the labels
-export const EditXAxis = ({ updateChart, chartType, option, id }) => {
+export const EditXAxis = ({ option, id }) => {
     const { data, setData } = useBlockSettings<any>(id);
     const [xaxisState, setXaxisState] = useState(INITIAL_XAXIS_STATE);
     const [xAxisDataUpdated, setXAxisDataUpdated] = useState<
         'initial' | 'updated'
     >('initial');
     const [value, setValue] = useState(data.option);
+    //the path of the property to be updated
     const path = 'option';
     // get the value of the input (wrapped in usememo because of path prop)
     const computedValue = useMemo(() => {
@@ -93,56 +76,30 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
             return JSON.stringify(v, null, 2);
         });
     }, [data, path]).get();
+    //when the computed value is changed, local state is updated
     useEffect(() => {
         setValue(computedValue);
     }, [computedValue]);
+    //updating the initial local state, based on the existing state store
     useEffect(() => {
         let axis = 'xAxis';
         let xAxisStateData = {
             showAxis: true,
             xaxistitle: '',
             xaxisTitleFontSize: 18,
-            centerAlignText: false,
-            titleGapValue: 15,
-            titleGapMinValue: 1,
-            titleGapMaxValue: 100,
-            showXAxisLine: true,
             showXAxisLineTicks: false,
-            showXAxisValues: true,
             showXAxisLabels: true,
-            showXAxisAllLabels: false,
-            showAllLabels: false,
             labelFontSize: 12,
             rotate: 0,
             rotateLabelMinValue: 0,
             rotateLabelMaxValue: 360,
-            format: '',
-            numberDelimiter: '',
             showxAxisZoom: false,
         };
         if (option.hasOwnProperty(axis) && option[axis]) {
             xAxisStateData.xaxistitle = option[axis].hasOwnProperty('name')
                 ? option[axis]['name']
                 : '';
-            xAxisStateData.centerAlignText = option[axis].hasOwnProperty(
-                'nameLocation',
-            )
-                ? true
-                : false;
-            xAxisStateData.titleGapValue = option[axis].hasOwnProperty(
-                'nameGap',
-            )
-                ? option[axis]['nameGap']
-                : 15;
-            console.log(option[axis].hasOwnProperty('nameLocation'));
 
-            if (option[axis].hasOwnProperty('axisLine')) {
-                xAxisStateData.showXAxisLine = option[axis][
-                    'axisLine'
-                ].hasOwnProperty('show')
-                    ? option[axis]['axisLine'].show
-                    : true;
-            }
             if (option[axis].hasOwnProperty('axisTick')) {
                 xAxisStateData.showXAxisLineTicks = option[axis][
                     'axisTick'
@@ -151,16 +108,6 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
                     : false;
             }
             if (option[axis].hasOwnProperty('axisLabel')) {
-                xAxisStateData.showXAxisValues = option[axis][
-                    'axisLabel'
-                ].hasOwnProperty('show')
-                    ? option[axis]['axisLabel'].show
-                    : true;
-                xAxisStateData.showAllLabels =
-                    option[axis]['axisLabel'].hasOwnProperty('interval') &&
-                    option[axis]['axisLabel'].hasOwnProperty('show')
-                        ? option[axis]['axisLabel'].hasOwnProperty('interval')
-                        : false;
                 xAxisStateData.labelFontSize = option[axis][
                     'axisLabel'
                 ].hasOwnProperty('fontSize')
@@ -180,13 +127,13 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
             };
         });
     }, []);
-
+    //when the x axis fields are updated, then the chart data will be updated to store
     useEffect(() => {
         if (xAxisDataUpdated === 'updated') {
             updateChartData();
         }
     }, [xaxisState]);
-
+    //when y axis fields are updated, then respective state is updated to trigger the update to store
     function handleInputChange(e, title, directVal = undefined) {
         if (xAxisDataUpdated === 'initial') setXAxisDataUpdated('updated');
         if (directVal != undefined) {
@@ -205,7 +152,7 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
             });
         }
     }
-
+    // updating the chart data, when x axis fields are getting updated
     function updateChartData() {
         let axisData = {
             showAxis: xaxisState.showAxis,
@@ -218,6 +165,7 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
             showxAxisZoom: xaxisState.showxAxisZoom,
         };
         let option = typeof value === 'string' ? JSON.parse(value) : value;
+        //update the chart data based on the changes in the x axis fields
         let optionUpdated = option;
         if (option.hasOwnProperty('xAxis') && option['xAxis']) {
             if (axisData.hasOwnProperty('showAxis')) {
@@ -315,9 +263,11 @@ export const EditXAxis = ({ updateChart, chartType, option, id }) => {
             runStateUpdateCustom(optionUpdated);
         }
     }
+    //resetting the x axis fields to initial state when reset button is clicked
     function resetToInitialState() {
         setXaxisState(INITIAL_XAXIS_STATE);
     }
+    //run state store update, when a change in the fields is detected
     function runStateUpdateCustom(optionUpdated: any) {
         setTimeout(() => {
             try {

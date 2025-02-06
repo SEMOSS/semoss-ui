@@ -1,29 +1,17 @@
 import { observer } from 'mobx-react-lite';
-import { useBlock, useBlocks, useBlockSettings, useFrame } from '@/hooks';
-import { BlockComponent } from '@/stores';
+import { useBlockSettings, useFrame } from '@/hooks';
 import { styled } from '@mui/material';
 import * as echarts from 'echarts/core';
-import { BarChart } from 'echarts/charts';
-import { CanvasRenderer } from 'echarts/renderers';
-import { TooltipComponent } from 'echarts/components';
 import EChartsReact from 'echarts-for-react';
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 import { ChartContextMenu } from './ChartContextMenu';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BAR_CHART_DATA } from '../../Visualization.constants';
-
-const StyledChartContainer = styled('div')(() => ({
-    width: 'fit-content',
-    minWidth: '50px',
-    minHeight: '50px',
-}));
+//Main Container for displaying Bar chart
 const StyledMainContainer = styled('div')(({ theme }) => ({
     height: 'inherit',
-    // width: 'inherit',
-    // color: 'unset',
+    width: 'inherit',
 }));
-const StyledSubContainer = styled('div')(({ theme }) => ({}));
-
+//container for displaying invalid or no data
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',
 })<{ error?: boolean }>(({ error = false, theme }) => ({
@@ -36,43 +24,28 @@ const StyledNoDataContainer = styled('div', {
     alignContent: 'flex-start',
     color: error ? theme.palette.error.main : 'unset',
 }));
-
+//echart field structure
 export interface EChartColumns {
     name: string;
     selector: string;
     width: string;
 }
-
+//bar component properties
 interface BarProps {
     id: string;
-    updateChartData: any;
 }
 
-export const Bar: any = observer<BarProps>(({ id, updateChartData }) => {
-    function debounce(fn, delay) {
-        let timer;
-        return (...args) => {
-            clearTimeout(timer);
-            timer = setTimeout(() => fn(...args), delay);
-        };
-    }
+export const Bar: any = observer<BarProps>(({ id }) => {
     const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
     const [echartState, setEchartState] = useState<any>({});
-    const [selectedChart, setSelectedChart] = useState<any>({});
+    // const [selectedChart, setSelectedChart] = useState<any>({});
     const [contextMenu, setContextMenu] = useState<{
-        mouseX: number;
-        mouseY: number;
-        value: unknown;
+        mouseX: number; //x axis position for the click/brush event
+        mouseY: number; //y axis position for the click/brush event
+        value: unknown; //value can be of object or any type
     } | null>(null);
-    const [value, setValue] = useState({});
-    const { state } = useBlocks();
     let resultData: unknown = {};
-
-    echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
-    window.onresize = () => {
-        console.log('resize detected');
-    };
-
+    //selector string construction based on fields selection
     const selector = `Select(${data.columns
         ?.map((c, index) => {
             //Converting Y axis columns to Average by default
@@ -83,77 +56,18 @@ export const Bar: any = observer<BarProps>(({ id, updateChartData }) => {
             return c.name;
         })
         .join(', ')}])|Group(${data.columns?.[0]?.name})`;
-
+    //frame object
     const frameData = useFrame(data.frame.name, {
         selector: selector,
     });
 
-    //run perform operations when the echarts component is loaded
-    useEffect(() => {
-        let limit = 200,
-            limitStart = 0;
-        let echartElementId = document.getElementById(id);
-        let canvasElement: any = echartElementId.getElementsByTagName('CANVAS');
-        if (!canvasElement.length) {
-            return;
-        }
-        canvasElement = canvasElement[0];
-        let echartInstance = undefined;
-        while (!echartInstance && limitStart < limit) {
-            if (echarts.getInstanceByDom(canvasElement)) {
-                echartInstance = echarts.getInstanceByDom(canvasElement);
-            } else if (canvasElement.id === id) {
-                break;
-            } else {
-                canvasElement = canvasElement.parentElement;
-            }
-            limitStart++;
-        }
-        if (echartInstance) {
-            chartOperationData.current.chartInstance = echartInstance;
-            console.log('echartInstance', echartInstance);
-            if (Object.keys(selectedChart).length == 0) {
-                setSelectedChart(echartInstance);
-            }
-            echartInstance.on('click', function (e) {
-                console.log('click event');
-                return;
-            });
-            echartInstance.getZr().on('click', function (e) {
-                console.log('click event');
-                return;
-            });
-        }
-    }, [echartState, frameData.data.values]);
-
-    //Based on the brushselection data filter query will run in a specific debounce time
-    const handleSelection = debounce((column, value) => {
-        frameData.filter(`SetFrameFilter(${column}==[${value}])`);
-    }, 500);
-
-    let latestOption = useRef();
     let chartOperationData = useRef({
         brushSelected: [],
         contextMenu: null,
         yAxisColumn: { name: '', selector: '', width: undefined },
         chartInstance: { setOption: null },
     });
-    function processReceivedData(frameResult) {
-        return {
-            xAxis: frameResult.values.map((item) => {
-                return item[0];
-            }),
-            yAxis: frameResult.values.map((item) => {
-                return item[1];
-            }),
-            yAxisAdditional: frameResult.values.map((item) => {
-                return item[2] ? item[2] : '';
-            }),
-        };
-    }
-    function getData() {
-        return data.option;
-    }
+
     //update frame values to the series data when frame values are changed
     const receiveValueswithCorrections = useCallback(
         (resultData: unknown) => {
@@ -166,10 +80,6 @@ export const Bar: any = observer<BarProps>(({ id, updateChartData }) => {
             );
             let optionSeriesLength = frameData.data.headers.length;
             frameDataIndex++;
-            // let seriesIndex =
-            //     resultData['series'].findIndex((item) =>
-            //         BAR_CHART_DATA.JSONVALUE.includes(item.type),
-            //     ) || 0;
             //setting all values to all existing series to null, to restore the chart to initial state so new values will be updated
             for (
                 let seriesIdx = 0;
@@ -221,9 +131,10 @@ export const Bar: any = observer<BarProps>(({ id, updateChartData }) => {
             });
         }
     }
+    //on events object for getting and processing events with chart
     const onClickChart = {
+        //when contextmenu event is raised, default context menu made hidden, and custom component is shown
         contextmenu: (params) => {
-            //  let currentOption = chart.getOption();
             if (params.data) {
                 let xAxisName = data.option['xAxis']['pixelvalue'][0];
                 let xAxisValue =
@@ -256,6 +167,7 @@ export const Bar: any = observer<BarProps>(({ id, updateChartData }) => {
                 params.event.event.preventDefault();
             }
         },
+        //After brushing in bar chart, this event will be triggered to filter the selected data
         brushend: (params) => {
             let batch = params.batch;
             let xAxisName = data.option['xAxis']['pixelvalue'][0];
@@ -269,6 +181,7 @@ export const Bar: any = observer<BarProps>(({ id, updateChartData }) => {
                 `SetFrameFilter(${xAxisName}==${JSON.stringify(xAxisValue)})`,
             );
         },
+        //this event will be triggered when bar data is being selected
         brushselected: (params) => {
             let batch = params.batch;
             if (batch.length) {
@@ -313,7 +226,7 @@ export const Bar: any = observer<BarProps>(({ id, updateChartData }) => {
                     onEvents={onClickChart}
                     style={{
                         height: 'inherit',
-                        // width: 'inherit'
+                        width: 'inherit',
                     }}
                 />
                 <ChartContextMenu

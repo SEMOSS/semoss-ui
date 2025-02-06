@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import CustomAccordianBlock from './CustomAccordianBlock';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { Button, Select, Slider, styled, TextField } from '@semoss/ui';
+import { Slider, styled, TextField } from '@semoss/ui';
 import { BAR_CHART_DATA } from '../../Visualization.constants';
 import { useBlockSettings } from '@/hooks';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
 import { PathValue } from '@/types';
-
+//Styled container for bar chart
 const StyledBarStylesContainer = styled('div')<{
     width?: string;
     display?: string;
@@ -19,11 +17,11 @@ const StyledBarStylesContainer = styled('div')<{
     justifyContent: justifyContent ?? undefined,
     padding: '0.95rem',
 }));
-
+//styled text field for customizing text field size
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: '100%',
 }));
-
+//properties/props for VisualizationStyles component
 interface EChartVisualizationColumns {
     id: string;
     option: any;
@@ -34,24 +32,18 @@ interface EChartVisualizationColumns {
 //Updating bar chart specific styles like bar width and its colour
 export const VisualizationStyles = observer<EChartVisualizationColumns>(
     ({ updateChart, chartType, option, id }) => {
+        //style data for bar chart with initial styles
         const [styleData, setStyleData] = useState({
             barwidth: 10,
             minBarWidth: 1,
             maxBarWidth: 45,
             barColour: '#5470c6',
         });
+        //chart data
         const { data, setData } = useBlockSettings<any>(id);
         const [value, setValue] = useState(data.option);
+        //path of the chart json to update
         const path = 'option';
-        const barSymbols = [
-            { label: 'Default(Bar)', value: 'bar' },
-            { label: 'Circle', value: 'circle' },
-            { label: 'Rectangle', value: 'rectangle' },
-            { label: 'Rounded Rectangle', value: 'rounded_rectangle' },
-            { label: 'Triangle', value: 'triangle' },
-            { label: 'Diamond', value: 'diamond' },
-            { label: 'Pin', value: 'pin' },
-        ];
         const [stylesUpdated, setStylesUpdated] = useState<
             'initial' | 'updated'
         >('initial');
@@ -70,7 +62,7 @@ export const VisualizationStyles = observer<EChartVisualizationColumns>(
                 return JSON.stringify(v, null, 2);
             });
         }, [data, path]).get();
-
+        //update the value when the computed value is changed
         useEffect(() => {
             setValue(computedValue);
         }, [computedValue]);
@@ -115,6 +107,7 @@ export const VisualizationStyles = observer<EChartVisualizationColumns>(
                                 : styleData.barColour,
                         };
                     }
+                    //retaining the current component data by fetching data from json
                     setStyleData((prevStyleObj) => {
                         return {
                             ...prevStyleObj,
@@ -124,13 +117,13 @@ export const VisualizationStyles = observer<EChartVisualizationColumns>(
                 }
             }
         }, []);
-
+        //whenever input values changed, the stules updated will get new value 'updated', so retaining the state from main state object will not call updatechartdata
         useEffect(() => {
             if (stylesUpdated === 'updated') {
                 updateChartData(styleData);
             }
         }, [styleData]);
-
+        //this function will return filtered series index with type 'bar'
         function getFilteredSeriesIndex() {
             let index = [];
             let seriesAvailable: any[] = data.option['series'].filter((item) =>
@@ -205,6 +198,7 @@ export const VisualizationStyles = observer<EChartVisualizationColumns>(
             }
             runStateUpdateCustom(option);
         }
+        //this function will update chart json to new option value
         function runStateUpdateCustom(option) {
             setTimeout(() => {
                 try {
@@ -214,6 +208,7 @@ export const VisualizationStyles = observer<EChartVisualizationColumns>(
                 }
             }, 300);
         }
+        //bar chart component content is rendered into a single variable
         const accordionDetails = (
             <StyledBarStylesContainer>
                 <StyledBarStylesContainer>

@@ -1,21 +1,4 @@
-import {
-    Accordion,
-    Button,
-    MenuItem,
-    Select,
-    styled,
-    Switch,
-    TextField,
-} from '@semoss/ui';
-import CustomAccordianBlock from './CustomAccordianBlock';
-import {
-    AccordionActions,
-    AccordionDetails,
-    AccordionSummary,
-    debounce,
-    Input,
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { Select, styled, Switch, TextField } from '@semoss/ui';
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { useBlockSettings } from '@/hooks';
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
@@ -23,20 +6,18 @@ import { BAR_CHART_DATA } from '../../Visualization.constants';
 import { PathValue } from '@/types';
 import { getValueByPath } from '@/utility';
 import { computed } from 'mobx';
-import { ColorSettings } from '@/components/block-settings';
 import { observer } from 'mobx-react-lite';
-
+//styled select field to have full width
 const StyledSelect = styled(Select)(() => ({
     width: '100%',
 }));
-
+//a main section field with custom styling
 const StyledMainSection = styled('div')(() => ({
     display: 'block',
-    // border: '1px solid gray',
     padding: '0.5rem',
     width: '100%',
 }));
-
+//a sub section field with custom styling
 const StyledSubSection = styled('div', {
     shouldForwardProp: (prop) => prop != 'display' && prop != 'justifyContent',
 })<{ display?: string; justifyContent?: string }>(
@@ -47,11 +28,11 @@ const StyledSubSection = styled('div', {
         justifyContent: justifyContent ?? undefined,
     }),
 );
-
+//a text field with custom styling for full width
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: '100%',
 }));
-
+//Initial state of custom value labels as default values for managing and restoring
 const INITIAL_VALUE_LABELS = {
     show: false,
     position: 'top',
@@ -62,9 +43,8 @@ const INITIAL_VALUE_LABELS = {
     fontweight: 'normal',
     fontcolour: '#000000',
 };
-
+//custom value labels props
 interface CustomizeValueLabelsProps {
-    updateChart: any;
     option: any;
     chartType: string;
     id: string;
@@ -72,7 +52,7 @@ interface CustomizeValueLabelsProps {
 
 //having custom fields to customize charts text parts like: position, alignment, rotate, etc
 export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
-    ({ updateChart, option, chartType, id }) => {
+    ({ option, chartType, id }) => {
         const [fieldData, setFieldData] = useState(INITIAL_VALUE_LABELS);
         const path = 'option';
         const { data, setData } =
@@ -81,8 +61,6 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
         const [valueLabelsUpdated, setValueLabelsUpdated] = useState<
             'initial' | 'updated'
         >('initial');
-        let accordianDetails = '';
-        const accordianExpanded = false;
         const labelPositionValues = [
             'top',
             'left',
@@ -167,9 +145,11 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
                 return JSON.stringify(v, null, 2);
             });
         }, [data, path]).get();
+        //updating local 'value' state to the most recent state
         useEffect(() => {
             setValue(computedValue);
         }, [computedValue]);
+        //update the chart data to state, when any of customize value labels field is changed
         useEffect(() => {
             if (valueLabelsUpdated === 'updated') {
                 updateChartData(fieldData);
@@ -189,7 +169,7 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
                 };
             });
         }
-
+        //update the chart data to state, when customize value labels fields section is updated to new value
         function updateChartData(values: any) {
             let option = typeof value === 'string' ? JSON.parse(value) : value;
             let optionUpdated = option;
@@ -202,7 +182,9 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
                 };
             });
             const customizeLabelOptionsValue = customizeLabelOptionsData;
+            //get matching series index for bar chart
             const filteredSeries = getFilteredSeriesIndex();
+            //update the series with new styles for every matching series index
             filteredSeries.forEach((item) => {
                 const displayPositionIndex = item;
                 let showValueLabel =
@@ -331,6 +313,7 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
             optionUpdated = option;
             runStateUpdateCustom(optionUpdated);
         }
+        //function to check and retrieve the indexes for bar chart type
         function getFilteredSeriesIndex() {
             let index = [];
             let seriesAvailable: any[] = data.option['series'].filter((item) =>
@@ -341,6 +324,7 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
             });
             return index;
         }
+        //update the state when any of the fields in custom value labels is changed
         function runStateUpdateCustom(optionUpdated) {
             setTimeout(() => {
                 try {
@@ -372,7 +356,6 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
                             <label htmlFor="label-position">Position</label>
                             <StyledSelect
                                 id="label-position"
-                                label="Select Position"
                                 value={fieldData.position ?? ''}
                                 onChange={(e) =>
                                     updateFields('position', e, 'select')
@@ -396,10 +379,8 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
                             </label>
                             <StyledTextField
                                 variant={'outlined'}
-                                label="Rotate"
                                 type="number"
                                 id="rotate-label"
-                                // defaultValue={fieldData.rotate ?? ''}
                                 value={fieldData.rotate ?? ''}
                                 onChange={(e) =>
                                     updateFields('rotate', e, 'text')
@@ -412,8 +393,6 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
                             </label>
                             <StyledSelect
                                 id="alignment-label"
-                                label="Select Alignment"
-                                // defaultValue={fieldData.alignment ?? ''}
                                 value={fieldData.alignment ?? ''}
                                 onChange={(e) =>
                                     updateFields('alignment', e, 'select')
@@ -435,8 +414,6 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
                             <label htmlFor="font">Select Font</label>
                             <StyledSelect
                                 id="font"
-                                label="Select Font"
-                                // defaultValue={fieldData.font}
                                 value={fieldData.font ?? ''}
                                 onChange={(e) =>
                                     updateFields('font', e, 'select')
@@ -460,7 +437,6 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
                             </label>
                             <StyledTextField
                                 variant={'outlined'}
-                                label="Select Font Size"
                                 type="number"
                                 id="font-size"
                                 // defaultValue={fieldData.fontsize}
@@ -476,8 +452,6 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
                             </label>
                             <StyledSelect
                                 id="font-weight"
-                                label="Select Font"
-                                // defaultValue={fieldData.fontweight}
                                 value={fieldData.fontweight}
                                 onChange={(e) =>
                                     updateFields('fontweight', e, 'select')
@@ -502,15 +476,12 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
                             <StyledTextField
                                 variant={'outlined'}
                                 id="font-weight"
-                                label="Select Font Colour"
                                 type="color"
-                                // defaultValue={fieldData.fontcolour}
                                 value={fieldData.fontcolour}
                                 onChange={(e) =>
                                     updateFields('fontcolour', e, 'text')
                                 }
                             ></StyledTextField>
-                            {/* <ColorSettings id={id} label={'Select Font Colour'} path={''} /> */}
                         </StyledSubSection>
                     </>
                 )}
@@ -518,14 +489,6 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
             </StyledMainSection>
         );
 
-        return (
-            // <CustomAccordianBlock
-            //     accordianExpanded={accordianExpanded}
-            //     accordianSummaryProps={<ExpandMoreIcon />}
-            //     accordianSummary="Customize Label Values"
-            //     accordianDetails={getAccordianDetails}
-            // />
-            <>{getAccordianDetails}</>
-        );
+        return <>{getAccordianDetails}</>;
     },
 );

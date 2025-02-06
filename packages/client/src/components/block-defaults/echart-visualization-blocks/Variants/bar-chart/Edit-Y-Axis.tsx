@@ -1,82 +1,58 @@
-import {
-    useState,
-    useEffect,
-    SyntheticEvent,
-    ChangeEvent,
-    useMemo,
-} from 'react';
-import CustomAccordianBlock from './CustomAccordianBlock';
-import {
-    Button,
-    Checkbox,
-    Slider,
-    styled,
-    TextField,
-    Switch,
-} from '@semoss/ui';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { useState, useEffect, ChangeEvent, useMemo } from 'react';
+import { Button, Slider, styled, TextField, Switch } from '@semoss/ui';
 import { useBlockSettings } from '@/hooks';
 import { PathValue } from '@/types';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
-
+//Axis div for switch type fields
 const StyledAxisDiv = styled('div')<{
     display?: string;
     justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
+}>(({ display, justifyContent }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: 'row',
     padding: '0.5rem',
 }));
-
+//Axis div for input type fields with label
 const StyledAxisColDiv = styled('div')<{
     display?: string;
     justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
+}>(({ display, justifyContent }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: 'column',
     padding: '0.5rem',
 }));
-
+//Axis div for span type elements
 const StyledAxisSpan = styled('span')<{
     display?: string;
     justifyContent?: string;
     width?: string;
-}>(({ theme, display, justifyContent, width }) => ({
+}>(({ display, justifyContent, width }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     width: width ?? undefined,
 }));
-
+//text field styling to have 100% width
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: '100%',
 }));
+//Initial y axis state for maintaining, restoring y axis fields
 const INITIAL_YAXIS_STATE = {
-    showAxis: true,
-    yaxistitle: '',
-    yaxisTitleFontSize: 18,
-    centerAlignText: false,
-    titleGapValue: 15,
-    titleGapMinValue: 1,
-    titleGapMaxValue: 100,
-    showYAxisLine: true,
-    showYAxisLineTicks: false,
-    showYAxisValues: true,
-    showYAxisLabels: true,
-    showYAxisAllLabels: false,
-    showAllLabels: false,
-    labelFontSize: 12,
-    rotate: 0,
-    rotateLabelMinValue: 0,
-    rotateLabelMaxValue: 360,
-    format: '',
-    numberDelimiter: '',
-    showYAxisZoom: true,
+    showAxis: true, //yaxis show/hide
+    yaxistitle: '', //y axis title value
+    yaxisTitleFontSize: 18, // yaxis title fontsize
+    showYAxisLineTicks: false, // show/hide y axis ticks
+    showYAxisLabels: true, // show/hide y axis labels
+    labelFontSize: 12, // to change label font size
+    rotate: 0, // to rotate label values from 0 to 360
+    rotateLabelMinValue: 0, // rotating degree min value
+    rotateLabelMaxValue: 360, // rotating degree max value
+    showYAxisZoom: true, // show y axis zoom slider
 };
 //Changing the Y axis styling like title, rotate and changing the labels
-export const EditYAxis = ({ updateChart, chartType, option, id }) => {
+export const EditYAxis = ({ option, id }) => {
     const { data, setData } = useBlockSettings<any>(id);
     const [yaxisState, setYaxisState] = useState(INITIAL_YAXIS_STATE);
     const [yAxisDataUpdated, setYAxisDataUpdated] = useState<
@@ -100,56 +76,29 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
             return JSON.stringify(v, null, 2);
         });
     }, [data, path]).get();
+    //update the value when computed value is updated
     useEffect(() => {
         setValue(computedValue);
     }, [computedValue]);
-
+    //updating initial state of y axis fields, when the component is mounted
     useEffect(() => {
         let axis = 'yAxis';
         let yAxisStateData = {
             showAxis: true,
             yaxistitle: '',
             yaxisTitleFontSize: 18,
-            centerAlignText: false,
-            titleGapValue: 15,
-            titleGapMinValue: 1,
-            titleGapMaxValue: 100,
-            showYAxisLine: true,
             showYAxisLineTicks: false,
-            showYAxisValues: true,
             showYAxisLabels: true,
-            showYAxisAllLabels: false,
-            showAllLabels: false,
             labelFontSize: 12,
             rotate: 0,
             rotateLabelMinValue: 0,
             rotateLabelMaxValue: 360,
-            format: '',
-            numberDelimiter: '',
             showYAxisZoom: true,
         };
         if (option.hasOwnProperty(axis) && option[axis]) {
             yAxisStateData.yaxistitle = option[axis].hasOwnProperty('name')
                 ? option[axis]['name']
                 : '';
-            yAxisStateData.centerAlignText = option[axis].hasOwnProperty(
-                'nameLocation',
-            )
-                ? true
-                : false;
-            yAxisStateData.titleGapValue = option[axis].hasOwnProperty(
-                'nameGap',
-            )
-                ? option[axis]['nameGap']
-                : 15;
-
-            if (option[axis].hasOwnProperty('axisLine')) {
-                yAxisStateData.showYAxisLine = option[axis][
-                    'axisLine'
-                ].hasOwnProperty('show')
-                    ? option[axis]['axisLine'].show
-                    : true;
-            }
             if (option[axis].hasOwnProperty('axisTick')) {
                 yAxisStateData.showYAxisLineTicks = option[axis][
                     'axisTick'
@@ -158,11 +107,6 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
                     : false;
             }
             if (option[axis].hasOwnProperty('axisLabel')) {
-                yAxisStateData.showYAxisValues = option[axis][
-                    'axisLabel'
-                ].hasOwnProperty('show')
-                    ? option[axis]['axisLabel'].show
-                    : true;
                 yAxisStateData.labelFontSize = option[axis][
                     'axisLabel'
                 ].hasOwnProperty('fontSize')
@@ -178,7 +122,6 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
                 let yAxisPosition = option['dataZoom'].findIndex((opt) =>
                     opt.hasOwnProperty('yAxisIndex'),
                 );
-                console.log(yAxisPosition, 'yAxisPosition');
                 if (yAxisPosition > -1) {
                     yAxisStateData.showYAxisZoom = option['dataZoom'][
                         yAxisPosition
@@ -203,19 +146,19 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
             };
         });
     }, []);
-
+    //updating the chart data, when any of the yaxis fields in this component is changed
     useEffect(() => {
         if (yAxisDataUpdated === 'updated') {
             updateChartData();
         }
     }, [yaxisState]);
-
+    //reset the y axis component to initial state for restoring
     function resetToInitialState() {
         setYaxisState(INITIAL_YAXIS_STATE);
     }
-
+    //updating the chart data to state, when any of the y axis field is updated
     function updateChartData() {
-        let axis = 'yAxis';
+        let axis = 'yAxis'; //an axis pointer, either x or y axis
         let axisData = {
             showAxis: yaxisState.showAxis,
             yaxistitle: yaxisState.yaxistitle,
@@ -228,6 +171,7 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
         };
         let option = typeof value === 'string' ? JSON.parse(value) : value;
         let optionUpdated = option;
+        //when a property is available, the respective values in the option is updated and state is also updated
         if (option.hasOwnProperty(axis) && option[axis]) {
             if (axisData.hasOwnProperty('showAxis')) {
                 option[axis] = {
@@ -251,7 +195,6 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
                     },
                 };
             }
-
             if (axisData.hasOwnProperty('showYAxisLineTicks')) {
                 option[axis] = {
                     ...option[axis],
@@ -324,6 +267,7 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
             runStateUpdateCustom(optionUpdated);
         }
     }
+    //updating the state, after y axis fields are updated
     function runStateUpdateCustom(optionUpdated: any) {
         setTimeout(() => {
             try {
@@ -333,7 +277,7 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
             }
         }, 300);
     }
-
+    //updating y axis state, when y axis fields are changed
     function handleInputChange(e, title, directVal = undefined) {
         if (yAxisDataUpdated === 'initial') setYAxisDataUpdated('updated');
         if (directVal != undefined) {
@@ -352,7 +296,7 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
             });
         }
     }
-
+    // component html data
     const accordionDetails = (
         <StyledAxisDiv style={{ padding: '0.95rem' }}>
             <StyledAxisDiv display="flex" justifyContent="space-between">
@@ -401,7 +345,7 @@ export const EditYAxis = ({ updateChart, chartType, option, id }) => {
                             e.target.checked,
                         )
                     }
-                    title="Show XAxis Labels"
+                    title="Show YAxis Labels"
                 />
                 <label htmlFor="show-xaxis-labels">Show YAxis Labels</label>
             </StyledAxisDiv>

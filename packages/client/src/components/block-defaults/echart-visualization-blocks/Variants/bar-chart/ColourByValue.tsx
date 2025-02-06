@@ -1,38 +1,41 @@
-import { useBlock, useBlockSettings } from '@/hooks';
+import { useBlockSettings } from '@/hooks';
 import { observer } from 'mobx-react-lite';
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Select, Stack, styled, Table, TextField } from '@semoss/ui';
-import CustomAccordianBlock from './CustomAccordianBlock';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { PathValue } from 'react-hook-form';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
 import { BAR_CHART_DATA } from '../../Visualization.constants';
 import { Delete, Edit } from '@mui/icons-material';
-import { assign } from 'mobx/dist/internal';
 import { ECHART_BAR_COLOUR } from '../../Visualization.constants';
-
+// styled main section with custom styling
 const StyledMainSection = styled('div')(() => ({
     display: 'inline-flex',
     width: '100%',
 }));
-
+//select field with custom styling design to show two select fields in a row
 const StyledSelect = styled(Select)(() => ({
     width: '48%',
 }));
-
+//custom text field with reduced width
 const StyledTextField = styled(TextField)<{
     width?: string;
 }>(({ width }) => ({
     width: width ?? '48%',
 }));
+//styled span section
+const StyledSpan = styled('span')(() => ({
+    display: 'flex',
+    justifyContent: 'space-around',
+}));
 
+//Color by value props
 export interface ColourByValueProps {
     id: string;
     updateChart: (option: any) => void;
 }
-
+//initial new rules for managing the state and for restoring
 const INITIAL_NEW_RULES = {
     column: '',
     columnColour: '#000000',
@@ -45,11 +48,6 @@ const INITIAL_NEW_RULES = {
     index: -1,
 };
 
-const StyledSpan = styled('span')(() => ({
-    display: 'flex',
-    justifyContent: 'space-around',
-}));
-
 const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
     const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
 
@@ -59,12 +57,13 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
     const [value, setValue] = useState({});
     const [appliedRules, setAppliedRules] = useState([]);
     const [valuesColourMapping, setValuesColourMapping] = useState({});
-
+    //custom reference variable to handle color value applying
     let functionCallReference = useRef({
         valuesResetCheck: false,
         assignedRules: [],
         applyRulesToChart: false,
     });
+    //update the state in the following json path
     const path = 'option';
     const columnData = data.columns || [];
     // get the value of the input (wrapped in usememo because of path prop)
@@ -82,6 +81,7 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             return JSON.stringify(v, null, 2);
         });
     }, [data, path]).get();
+    //initial setting of state data based on the json value
     useEffect(() => {
         functionCallReference.current.applyRulesToChart = false;
         let option =
@@ -96,102 +96,76 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             setAppliedRules(appliedRules);
         }
     }, []);
+    //whenever a computed value is changed, then respective change for colour by value component is
     useEffect(() => {
         setValue(computedValue);
-        if (functionCallReference.current.valuesResetCheck) {
-            let optionToValidate =
-                typeof computedValue === 'string'
-                    ? JSON.parse(computedValue)
-                    : computedValue;
-            let seriesIndex = optionToValidate['series'].findIndex((opt) =>
-                BAR_CHART_DATA.JSONVALUE.includes(opt.type),
-            );
-            let dataToValidate =
-                optionToValidate['series'][seriesIndex]['data'] || [];
-            // let styleExists = dataToValidate.some(
-            //     (data) =>
-            //         typeof data === 'object' &&
-            //         data.hasOwnProperty('itemStyle'),
-            // );
-            // if (!styleExists) {
-            updateExistingRules(
-                functionCallReference.current.assignedRules,
-                computedValue,
-            );
-            functionCallReference.current.valuesResetCheck = false;
-            functionCallReference.current.assignedRules = [];
-            // }
-        }
     }, [computedValue]);
     useEffect(() => {
         if (functionCallReference.current.applyRulesToChart) {
             let option = typeof value === 'string' ? JSON.parse(value) : value;
-            let seriesIndex = option['series'].findIndex((opt) =>
-                BAR_CHART_DATA.JSONVALUE.includes(opt.type),
-            );
             let colourObj = {};
             let optionUpdated = option;
             appliedRules.forEach((appliedItem, index) => {
                 let xAxisPosition = getXAxisPositions(appliedItem);
-                let columnsName = columnData.find(
-                    (colitem) =>
-                        colitem.selector === appliedItem.columnToColour,
-                );
-                console.log(
-                    columnData,
-                    columnsName.name,
-                    appliedItem,
-                    'columnsName',
-                );
-                let seriesIndexData = option['series'].findIndex(
-                    (opt) =>
-                        BAR_CHART_DATA.JSONVALUE.includes(opt.type) &&
-                        opt.name === columnsName.name,
-                );
+                //take all the series indexes to update the data
+                let filteredSeriesIndex = getFilteredSeriesIndex();
                 if (xAxisPosition.length) {
-                    if (seriesIndexData > -1) {
-                        let data = option['series'][seriesIndexData]['data'];
-                        data.forEach((item, dataindex) => {
-                            colourObj = {
-                                ...colourObj,
-                                [dataindex]: xAxisPosition.includes(dataindex)
-                                    ? appliedItem.columnColour
-                                    : colourObj.hasOwnProperty(dataindex)
-                                    ? colourObj[dataindex]
-                                    : ECHART_BAR_COLOUR,
-                            };
-                        });
-                        setValuesColourMapping((prevColour) => {
-                            return {
-                                ...prevColour,
-                                ...colourObj,
-                            };
-                        });
-                        if (
-                            option['series'][seriesIndexData].hasOwnProperty(
-                                'itemStyle',
-                            )
-                        ) {
-                            option['series'][seriesIndexData]['itemStyle'] = {
-                                ...option['series'][seriesIndexData][
-                                    'itemStyle'
-                                ],
-                                ['color']: (seriesData) =>
-                                    updateColorData(seriesData, colourObj),
-                            };
-                        } else {
-                            option['series'][seriesIndexData] = {
-                                ...option['series'][seriesIndexData],
-                                ['itemStyle']: {
-                                    ...option['series'][seriesIndexData][
-                                        'itemStyle'
-                                    ],
-                                    ['color']: (seriesData) =>
-                                        updateColorData(seriesData, colourObj),
-                                },
-                            };
+                    filteredSeriesIndex.forEach((item, index) => {
+                        let seriesIndexData = item;
+                        if (seriesIndexData > -1) {
+                            let data =
+                                option['series'][seriesIndexData]['data'];
+                            data.forEach((item, dataindex) => {
+                                colourObj = {
+                                    ...colourObj,
+                                    [dataindex]: xAxisPosition.includes(
+                                        dataindex,
+                                    )
+                                        ? appliedItem.columnColour
+                                        : colourObj.hasOwnProperty(dataindex)
+                                        ? colourObj[dataindex]
+                                        : ECHART_BAR_COLOUR,
+                                };
+                            });
+                            setValuesColourMapping((prevColour) => {
+                                return {
+                                    ...prevColour,
+                                    ...colourObj,
+                                };
+                            });
+                            if (
+                                option['series'][
+                                    seriesIndexData
+                                ].hasOwnProperty('itemStyle')
+                            ) {
+                                option['series'][seriesIndexData]['itemStyle'] =
+                                    {
+                                        ...option['series'][seriesIndexData][
+                                            'itemStyle'
+                                        ],
+                                        ['color']: (seriesData) =>
+                                            updateColorData(
+                                                seriesData,
+                                                colourObj,
+                                            ),
+                                    };
+                            } else {
+                                option['series'][seriesIndexData] = {
+                                    ...option['series'][seriesIndexData],
+                                    ['itemStyle']: {
+                                        ...option['series'][seriesIndexData][
+                                            'itemStyle'
+                                        ],
+                                        ['color']: (seriesData) =>
+                                            updateColorData(
+                                                seriesData,
+                                                colourObj,
+                                            ),
+                                    },
+                                };
+                            }
                         }
-                    }
+                    });
                 }
             });
 
@@ -200,35 +174,22 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                 ['appliedColourByValue']: appliedRules,
             };
             optionUpdated = option;
-            console.log(optionUpdated, 'option updated');
             runStateUpdateCustom(optionUpdated);
-            // updateChart(optionUpdated);
             functionCallReference.current.applyRulesToChart = false;
         }
-        /*} else {
-            let index = newRules.index;
-            let assignedRules = appliedRules;
-            console.log(
-                [
-                    ...assignedRules.filter(
-                        (item, itemIndex) => itemIndex < index,
-                    ),
-                    newRules,
-                    ...assignedRules.filter(
-                        (item, itemIndex) => itemIndex > index,
-                    ),
-                ],
-                'updatedEdit',
-            );
-            let updatedRules = [
-                ...assignedRules.filter((item, itemIndex) => itemIndex < index),
-                newRules,
-                ...assignedRules.filter((item, itemIndex) => itemIndex > index),
-            ];
-            updateExistingRules(updatedRules, computedValue);
-            setNewRules(INITIAL_NEW_RULES);
-        }*/
     }, [appliedRules]);
+
+    //function to check and retrieve the indexes for bar chart type
+    function getFilteredSeriesIndex() {
+        let index = [];
+        let seriesAvailable: any[] = data.option['series'].filter((item) =>
+            BAR_CHART_DATA.JSONVALUE.includes(item.type),
+        );
+        seriesAvailable.forEach((item, seriesIndex) => {
+            index.push(seriesIndex);
+        });
+        return index;
+    }
 
     function runStateUpdateCustom(updatedOption: PathValue<any, typeof path>) {
         setTimeout(() => {
@@ -239,7 +200,7 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             }
         }, 300);
     }
-
+    //when fields are updated, new rules are updated
     function updateFields(column, event) {
         setNewRules((prevRules) => {
             return {
@@ -247,6 +208,7 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                 [column]: event.target.value,
             };
         });
+        //if column updated is columnToColour then values to be selected if fetched from series and added to valuestocolor state
         if (column === 'columnToColour') {
             let option = data.option;
             let jsonPropName = data.columns.find(
@@ -317,11 +279,7 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             }
         }
     }
-    function findAllIndexes(array, item, indexPosition) {
-        if (array.indexOf(item, indexPosition) > -1) {
-            return array.indexOf(item, indexPosition);
-        }
-    }
+    //get the xaxis positons to be updated with the colour selected
     function getXAxisPositions(sourceObject: any = {}) {
         let option = typeof value === 'string' ? JSON.parse(value) : value;
         let positions = [];
@@ -340,7 +298,6 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                         xAxisPosition.push(index);
                     }
                 });
-                //option['xAxis']['data'].findIndex((data)=>(data.hasOwnProperty('value') ? (data.value === item) : (data === item)));
                 positions = [...xAxisPosition, ...positions];
             });
         }
@@ -426,38 +383,14 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
 
         return positions;
     }
-    function updatePositionsForAxis(option, positions, rules: any = {}) {
-        let optionToUpdate = option;
-        if (Object.keys(rules).length === 0) {
-            rules = newRules;
-        }
-        positions.forEach((item) => {
-            // let currentValue = optionToUpdate[item];
-            // if (typeof optionToUpdate[item] === 'object') {
-            //     optionToUpdate[item] = {
-            //         ...optionToUpdate[item],
-            //         ['itemStyle']: {
-            //             ...optionToUpdate[item]['itemStyle'],
-            //             ['color']: rules.columnColour,
-            //         },
-            //     };
-            // } else {
-            //     optionToUpdate[item] = {
-            //         ['value']: currentValue,
-            //         ['itemStyle']: {
-            //             ['color']: rules.columnColour,
-            //         },
-            //     };
-            // }
-        });
-        return optionToUpdate;
-    }
+    //THE COLOR data function return the colour data for the rules
     function updateColorData(seriesData, colourObj) {
         if (colourObj.hasOwnProperty(seriesData.dataIndex)) {
             return colourObj[seriesData.dataIndex];
         }
         return ECHART_BAR_COLOUR;
     }
+    //when the condition is met, values from newRules will be added to applied rules, then it will applied to chart
     function updateData() {
         if (
             newRules.column !== '' &&
@@ -490,6 +423,7 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
         }
         setNewRules(INITIAL_NEW_RULES);
     }
+    //column comparision object
     const columnComparision = [
         {
             name: 'is Equal To',
@@ -516,7 +450,7 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             value: '>=',
         },
     ];
-
+    //condition to show a text field, when the comparision is not '=='
     const conditionForShowingField =
         newRules.columnComparision == '<' ||
         newRules.columnComparision == '>' ||
@@ -705,77 +639,7 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             </StyledMainSection>
         </Stack>
     );
-    function updateExistingRules(assignedRules, valueCompute) {
-        setTimeout(() => {
-            let option =
-                typeof valueCompute === 'string'
-                    ? JSON.parse(valueCompute)
-                    : valueCompute;
-            assignedRules.forEach((item, index) => {
-                let xAxisPositions = getXAxisPositions(item);
-                let seriesIndex = option['series'].findIndex((seriesitem) =>
-                    BAR_CHART_DATA.JSONVALUE.includes(seriesitem.type),
-                );
-                let colourObj = {};
-                option['series'][seriesIndex]['data'].forEach(
-                    (seriesItem, index) => {
-                        if (xAxisPositions.includes(index)) {
-                            colourObj = {
-                                ...colourObj,
-                                [index]: item.columnColour,
-                            };
-                        } else {
-                            colourObj = {
-                                ...colourObj,
-                                [index]: ECHART_BAR_COLOUR,
-                            };
-                        }
-                    },
-                );
-                option['series'][seriesIndex] = {
-                    ...option['series'][seriesIndex],
-                    ['itemStyle']: {
-                        ...option['series'][seriesIndex],
-                        ['color']: (seriesIndex) =>
-                            updateColorData(seriesIndex, colourObj),
-                    },
-                };
-                // let optionUpdatedList = updatePositionsForAxis(
-                //     option['series'][seriesIndex]['data'],
-                //     xAxisPositions,
-                //     item,
-                // );
-                // option['series'][seriesIndex]['data'] = optionUpdatedList;
-                // option = {
-                //     ...option,
-                //     ['customSettings']: {
-                //         ...option['customSettings'],
-                //         ['optionStateChange']: true,
-                //     },
-                // };
-                let chartOption = option;
-                updateChart(chartOption);
-            });
-        }, 100);
-    }
-    function updateColourValueMap(assignedRules) {
-        let appliedColours = valuesColourMapping;
-        assignedRules.forEach((item, index) => {
-            let xAxisPositions = getXAxisPositions(item);
-            if (xAxisPositions.length > 0) {
-                appliedColours = {
-                    ...appliedColours,
-                    [index]: item.columnColour,
-                };
-            }
-        });
-        setValuesColourMapping((prevColourMap) => {
-            return {
-                ...prevColourMap,
-                ...appliedColours,
-            };
-        });
-    }
+
     function deleteAssignedRule(rule, index) {
         let assignedRules = appliedRules;
         assignedRules = assignedRules.filter(
@@ -789,34 +653,6 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             };
         });
         setAppliedRules(assignedRules);
-        // updateColourValueMap(assignedRules);
-        // setTimeout(() => {
-        //     try {
-        //         let dataVal =
-        //             typeof value === 'string' ? JSON.parse(value) : value;
-        //         let dataValUpdated = dataVal;
-        //         let seriesIndex = dataVal['series'].findIndex((opt) =>
-        //             BAR_CHART_DATA.JSONVALUE.includes(opt.type),
-        //         );
-        //         let colourObj = {};
-        //         dataVal['series'][seriesIndex]['data'].forEach((item,index)=>{
-        //             colourObj[index] = '#5470c6';
-        //         });
-
-        //         dataVal['series'][seriesIndex]['itemStyle'] = {
-        //             ...dataVal['series'][seriesIndex]['itemStyle'],
-        //             ['color']:(seriesIndex)=>updateColorData(seriesIndex, colourObj),
-        //         };
-
-        //         dataValUpdated = dataVal;
-        //         updateChart(dataValUpdated);
-        //         functionCallReference.current.valuesResetCheck = true;
-        //         functionCallReference.current.assignedRules = assignedRules;
-        //         updateExistingRules(assignedRules, computedValue);
-        //     } catch (e) {
-        //         console.log('e', e);
-        //     }
-        // }, 100);
     }
     function editAssignedRule(rule, index) {
         let assignedRules = rule;
