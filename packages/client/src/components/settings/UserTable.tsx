@@ -170,6 +170,7 @@ const formatModelLimitValue = (input: string) => {
             DAY: 'Daily',
             WEEK: 'Weekly',
             MONTH: 'Monthly',
+            NULL: 'None',
         };
         return mappings[input.toUpperCase()] || input;
     }
