@@ -14,7 +14,7 @@ import { DefaultCells } from '@/components/cell-defaults';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks, Renderer } from '@/components/blocks';
 import { LoadingScreen } from '@/components/ui';
-import { Typography } from '@semoss/ui';
+import { Typography, Modal, styled, Box, Select, Button } from '@semoss/ui';
 import {
     Routes,
     Route,
@@ -36,6 +36,11 @@ interface BlocksRendererProps {
     preview?: boolean;
 }
 
+const FlexBox = styled(Box)(() => ({
+    display: 'flex',
+    marginBottom: '20px',
+}));
+
 /**
  * Render a block app
  */
@@ -49,7 +54,8 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [stateStore, setStateStore] = useState<StateStore | null>();
     const queryStringParams = new URLSearchParams(useLocation().search);
-
+    const [falseVarModal, setFalseVarModal] = useState<boolean>(false);
+    const [falseVars, setFalseVars] = useState({});
     useEffect(() => {
         // start the loading
         setIsLoading(true);
@@ -65,7 +71,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
         // initialize a new insight
         let pixel = '';
         if (appId && !stateFilter) {
-            pixel = `GetAppBlocksJson ( project=["${appId}"]);`;
+            pixel = `GetAppBlocksJson ( project=["${appId}"]);ValidateProjectDependencies(project=["${appId}"])`;
         } else if (state || stateFilter) {
             pixel = `true`;
         } else {
@@ -83,7 +89,74 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
                 if (errors.length) {
                     throw new Error(errors.join(''));
                 }
+                const falseVars = {};
 
+                // get variables that are fasle;
+                if (Object.keys(pixelReturn[1].output?.vars).length) {
+                    for (const prop in pixelReturn[1].output?.vars) {
+                        if (!pixelReturn[1].output.vars[prop]) {
+                            // create var on false var object
+                            // display is what we show to the user
+                            // newValue will be the value associated with display database id that will become the new value in the store
+                            falseVars[prop] = {
+                                newValue: '',
+                                displayValue: '',
+                                options: [],
+                            };
+                        }
+                    }
+                }
+
+                // if there are false variables get engines they can swap with
+
+                if (Object.keys(falseVars).length) {
+                    Object.keys(falseVars).forEach((falseVar, falseVarIdx) => {
+                        if (falseVar in pixelReturn[0].output.variables) {
+                            // if its false get engines
+                            runPixel<[any]>(
+                                `MyEngines ( engineTypes = [ "${pixelReturn[0].output.variables[
+                                    falseVar
+                                ].type.toUpperCase()}"]) ;`,
+                                'new',
+                            ).then(
+                                async ({ pixelReturn, errors, insightId }) => {
+                                    if (errors.length) {
+                                        throw new Error(errors.join(''));
+                                    }
+                                    const { output } = pixelReturn[0];
+                                    output.forEach((datum) => {
+                                        const { database_name, database_id } =
+                                            datum;
+
+                                        // create option list for modal
+
+                                        falseVars[falseVar].options.push({
+                                            display: database_name,
+                                            value: database_id,
+                                        });
+                                    });
+                                    if (
+                                        falseVarIdx ===
+                                        Object.keys(falseVars).length - 1
+                                    ) {
+                                        // set the modal to true if its the end of array
+                                        setFalseVars(falseVars);
+                                        setFalseVarModal(true);
+                                    }
+                                },
+                            );
+                        } else {
+                            if (
+                                falseVarIdx ===
+                                Object.keys(falseVars).length - 1
+                            ) {
+                                // set the modal true if its the end of the array
+                                setFalseVars(falseVars);
+                                setFalseVarModal(true);
+                            }
+                        }
+                    });
+                }
                 // set the state
                 let s: SerializedState;
                 if (appId && !stateFilter) {
@@ -115,6 +188,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
                     params[key] = value;
                 });
 
+                debugger;
                 // create a new state store
                 const store = new StateStore({
                     mode: 'interactive',
@@ -124,8 +198,11 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
                     initialParams: params,
                 });
 
+                console.log(store);
+
                 // set it
                 setStateStore(store);
+
                 const allBlocks = Object.values(store.blocks);
                 setAllPages(allBlocks.filter((b) => b.widget == 'page'));
 
@@ -182,13 +259,112 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
 
     const getPage = (pageId: string) => {
         return (
-            <Blocks state={stateStore} registry={DefaultBlocks}>
-                <Renderer id={pageId} />
-            </Blocks>
+            <div>
+                <Modal
+                    open={falseVarModal}
+                    fullWidth
+                    onClose={() => setFalseVarModal(false)}
+                >
+                    <Modal.Actions sx={{ width: '100%' }}>
+                        {Object.keys(falseVars).map((key, keyIdx) => {
+                            return (
+                                <Select
+                                    key={keyIdx}
+                                    sx={{ width: '100%' }}
+                                    onChange={(val) => {
+                                        setFalseVars((prevState) => {
+                                            const prevFalseValues = {
+                                                ...prevState,
+                                            };
+
+                                            // set the new value to be the database id of the value selected
+                                            prevFalseValues[key].newValue =
+                                                prevFalseValues[
+                                                    key
+                                                ].options.filter(
+                                                    (opt) =>
+                                                        opt.display ===
+                                                        val.target.value,
+                                                )[0].value;
+                                            prevFalseValues[key].displayValue =
+                                                prevFalseValues[
+                                                    key
+                                                ].options.filter(
+                                                    (opt) =>
+                                                        opt.display ===
+                                                        val.target.value,
+                                                )[0].display;
+
+                                            // return updated falsevar object
+                                            return prevFalseValues;
+                                        });
+                                    }}
+                                    value={falseVars[key].displayValue}
+                                    label={`${key}`}
+                                >
+                                    {falseVars[key].options.map(
+                                        (opt, optIdx) => {
+                                            console.log(opt);
+                                            return (
+                                                <Select.Item
+                                                    key={optIdx}
+                                                    value={opt.display}
+                                                >
+                                                    {opt.display}
+                                                </Select.Item>
+                                            );
+                                        },
+                                    )}
+                                </Select>
+                            );
+                        })}
+
+                        <Button
+                            onClick={() => {
+                                setFalseVars((prevState) => {
+                                    const prevFalseValues = { ...prevState };
+                                    for (const prop in prevFalseValues) {
+                                        prevFalseValues[prop].newValue = '';
+                                    }
+                                    return prevFalseValues;
+                                });
+                                setFalseVarModal(false);
+                            }}
+                            variant="outlined"
+                            color="error"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            disabled={Object.keys(falseVars).some(
+                                (falseVar) => !falseVars[falseVar].newValue,
+                            )}
+                            onClick={() => {
+                                setStateStore((prevState: any) => {
+                                    // update the state store to have the new values
+                                    for (const prop in falseVars) {
+                                        if (prop in prevState.variables) {
+                                            prevState.variables[prop].value =
+                                                falseVars[prop].newValue;
+                                        }
+                                    }
+
+                                    return prevState;
+                                });
+                            }}
+                        >
+                            Submit
+                        </Button>
+                    </Modal.Actions>
+                </Modal>
+                <Blocks state={stateStore} registry={DefaultBlocks}>
+                    <Renderer id={pageId} />
+                </Blocks>
+            </div>
         );
     };
 
-    return preview ? (
+    preview ? (
         <Blocks state={stateStore} registry={DefaultBlocks}>
             <Renderer id={ACTIVE} />
         </Blocks>
