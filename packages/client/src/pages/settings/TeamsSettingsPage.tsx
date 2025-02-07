@@ -19,12 +19,10 @@ import {
     Select,
 } from '@semoss/ui';
 
-import { removeUnderscores } from '@/utility';
-
 import { Controller, useForm } from 'react-hook-form';
 import { TextField } from '@mui/material';
 import { TeamTileCard } from './GenericTeamCard';
-import { toJS } from 'mobx';
+import { observer } from 'mobx-react-lite';
 
 export interface DBMember {
     ID: string;
@@ -117,7 +115,7 @@ type NewTeamForm = {
     CUSTOM_GROUP: boolean;
 };
 
-export const TeamsSettingsPage = () => {
+export const TeamsSettingsPage = observer(() => {
     const { adminMode } = useSettings();
     const { monolithStore, configStore } = useRootStore();
     const navigate = useNavigate();
@@ -250,8 +248,6 @@ export const TeamsSettingsPage = () => {
         }
     });
 
-    const loginTypes = configStore.store.config.providers;
-
     return (
         <>
             <StyledBackdrop open={getTeams.status !== 'SUCCESS'}>
@@ -382,23 +378,20 @@ export const TeamsSettingsPage = () => {
                                                     fullWidth={true}
                                                     disabled={watchCustom}
                                                 >
-                                                    {loginTypes &&
-                                                        loginTypes.map(
-                                                            (val, idx) => {
-                                                                return (
-                                                                    <Select.Item
-                                                                        key={
-                                                                            idx
-                                                                        }
-                                                                        value={
-                                                                            val
-                                                                        }
-                                                                    >
-                                                                        {val}
-                                                                    </Select.Item>
-                                                                );
-                                                            },
-                                                        )}
+                                                    {configStore.store.config.availableProviders.map(
+                                                        (p, idx) => {
+                                                            return (
+                                                                <Select.Item
+                                                                    key={idx}
+                                                                    value={
+                                                                        p.provider
+                                                                    }
+                                                                >
+                                                                    {p.name}
+                                                                </Select.Item>
+                                                            );
+                                                        },
+                                                    )}
                                                 </Select>
                                             );
                                         }}
@@ -480,4 +473,4 @@ export const TeamsSettingsPage = () => {
             </StyledContainer>
         </>
     );
-};
+});

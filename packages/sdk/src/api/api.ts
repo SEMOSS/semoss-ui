@@ -69,13 +69,24 @@ interceptors.response = async ({ response }) => {
  */
 export const getSystemConfig = async (): Promise<{
     logins: { [key: string]: unknown };
-    loginsAllowed: { [key: string]: boolean };
+    /**
+     * List of available providers (logins) that are available
+     */
+    availableProviders: {
+        provider: string;
+        name: string;
+        isOauth: boolean;
+    }[];
     [key: string]: unknown;
 }> => {
     // get the response
     const response = await get<{
         logins: { [key: string]: unknown };
-        loginsAllowed: { [key: string]: boolean };
+        availableProviders: {
+            provider: string;
+            name: string;
+            isOauth: boolean;
+        }[];
         [key: string]: unknown;
     }>(`${Env.MODULE}/api/config`);
 
