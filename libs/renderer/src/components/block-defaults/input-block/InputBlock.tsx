@@ -46,8 +46,8 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
             }
             rows={data.rows}
             multiline={data.rows > 1 && data.type === "text"}
-            required={data.required}
-            disabled={data?.disabled || data?.loading}
+            required={Boolean(data.required)}
+            disabled={Boolean(data?.disabled || data?.loading)}
             helperText={
                 data?.loading ? <LinearProgress color="primary" /> : data?.hint
             }

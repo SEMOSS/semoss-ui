@@ -113,6 +113,26 @@ export const config: BlockConfig<InputBlockDef> = {
                         />
                     ),
                 },
+                {
+                    description: "Disabled",
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="disabled"
+                            path="disabled"
+                        />
+                    ),
+                },
+                {
+                    description: "Required",
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="Required"
+                            path="required"
+                        />
+                    ),
+                },
             ],
         },
         {
