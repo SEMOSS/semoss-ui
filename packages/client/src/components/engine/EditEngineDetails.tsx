@@ -31,11 +31,11 @@ const StyledEditorContainer = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(1),
 }));
 
-const StyledModalHeader = styled(Box)(({ theme }) => ({
+const StyledModalHeader = styled(Box)({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-}));
+});
 
 interface EditEngineDetailsProps {
     /** Track if the edit is open */
@@ -331,6 +331,8 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
             )}
             <Modal.Content>
                 <Stack spacing={3}>
+                    {/* div included to prevent the first title from clipping */}
+                    <div />
                     {engineMetaKeys.map((key) => {
                         const { metakey, display_options } = key;
                         const label =
