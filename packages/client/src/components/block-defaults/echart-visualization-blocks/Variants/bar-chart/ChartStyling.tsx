@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useEffect } from 'react';
 import { Button, Select, styled, TextField } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
@@ -40,6 +40,7 @@ const INITIAL_CHART_STYLE = {
     fontWeight: 'bold',
     fontFamily: '',
 };
+//chart styling component props structure
 interface ChartStylingProps {
     option: {};
     updateChart: () => void;
@@ -55,6 +56,7 @@ export const ChartStyling = observer<ChartStylingProps>(
             accordionExpanded: false,
         });
         const [chartDataChanged, setChartDataChanged] = useState(false);
+        const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
         //default chart alignment for dropdown
         const chartAlignment = [
             { label: 'Left', value: 'left' },
@@ -116,14 +118,7 @@ export const ChartStyling = observer<ChartStylingProps>(
         }, [computedValue]);
         //for retaining the previously selected values, this useeffect will help
         useEffect(() => {
-            let chartStyleData = {
-                title: '',
-                alignment: '',
-                textSize: 12,
-                fontColour: '#000000',
-                fontWeight: '',
-                fontFamily: '',
-            };
+            let chartStyleData = INITIAL_CHART_STYLE;
             let option = typeof value === 'string' ? JSON.parse(value) : value;
             if (option['title']) {
                 if (option['title'].hasOwnProperty('text')) {
@@ -243,7 +238,11 @@ export const ChartStyling = observer<ChartStylingProps>(
         }
         // update state when chart fields are updated
         function runStateUpdate(optionUpdated) {
-            setTimeout(() => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+            }
+            timeoutRef.current = setTimeout(() => {
                 try {
                     setData(
                         'option',
