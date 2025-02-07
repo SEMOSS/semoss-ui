@@ -9181,7 +9181,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false, min: 0 },
                     },
                     {
-                        fieldName: 'httpPAth',
+                        fieldName: 'httpPath',
                         label: 'HTTP Path',
                         defaultValue: '',
                         options: {

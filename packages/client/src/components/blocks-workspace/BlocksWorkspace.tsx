@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { ConstructionOutlined } from '@mui/icons-material';
-import { useNotification, styled, Typography, Stack } from '@semoss/ui';
+import { useNotification } from '@semoss/ui';
 import { runPixel } from '@/api';
 import {
     SerializedState,
@@ -37,19 +36,6 @@ import {
 import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
 
 const DEFAULT_BORDER_SIZE = 300;
-
-const StyledAlert = styled('div')(({ theme }) => ({
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing(1),
-    paddingLeft: theme.spacing(2),
-    paddingRight: theme.spacing(2),
-    height: theme.spacing(4),
-    borderRadius: '4px',
-    background: 'rgba(253, 237, 225, 1)',
-}));
 
 const DEFAULT_OPTIONS: WorkspaceOptions = {
     version: '',
