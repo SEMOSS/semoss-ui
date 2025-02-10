@@ -70,6 +70,7 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                             <FrameOperations
                                 id={id}
                                 updateFrame={updateFrame}
+                                path="option"
                             />
                         )}
                         {data.variation === 'echart-pie-chart' && (

@@ -5,6 +5,8 @@ import { BlockComponent } from '@/stores';
 import { styled } from '@mui/material';
 import { Bar } from './Variants/bar-chart/Bar';
 import { Pie } from './Variants/PieChart/Pie';
+import { useMemo } from 'react';
+import { BAR_CHART_DATA } from './Visualization.constants';
 
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',
@@ -59,6 +61,39 @@ export interface EchartVisualizationBlockDef {
 
 export const VisualizationBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
+    //get the updated data style when data.style is changed
+    const updatedDataStyle = useMemo(() => {
+        let isEm =
+            data.style.height.toString().endsWith('em') &&
+            data.style.width.toString().endsWith('em');
+        let isPx =
+            data.style.height.toString().endsWith('px') &&
+            data.style.width.toString().endsWith('px');
+        if (isEm || isPx) return { ...data.style }; //if values mentioned in em or px, then return same style
+        //if any of style is different from % then, take that value and convert % value to px equivalent
+        let calculatedHeight =
+            data.style.height.toString().endsWith('em') ||
+            data.style.height.toString().endsWith('px')
+                ? data.style.height
+                : BAR_CHART_DATA.HEIGHT;
+        let calculatedWidth = data.style.width;
+        if (data.style.height.toString().endsWith('%')) {
+            let heightGivenInPercent = parseInt(
+                data.style.height.toString().replace('%', ''),
+            );
+            let height = parseInt(
+                data.style.height.toString().replace('%', ''),
+            );
+            calculatedHeight = (calculatedHeight * heightGivenInPercent) / 100;
+        }
+        console.log(calculatedHeight, 'calculated height');
+        //return updated style
+        return {
+            ...data.style,
+            height: calculatedHeight + 'px',
+            width: calculatedWidth,
+        };
+    }, [data.style]);
 
     if (!data.option) {
         return (
@@ -69,7 +104,7 @@ export const VisualizationBlock: BlockComponent = observer(({ id }) => {
     }
 
     return (
-        <StyledDataContainer {...attrs} style={{ ...data.style }}>
+        <StyledDataContainer {...attrs} style={{ ...updatedDataStyle }}>
             {data.variation === 'echart-bar-graph' && <Bar id={id} />}
             {data.variation === 'echart-pie-chart' && <Pie id={id}></Pie>}
         </StyledDataContainer>

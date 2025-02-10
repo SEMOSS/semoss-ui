@@ -6,6 +6,8 @@ import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
 import { useBlockSettings } from '@/hooks';
 import { PathValue } from '@/types';
+import { BlockDef } from '@/stores';
+import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 //Styled select with custom styling
 const StyledSelect = styled(Select)(() => ({
     width: '100%',
@@ -40,16 +42,12 @@ const INITIAL_CHART_STYLE = {
     fontWeight: 'bold',
     fontFamily: '',
 };
-//chart styling component props structure
-interface ChartStylingProps {
-    option: {};
-    updateChart: () => void;
-    id: string;
-}
+
 //handles chart styling with custom title, colour, etc
-export const ChartStyling = observer<ChartStylingProps>(
-    ({ updateChart, option, id }) => {
-        const { data, setData } = useBlockSettings<any>(id); //json data for chart rendering
+export const ChartStyling = observer(
+    <D extends BlockDef = BlockDef>({ updateChart, option, id, path }) => {
+        const { data, setData } =
+            useBlockSettings<EchartVisualizationBlockDef>(id); //json data for chart rendering
         const [chartStyle, setChartStyle] = useState(INITIAL_CHART_STYLE); //chart style initial state
         const [value, setValue] = useState(data.option);
         const [chartPageState, setChartPageState] = useState({
@@ -95,8 +93,6 @@ export const ChartStyling = observer<ChartStylingProps>(
             { label: 'Segoe UI', value: 'Segoe UI' },
             { label: 'Times New Roman', value: 'Times New Roman' },
         ];
-        //the path of the chart option to update
-        const path = 'option';
         // get the value of the input (wrapped in usememo because of path prop)
         const computedValue = useMemo(() => {
             return computed(() => {
@@ -246,7 +242,7 @@ export const ChartStyling = observer<ChartStylingProps>(
                 try {
                     setData(
                         'option',
-                        optionUpdated as PathValue<any, typeof path>,
+                        optionUpdated as PathValue<D['data'], typeof path>,
                     );
                 } catch (e) {
                     console.log(e);

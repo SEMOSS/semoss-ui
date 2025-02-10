@@ -6,10 +6,11 @@ import EChartsReact from 'echarts-for-react';
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 import { ChartContextMenu } from './ChartContextMenu';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { BlockComponent } from '@/stores';
 //Main Container for displaying Bar chart
 const StyledMainContainer = styled('div')(({ theme }) => ({
-    height: 'inherit',
-    width: 'inherit',
+    height: '100%',
+    width: '100%',
 }));
 //container for displaying invalid or no data
 const StyledNoDataContainer = styled('div', {
@@ -35,14 +36,12 @@ interface BarProps {
     id: string;
 }
 
-export const Bar: any = observer<BarProps>(({ id }) => {
+export const Bar: BlockComponent = observer(({ id }) => {
     const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
-    const [echartState, setEchartState] = useState<any>({});
-    // const [selectedChart, setSelectedChart] = useState<any>({});
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number; //x axis position for the click/brush event
         mouseY: number; //y axis position for the click/brush event
-        value: unknown; //value can be of object or any type
+        value: unknown; //value can be of object or string or number type
     } | null>(null);
     let resultData: unknown = {};
     //selector string construction based on fields selection
@@ -120,17 +119,6 @@ export const Bar: any = observer<BarProps>(({ id }) => {
         [frameData.data.values],
     );
 
-    //this function is automatically called, when the chart is ready
-    function echartsLoaded(echartInstance) {
-        if (!echartState.hasOwnProperty('chartLoaded')) {
-            setEchartState((prevState) => {
-                return {
-                    ...prevState,
-                    ['chartLoaded']: true,
-                };
-            });
-        }
-    }
     //on events object for getting and processing events with chart
     const onClickChart = {
         //when contextmenu event is raised, default context menu made hidden, and custom component is shown
@@ -202,9 +190,9 @@ export const Bar: any = observer<BarProps>(({ id }) => {
         try {
             const options = JSON.parse(data.option);
             return (
-                <StyledNoDataContainer id={id}>
+                <StyledMainContainer id={id}>
                     <EChartsReact option={options} />
-                </StyledNoDataContainer>
+                </StyledMainContainer>
             );
         } catch (e) {
             return (
@@ -222,7 +210,7 @@ export const Bar: any = observer<BarProps>(({ id }) => {
             <StyledMainContainer id={id}>
                 <EChartsReact
                     option={resultData}
-                    onChartReady={echartsLoaded}
+                    // onChartReady={echartsLoaded}
                     onEvents={onClickChart}
                     style={{
                         height: 'inherit',

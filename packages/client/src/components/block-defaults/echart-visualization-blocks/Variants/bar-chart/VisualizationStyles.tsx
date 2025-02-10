@@ -1,17 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Slider, styled, TextField } from '@semoss/ui';
 import { BAR_CHART_DATA } from '../../Visualization.constants';
 import { useBlockSettings } from '@/hooks';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
-import { PathValue } from '@/types';
+import { Paths, PathValue } from '@/types';
+import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
+import { EchartVisualizationBlockConfig } from '@/components/block-defaults';
+import { Block, BlockDef } from '@/stores';
 //Styled container for bar chart
 const StyledBarStylesContainer = styled('div')<{
     width?: string;
     display?: string;
     justifyContent?: string;
-}>(({ theme, width, display, justifyContent }) => ({
+}>(({ width, display, justifyContent }) => ({
     width: width ?? undefined,
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
@@ -21,29 +24,42 @@ const StyledBarStylesContainer = styled('div')<{
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: '100%',
 }));
-//properties/props for VisualizationStyles component
-interface EChartVisualizationColumns {
-    id: string;
-    option: any;
-    chartType: string;
-    updateChart: (data) => void;
+
+//bar chart styling component structure
+interface BarChartStyle {
+    barwidth: number;
+    minBarWidth: number;
+    maxBarWidth: number;
+    barColour: string;
 }
+//initial bar chart style
+const INITIAL_BAR_CHART_STYLES = {
+    barwidth: 10,
+    minBarWidth: 1,
+    maxBarWidth: 45,
+    barColour: '#5470c6',
+};
 
 //Updating bar chart specific styles like bar width and its colour
-export const VisualizationStyles = observer<EChartVisualizationColumns>(
-    ({ updateChart, chartType, option, id }) => {
+export const VisualizationStyles = observer(
+    <D extends BlockDef = BlockDef>({
+        updateChart,
+        chartType,
+        option,
+        id,
+        path,
+    }) => {
         //style data for bar chart with initial styles
-        const [styleData, setStyleData] = useState({
-            barwidth: 10,
-            minBarWidth: 1,
-            maxBarWidth: 45,
-            barColour: '#5470c6',
-        });
+        const [styleData, setStyleData] = useState<BarChartStyle>(
+            INITIAL_BAR_CHART_STYLES,
+        );
         //chart data
-        const { data, setData } = useBlockSettings<any>(id);
-        const [value, setValue] = useState(data.option);
-        //path of the chart json to update
-        const path = 'option';
+        const { data, setData } =
+            useBlockSettings<EchartVisualizationBlockDef>(id);
+        const [value, setValue] = useState<
+            typeof EchartVisualizationBlockConfig.data.option
+        >(data.option);
+        const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
         const [stylesUpdated, setStylesUpdated] = useState<
             'initial' | 'updated'
         >('initial');
@@ -124,9 +140,9 @@ export const VisualizationStyles = observer<EChartVisualizationColumns>(
             }
         }, [styleData]);
         //this function will return filtered series index with type 'bar'
-        function getFilteredSeriesIndex() {
-            let index = [];
-            let seriesAvailable: any[] = data.option['series'].filter((item) =>
+        function getFilteredSeriesIndex(): number[] {
+            let index: number[] = [];
+            let seriesAvailable = data.option['series'].filter((item) =>
                 BAR_CHART_DATA.JSONVALUE.includes(item.type),
             );
             seriesAvailable.forEach((item, seriesIndex) => {
@@ -147,6 +163,7 @@ export const VisualizationStyles = observer<EChartVisualizationColumns>(
         }
         //handles bar colour changes and updates the value to state
         function handleBarColourChange(e) {
+            if (stylesUpdated === 'initial') setStylesUpdated('updated');
             setStyleData((prevStyle) => {
                 return {
                     ...prevStyle,
@@ -155,13 +172,12 @@ export const VisualizationStyles = observer<EChartVisualizationColumns>(
             });
         }
         //update bar chart data
-        function updateChartData(barData) {
-            const barWidth = barData['barwidth'];
-            const barColour = barData['barColour'];
+        function updateChartData(barData: BarChartStyle) {
+            const barWidth: number = barData['barwidth'];
+            const barColour: string = barData['barColour'];
             let option = typeof value === 'string' ? JSON.parse(value) : value;
-            let optionUpdated = option;
             if (option['series']) {
-                let seriesDataIndex = getFilteredSeriesIndex();
+                let seriesDataIndex: number[] = getFilteredSeriesIndex();
                 seriesDataIndex.forEach((index) => {
                     const barChartDataIndex = index;
                     if (barChartDataIndex > -1) {
@@ -199,10 +215,19 @@ export const VisualizationStyles = observer<EChartVisualizationColumns>(
             runStateUpdateCustom(option);
         }
         //this function will update chart json to new option value
-        function runStateUpdateCustom(option) {
-            setTimeout(() => {
+        function runStateUpdateCustom(
+            option: typeof EchartVisualizationBlockConfig.data.option,
+        ) {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+            }
+            timeoutRef.current = setTimeout(() => {
                 try {
-                    setData('option', option as PathValue<any, typeof path>);
+                    setData(
+                        'option',
+                        option as PathValue<D['data'], typeof path>,
+                    );
                 } catch (e) {
                     console.log(e);
                 }

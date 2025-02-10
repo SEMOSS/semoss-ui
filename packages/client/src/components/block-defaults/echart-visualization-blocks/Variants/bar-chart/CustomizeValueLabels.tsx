@@ -1,5 +1,5 @@
 import { Select, styled, Switch, TextField } from '@semoss/ui';
-import { ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useBlockSettings } from '@/hooks';
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 import { BAR_CHART_DATA } from '../../Visualization.constants';
@@ -7,6 +7,8 @@ import { PathValue } from '@/types';
 import { getValueByPath } from '@/utility';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
+import { BlockDef } from '@/stores';
+import { EchartVisualizationBlockConfig } from '@/components/block-defaults';
 //styled select field to have full width
 const StyledSelect = styled(Select)(() => ({
     width: '100%',
@@ -43,25 +45,34 @@ const INITIAL_VALUE_LABELS = {
     fontweight: 'normal',
     fontcolour: '#000000',
 };
-//custom value labels props
-interface CustomizeValueLabelsProps {
-    option: any;
-    chartType: string;
-    id: string;
+
+//Customize value labels component's key properties
+interface CustomizeValueLabelsKeys {
+    show: boolean;
+    position: string;
+    rotate: string;
+    alignment: string;
+    font: string;
+    fontsize: string;
+    fontweight: string;
+    fontcolour: string;
 }
 
 //having custom fields to customize charts text parts like: position, alignment, rotate, etc
-export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
-    ({ option, chartType, id }) => {
-        const [fieldData, setFieldData] = useState(INITIAL_VALUE_LABELS);
-        const path = 'option';
+export const CustomizeValueLabels = observer(
+    <D extends BlockDef = BlockDef>({ option, chartType, id, path }) => {
+        const [fieldData, setFieldData] =
+            useState<CustomizeValueLabelsKeys>(INITIAL_VALUE_LABELS);
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
-        const [value, setValue] = useState(data.option);
+        const [value, setValue] = useState<
+            typeof EchartVisualizationBlockConfig.data.option
+        >(data.option);
+        const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
         const [valueLabelsUpdated, setValueLabelsUpdated] = useState<
             'initial' | 'updated'
         >('initial');
-        const labelPositionValues = [
+        const labelPositionValues: string[] = [
             'top',
             'left',
             'right',
@@ -76,9 +87,9 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
             'insideTopRight',
             'insideBottomRight',
         ];
-        const alignment = ['left', 'center', 'right'];
-        const fontFamily = ['sans-serif', 'serif', 'monospace'];
-        const fontWeight = [
+        const alignment: string[] = ['left', 'center', 'right'];
+        const fontFamily: string[] = ['sans-serif', 'serif', 'monospace'];
+        const fontWeight: string[] = [
             'normal',
             'bold',
             'bolder',
@@ -156,9 +167,10 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
             }
         }, [fieldData]);
         //handles different input fields by setting values to state, whenever a change happens
-        function updateFields(fieldName, fieldValue, fieldType) {
-            if (valueLabelsUpdated === 'initial')
+        const updateFields = (fieldName, fieldValue, fieldType): void => {
+            if (valueLabelsUpdated === 'initial') {
                 setValueLabelsUpdated('updated');
+            }
             setFieldData((prevData) => {
                 return {
                     ...prevData,
@@ -168,9 +180,9 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
                             : fieldValue.target.value,
                 };
             });
-        }
+        };
         //update the chart data to state, when customize value labels fields section is updated to new value
-        function updateChartData(values: any) {
+        function updateChartData(values: CustomizeValueLabelsKeys) {
             let option = typeof value === 'string' ? JSON.parse(value) : value;
             let optionUpdated = option;
             let customizeLabelOptionsData = {};
@@ -183,11 +195,11 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
             });
             const customizeLabelOptionsValue = customizeLabelOptionsData;
             //get matching series index for bar chart
-            const filteredSeries = getFilteredSeriesIndex();
+            const filteredSeries: number[] = getFilteredSeriesIndex();
             //update the series with new styles for every matching series index
             filteredSeries.forEach((item) => {
-                const displayPositionIndex = item;
-                let showValueLabel =
+                const displayPositionIndex: number = item;
+                let showValueLabel: boolean =
                     customizeLabelOptionsValue['show'] ?? false;
                 if (customizeLabelOptionsValue['show']) {
                     if (option['series'][displayPositionIndex]) {
@@ -316,7 +328,7 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
         //function to check and retrieve the indexes for bar chart type
         function getFilteredSeriesIndex() {
             let index = [];
-            let seriesAvailable: any[] = data.option['series'].filter((item) =>
+            let seriesAvailable = data.option['series'].filter((item) =>
                 BAR_CHART_DATA.JSONVALUE.includes(item.type),
             );
             seriesAvailable.forEach((item, seriesIndex) => {
@@ -325,12 +337,18 @@ export const CustomizeValueLabels = observer<CustomizeValueLabelsProps>(
             return index;
         }
         //update the state when any of the fields in custom value labels is changed
-        function runStateUpdateCustom(optionUpdated) {
-            setTimeout(() => {
+        function runStateUpdateCustom(
+            optionUpdated: typeof EchartVisualizationBlockConfig.data.option,
+        ) {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+            }
+            timeoutRef.current = setTimeout(() => {
                 try {
                     setData(
                         'option',
-                        optionUpdated as PathValue<any, typeof path>,
+                        optionUpdated as PathValue<D['data'], typeof path>,
                     );
                 } catch (e) {
                     console.log(e);

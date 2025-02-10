@@ -8,6 +8,8 @@ import { PathValue } from '@/types';
 import { Sync } from '@mui/icons-material';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
+import { BlockDef } from '@/stores';
+import { EChartColumns } from './Bar';
 //frame operations component props structure
 export interface FrameOperationsProps {
     id: string;
@@ -31,8 +33,8 @@ const StyledSelect = styled(Select)(() => ({
     width: '100%',
 }));
 
-export const FrameOperations = observer<FrameOperationsProps>(
-    ({ id, updateFrame }) => {
+export const FrameOperations = observer(
+    <D extends BlockDef = BlockDef>({ id, updateFrame, path }) => {
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
         const [columnsData, setColumnsData] = useState([]);
@@ -41,7 +43,6 @@ export const FrameOperations = observer<FrameOperationsProps>(
             yaxis: [],
         });
         const [value, setValue] = useState({});
-        const path = 'option';
         const [selectedValues, setSelectedValues] = useState({
             xAxis: [],
             yAxis: [],
@@ -106,7 +107,9 @@ export const FrameOperations = observer<FrameOperationsProps>(
             let pixelName = [],
                 pixelValue = [];
             yAxisData.forEach((item, index) => {
-                let name = columnsSelector.find((col) => col.selector === item);
+                let name = columnsSelector.find(
+                    (col: EChartColumns) => col.selector === item,
+                );
                 initialColumns['yaxis'].push({
                     ['name']: name?.name || option['yAxis']['pixelname'][index],
                     ['selector']: item,
@@ -201,7 +204,7 @@ export const FrameOperations = observer<FrameOperationsProps>(
             if (axis === 'xaxis') {
                 let recentValue = value.slice(-1) || [];
                 let name = columnsSelector.find(
-                    (col) => col.selector === recentValue[0],
+                    (col: EChartColumns) => col.selector === recentValue[0],
                 );
                 columns['xaxis'] = [
                     {

@@ -102,7 +102,11 @@ export const UpgradedVisualizationTool =
                             </ListItemButton>
                         )}
                         {selectedList === 'colourbyvalue' && (
-                            <ColourByValue id={id} updateChart={updateChart} />
+                            <ColourByValue
+                                id={id}
+                                updateChart={updateChart}
+                                path="option"
+                            />
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
@@ -132,7 +136,11 @@ export const UpgradedVisualizationTool =
                             </ListItemButton>
                         )}
                         {selectedList === 'editxaxis' && (
-                            <EditXAxis id={id} option={data.option} />
+                            <EditXAxis
+                                id={id}
+                                option={data.option}
+                                path="option"
+                            />
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
@@ -162,7 +170,11 @@ export const UpgradedVisualizationTool =
                             </ListItemButton>
                         )}
                         {selectedList === 'edityaxis' && (
-                            <EditYAxis id={id} option={data.option} />
+                            <EditYAxis
+                                id={id}
+                                option={data.option}
+                                path="option"
+                            />
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
@@ -196,6 +208,7 @@ export const UpgradedVisualizationTool =
                                 id={id}
                                 option={data.option}
                                 chartType={BAR_CHART_DATA.JSONVALUE[0]}
+                                path="option"
                             />
                         )}
                     </StyledListItem>
@@ -229,6 +242,7 @@ export const UpgradedVisualizationTool =
                             <VisualizationStyles
                                 id={id}
                                 option={data.option}
+                                path="option"
                                 chartType={BAR_CHART_DATA.JSONVALUE[0]}
                                 updateChart={updateChart}
                             />
@@ -271,6 +285,7 @@ export const UpgradedVisualizationTool =
                                 option={data.option}
                                 id={id}
                                 updateChart={updateChart}
+                                path="option"
                             />
                         )}
                     </StyledListItem>
@@ -306,6 +321,7 @@ export const UpgradedVisualizationTool =
                                 options={data.option}
                                 updateChart={updateChart}
                                 chartType={BAR_CHART_DATA.JSONVALUE[0]}
+                                path="option"
                             />
                         )}
                     </StyledListItem>
@@ -335,7 +351,9 @@ export const UpgradedVisualizationTool =
                                 <InfoOutlined />
                             </ListItemButton>
                         )}
-                        {selectedList === 'barlegend' && <Legend id={id} />}
+                        {selectedList === 'barlegend' && (
+                            <Legend id={id} path="option" />
+                        )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
                         <ListItemButton
