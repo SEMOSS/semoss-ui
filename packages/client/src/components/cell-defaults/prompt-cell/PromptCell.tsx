@@ -10,6 +10,7 @@ import {
     Tooltip,
     Select,
     FormControl,
+    Typography,
 } from '@semoss/ui';
 import { ActionMessages, CellComponent, CellDef } from '@/stores';
 import { useBlocks, useRootStore } from '@/hooks';
@@ -20,7 +21,7 @@ export interface PromptCellDef extends CellDef<'prompt'> {
     parameters: {
         id: string;
         prompt: string;
-        boundState: boolean;
+        inSync: boolean;
     };
 }
 
@@ -46,6 +47,9 @@ const StyledActionButtons = styled('div')(({ theme }) => ({
 
 const StyledCheckbox = styled(Checkbox)(({ theme }) => ({
     position: 'relative',
+}));
+
+const StyledLabel = styled(Typography)(({ theme }) => ({
     width: '100%',
 }));
 
@@ -56,9 +60,7 @@ export const PromptCell: CellComponent<PromptCellDef> = observer((props) => {
     const { cell } = props;
     const [id, setId] = useState(cell.parameters.id);
     const [prompt, setPrompt] = useState(cell.parameters.prompt);
-    const [boundStateCheck, setBoundStateCheck] = useState(
-        cell.parameters.boundState,
-    );
+    const [inSync, setInSync] = useState(cell.parameters.inSync);
     const [allPrompts, setAllPrompts] = useState([]);
 
     useEffect(() => {
@@ -68,7 +70,7 @@ export const PromptCell: CellComponent<PromptCellDef> = observer((props) => {
     useEffect(() => {
         //pull the prompt by the id if boundState is checked
         //replace prompt
-        if (id && boundStateCheck) {
+        if (id && inSync) {
             monolithStore
                 .runQuery("GetPrompt('" + id + "')")
                 .then((response) => {
@@ -79,7 +81,7 @@ export const PromptCell: CellComponent<PromptCellDef> = observer((props) => {
                     }
                 });
         }
-    }, [boundStateCheck, id]);
+    }, [inSync, id]);
 
     const init = () => {
         if (allPrompts.length === 0) {
@@ -128,7 +130,12 @@ export const PromptCell: CellComponent<PromptCellDef> = observer((props) => {
 
     return (
         <div>
-            <Stack direction="row" spacing={1}>
+            <Stack
+                direction="row"
+                spacing={1}
+                justifyContent={'space-between'}
+                alignItems={'center'}
+            >
                 <FormControl>
                     <Select
                         value={id ? id : ''}
@@ -156,6 +163,33 @@ export const PromptCell: CellComponent<PromptCellDef> = observer((props) => {
                         ))}
                     </Select>
                 </FormControl>
+                <Stack direction="row" alignItems={'center'}>
+                    <StyledLabel variant="body1">Stay in sync?</StyledLabel>
+                    <Tooltip
+                        title={
+                            'Checking this box will overwrite the prompt with what is currently stored in the database'
+                        }
+                    >
+                        <StyledCheckbox
+                            checked={inSync}
+                            onChange={(
+                                e: React.ChangeEvent<HTMLInputElement>,
+                            ) => {
+                                const value = e.target.checked;
+                                setInSync(value);
+                                state.dispatch({
+                                    message: ActionMessages.UPDATE_CELL,
+                                    payload: {
+                                        queryId: cell.query.id,
+                                        cellId: cell.id,
+                                        path: 'parameters.inSync',
+                                        value: value,
+                                    },
+                                });
+                            }}
+                        />
+                    </Tooltip>
+                </Stack>
             </Stack>
             <StyledStack direction="row" spacing={1}>
                 <TextField
@@ -177,32 +211,6 @@ export const PromptCell: CellComponent<PromptCellDef> = observer((props) => {
                         });
                     }}
                 />
-                <Stack direction="row" sx={{ paddingLeft: '10px' }}>
-                    <Tooltip
-                        title={
-                            'Checking this box will overwrite the prompt with what is currently stored in the database'
-                        }
-                    >
-                        <StyledCheckbox
-                            checked={boundStateCheck}
-                            onChange={(
-                                e: React.ChangeEvent<HTMLInputElement>,
-                            ) => {
-                                const value = e.target.checked;
-                                setBoundStateCheck(value);
-                                state.dispatch({
-                                    message: ActionMessages.UPDATE_CELL,
-                                    payload: {
-                                        queryId: cell.query.id,
-                                        cellId: cell.id,
-                                        path: 'parameters.boundState',
-                                        value: value,
-                                    },
-                                });
-                            }}
-                        />
-                    </Tooltip>
-                </Stack>
             </StyledStack>
         </div>
     );

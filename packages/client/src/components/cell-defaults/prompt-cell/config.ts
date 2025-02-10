@@ -7,7 +7,7 @@ export const PromptCellConfig: CellConfig<PromptCellDef> = {
     parameters: {
         id: '',
         prompt: '',
-        boundState: false,
+        inSync: false,
     },
     view: PromptCell,
     toPixel: ({ id, prompt }) => {

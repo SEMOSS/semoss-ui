@@ -3,7 +3,7 @@ import { CellRegistry } from '@/stores';
 import { CodeCellConfig, CodeCellDef } from './code-cell';
 import { QueryImportCellConfig, QueryImportCellDef } from './query-import-cell';
 import { DataImportCellConfig, DataImportCellDef } from './data-import-cell';
-import { PromptCell, PromptCellConfig, PromptCellDef } from './prompt-cell';
+import { PromptCellConfig, PromptCellDef } from './prompt-cell';
 import {
     UppercaseTransformationCellConfig,
     UppercaseTransformationCellDef,
