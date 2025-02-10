@@ -24,6 +24,11 @@ const StyledToolsSection = styled('div')(() => ({
     justifyContent: 'space-around',
     width: '100%',
 }));
+const StyledStack = styled(Stack)(() => ({
+    '>.MuiBox-root': {
+        width: '100%',
+    },
+}));
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
     border: '1px',
     minHeight: '42px',
@@ -31,9 +36,17 @@ const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
     borderRadius: theme.shape.borderRadius,
     alignItems: 'center',
     padding: '0px 3px',
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'space-between',
+    '>.MuiTabs-scroller': {
+        display: 'flex',
+        justifyContent: 'space-around',
+    },
 }));
 const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
     height: '38px',
+    // width:'33%',
     padding: '8px 11px',
     '&.MuiTab-root': {
         borderRadius: theme.shape.borderRadius,
@@ -48,13 +61,16 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
     const [selectedTab, setSelectedTab] = useState('Tools');
     function updateFrame() {}
     return (
-        <Stack>
+        <StyledStack>
             {/* CodeEditorSettings is a dup of JsonSettings with LLM prompting and wordwrap added to the editor and ability to work with HTML as well as JSON */}
             {/* Not sure if we want to delete JsonSettings but it's no longer in use here */}
             {/* <JsonSettings id={id} path="option" /> */}
             {/* <CodeEditorSettings id={id} path="specJson" /> */}
             <StyledToggleTabsGroup
                 value={selectedTab}
+                style={{
+                    width: '100% !important',
+                }}
                 onChange={(e: React.SyntheticEvent, val: string) => {
                     setSelectedTab(val);
                 }}
@@ -99,6 +115,6 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                     valueAsObject
                 />
             )}
-        </Stack>
+        </StyledStack>
     );
 };
