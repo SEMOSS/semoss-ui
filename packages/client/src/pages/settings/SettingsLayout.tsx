@@ -16,6 +16,7 @@ import {
     Paper,
     IconButton,
     Chip,
+    Button,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
@@ -27,6 +28,7 @@ import {
     AdminPanelSettingsOutlined,
     ContentCopyOutlined,
 } from '@mui/icons-material';
+import { PrivacyPreferenceCenterModal } from '@/components/cookies/PrivacyPreferenceCenterModal';
 
 const StyledHeader = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -38,6 +40,12 @@ const StyledAdminHeader = styled('div')(({ theme }) => ({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+}));
+
+const StyledAdminActionButtons = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1),
 }));
 
 const StyledId = styled(Typography)(({ theme }) => ({
@@ -77,6 +85,7 @@ export const SettingsLayout = observer(() => {
     const { configStore } = useRootStore();
     const { id } = useParams();
     const { pathname, state } = useLocation();
+    const [privacyCenterOpen, setPrivacyCenterOpen] = useState(false);
 
     // track the active breadcrumbs
     const [adminMode, setAdminMode] = useState(false);
@@ -148,26 +157,42 @@ export const SettingsLayout = observer(() => {
                                         ? state.name
                                         : matchedRoute.title}
                                 </Typography>
-                                {configStore.store.user.admin && (
-                                    <StyledChip
-                                        adminMode={adminMode}
-                                        size="medium"
-                                        clickable
-                                        icon={
-                                            <AdminPanelSettingsOutlined
-                                                color={
-                                                    adminMode
-                                                        ? 'success'
-                                                        : 'disabled'
-                                                }
-                                            />
+
+                                <StyledAdminActionButtons>
+                                    <Button
+                                        variant="text"
+                                        onClick={() =>
+                                            setPrivacyCenterOpen(true)
                                         }
-                                        label={
-                                            adminMode ? 'Admin On' : 'Admin Off'
-                                        }
-                                        onClick={() => setAdminMode(!adminMode)}
-                                    />
-                                )}
+                                    >
+                                        Privacy Center
+                                    </Button>
+
+                                    {configStore.store.user.admin && (
+                                        <StyledChip
+                                            adminMode={adminMode}
+                                            size="medium"
+                                            clickable
+                                            icon={
+                                                <AdminPanelSettingsOutlined
+                                                    color={
+                                                        adminMode
+                                                            ? 'success'
+                                                            : 'disabled'
+                                                    }
+                                                />
+                                            }
+                                            label={
+                                                adminMode
+                                                    ? 'Admin On'
+                                                    : 'Admin Off'
+                                            }
+                                            onClick={() =>
+                                                setAdminMode(!adminMode)
+                                            }
+                                        />
+                                    )}
+                                </StyledAdminActionButtons>
                             </StyledAdminHeader>
                         </StyledAdminContainer>
                         {id ? (
@@ -194,6 +219,11 @@ export const SettingsLayout = observer(() => {
                 }
             >
                 <Outlet />
+
+                <PrivacyPreferenceCenterModal
+                    isOpen={privacyCenterOpen}
+                    onClose={() => setPrivacyCenterOpen(false)}
+                />
             </Page>
         </SettingsContext.Provider>
     );

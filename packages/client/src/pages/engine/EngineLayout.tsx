@@ -12,7 +12,7 @@ import { styled, ToggleTabsGroup } from '@semoss/ui';
 
 import { ENGINE_TYPES } from '@/types';
 import { EngineContext } from '@/contexts';
-import { usePixel, useAPI, useRootStore } from '@/hooks';
+import { usePixel, useAPI, useRootStore, useSettings } from '@/hooks';
 
 import { LoadingScreen } from '@/components/ui';
 import { EngineShell } from '@/components/engine';
@@ -57,6 +57,7 @@ export const EngineLayout = (props: EngineLayoutProps) => {
     const resolvedPath = useResolvedPath('');
     const { pathname } = useLocation();
     const navigate = useNavigate();
+    const { adminMode } = useSettings();
 
     // get the matching route
     const route: (typeof ENGINE_ROUTES)[number] | null = useMemo(() => {
@@ -101,6 +102,15 @@ export const EngineLayout = (props: EngineLayoutProps) => {
         ])}); `,
     );
 
+    const { data: llmModels } = usePixel<
+        {
+            database_name: string;
+            database_id: string;
+        }[]
+    >(
+        `MyEngines( metaKeys = ["tag","domain","data classification","data restrictions","description"] , metaFilters = [ {} ] , filterWord=[""], userT = [true], engineTypes=['MODEL'],  offset=[0], limit=[15]) ;`,
+    );
+
     // convert the data into an object
     const values = useMemo(() => {
         if (engineMetaStatus !== 'SUCCESS') {
@@ -133,7 +143,8 @@ export const EngineLayout = (props: EngineLayoutProps) => {
     }, [engineMetaStatus, engineMetaData, JSON.stringify(metaKeys)]);
 
     // get the user's role
-    const getUserEnginePermission = useAPI(['getUserEnginePermission', id]);
+    const getUserEnginePermission =
+        !adminMode && useAPI(['getUserEnginePermission', id]);
 
     // get the tabs based on permission
     const tabs = useMemo(() => {
@@ -203,6 +214,7 @@ export const EngineLayout = (props: EngineLayoutProps) => {
                 role: getUserEnginePermission.data.permission,
                 refresh: engineMetaRefresh,
                 metaVals: values, // Needed so edit button can be in header
+                llmModels: llmModels,
             }}
         >
             <EngineShell>

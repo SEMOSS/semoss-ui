@@ -2,16 +2,10 @@ import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Stack, Typography, styled } from '@semoss/ui';
 
-import {
-    ActionMessages,
-    getRelativeSize,
-    getRootElement,
-    getBlockElement,
-} from '@/stores';
+import { ActionMessages, getRelativeSize, getBlockElement } from '@/stores';
 import { useBlocks, useDesigner } from '@/hooks';
 
 import { DragIndicator } from '@mui/icons-material';
-import { getImageForWidget } from './designer.constants';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'absolute',
@@ -43,10 +37,17 @@ const StyledTitle = styled('div')(({ theme }) => ({
     whiteSpace: 'nowrap',
 }));
 
+interface SelectedMaskProps {
+    /** Element to bind the mask to */
+    screenEle: HTMLDivElement;
+}
+
 /**
  * Show the information of a selected block
  */
-export const SelectedMask = observer(() => {
+export const SelectedMask = observer((props: SelectedMaskProps) => {
+    const { screenEle } = props;
+
     // create the state
     const [size, setSize] = useState<{
         top: number;
@@ -88,7 +89,7 @@ export const SelectedMask = observer(() => {
                 return true;
             },
             block.id,
-            getImageForWidget(block.widget),
+            registry[block.widget].icon,
         );
 
         // clear the hovered
@@ -161,9 +162,6 @@ export const SelectedMask = observer(() => {
 
     // reposition the mask
     const repositionMask = () => {
-        // get the root element
-        const rootEle = getRootElement();
-
         // get the block elemenent
         const blockEle = getBlockElement(designer.selected);
 
@@ -172,7 +170,7 @@ export const SelectedMask = observer(() => {
         }
 
         // calculate and set the side
-        const updated = getRelativeSize(blockEle, rootEle);
+        const updated = getRelativeSize(blockEle, screenEle);
         setSize(updated);
     };
 
@@ -189,14 +187,11 @@ export const SelectedMask = observer(() => {
 
     // get the root, watch changes, and reposition the mask
     useLayoutEffect(() => {
-        // get the root element
-        const rootEle = getRootElement();
-
         const observer = new MutationObserver(() => {
             repositionMask();
         });
 
-        observer.observe(rootEle, {
+        observer.observe(screenEle, {
             subtree: true,
             childList: true,
         });

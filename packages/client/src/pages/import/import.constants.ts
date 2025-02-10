@@ -37,6 +37,7 @@ import TRINO from '@/assets/img/TRINO.jpg';
 //Add Storage
 import AMAZON_S3 from '@/assets/img/Amazon_S3.png';
 import AZURE_BLOB from '@/assets/img/AZURE_BLOB.png';
+import AZURE_SPEECH_TO_TEXT from '@/assets/img/AZURE_SPEECH_TO_TEXT.png';
 import CEPH from '@/assets/img/CEPH.png';
 import DREAMHOST from '@/assets/img/DREAMHOST.png';
 import DROPBOX from '@/assets/img/dropbox.png';
@@ -70,6 +71,7 @@ import STABILITY_AI from '@/assets/img/STABILITY_AI.png';
 import REPLIT from '@/assets/img/REPLIT_CODE.png';
 // Functions
 import RESTAPI from '@/assets/img/rest-api.svg';
+import AWS_COMPREHEND from '@/assets/img/AWS_COMPREHEND.png';
 //Vector
 import CHROMADB from '@/assets/img/CHROMADB.png';
 import PINECONE from '@/assets/img/PINECONE.png';
@@ -159,7 +161,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -324,7 +338,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -485,7 +511,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -606,7 +644,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -768,7 +818,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -919,6 +981,138 @@ export const CONNECTION_OPTIONS = {
                         },
                     ],
                 },
+                {
+                    name: 'Azure Open AI ADA Embedder',
+                    disable: false,
+                    icon: AZURE_OPEN_AI,
+                    fields: [
+                        {
+                            fieldName: 'NAME',
+                            label: 'Catalog Name',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
+                        },
+                        {
+                            fieldName: 'TAG',
+                            label: 'Tag',
+                            defaultValue: 'embeddings',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: true,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MODEL_TYPE',
+                            label: 'Type',
+                            defaultValue: 'OPEN_AI',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'Open AI',
+                                        value: 'OPEN_AI',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MODEL',
+                            label: 'Model',
+                            defaultValue: 'text-embedding-ada-002',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'text-embedding-ada-002',
+                                        value: 'text-embedding-ada-002',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'OPEN_AI_KEY',
+                            label: 'Azure Open AI API Key',
+                            defaultValue: '',
+                            options: {
+                                component: 'password',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'ENDPOINT',
+                            label: 'Azure Endpoint',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'API_VERSION',
+                            label: 'API version',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'VAR_NAME',
+                            label: 'Variable Name',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'INIT_MODEL_ENGINE',
+                            label: 'Init Script',
+                            defaultValue:
+                                "from genai_client import AzureOpenAiEmbedder;${VAR_NAME} = AzureOpenAiEmbedder(model_name = '${MODEL}', endpoint = '${ENDPOINT}', api_key = '${OPEN_AI_KEY}', api_version = '${API_VERSION}')",
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MAX_TOKENS',
+                            label: 'Max Tokens',
+                            rules: { required: true },
+                            defaultValue: '4000',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                        },
+                    ],
+                },
             ],
             'AWS Bedrock': [
                 {
@@ -934,7 +1128,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: 'This field is required',
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1110,7 +1316,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1276,7 +1494,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1442,7 +1672,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1595,6 +1837,173 @@ export const CONNECTION_OPTIONS = {
                         },
                     ],
                 },
+                {
+                    name: 'Gemini 1.5 pro',
+                    disable: false,
+                    icon: VERTEX,
+                    fields: [
+                        {
+                            fieldName: 'NAME',
+                            label: 'Catalog Name',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
+                        },
+                        {
+                            fieldName: 'MODEL_TYPE',
+                            label: 'Type',
+                            defaultValue: 'VERTEX',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'Vertex',
+                                        value: 'VERTEX',
+                                    },
+                                ],
+                            },
+                            disabled: true,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MODEL',
+                            label: 'Model',
+                            defaultValue: 'gemini-1.5-pro-002',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: true,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'GCP_REGION',
+                            label: 'GCP Region',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'VAR_NAME',
+                            label: 'Variable Name',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'generative',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: true,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'FILE',
+                            label: 'Upload Service Account File',
+                            defaultValue: null,
+                            options: {
+                                component: 'file-upload',
+                            },
+                            disabled: true,
+                            secondary: true,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'INIT_MODEL_ENGINE',
+                            label: 'Init Script',
+                            defaultValue:
+                                "import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', service_account_credentials = ${SERVICE_ACCOUNT_CREDENTIALS}, region='${GCP_REGION}', chat_type='${CHAT_TYPE}')",
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'KEEP_CONVERSATION_HISTORY',
+                            label: 'Keep Conversation History',
+                            defaultValue: 'false',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'true',
+                                        value: 'true',
+                                    },
+                                    {
+                                        display: 'false',
+                                        value: 'false',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'KEEP_INPUT_OUTPUT',
+                            label: 'Record Questions and Responses',
+                            defaultValue: 'false',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'true',
+                                        value: 'true',
+                                    },
+                                    {
+                                        display: 'false',
+                                        value: 'false',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MAX_TOKENS',
+                            label: 'Max Tokens',
+                            rules: { required: false },
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                        },
+                        {
+                            fieldName: 'MAX_INPUT_TOKENS',
+                            label: 'Max Input Tokens',
+                            rules: { required: false },
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                        },
+                    ],
+                },
             ],
             'NVIDIA NIM Models': [
                 {
@@ -1610,7 +2019,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1773,7 +2194,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1939,7 +2372,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2096,7 +2541,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2253,7 +2710,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2410,7 +2879,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2567,7 +3048,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2724,7 +3217,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2881,7 +3386,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3038,7 +3555,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3195,7 +3724,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3352,7 +3893,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3509,7 +4062,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3672,7 +4237,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3829,7 +4406,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3986,7 +4575,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4143,7 +4744,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4300,7 +4913,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4465,7 +5090,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4606,6 +5243,99 @@ export const CONNECTION_OPTIONS = {
                 ],
             },
             {
+                name: 'AWS TITAN TEXT EMBEDDINGS',
+                disable: true,
+                icon: AMAZON_S3, //need to change the icon
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL_TYPE',
+                        label: 'Type',
+                        defaultValue: 'AWS_TITAN_TEXT_EMBEDDINGS',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'AWS TITAN TEXT EMBEDDINGS',
+                                    value: 'AWS_TITAN_TEXT_EMBEDDINGS',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL',
+                        label: 'Model',
+                        defaultValue: 'amazon.titan-embed-text-v2:0',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VAR_NAME',
+                        label: 'Variable Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'INIT_MODEL_ENGINE',
+                        label: 'Init Script',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'AWS_REGION',
+                        label: 'Aws Region',
+                        defaultValue: 'us-east-1',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'AWS_ACCESS_KEY',
+                        label: 'Aws Access Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'AWS_SECRET_KEY',
+                        label: 'Aws Secret Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
                 name: 'Stablity AI',
                 disable: true,
                 icon: STABILITY_AI,
@@ -4618,7 +5348,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4771,7 +5513,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4957,7 +5711,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'URL',
@@ -5069,6 +5835,719 @@ export const CONNECTION_OPTIONS = {
                     },
                 ],
             },
+            {
+                name: 'Azure OCR',
+                disable: false,
+                icon: RESTAPI,
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'AZUREOCR',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'URL',
+                        label: 'URL',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'API_KEY',
+                        label: 'API Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
+                name: 'Azure speech to text',
+                disable: false,
+                icon: AZURE_SPEECH_TO_TEXT,
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'AZURE SPEECH TO TEXT',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'SPEECH_KEY',
+                        label: 'Speech Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'SPEECH_REGION',
+                        label: 'Speech region',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        label: 'Function Required Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
+                name: 'AWS - Image Text Extraction',
+                disable: false,
+                icon: AMAZON_S3,
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'AWS_TEXTRACT',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'AWS TEXTRACT',
+                                    value: 'AWS_TEXTRACT',
+                                },
+                                {
+                                    display: 'AWS REKOGNITION',
+                                    value: 'AWS_REKOGNITION',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        hidden: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ACCESS_KEY',
+                        label: 'Access Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'SECRET_KEY',
+                        label: 'Secret Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'REGION',
+                        label: 'Region',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'S3BUCKETENGINEID',
+                        label: 'S3 Bucket Engine Id',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        label: 'Function Required Parameters',
+                        defaultValue: '["isFilePresentInS3","filePath"]',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
+                name: 'AWS POLLY',
+                disable: false,
+                icon: AMAZON_S3, //need to change the icon
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'AWS_POLLY',
+
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ACCESS_KEY',
+                        label: 'Access Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'SECRET_KEY',
+                        label: 'Secret Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'REGION',
+                        label: 'Region',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        label: 'Function Required Parameters',
+                        defaultValue: '["extractedText","nameOfTheAudioFile"]',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
+                name: 'AWS Transcribe',
+                disable: false,
+                icon: AMAZON_S3,
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'AWS_Transcribe',
+
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ACCESS_KEY',
+                        label: 'Access Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'SECRET_KEY',
+                        label: 'Secret Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'REGION',
+                        label: 'Region',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'S3BUCKETENGINEID',
+                        label: 'S3 Bucket Engine Id',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        label: 'Function Required Parameters',
+                        defaultValue: '["isFilePresentInS3","filePath"]',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
+                name: 'AWS Comprehend',
+                disable: false,
+                icon: AWS_COMPREHEND,
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'AWS_COMPREHEND',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ACCESS_KEY',
+                        label: 'Access Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'SECRET_KEY',
+                        label: 'Secret Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'REGION',
+                        label: 'Region',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        label: 'Function Required Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
+                name: 'Google Speech To Text',
+                disable: false,
+                icon: GOOGLE_CLOUD, //need to change the icon
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'GOOGLE_SPEECH_TO_TEXT',
+
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FILE',
+                        label: 'Upload Service Account File',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'GOOGLE_BUCKET_ENGINEID',
+                        label: 'Google Bucket Engine Id',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        label: 'Function Required Parameters',
+                        defaultValue: '["isFilePresentInBucket","filePath"]',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
+                name: 'Google OCR',
+                disable: false,
+                icon: GOOGLE_CLOUD, //need to change the icon
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'GOOGLE_OCR',
+
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'PROJECT_ID',
+                        label: 'Project Id',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'PROCESSOR_ID',
+                        label: 'Processor Id',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'REGION',
+                        label: 'Region',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FILE',
+                        label: 'Upload Service Account File',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'GOOGLE_BUCKET_ENGINEID',
+                        label: 'Google Bucket Engine Id',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        label: 'Function Required Parameters',
+                        defaultValue: '["isFilePresentInBucket","filePath"]',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
         ],
         'File Uploads': [
             {
@@ -5105,7 +6584,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -5144,6 +6635,39 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                         disabled: true,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHUNKING_STRATEGY',
+                        label: 'Chunking Strategy',
+                        defaultValue: 'ALL',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Token',
+                                    value: 'ALL',
+                                },
+                                {
+                                    display: 'Page by page',
+                                    value: 'PAGE_BY_PAGE',
+                                },
+                                {
+                                    display: 'Markdown',
+                                    value: 'MARKDOWN',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        hidden: false,
+                        rules: { required: true },
+                        displayRules: {
+                            hideOtherFields: [
+                                {
+                                    fieldName: 'CONTENT_LENGTH',
+                                    value: ['PAGE_BY_PAGE', 'MARKDOWN'],
+                                },
+                            ],
+                        },
                     },
                     {
                         fieldName: 'CONTENT_LENGTH',
@@ -5256,6 +6780,27 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                         helperText: '',
                     },
+                    {
+                        fieldName: 'RETAIN_EXTRACTED_TEXT',
+                        label: 'Retain Extracted Text',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'False',
+                                    value: 'false',
+                                },
+                                {
+                                    display: 'True',
+                                    value: 'true',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -5271,7 +6816,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -5310,6 +6867,39 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                         disabled: true,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHUNKING_STRATEGY',
+                        label: 'Chunking Strategy',
+                        defaultValue: 'ALL',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Token',
+                                    value: 'ALL',
+                                },
+                                {
+                                    display: 'Page by page',
+                                    value: 'PAGE_BY_PAGE',
+                                },
+                                {
+                                    display: 'Markdown',
+                                    value: 'MARKDOWN',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        hidden: false,
+                        rules: { required: true },
+                        displayRules: {
+                            hideOtherFields: [
+                                {
+                                    fieldName: 'CONTENT_LENGTH',
+                                    value: ['PAGE_BY_PAGE', 'MARKDOWN'],
+                                },
+                            ],
+                        },
                     },
                     {
                         fieldName: 'CONTENT_LENGTH',
@@ -5368,6 +6958,27 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                         helperText: '',
                     },
+                    {
+                        fieldName: 'RETAIN_EXTRACTED_TEXT',
+                        label: 'Retain Extracted Text',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'False',
+                                    value: 'false',
+                                },
+                                {
+                                    display: 'True',
+                                    value: 'true',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -5405,7 +7016,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_TAGS',
@@ -5524,6 +7147,39 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHUNKING_STRATEGY',
+                        label: 'Chunking Strategy',
+                        defaultValue: 'ALL',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Token',
+                                    value: 'ALL',
+                                },
+                                {
+                                    display: 'Page by page',
+                                    value: 'PAGE_BY_PAGE',
+                                },
+                                {
+                                    display: 'Markdown',
+                                    value: 'MARKDOWN',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        hidden: false,
+                        rules: { required: true },
+                        displayRules: {
+                            hideOtherFields: [
+                                {
+                                    fieldName: 'CONTENT_LENGTH',
+                                    value: ['PAGE_BY_PAGE', 'MARKDOWN'],
+                                },
+                            ],
+                        },
+                    },
+                    {
                         fieldName: 'CONTENT_LENGTH',
                         label: 'Content Length',
                         defaultValue: '512',
@@ -5623,7 +7279,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -5655,6 +7311,27 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         advanced: true,
                     },
+                    {
+                        fieldName: 'RETAIN_EXTRACTED_TEXT',
+                        label: 'Retain Extracted Text',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'False',
+                                    value: 'false',
+                                },
+                                {
+                                    display: 'True',
+                                    value: 'true',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -5670,7 +7347,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -5709,6 +7398,39 @@ export const CONNECTION_OPTIONS = {
                         disabled: true,
                         hidden: true,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHUNKING_STRATEGY',
+                        label: 'Chunking Strategy',
+                        defaultValue: 'ALL',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Token',
+                                    value: 'ALL',
+                                },
+                                {
+                                    display: 'Page by page',
+                                    value: 'PAGE_BY_PAGE',
+                                },
+                                {
+                                    display: 'Markdown',
+                                    value: 'MARKDOWN',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        hidden: false,
+                        rules: { required: true },
+                        displayRules: {
+                            hideOtherFields: [
+                                {
+                                    fieldName: 'CONTENT_LENGTH',
+                                    value: ['PAGE_BY_PAGE', 'MARKDOWN'],
+                                },
+                            ],
+                        },
                     },
                     {
                         fieldName: 'CONTENT_LENGTH',
@@ -5757,16 +7479,6 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'NAMESPACE',
                         label: 'Namespace',
-                        defaultValue: null,
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'VECTORS',
-                        label: 'Vector',
                         defaultValue: null,
                         options: {
                             component: 'text-field',
@@ -5827,6 +7539,27 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                         helperText: '',
                     },
+                    {
+                        fieldName: 'RETAIN_EXTRACTED_TEXT',
+                        label: 'Retain Extracted Text',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'False',
+                                    value: 'false',
+                                },
+                                {
+                                    display: 'True',
+                                    value: 'true',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -5842,7 +7575,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -5881,6 +7626,39 @@ export const CONNECTION_OPTIONS = {
                         disabled: true,
                         hidden: true,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHUNKING_STRATEGY',
+                        label: 'Chunking Strategy',
+                        defaultValue: 'ALL',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Token',
+                                    value: 'ALL',
+                                },
+                                {
+                                    display: 'Page by page',
+                                    value: 'PAGE_BY_PAGE',
+                                },
+                                {
+                                    display: 'Markdown',
+                                    value: 'MARKDOWN',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        hidden: false,
+                        rules: { required: true },
+                        displayRules: {
+                            hideOtherFields: [
+                                {
+                                    fieldName: 'CONTENT_LENGTH',
+                                    value: ['PAGE_BY_PAGE', 'MARKDOWN'],
+                                },
+                            ],
+                        },
                     },
                     {
                         fieldName: 'CONTENT_LENGTH',
@@ -6042,6 +7820,27 @@ export const CONNECTION_OPTIONS = {
                         secondary: true,
                         rules: {},
                     },
+                    {
+                        fieldName: 'RETAIN_EXTRACTED_TEXT',
+                        label: 'Retain Extracted Text',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'False',
+                                    value: 'false',
+                                },
+                                {
+                                    display: 'True',
+                                    value: 'true',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -6057,7 +7856,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -6096,6 +7907,39 @@ export const CONNECTION_OPTIONS = {
                         disabled: true,
                         hidden: true,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHUNKING_STRATEGY',
+                        label: 'Chunking Strategy',
+                        defaultValue: 'ALL',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Token',
+                                    value: 'ALL',
+                                },
+                                {
+                                    display: 'Page by page',
+                                    value: 'PAGE_BY_PAGE',
+                                },
+                                {
+                                    display: 'Markdown',
+                                    value: 'MARKDOWN',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        hidden: false,
+                        rules: { required: true },
+                        displayRules: {
+                            hideOtherFields: [
+                                {
+                                    fieldName: 'CONTENT_LENGTH',
+                                    value: ['PAGE_BY_PAGE', 'MARKDOWN'],
+                                },
+                            ],
+                        },
                     },
                     {
                         fieldName: 'CONTENT_LENGTH',
@@ -6214,6 +8058,47 @@ export const CONNECTION_OPTIONS = {
                         secondary: true,
                         rules: {},
                     },
+                    {
+                        fieldName: 'CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID',
+                        label: 'OCR PROCESSOR FUNCTION ID',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'CUSTOM_DOCUMENT_PROCESSOR',
+                        label: 'Boolean flag for document processor',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'RETAIN_EXTRACTED_TEXT',
+                        label: 'Retain Extracted Text',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'False',
+                                    value: 'false',
+                                },
+                                {
+                                    display: 'True',
+                                    value: 'true',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                    },
                 ],
             },
         ],
@@ -6259,7 +8144,7 @@ export const CONNECTION_OPTIONS = {
             },
             {
                 name: 'CSV',
-                disable: false,
+                disable: true,
                 icon: CSV,
                 fields: [
                     // baseUpload
@@ -6338,7 +8223,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -6453,7 +8350,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -6511,7 +8408,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -6627,7 +8536,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -6685,7 +8594,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -6823,7 +8744,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -6939,7 +8872,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -6997,7 +8930,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7123,7 +9068,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -7181,7 +9126,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7224,7 +9181,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false, min: 0 },
                     },
                     {
-                        fieldName: 'httpPAth',
+                        fieldName: 'httpPath',
                         label: 'HTTP Path',
                         defaultValue: '',
                         options: {
@@ -7317,7 +9274,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -7375,7 +9332,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7473,7 +9442,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7588,7 +9569,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -7647,7 +9628,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7763,7 +9756,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -7822,7 +9815,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7924,7 +9929,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
-                        defaultValue: 'HIVE',
+                        defaultValue: 'H2_DB',
                         options: {
                             component: 'text-field',
                         },
@@ -7940,7 +9945,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8056,7 +10073,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -8115,7 +10132,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8231,7 +10260,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -8290,7 +10319,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8406,7 +10447,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -8464,7 +10505,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8580,7 +10633,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -8638,7 +10691,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8753,7 +10818,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -8811,7 +10876,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8929,7 +11006,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9045,7 +11134,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -9103,7 +11192,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9219,7 +11320,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -9277,7 +11378,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9403,7 +11516,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -9461,7 +11574,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9587,7 +11712,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -9645,7 +11770,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]" ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9761,7 +11898,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -9819,7 +11956,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9975,7 +12124,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -10033,7 +12182,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -10180,7 +12341,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -10238,7 +12399,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -10364,7 +12537,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -10423,7 +12596,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -10529,7 +12714,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -10587,7 +12772,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -10693,7 +12890,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -10751,7 +12948,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -10867,7 +13076,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -10925,7 +13134,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -11050,7 +13271,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                     },
                     {
-                        fieldName: 'CONNECTION_POOLING',
+                        fieldName: 'USE_CONNECTION_POOLING',
                         label: 'Use Connection Pooling',
                         defaultValue: false,
                         rules: { required: false },
@@ -11112,7 +13333,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'S3_REGION',
@@ -11170,7 +13403,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'CEPH_ACCESS_KEY',
@@ -11238,7 +13483,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'S3_REGION',
@@ -11306,7 +13563,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'S3_REGION',
@@ -11374,7 +13643,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'GCS_REGION',
@@ -11438,7 +13719,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'PATH_PREFIX',
@@ -11476,7 +13769,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'AZ_ACCOUNT_NAME',
@@ -11543,7 +13848,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'S3_REGION',
@@ -11611,7 +13928,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MINIO_REGION',
@@ -11689,7 +14018,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'NETWORK_DOMAIN',
@@ -11758,7 +14099,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'HOSTNAME',
@@ -11941,6 +14294,10 @@ export const ENGINE_IMAGES = {
             icon: ORCA,
         },
         {
+            name: 'AWS_TITAN_TEXT_EMBEDDINGS',
+            icon: AMAZON_S3, //need to change the icon
+        },
+        {
             name: 'Stablity AI',
             icon: STABILITY_AI,
         },
@@ -11965,6 +14322,30 @@ export const ENGINE_IMAGES = {
         {
             name: 'ZIP',
             icon: ZIP,
+        },
+        {
+            name: 'AZUREOCR',
+            icon: RESTAPI,
+        },
+        {
+            name: 'AWS - Image Text Extraction',
+            icon: AMAZON_S3, //need to change the icon
+        },
+        {
+            name: 'AWS POLLY',
+            icon: AMAZON_S3, //need to change the icon
+        },
+        {
+            name: 'AWS Transcribe',
+            icon: AMAZON_S3, //need to change the icon
+        },
+        {
+            name: 'Google Speech To Text',
+            icon: GOOGLE_CLOUD, //need to change the icon
+        },
+        {
+            name: 'Google OCR',
+            icon: GOOGLE_CLOUD, //need to change the icon
         },
     ],
     VECTOR: [

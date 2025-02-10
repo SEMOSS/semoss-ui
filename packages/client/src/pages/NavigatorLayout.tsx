@@ -12,6 +12,7 @@ import { Navbar } from '@/components/ui';
 import { ErrorBoundary } from '@/components/common';
 import { ENGINE_ROUTES } from '@/pages/engine';
 import { ErrorPage } from './ErrorPage';
+import { PlatformMessages } from './PlatformMessages';
 
 const NAV_HEIGHT = '48px';
 const SIDEBAR_WIDTH = '56px';
@@ -89,7 +90,10 @@ export const NavigatorLayout = observer(() => {
                     <StyledSidebarItem
                         data-tour="nav-app-library"
                         to={'/'}
-                        selected={!!matchPath('', pathname)}
+                        selected={
+                            !!matchPath('', pathname) ||
+                            !!matchPath('app/*', pathname)
+                        }
                         aria-label={'Navigate to app library'}
                     >
                         <Icon>
@@ -143,7 +147,9 @@ export const NavigatorLayout = observer(() => {
                 </Tooltip>
             </StyledSidebar>
             <StyledContent>
-                <Outlet />
+                <PlatformMessages platformAssist={true}>
+                    <Outlet />
+                </PlatformMessages>
             </StyledContent>
         </ErrorBoundary>
     );

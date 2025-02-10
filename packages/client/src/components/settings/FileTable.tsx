@@ -14,7 +14,7 @@ import {
     Typography,
     useNotification,
 } from '@semoss/ui';
-import { Add, Delete } from '@mui/icons-material';
+import { Add, Delete, SimCardDownload } from '@mui/icons-material';
 import { usePixel, useRootStore } from '@/hooks';
 
 const StyledTableContainer = styled(Table.Container)({
@@ -95,6 +95,9 @@ export const FileTable = (props: FileTableProps) => {
     const didMount = useRef<boolean>(false);
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
+
+    //download multiple files modal
+    const [exportLoading, setExportLoading] = useState(false);
 
     //grabbing ID out of props
     const { id } = props;
@@ -193,11 +196,28 @@ export const FileTable = (props: FileTableProps) => {
             });
 
             // Embedding the File
-            await monolithStore.runQuery(`
+            const response = await monolithStore.runQuery(`
                 CreateEmbeddingsFromDocuments( engine= "${id}", filePaths= [${fileLocations}])
             `);
+
+            const { output, operationType } = response.pixelReturn[0];
+
+            if (operationType.indexOf('ERROR') === -1) {
+                notification.add({
+                    color: 'success',
+                    message: `Successfully added document`,
+                });
+            } else {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+            }
         } catch (e) {
-            console.error(e);
+            notification.add({
+                color: 'error',
+                message: String(e),
+            });
         } finally {
             //turn off loading
             getFileDetails.refresh();
@@ -211,9 +231,23 @@ export const FileTable = (props: FileTableProps) => {
         const { fileName } = file;
         setIsLoading(true);
         try {
-            await monolithStore.runQuery(`
+            const response = await monolithStore.runQuery(`
             RemoveDocumentFromVectorDatabase(engine = "${id}", fileNames=["${fileName}"])
             `);
+
+            const { output, operationType } = response.pixelReturn[0];
+
+            if (operationType.indexOf('ERROR') === -1) {
+                notification.add({
+                    color: 'success',
+                    message: `Successfully removed document`,
+                });
+            } else {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+            }
         } catch (e) {
             notification.add({
                 color: 'warning',
@@ -242,9 +276,23 @@ export const FileTable = (props: FileTableProps) => {
         });
 
         try {
-            await monolithStore.runQuery(`
+            const response = await monolithStore.runQuery(`
                 RemoveDocumentFromVectorDatabase(engine = "${id}", fileNames=[${fileArray}])
             `);
+
+            const { output, operationType } = response.pixelReturn[0];
+
+            if (operationType.indexOf('ERROR') === -1) {
+                notification.add({
+                    color: 'success',
+                    message: `Successfully removed document`,
+                });
+            } else {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+            }
         } catch (e) {
             notification.add({
                 color: 'warning',
@@ -257,6 +305,32 @@ export const FileTable = (props: FileTableProps) => {
             setFileToDelete(null);
             setDeleteFilesModal(false);
         }
+    };
+
+    const downloadSelectedFiles = async (files: FileExplorerProps[]) => {
+        // construct the string of files
+        setExportLoading(true);
+        let fileArray = '';
+        files.forEach((file, index) => {
+            const { fileName } = file;
+            if (index + 1 === files.length) {
+                //structuring the last element
+                fileArray = fileArray + `"${fileName}"`;
+            } else {
+                // all but the last element
+                fileArray = fileArray + `"${fileName}", `;
+            }
+        });
+
+        const pixel = `META | VectorFileDownload(engine = "${id}", filenames=[${fileArray}]);`;
+
+        monolithStore.runQuery(pixel).then((response) => {
+            const output = response.pixelReturn[0].output,
+                insightId = response.insightId;
+
+            monolithStore.download(insightId, output);
+        });
+        setExportLoading(false);
     };
 
     return (
@@ -286,6 +360,25 @@ export const FileTable = (props: FileTableProps) => {
                                 onClick={() => setDeleteFilesModal(true)}
                             >
                                 Delete Selected
+                            </Button>
+                        )}
+                        {selectedFiles.length > 0 && (
+                            <Button
+                                disabled={exportLoading}
+                                startIcon={
+                                    exportLoading ? (
+                                        <CircularProgress size="1em" />
+                                    ) : (
+                                        <SimCardDownload />
+                                    )
+                                }
+                                variant="outlined"
+                                onClick={() =>
+                                    downloadSelectedFiles(selectedFiles)
+                                }
+                                style={{ marginRight: '10px' }}
+                            >
+                                Download
                             </Button>
                         )}
                         <Button
@@ -320,7 +413,7 @@ export const FileTable = (props: FileTableProps) => {
                             />
                         </Table.Cell>
                         <Table.Cell size="small">Name</Table.Cell>
-                        <Table.Cell size="small">Date Modified</Table.Cell>
+                        <Table.Cell size="small">Date Uploaded</Table.Cell>
                         <Table.Cell size="small">Size</Table.Cell>
                         <Table.Cell size="small">Action</Table.Cell>
                     </Table.Head>

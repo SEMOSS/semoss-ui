@@ -32,7 +32,14 @@ interface InsightStoreInterface {
         /** Config information */
         config: {
             logins: Record<string, unknown>;
-            providers: string[];
+            /**
+             * List of available providers (logins) that are available
+             */
+            availableProviders: {
+                provider: string;
+                name: string;
+                isOauth: boolean;
+            }[];
             [key: string]: unknown;
         };
     } | null;
@@ -279,16 +286,9 @@ export class InsightStore {
             system = {
                 config: {
                     logins: {},
-                    providers: [],
+                    availableProviders: [],
                 },
             };
-
-            // add the provideres
-            for (const provider in data.loginsAllowed) {
-                if (data.loginsAllowed[provider]) {
-                    system.config.providers.push(provider);
-                }
-            }
 
             // save the other config data
             for (const key in data) {
@@ -605,13 +605,18 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
          * @param space - where to run it
          */
         runPy: async <O>(python: string, space: Space = 'insight') => {
-            const { pixelReturn } = await this.actions.run<[O]>(
-                `Py("<encode>${python}</encode>")`,
-                space,
-            );
+            const { pixelReturn } = await this.actions.run<
+                [
+                    [
+                        {
+                            output: O;
+                        },
+                    ],
+                ]
+            >(`Py("<encode>${python}</encode>")`, space);
 
             return {
-                output: pixelReturn[0].output,
+                output: pixelReturn[0].output[0].output,
             };
         },
 

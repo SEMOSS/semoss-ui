@@ -11,6 +11,8 @@ interface ConfigStoreInterface {
     authenticated: boolean;
     /** InsightID to run actions against */
     insightID: string;
+    /** Session ID */
+    userEpoch: string;
     /** User information (if logged in) */
     user: {
         loggedIn: boolean;
@@ -58,11 +60,30 @@ interface ConfigStoreInterface {
         /**
          * List of available providers (logins) that are available
          */
-        providers: string[];
+        availableProviders: {
+            provider: string;
+            name: string;
+            isOauth: boolean;
+        }[];
+        /**
+         * Track if native registration is allowed (username/pw)
+         */
+        nativeRegistration: boolean;
+        /**
+         * Version of the app
+         */
         version: {
             datetime: string;
             version: string;
         };
+        /**
+         * Track if r is enabled
+         */
+        r: boolean;
+        /**
+         * Track if python is enabled
+         */
+        python: boolean;
         [key: string]: unknown;
     };
 }
@@ -76,6 +97,7 @@ export class ConfigStore {
         status: 'INITIALIZING',
         authenticated: false,
         insightID: '',
+        userEpoch: '',
         user: {
             loggedIn: false,
             id: '',
@@ -86,11 +108,14 @@ export class ConfigStore {
         config: {
             databaseMetaKeys: [],
             projectMetaKeys: [],
-            providers: [],
+            availableProviders: [],
+            nativeRegistration: false,
             version: {
                 version: '',
                 datetime: '',
             },
+            r: true,
+            python: true,
         },
     };
     private _generalReactors: Array<string> = [];
@@ -161,14 +186,6 @@ export class ConfigStore {
                     this._store.user.loggedIn = true;
                 }
 
-                // save the providers
-                this._store.config.providers = [];
-                for (const provider in data.loginsAllowed) {
-                    if (data.loginsAllowed[provider]) {
-                        this._store.config.providers.push(provider);
-                    }
-                }
-
                 // save the other config data
                 for (const key in data) {
                     this._store.config[key] = data[key];
@@ -209,19 +226,26 @@ export class ConfigStore {
         const { monolithStore } = this._root;
 
         try {
-            const { pixelReturn, insightId } = await monolithStore.run(
-                'new',
-                `GetUserInfo();`,
-            );
+            const { pixelReturn, insightId, errors } = await monolithStore.run<
+                [
+                    {
+                        [key: string]: {
+                            id: string;
+                            name: string;
+                            email: string;
+                            admin: boolean;
+                            userEpoch: string;
+                        };
+                    },
+                ]
+            >('new', `GetUserInfo();`);
 
             // track if the user is an admin
             const isAdmin = await monolithStore.isAdminUser();
 
             const output = pixelReturn[0].output;
-            const type = pixelReturn[0].operationType;
-
-            if (type.indexOf('ERROR') > -1) {
-                throw Error(output as string);
+            if (errors.length > 0) {
+                throw Error(errors.join(''));
             }
 
             runInAction(() => {
@@ -232,20 +256,29 @@ export class ConfigStore {
                     id: '',
                     name: '',
                     email: '',
+                    userEpoch: '',
                     admin: false,
                 };
 
+                // TODO: remove userEpoch from the backend
+                if (output.userEpoch) {
+                    delete output.userEpoch;
+                }
+
+                // get the user based on provider
                 if (output['SAML']) {
                     user = output['SAML'];
                 } else if (output['NATIVE']) {
                     user = output['NATIVE'];
                 } else if (output && Object.keys(output).length > 0) {
+                    // This is a hack...since we don't have a single user
                     user = output[Object.keys(output)[0]];
                 }
 
                 this._store.user.id = user.id || '';
                 this._store.user.name = user.name || '';
                 this._store.user.email = user.email || '';
+                this._store.userEpoch = user.userEpoch;
 
                 this._store.user.admin = isAdmin;
 

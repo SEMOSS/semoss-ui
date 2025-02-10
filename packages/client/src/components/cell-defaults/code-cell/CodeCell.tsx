@@ -5,7 +5,7 @@ import { Code, KeyboardArrowDown } from '@mui/icons-material';
 import { CellDef, Variable } from '@/stores';
 import { runPixel } from '@/api';
 import { ActionMessages, CellComponent } from '@/stores';
-import { useBlocks, useLLM, useRootStore } from '@/hooks';
+import { useBlocks, useRootStore, useWorkspace } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { StyledSelect, StyledSelectItem } from '../shared';
 
@@ -27,19 +27,16 @@ const EDITOR_TYPE = {
         name: 'Python',
         value: 'py',
         language: 'python',
-        icon: PythonIcon,
     },
     r: {
         name: 'R',
         value: 'r',
         language: 'r',
-        icon: RIcon,
     },
     pixel: {
         name: 'Pixel',
         value: 'pixel',
         language: 'pixel',
-        icon: Code,
     },
 } as const;
 
@@ -98,7 +95,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     const [isLLMRejected, setIsLLMRejected] = useState(false);
     const [count, setCount] = useState(0);
-    const { modelId } = useLLM();
+    const { workspace } = useWorkspace();
 
     /**
      * Ask a LLM a question to generate a response
@@ -106,11 +103,16 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
      * @returns LLM Response
      */
     const promptLLM = async (prompt: string) => {
-        setLLMLoading(true);
-        const pixel = `LLM(engine = "${modelId}", command = "${prompt}", paramValues = [ {} ] );`;
-
         try {
-            const res = await runPixel(pixel);
+            setLLMLoading(true);
+
+            if (!workspace.agentModelEngine) {
+                throw new Error('No Agent Model Engine');
+            }
+
+            const res = await runPixel(
+                `LLM(engine = "${workspace.agentModelEngine}", command = "${prompt}", paramValues = [ {} ] );`,
+            );
 
             const LLMResponse = res.pixelReturn[0].output['response'];
             let trimmedStarterCode = LLMResponse;
@@ -726,22 +728,19 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                             }
                         }}
                     >
-                        {Array.from(
-                            Object.values(EDITOR_TYPE),
-                            (language, i) => (
-                                <StyledSelectItem
-                                    key={`${i}-${cell.id}-${language.name}`}
-                                    value={language.value}
-                                    // title={language.name} // throwing ts error
-                                >
-                                    <language.icon
-                                        color="inherit"
-                                        fontSize="small"
-                                    />
-                                    {language.name}
-                                </StyledSelectItem>
-                            ),
-                        )}
+                        {configStore.store.config.python ? (
+                            <StyledSelectItem value={'py'} title="Python">
+                                <PythonIcon color="inherit" fontSize="small" />
+                            </StyledSelectItem>
+                        ) : null}
+                        {configStore.store.config.r ? (
+                            <StyledSelectItem value={'r'} title="R">
+                                <RIcon color="inherit" fontSize="small" />
+                            </StyledSelectItem>
+                        ) : null}
+                        <StyledSelectItem value={'pixel'} title="Pixel">
+                            <Code color="inherit" fontSize="small" />
+                        </StyledSelectItem>
                     </StyledSelect>
                 </Stack>
                 {/* )} */}

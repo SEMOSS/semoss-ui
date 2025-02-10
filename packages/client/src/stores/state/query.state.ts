@@ -199,6 +199,13 @@ export class QueryState {
     }
 
     /**
+     * Get the cells of the query as a list
+     */
+    get cellList() {
+        return this._store.list.map((cId) => this._store.cells[cId]);
+    }
+
+    /**
      * Get a cell from the query
      * @param id - id of the cell to get
      */
@@ -232,9 +239,9 @@ export class QueryState {
      * Helpers
      */
     /**
-     * Process running of a pixel
+     * Run the query
      */
-    _processRun = async () => {
+    _run = async () => {
         try {
             // check the loading state
             if (this._store.isLoading) {
@@ -249,7 +256,7 @@ export class QueryState {
                 const cell = this._store.cells[s];
 
                 // run the cell
-                await cell._processRun();
+                await cell._run();
             }
         } catch (e) {
             // if a cell errors out of the runPixel and causes a break/catch here,
@@ -270,7 +277,7 @@ export class QueryState {
      * @param path - path of the data to set
      * @param value - value of the data
      */
-    _processUpdate = (path: string | null, value: unknown) => {
+    _update = (path: string | null, value: unknown) => {
         if (!path) {
             // set the value
             this._store = value as QueryStateStoreInterface;
@@ -282,11 +289,11 @@ export class QueryState {
     };
 
     /**
-     * Process adding a new cell to the query
+     * Add a cell
      * @param cell - new cell being added
      * @param previousCellId - id of the previous cell
      */
-    _processNewCell = (
+    _addCell = (
         cellId: string,
         config: Omit<CellStateConfig, 'id'>,
         previousCellId: string,
@@ -323,10 +330,10 @@ export class QueryState {
     };
 
     /**
-     * Process deleting a cell from the query
+     * Remove a cell
      * @param id - id of the cell to delete
      */
-    _processDeleteCell = (id: string) => {
+    _removeCell = (id: string) => {
         // find the index to delete at
         const deleteCellIdx = this._store.list.indexOf(id);
         if (deleteCellIdx === -1) {

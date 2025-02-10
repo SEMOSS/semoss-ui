@@ -1,5 +1,6 @@
-import { makeAutoObservable, toJS } from 'mobx';
+import { makeAutoObservable, runInAction, toJS } from 'mobx';
 
+import { download, runPixel } from '@/api';
 import { cancellablePromise, getValueByPath } from '@/utility';
 
 import {
@@ -18,6 +19,7 @@ import {
     Variable,
     VariableType,
     VariableWithId,
+    Frame,
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
@@ -30,7 +32,7 @@ interface StateStoreInterface {
     /** insightID to load */
     insightId: string;
 
-    /** token to reference (blocks, cells, dependencies) */
+    /** token to reference (blocks, cells, constants) */
     variables: Record<string, Variable>;
 
     /** Queries rendered in the insight */
@@ -38,6 +40,9 @@ interface StateStoreInterface {
 
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
+
+    /** Frames stored in the insight */
+    frames: Record<string, Frame>;
 
     /** Cells registered to the insight */
     cellRegistry: CellRegistry;
@@ -47,9 +52,6 @@ interface StateStoreInterface {
 
     /** Order of how we consume app as API */
     executionOrder: string[];
-
-    /** TODO: Get rid of this, engine dependencies */
-    dependencies: Record<string, unknown>;
 }
 
 export class StateStoreConfig {
@@ -79,9 +81,9 @@ export class StateStore {
         version: '',
         queries: {},
         blocks: {},
+        frames: {},
         cellRegistry: {},
         variables: {},
-        dependencies: {}, // Maher said change to constants
         executionOrder: [],
     };
 
@@ -169,14 +171,6 @@ export class StateStore {
     }
 
     /**
-     * Gets all tokens
-     * @returns the tokens
-     */
-    get dependencies() {
-        return this._store.dependencies;
-    }
-
-    /**
      * Get the cell type registry
      * @returns the cell type registry
      */
@@ -195,6 +189,32 @@ export class StateStore {
         }
 
         return null;
+    }
+
+    /**
+     * Get all blocks of a specific type
+     * @param type - type of the block to get
+     * @returns all blocks of the specific type
+     */
+    getAllBlocksOfType(type: string) {
+        return Object.values(this._store.blocks).filter(
+            (block) => block.widget === type,
+        );
+    }
+
+    /**
+     * Get all parents of a block
+     * @param nodeId - id of the block to get the parents of
+     * @returns all parents of the block
+     */
+    getAllParents(nodeId: string) {
+        let selected = nodeId;
+        const parents = [];
+        while (selected) {
+            parents.push(selected);
+            selected = this._store.blocks[selected]?.parent?.id;
+        }
+        return parents;
     }
 
     /**
@@ -325,6 +345,21 @@ export class StateStore {
     }
 
     /**
+     * Get a frame. Create one if it isn't there
+     * @param name
+     */
+    getFrameKey(name: string): Frame['key'] {
+        // create the frame if it is not there
+        if (!this._store.frames[name]) {
+            runInAction(() => {
+                this.createFrame(name);
+            });
+        }
+
+        return this._store.frames[name].key;
+    }
+
+    /**
      * Actions
      */
     /**
@@ -443,14 +478,6 @@ export class StateStore {
                 const { id } = action.payload;
 
                 this.deleteVariable(id);
-            } else if (ActionMessages.ADD_DEPENDENCY === action.message) {
-                const { id, type } = action.payload;
-
-                return this.addDependency(id, type);
-            } else if (ActionMessages.REMOVE_DEPENDENCY === action.message) {
-                const { id } = action.payload;
-
-                return this.removeDependency(id);
             } else if (
                 ActionMessages.SET_SHEET_EXECUTION_ORDER === action.message
             ) {
@@ -525,6 +552,42 @@ export class StateStore {
         });
     };
 
+    /** Side effects Methods */
+    /**
+     * Run a side effect pixel and process the response
+     *
+     * @param pixel - side effect to run
+     */
+    runSideEffect = async <O extends unknown[] | []>(pixel: string) => {
+        const response = await runPixel<O>(pixel, this._store.insightId);
+
+        // process the side effects
+        for (const { operationType, output } of response.pixelReturn) {
+            this.processSideEffects(operationType, output);
+        }
+
+        // return the response
+        return response;
+    };
+
+    /**
+     * Process side-effects from running a pixel
+     *
+     * @param operation - operation that was run
+     * @param output - output fo the operation
+     */
+    processSideEffects = (operation: string[], output: unknown) => {
+        // download the file
+        if (operation.includes('FILE_DOWNLOAD')) {
+            download(this.insightId, output as string);
+        } else if (
+            operation.includes('FRAME_DATA_CHANGE') ||
+            operation.includes('FRAME_FILTER_CHANGE')
+        ) {
+            this.syncFrame((output as { name: string }).name);
+        }
+    };
+
     /**
      * Serialize to JSON
      */
@@ -536,11 +599,14 @@ export class StateStore {
             }, {} as SerializedState['queries']),
             blocks: toJS(this._store.blocks),
             variables: toJS(this._store.variables),
-            dependencies: toJS(this._store.dependencies),
             executionOrder: toJS(this._store.executionOrder),
             version: this._store.version,
         };
     }
+
+    /**
+     *
+     */
 
     /**
      * Internal
@@ -569,6 +635,8 @@ export class StateStore {
 
         // add the data
         block.data = json.data;
+        // Defaulting the route to the block id
+        block.data.route = id;
 
         // add the listeners
         block.listeners = json.listeners;
@@ -697,6 +765,29 @@ export class StateStore {
     };
 
     /**
+     * Create a new frame
+     */
+    private createFrame = (name: string) => {
+        this._store.frames[name] = {
+            name: name,
+            key: 0,
+        };
+    };
+
+    /**
+     * Resync the frame and change the data key
+     */
+    private syncFrame = (name: string) => {
+        // create the frame if it is not there
+        if (!this._store.frames[name]) {
+            this.createFrame(name);
+        }
+
+        // increment the key
+        this._store.frames[name].key = this._store.frames[name].key + 1;
+    };
+
+    /**
      * Actions
      */
     /**
@@ -719,9 +810,6 @@ export class StateStore {
 
         // store the variables
         this._store.variables = state.variables ? state.variables : {};
-
-        // TODO: Remove, store the dependencies
-        this._store.dependencies = state.dependencies ? state.dependencies : {};
 
         // store the execution order of notebooks
         let order = [];
@@ -1087,7 +1175,7 @@ export class StateStore {
         const q = this._store.queries[queryId];
 
         // set the value
-        q._processUpdate(path, value);
+        q._update(path, value);
     };
 
     /**
@@ -1105,7 +1193,7 @@ export class StateStore {
         // setup the promise
         const p = cancellablePromise(async () => {
             // run the query
-            await q._processRun();
+            await q._run();
 
             // turn it off
             return true;
@@ -1140,7 +1228,7 @@ export class StateStore {
         const q = this._store.queries[queryId];
 
         // add the cell
-        q._processNewCell(cellId, config, previousCellId);
+        q._addCell(cellId, config, previousCellId);
     };
 
     /**
@@ -1152,8 +1240,8 @@ export class StateStore {
         // get the query
         const q = this._store.queries[queryId];
 
-        // add the cell
-        q._processDeleteCell(cellId);
+        // remove the cell
+        q._removeCell(cellId);
 
         // clean up variables
         Object.entries(this._store.variables).forEach((keyValue) => {
@@ -1202,7 +1290,7 @@ export class StateStore {
         const s = q.getCell(cellId);
 
         // set the value
-        s._processUpdate(path, value);
+        s._update(path, value);
     };
 
     /**
@@ -1212,7 +1300,7 @@ export class StateStore {
      */
     private runCell = (queryId: string, cellId: string): void => {
         const q = this._store.queries[queryId];
-        const s = q.getCell(cellId);
+        const c = q.getCell(cellId);
 
         const key = `cell--${cellId} (query--${queryId});`;
 
@@ -1222,7 +1310,7 @@ export class StateStore {
         // setup the promise
         const p = cancellablePromise(async () => {
             // run the cell
-            await s._processRun();
+            await c._run();
 
             // turn it off
             return true;
@@ -1338,15 +1426,6 @@ export class StateStore {
      * @param id - id to delete
      */
     private deleteVariable = async (id: string) => {
-        const variable = this._store.variables[id];
-        if (
-            variable.type !== 'block' &&
-            variable.type !== 'query' &&
-            variable.type !== 'cell'
-        ) {
-            delete this._store.dependencies[variable.to];
-        }
-
         // Stringify blocks
         const blocksToMutate = JSON.stringify(this._store.blocks);
         // remove the references of it from ui (don't touch users code notebook)
@@ -1357,32 +1436,6 @@ export class StateStore {
         this._store.blocks = JSON.parse(modifiedBlocks);
 
         delete this._store.variables[id];
-    };
-
-    /**
-     * Adds a constant/dependency to use as a token
-     * @param value can be an engine id, string, number, date, and etc
-     * @param type - what type of dependency - Model, Database, String, Date, Number
-     * @returns id of newly added dependency for token value
-     */
-    private addDependency = (value: unknown, type: string) => {
-        let id;
-
-        do {
-            id = `${type}--${Math.floor(Math.random() * 10000)}`;
-        } while (this._store.dependencies[id]);
-
-        this._store.dependencies[id] = value;
-
-        return id;
-    };
-
-    /**
-     * Removes a dependency if unsuccesful variable creation
-     * @param id id to remove
-     */
-    private removeDependency = (id: string) => {
-        delete this._store.dependencies[id];
     };
 
     /**
