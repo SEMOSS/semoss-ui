@@ -4,6 +4,7 @@ import { observer } from "mobx-react-lite";
 import { useBlock } from "../../../hooks";
 import { BlockComponent, BlockDef } from "../../../store";
 import { LinearProgress, TextField, styled } from "@mui/material";
+import { CircularProgress, InputAdornment } from "@semoss/ui";
 import { debounced } from "../../../utility";
 
 const StyledTextField = styled(TextField)({
@@ -12,6 +13,10 @@ const StyledTextField = styled(TextField)({
         left: "auto",
     },
 });
+
+const StyledLoading = styled(CircularProgress)(({ theme }) => ({
+    color: theme.palette.divider,
+}));
 export interface InputBlockDef extends BlockDef<"input"> {
     widget: "input";
     data: {
@@ -38,7 +43,11 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
     return (
         <StyledTextField
             size="small"
-            value={data.value}
+            value={
+                data.value !== null && data.value !== undefined
+                    ? data.value
+                    : ""
+            }
             label={
                 typeof data.label !== "string"
                     ? JSON.stringify(data.label)
@@ -48,11 +57,16 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
             multiline={data.rows > 1 && data.type === "text"}
             required={Boolean(data.required)}
             disabled={Boolean(data?.disabled || data?.loading)}
-            helperText={
-                data?.loading ? <LinearProgress color="primary" /> : data?.hint
-            }
+            helperText={data?.hint}
             style={{
                 ...data.style,
+            }}
+            InputProps={{
+                startAdornment: (
+                    <InputAdornment position="end">
+                        {data?.loading ? <StyledLoading size={20} /> : <></>}
+                    </InputAdornment>
+                ),
             }}
             type={data.type}
             onChange={(e) => {
