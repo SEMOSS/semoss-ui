@@ -50,3 +50,5 @@ export { default as TOGGLE_ACTIVE } from './Toggle_Active.png';
 export { default as TOGGLE_HOVER } from './Toggle_Hover.png';
 export { default as UPLOAD_ACTIVE } from './Upload_Active.png';
 export { default as UPLOAD_HOVER } from './Upload_Hover.png';
+export { default as THEME_ACTIVE } from './Theme_Active.png';
+export { default as THEME_HOVER } from './Theme_Hover.png';
