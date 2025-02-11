@@ -170,6 +170,7 @@ const formatModelLimitValue = (input: string) => {
             DAY: 'Daily',
             WEEK: 'Weekly',
             MONTH: 'Monthly',
+            NULL: 'None',
         };
         return mappings[input.toUpperCase()] || input;
     }
@@ -188,10 +189,10 @@ interface User {
     phoneextension?: string;
     countrycode?: string;
     username?: string;
-    usage_restriction?: string;
-    usage_frequency?: string;
-    max_tokens?: number;
-    max_response_time?: number;
+    model_usage_restriction?: string;
+    model_usage_frequency?: string;
+    model_max_tokens?: number;
+    model_max_response_time?: number;
     unit?: string;
 }
 
@@ -211,7 +212,6 @@ export const UserTable = (props: UserTableProps) => {
 
     const [page, setPage] = useState<number>(0);
     const [rowsPerPage, setRowsPerPage] = useState<number>(5);
-    const [displayedUsers, setDisplayedUsers] = useState([]);
     const [isSearch, setIsSearch] = useState<boolean>(false);
     const [search, setSearch] = useState<string>('');
 
@@ -239,21 +239,12 @@ export const UserTable = (props: UserTableProps) => {
     // track if the page is loading
     const isLoading =
         getUsers.status === 'INITIAL' || getUsers.status === 'LOADING';
-    const totalUsers = getUsers.status === 'SUCCESS' ? getUsers.data.length : 0;
-    const hasUsers = getUsers.status === 'SUCCESS' && getUsers.data.length > 0;
-
-    // Set the displayed users when the data, page, or rowsPerPage change.
-    useEffect(() => {
-        if (getUsers.status === 'SUCCESS') {
-            const displayed = getUsers.data.slice(
-                page * rowsPerPage,
-                (page + 1) * rowsPerPage,
-            );
-            setDisplayedUsers(displayed);
-        } else {
-            setDisplayedUsers([]);
-        }
-    }, [getUsers.status, page, rowsPerPage]);
+    const renderedMembers =
+        getUsers.status === 'SUCCESS' ? getUsers.data['users'] : [];
+    const totalUsers =
+        getUsers.status === 'SUCCESS' ? getUsers.data['totalUsers'] : 0;
+    const hasUsers =
+        getUsers.status === 'SUCCESS' && getUsers.data['totalUsers'] > 0;
 
     /**
      * Update a user
@@ -383,16 +374,16 @@ export const UserTable = (props: UserTableProps) => {
 
     // Avatars rendered
     const Avatars = useMemo(() => {
-        if (!displayedUsers.length) {
+        if (!renderedMembers.length) {
             return [];
         }
 
         let i = 0;
         const avatarList = [];
-        while (i < 5 && i < displayedUsers.length) {
+        while (i < 5 && i < renderedMembers.length) {
             avatarList.push(
                 <Avatar key={i}>
-                    {(displayedUsers[i].name || ' ').charAt(0).toUpperCase()}
+                    {(renderedMembers[i].name || ' ').charAt(0).toUpperCase()}
                 </Avatar>,
             );
 
@@ -400,7 +391,7 @@ export const UserTable = (props: UserTableProps) => {
         }
 
         return avatarList;
-    }, [displayedUsers.length]);
+    }, [renderedMembers.length]);
 
     return (
         <StyledMemberContent>
@@ -501,17 +492,17 @@ export const UserTable = (props: UserTableProps) => {
                                                 <Checkbox
                                                     checked={
                                                         selectedMembers.length ===
-                                                            displayedUsers.length &&
-                                                        displayedUsers.length >
+                                                            renderedMembers.length &&
+                                                        renderedMembers.length >
                                                             0
                                                     }
                                                     onChange={() => {
                                                         if (
                                                             selectedMembers.length !==
-                                                            displayedUsers.length
+                                                            renderedMembers.length
                                                         ) {
                                                             setSelectedMembers(
-                                                                displayedUsers,
+                                                                renderedMembers,
                                                             );
                                                         } else {
                                                             setSelectedMembers(
@@ -548,15 +539,15 @@ export const UserTable = (props: UserTableProps) => {
                                         </Table.Row>
                                     </Table.Head>
                                     <Table.Body>
-                                        {displayedUsers.map((user) => {
+                                        {renderedMembers.map((user) => {
                                             let isSelected = false;
                                             if (user) {
                                                 isSelected =
                                                     selectedMembers.some(
                                                         (value) => {
                                                             return (
-                                                                value.userid ===
-                                                                user.userid
+                                                                value.id ===
+                                                                user.id
                                                             );
                                                         },
                                                     );
@@ -581,8 +572,8 @@ export const UserTable = (props: UserTableProps) => {
                                                                                 u,
                                                                             ) => {
                                                                                 if (
-                                                                                    u.userid !==
-                                                                                    user.userid
+                                                                                    u.id !==
+                                                                                    user.id
                                                                                 )
                                                                                     selMembers.push(
                                                                                         u,
