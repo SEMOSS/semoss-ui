@@ -2688,7 +2688,7 @@ export class MonolithStore {
 
         const finalResponse = {
             users: response.data,
-            totalUsers: count.data,
+            totalUsers: searchTerm !== '' ? response.data.length : count.data,
         };
 
         return finalResponse;
