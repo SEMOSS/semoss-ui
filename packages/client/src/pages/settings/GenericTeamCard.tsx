@@ -106,13 +106,13 @@ interface TeamCardProps {
     dispatch: (val: { type: string; field: string; value: unknown[] }) => void;
 
     /** databases to update */
-    databases;
+    teams;
 
     onClick?: (value: string) => void;
 }
 
 export const TeamTileCard = (props: TeamCardProps) => {
-    const { id, description, tag, dispatch, databases, onClick } = props;
+    const { id, description, type, tag, dispatch, teams, onClick } = props;
     const [hover, setHover] = React.useState(false);
     const [deleteModal, setDeleteModal] = React.useState(false);
     const { monolithStore } = useRootStore();
@@ -125,11 +125,11 @@ export const TeamTileCard = (props: TeamCardProps) => {
 
     const deleteGroup = () => {
         try {
-            monolithStore.deleteTeam(id, description);
+            monolithStore.deleteTeam(id, type);
             dispatch({
                 type: 'field',
-                field: 'databases',
-                value: [...databases.filter((val) => val.id !== id)],
+                field: 'teams',
+                value: [...teams.filter((val) => val.id !== id)],
             });
             notification.add({
                 color: 'success',
