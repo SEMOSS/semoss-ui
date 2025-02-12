@@ -27,7 +27,7 @@ import {
 } from '@mui/icons-material';
 import { AxiosResponse } from 'axios';
 
-import { SETTINGS_ROLE } from './settings.types';
+import { SETTINGS_ROLE } from '@/components/settings/settings.types';
 import { useRootStore } from '@/hooks';
 
 const colors = [
@@ -50,7 +50,7 @@ const NameIDWrapper = styled('div')({
     display: 'inline-block',
 });
 
-const StyledProjectContent = styled('div')({
+const StyledEngineContent = styled('div')({
     display: 'flex',
     width: '100%',
     flexDirection: 'column',
@@ -59,7 +59,7 @@ const StyledProjectContent = styled('div')({
     flexShrink: '0',
 });
 
-const StyledProjectInnerContent = styled('div')({
+const StyledEngineInnerContent = styled('div')({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
@@ -73,7 +73,7 @@ const StyledTableContainer = styled(Table.Container)({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
 });
 
-const StyledProjectTable = styled(Table)({ backgroundColor: 'white' });
+const StyledEngineTable = styled(Table)({ backgroundColor: 'white' });
 
 const StyledTableTitleContainer = styled('div')({
     display: 'flex',
@@ -90,13 +90,13 @@ const StyledTableTitleDiv = styled('div')({
     gap: '10px',
 });
 
-const StyledTableTitleProjectContainer = styled('div')({
+const StyledTableTitleEngineContainer = styled('div')({
     display: 'flex',
     alignItems: 'flex-start',
     flex: '1 0 0',
 });
 
-const StyledTableTitleProjectCountContainer = styled('div')({
+const StyledTableTitleEngineCountContainer = styled('div')({
     display: 'flex',
     height: '56px',
     padding: '6px 16px 6px 8px',
@@ -106,7 +106,7 @@ const StyledTableTitleProjectCountContainer = styled('div')({
     gap: '10px',
 });
 
-const StyledTableTitleProjectCount = styled('div')({
+const StyledTableTitleEngineCount = styled('div')({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
@@ -127,7 +127,7 @@ const StyledDeleteSelectedContainer = styled('div')({
     gap: '10px',
 });
 
-const StyledAddProjectsContainer = styled('div')({
+const StyledAddEnginesContainer = styled('div')({
     display: 'flex',
     padding: '10px 24px 10px 8px',
     flexDirection: 'column',
@@ -136,13 +136,13 @@ const StyledAddProjectsContainer = styled('div')({
     gap: '10px',
 });
 
-const StyledNonProjectsContainer = styled('div')({
+const StyledNonEnginesContainer = styled('div')({
     width: '100%',
     borderRadius: '12px',
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
 });
 
-const StyledNonProjectsDiv = styled('div')({
+const StyledNonEnginesDiv = styled('div')({
     width: '100%',
     height: '503px',
     display: 'flex',
@@ -178,7 +178,7 @@ const permissionMapper = {
     'Read-Only': 3, // DISPLAY: BE
 };
 
-interface ProjectsTableProps {
+interface EnginesTableProps {
     /**
      * Id of the setting
      */
@@ -192,46 +192,43 @@ interface ProjectsTableProps {
     name: string;
 }
 
-export const TeamProjectsTable = (props: ProjectsTableProps) => {
+export const TeamEnginesTable = (props: EnginesTableProps) => {
     const { groupId, groupType } = props;
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
 
-    /** Project Table State */
-    const [projectsPage, setProjectsPage] = useState<number>(1);
-    const [selectedProjects, setSelectedProojects] = useState([]);
+    /** Engine Table State */
+    const [enginesPage, setEnginesPage] = useState<number>(1);
+    const [selectedEngines, setSelectedEngines] = useState([]);
     const [count, setCount] = useState(0);
 
-    /** Delete Project */
-    const [deleteProjectsModal, setDeleteProjectsModal] =
+    /** Delete Engine */
+    const [deleteEnginesModal, setDeleteEnginesModal] =
         useState<boolean>(false);
-    const [deleteProjectModal, setDeleteProjectModal] =
-        useState<boolean>(false);
-    const [projectToDelete, setProjectToDelete] = useState(null);
+    const [deleteEngineModal, setDeleteEngineModal] = useState<boolean>(false);
+    const [engineToDelete, setEngineToDelete] = useState(null);
 
-    /** Add Project State */
-    const [addProjectModal, setAddProjectModal] = useState<boolean>(false);
-    const [nonCredentialedProjects, setNonCredentialedProjects] = useState([]);
-    const [
-        selectedNonCredentialedProjects,
-        setSelectedNonCredentialedProjects,
-    ] = useState([]);
-    const [addProjectRole, setAddProjectRole] = useState<SETTINGS_ROLE>();
+    /** Add Engine State */
+    const [addEngineModal, setAddEngineModal] = useState<boolean>(false);
+    const [nonCredentialedEngines, setNonCredentialedEngines] = useState([]);
+    const [selectedNonCredentialedEngines, setSelectedNonCredentialedEngines] =
+        useState([]);
+    const [addEngineRole, setAddEngineRole] = useState<SETTINGS_ROLE>();
 
-    const [projects, setProjects] = useState(null);
-    const [projectCount, setProjectCount] = useState(null);
-    const [hasProjects, setHasProject] = useState(false);
+    const [engines, setEngines] = useState(null);
+    const [enginesCount, setEngineCount] = useState(null);
+    const [hasEngines, setHasEngines] = useState(false);
 
     const limit = 5;
 
-    const projectSearchRef = useRef(undefined);
+    const engineSearchRef = useRef(undefined);
 
     const { watch, setValue } = useForm<{
         SEARCH_FILTER: string;
     }>({
         defaultValues: {
-            // Filters for projects table
+            // Filters for engines table
             SEARCH_FILTER: '',
         },
     });
@@ -240,40 +237,40 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 
     /**
      * @name useEffect
-     * @desc - sets projects in react hook form
+     * @desc - sets engines in react hook form
      */
     useEffect(() => {
         monolithStore
-            .getTeamProjects(
+            .getTeamEngines(
                 groupId,
+                groupType,
                 limit,
-                projectsPage * limit - limit, // offset
+                enginesPage * limit - limit, // offset
                 searchFilter,
-                false,
             )
             .then((data) => {
-                setProjects(data);
-                setHasProject(true);
+                setEngines(data);
+                setHasEngines(true);
             });
     }, []);
 
     /**
-     * @name submitNonGroupProjects
+     * @name submitNonGroupEngines
      */
-    const submitNonGroupProjects = async () => {
+    const submitNonGroupEngines = async () => {
         try {
             // construct requests for post data
-            const requests = selectedNonCredentialedProjects.map((m) => {
+            const requests = selectedNonCredentialedEngines.map((m) => {
                 return {
-                    project_id: m.project_id,
-                    permission: permissionMapper[addProjectRole],
+                    engine_id: m.engine_id,
+                    permission: permissionMapper[addEngineRole],
                 };
             });
 
             if (requests.length === 0) {
                 notification.add({
                     color: 'warning',
-                    message: `No projects to add`,
+                    message: `No engines to add`,
                 });
 
                 return;
@@ -281,10 +278,10 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 
             for (let i = 0; i < requests.length; i++) {
                 let response: AxiosResponse<{ success: boolean }> | null = null;
-                response = await monolithStore.addProject(
+                response = await monolithStore.addEnginePermission(
                     groupId,
-                    requests[i].project_id,
-                    permissionMapper[addProjectRole],
+                    requests[i].engine_id,
+                    permissionMapper[addEngineRole],
                     groupType ? groupType : '',
                 );
 
@@ -294,44 +291,45 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 
                 // ignore if there is no response
                 if (response) {
-                    setAddProjectModal(false);
-                    setSelectedNonCredentialedProjects([]);
+                    setAddEngineModal(false);
+                    setSelectedNonCredentialedEngines([]);
 
                     notification.add({
                         color: 'success',
-                        message: 'Successfully added project permission',
+                        message: 'Successfully added engine permission',
                     });
                 } else {
                     notification.add({
                         color: 'error',
-                        message: `Error adding project permission`,
+                        message: `Error adding engine permission`,
                     });
                 }
             }
         } catch (e) {
-            setAddProjectModal(false);
-            setSelectedNonCredentialedProjects([]);
+            setAddEngineModal(false);
+            setSelectedNonCredentialedEngines([]);
 
             notification.add({
                 color: 'error',
                 message: String(e),
             });
         } finally {
-            // refresh the projects
+            // refresh the engines
             setCount(count + 1);
         }
     };
 
     /**
-     * @name deleteProject
-     * @param project
+     * @name deleteEngine
+     * @param engine
      */
-    const deleteProject = async (project) => {
+    const deleteEngine = async (engine) => {
         try {
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            response = await monolithStore.deleteProjectPermission(
+            response = await monolithStore.deleteEnginePermission(
                 groupId,
-                project,
+                groupType,
+                engine,
             );
 
             if (!response) {
@@ -340,7 +338,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 
             notification.add({
                 color: 'success',
-                message: `Successfully removed project`,
+                message: `Successfully removed engine`,
             });
         } catch (e) {
             notification.add({
@@ -348,24 +346,25 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                 message: String(e),
             });
         } finally {
-            setDeleteProjectModal(false);
+            setDeleteEngineModal(false);
             setCount(count + 1);
         }
-        // refresh the projects
+        // refresh the engines
     };
 
     /**
-     * @name deleteProjectPermissions
+     * @name deleteEnginePermissions
      */
-    const deleteProjectPermissions = async () => {
+    const deleteEnginePermissions = async () => {
         try {
-            for (let i = 0; i < selectedProjects.length; i++) {
+            for (let i = 0; i < selectedEngines.length; i++) {
                 try {
                     let response: AxiosResponse<{ success: boolean }> | null =
                         null;
-                    response = await monolithStore.deleteProjectPermission(
+                    response = await monolithStore.deleteEnginePermission(
                         groupId,
-                        selectedProjects[i],
+                        groupType,
+                        selectedEngines[i],
                     );
 
                     if (!response) {
@@ -377,34 +376,37 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                         message: String(e),
                     });
                 } finally {
-                    setDeleteProjectModal(false);
+                    setDeleteEngineModal(false);
                 }
             }
         } finally {
             notification.add({
                 color: 'success',
-                message: `Successfully removed projects`,
+                message: `Successfully removed engines`,
             });
             setCount(count + 1);
-            setDeleteProjectsModal(false);
-            setSelectedProojects([]);
+            setDeleteEnginesModal(false);
+            setSelectedEngines([]);
         }
     };
 
     /**
-     * @name getProjects
-     * @desc Gets all projects without credentials
+     * @name getEngines
+     * @desc Gets all engines without credentials
      */
-    const getProjects = async () => {
+    const getEngines = async () => {
         try {
             let response;
-            // possibly add more db table columns / keys here to get id type for display under projects
+            // possibly add more db table columns / keys here to get id type for display under engines
             // eslint-disable-next-line prefer-const
-            response = await monolithStore.getUnassignedTeamProjects(groupId);
+            response = await monolithStore.getUnassignedTeamEngines(
+                groupId,
+                groupType,
+            );
 
             // ignore if there is no response
             if (response) {
-                const projects = response.map((val) => {
+                const engines = response.map((val) => {
                     return {
                         ...val,
                         color: colors[
@@ -413,7 +415,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                     };
                 });
 
-                setNonCredentialedProjects(projects);
+                setNonCredentialedEngines(engines);
             }
         } catch (e) {
             notification.add({
@@ -421,14 +423,14 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                 message: String(e),
             });
         } finally {
-            setAddProjectModal(true);
+            setAddEngineModal(true);
         }
     };
 
-    /** MEMBER TABLE FUNCTIONS */
-    const updateSelectedProjects = async (project) => {
+    /** ENGINES TABLE FUNCTIONS */
+    const updateSelectedEngines = async (engine) => {
         try {
-            if (!project.projectid) {
+            if (!engine.engineid) {
                 notification.add({
                     color: 'warning',
                     message: `No permissions to change`,
@@ -438,9 +440,9 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
             }
 
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            response = await monolithStore.editProjectPermisison(
+            response = await monolithStore.editEnginePermission(
                 groupId,
-                project,
+                engine,
             );
 
             if (!response) {
@@ -448,7 +450,6 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
             }
 
             // ignore if there is no response
-
             if (response.data) {
                 notification.add({
                     color: 'success',
@@ -472,11 +473,11 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
     };
 
     const paginationOptions = {
-        projectsPageCounts: [5],
+        enginesPageCounts: [5],
     };
 
-    projects > 9 && paginationOptions.projectsPageCounts.push(10);
-    projects > 19 && paginationOptions.projectsPageCounts.push(20);
+    engines > 9 && paginationOptions.enginesPageCounts.push(10);
+    engines > 19 && paginationOptions.enginesPageCounts.push(20);
 
     function useDebounce(effect, dependencies, delay) {
         const callback = useCallback(effect, dependencies);
@@ -491,45 +492,45 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
     useDebounce(
         () => {
             monolithStore
-                .getTeamProjects(
+                .getTeamEngines(
                     groupId,
+                    groupType,
                     limit,
-                    projectsPage * limit - limit, // offset
+                    enginesPage * limit - limit, // offset
                     searchFilter,
-                    false,
                 )
                 .then((data) => {
-                    setProjects(data);
-                    setHasProject(true);
+                    setEngines(data);
+                    setHasEngines(true);
                 });
             monolithStore
-                .getTeamProjects(
+                .getTeamEngines(
                     groupId,
+                    groupType,
                     100,
                     0, // offset
                     searchFilter,
-                    false,
                 )
-                .then((data) => setProjectCount(data.length));
+                .then((data) => setEngineCount(data.length));
         },
-        [count, projectsPage, searchFilter],
+        [count, enginesPage, searchFilter],
         200,
     );
 
     return (
-        <StyledProjectContent>
-            <StyledProjectInnerContent>
-                {(projects && projects.length > 0) ||
-                projectCount > 0 ||
-                hasProjects ? (
+        <StyledEngineContent>
+            <StyledEngineInnerContent>
+                {(engines && engines.length > 0) ||
+                enginesCount > 0 ||
+                hasEngines ? (
                     <StyledTableContainer>
                         <StyledTableTitleContainer>
-                            <StyledTableTitleDiv>Projects</StyledTableTitleDiv>
-                            <StyledTableTitleProjectContainer />
+                            <StyledTableTitleDiv>Engines</StyledTableTitleDiv>
+                            <StyledTableTitleEngineContainer />
                             <StyledSearchButtonContainer>
                                 <Search
-                                    ref={projectSearchRef}
-                                    placeholder="Search Projects"
+                                    ref={engineSearchRef}
+                                    placeholder="Search Engines"
                                     size="small"
                                     value={searchFilter}
                                     onChange={(e) => {
@@ -542,49 +543,47 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                             </StyledSearchButtonContainer>
 
                             <StyledDeleteSelectedContainer>
-                                {selectedProjects.length > 0 && (
+                                {selectedEngines.length > 0 && (
                                     <Button
                                         variant={'outlined'}
                                         color="error"
                                         onClick={() =>
-                                            setDeleteProjectsModal(true)
+                                            setDeleteEnginesModal(true)
                                         }
                                     >
                                         Delete Selected
                                     </Button>
                                 )}
                             </StyledDeleteSelectedContainer>
-                            <StyledAddProjectsContainer>
+                            <StyledAddEnginesContainer>
                                 <Button
                                     variant={'contained'}
                                     onClick={() => {
-                                        getProjects();
+                                        getEngines();
                                     }}
                                 >
-                                    Add Projects{' '}
+                                    Add Engines{' '}
                                 </Button>
-                            </StyledAddProjectsContainer>
+                            </StyledAddEnginesContainer>
                         </StyledTableTitleContainer>
-                        <StyledProjectTable>
+                        <StyledEngineTable>
                             <Table.Head>
                                 <Table.Row>
                                     <Table.Cell size="small" padding="checkbox">
                                         <Checkbox
                                             checked={
-                                                selectedProjects.length ===
-                                                    projects.length &&
-                                                projects.length > 0
+                                                selectedEngines.length ===
+                                                    engines.length &&
+                                                engines.length > 0
                                             }
                                             onChange={() => {
                                                 if (
-                                                    selectedProjects.length !==
-                                                    projects.length
+                                                    selectedEngines.length !==
+                                                    engines.length
                                                 ) {
-                                                    setSelectedProojects(
-                                                        projects,
-                                                    );
+                                                    setSelectedEngines(engines);
                                                 } else {
-                                                    setSelectedProojects([]);
+                                                    setSelectedEngines([]);
                                                 }
                                             }}
                                         />
@@ -598,26 +597,26 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                 </Table.Row>
                             </Table.Head>
                             <Table.Body>
-                                {projects &&
-                                    projects.map((x, i) => {
-                                        const project = projects[i];
+                                {engines &&
+                                    engines.map((x, i) => {
+                                        const engine = engines[i];
 
                                         let isSelected = false;
 
-                                        if (project) {
-                                            isSelected = selectedProjects.some(
+                                        if (engine) {
+                                            isSelected = selectedEngines.some(
                                                 (value) => {
                                                     return (
-                                                        value.projectid ===
-                                                        project.projectid
+                                                        value.engineid ===
+                                                        engine.engineid
                                                     );
                                                 },
                                             );
                                         }
-                                        if (project) {
+                                        if (engine) {
                                             return (
                                                 <Table.Row
-                                                    key={project.projectid + i}
+                                                    key={engine.engineid + i}
                                                 >
                                                     <StyledTableCell
                                                         size="medium"
@@ -629,27 +628,27 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                                 if (
                                                                     isSelected
                                                                 ) {
-                                                                    const selProjects =
+                                                                    const selEngines =
                                                                         [];
-                                                                    selectedProjects.forEach(
+                                                                    selectedEngines.forEach(
                                                                         (p) => {
                                                                             if (
-                                                                                p.projectid !==
-                                                                                project.projectid
+                                                                                p.engineid !==
+                                                                                engine.engineid
                                                                             )
-                                                                                selProjects.push(
+                                                                                selEngines.push(
                                                                                     p,
                                                                                 );
                                                                         },
                                                                     );
-                                                                    setSelectedProojects(
-                                                                        selProjects,
+                                                                    setSelectedEngines(
+                                                                        selEngines,
                                                                     );
                                                                 } else {
-                                                                    setSelectedProojects(
+                                                                    setSelectedEngines(
                                                                         [
-                                                                            ...selectedProjects,
-                                                                            project,
+                                                                            ...selectedEngines,
+                                                                            engine,
                                                                         ],
                                                                     );
                                                                 }
@@ -664,11 +663,11 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                         <NameIDWrapper>
                                                             <Stack>
                                                                 {
-                                                                    project.project_name
+                                                                    engine.engine_name
                                                                 }
                                                             </Stack>
                                                             <Stack>
-                                                                {`Project ID: ${project.projectid}`}
+                                                                {`Engine ID: ${engine.engineid}`}
                                                             </Stack>
                                                         </NameIDWrapper>
                                                     </UserInfoTableCell>
@@ -676,17 +675,17 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                         <RadioGroup
                                                             row
                                                             defaultValue={
-                                                                project.permission
+                                                                engine.permission
                                                             }
                                                             onChange={(e) => {
                                                                 console.log(
                                                                     'Hit Update Permission fn and fix in state',
                                                                 );
-                                                                updateSelectedProjects(
+                                                                updateSelectedEngines(
                                                                     {
-                                                                        projectid:
-                                                                            project.projectid,
-                                                                        type: project.type,
+                                                                        engineid:
+                                                                            engine.engineid,
+                                                                        type: engine.type,
                                                                         permission:
                                                                             e
                                                                                 .target
@@ -711,18 +710,18 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                     </Table.Cell>
                                                     <Table.Cell size="medium">
                                                         {
-                                                            project.project_date_created
+                                                            engine.engine_date_created
                                                         }
                                                     </Table.Cell>
                                                     <Table.Cell size="medium">
                                                         <IconButton
                                                             onClick={() => {
-                                                                // set project
-                                                                setProjectToDelete(
-                                                                    project,
+                                                                // set engine
+                                                                setEngineToDelete(
+                                                                    engine,
                                                                 );
                                                                 // open modal
-                                                                setDeleteProjectModal(
+                                                                setDeleteEngineModal(
                                                                     true,
                                                                 );
                                                             }}
@@ -753,85 +752,81 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                 <Table.Row>
                                     <Table.Pagination
                                         rowsPerPageOptions={
-                                            paginationOptions.projectsPageCounts
+                                            paginationOptions.enginesPageCounts
                                         }
                                         onPageChange={(e, v) => {
-                                            setProjectsPage(v + 1);
-                                            setSelectedProojects([]);
+                                            setEnginesPage(v + 1);
+                                            setSelectedEngines([]);
                                         }}
-                                        page={projectsPage - 1}
+                                        page={enginesPage - 1}
                                         rowsPerPage={5}
-                                        count={projectCount}
+                                        count={enginesCount}
                                     />
                                 </Table.Row>
                             </Table.Footer>
-                        </StyledProjectTable>
+                        </StyledEngineTable>
                     </StyledTableContainer>
                 ) : (
-                    <StyledNonProjectsContainer>
+                    <StyledNonEnginesContainer>
                         <StyledTableTitleContainer>
                             <StyledTableTitleDiv>
-                                <Typography variant={'h6'}>projects</Typography>
+                                <Typography variant={'h6'}>engines</Typography>
                             </StyledTableTitleDiv>
                         </StyledTableTitleContainer>
-                        <StyledNonProjectsDiv>
+                        <StyledNonEnginesDiv>
                             <Typography variant={'body1'}>
-                                No projects present
+                                No engines present
                             </Typography>
                             <Button
                                 variant={'contained'}
                                 onClick={() => {
-                                    getProjects();
+                                    getEngines();
                                 }}
                             >
-                                Add Projects
+                                Add Engines
                             </Button>
-                        </StyledNonProjectsDiv>
-                    </StyledNonProjectsContainer>
+                        </StyledNonEnginesDiv>
+                    </StyledNonEnginesContainer>
                 )}
-            </StyledProjectInnerContent>
-            <Modal open={addProjectModal} maxWidth="lg">
-                <Modal.Title>Add App</Modal.Title>
+            </StyledEngineInnerContent>
+            <Modal open={addEngineModal} maxWidth="lg">
+                <Modal.Title>Add Engine</Modal.Title>
                 <Modal.Content sx={{ width: '50rem' }}>
                     <StyledModalContentText>
                         <Autocomplete
-                            label="Select App"
+                            label="Select Engine"
                             multiple={true}
-                            options={nonCredentialedProjects}
+                            options={nonCredentialedEngines}
                             limitTags={2}
                             getLimitTagsText={() =>
-                                ` +${
-                                    selectedNonCredentialedProjects.length - 2
-                                }`
+                                ` +${selectedNonCredentialedEngines.length - 2}`
                             }
-                            value={[...selectedNonCredentialedProjects]}
+                            value={[...selectedNonCredentialedEngines]}
                             getOptionLabel={(option: any) => {
-                                return `${option.project_name}`;
+                                return `${option.engine_name}`;
                             }}
                             isOptionEqualToValue={(option, value) => {
-                                return (
-                                    option.project_name === value.project_name
-                                );
+                                return option.engine_name === value.engine_name;
                             }}
                             onChange={(event, newValue: any) => {
-                                setSelectedNonCredentialedProjects([
+                                setSelectedNonCredentialedEngines([
                                     ...newValue,
                                 ]);
                             }}
                         />
 
-                        {selectedNonCredentialedProjects &&
-                            selectedNonCredentialedProjects.map(
-                                (project, idx) => {
+                        {selectedNonCredentialedEngines &&
+                            selectedNonCredentialedEngines.map(
+                                (engine, idx) => {
                                     const space =
-                                        project.project_name.indexOf(' ');
-                                    const initial = project.project_name
+                                        engine.engine_name.indexOf(' ');
+                                    const initial = engine.engine_name
                                         ? space > -1
-                                            ? `${project.project_name[0].toUpperCase()}${project.project_name[
+                                            ? `${engine.engine_name[0].toUpperCase()}${engine.engine_name[
                                                   space + 1
                                               ].toUpperCase()}`
-                                            : project.project_name[0].toUpperCase()
-                                        : project.project_id[0].toUpperCase();
+                                            : engine.engine_name[0].toUpperCase()
+                                        : engine.engine_id[0].toUpperCase();
                                     return (
                                         <Box
                                             key={idx}
@@ -874,7 +869,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                             height: '60px',
                                                             fontSize: '24px',
                                                             backgroundColor:
-                                                                project.color,
+                                                                engine.color,
                                                         }}
                                                     >
                                                         {initial}
@@ -884,7 +879,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                             <Card.Header
                                                 title={
                                                     <Typography variant="h5">
-                                                        {project.project_name}
+                                                        {engine.engine_name}
                                                     </Typography>
                                                 }
                                                 sx={{
@@ -906,10 +901,10 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                                     '14px',
                                                             }}
                                                         >
-                                                            {`Project ID: `}
+                                                            {`Engine ID: `}
                                                             <Chip
                                                                 label={
-                                                                    project.project_id
+                                                                    engine.engine_id
                                                                 }
                                                                 size="small"
                                                             />
@@ -926,12 +921,12 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                         }}
                                                         onClick={() => {
                                                             const filtered =
-                                                                selectedNonCredentialedProjects.filter(
+                                                                selectedNonCredentialedEngines.filter(
                                                                     (val) =>
-                                                                        val.project_id !==
-                                                                        project.project_id,
+                                                                        val.engine_id !==
+                                                                        engine.engine_id,
                                                                 );
-                                                            setSelectedNonCredentialedProjects(
+                                                            setSelectedNonCredentialedEngines(
                                                                 filtered,
                                                             );
                                                         }}
@@ -968,7 +963,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                 onChange={(e) => {
                                     const val = e.target.value;
                                     if (val) {
-                                        setAddProjectRole(val as SETTINGS_ROLE);
+                                        setAddEngineRole(val as SETTINGS_ROLE);
                                     }
                                 }}
                             >
@@ -1123,34 +1118,34 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                 <Modal.Actions>
                     <Button
                         variant="outlined"
-                        onClick={() => setAddProjectModal(false)}
+                        onClick={() => setAddEngineModal(false)}
                     >
                         Cancel
                     </Button>
                     <Button
                         variant={'contained'}
                         disabled={
-                            !addProjectRole ||
-                            selectedNonCredentialedProjects.length < 1
+                            !addEngineRole ||
+                            selectedNonCredentialedEngines.length < 1
                         }
                         onClick={() => {
-                            submitNonGroupProjects();
+                            submitNonGroupEngines();
                         }}
                     >
                         Save
                     </Button>
                 </Modal.Actions>
             </Modal>
-            <Modal open={deleteProjectModal} maxWidth="md">
+            <Modal open={deleteEngineModal} maxWidth="md">
                 <Modal.Title>
                     <Typography variant="h6">Are you sure?</Typography>
                 </Modal.Title>
                 <Modal.Content>
                     <Modal.ContentText>
-                        {projectToDelete && (
+                        {engineToDelete && (
                             <Typography variant="body1">
                                 This will remove{' '}
-                                <b>{projectToDelete.project_name}</b>
+                                <b>{engineToDelete.engine_name}</b>
                             </Typography>
                         )}
                     </Modal.ContentText>
@@ -1158,7 +1153,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                 <Modal.Actions>
                     <Button
                         variant="text"
-                        onClick={() => setDeleteProjectModal(false)}
+                        onClick={() => setDeleteEngineModal(false)}
                     >
                         Close
                     </Button>
@@ -1166,25 +1161,25 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                         color="error"
                         variant={'contained'}
                         onClick={() => {
-                            if (!projectToDelete) {
-                                console.error('No project to delete');
+                            if (!engineToDelete) {
+                                console.error('No engine to delete');
                             }
-                            deleteProject(projectToDelete);
+                            deleteEngine(engineToDelete);
                         }}
                     >
                         Confirm
                     </Button>
                 </Modal.Actions>
             </Modal>
-            <Modal open={deleteProjectsModal}>
+            <Modal open={deleteEnginesModal}>
                 <Modal.Title>Are you sure?</Modal.Title>
                 <Modal.Content>
-                    Would you like to delete all selected projects?
+                    Would you like to delete all selected engines?
                 </Modal.Content>
                 <Modal.Actions>
                     <Button
                         variant="text"
-                        onClick={() => setDeleteProjectsModal(false)}
+                        onClick={() => setDeleteEnginesModal(false)}
                     >
                         Close
                     </Button>
@@ -1192,13 +1187,13 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                         variant={'contained'}
                         color="error"
                         onClick={() => {
-                            deleteProjectPermissions();
+                            deleteEnginePermissions();
                         }}
                     >
                         Confirm
                     </Button>
                 </Modal.Actions>
             </Modal>
-        </StyledProjectContent>
+        </StyledEngineContent>
     );
 };
