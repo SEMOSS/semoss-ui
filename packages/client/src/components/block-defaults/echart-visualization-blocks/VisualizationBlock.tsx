@@ -85,12 +85,17 @@ export const VisualizationBlock: BlockComponent = observer(({ id }) => {
                 data.style.height.toString().replace('%', ''),
             );
             calculatedHeight = (calculatedHeight * heightGivenInPercent) / 100;
+            //return updated style
+            return {
+                ...data.style,
+                height: calculatedHeight + 'px',
+                width: calculatedWidth,
+            };
         }
-        console.log(calculatedHeight, 'calculated height');
         //return updated style
         return {
             ...data.style,
-            height: calculatedHeight + 'px',
+            height: calculatedHeight,
             width: calculatedWidth,
         };
     }, [data.style]);

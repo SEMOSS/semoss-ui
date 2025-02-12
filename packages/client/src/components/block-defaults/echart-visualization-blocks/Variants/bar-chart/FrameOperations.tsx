@@ -1,7 +1,7 @@
 import { useBlockSettings, useBlocksPixel, useFrameHeaders } from '@/hooks';
 import { Autocomplete, Button, Select, styled, TextField } from '@semoss/ui';
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { BAR_CHART_DATA } from '../../Visualization.constants';
 import { PathValue } from '@/types';
@@ -369,7 +369,9 @@ export const FrameOperations = observer(
                                 ? selectedValues['xAxis'] ?? []
                                 : []
                         }
-                        onChange={(e) => updateFields('xaxis', e)}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            updateFields('xaxis', e)
+                        }
                     >
                         <Select.Item key="-1" value="">
                             Select X Axis Field
@@ -396,7 +398,9 @@ export const FrameOperations = observer(
                                 ? selectedValues['yAxis'] ?? []
                                 : []
                         }
-                        onChange={(e) => updateFields('yaxis', e)}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            updateFields('yaxis', e)
+                        }
                     >
                         <Select.Item key="-1" value="">
                             Select Y Axis Field
