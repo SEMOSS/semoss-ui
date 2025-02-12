@@ -1,1292 +1,1881 @@
+import { newColor } from './ScatterPlotColorData';
+
 export const processData = (apiData, data) => {
-    const formatItem = (item) => ({
-        value: [item[1], item[2]], // x and y values
+    let fields = '',
+        label = '',
+        xAxis = '',
+        yAxis = '',
+        size = '',
+        color = '',
+        tooltip = '',
+        labelName = '',
+        xAxisName = '',
+        yAxisName = '';
+    if (data.option.hasOwnProperty('_state')) {
+        fields = data.option['_state']['fields'];
+        label = fields['label'];
+        xAxis = fields['XAxis'];
+        yAxis = fields['YAxis'];
+        size = fields['size'];
+        color = fields['color'];
+        tooltip = fields['tooltip'];
+    }
+    const formatItem = (label, xAxis, yAxis) => ({
+        value: [xAxis, yAxis], // x and y values
         label: {
-            formatter: item[0].toString(), // Use array[0] as the label
+            formatter: label.toString(), // Use array[0] as the label
         },
     });
 
-    function newColor(color) {
-        if (data.option['_state']['fields']['colorDataType'] == 'NUMBER') {
-            let colour = color != 'NaN' ? valueToHSL(color) : '#000000';
-            return colour;
-        }
-        if (data.option['_state']['fields']['colorDataType'] == 'STRING') {
-            let colour = color != 'NaN' ? stringToColor(color) : '000000';
-            return colour;
-        }
-    }
-    function valueToHSL(value) {
-        const hue = (parseInt(value, 10) * 37) % 360;
-        return `hsl(${hue}, 70%, 50%)`;
-    }
-
-    function stringToColor(str) {
-        let hash = 0;
-        for (let i = 0; i < str?.length; i++) {
-            hash = str?.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        let color = '#';
-        for (let i = 0; i < 3; i++) {
-            const value = (hash >> (i * 8)) & 0xff;
-            color += ('00' + value.toString(16)).slice(-2);
-        }
-        return color;
-    }
+    const formatDataItem = (label, xAxis, yAxis, size, color, tooltip) => ({
+        value: [xAxis, yAxis], // x and y values
+        label: {
+            formatter: label.toString(), // Use array[0] as the label
+        },
+        symbolSize: size, // Individual symbol size
+        itemStyle: {
+            color: newColor(data, color), //Individual color
+            colorValue: color,
+        },
+        tooltipValue: tooltip, //tooltip value
+    });
+    const formatData = (label, xAxis, yAxis, size, color) => ({
+        value: [xAxis, yAxis], // x and y values
+        label: {
+            formatter: label.toString(), // Use array[0] as the label
+        },
+        symbolSize: size, // Individual symbol size
+        itemStyle: {
+            color: newColor(data, color), //Individual color
+            colorValue: color,
+        },
+    });
+    const formatItemData = (label, xAxis, yAxis, color, tooltip) => ({
+        value: [xAxis, yAxis], // x and y values
+        label: {
+            formatter: label.toString(), // Use array[0] as the label
+        },
+        itemStyle: {
+            color: newColor(data, color), //Individual color
+            colorValue: color,
+        },
+        tooltipValue: tooltip, //tooltip value
+    });
+    const formatItems = (label, xAxis, yAxis, size, tooltip) => ({
+        value: [xAxis, yAxis], // x and y values
+        label: {
+            formatter: label.toString(), // Use array[0] as the label
+        },
+        symbolSize: size, // Individual symbol size
+        tooltipValue: tooltip, //tooltip value
+    });
+    const formatColorDataItem = (label, xAxis, yAxis, color) => ({
+        value: [xAxis, yAxis], // x and y values
+        label: {
+            formatter: label.toString(), // Use array[0] as the label
+        },
+        itemStyle: {
+            color: newColor(data, color), //Individual color
+            colorValue: color,
+        },
+    });
+    const formatSizeDataItem = (label, xAxis, yAxis, size) => ({
+        value: [xAxis, yAxis], // x and y values
+        label: {
+            formatter: label.toString(), // Use array[0] as the label
+        },
+        symbolSize: size, // Individual symbol size
+    });
+    const formatTooltipDataItem = (label, xAxis, yAxis, tooltip) => ({
+        value: [xAxis, yAxis], // x and y values
+        label: {
+            formatter: label.toString(), // Use array[0] as the label
+        },
+        tooltipValue: tooltip, //tooltip value
+    });
 
     if (apiData['values']) {
         if (data.option.hasOwnProperty('_state')) {
             if (data.option['_state'].hasOwnProperty('fields')) {
-                if (
-                    data.option['_state']['fields']['label'] &&
-                    data.option['_state']['fields']['XAxis'] &&
-                    data.option['_state']['fields']['YAxis'] &&
-                    data.option['_state']['fields']['size'] &&
-                    data.option['_state']['fields']['color'] &&
-                    data.option['_state']['fields']['tooltip']
-                ) {
+                if (label && xAxis && yAxis && size && color && tooltip) {
                     if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['color'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['tooltip']
+                        xAxis === yAxis &&
+                        xAxis === size &&
+                        xAxis === color &&
+                        xAxis === tooltip
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[1]), //Individual color
-                                colorValue: item[1],
-                            },
-                            tooltipValue: item[1], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[1],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['color'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['tooltip']
+                        xAxis == yAxis &&
+                        label == size &&
+                        label == color &&
+                        label == tooltip
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[2]), //Individual color
-                                colorValue: item[2],
-                            },
-                            tooltipValue: item[2], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[0],
+                                item[0],
+                                item[0],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['color'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['tooltip']
+                        xAxis == yAxis &&
+                        xAxis == size &&
+                        label == color &&
+                        label == tooltip
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[1]), //Individual color
-                                colorValue: item[1],
-                            },
-                            tooltipValue: item[2], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[0],
+                                item[0],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['color'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['tooltip']
+                        xAxis == yAxis &&
+                        xAxis == size &&
+                        label == color &&
+                        xAxis == tooltip
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[2]), //Individual color
-                                colorValue: item[2],
-                            },
-                            tooltipValue: item[1], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[0],
+                                item[1],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['color'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['tooltip']
+                        xAxis == yAxis &&
+                        label == size &&
+                        xAxis == color &&
+                        label == tooltip
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[1]), //Individual color
-                                colorValue: item[1],
-                            },
-                            tooltipValue: item[1], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[0],
+                                item[1],
+                                item[0],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['color'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['tooltip']
+                        xAxis == yAxis &&
+                        label == size &&
+                        label == color &&
+                        xAxis == tooltip
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[2]), //Individual color
-                                colorValue: item[2],
-                            },
-                            tooltipValue: item[1], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[0],
+                                item[0],
+                                item[1],
+                            ),
+                        }));
+                    }
+                    if (xAxis == yAxis && size == color && size == tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[2],
+                            ),
+                        }));
+                    }
+                    if (xAxis == yAxis && label == color && size == tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[0],
+                                item[2],
+                            ),
+                        }));
+                    }
+                    if (xAxis == yAxis && size == tooltip && xAxis == color) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[2],
+                            ),
+                        }));
+                    }
+                    if (xAxis == yAxis && size == color && xAxis == tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[1],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['color'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['tooltip']
+                        xAxis === size &&
+                        xAxis === color &&
+                        xAxis === tooltip
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[1]), //Individual color
-                                colorValue: item[1],
-                            },
-                            tooltipValue: item[2], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[1],
+                                item[1],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['color'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['tooltip']
+                        yAxis === size &&
+                        yAxis === color &&
+                        yAxis === tooltip
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[2]), //Individual color
-                                colorValue: item[2],
-                            },
-                            tooltipValue: item[2], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[2],
+                                item[2],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['tooltip'] &&
-                        data.option['_state']['fields']['label'] ==
-                            data.option['_state']['fields']['color']
+                        xAxis === size &&
+                        xAxis === color &&
+                        yAxis === tooltip
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[0]), //Individual color
-                                colorValue: item[0],
-                            },
-                            tooltipValue: item[1], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[1],
+                                item[2],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['tooltip'] &&
-                        data.option['_state']['fields']['label'] ==
-                            data.option['_state']['fields']['color']
+                        xAxis === size &&
+                        yAxis === color &&
+                        xAxis === tooltip
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[0]), //Individual color
-                                colorValue: item[0],
-                            },
-                            tooltipValue: item[2], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[2],
+                                item[1],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['tooltip'] &&
-                        data.option['_state']['fields']['label'] ==
-                            data.option['_state']['fields']['color']
+                        yAxis === size &&
+                        xAxis === color &&
+                        xAxis === tooltip
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[0]), //Individual color
-                                colorValue: item[0],
-                            },
-                            tooltipValue: item[2], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[1],
+                                item[1],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['tooltip'] &&
-                        data.option['_state']['fields']['label'] ==
-                            data.option['_state']['fields']['color']
+                        yAxis === size &&
+                        yAxis === color &&
+                        xAxis === tooltip
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[0]), //Individual color
-                                colorValue: item[0],
-                            },
-                            tooltipValue: item[1], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[2],
+                                item[1],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['label'] ==
-                            data.option['_state']['fields']['color']
+                        yAxis === size &&
+                        xAxis === color &&
+                        yAxis === tooltip
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[0]), //Individual color
-                                colorValue: item[0],
-                            },
-                            tooltipValue: item[3], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[1],
+                                item[2],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['label'] ==
-                            data.option['_state']['fields']['color']
+                        xAxis === size &&
+                        yAxis === color &&
+                        yAxis === tooltip
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[0]), //Individual color
-                                colorValue: item[0],
-                            },
-                            tooltipValue: item[3], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[2],
+                                item[2],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['tooltip'] &&
-                        data.option['_state']['fields']['label'] ==
-                            data.option['_state']['fields']['color']
+                        xAxis === size &&
+                        xAxis === tooltip &&
+                        label === color
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[0]), //Individual color
-                                colorValue: item[0],
-                            },
-                            tooltipValue: item[1], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[0],
+                                item[1],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['tooltip'] &&
-                        data.option['_state']['fields']['label'] ==
-                            data.option['_state']['fields']['color']
+                        yAxis === size &&
+                        yAxis === tooltip &&
+                        label === color
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[0]), //Individual color
-                                colorValue: item[0],
-                            },
-                            tooltipValue: item[2], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[0],
+                                item[2],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['color']
+                        xAxis === size &&
+                        yAxis === tooltip &&
+                        label === color
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[1]), //Individual color
-                                colorValue: item[1],
-                            },
-                            tooltipValue: item[3], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[0],
+                                item[2],
+                            ),
                         }));
                     }
                     if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['color']
+                        yAxis === size &&
+                        xAxis === tooltip &&
+                        label === color
                     ) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[2]), //Individual color
-                                colorValue: item[2],
-                            },
-                            tooltipValue: item[3], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[0],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && label == size && xAxis == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[3]), //Individual color
-                                colorValue: item[3],
-                            },
-                            tooltipValue: item[1], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[0],
+                                item[2],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && xAxis == size && xAxis == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[3]), //Individual color
-                                colorValue: item[3],
-                            },
-                            tooltipValue: item[2], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['color'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && label == color && xAxis == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[1]), //Individual color
-                                colorValue: item[1],
-                            },
-                            tooltipValue: item[1], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[0],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['color'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && label == size && label == color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[2]), //Individual color
-                                colorValue: item[2],
-                            },
-                            tooltipValue: item[2], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[0],
+                                item[0],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['color']
-                    ) {
+                    if (xAxis == yAxis && label == color && label == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[2]), //Individual color
-                                colorValue: item[2],
-                            },
-                            tooltipValue: item[3], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[0],
+                                item[0],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['color']
-                    ) {
+                    if (xAxis == yAxis && label == size && label == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[1]), //Individual color
-                                colorValue: item[1],
-                            },
-                            tooltipValue: item[3], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[0],
+                                item[2],
+                                item[0],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && xAxis == size && xAxis == color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[3]), //Individual color
-                                colorValue: item[3],
-                            },
-                            tooltipValue: item[2], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && xAxis == size && xAxis == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[3]), //Individual color
-                                colorValue: item[3],
-                            },
-                            tooltipValue: item[1], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['color'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && xAxis == color && xAxis == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[1]), //Individual color
-                                colorValue: item[1],
-                            },
-                            tooltipValue: item[2], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['color'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis === yAxis && xAxis === size && label === color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[2]), //Individual color
-                                colorValue: item[2],
-                            },
-                            tooltipValue: item[1], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[0],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['size'] ==
-                            data.option['_state']['fields']['tooltip'] &&
-                        data.option['_state']['fields']['label'] ==
-                            data.option['_state']['fields']['color']
-                    ) {
+                    if (size == color && xAxis == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[0]), //Individual color
-                                colorValue: item[0],
-                            },
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[3],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['label'] ==
-                        data.option['_state']['fields']['color']
-                    ) {
+                    if (size == color && yAxis == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[0]), //Individual color
-                                colorValue: item[0],
-                            },
-                            tooltipValue: item[4], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[3],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['size'] ==
-                        data.option['_state']['fields']['label']
-                    ) {
+                    if (size == color && yAxis == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[4]), //Individual color
-                                colorValue: item[4],
-                            },
-                            tooltipValue: item[5], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[3],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['tooltip'] ==
-                        data.option['_state']['fields']['label']
-                    ) {
+                    if (size == color && size == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[4]), //Individual color
-                                colorValue: item[4],
-                            },
-                            tooltipValue: item[5], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[3],
+                                item[3],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                        data.option['_state']['fields']['size']
-                    ) {
+                    if (size == tooltip && xAxis == color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[3]), //Individual color
-                                colorValue: item[3],
-                            },
-                            tooltipValue: item[4], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[1],
+                                item[3],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                        data.option['_state']['fields']['color']
-                    ) {
+                    if (size == tooltip && yAxis == color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[1]), //Individual color
-                                colorValue: item[1],
-                            },
-                            tooltipValue: item[4], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[2],
+                                item[3],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                        data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && xAxis == size) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[4]), //Individual color
-                                colorValue: item[4],
-                            },
-                            tooltipValue: item[1], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[3],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                        data.option['_state']['fields']['size']
-                    ) {
+                    if (xAxis == yAxis && xAxis == color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[3]), //Individual color
-                                colorValue: item[3],
-                            },
-                            tooltipValue: item[4], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[3],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                        data.option['_state']['fields']['color']
-                    ) {
+                    if (xAxis == yAxis && size == color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[2]), //Individual color
-                                colorValue: item[2],
-                            },
-                            tooltipValue: item[4], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[3],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                        data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && xAxis == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[4]), //Individual color
-                                colorValue: item[4],
-                            },
-                            tooltipValue: item[2], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['size'] ==
-                        data.option['_state']['fields']['color']
-                    ) {
+                    if (xAxis == yAxis && size == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[3]), //Individual color
-                                colorValue: item[3],
-                            },
-                            tooltipValue: item[4], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['size'] ==
-                        data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && label == size) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[4]), //Individual color
-                                colorValue: item[4],
-                            },
-                            tooltipValue: item[3], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[0],
+                                item[2],
+                                item[3],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['color'] ==
-                        data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && label == color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[4]), //Individual color
-                                colorValue: item[4],
-                            },
-                            tooltipValue: item[4], //tooltip value
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[0],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (xAxis == yAxis && label == tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[0],
+                            ),
+                        }));
+                    }
+                    if (xAxis == size && label == color) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[0],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (yAxis === size && label === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[0],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (xAxis === tooltip && label === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[0],
+                                item[1],
+                            ),
+                        }));
+                    }
+                    if (yAxis === tooltip && label === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[0],
+                                item[2],
+                            ),
+                        }));
+                    }
+                    if (xAxis === size && xAxis === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[1],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (yAxis === size && yAxis === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[2],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (xAxis === size && xAxis === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[3],
+                                item[1],
+                            ),
+                        }));
+                    }
+                    if (yAxis === size && yAxis === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[3],
+                                item[2],
+                            ),
+                        }));
+                    }
+                    if (xAxis === color && xAxis === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[1],
+                                item[1],
+                            ),
+                        }));
+                    }
+                    if (yAxis === color && yAxis === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[2],
+                                item[2],
+                            ),
+                        }));
+                    }
+                    if (xAxis === size && yAxis === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[2],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (yAxis === size && xAxis === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[1],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (xAxis === size && yAxis === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[3],
+                                item[2],
+                            ),
+                        }));
+                    }
+                    if (yAxis === size && xAxis === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[3],
+                                item[1],
+                            ),
+                        }));
+                    }
+                    if (xAxis === color && yAxis === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[1],
+                                item[2],
+                            ),
+                        }));
+                    }
+                    if (yAxis === color && xAxis === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[2],
+                                item[1],
+                            ),
+                        }));
+                    }
+                    if (size === tooltip && label === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[0],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (xAxis == yAxis) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[4],
+                            ),
+                        }));
+                    }
+                    if (label === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[0],
+                                item[4],
+                            ),
+                        }));
+                    }
+                    if (size === label) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[4],
+                                item[5],
+                            ),
+                        }));
+                    }
+                    if (tooltip === label) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[4],
+                                item[5],
+                            ),
+                        }));
+                    }
+                    if (xAxis === size) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[3],
+                                item[4],
+                            ),
+                        }));
+                    }
+                    if (xAxis === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[1],
+                                item[4],
+                            ),
+                        }));
+                    }
+                    if (xAxis === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[4],
+                                item[1],
+                            ),
+                        }));
+                    }
+                    if (yAxis === size) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[3],
+                                item[4],
+                            ),
+                        }));
+                    }
+                    if (yAxis === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[2],
+                                item[4],
+                            ),
+                        }));
+                    }
+                    if (yAxis === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[4],
+                                item[2],
+                            ),
+                        }));
+                    }
+                    if (size === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[3],
+                                item[4],
+                            ),
+                        }));
+                    }
+                    if (size === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[4],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (color === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[4],
+                                item[4],
+                            ),
                         }));
                     }
                     return apiData.values.map((item) => ({
-                        ...formatItem(item),
-                        symbolSize: item[3], // Individual symbol size
-                        itemStyle: {
-                            color: newColor(item[4]), //Individual color
-                            colorValue: item[4],
-                        },
-                        tooltipValue: item[5], //tooltip value
+                        ...formatDataItem(
+                            item[0],
+                            item[1],
+                            item[2],
+                            item[3],
+                            item[4],
+                            item[5],
+                        ),
                     }));
                 }
-                if (
-                    data.option['_state']['fields']['label'] &&
-                    data.option['_state']['fields']['XAxis'] &&
-                    data.option['_state']['fields']['YAxis'] &&
-                    data.option['_state']['fields']['size'] &&
-                    data.option['_state']['fields']['color']
-                ) {
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['color']
-                    ) {
+                if (label && xAxis && yAxis && size && color) {
+                    if (xAxis == yAxis && xAxis == size && label == color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[1]),
-                                colorValue: item[1],
-                            },
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[0],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['color']
-                    ) {
+                    if (xAxis == yAxis && xAxis == size && xAxis == color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[2]),
-                                colorValue: item[2],
-                            },
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['color']
-                    ) {
+                    if (xAxis == yAxis && xAxis == color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[2]),
-                                colorValue: item[2],
-                            },
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['color']
-                    ) {
+                    if (xAxis == yAxis && size == color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[1]),
-                                colorValue: item[1],
-                            },
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['label'] ==
-                            data.option['_state']['fields']['color']
-                    ) {
+                    if (xAxis == yAxis && label == color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[0]),
-                                colorValue: item[0],
-                            },
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[0],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['label'] ==
-                            data.option['_state']['fields']['color']
-                    ) {
+                    if (xAxis == yAxis && xAxis == size) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[0]),
-                                colorValue: item[0],
-                            },
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['label'] ==
-                        data.option['_state']['fields']['color']
-                    ) {
+                    if (xAxis === size && xAxis === color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[0]),
-                                colorValue: item[0],
-                            },
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['size'] ==
-                        data.option['_state']['fields']['color']
-                    ) {
+                    if (yAxis === size && yAxis === color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[3]),
-                                colorValue: item[3],
-                            },
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                        data.option['_state']['fields']['size']
-                    ) {
+                    if (xAxis === size && yAxis === color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[3]),
-                                colorValue: item[3],
-                            },
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                        data.option['_state']['fields']['size']
-                    ) {
+                    if (yAxis === size && xAxis === color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[3]),
-                                colorValue: item[3],
-                            },
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                        data.option['_state']['fields']['color']
-                    ) {
+                    if (xAxis === size && label === color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[1]),
-                                colorValue: item[1],
-                            },
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[0],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                        data.option['_state']['fields']['color']
-                    ) {
+                    if (yAxis === size && label === color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            itemStyle: {
-                                color: newColor(item[2]),
-                                colorValue: item[2],
-                            },
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[0],
+                            ),
+                        }));
+                    }
+                    if (xAxis == yAxis) {
+                        return apiData.values.map((item) => ({
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (label === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[0],
+                            ),
+                        }));
+                    }
+                    if (size === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (xAxis === size) {
+                        return apiData.values.map((item) => ({
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (yAxis === size) {
+                        return apiData.values.map((item) => ({
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (xAxis === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[1],
+                            ),
+                        }));
+                    }
+                    if (yAxis === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[2],
+                            ),
                         }));
                     }
                     return apiData.values.map((item) => ({
-                        ...formatItem(item),
-                        symbolSize: item[3], // Individual symbol size
-                        itemStyle: {
-                            color: newColor(item[4]),
-                            colorValue: item[4],
-                        },
+                        ...formatData(
+                            item[0],
+                            item[1],
+                            item[2],
+                            item[3],
+                            item[4],
+                        ),
                     }));
                 }
-                if (
-                    data.option['_state']['fields']['label'] &&
-                    data.option['_state']['fields']['XAxis'] &&
-                    data.option['_state']['fields']['YAxis'] &&
-                    data.option['_state']['fields']['color'] &&
-                    data.option['_state']['fields']['tooltip']
-                ) {
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['color'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['tooltip']
-                    ) {
+                if (label && xAxis && yAxis && color && tooltip) {
+                    if (xAxis == yAxis && xAxis == tooltip && label == color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            itemStyle: {
-                                color: newColor(item[1]),
-                                colorValue: item[1],
-                            },
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[0],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['color'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && xAxis == tooltip && xAxis == color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            itemStyle: {
-                                color: newColor(item[2]),
-                                colorValue: item[2],
-                            },
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['color'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && xAxis == color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            itemStyle: {
-                                color: newColor(item[1]),
-                                colorValue: item[1],
-                            },
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['color'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && label == color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            itemStyle: {
-                                color: newColor(item[2]),
-                                colorValue: item[2],
-                            },
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[0],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['tooltip'] &&
-                        data.option['_state']['fields']['label'] ==
-                            data.option['_state']['fields']['color']
-                    ) {
+                    if (xAxis == yAxis && xAxis == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            itemStyle: {
-                                color: newColor(item[0]),
-                                colorValue: item[0],
-                            },
-                            tooltipValue: item[1],
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['tooltip'] &&
-                        data.option['_state']['fields']['label'] ==
-                            data.option['_state']['fields']['color']
-                    ) {
+                    if (xAxis == color && xAxis == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            itemStyle: {
-                                color: newColor(item[0]),
-                                colorValue: item[0],
-                            },
-                            tooltipValue: item[2],
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['label'] ==
-                        data.option['_state']['fields']['color']
-                    ) {
+                    if (yAxis === color && yAxis === tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            itemStyle: {
-                                color: newColor(item[0]),
-                                colorValue: item[0],
-                            },
-                            tooltipValue: item[1],
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['color'] ==
-                        data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis === color && yAxis === tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            itemStyle: {
-                                color: newColor(item[3]),
-                                colorValue: item[3],
-                            },
-                            tooltipValue: item[3],
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                        data.option['_state']['fields']['color']
-                    ) {
+                    if (yAxis === color && xAxis === tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            itemStyle: {
-                                color: newColor(item[1]),
-                                colorValue: item[1],
-                            },
-                            tooltipValue: item[3],
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                        data.option['_state']['fields']['color']
-                    ) {
+                    if (xAxis === tooltip && label === color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            itemStyle: {
-                                color: newColor(item[2]),
-                                colorValue: item[2],
-                            },
-                            tooltipValue: item[3],
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[0],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                        data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (yAxis === tooltip && label === color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            itemStyle: {
-                                color: newColor(item[3]),
-                                colorValue: item[3],
-                            },
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[0],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                        data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            itemStyle: {
-                                color: newColor(item[3]),
-                                colorValue: item[3],
-                            },
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (label === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[0],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (color === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (xAxis === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (yAxis === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (xAxis === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[1],
+                            ),
+                        }));
+                    }
+                    if (yAxis === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatItemData(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[2],
+                            ),
                         }));
                     }
                     return apiData.values.map((item) => ({
-                        ...formatItem(item),
-                        itemStyle: {
-                            color: newColor(item[3]),
-                            colorValue: item[3],
-                        },
-                        tooltipValue: item[4],
+                        ...formatItemData(
+                            item[0],
+                            item[1],
+                            item[2],
+                            item[3],
+                            item[4],
+                        ),
                     }));
                 }
-                if (
-                    data.option['_state']['fields']['label'] &&
-                    data.option['_state']['fields']['XAxis'] &&
-                    data.option['_state']['fields']['YAxis'] &&
-                    data.option['_state']['fields']['size'] &&
-                    data.option['_state']['fields']['tooltip']
-                ) {
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['tooltip']
-                    ) {
+                if (label && xAxis && yAxis && size && tooltip) {
+                    if (xAxis == yAxis && xAxis == size && xAxis == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
+                            ...formatItems(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && xAxis == size) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
+                            ...formatItems(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && xAxis == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
+                            ...formatItems(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                            data.option['_state']['fields']['size'] &&
-                        data.option['_state']['fields']['XAxis'] ==
-                            data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis && size == tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
+                            ...formatItems(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['size'] ==
-                        data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis === size && xAxis === tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
-                            tooltipValue: item[3],
+                            ...formatItems(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                        data.option['_state']['fields']['size']
-                    ) {
+                    if (yAxis === size && yAxis === tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1], // Individual symbol size
-                            tooltipValue: item[3],
+                            ...formatItems(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                        data.option['_state']['fields']['size']
-                    ) {
+                    if (xAxis === size && yAxis === tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2], // Individual symbol size
-                            tooltipValue: item[3],
+                            ...formatItems(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[2],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                        data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (yAxis === size && xAxis === tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
+                            ...formatItems(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                        data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis == yAxis) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[3], // Individual symbol size
+                            ...formatItems(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (size === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatItems(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (xAxis === size) {
+                        return apiData.values.map((item) => ({
+                            ...formatItems(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (yAxis === size) {
+                        return apiData.values.map((item) => ({
+                            ...formatItems(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                                item[3],
+                            ),
+                        }));
+                    }
+                    if (xAxis === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatItems(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[1],
+                            ),
+                        }));
+                    }
+                    if (yAxis === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatItems(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[3],
+                                item[2],
+                            ),
                         }));
                     }
                     return apiData.values.map((item) => ({
-                        ...formatItem(item),
-                        symbolSize: item[3], // Individual symbol size
-                        tooltipValue: item[4],
+                        ...formatItems(
+                            item[0],
+                            item[1],
+                            item[2],
+                            item[4],
+                            item[4],
+                        ),
                     }));
                 }
-                if (
-                    data.option['_state']['fields']['label'] &&
-                    data.option['_state']['fields']['XAxis'] &&
-                    data.option['_state']['fields']['YAxis'] &&
-                    data.option['_state']['fields']['color']
-                ) {
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                        data.option['_state']['fields']['color']
-                    ) {
+                if (label && xAxis && yAxis && color) {
+                    if (xAxis === yAxis && xAxis === color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            itemStyle: {
-                                color: newColor(item[1]),
-                                colorValue: item[1],
-                            },
+                            ...formatColorDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                        data.option['_state']['fields']['color']
-                    ) {
+                    if (xAxis === yAxis && label === color) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            itemStyle: {
-                                color: newColor(item[2]),
-                                colorValue: item[2],
-                            },
+                            ...formatColorDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[0],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['label'] ==
-                        data.option['_state']['fields']['color']
-                    ) {
+                    if (xAxis === yAxis) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            itemStyle: {
-                                color: newColor(item[0]),
-                                colorValue: item[0],
-                            },
+                            ...formatColorDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                            ),
+                        }));
+                    }
+                    if (xAxis === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatColorDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                            ),
+                        }));
+                    }
+                    if (yAxis === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatColorDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                            ),
+                        }));
+                    }
+                    if (label === color) {
+                        return apiData.values.map((item) => ({
+                            ...formatColorDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[0],
+                            ),
                         }));
                     }
                     return apiData.values.map((item) => ({
-                        ...formatItem(item),
-                        itemStyle: {
-                            color: newColor(item[3]),
-                            colorValue: item[3],
-                        },
+                        ...formatColorDataItem(
+                            item[0],
+                            item[1],
+                            item[2],
+                            item[3],
+                        ),
                     }));
                 }
-                if (
-                    data.option['_state']['fields']['label'] &&
-                    data.option['_state']['fields']['XAxis'] &&
-                    data.option['_state']['fields']['YAxis'] &&
-                    data.option['_state']['fields']['size']
-                ) {
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                        data.option['_state']['fields']['size']
-                    ) {
+                if (label && xAxis && yAxis && size) {
+                    if (xAxis === yAxis && xAxis === size) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[1] != 'NaN' ? item[1] : 12, // Individual symbol size
+                            ...formatSizeDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                        data.option['_state']['fields']['size']
-                    ) {
+                    if (xAxis === yAxis) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
-                            symbolSize: item[2] != 'NaN' ? item[2] : 12, // Individual symbol size
+                            ...formatSizeDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                            ),
+                        }));
+                    }
+                    if (xAxis === size) {
+                        return apiData.values.map((item) => ({
+                            ...formatSizeDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                            ),
+                        }));
+                    }
+                    if (yAxis === size) {
+                        return apiData.values.map((item) => ({
+                            ...formatSizeDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                            ),
                         }));
                     }
                     return apiData.values.map((item) => ({
-                        ...formatItem(item),
-                        symbolSize: item[3], // Individual symbol size
+                        ...formatSizeDataItem(
+                            item[0],
+                            item[1],
+                            item[2],
+                            item[3],
+                        ),
                     }));
                 }
-                if (
-                    data.option['_state']['fields']['label'] &&
-                    data.option['_state']['fields']['XAxis'] &&
-                    data.option['_state']['fields']['YAxis'] &&
-                    data.option['_state']['fields']['tooltip']
-                ) {
-                    if (
-                        data.option['_state']['fields']['XAxis'] ==
-                        data.option['_state']['fields']['tooltip']
-                    ) {
+                if (label && xAxis && yAxis && tooltip) {
+                    if (xAxis === yAxis && xAxis === tooltip) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
+                            ...formatTooltipDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[1],
+                            ),
                         }));
                     }
-                    if (
-                        data.option['_state']['fields']['YAxis'] ==
-                        data.option['_state']['fields']['tooltip']
-                    ) {
+                    if (xAxis === yAxis) {
                         return apiData.values.map((item) => ({
-                            ...formatItem(item),
+                            ...formatTooltipDataItem(
+                                item[0],
+                                item[1],
+                                item[1],
+                                item[2],
+                            ),
+                        }));
+                    }
+                    if (xAxis === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatTooltipDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[1],
+                            ),
+                        }));
+                    }
+                    if (yAxis === tooltip) {
+                        return apiData.values.map((item) => ({
+                            ...formatTooltipDataItem(
+                                item[0],
+                                item[1],
+                                item[2],
+                                item[2],
+                            ),
                         }));
                     }
                     return apiData.values.map((item) => ({
-                        ...formatItem(item),
-                        tooltipValue: item[3],
+                        ...formatTooltipDataItem(
+                            item[0],
+                            item[1],
+                            item[2],
+                            item[3],
+                        ),
                     }));
                 }
             }
         }
-        return apiData.values.map((item) => ({
-            ...formatItem(item),
-        }));
+        if (label && xAxis && yAxis) {
+            {
+                if (xAxis === yAxis) {
+                    return apiData.values.map((item) => ({
+                        ...formatItem(item[0], item[1], item[1]),
+                    }));
+                }
+                return apiData.values.map((item) => ({
+                    ...formatItem(item[0], item[1], item[2]),
+                }));
+            }
+        }
     }
 };

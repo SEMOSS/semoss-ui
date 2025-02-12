@@ -5,6 +5,7 @@ import { BlockComponent } from '@/stores';
 import { styled } from '@mui/material';
 import { Bar } from './Variants/Bar';
 import { ScatterPlotBlock } from './Variants/ScatterPlot';
+import { useMemo } from 'react';
 
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',
@@ -45,6 +46,46 @@ export interface EchartVisualizationBlockDef {
 
 export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
+    //get the updated data style when data.style is changed
+    const updatedDataStyle = useMemo(() => {
+        let isEm =
+            data.style.height.toString().endsWith('em') &&
+            data.style.width.toString().endsWith('em');
+        let isPx =
+            data.style.height.toString().endsWith('px') &&
+            data.style.width.toString().endsWith('px');
+        if (isEm || isPx) return { ...data.style }; //if values mentioned in em or px, then return same style
+        //if any of style is different from % then, take that value and convert % value to px equivalent
+        let calculatedHeight =
+            data.style.height.toString().endsWith('em') ||
+            data.style.height.toString().endsWith('px')
+                ? data.style.height
+                : '350';
+        let calculatedWidth = data.style.width;
+        if (data.style.height.toString().endsWith('%')) {
+            let heightGivenInPercent = parseInt(
+                data.style.height.toString().replace('%', ''),
+            );
+            let height = parseInt(
+                data.style.height.toString().replace('%', ''),
+            );
+            let heightInPx =
+                (parseInt(calculatedHeight.toString()) * heightGivenInPercent) /
+                100;
+            calculatedHeight = heightInPx.toString();
+            return {
+                ...data.style,
+                height: calculatedHeight + 'px',
+                width: calculatedWidth,
+            };
+        }
+        //return updated style
+        return {
+            ...data.style,
+            height: calculatedHeight,
+            width: calculatedWidth,
+        };
+    }, [data.style]);
 
     if (!data.option) {
         return (
@@ -56,7 +97,10 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
     if (typeof data.option === 'string') {
         try {
             return (
-                <StyledNoDataContainer {...attrs}>
+                <StyledNoDataContainer
+                    {...attrs}
+                    style={{ ...updatedDataStyle }}
+                >
                     {data.variation === 'echart-bar-graph' && <Bar id={id} />}
                     {data.variation === 'echart-scatter-plots' && (
                         <ScatterPlotBlock id={id} />
@@ -72,7 +116,7 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
         }
     } else {
         return (
-            <StyledNoDataContainer {...attrs} style={{ ...data.style }}>
+            <StyledNoDataContainer {...attrs} style={{ ...updatedDataStyle }}>
                 {data.variation === 'echart-bar-graph' && <Bar id={id} />}
                 {data.variation === 'echart-scatter-plots' && (
                     <ScatterPlotBlock id={id} />

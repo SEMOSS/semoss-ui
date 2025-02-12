@@ -16,8 +16,8 @@ import { getSelector } from '../ScatterPlot.tsx/ScatterPlotSelector';
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',
 })<{ error?: boolean }>(({ error = false, theme }) => ({
-    height: 'inherit',
-    width: 'inherit',
+    height: '100%',
+    width: '100%',
     color: error ? theme.palette.error.main : 'unset',
 }));
 export interface EChartColumns {
@@ -128,7 +128,20 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
             }
             return (
                 <StyledNoDataContainer>
-                    <EChartsReact option={data.option} />
+                    <EChartsReact
+                        option={data.option}
+                        onChartReady={(chart) => {
+                            echartsLoaded(chart);
+                        }}
+                        style={{ height: 'inherit', width: 'inherit' }}
+                        onEvents={onClickChart}
+                    />
+                    <VizBlockContextMenu
+                        id={id}
+                        frame={frame}
+                        contextMenu={contextMenu}
+                        onClose={() => setContextMenu(null)}
+                    />
                 </StyledNoDataContainer>
             );
         } catch (e) {
@@ -156,7 +169,7 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                     onChartReady={(chart) => {
                         echartsLoaded(chart);
                     }}
-                    style={{ height: 'inherit' }}
+                    style={{ height: 'inherit', width: 'inherit' }}
                     onEvents={onClickChart}
                 />
                 <VizBlockContextMenu

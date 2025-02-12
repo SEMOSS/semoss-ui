@@ -816,6 +816,7 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                     tooltip: {
                         show: true,
                         trigger: 'item',
+                        position: 'bottom',
                     },
                     xAxis: {
                         name: '',

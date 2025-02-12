@@ -2,6 +2,7 @@ import { observer } from 'mobx-react-lite';
 import {
     Autocomplete,
     IconButton,
+    styled,
     TextField,
     useNotification,
 } from '@semoss/ui';
@@ -17,6 +18,9 @@ import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
 import { Paths } from '@/types';
 import { Block, BlockDef } from '@/stores';
+const StyledStack = styled(Stack)(() => ({
+    width: '100%',
+}));
 
 interface ScatterPlotBlockSettingsProps<D extends BlockDef = BlockDef> {
     /** Id of the block */
@@ -482,7 +486,7 @@ export const ScatterPlotBlockSettings = observer(
         const options = getFrames.status === 'SUCCESS' ? getFrames?.data : [];
 
         return (
-            <Stack>
+            <StyledStack>
                 <BaseSettingSection label="Frame">
                     <Autocomplete
                         fullWidth
@@ -515,7 +519,7 @@ export const ScatterPlotBlockSettings = observer(
                     </IconButton>
                 </BaseSettingSection>
 
-                <Stack>
+                <StyledStack>
                     <BaseSettingSection label="Label">
                         <Autocomplete
                             size="small"
@@ -684,8 +688,8 @@ export const ScatterPlotBlockSettings = observer(
                             )}
                         />
                     </BaseSettingSection>
-                </Stack>
-            </Stack>
+                </StyledStack>
+            </StyledStack>
         );
     },
 );
