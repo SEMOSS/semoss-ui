@@ -1,4 +1,4 @@
-import { Select, styled, Switch, TextField } from '@semoss/ui';
+import { Select, styled, Switch, TextField, ToggleTabsGroup } from '@semoss/ui';
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useBlockSettings } from '@/hooks';
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
@@ -35,7 +35,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     width: '100%',
 }));
 //Initial state of custom value labels as default values for managing and restoring
-const INITIAL_VALUE_LABELS = {
+const DEFAULT_VALUE_LABELS = {
     show: false,
     position: 'top',
     rotate: '0',
@@ -44,7 +44,11 @@ const INITIAL_VALUE_LABELS = {
     fontsize: '12',
     fontweight: 'normal',
     fontcolour: '#000000',
+    seriesIndex: '0',
 };
+
+//Customize value labels initial value
+const INITIAL_VALUE_LABELS = [];
 
 //Customize value labels component's key properties
 interface CustomizeValueLabelsKeys {
@@ -56,18 +60,20 @@ interface CustomizeValueLabelsKeys {
     fontsize: string;
     fontweight: string;
     fontcolour: string;
+    seriesIndex: number | string;
 }
 
 //having custom fields to customize charts text parts like: position, alignment, rotate, etc
 export const CustomizeValueLabels = observer(
     <D extends BlockDef = BlockDef>({ option, chartType, id, path }) => {
         const [fieldData, setFieldData] =
-            useState<CustomizeValueLabelsKeys>(INITIAL_VALUE_LABELS);
+            useState<CustomizeValueLabelsKeys[]>(INITIAL_VALUE_LABELS);
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
         const [value, setValue] = useState<
             typeof EchartVisualizationBlockConfig.data.option
         >(data.option);
+        const [selectedSeries, setSelectedSeries] = useState<string>('0');
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
         const [valueLabelsUpdated, setValueLabelsUpdated] = useState<
             'initial' | 'updated'
@@ -106,12 +112,19 @@ export const CustomizeValueLabels = observer(
         ];
         //for retaining the previously selected values, this useeffect will help
         useEffect(() => {
+            let option = typeof value === 'string' ? JSON.parse(value) : value;
             if (option['series']) {
-                const seriesChartData = option['series'].findIndex(
-                    (opt) => opt.type === chartType,
-                );
-                if (option['series'][seriesChartData]['label']) {
-                    let customizeLabelsOptions = {
+                let seriesData = getFilteredSeriesIndex();
+                let fieldsData = fieldData;
+                let fieldsDataToUpdate = seriesData.map((seriesChartData) => {
+                    if (
+                        option['series'][seriesChartData]['label'] === undefined
+                    )
+                        return {
+                            ...DEFAULT_VALUE_LABELS,
+                            seriesIndex: seriesChartData,
+                        };
+                    return {
                         show:
                             option['series'][seriesChartData]['label'].show ??
                             false,
@@ -136,9 +149,12 @@ export const CustomizeValueLabels = observer(
                         fontcolour:
                             option['series'][seriesChartData]['label'].color ??
                             '',
+                        seriesIndex: seriesChartData,
                     };
-                    setFieldData(customizeLabelsOptions);
-                }
+                });
+                setFieldData((prevFieldsData) => {
+                    return fieldsDataToUpdate;
+                });
             }
         }, []);
         // get the value of the input (wrapped in usememo because of path prop)
@@ -167,30 +183,42 @@ export const CustomizeValueLabels = observer(
             }
         }, [fieldData]);
         //handles different input fields by setting values to state, whenever a change happens
-        const updateFields = (fieldName, fieldValue, fieldType): void => {
+        const updateFields = (
+            fieldName,
+            fieldValue,
+            fieldType,
+            seriesIndex,
+        ): void => {
             if (valueLabelsUpdated === 'initial') {
                 setValueLabelsUpdated('updated');
             }
+            let fieldsData = fieldData;
+            fieldsData[seriesIndex] = {
+                ...fieldsData[seriesIndex],
+                [fieldName]:
+                    fieldType === 'switch'
+                        ? fieldValue.target.checked
+                        : fieldValue.target.value,
+            };
             setFieldData((prevData) => {
-                return {
-                    ...prevData,
-                    [fieldName]:
-                        fieldType === 'switch'
-                            ? fieldValue.target.checked
-                            : fieldValue.target.value,
-                };
+                return [...fieldsData];
             });
         };
         //update the chart data to state, when customize value labels fields section is updated to new value
-        function updateChartData(values: CustomizeValueLabelsKeys) {
+        function updateChartData(values: CustomizeValueLabelsKeys[]) {
             let option = typeof value === 'string' ? JSON.parse(value) : value;
             let optionUpdated = option;
             let customizeLabelOptionsData = {};
-
-            Object.keys(values).forEach((val) => {
-                customizeLabelOptionsData = {
-                    ...customizeLabelOptionsData,
-                    [val]: values[val],
+            values.forEach((item) => {
+                customizeLabelOptionsData[item.seriesIndex] = {
+                    show: item.show,
+                    position: item.position,
+                    rotate: item.rotate,
+                    alignment: item.alignment,
+                    font: item.font,
+                    fontsize: item.fontsize,
+                    fontweight: item.fontweight,
+                    fontcolour: item.fontcolour,
                 };
             });
             const customizeLabelOptionsValue = customizeLabelOptionsData;
@@ -200,8 +228,9 @@ export const CustomizeValueLabels = observer(
             filteredSeries.forEach((item) => {
                 const displayPositionIndex: number = item;
                 let showValueLabel: boolean =
-                    customizeLabelOptionsValue['show'] ?? false;
-                if (customizeLabelOptionsValue['show']) {
+                    customizeLabelOptionsValue[displayPositionIndex]['show'] ??
+                    false;
+                if (customizeLabelOptionsValue[displayPositionIndex]['show']) {
                     if (option['series'][displayPositionIndex]) {
                         option['series'][displayPositionIndex] = {
                             ...option['series'][displayPositionIndex],
@@ -214,7 +243,9 @@ export const CustomizeValueLabels = observer(
                         };
                     }
                 }
-                if (customizeLabelOptionsValue['position']) {
+                if (
+                    customizeLabelOptionsValue[displayPositionIndex]['position']
+                ) {
                     if (option['series'][displayPositionIndex]) {
                         option['series'][displayPositionIndex] = {
                             ...option['series'][displayPositionIndex],
@@ -224,12 +255,16 @@ export const CustomizeValueLabels = observer(
                                 ],
                                 ['show']: showValueLabel,
                                 ['position']:
-                                    customizeLabelOptionsValue['position'],
+                                    customizeLabelOptionsValue[
+                                        displayPositionIndex
+                                    ]['position'],
                             },
                         };
                     }
                 }
-                if (customizeLabelOptionsValue['rotate']) {
+                if (
+                    customizeLabelOptionsValue[displayPositionIndex]['rotate']
+                ) {
                     if (option['series'][displayPositionIndex]) {
                         option['series'][displayPositionIndex] = {
                             ...option['series'][displayPositionIndex],
@@ -239,12 +274,18 @@ export const CustomizeValueLabels = observer(
                                 ],
                                 ['show']: showValueLabel,
                                 ['rotate']:
-                                    customizeLabelOptionsValue['rotate'],
+                                    customizeLabelOptionsValue[
+                                        displayPositionIndex
+                                    ]['rotate'],
                             },
                         };
                     }
                 }
-                if (customizeLabelOptionsValue['alignment']) {
+                if (
+                    customizeLabelOptionsValue[displayPositionIndex][
+                        'alignment'
+                    ]
+                ) {
                     if (option['series'][displayPositionIndex]) {
                         option['series'][displayPositionIndex] = {
                             ...option['series'][displayPositionIndex],
@@ -254,12 +295,14 @@ export const CustomizeValueLabels = observer(
                                 ],
                                 ['show']: showValueLabel,
                                 ['align']:
-                                    customizeLabelOptionsValue['alignment'],
+                                    customizeLabelOptionsValue[
+                                        displayPositionIndex
+                                    ]['alignment'],
                             },
                         };
                     }
                 }
-                if (customizeLabelOptionsValue['font']) {
+                if (customizeLabelOptionsValue[displayPositionIndex]['font']) {
                     if (option['series'][displayPositionIndex]) {
                         option['series'][displayPositionIndex] = {
                             ...option['series'][displayPositionIndex],
@@ -269,12 +312,16 @@ export const CustomizeValueLabels = observer(
                                 ],
                                 ['show']: showValueLabel,
                                 ['fontFamily']:
-                                    customizeLabelOptionsValue['font'],
+                                    customizeLabelOptionsValue[
+                                        displayPositionIndex
+                                    ]['font'],
                             },
                         };
                     }
                 }
-                if (customizeLabelOptionsValue['fontsize']) {
+                if (
+                    customizeLabelOptionsValue[displayPositionIndex]['fontsize']
+                ) {
                     if (option['series'][displayPositionIndex]) {
                         option['series'][displayPositionIndex] = {
                             ...option['series'][displayPositionIndex],
@@ -285,13 +332,19 @@ export const CustomizeValueLabels = observer(
                                 ['show']: showValueLabel,
                                 ['fontSize']:
                                     Number(
-                                        customizeLabelOptionsValue['fontsize'],
+                                        customizeLabelOptionsValue[
+                                            displayPositionIndex
+                                        ]['fontsize'],
                                     ) || undefined,
                             },
                         };
                     }
                 }
-                if (customizeLabelOptionsValue['fontweight']) {
+                if (
+                    customizeLabelOptionsValue[displayPositionIndex][
+                        'fontweight'
+                    ]
+                ) {
                     if (option['series'][displayPositionIndex]) {
                         option['series'][displayPositionIndex] = {
                             ...option['series'][displayPositionIndex],
@@ -301,12 +354,18 @@ export const CustomizeValueLabels = observer(
                                 ],
                                 ['show']: showValueLabel,
                                 ['fontWeight']:
-                                    customizeLabelOptionsValue['fontweight'],
+                                    customizeLabelOptionsValue[
+                                        displayPositionIndex
+                                    ]['fontweight'],
                             },
                         };
                     }
                 }
-                if (customizeLabelOptionsValue['fontcolour']) {
+                if (
+                    customizeLabelOptionsValue[displayPositionIndex][
+                        'fontcolour'
+                    ]
+                ) {
                     if (option['series'][displayPositionIndex]) {
                         option['series'][displayPositionIndex] = {
                             ...option['series'][displayPositionIndex],
@@ -316,7 +375,9 @@ export const CustomizeValueLabels = observer(
                                 ],
                                 ['show']: showValueLabel,
                                 ['color']:
-                                    customizeLabelOptionsValue['fontcolour'],
+                                    customizeLabelOptionsValue[
+                                        displayPositionIndex
+                                    ]['fontcolour'],
                             },
                         };
                     }
@@ -328,7 +389,8 @@ export const CustomizeValueLabels = observer(
         //function to check and retrieve the indexes for bar chart type
         function getFilteredSeriesIndex() {
             let index = [];
-            let seriesAvailable = data.option['series'].filter((item) =>
+            let option = typeof value === 'string' ? JSON.parse(value) : value;
+            let seriesAvailable = option['series'].filter((item) =>
                 BAR_CHART_DATA.JSONVALUE.includes(item.type),
             );
             seriesAvailable.forEach((item, seriesIndex) => {
@@ -356,27 +418,67 @@ export const CustomizeValueLabels = observer(
             }, 300);
         }
 
+        const fieldSelectedSeries: CustomizeValueLabelsKeys =
+            fieldData[parseInt(selectedSeries)] || DEFAULT_VALUE_LABELS;
+
         const getAccordianDetails = (
             <StyledMainSection>
                 <StyledSubSection display="flex" justifyContent="space-between">
-                    <Switch
-                        checked={fieldData.show ?? undefined}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            updateFields('show', e, 'switch')
+                    <ToggleTabsGroup
+                        onChange={(e: React.SyntheticEvent, val: string) =>
+                            setSelectedSeries((prevSelectedSeries) => val)
                         }
-                        title="Show Value Labels"
-                    />
-                    <label htmlFor="show-value-labels">Show Value Labels</label>
+                        value={selectedSeries}
+                    >
+                        {fieldData.length &&
+                            fieldData.map((item, index) => {
+                                return (
+                                    <ToggleTabsGroup.Item
+                                        label={`Series ${index + 1}`}
+                                        value={`${index}`}
+                                        key={`series${index}`}
+                                    />
+                                );
+                            })}
+                        ;
+                    </ToggleTabsGroup>
                 </StyledSubSection>
-                {fieldData.show && (
+                {parseInt(selectedSeries) >= 0 && (
+                    <StyledSubSection
+                        display="flex"
+                        justifyContent="space-between"
+                    >
+                        <Switch
+                            checked={fieldSelectedSeries?.show ?? undefined}
+                            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                                updateFields(
+                                    'show',
+                                    e,
+                                    'switch',
+                                    selectedSeries,
+                                )
+                            }
+                            title="Show Value Labels"
+                        />
+                        <label htmlFor="show-value-labels">
+                            Show Value Labels
+                        </label>
+                    </StyledSubSection>
+                )}
+                {fieldSelectedSeries?.show && (
                     <>
                         <StyledSubSection>
                             <label htmlFor="label-position">Position</label>
                             <StyledSelect
                                 id="label-position"
-                                value={fieldData.position ?? ''}
+                                value={fieldSelectedSeries.position ?? ''}
                                 onChange={(e) =>
-                                    updateFields('position', e, 'select')
+                                    updateFields(
+                                        'position',
+                                        e,
+                                        'select',
+                                        selectedSeries,
+                                    )
                                 }
                             >
                                 <Select.Item key="-1" value="">
@@ -399,9 +501,14 @@ export const CustomizeValueLabels = observer(
                                 variant={'outlined'}
                                 type="number"
                                 id="rotate-label"
-                                value={fieldData.rotate ?? ''}
+                                value={fieldSelectedSeries.rotate ?? ''}
                                 onChange={(e) =>
-                                    updateFields('rotate', e, 'text')
+                                    updateFields(
+                                        'rotate',
+                                        e,
+                                        'text',
+                                        selectedSeries,
+                                    )
                                 }
                             ></StyledTextField>
                         </StyledSubSection>
@@ -411,9 +518,14 @@ export const CustomizeValueLabels = observer(
                             </label>
                             <StyledSelect
                                 id="alignment-label"
-                                value={fieldData.alignment ?? ''}
+                                value={fieldSelectedSeries.alignment ?? ''}
                                 onChange={(e) =>
-                                    updateFields('alignment', e, 'select')
+                                    updateFields(
+                                        'alignment',
+                                        e,
+                                        'select',
+                                        selectedSeries,
+                                    )
                                 }
                             >
                                 <Select.Item key="-1" value="">
@@ -432,9 +544,14 @@ export const CustomizeValueLabels = observer(
                             <label htmlFor="font">Select Font</label>
                             <StyledSelect
                                 id="font"
-                                value={fieldData.font ?? ''}
+                                value={fieldSelectedSeries.font ?? ''}
                                 onChange={(e) =>
-                                    updateFields('font', e, 'select')
+                                    updateFields(
+                                        'font',
+                                        e,
+                                        'select',
+                                        selectedSeries,
+                                    )
                                 }
                             >
                                 <Select.Item key="-1" value="">
@@ -458,9 +575,14 @@ export const CustomizeValueLabels = observer(
                                 type="number"
                                 id="font-size"
                                 // defaultValue={fieldData.fontsize}
-                                value={fieldData.fontsize}
+                                value={fieldSelectedSeries.fontsize}
                                 onChange={(e) =>
-                                    updateFields('fontsize', e, 'text')
+                                    updateFields(
+                                        'fontsize',
+                                        e,
+                                        'text',
+                                        selectedSeries,
+                                    )
                                 }
                             ></StyledTextField>
                         </StyledSubSection>
@@ -470,9 +592,14 @@ export const CustomizeValueLabels = observer(
                             </label>
                             <StyledSelect
                                 id="font-weight"
-                                value={fieldData.fontweight}
+                                value={fieldSelectedSeries.fontweight}
                                 onChange={(e) =>
-                                    updateFields('fontweight', e, 'select')
+                                    updateFields(
+                                        'fontweight',
+                                        e,
+                                        'select',
+                                        selectedSeries,
+                                    )
                                 }
                             >
                                 <Select.Item key="-1" value="">
@@ -495,9 +622,14 @@ export const CustomizeValueLabels = observer(
                                 variant={'outlined'}
                                 id="font-weight"
                                 type="color"
-                                value={fieldData.fontcolour}
+                                value={fieldSelectedSeries.fontcolour}
                                 onChange={(e) =>
-                                    updateFields('fontcolour', e, 'text')
+                                    updateFields(
+                                        'fontcolour',
+                                        e,
+                                        'text',
+                                        selectedSeries,
+                                    )
                                 }
                             ></StyledTextField>
                         </StyledSubSection>

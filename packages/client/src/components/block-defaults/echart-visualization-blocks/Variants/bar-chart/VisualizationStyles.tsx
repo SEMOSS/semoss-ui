@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Slider, styled, TextField } from '@semoss/ui';
+import { Slider, styled, TextField, ToggleTabsGroup } from '@semoss/ui';
 import { BAR_CHART_DATA } from '../../Visualization.constants';
 import { useBlockSettings } from '@/hooks';
 import { observer } from 'mobx-react-lite';
@@ -32,13 +32,15 @@ interface BarChartStyle {
     maxBarWidth: number;
     barColour: string;
 }
-//initial bar chart style
-const INITIAL_BAR_CHART_STYLES = {
+//custom bar chart style
+const CUSTOM_BAR_CHART_STYLES = {
     barwidth: 10,
     minBarWidth: 1,
     maxBarWidth: 45,
     barColour: '#5470c6',
 };
+//initial bar chart style
+const INITIAL_BAR_CHART_STYLES = [];
 
 //Updating bar chart specific styles like bar width and its colour
 export const VisualizationStyles = observer(
@@ -50,7 +52,7 @@ export const VisualizationStyles = observer(
         path,
     }) => {
         //style data for bar chart with initial styles
-        const [styleData, setStyleData] = useState<BarChartStyle>(
+        const [styleData, setStyleData] = useState<BarChartStyle[]>(
             INITIAL_BAR_CHART_STYLES,
         );
         //chart data
@@ -63,6 +65,7 @@ export const VisualizationStyles = observer(
         const [stylesUpdated, setStylesUpdated] = useState<
             'initial' | 'updated'
         >('initial');
+        const [selectedSeries, setSelectedSeries] = useState<string>('0');
         // get the value of the input (wrapped in usememo because of path prop)
         const computedValue = useMemo(() => {
             return computed(() => {
@@ -83,60 +86,37 @@ export const VisualizationStyles = observer(
             setValue(computedValue);
         }, [computedValue]);
 
+        //parsed variable of chart data
+        const parsedJson = useMemo(() => {
+            return typeof value === 'string' ? JSON.parse(value) : value;
+        }, [value]);
+
         //for retaining the previously selected values, this will help
         useEffect(() => {
-            let styleDataObj = {
-                barwidth: styleData.barwidth,
-                barColour: styleData.barColour,
-            };
-            if (option.hasOwnProperty('series') && option['series']) {
-                const barChartDataIndex = option['series'].findIndex((opt) =>
-                    BAR_CHART_DATA.JSONVALUE.includes(opt.type),
-                );
-                if (barChartDataIndex > -1) {
-                    if (
-                        option['series'][barChartDataIndex].hasOwnProperty(
-                            'barWidth',
-                        )
-                    ) {
-                        styleDataObj = {
-                            ...styleDataObj,
-                            ['barwidth']:
-                                option['series'][barChartDataIndex][
-                                    'barWidth'
-                                ] ?? 10,
-                        };
-                    }
-                    if (
-                        option['series'][barChartDataIndex].hasOwnProperty(
-                            'itemStyle',
-                        )
-                    ) {
-                        styleDataObj = {
-                            ...styleDataObj,
-                            ['barColour']: option['series'][barChartDataIndex][
-                                'itemStyle'
-                            ].hasOwnProperty('color')
-                                ? option['series'][barChartDataIndex][
-                                      'itemStyle'
-                                  ]['color']
-                                : styleData.barColour,
-                        };
-                    }
-                    //retaining the current component data by fetching data from json
-                    setStyleData((prevStyleObj) => {
-                        return {
-                            ...prevStyleObj,
-                            ...styleDataObj,
-                        };
-                    });
-                }
+            let barChartData = option['series'].filter((item) =>
+                BAR_CHART_DATA.JSONVALUE.includes(item.type),
+            );
+            if (barChartData.length) {
+                let barStyleData = [];
+                barChartData.forEach((item, index) => {
+                    barStyleData = [
+                        ...barStyleData,
+                        {
+                            barwidth: item?.['barWidth'] ?? 10,
+                            barColour:
+                                item['itemStyle']?.['color'] ?? '#5470c6',
+                            minBarWidth: 1,
+                            maxBarWidth: 45,
+                        },
+                    ];
+                });
+                setStyleData(barStyleData);
             }
         }, []);
         //whenever input values changed, the stules updated will get new value 'updated', so retaining the state from main state object will not call updatechartdata
         useEffect(() => {
             if (stylesUpdated === 'updated') {
-                updateChartData(styleData);
+                updateChartData(styleData, selectedSeries);
             }
         }, [styleData]);
         //this function will return filtered series index with type 'bar'
@@ -152,34 +132,39 @@ export const VisualizationStyles = observer(
         }
 
         //handles bar width changes and updates the value to state
-        function handleInputChange(event, newValue) {
+        function handleInputChange(event, newValue, seriesIndex = '0') {
             if (stylesUpdated === 'initial') setStylesUpdated('updated');
+
+            let currentStyle = styleData;
+            currentStyle[seriesIndex] = {
+                ...currentStyle[seriesIndex],
+                ['barwidth']: newValue,
+            };
             setStyleData((prevStyleData) => {
-                return {
-                    ...prevStyleData,
-                    ['barwidth']: newValue,
-                };
+                return [...currentStyle];
             });
         }
         //handles bar colour changes and updates the value to state
-        function handleBarColourChange(e) {
+        function handleBarColourChange(e, seriesIndex = '0') {
             if (stylesUpdated === 'initial') setStylesUpdated('updated');
-            setStyleData((prevStyle) => {
-                return {
-                    ...prevStyle,
-                    ['barColour']: e.target.value,
-                };
+
+            let currentStyle = styleData;
+            currentStyle[seriesIndex] = {
+                ...currentStyle[seriesIndex],
+                ['barColour']: e.target.value,
+            };
+            setStyleData((prevStyleData) => {
+                return [...currentStyle];
             });
         }
         //update bar chart data
-        function updateChartData(barData: BarChartStyle) {
-            const barWidth: number = barData['barwidth'];
-            const barColour: string = barData['barColour'];
+        function updateChartData(barData: BarChartStyle[], selectedSeries) {
             let option = typeof value === 'string' ? JSON.parse(value) : value;
-            if (option['series']) {
-                let seriesDataIndex: number[] = getFilteredSeriesIndex();
-                seriesDataIndex.forEach((index) => {
-                    const barChartDataIndex = index;
+            barData.forEach((barDataSegment, barDataIndex) => {
+                const barWidth: number = barDataSegment['barwidth'];
+                const barColour: string = barDataSegment['barColour'];
+                if (option['series']) {
+                    const barChartDataIndex = barDataIndex;
                     if (barChartDataIndex > -1) {
                         if (barWidth !== undefined && barWidth > 0) {
                             option['series'][barChartDataIndex] = {
@@ -210,8 +195,8 @@ export const VisualizationStyles = observer(
                             }
                         }
                     }
-                });
-            }
+                }
+            });
             runStateUpdateCustom(option);
         }
         //this function will update chart json to new option value
@@ -235,29 +220,59 @@ export const VisualizationStyles = observer(
         }
         //bar chart component content is rendered into a single variable
         const accordionDetails = (
-            <StyledBarStylesContainer>
-                <StyledBarStylesContainer>
-                    <label>Bar Width</label>
-                    <Slider
-                        value={styleData.barwidth}
-                        min={styleData.minBarWidth}
-                        max={styleData.maxBarWidth}
-                        valueLabelDisplay="auto"
-                        onChange={(event, newValue) =>
-                            handleInputChange(event, newValue)
-                        }
-                    />
-                </StyledBarStylesContainer>
-                <StyledBarStylesContainer>
-                    <label htmlFor="bar-colour">Change Bar Colours</label>
-                    <StyledTextField
-                        type={'color'}
-                        value={styleData.barColour}
-                        id="bar-colour"
-                        onChange={(e) => handleBarColourChange(e)}
-                    />
-                </StyledBarStylesContainer>
-            </StyledBarStylesContainer>
+            <>
+                <ToggleTabsGroup
+                    onChange={(e: React.SyntheticEvent, val: string) =>
+                        setSelectedSeries(val)
+                    }
+                    value={selectedSeries}
+                >
+                    {styleData.length &&
+                        styleData.map((item, index) => {
+                            return (
+                                <ToggleTabsGroup.Item
+                                    label={`Series ${index + 1}`}
+                                    value={`${index}`}
+                                    key={`series${index}`}
+                                />
+                            );
+                        })}
+                    ;
+                </ToggleTabsGroup>
+                {styleData[selectedSeries] && (
+                    <StyledBarStylesContainer>
+                        <StyledBarStylesContainer>
+                            <label>Bar Width</label>
+                            <Slider
+                                value={styleData[selectedSeries].barwidth}
+                                min={styleData[selectedSeries].minBarWidth}
+                                max={styleData[selectedSeries].maxBarWidth}
+                                valueLabelDisplay="auto"
+                                onChange={(event, newValue) =>
+                                    handleInputChange(
+                                        event,
+                                        newValue,
+                                        selectedSeries,
+                                    )
+                                }
+                            />
+                        </StyledBarStylesContainer>
+                        <StyledBarStylesContainer>
+                            <label htmlFor="bar-colour">
+                                Change Bar Colours
+                            </label>
+                            <StyledTextField
+                                type={'color'}
+                                value={styleData[selectedSeries].barColour}
+                                id="bar-colour"
+                                onChange={(e) =>
+                                    handleBarColourChange(e, selectedSeries)
+                                }
+                            />
+                        </StyledBarStylesContainer>
+                    </StyledBarStylesContainer>
+                )}
+            </>
         );
         return (
             <StyledBarStylesContainer width="100%">
