@@ -15,6 +15,7 @@ import {
 import { InfoOutlined } from '@mui/icons-material';
 import { EchartVisualizationBlockDef } from '../../EchartVisualizationBlock';
 import { ColorPalatteSettings } from '@/components/block-settings/shared/ColorPalatteSettings';
+import { ColorPickerSettings } from '@/components/block-settings/shared/ColorPickerSettings';
 
 interface UpgradedVisualizationToolProps {
     id: string;
@@ -95,7 +96,12 @@ export const UpgradedVisualizationTool =
                             <InfoOutlined />
                         </ListItemButton>
                         {selectedList === 'colourbyvalue' && (
-                            <p>Colour By Value Component</p>
+                            <ColorPickerSettings
+                                id={id}
+                                path="option"
+                                width={'100%'}
+                                height={'100%'}
+                            />
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
