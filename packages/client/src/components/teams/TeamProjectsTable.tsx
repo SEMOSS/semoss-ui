@@ -563,6 +563,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                     </Button>
                                 )}
                             </StyledDeleteSelectedContainer>
+
                             <StyledAddProjectsContainer>
                                 <Button
                                     variant={'contained'}
