@@ -5,7 +5,7 @@ import { BlockComponent } from '@/stores';
 import { styled } from '@mui/material';
 import { Bar } from './Variants/Bar';
 import { ScatterPlotBlock } from './Variants/ScatterPlot';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',
@@ -46,6 +46,31 @@ export interface EchartVisualizationBlockDef {
 
 export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
+    const elementRef = useRef<HTMLDivElement>(null);
+    console.log(elementRef, 'elementRef');
+    let parentElementHeight: number = 0;
+    let parentElementUnit: string =
+        elementRef.current?.parentElement?.style?.height
+            .toString()
+            .endsWith('em')
+            ? 'em'
+            : 'px';
+    //let parentElementUnit: string = elementRef.current?.parentElement?.style?.height.toString().endsWith('em') ? 'em' : elementRef.current?.parentElement?.style?.height.toString().endsWith('px') ? 'px' : '%';
+    if (parentElementUnit === 'em') {
+        parentElementHeight = parseInt(
+            elementRef.current?.parentElement?.style?.height
+                .toString()
+                .replace('em', ''),
+        );
+    }
+    // else if(parentElementUnit === '%'){
+    //     parentElementHeight = parseInt(elementRef.current?.parentElement?.clientHeight.toString().replace('%', ''));
+    // }
+    else {
+        parentElementHeight = parseInt(
+            elementRef.current?.parentElement?.style?.height,
+        );
+    }
     //get the updated data style when data.style is changed
     const updatedDataStyle = useMemo(() => {
         let isEm =
@@ -60,7 +85,7 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
             data.style.height.toString().endsWith('em') ||
             data.style.height.toString().endsWith('px')
                 ? data.style.height
-                : '350';
+                : parentElementHeight;
         let calculatedWidth = data.style.width;
         if (data.style.height.toString().endsWith('%')) {
             let heightGivenInPercent = parseInt(
@@ -69,13 +94,17 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
             let height = parseInt(
                 data.style.height.toString().replace('%', ''),
             );
-            let heightInPx =
-                (parseInt(calculatedHeight.toString()) * heightGivenInPercent) /
-                100;
-            calculatedHeight = heightInPx.toString();
+            console.log(
+                calculatedHeight,
+                'calculatedHeight',
+                heightGivenInPercent,
+                'heightGivenInPercent',
+            );
+            calculatedHeight = (calculatedHeight * heightGivenInPercent) / 100;
+            //return updated style
             return {
                 ...data.style,
-                height: calculatedHeight + 'px',
+                height: calculatedHeight + parentElementUnit,
                 width: calculatedWidth,
             };
         }
@@ -100,6 +129,7 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
                 <StyledNoDataContainer
                     {...attrs}
                     style={{ ...updatedDataStyle }}
+                    ref={elementRef}
                 >
                     {data.variation === 'echart-bar-graph' && <Bar id={id} />}
                     {data.variation === 'echart-scatter-plots' && (
@@ -116,7 +146,11 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
         }
     } else {
         return (
-            <StyledNoDataContainer {...attrs} style={{ ...updatedDataStyle }}>
+            <StyledNoDataContainer
+                {...attrs}
+                style={{ ...updatedDataStyle }}
+                ref={elementRef}
+            >
                 {data.variation === 'echart-bar-graph' && <Bar id={id} />}
                 {data.variation === 'echart-scatter-plots' && (
                     <ScatterPlotBlock id={id} />

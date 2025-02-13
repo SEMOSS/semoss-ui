@@ -46,7 +46,6 @@ export function useFrame(
 
     // get the frameKey, this will change whenever the data does
     const frameKey = state.getFrameKey(frame);
-    console.log(frame, 'frameName');
 
     /**
      * Filter the frame
@@ -59,7 +58,6 @@ export function useFrame(
                 setIsLoading(true);
 
                 // filter the frame
-                console.log(frame, 'frameName');
                 const response = await state.runSideEffect(
                     `META | ${frame} | ${filterPixel};`,
                 );
