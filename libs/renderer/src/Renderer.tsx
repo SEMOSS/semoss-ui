@@ -3,7 +3,13 @@ import { observer } from "mobx-react-lite";
 import { useSearchParams, useLocation } from "react-router-dom";
 
 import { runPixel, useInsight } from "@semoss/sdk";
-import { Button, Notification, Typography, useNotification } from "@semoss/ui";
+import {
+    Button,
+    LoadingScreen,
+    Notification,
+    Typography,
+    useNotification,
+} from "@semoss/ui";
 
 import { Blocks, RendererEngine } from "./components/blocks";
 import { DefaultBlocks } from "./components/block-defaults";
@@ -166,12 +172,16 @@ export const Renderer = observer((props: RendererProps) => {
     }, [state, appId, isAuthorized]);
 
     if (!isAuthorized) {
-        return <>SDK NOT LOGGED IN</>;
+        return (
+            <Typography variant="h6">Authorizing Renderer SDK...</Typography>
+        );
+        // return <LoadingScreen.Trigger message="Authorizing Renderer SDK"/>;
     }
 
     if (!stateStore || (isLoading && !preview)) {
         if (!preview) {
-            return <Typography variant="h6">Show Loading...</Typography>;
+            return <Typography variant="h6">Initializing Blocks...</Typography>;
+            // return <LoadingScreen.Trigger message="Initializing Blocks"/>;
         } else {
             return <Typography variant="h6">Fetching Preview...</Typography>;
         }

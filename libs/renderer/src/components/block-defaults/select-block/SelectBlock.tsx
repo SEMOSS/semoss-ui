@@ -11,7 +11,13 @@ import {
     Stack,
     TextField,
     Typography,
+    styled,
 } from "@mui/material";
+import { CircularProgress, InputAdornment } from "@semoss/ui";
+
+const StyledLoading = styled(CircularProgress)(({ theme }) => ({
+    color: theme.palette.divider,
+}));
 
 export interface SelectBlockDef extends BlockDef<"select"> {
     widget: "select";
@@ -148,13 +154,19 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
                     variant="outlined"
                     required={data.required}
                     disabled={data?.disabled || data?.loading}
-                    helperText={
-                        data?.loading ? (
-                            <LinearProgress color="primary" />
-                        ) : (
-                            data?.hint
-                        )
-                    }
+                    InputProps={{
+                        ...params.InputProps,
+                        startAdornment: (
+                            <InputAdornment position="end">
+                                {data?.loading ? (
+                                    <StyledLoading size={20} />
+                                ) : (
+                                    <></>
+                                )}
+                            </InputAdornment>
+                        ),
+                    }}
+                    helperText={data?.hint}
                 />
             )}
             {...attrs}
