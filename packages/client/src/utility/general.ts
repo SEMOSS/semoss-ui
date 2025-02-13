@@ -142,7 +142,7 @@ export const getSDKSnippet = (
 import ai_server
 
 # pass in your access and secret keys to authenticate
-server_connection=ai_server.RESTServer(
+server_connection=ai_server.ServerClient(
     access_key="${
         accessKey ? accessKey : '<your access key>'
     }",             # example: "d0033d40-ea83-4083-96ce-17a01451f831"
