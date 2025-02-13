@@ -18,14 +18,6 @@ interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
-    /**
-     * Height of ColorPalatte
-     */
-    height: string;
-    /**
-     * Width of ColorPalatte
-     */
-    width: string;
 }
 const varr = '"Test variable"';
 
@@ -46,7 +38,7 @@ const StyledChartContainer = styled(SketchPicker)({
     },
 });
 export const ColorPickerSettings = observer<ColorPalatteSettingProps>(
-    ({ id, path, height, width }) => {
+    ({ id, path }) => {
         const [colors, setColors] = useState([]);
         const [showPopover, setShowPopover] =
             useState<HTMLButtonElement | null>(null);

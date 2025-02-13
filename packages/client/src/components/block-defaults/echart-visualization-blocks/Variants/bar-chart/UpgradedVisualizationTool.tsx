@@ -62,12 +62,7 @@ export const UpgradedVisualizationTool =
                                 width={'100%'}
                                 style={{ padding: '0.95%', width: 'inherit' }}
                             >
-                                <ColorPalatteSettings
-                                    id={id}
-                                    path="option"
-                                    width={'100%'}
-                                    height={'100%'}
-                                />
+                                <ColorPalatteSettings id={id} path="option" />
                             </Stack>
                         )}
                     </StyledListItem>
@@ -96,12 +91,7 @@ export const UpgradedVisualizationTool =
                             <InfoOutlined />
                         </ListItemButton>
                         {selectedList === 'colourbyvalue' && (
-                            <ColorPickerSettings
-                                id={id}
-                                path="option"
-                                width={'100%'}
-                                height={'100%'}
-                            />
+                            <ColorPickerSettings id={id} path="option" />
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>

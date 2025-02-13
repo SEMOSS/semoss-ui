@@ -25,6 +25,7 @@ import {
     Delete,
     Edit,
     FormatColorFill,
+    Label,
     Padding,
 } from '@mui/icons-material';
 
@@ -37,27 +38,7 @@ interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
-    /**
-     * Height of ColorPalatte
-     */
-    height: string;
-    /**
-     * Width of ColorPalatte
-     */
-    width: string;
 }
-const varr = '"Test variable"';
-// const StyledChartContainer = styled(SketchPicker)(
-//     '.custom-sketch-picker .flexbox-fix:nth-child(4)::before',
-//     () => ({
-//         content: varr,
-//         display: 'block',
-//         fontSize:'12px',
-//         fontWeight: 'bold',
-//         color: 'black',
-//         padding: '5px',
-//     }),
-// );
 const StyledButton = styled(Button)(({}) => ({
     justifyContent: 'center',
     display: 'flex',
@@ -76,6 +57,7 @@ const StyledPicker = styled(SketchPicker)(({}) => ({
     width: '300px !important',
     // padding: '10px 10px 0px',
 }));
+const StyledEmptyContainer = styled('div')(() => ({}));
 const StyledColorPalete = styled('div')(() => ({
     display: 'inline-block',
     borderRadius: '10px',
@@ -146,16 +128,6 @@ const StyledButtonAdd = styled(Button)(() => ({
     cursor: 'pointer',
     marginRight: '20px',
 }));
-const StyledInputContainer = styled('div')(() => ({
-    display: 'flex',
-    flexDirection: 'column',
-    marginBottom: '12px',
-}));
-const StyledInputField = styled(TextField)(() => ({
-    display: 'flex',
-    flexDirection: 'column',
-    marginBottom: '12px',
-}));
 const StyledButtonContainer = styled('div')(() => ({
     display: 'flex',
     justifyContent: 'flex-end',
@@ -166,22 +138,14 @@ const StyledPaleteLabel = styled('div')(() => ({
     fontSize: '14px',
     fontWeight: 'normal',
 }));
-const StyledChartContainer = styled(SketchPicker)({
-    '.custom-sketch-picker .flexbox-fix::before': {
-        marginLeft: '32px',
-        content: varr,
-        display: 'block',
-        fontSize: '12px',
-        fontWeight: 'bold',
-        color: 'black',
-    },
-    '.custom-sketch-picker .flexbox-fix:last-child div': {
-        width: '24px !important' /* Set the width of the color circle */,
-        height: '24px !important' /* Set the height of the color circle */,
-        borderRadius: '50% !important' /* Makes only preset colors circular */,
-        overflow: 'hidden',
-    },
-});
+const StyledLabel = styled('label')(() => ({
+    marginLeft: '20px',
+    display: 'flex',
+}));
+const StyledColorSpan = styled('span')(() => ({ marginLeft: '20px' }));
+const StyledEmptyContainer2 = styled('div')(() => ({}));
+const StyledEmptyContainer3 = styled('div')(() => ({}));
+
 const ColorPalette = ({ colors, label, onClick }) => {
     return (
         <StyledColorPalete onClick={() => onClick(colors)}>
@@ -202,7 +166,7 @@ const ColorPalette = ({ colors, label, onClick }) => {
     );
 };
 export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
-    ({ id, path, height, width }) => {
+    ({ id, path }) => {
         const palettes = [
             {
                 label: 'Option 1',
@@ -321,8 +285,6 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
             },
         ];
         const [colors, setColors] = useState([]);
-        const [showPopover, setShowPopover] =
-            useState<HTMLButtonElement | null>(null);
         const [showCustomPopover, setShowCustomPopover] =
             useState<HTMLButtonElement | null>(null);
         const [color, setColor] = useState('#000000');
@@ -347,14 +309,12 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                 if (!data) {
                     return '';
                 }
-
                 const v = getValueByPath(data, pathVal);
                 if (typeof v === 'undefined') {
                     return '';
                 } else if (typeof v === 'string') {
                     return v;
                 }
-
                 return JSON.stringify(v, null, 2);
             });
         }, [data, pathVal]).get();
@@ -362,7 +322,6 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
         function handleClick(event: MouseEvent<HTMLButtonElement>) {
             if (showCustomPopover) setShowCustomPopover(null);
             else setShowCustomPopover(event.currentTarget);
-
             console.log(
                 document
                     .getElementById('elm-track-add-custom')
@@ -379,7 +338,6 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
             console.log(popoverPosition, 'popoverPosition');
         }
         function handleClose() {
-            setShowPopover(null);
             setColorPalatteFlag(false);
             setShowCustomPopover(null);
         }
@@ -415,9 +373,6 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
         }, [computedValue]);
         useEffect(() => {
             let option = typeof value === 'string' ? JSON.parse(value) : value;
-            // let customPath = 'series.0.itemStyle.color';
-            // let customPathArray = customPath.split('.');
-
             if (
                 option.hasOwnProperty('series') &&
                 option['series'].length > 0
@@ -447,20 +402,23 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                 }
             }, 300);
         }
-        const open = Boolean(showPopover);
-        const open1 = Boolean(showCustomPopover);
+        const open = Boolean(showCustomPopover);
         let customPopoverPositionLeft = popoverPosition.left;
         let customPopoverPositionTop = popoverPosition.top;
         return (
-            <div>
+            <StyledEmptyContainer>
                 <Popover
                     id={id}
-                    open={open1}
+                    open={open}
                     anchorEl={showCustomPopover}
                     onClose={handleClose}
+                    // anchorOrigin={{
+                    //     vertical: customPopoverPositionTop,
+                    //     horizontal: customPopoverPositionLeft,
+                    // }}
                     anchorOrigin={{
-                        vertical: customPopoverPositionTop,
-                        horizontal: 8000,
+                        vertical: 'bottom',
+                        horizontal: 'left',
                     }}
                     // anchorPosition={{ top: -200, left: -450 }}
                 >
@@ -491,12 +449,9 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                         </StyledModel>
                     </StyledOverlay>
                     <hr style={{ marginBottom: '20px' }}></hr>
-                    <label
-                        htmlFor="outlined-adornment-password"
-                        style={{ marginLeft: '20px', display: 'flex' }}
-                    >
+                    <StyledLabel htmlFor="outlined-adornment-password">
                         Name
-                    </label>
+                    </StyledLabel>
                     <TextField
                         style={{
                             marginLeft: '20px',
@@ -508,12 +463,9 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                         }}
                         label="Enter Palette Name"
                     ></TextField>
-                    <label
-                        htmlFor="outlined-adornment-password"
-                        style={{ marginLeft: '20px' }}
-                    >
+                    <StyledLabel htmlFor="outlined-adornment-password">
                         Select Colour
-                    </label>
+                    </StyledLabel>
                     <OutlinedInput
                         id="outlined-adornment-password"
                         placeholder="Enter Hex code or Pick Color"
@@ -545,7 +497,7 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                         label="Select Colour"
                     />
                     {colorPalatteFlag && (
-                        <div>
+                        <StyledEmptyContainer>
                             <StyledPicker
                                 onChange={(newColor) => {
                                     setColor(newColor.hex);
@@ -569,11 +521,11 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                                     Add Color
                                 </StyledButtonAdd>
                             </StyledButtonContainer>
-                        </div>
+                        </StyledEmptyContainer>
                     )}
                     <div>
                         {colors.map((color, index) => (
-                            <div key={index}>
+                            <StyledEmptyContainer key={index}>
                                 <div
                                     style={{
                                         display: 'flex',
@@ -592,12 +544,9 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                                             width: '33px',
                                             height: '33px',
                                             borderRadius: '20%',
-                                            //display: 'block',
                                         }}
                                     ></div>
-                                    <span style={{ marginLeft: '20px' }}>
-                                        {color}
-                                    </span>
+                                    <StyledColorSpan>{color}</StyledColorSpan>
                                     <IconButton
                                         style={{
                                             marginLeft: 'auto',
@@ -641,7 +590,7 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                                     </IconButton>
                                 </div>
                                 {index === editIndex && (
-                                    <div>
+                                    <StyledEmptyContainer>
                                         <StyledPicker
                                             onChange={(newColor) => {
                                                 setEditColor(newColor.hex);
@@ -669,9 +618,9 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                                                 Edit Color
                                             </StyledButtonAdd>
                                         </StyledButtonContainer>
-                                    </div>
+                                    </StyledEmptyContainer>
                                 )}
-                            </div>
+                            </StyledEmptyContainer>
                         ))}
                     </div>
                     <StyledButtonContainer>
@@ -683,7 +632,6 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                         </StyledButtonAdd>
                     </StyledButtonContainer>
                 </Popover>
-                <hr></hr>
                 {/* <div id='elm-track-add-custom'>&nbsp;</div> */}
                 <div style={{ display: 'flex', justifyContent: 'center' }}>
                     <StyledButton
@@ -707,9 +655,8 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                         />
                     ))}
                 </div>
-
                 {/* </div> */}
-            </div>
+            </StyledEmptyContainer>
         );
     },
 );
