@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, Suspense, lazy } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
+import { Button, Stack, styled, Typography } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings, useBlocks } from '@/hooks';
 import { Block, BlockDef, QueryState } from '@/stores';
@@ -10,6 +11,15 @@ import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.con
 
 // Reduce Initial Bundle
 const Editor = lazy(() => import('@monaco-editor/react'));
+
+const StyledErrorContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    width: '100%',
+    color: theme.palette.error.main,
+}));
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**
@@ -31,6 +41,11 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
      * Width of the editor
      */
     width?: string;
+
+    /**
+     * Callback to run after save
+     */
+    callback?: () => void;
 }
 
 export const JsonSettings = observer(
@@ -39,12 +54,15 @@ export const JsonSettings = observer(
         path,
         height = '100%',
         width = '100%',
+        callback = null,
     }: JsonSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
         const { state, notebook } = useBlocks();
 
         // track the value
         const [value, setValue] = useState('');
+        const [validJson, setValidJson] = useState(true);
+        const [errors, setErrors] = useState<string[]>([]);
 
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -73,37 +91,46 @@ export const JsonSettings = observer(
         }, [computedValue, data]);
 
         /**
+         * Sync the data on save
+         */
+        const handleJsonSave = () => {
+            if (validJson) {
+                // clear out he old timeout
+                if (timeoutRef.current) {
+                    clearTimeout(timeoutRef.current);
+                    timeoutRef.current = null;
+                }
+
+                timeoutRef.current = setTimeout(() => {
+                    try {
+                        // try to parse object, otherwise set string
+                        try {
+                            const specJson = JSON.parse(value);
+                            setData(
+                                path,
+                                specJson as PathValue<D['data'], typeof path>,
+                            );
+                        } catch (e) {
+                            setData(
+                                path,
+                                value as PathValue<D['data'], typeof path>,
+                            );
+                        }
+
+                        callback && callback();
+                    } catch (e) {
+                        console.log(e);
+                    }
+                }, 300);
+            }
+        };
+
+        /**
          * Sync the data on change
          */
         const onChange = (value: string) => {
             // set the value
             setValue(value);
-
-            // clear out he old timeout
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-                timeoutRef.current = null;
-            }
-
-            timeoutRef.current = setTimeout(() => {
-                try {
-                    // try to parse object, otherwise set string
-                    try {
-                        const specJson = JSON.parse(value);
-                        setData(
-                            path,
-                            specJson as PathValue<D['data'], typeof path>,
-                        );
-                    } catch (e) {
-                        setData(
-                            path,
-                            value as PathValue<D['data'], typeof path>,
-                        );
-                    }
-                } catch (e) {
-                    console.log(e);
-                }
-            }, 300);
         };
 
         const handleMount = (editor, monaco) => {
@@ -246,28 +273,65 @@ export const JsonSettings = observer(
             });
         };
 
+        const handleEditorValidation = (markers) => {
+            // model markers
+            const errorSet = [];
+            markers.forEach((marker) => errorSet.push(marker.message));
+            setErrors(errorSet);
+            setValidJson(!markers?.length);
+        };
+
         return (
             <Suspense fallback={<>...</>}>
-                <Editor
-                    height={height}
-                    width={width}
-                    value={value}
-                    language="json"
-                    options={{
-                        lineNumbers: 'on',
-                        readOnly: false,
-                        minimap: { enabled: false },
-                        automaticLayout: true,
-                        scrollBeyondLastLine: false,
-                        lineHeight: 19,
-                        overviewRulerBorder: false,
-                    }}
-                    onChange={(e) => {
-                        // sync the data on change
-                        onChange(e);
-                    }}
-                    onMount={handleMount}
-                />
+                <Stack
+                    flex={1}
+                    direction="column"
+                    justifyContent="end"
+                    alignItems="flex-end"
+                    spacing={1}
+                >
+                    <Editor
+                        height={height}
+                        width={width}
+                        value={value}
+                        language="json"
+                        options={{
+                            lineNumbers: 'on',
+                            readOnly: false,
+                            minimap: { enabled: false },
+                            automaticLayout: true,
+                            scrollBeyondLastLine: false,
+                            lineHeight: 19,
+                            overviewRulerBorder: false,
+                        }}
+                        onChange={(e) => {
+                            // sync the data on change
+                            onChange(e);
+                        }}
+                        onMount={handleMount}
+                        onValidate={handleEditorValidation}
+                    />
+                    {!!errors.length && (
+                        <StyledErrorContainer>
+                            {errors.map((error, id) => (
+                                <Typography
+                                    key={id}
+                                    variant="caption"
+                                    color="error"
+                                >
+                                    {error}
+                                </Typography>
+                            ))}
+                        </StyledErrorContainer>
+                    )}
+                    <Button
+                        disabled={!validJson}
+                        variant="text"
+                        onClick={handleJsonSave}
+                    >
+                        Save
+                    </Button>
+                </Stack>
             </Suspense>
         );
     },

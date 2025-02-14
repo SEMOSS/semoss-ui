@@ -195,6 +195,18 @@ export const ENGINE_ROUTES: {
                 restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
             },
             {
+                name: 'Files',
+                path: 'files',
+                component: EngineFilePage,
+                restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
+            },
+            {
+                name: 'Q&A',
+                path: 'qa',
+                component: EngineQAPage,
+                restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
+            },
+            {
                 name: 'Access Control',
                 path: 'access-control',
                 component: EngineSettingsPage,
@@ -204,18 +216,6 @@ export const ENGINE_ROUTES: {
                 name: 'SMSS',
                 path: 'smss',
                 component: EngineSmssPage,
-                restrict: ['OWNER'],
-            },
-            {
-                name: 'Files',
-                path: 'files',
-                component: EngineFilePage,
-                restrict: ['OWNER', 'EDIT'],
-            },
-            {
-                name: 'Q&A',
-                path: 'qa',
-                component: EngineQAPage,
                 restrict: ['OWNER'],
             },
         ],
