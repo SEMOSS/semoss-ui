@@ -16,7 +16,7 @@ import {
 
 import { useRootStore, useAPI } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
-import { TeamTileCard } from './GenericTeamCard';
+import { TeamTileCard } from '@/components/teams/TeamTileCard';
 import { AddTeamModal } from '@/components/teams/AddTeamModal';
 import { Add } from '@mui/icons-material';
 
