@@ -1,4 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { MenuList, MenuItem } from '@mui/material';
+import { MoreVert, DeleteRounded } from '@mui/icons-material';
+
 import {
     Card,
     Chip,
@@ -9,12 +12,10 @@ import {
     Modal,
     useNotification,
     Button,
+    Popover,
 } from '@semoss/ui';
 
-import { MoreVert, DeleteRounded } from '@mui/icons-material';
 import { useRootStore } from '@/hooks';
-
-import { useMemo } from 'react';
 
 const colors = [
     'rgba(111, 212, 203, 1)',
@@ -89,6 +90,15 @@ const StyledChipContainer = styled('div')({
     paddingTop: '8px',
 });
 
+const StyledMoreVert = styled(MoreVert, {
+    shouldForwardProp: (prop) => prop !== 'hover',
+})<{
+    /** Track if the page header is stuck */
+    hover: boolean;
+}>(({ theme, hover }) => ({
+    color: hover ? theme.palette.divider : theme.palette.text.secondary,
+}));
+
 interface TeamCardProps {
     /** ID of team */
     id: string;
@@ -106,30 +116,34 @@ interface TeamCardProps {
     dispatch: (val: { type: string; field: string; value: unknown[] }) => void;
 
     /** databases to update */
-    databases;
+    teams;
 
     onClick?: (value: string) => void;
 }
 
 export const TeamTileCard = (props: TeamCardProps) => {
-    const { id, description, tag, dispatch, databases, onClick } = props;
+    const { id, description, type, tag, dispatch, teams, onClick } = props;
+
+    const { monolithStore } = useRootStore();
+    const notification = useNotification();
+
     const [hover, setHover] = React.useState(false);
     const [deleteModal, setDeleteModal] = React.useState(false);
-    const { monolithStore } = useRootStore();
+    const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(
+        null,
+    );
 
     const randomColor = useMemo(() => {
         return colors[Math.floor(Math.random() * colors.length)];
     }, []);
 
-    const notification = useNotification();
-
     const deleteGroup = () => {
         try {
-            monolithStore.deleteTeam(id, description);
+            monolithStore.deleteTeam(id, type);
             dispatch({
                 type: 'field',
-                field: 'databases',
-                value: [...databases.filter((val) => val.id !== id)],
+                field: 'teams',
+                value: [...teams.filter((val) => val.id !== id)],
             });
             notification.add({
                 color: 'success',
@@ -145,6 +159,19 @@ export const TeamTileCard = (props: TeamCardProps) => {
             setDeleteModal(false);
         }
     };
+
+    const handleClick = (event) => {
+        event.stopPropagation();
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = (event) => {
+        event.stopPropagation();
+        setAnchorEl(null);
+    };
+
+    const open = Boolean(anchorEl);
+    const popoverId = open ? 'simple-popover' : undefined;
 
     return (
         <React.Fragment>
@@ -215,21 +242,52 @@ export const TeamTileCard = (props: TeamCardProps) => {
                 </Card.Content>
                 <StyledActionContainer>
                     <IconButton
-                        onMouseOver={() => {
-                            setHover(true);
-                        }}
-                        onMouseLeave={() => {
-                            setHover(false);
-                        }}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteModal(true);
-                        }}
+                        size={'small'}
+                        color="default"
+                        onClick={handleClick}
                     >
-                        <DeleteRounded
-                            sx={{ color: hover ? 'red' : 'black' }}
-                        />
+                        <StyledMoreVert hover={hover} />
                     </IconButton>
+                    <Popover
+                        id={popoverId}
+                        open={open}
+                        anchorEl={anchorEl}
+                        onClose={handleClose}
+                        anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'right',
+                        }}
+                        // transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    >
+                        <MenuList>
+                            <MenuItem
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeleteModal(true);
+                                    handleClose(e);
+                                }}
+                                onMouseOver={() => {
+                                    setHover(true);
+                                }}
+                                onMouseLeave={() => {
+                                    setHover(false);
+                                }}
+                            >
+                                <Stack direction="row" gap={2}>
+                                    <DeleteRounded
+                                        sx={{ color: hover ? 'red' : 'black' }}
+                                    />
+                                    <div
+                                        style={{
+                                            color: hover ? 'red' : 'black',
+                                        }}
+                                    >
+                                        Delete
+                                    </div>
+                                </Stack>
+                            </MenuItem>
+                        </MenuList>
+                    </Popover>
                 </StyledActionContainer>
             </StyledTileCard>
             <Modal open={deleteModal}>
@@ -240,7 +298,13 @@ export const TeamTileCard = (props: TeamCardProps) => {
                     <Button onClick={() => setDeleteModal(false)}>
                         Cancel
                     </Button>
-                    <Button onClick={() => deleteGroup()}>Confirm</Button>
+                    <Button
+                        variant="contained"
+                        color={'error'}
+                        onClick={() => deleteGroup()}
+                    >
+                        Confirm
+                    </Button>
                 </Modal.Actions>
             </Modal>
         </React.Fragment>
