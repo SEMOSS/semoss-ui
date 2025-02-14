@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled, Card, Tooltip, Stack, Typography } from '@semoss/ui';
-import * as BLOCK_IMAGES from '@/assets/img/block';
+import * as BLOCK_IMAGES from '@/assets/block';
 
 import { ActionMessages } from '@/stores';
 import { useBlocks, useDesigner } from '@/hooks';
