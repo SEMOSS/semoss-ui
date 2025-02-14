@@ -2,26 +2,34 @@ import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { ActionMessages, useBlocks } from '@semoss/renderer';
-import { styled, Card, Tooltip, Typography } from '@semoss/ui';
+import { styled, Card, Tooltip, Stack, Typography } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
 import { DesignerMenuItem } from '../blocks-workspace/menus/menu-types';
+import { BlockCardContent, blockCardWidth } from './BlockMenuCardContent';
+import * as BLOCK_IMAGES from '@/assets/blocks';
 
-const StyledCard = styled(Card)(({ theme }) => ({
-    height: '100%',
-    width: '100%',
-    padding: theme.spacing(2),
+const StyledCard = styled(Card)({
     cursor: 'grab',
-    border: `1px solid rgba(0, 0, 0, 0.23)`,
+    border: `1px solid rgba(0, 0, 0, 0.12)`,
     //TODO: styled needs to be updated to match the theme
-    borderRadius: '12px', //  theme.shape.borderRadiusLg
+    borderRadius: '6px',
     justifyContent: 'center',
+});
+
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    color: theme.palette.secondary.dark,
+    width: blockCardWidth,
+    userSelect: 'none',
 }));
 
 export interface AddBlocksMenuItemProps {
     /** Item that can be dragged onto the block */
     item: DesignerMenuItem;
 }
+
+const getValidImage = (imageA: string, imageB: string): string | undefined =>
+    BLOCK_IMAGES[imageA] || BLOCK_IMAGES[imageB] || undefined;
 
 /**
  * Individaul block that can be dragged onto the UI
@@ -34,6 +42,12 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
     // track if it is this one that is dragging
     const [local, setLocal] = useState(false);
 
+    // track if this is being hovered
+    const [hovered, setHovered] = useState<boolean>(false);
+
+    // MATCH CASE WITH IMAGE_MAP
+    let BLOCK_IMAGE_KEY = item.name.replace(/ /g, '_').toUpperCase();
+
     /**
      * Handle the mousedown on the widget.
      */
@@ -45,7 +59,10 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 return true;
             },
             item.name,
-            item.image,
+            getValidImage(
+                `${BLOCK_IMAGE_KEY}_HOVER`,
+                `${BLOCK_IMAGE_KEY}_ACTIVE`,
+            ),
         );
 
         // clear the hovered
@@ -138,17 +155,48 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         };
     }, [designer.drag.active, local, handleDocumentMouseUp]);
 
+    console.log(item);
+
     return (
-        <StyledCard onMouseDown={handleMouseDown}>
-            <Tooltip title={`Add ${item.name}`}>
-                {item.image ? (
-                    <img draggable={false} src={item.image} />
-                ) : (
-                    <Typography align="center" variant={'body2'}>
-                        {item.name}
-                    </Typography>
-                )}
-            </Tooltip>
-        </StyledCard>
+        <Stack
+            spacing={1}
+            alignItems="center"
+            height="100%"
+            justifyContent="flex-end"
+        >
+            <StyledTypography
+                variant="body2"
+                fontWeight="medium"
+                align="center"
+            >
+                {item.name}
+            </StyledTypography>
+            <StyledCard onMouseDown={handleMouseDown}>
+                <Tooltip
+                    title={item.helperText ?? item.name}
+                    arrow
+                    placement="bottom"
+                    onOpen={() => setHovered(true)}
+                    onClose={() => setHovered(false)}
+                >
+                    <div>
+                        <BlockCardContent
+                            image={
+                                hovered
+                                    ? getValidImage(
+                                          `${BLOCK_IMAGE_KEY}_HOVER`,
+                                          `${BLOCK_IMAGE_KEY}_ACTIVE`,
+                                      )
+                                    : getValidImage(
+                                          `${BLOCK_IMAGE_KEY}_ACTIVE`,
+                                          `${BLOCK_IMAGE_KEY}_HOVER`,
+                                      )
+                            }
+                            name={item.name}
+                        />
+                    </div>
+                </Tooltip>
+            </StyledCard>
+        </Stack>
     );
 });

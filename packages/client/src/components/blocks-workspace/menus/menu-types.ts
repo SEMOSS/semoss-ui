@@ -17,10 +17,14 @@ export interface DesignerMenuItem {
         | 'Line Chart'
         | 'Pie Chart'
         | 'Scatter Plot'
-        | 'Theme';
+        | 'Theme'
+        | 'Miscellaneous';
 
     /** Name of the item to show in the tooltip */
     name: string;
+
+    /** helper text to show for block */
+    helperText: string;
 
     /** JSON of the block */
     json: BlockJSON;
