@@ -109,7 +109,12 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
     const notification = useNotification();
     const { monolithStore, configStore } = useRootStore();
 
-    const { handleSubmit, control } = useForm<NewTeamForm>({
+    const {
+        handleSubmit,
+        control,
+        reset,
+        formState: { isValid },
+    } = useForm<NewTeamForm>({
         defaultValues: {
             TEAM_NAME: '',
             TEAM_DESCRIPTION: '',
@@ -158,6 +163,9 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                     type: data.TEAM_TYPE,
                     description: data.TEAM_DESCRIPTION,
                 });
+
+                reset();
+
                 notification.add({
                     color: 'success',
                     message: 'Successfully added group',
@@ -193,18 +201,21 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                             <Controller
                                 name={'TEAM_TYPE'}
                                 control={control}
-                                rules={{ required: false }}
-                                render={({ field }) => {
+                                rules={{
+                                    required: 'Please select a team type',
+                                }}
+                                render={({ field, fieldState: { error } }) => {
                                     return (
                                         <Select
-                                            label="Type"
+                                            label={'Type*'}
+                                            fullWidth={true}
+                                            error={!!error}
                                             value={
                                                 field.value ? field.value : ''
                                             }
                                             onChange={(value) =>
                                                 field.onChange(value)
                                             }
-                                            fullWidth={true}
                                         >
                                             {loginTypes
                                                 .sort()
@@ -300,7 +311,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                             <Controller
                                 name={'TEAM_DESCRIPTION'}
                                 control={control}
-                                rules={{ required: true }}
+                                rules={{}}
                                 render={({ field }) => {
                                     return (
                                         <TextField
@@ -334,7 +345,11 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" variant={'contained'}>
+                        <Button
+                            type="submit"
+                            variant={'contained'}
+                            disabled={!isValid}
+                        >
                             Add
                         </Button>
                     </Stack>
