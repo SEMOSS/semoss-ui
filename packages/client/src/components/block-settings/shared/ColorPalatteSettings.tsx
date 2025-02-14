@@ -21,6 +21,7 @@ import { SketchPicker } from 'react-color';
 import { Input, OutlinedInput } from '@mui/material';
 import EChartsReact from 'echarts-for-react';
 import {
+    Check,
     Close,
     Delete,
     Edit,
@@ -44,18 +45,19 @@ const StyledButton = styled(Button)(({}) => ({
     display: 'flex',
 }));
 const StyledCloseButton = styled(Button)(({}) => ({
-    titile: 'Add Custom Color Palette',
     width: '10%',
     variant: 'outlined',
     color: 'primary',
     justifyContent: 'flex-end',
 }));
 const StyledPicker = styled(SketchPicker)(({}) => ({
-    marginTop: '20px',
-    marginLeft: '20px',
-    // display: 'flex',
+    // marginTop: '20px',
+    // marginLeft: '20px',
     width: '300px !important',
-    // padding: '10px 10px 0px',
+    margin: '10px',
+    boxShadow:
+        'rgba(0, 0, 0, 0) 0px 0px 0px 1px, rgba(0, 0, 0, 0) 0px 8px 16px !important',
+    padding: '0px !important',
 }));
 const StyledEmptyContainer = styled('div')(() => ({}));
 const StyledColorPalete = styled('div')(() => ({
@@ -116,7 +118,7 @@ const StyledButtonClose = styled(Button)(() => ({
     fontSize: '14px',
     cursor: 'pointer',
     color: '#666',
-    marginRight: '20px',
+    marginRight: '5px',
 }));
 const StyledButtonAdd = styled(Button)(() => ({
     background: '#007AFF',
@@ -126,12 +128,18 @@ const StyledButtonAdd = styled(Button)(() => ({
     border: 'none',
     borderRadius: '8px',
     cursor: 'pointer',
-    marginRight: '20px',
+    marginRight: '5px',
+}));
+const StyledCheck = styled(Button)(() => ({
+    fontSize: '20px',
+    // padding: '6px 16px',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
 }));
 const StyledButtonContainer = styled('div')(() => ({
     display: 'flex',
     justifyContent: 'flex-end',
-    marginTop: '10px',
 }));
 const StyledPaleteLabel = styled('div')(() => ({
     marginTop: '5px',
@@ -343,6 +351,7 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
         }
         function handleEdit(index) {
             setEditIndex(index);
+            setColorPalatteFlag(false);
         }
         function handleColorPicker() {
             setColorPalatteFlag(!colorPalatteFlag);
@@ -497,7 +506,15 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                         label="Select Colour"
                     />
                     {colorPalatteFlag && (
-                        <StyledEmptyContainer>
+                        <StyledEmptyContainer
+                            style={{
+                                display: 'inline-block',
+                                borderRadius: '10px',
+                                border: '1px solid #ddd',
+                                margin: '20px',
+                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                            }}
+                        >
                             <StyledPicker
                                 onChange={(newColor) => {
                                     setColor(newColor.hex);
@@ -505,21 +522,46 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                                 // onChangeComplete={() =>{setColorPalatteFlag(false)}}
                                 color={color}
                             ></StyledPicker>
+                            <hr></hr>
                             <StyledButtonContainer>
                                 <StyledButtonClose
                                     onClick={() => {
                                         setColorPalatteFlag(false);
                                     }}
                                 >
-                                    Close
+                                    <Icon
+                                        sx={{
+                                            width: '20px',
+                                            height: '20px',
+                                            mt: '6px',
+                                            marginRight: '12px',
+                                            fontSize: '12px',
+                                            fontWeight: 'bold',
+                                            color: 'rgba(0, 0, 0, .5)',
+                                        }}
+                                    >
+                                        <Close />
+                                    </Icon>
                                 </StyledButtonClose>
-                                <StyledButtonAdd
+                                <StyledCheck
                                     onClick={() => {
                                         addColorRow(color);
                                     }}
                                 >
-                                    Add Color
-                                </StyledButtonAdd>
+                                    <Icon
+                                        sx={{
+                                            width: '20px',
+                                            height: '20px',
+                                            mt: '6px',
+                                            marginRight: '12px',
+                                            fontSize: '20px',
+                                            fontWeight: 'bold',
+                                            color: 'rgba(0, 81, 255, 0.5)',
+                                        }}
+                                    >
+                                        <Check />
+                                    </Icon>
+                                </StyledCheck>
                             </StyledButtonContainer>
                         </StyledEmptyContainer>
                     )}
@@ -590,7 +632,16 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                                     </IconButton>
                                 </div>
                                 {index === editIndex && (
-                                    <StyledEmptyContainer>
+                                    <StyledEmptyContainer
+                                        style={{
+                                            display: 'inline-block',
+                                            borderRadius: '10px',
+                                            border: '1px solid #ddd',
+                                            margin: '20px',
+                                            boxShadow:
+                                                '0 2px 5px rgba(0,0,0,0.2)',
+                                        }}
+                                    >
                                         <StyledPicker
                                             onChange={(newColor) => {
                                                 setEditColor(newColor.hex);
@@ -598,15 +649,33 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                                             // onChangeComplete={() =>{setColorPalatteFlag(false)}}
                                             color={editColor}
                                         ></StyledPicker>
-                                        <StyledButtonContainer>
+                                        <hr></hr>
+                                        <StyledButtonContainer
+                                            style={{
+                                                marginTop: '5px',
+                                                marginBottom: '10px',
+                                            }}
+                                        >
                                             <StyledButtonClose
                                                 onClick={() => {
                                                     setColorPalatteFlag(false);
                                                 }}
                                             >
-                                                Close
+                                                <Icon
+                                                    sx={{
+                                                        width: '20px',
+                                                        height: '20px',
+                                                        mt: '6px',
+                                                        marginRight: '12px',
+                                                        fontSize: '12px',
+                                                        fontWeight: 'bold',
+                                                        color: 'rgba(0, 0, 0, .5)',
+                                                    }}
+                                                >
+                                                    <Close />
+                                                </Icon>
                                             </StyledButtonClose>
-                                            <StyledButtonAdd
+                                            <StyledCheck
                                                 onClick={() => {
                                                     editColorRow(
                                                         editColor,
@@ -615,15 +684,29 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                                                     setEditIndex(-1);
                                                 }}
                                             >
-                                                Edit Color
-                                            </StyledButtonAdd>
+                                                <Icon
+                                                    sx={{
+                                                        width: '20px',
+                                                        height: '20px',
+                                                        mt: '6px',
+                                                        marginRight: '12px',
+                                                        fontSize: '20px',
+                                                        fontWeight: 'bold',
+                                                        color: 'rgba(0, 81, 255, 0.5)',
+                                                    }}
+                                                >
+                                                    <Check />
+                                                </Icon>
+                                            </StyledCheck>
                                         </StyledButtonContainer>
                                     </StyledEmptyContainer>
                                 )}
                             </StyledEmptyContainer>
                         ))}
                     </div>
-                    <StyledButtonContainer>
+                    <StyledButtonContainer
+                        style={{ marginTop: '10px', marginBottom: '20px' }}
+                    >
                         <StyledButtonClose onClick={handleClose}>
                             Close
                         </StyledButtonClose>
