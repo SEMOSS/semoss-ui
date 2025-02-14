@@ -9,15 +9,9 @@ export interface DesignerMenuItem {
         | 'Layout'
         | 'Progress'
         | 'Text'
-        | 'Compare LLMs'
-        | 'Mermaid'
-        | 'Area Chart'
-        | 'Bar Chart'
         | 'General'
-        | 'Line Chart'
-        | 'Pie Chart'
-        | 'Scatter Plot'
-        | 'Theme'
+        | 'Data Charts'
+        | 'Mermaid Charts'
         | 'Miscellaneous';
 
     /** Name of the item to show in the tooltip */
@@ -29,6 +23,13 @@ export interface DesignerMenuItem {
     /** JSON of the block */
     json: BlockJSON;
 
-    /** Optional image that represents block */
-    image?: string;
+    /**
+     * Image of block
+     */
+    activeImage?: string;
+
+    /**
+     *  Hover Image of block
+     */
+    hoverImage?: string;
 }

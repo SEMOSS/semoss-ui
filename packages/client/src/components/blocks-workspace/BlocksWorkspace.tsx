@@ -36,7 +36,6 @@ import {
     NotebookViewerPanel,
 } from './panels';
 import { DEFAULT_MENU } from './menus/default-menu';
-import { VISUALIZATION_MENU } from './menus/visualization-menu';
 
 const DEFAULT_BORDER_SIZE = 300;
 
@@ -81,15 +80,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                     enableDrag: false,
                                     helpText:
                                         'UI components that can be used to display for your app',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Visualizations',
-                                    component: 'viz',
-                                    config: {},
-                                    enableDrag: false,
-                                    helpText:
-                                        'Visualizations to be used within the designer',
                                 },
                                 {
                                     type: 'tab',
@@ -219,14 +209,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                 },
                                 {
                                     type: 'tab',
-                                    name: 'Visualizations',
-                                    component: 'viz',
-                                    config: {},
-                                    helpText:
-                                        'Visualizations to be used within the designer',
-                                },
-                                {
-                                    type: 'tab',
                                     name: 'Layers',
                                     component: 'layers',
                                     config: {},
@@ -344,13 +326,6 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
         return <SelectedBlockPanel />;
     } else if (component === 'blocks') {
         return <BlocksMenuPanel title={'Add Blocks'} items={DEFAULT_MENU} />;
-    } else if (component === 'viz') {
-        return (
-            <BlocksMenuPanel
-                title={'Add Visualization'}
-                items={VISUALIZATION_MENU}
-            />
-        );
     } else if (component === 'file-explorer') {
         return <FileExplorerPanel layout={layout} />;
     } else if (component === 'file-editor') {
@@ -361,6 +336,15 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
         return <NotebookViewerPanel id={config.id} />;
     }
 
+    // TODO: Clean out session storage for old workspaces
+    // else if (component === 'viz') {
+    //     return (
+    //         <BlocksMenuPanel
+    //             title={'Add Visualization'}
+    //             items={VISUALIZATION_MENU}
+    //         />
+    //     );
+    // }
     return <>{component}</>;
 };
 

@@ -21,6 +21,7 @@ import {
 } from '@semoss/renderer';
 
 import type { DesignerMenuItem } from './menu-types';
+import * as BLOCK_IMAGES from '@/assets/blocks';
 
 const SECTION_ELEMENT = 'Element';
 const SECTION_INPUT = 'Input';
@@ -28,23 +29,28 @@ const SECTION_LAYOUT = 'Layout';
 const SECTION_PROGRESS = 'Progress';
 const SECTION_TEXT = 'Text';
 
-const SECTION_GENERAL_VISUALIZATION = 'General';
-const SECTION_MERMAID = 'Mermaid';
-const SECTION_AREA_CHART = 'Area Chart';
-const SECTION_BAR_CHART = 'Bar Chart';
-const SECTION_LINE_CHART = 'Line Chart';
-const SECTION_PIE_CHART = 'Pie Chart';
-const SECTION_SCATTER_PLOTS = 'Scatter Plot';
-
+const SECTION_CHARTS = 'Data Charts';
+const SECTION_FLOWS = 'Mermaid Charts';
 const SECTION_MISC = 'Miscellaneous';
 
-const SECTION_ORDER = [SECTION_LAYOUT, SECTION_TEXT, SECTION_INPUT];
+export const SECTION_ORDER = [
+    SECTION_LAYOUT,
+    SECTION_TEXT,
+    SECTION_INPUT,
+    SECTION_PROGRESS,
+    SECTION_ELEMENT,
+    SECTION_MISC,
+    SECTION_CHARTS,
+    SECTION_FLOWS,
+];
 
 export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
-        section: SECTION_THEME,
+        section: SECTION_MISC,
         name: 'Theme Block',
         helperText: 'Determine the theme of your page with our Theme Block',
+        activeImage: '',
+        hoverImage: '',
         json: {
             widget: 'theme',
             data: {
@@ -60,6 +66,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_INPUT,
         name: 'Audio Player',
         helperText: 'Play back audio responses or other files',
+        activeImage: BLOCK_IMAGES['AUDIO_PLAYER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['AUDIO_PLAYER_HOVER'],
         json: {
             widget: 'audio-player',
             data: {
@@ -77,6 +85,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_INPUT,
         name: 'Button',
         helperText: 'Creates a click event',
+        activeImage: BLOCK_IMAGES['BUTTON_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['BUTTON_HOVER'],
         json: {
             widget: 'button',
             data: {
@@ -97,6 +107,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_INPUT,
         name: 'Checkbox',
         helperText: 'Add a checkbox for user selection',
+        activeImage: BLOCK_IMAGES['CHECKBOX_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['CHECKBOX_HOVER'],
         json: {
             widget: 'checkbox',
             data: {
@@ -169,6 +181,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_INPUT,
         name: 'Input',
         helperText: 'Add an input box for typing text',
+        activeImage: BLOCK_IMAGES['INPUT_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['INPUT_HOVER'],
         json: {
             widget: 'input',
             data: {
@@ -198,6 +212,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_INPUT,
         name: 'Audio Input',
         helperText: 'Input audio from the user',
+        activeImage: BLOCK_IMAGES['AUDIO_INPUT_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['AUDIO_INPUT_HOVER'],
         json: {
             widget: 'audio-input',
             data: {
@@ -222,6 +238,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_INPUT,
         name: 'Select',
         helperText: 'Choose an option from a dropdown list',
+        activeImage: BLOCK_IMAGES['SELECT_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['SELECT_HOVER'],
         json: {
             widget: 'select',
             data: {
@@ -248,6 +266,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_INPUT,
         name: 'Upload',
         helperText: 'Upload files like documents or images',
+        activeImage: BLOCK_IMAGES['UPLOAD_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['UPLOAD_HOVER'],
         json: {
             widget: 'upload',
             data: {
@@ -274,6 +294,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_LAYOUT,
         name: 'Container',
         helperText: 'Create a layout element for custom design',
+        activeImage: BLOCK_IMAGES['CONTAINER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['CONTAINER_HOVER'],
         json: {
             widget: 'container',
             data: {
@@ -295,6 +317,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_PROGRESS,
         name: 'Progress',
         helperText: 'Display progress tracking or status',
+        activeImage: BLOCK_IMAGES['PROGRESS_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PROGRESS_HOVER'],
         json: {
             widget: 'progress',
             data: {
@@ -311,6 +335,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_ELEMENT,
         name: 'Iframe',
         helperText: 'Embed a webpage using a source link',
+        activeImage: BLOCK_IMAGES['IFRAME_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['IFRAME_HOVER'],
         json: {
             widget: 'iframe',
             data: {
@@ -327,6 +353,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_ELEMENT,
         name: 'PDF Viewer',
         helperText: 'Embed a PDF for viewing',
+        activeImage: BLOCK_IMAGES['PDF_VIEWER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PDF_VIEWER_HOVER'],
         json: {
             widget: 'pdfViewer',
             data: {
@@ -345,6 +373,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_ELEMENT,
         name: 'Image',
         helperText: 'Add an image to your layout',
+        activeImage: BLOCK_IMAGES['IMAGE_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['IMAGE_HOVER'],
         json: {
             widget: 'image',
             data: {
@@ -369,6 +399,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_TEXT,
         name: 'Logs',
         helperText: 'Show logs from the notebook',
+        activeImage: BLOCK_IMAGES['LOGS_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['LOGS_HOVER'],
         json: {
             widget: 'logs',
             data: {
@@ -383,6 +415,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_INPUT,
         name: 'Toggle Button',
         helperText: 'Switch between multiple options',
+        activeImage: BLOCK_IMAGES['TOGGLE_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['TOGGLE_HOVER'],
         json: {
             widget: 'toggle-button',
             data: {
@@ -411,6 +445,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_TEXT,
         name: 'Link',
         helperText: 'Access a webpage through a clickable URL',
+        activeImage: BLOCK_IMAGES['LINK_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['LINK_HOVER'],
         json: {
             widget: 'link',
             data: {
@@ -430,6 +466,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_TEXT,
         name: 'Markdown',
         helperText: 'Show text in markdown format',
+        activeImage: BLOCK_IMAGES['MARKDOWN_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['MARKDOWN_HOVER'],
         json: {
             widget: 'markdown',
             data: {
@@ -446,6 +484,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_ELEMENT,
         name: 'HTML',
         helperText: 'Write custom HTML manually or with AI assistance',
+        activeImage: BLOCK_IMAGES['HTML_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['HTML_HOVER'],
         json: {
             widget: 'html',
             data: {
@@ -463,6 +503,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_TEXT,
         name: 'Text',
         helperText: 'Display Text in header 1',
+        activeImage: BLOCK_IMAGES['H1_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H1_HOVER'],
         json: {
             widget: 'text',
             data: {
@@ -482,6 +524,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_TEXT,
         name: 'Text',
         helperText: 'Display Text in header 2',
+        activeImage: BLOCK_IMAGES['H2_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H2_HOVER'],
         json: {
             widget: 'text',
             data: {
@@ -501,6 +545,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_TEXT,
         name: 'Text',
         helperText: 'Display Text in header 3',
+        activeImage: BLOCK_IMAGES['H3_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H3_HOVER'],
         json: {
             widget: 'text',
             data: {
@@ -520,6 +566,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_TEXT,
         name: 'Text',
         helperText: 'Display Text in header 4',
+        activeImage: BLOCK_IMAGES['H4_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H4_HOVER'],
         json: {
             widget: 'text',
             data: {
@@ -539,6 +587,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_TEXT,
         name: 'Text',
         helperText: 'Display Text in header 5',
+        activeImage: BLOCK_IMAGES['H5_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H5_HOVER'],
         json: {
             widget: 'text',
             data: {
@@ -558,6 +608,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_TEXT,
         name: 'Text',
         helperText: 'Display Text in header 6',
+        activeImage: BLOCK_IMAGES['H6_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H6_HOVER'],
         json: {
             widget: 'text',
             data: {
@@ -577,6 +629,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_TEXT,
         name: 'Text',
         helperText: 'Show text in a regular paragraph style',
+        activeImage: BLOCK_IMAGES['PARAGRAPH_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PARAGRAPH_HOVER'],
         json: {
             widget: 'text',
             data: {
@@ -596,6 +650,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_MISC,
         name: 'Compare LLMs',
         helperText: 'Compare large language models against the same context',
+        activeImage: BLOCK_IMAGES['COMPARE_LLMS_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['COMPARE_LLMS_HOVER'],
         json: {
             widget: 'llmComparison',
             data: {
@@ -611,26 +667,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
-    // {
-    //     section: SECTION_MERMAID,
-    //     name: 'Mermaid',
-    //     json: {
-    //         widget: 'mermaid',
-    //         data: {
-    //             style: {
-    //                 padding: '4px',
-    //                 whiteSpace: 'pre-line',
-    //                 textOverflow: 'ellipsis',
-    //             },
-    //             text: 'Query',
-    //             variant: 'p',
-    //         },
-    //         listeners: {},
-    //         slots: {} as BlockJSON['slots'],
-    //     },
-    // },
     {
-        section: SECTION_GENERAL_VISUALIZATION,
+        section: SECTION_CHARTS,
         name: 'Vega',
         helperText: '',
         json: {
@@ -644,7 +682,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_GENERAL_VISUALIZATION,
+        section: SECTION_CHARTS,
         name: 'Grid',
         helperText: '',
         json: {
@@ -663,7 +701,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_BAR_CHART,
+        section: SECTION_CHARTS,
         name: 'Bar Chart',
         helperText: '',
         json: {
@@ -705,7 +743,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_BAR_CHART,
+        section: SECTION_CHARTS,
         name: 'Grouped Bar Chart',
         helperText: '',
         json: {
@@ -749,7 +787,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_PIE_CHART,
+        section: SECTION_CHARTS,
         name: 'Pie Chart',
         helperText: '',
         json: {
@@ -789,7 +827,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_PIE_CHART,
+        section: SECTION_CHARTS,
         name: 'Radial Plot',
         helperText: '',
         json: {
@@ -856,7 +894,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_LINE_CHART,
+        section: SECTION_CHARTS,
         name: 'Line Chart',
         helperText: '',
         json: {
@@ -897,7 +935,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_AREA_CHART,
+        section: SECTION_CHARTS,
         name: 'Area Chart',
         helperText: '',
         json: {
@@ -943,7 +981,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_AREA_CHART,
+        section: SECTION_CHARTS,
         name: 'Area Chart with Gradient',
         helperText: '',
         json: {
@@ -1012,7 +1050,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_SCATTER_PLOTS,
+        section: SECTION_CHARTS,
         name: 'Scatter Plot',
         helperText: '',
         json: {
@@ -1053,7 +1091,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
+        section: SECTION_FLOWS,
         name: 'General Mermaid',
         helperText: '',
         json: {
@@ -1066,7 +1104,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
+        section: SECTION_FLOWS,
         name: 'Class Diagram',
         helperText: '',
         json: {
@@ -1079,7 +1117,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
+        section: SECTION_FLOWS,
         name: 'Sequence Diagram',
         helperText: '',
         json: {
@@ -1092,7 +1130,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
+        section: SECTION_FLOWS,
         name: 'State Diagram',
         helperText: '',
         json: {
@@ -1105,7 +1143,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
+        section: SECTION_FLOWS,
         name: 'Entity Relationship Diagram',
         helperText: '',
         json: {
@@ -1118,7 +1156,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
+        section: SECTION_FLOWS,
         name: 'User Journey',
         helperText: '',
         json: {
@@ -1131,7 +1169,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
+        section: SECTION_FLOWS,
         name: 'Gantt',
         helperText: '',
         json: {
@@ -1144,7 +1182,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
+        section: SECTION_FLOWS,
         name: 'Pie Chart',
         helperText: '',
         json: {
@@ -1157,7 +1195,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
+        section: SECTION_FLOWS,
         name: 'Quadrant Chart',
         helperText: '',
         json: {
@@ -1170,7 +1208,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
+        section: SECTION_FLOWS,
         name: 'Requirement Diagram',
         helperText: '',
         json: {
@@ -1183,7 +1221,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
+        section: SECTION_FLOWS,
         name: 'Git Diagram',
         helperText: '',
         json: {
@@ -1196,8 +1234,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
-        name: 'C4 Diagram',
+        section: SECTION_FLOWS,
+        name: SECTION_FLOWS,
         helperText: '',
         json: {
             widget: 'mermaid',
@@ -1209,7 +1247,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
+        section: SECTION_FLOWS,
         name: 'Mindmap',
         helperText: '',
         json: {
@@ -1222,7 +1260,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
+        section: SECTION_FLOWS,
         name: 'Timeline',
         helperText: '',
         json: {
@@ -1235,7 +1273,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
+        section: SECTION_FLOWS,
         name: 'Sankey',
         helperText: '',
         json: {
@@ -1248,7 +1286,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
+        section: SECTION_FLOWS,
         name: 'XY Chart',
         helperText: '',
         json: {
@@ -1261,7 +1299,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_MERMAID,
+        section: SECTION_FLOWS,
         name: 'Block Diagram',
         helperText: '',
         json: {

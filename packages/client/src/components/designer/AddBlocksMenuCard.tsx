@@ -45,9 +45,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
     // track if this is being hovered
     const [hovered, setHovered] = useState<boolean>(false);
 
-    // MATCH CASE WITH IMAGE_MAP
-    let BLOCK_IMAGE_KEY = item.name.replace(/ /g, '_').toUpperCase();
-
     /**
      * Handle the mousedown on the widget.
      */
@@ -59,10 +56,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 return true;
             },
             item.name,
-            getValidImage(
-                `${BLOCK_IMAGE_KEY}_HOVER`,
-                `${BLOCK_IMAGE_KEY}_ACTIVE`,
-            ),
+            item.hoverImage,
         );
 
         // clear the hovered
@@ -181,17 +175,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 >
                     <div>
                         <BlockCardContent
-                            image={
-                                hovered
-                                    ? getValidImage(
-                                          `${BLOCK_IMAGE_KEY}_HOVER`,
-                                          `${BLOCK_IMAGE_KEY}_ACTIVE`,
-                                      )
-                                    : getValidImage(
-                                          `${BLOCK_IMAGE_KEY}_ACTIVE`,
-                                          `${BLOCK_IMAGE_KEY}_HOVER`,
-                                      )
-                            }
+                            image={hovered ? item.hoverImage : item.activeImage}
                             name={item.name}
                         />
                     </div>

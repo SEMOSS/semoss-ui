@@ -15,6 +15,7 @@ import {
 import { DesignerMenuItem } from '../menus/menu-types';
 import { AddBlocksMenuCard } from '@/components/designer';
 import { Panel } from '@/components/workspace';
+import { SECTION_ORDER } from '../menus/default-menu';
 
 const StyledTitle = styled('div')(({ theme }) => ({
     paddingTop: theme.spacing(1.5),
@@ -99,11 +100,10 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
     const [search, setSearch] = useState('');
     const [mode, setMode] = useState<MODE>('SYSTEM');
 
-    // sort by section so we can show the keys when they are different
-    const sortedItems: DesignerMenuItem[][] = useMemo(() => {
+    const sortedItems = useMemo(() => {
         const sectionRecord: Record<string, DesignerMenuItem[]> = {};
 
-        // sort items by section
+        // Group items by section
         items.forEach((item) => {
             const currentSection = item.section ?? defaultSection;
             if (!sectionRecord[currentSection])
@@ -111,16 +111,14 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
             sectionRecord[currentSection].push(item);
         });
 
-        // sort sections by name
-        return Object.keys(sectionRecord)
-            .sort()
-            .map((section) =>
-                // sort items within each section by name
-                sectionRecord[section].sort((a, b) =>
-                    a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
-                ),
+        // Sort sections based on sectionOrder
+        return SECTION_ORDER.map((section) => {
+            const sectionItems = sectionRecord[section] || [];
+            return sectionItems.sort((a, b) =>
+                a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
             );
-    }, [items]);
+        }).filter((section) => section.length > 0);
+    }, [items, SECTION_ORDER]);
 
     // get the rendered items
     const renderedItems: DesignerMenuItem[][] = useMemo(() => {
@@ -152,7 +150,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                 <StyledTitle>
                     <Typography variant={'h6'}>{title}</Typography>
                 </StyledTitle>
-                <Stack padding={2}>
+                <Stack paddingTop={2} paddingLeft={2} paddingRight={2}>
                     <TextField
                         // TODO: start + end icons
                         placeholder="Search Components"
@@ -174,9 +172,14 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                         <StyledToggleTabsGroupItem
                             label="Client Blocks"
                             value={'CLIENT'}
+                            disabled={true}
+                            // TODO: Coming next, asked van buren to
+                            // start looking at how to incorporate groupings,
+                            // if not done by 2/26/25, will take it over
                         />
                     </StyledToggleTabsGroup>
                 </Stack>
+
                 {/* TODO: Two Different Menus: Client and System */}
                 {renderedItems.length ? (
                     <StyledMenu>
