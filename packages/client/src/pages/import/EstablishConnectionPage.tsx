@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
     styled,
     Box,
@@ -37,16 +37,71 @@ export const EstablishConnectionPage = () => {
 
     // Used for edges and nodes
     const [metamodel, setMetamodel] = useState(null);
-
+    const initialized = useRef(false);
     useEffect(() => {
-        // If Database Connector
-        getTablesAndViews();
+        // Check database type first
+        if (initialized.current) return;
+        initialized.current = true;
 
-        // If Excel (Drag and Drop)
+        const initializeConnection = async () => {
+            const formDetails = steps[steps.length - 1];
+            if (formDetails.data.NO_SQL_TYPE) {
+                await createNoSqlConnection(formDetails);
+            } else {
+                await getTablesAndViews();
+            }
+        };
+
+        initializeConnection();
+
         return () => {
             setMetamodel(null);
         };
     }, []);
+
+    /**
+     * @name createNoSqlConnection
+     * @desc Creates NoSQL database connection
+     */
+    const createNoSqlConnection = async (formDetails) => {
+        setIsLoading(true);
+        const pixel = `CreateNoSqlDbConnection(conDetails=[${JSON.stringify(
+            formDetails.data,
+        )}],database=["${formDetails.title}"])`;
+
+        try {
+            const resp = await monolithStore.runQuery(pixel);
+            const output = resp.pixelReturn[0].output,
+                operationType = resp.pixelReturn[0].operationType;
+
+            if (operationType.indexOf('ERROR') > -1) {
+                notification.add({
+                    color: 'error',
+                    message: output ? output : 'Error connecting to database',
+                });
+                // Go back to form step
+                const newSteps = [steps[0], steps[1]];
+                setSteps(newSteps, 1);
+            } else {
+                notification.add({
+                    color: 'success',
+                    message: 'Successfully added NoSQL database to catalog',
+                });
+                navigate(
+                    `/engine/database/${output.DATABASE_DETAILS.database_id}`,
+                );
+            }
+        } catch (error) {
+            notification.add({
+                color: 'error',
+                message: 'Failed to create NoSQL database connection',
+            });
+            const newSteps = [steps[0], steps[1]];
+            setSteps(newSteps, 1);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     /**
      * @name getTablesAndViews

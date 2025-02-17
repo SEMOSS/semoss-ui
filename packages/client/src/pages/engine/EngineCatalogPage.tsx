@@ -162,13 +162,18 @@ export const EngineCatalogPage = observer(
 
         const metaKeysDescription = [...metaKeys, 'description'];
 
+        const engineTypes =
+            route.type === 'DATABASE'
+                ? ['DATABASE', 'NOSQLDATABASE']
+                : [route.type];
+
         const getFavoritedDatabases = usePixel(`
         ${dbPixelPrefix}(metaKeys = ${JSON.stringify(
             metaKeysDescription,
         )}, metaFilters = [ ${JSON.stringify(
             metaFilters,
         )} ] , filterWord=["${search}"], onlyFavorites=[true], ${
-            route ? `engineTypes=['${route.type}']` : ''
+            route ? `engineTypes=${JSON.stringify(engineTypes)}` : ''
         });
     `);
 
@@ -198,7 +203,7 @@ export const EngineCatalogPage = observer(
             )} , metaFilters = [ ${JSON.stringify(
                 metaFilters,
             )} ] , filterWord=["${search}"], userT = [true], ${
-                route ? `engineTypes=['${route.type}'], ` : ''
+                route ? `engineTypes=${JSON.stringify(engineTypes)}, ` : ''
             } offset=[${offset}], limit=[${limit}]) ;`,
         );
 

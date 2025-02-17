@@ -34,6 +34,7 @@ import SQL_SERVER from '@/assets/img/SQL_SERVER.png';
 import TERADATA from '@/assets/img/TERADATA.png';
 import TIBCO from '@/assets/img/TIBCO.png';
 import TRINO from '@/assets/img/TRINO.jpg';
+import DYNAMO_DB from '@/assets/img/DYNAMO_DB.png';
 //Add Storage
 import AMAZON_S3 from '@/assets/img/Amazon_S3.png';
 import AZURE_BLOB from '@/assets/img/AZURE_BLOB.png';
@@ -13305,6 +13306,96 @@ export const CONNECTION_OPTIONS = {
                     },
                 ],
             },
+            {
+                name: 'AWS DYNAMO DB',
+                disable: false,
+                icon: DYNAMO_DB,
+                fields: [
+                    {
+                        fieldName: 'NO_SQL_TYPE',
+                        label: 'Driver Name',
+                        defaultValue: 'AWS_DYNAMO_DB',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                        hidden: true,
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
+                    },
+                    {
+                        fieldName: 'DATABASE_DESCRIPTION',
+                        label: 'Database Description',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'DATABASE_TAGS',
+                        label: 'Tags',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'REGION',
+                        label: 'AWS Region',
+                        defaultValue: 'us-east-1',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ACCESS_KEY',
+                        label: 'AWS Access Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'SECRET_KEY',
+                        label: 'AWS Secret Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
         ],
     },
     STORAGE: {
@@ -14518,6 +14609,10 @@ export const ENGINE_IMAGES = {
         {
             name: 'TRINO',
             icon: TRINO,
+        },
+        {
+            name: 'AWS_DYNAMO_DB',
+            icon: DYNAMO_DB,
         },
     ],
     STORAGE: [
