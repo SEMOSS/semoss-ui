@@ -914,7 +914,7 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                                     alignWithLabel: true,
                                 },
                                 nameTextStyle: {
-                                    fontSize: 18,
+                                    fontSize: 12,
                                 },
                                 axisLabel: {
                                     show: true,

@@ -49,12 +49,30 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
     const elementRef = useRef<HTMLDivElement>(null);
     console.log(elementRef, 'elementRef');
     let parentElementHeight: number = 0;
-    let parentElementUnit: string =
-        elementRef.current?.parentElement?.style?.height
-            .toString()
-            .endsWith('em')
-            ? 'em'
-            : 'px';
+    function getParentElementUnit(elementRef) {
+        if (
+            elementRef.current?.parentElement?.style?.height
+                .toString()
+                .endsWith('em')
+        ) {
+            return 'em';
+        }
+        if (
+            elementRef.current?.parentElement?.style?.height
+                .toString()
+                .endsWith('px')
+        ) {
+            return 'px';
+        }
+        if (
+            elementRef.current?.parentElement?.style?.height
+                .toString()
+                .endsWith('%')
+        ) {
+            return '%';
+        }
+    }
+    let parentElementUnit: string = getParentElementUnit(elementRef);
     //let parentElementUnit: string = elementRef.current?.parentElement?.style?.height.toString().endsWith('em') ? 'em' : elementRef.current?.parentElement?.style?.height.toString().endsWith('px') ? 'px' : '%';
     if (parentElementUnit === 'em') {
         parentElementHeight = parseInt(
@@ -101,6 +119,10 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
                 'heightGivenInPercent',
             );
             calculatedHeight = (calculatedHeight * heightGivenInPercent) / 100;
+            console.log(calculatedHeight, 'calculatedHeight1');
+            if (calculatedHeight > parentElementHeight) {
+                calculatedHeight = parentElementHeight;
+            }
             //return updated style
             return {
                 ...data.style,
