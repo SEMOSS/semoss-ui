@@ -66,7 +66,6 @@ export const Renderer = observer((props: RendererProps) => {
         SwapAppDependencyInterface | {}
     >({});
 
-    console.log(isAuthorized, "IS AUTHORIZE");
     useEffect(() => {
         if (isAuthorized) {
             // start the loading
@@ -322,8 +321,6 @@ export const Renderer = observer((props: RendererProps) => {
             </Blocks>
         );
     };
-
-    console.log("view app is readt");
 
     const viewApp = () => {
         if (preview) {
