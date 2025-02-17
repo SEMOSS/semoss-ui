@@ -27,7 +27,7 @@ import {
 } from '@mui/icons-material';
 import { AxiosResponse } from 'axios';
 
-import { SETTINGS_ROLE } from './settings.types';
+import { SETTINGS_ROLE } from '@/components/settings/settings.types';
 import { useRootStore } from '@/hooks';
 
 const colors = [
@@ -243,6 +243,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
         monolithStore
             .getTeamEngines(
                 groupId,
+                groupType,
                 limit,
                 enginesPage * limit - limit, // offset
                 searchFilter,
@@ -327,6 +328,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
             let response: AxiosResponse<{ success: boolean }> | null = null;
             response = await monolithStore.deleteEnginePermission(
                 groupId,
+                groupType,
                 engine,
             );
 
@@ -361,6 +363,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                         null;
                     response = await monolithStore.deleteEnginePermission(
                         groupId,
+                        groupType,
                         selectedEngines[i],
                     );
 
@@ -396,7 +399,10 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
             let response;
             // possibly add more db table columns / keys here to get id type for display under engines
             // eslint-disable-next-line prefer-const
-            response = await monolithStore.getUnassignedTeamEngines(groupId);
+            response = await monolithStore.getUnassignedTeamEngines(
+                groupId,
+                groupType,
+            );
 
             // ignore if there is no response
             if (response) {
@@ -488,6 +494,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
             monolithStore
                 .getTeamEngines(
                     groupId,
+                    groupType,
                     limit,
                     enginesPage * limit - limit, // offset
                     searchFilter,
@@ -499,6 +506,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
             monolithStore
                 .getTeamEngines(
                     groupId,
+                    groupType,
                     100,
                     0, // offset
                     searchFilter,
