@@ -33,6 +33,18 @@ const StyledSelect = styled(Select)(() => ({
     width: '100%',
 }));
 
+const COLOUR_PALATTE_DATA = [
+    '#5470c6',
+    '#91cc75',
+    '#fac858',
+    '#ee6666',
+    '#73c0de',
+    '#3ba272',
+    '#fc8452',
+    '#9a60b4',
+    '#ea7ccc',
+];
+
 export const FrameOperations = observer(
     <D extends BlockDef = BlockDef>({ id, updateFrame, path }) => {
         const { data, setData } =
@@ -76,34 +88,23 @@ export const FrameOperations = observer(
         const initialUpdateOfData = () => {
             if (data.frame.name === '') return;
             const option =
-                typeof value === 'string' ? JSON.parse(value) : value;
+                typeof computedValue === 'string'
+                    ? JSON.parse(computedValue)
+                    : computedValue;
             let xAxisData = option['xAxis']['pixelvalue'] || []; //fetch data from xaxis
             let yAxisData = option['yAxis']['pixelvalue'] || []; //fetch data from yaxis
             let recentValue = xAxisData.slice(-1) || [];
-            let columnsToUpdate = [];
             let name = columnsSelector.find(
                 (col) => col.selector === recentValue[0],
             );
             let initialColumns = { ...fieldsData };
             initialColumns['xaxis'] = [
                 {
-                    ['name']: name?.name || option['xAxis']['pixelname'],
+                    ['name']: option['xAxis']['pixelname'],
                     ['selector']: recentValue,
                     ['width']: undefined,
                 },
             ];
-            columnsToUpdate = [
-                {
-                    name: name?.name || option['xAxis']['pixelname'],
-                    selector: recentValue[0],
-                },
-            ];
-            option['xAxis'] = {
-                ...option['xAxis'],
-                ['name']: name?.name || option['xAxis']['pixelname'],
-                ['pixelname']: name?.name || option['xAxis']['pixelname'],
-                ['pixelvalue']: recentValue || '',
-            };
             let pixelName = [],
                 pixelValue = [];
             yAxisData.forEach((item, index) => {
@@ -115,41 +116,20 @@ export const FrameOperations = observer(
                     ['selector']: item,
                     ['width']: undefined,
                 });
-                columnsToUpdate.push({
-                    name: name?.name || option['yAxis']['pixelname'][index],
-                    selector: item,
-                });
                 pixelName.push(
                     name?.name || option['yAxis']['pixelname'][index],
                 );
                 pixelValue.push(item);
             });
-            option['yAxis'] = {
-                ...option['yAxis'],
-                ['name']: pixelName[0],
-                ['pixelname']: pixelName,
-                ['pixelvalue']: pixelValue,
-            };
-            for (let i = 0; i < pixelName.length; i++) {
-                option['series'][i] = {
-                    ...option['series'][i],
-                    data: [],
-                    name: pixelName[i],
-                    type: 'bar',
-                };
-            }
-            if (option.hasOwnProperty('tooltip')) {
-                option['tooltip'] = {
-                    ...option['tooltip'],
-                    ['show']: !option['tooltip']['show'],
-                };
-            }
-            setFieldsData(initialColumns);
+            setFieldsData((prevFields) => {
+                return initialColumns;
+            });
             let selectedValuesData = { ...selectedValues };
             selectedValuesData.xAxis = recentValue;
             selectedValuesData.yAxis = yAxisData;
-            setSelectedValues(selectedValuesData);
-            dispatchData(option);
+            setSelectedValues((prevSelectedValues) => {
+                return selectedValuesData;
+            });
         };
         //additional function to trigger a sync, when a frame is newly selected
         function syncHeaders() {
@@ -160,7 +140,9 @@ export const FrameOperations = observer(
                     width: undefined,
                 };
             });
-            setColumnsData(columns);
+            setColumnsData((prevColumns) => {
+                return columns;
+            });
         }
 
         // get the value of the input (wrapped in usememo because of path prop)
@@ -185,18 +167,8 @@ export const FrameOperations = observer(
         //trying to check for updating the fields, when x and y axis is getting updated
         useEffect(() => {
             let option = typeof value === 'string' ? JSON.parse(value) : value;
-            if (
-                frameOperationState === 'initial' &&
-                data.frame.name !== '' &&
-                option['xAxis'] != undefined &&
-                option['xAxis'].hasOwnProperty('pixelvalue') &&
-                option['yAxis'] != undefined &&
-                option['yAxis'].hasOwnProperty('pixelvalue')
-            ) {
-                initialUpdateOfData();
-                setFrameOperationState('updated');
-            }
-        }, [columnsSelector]);
+            initialUpdateOfData();
+        }, [, id]);
         //update the x and y axis fields when a field change is detected, and update data.columns, at both x and y axis values are set
         function updateFields(axis, event) {
             let value = event.target.value || [];
@@ -301,6 +273,10 @@ export const FrameOperations = observer(
                         data: [],
                         name: columns['yaxis'][i].name,
                         type: 'bar',
+                        barWidth: 5,
+                        itemStyle: {
+                            color: COLOUR_PALATTE_DATA[i],
+                        },
                     };
                 }
                 dispatchData(tempVal);

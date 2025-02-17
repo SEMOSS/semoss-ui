@@ -907,6 +907,9 @@ export const VISUALIZATION_MENU_INITIAL: DesignerMenuItem[] = [
                             labelLine: {
                                 show: true,
                             },
+                            itemStyle: {
+                                color: '#5470c6',
+                            },
                         },
                     ],
                     tooltip: {
