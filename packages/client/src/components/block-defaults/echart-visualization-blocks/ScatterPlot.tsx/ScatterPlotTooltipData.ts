@@ -5,10 +5,7 @@ export const formatdatapoints = (apiData, data) => {
         yAxis = '',
         size = '',
         color = '',
-        tooltip = '',
-        labelName = '',
-        xAxisName = '',
-        yAxisName = '';
+        tooltip = '';
     if (data.option.hasOwnProperty('_state')) {
         fields = data.option['_state']['fields'];
         label = fields['label'];

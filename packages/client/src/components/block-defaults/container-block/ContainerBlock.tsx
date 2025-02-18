@@ -23,7 +23,6 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
             style={{
                 ...data.style,
                 overflowWrap: 'anywhere', // text that overflows container
-                overflow: 'hidden', // blocks that overflows container will be hidden
             }}
             {...attrs}
         >
