@@ -40,7 +40,7 @@ export { default as MERMAIDJS_ACTIVE } from './MermaidJs_Active.png';
 export { default as MERMAIDJS_HOVER } from './MermaidJs_Hover.png';
 export { default as PARAGRAPH_ACTIVE } from './Paragraph_Active.png';
 export { default as PARAGRAPH_HOVER } from './Paragraph_Hover.png';
-export { default as PDF_VIEWER_ACTIVE } from './PDF_Viewer_Active.png';
+export { default as PDF_VIEWER_ACTIVE } from './PDF_Viewer__Active.png';
 export { default as PDF_VIEWER_HOVER } from './PDF_Viewer_Hover.png';
 export { default as PROGRESS_ACTIVE } from './Progress_Active.png';
 export { default as PROGRESS_HOVER } from './Progress_Hover.png';
