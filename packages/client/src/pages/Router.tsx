@@ -23,6 +23,8 @@ import { PrivacyNotice } from './legal/PrivacyNotice';
 
 import { WorkspacePage } from './WorkspacePage';
 
+import { PlatformMessages } from './PlatformMessages';
+
 export const Router = observer(() => {
     const { configStore } = useRootStore();
 
@@ -63,8 +65,22 @@ export const Router = observer(() => {
                     <Route path="app/*" element={<AppRouter />} />
                     <Route path="prompt/*" element={<PromptRouter />} />
                 </Route>
-                <Route path="workspace/:appId/*" element={<WorkspacePage />} />
-                <Route path="s/:appId/*" element={<SharePage />} />
+                <Route
+                    path="workspace/:appId/*"
+                    element={
+                        <PlatformMessages platformAssist={false}>
+                            <WorkspacePage />
+                        </PlatformMessages>
+                    }
+                />
+                <Route
+                    path="s/:appId/*"
+                    element={
+                        <PlatformMessages platformAssist={false}>
+                            <SharePage />
+                        </PlatformMessages>
+                    }
+                />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
             {showCookieNotice && (
