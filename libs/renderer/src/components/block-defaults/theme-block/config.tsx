@@ -1,7 +1,6 @@
 import { CSSProperties, useState } from "react";
 import { Close, FileCopyOutlined, OpenInNew } from "@mui/icons-material";
-import { BlockConfig } from "../../../store";
-import { useBlockSettings } from "../../../hooks";
+
 import {
     Divider,
     IconButton,
@@ -16,6 +15,8 @@ import {
     MenuItem,
 } from "@semoss/ui";
 
+import { BlockConfig } from "../../../store";
+import { useBlockSettings } from "../../../hooks";
 import {
     BaseSettingSection,
     ColorSettings,
@@ -288,7 +289,7 @@ export const config: BlockConfig<ThemeBlockDef> = {
                                     <IconButton
                                         size="small"
                                         onClick={() => setOpen(true)}
-                                        disabled={true}
+                                        disabled={false}
                                     >
                                         <OpenInNew />
                                     </IconButton>
@@ -308,6 +309,7 @@ export const config: BlockConfig<ThemeBlockDef> = {
                                             id={id}
                                             path="theme"
                                             height="500px"
+                                            callback={() => setOpen(false)}
                                         />
                                     </Modal.Content>
                                 </Modal>
