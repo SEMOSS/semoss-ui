@@ -39,155 +39,14 @@ import { DEFAULT_MENU } from './menus/default-menu';
 
 const DEFAULT_BORDER_SIZE = 300;
 
-const StyledAlert = styled('div')(({ theme }) => ({
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing(1),
-    paddingLeft: theme.spacing(2),
-    paddingRight: theme.spacing(2),
-    height: theme.spacing(4),
-    borderRadius: '4px',
-    background: 'rgba(253, 237, 225, 1)',
-}));
-
 const DEFAULT_OPTIONS: WorkspaceOptions = {
     version: '',
     drawer: {
         isOpen: false,
     },
     layout: {
-        selected: 'ui',
+        selected: 'dev',
         available: {
-            ui: {
-                id: 'ui',
-                name: 'UI',
-                data: {
-                    global: { tabEnableClose: false },
-                    borders: [
-                        {
-                            type: 'border',
-                            location: 'left',
-                            selected: 0,
-                            size: DEFAULT_BORDER_SIZE,
-                            children: [
-                                {
-                                    type: 'tab',
-                                    name: 'Blocks',
-                                    component: 'blocks',
-                                    config: {},
-                                    enableDrag: false,
-                                    helpText:
-                                        'UI components that can be used to display for your app',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Layers',
-                                    component: 'layers',
-                                    config: {},
-                                    enableDrag: false,
-                                    helpText:
-                                        'Hierarchy for UI elements within the designer',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Variables',
-                                    component: 'variables',
-                                    config: {},
-                                    enableDrag: false,
-                                    helpText:
-                                        'Parameters that are used within blocks and notebooks',
-                                },
-                            ],
-                        },
-                        {
-                            type: 'border',
-                            location: 'right',
-                            size: DEFAULT_BORDER_SIZE,
-                            children: [
-                                {
-                                    type: 'tab',
-                                    name: 'Block Settings',
-                                    component: 'selected',
-                                    config: {},
-                                    enableDrag: false,
-                                    helpText:
-                                        'Settings for UI component you have selected',
-                                    // icon: '@/assets/favicon.svg',
-                                },
-                            ],
-                        },
-                    ],
-                    layout: {
-                        type: 'row',
-                        weight: 100,
-                        children: [
-                            {
-                                type: 'tabset',
-                                weight: 100,
-                                selected: 0,
-                                children: [
-                                    {
-                                        type: 'tab',
-                                        name: 'page-1',
-                                        component: 'designer',
-                                        config: {
-                                            id: 'page-1',
-                                        },
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                },
-            },
-            'data-science': {
-                id: 'data-science',
-                name: 'Data',
-                data: {
-                    global: { tabEnableClose: false },
-                    borders: [
-                        {
-                            type: 'border',
-                            location: 'left',
-                            selected: 0,
-                            size: DEFAULT_BORDER_SIZE,
-                            children: [
-                                {
-                                    type: 'tab',
-                                    name: 'Notebooks',
-                                    component: 'notebook-explorer',
-                                    config: {},
-                                    enableDrag: false,
-                                    helpText:
-                                        'Notebooks associated with the app',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Variables',
-                                    component: 'variables',
-                                    config: {},
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Files',
-                                    component: 'file-explorer',
-                                    config: {},
-                                    enableDrag: false,
-                                    helpText:
-                                        'Files that are stored at app level',
-                                },
-                            ],
-                        },
-                    ],
-                    layout: {
-                        type: 'row',
-                        weight: 100,
-                        children: [],
-                    },
-                },
-            },
             dev: {
                 id: 'dev',
                 name: 'Dev',
@@ -239,6 +98,13 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                     helpText:
                                         'Notebooks associated with the app',
                                 },
+                            ],
+                        },
+                        {
+                            type: 'border',
+                            location: 'right',
+                            size: DEFAULT_BORDER_SIZE,
+                            children: [
                                 {
                                     type: 'tab',
                                     name: 'Block Settings',
@@ -461,30 +327,6 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                         options={DEFAULT_OPTIONS}
                         workspace={workspace}
                         endTopbar={<BlocksWorkspaceActions />}
-                        alert={
-                            <StyledAlert>
-                                <Stack
-                                    direction="row"
-                                    padding={0}
-                                    spacing={0.5}
-                                    alignItems={'center'}
-                                >
-                                    <ConstructionOutlined
-                                        fontSize="small"
-                                        color={'warning'}
-                                    />
-                                    <Typography
-                                        variant={'caption'}
-                                        fontWeight="bold"
-                                    >
-                                        Note:
-                                    </Typography>
-                                    <Typography variant={'caption'}>
-                                        This feature is currently in alpha.
-                                    </Typography>
-                                </Stack>
-                            </StyledAlert>
-                        }
                         factory={FACTORY}
                     />
                     <BlocksWorkspaceDev />

@@ -1,16 +1,16 @@
-import { useRef, useState, Suspense, lazy } from "react";
+import React, { useRef, useState, Suspense, lazy } from "react";
 import { observer } from "mobx-react-lite";
-import { styled, Button, Stack, Select } from "@semoss/ui";
 import { Code, KeyboardArrowDown } from "@mui/icons-material";
+
+import { styled, Button, Stack, Select } from "@semoss/ui";
+import { runPixel } from "@semoss/sdk";
+
 import {
     ActionMessages,
     CellComponent,
     CellDef,
     Variable,
 } from "../../../store";
-import { runPixel } from "@semoss/sdk";
-
-// import { LoadingScreen } from "@/components/ui";
 import { useBlocks } from "../../../hooks";
 
 import { PythonIcon, RIcon } from "./icons";
@@ -46,24 +46,38 @@ const DiffEditor = lazy(() =>
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
 
-const EDITOR_TYPE = {
+interface EDITOR_TYPES {
+    py: {
+        name: string;
+        value: string;
+        language: string;
+    };
+    r: {
+        name: string;
+        value: string;
+        language: string;
+    };
+    pixel: {
+        name: string;
+        value: string;
+        language: string;
+    };
+}
+const EDITOR_TYPE: EDITOR_TYPES = {
     py: {
         name: "Python",
         value: "py",
         language: "python",
-        icon: PythonIcon,
     },
     r: {
         name: "R",
         value: "r",
         language: "r",
-        icon: RIcon,
     },
     pixel: {
         name: "Pixel",
         value: "pixel",
         language: "pixel",
-        icon: Code,
     },
 } as const;
 
@@ -756,12 +770,24 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                 <StyledSelectItem
                                     key={`${i}-${cell.id}-${language.name}`}
                                     value={language.value}
-                                    // title={language.name} // throwing ts error
+                                    title={language.name}
                                 >
-                                    <language.icon
-                                        color="inherit"
-                                        fontSize="small"
-                                    />
+                                    {language.value === "py" ? (
+                                        <PythonIcon
+                                            color="inherit"
+                                            fontSize="small"
+                                        />
+                                    ) : language.value === "r" ? (
+                                        <RIcon
+                                            color="inherit"
+                                            fontSize="small"
+                                        />
+                                    ) : (
+                                        <Code
+                                            color="inherit"
+                                            fontSize="small"
+                                        />
+                                    )}
                                 </StyledSelectItem>
                             ),
                         )}

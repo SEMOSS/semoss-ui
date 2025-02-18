@@ -1051,7 +1051,7 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
-                            fieldName: 'OPEN_AI_API_KEY',
+                            fieldName: 'OPEN_AI_KEY',
                             label: 'Azure Open AI API Key',
                             defaultValue: '',
                             options: {
@@ -1094,7 +1094,7 @@ export const CONNECTION_OPTIONS = {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue:
-                                "from genai_client import AzureOpenAiEmbedder;${VAR_NAME} = AzureOpenAiEmbedder(model_name = '${MODEL}', endpoint = '${ENDPOINT}', api_key = '${OPEN_AI_API_KEY}', api_version = '${API_VERSION}')",
+                                "from genai_client import AzureOpenAiEmbedder;${VAR_NAME} = AzureOpenAiEmbedder(model_name = '${MODEL}', endpoint = '${ENDPOINT}', api_key = '${OPEN_AI_KEY}', api_version = '${API_VERSION}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -7487,16 +7487,6 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'VECTORS',
-                        label: 'Vector',
-                        defaultValue: null,
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
                         fieldName: 'KEEP_INPUT_OUTPUT',
                         label: 'Record Questions and Responses',
                         defaultValue: 'false',
@@ -9191,7 +9181,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false, min: 0 },
                     },
                     {
-                        fieldName: 'httpPAth',
+                        fieldName: 'httpPath',
                         label: 'HTTP Path',
                         defaultValue: '',
                         options: {

@@ -1,9 +1,7 @@
 // store the interceptors
 export const interceptors: {
     request: ((options: RequestInit) => Promise<RequestInit>) | null;
-    response:
-        | ((output: { response: Response; data: unknown }) => Promise<void>)
-        | null;
+    response: ((output: { response: Response }) => Promise<void>) | null;
 } = {
     request: null,
     response: null,
@@ -29,16 +27,15 @@ export const get = async <O>(path: string, options: RequestInit = {}) => {
     // get the data
     const response = await fetch(`${path}`, options);
 
-    // get the data
-    const data = await response.json();
-
     // handle the response
     if (interceptors.response) {
         await interceptors.response({
             response: response,
-            data: data,
         });
     }
+
+    // get the data
+    const data = await response.json();
 
     // return the json
     return {
@@ -100,16 +97,15 @@ export const post = async <O>(
     // get the data
     const response = await fetch(`${path}`, options);
 
-    // get the data
-    const data = await response.json();
-
     // handle the response
     if (interceptors.response) {
         await interceptors.response({
             response: response,
-            data: data,
         });
     }
+
+    // get the data
+    const data = await response.json();
 
     // return the json
     return {

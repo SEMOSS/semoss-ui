@@ -1,5 +1,10 @@
 # First-Time Semoss-UI Setup Instructions
 
+| Software    | Version |
+| -------- | ------- |
+| Node.js |  v18.16.0|
+| pnpm | v8.14.3 |
+
 1. Git clone this repository to your `webapps` folder. `git clone git@repo.semoss.org:semoss/semoss-ui.git`
 
 2. Ensure your BE server is running in eclipse and at a minimum running on a version of pnpm@8.

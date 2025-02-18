@@ -1,9 +1,11 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Controller, useForm } from 'react-hook-form';
 
 import { ActionMessages, useBlocks } from '@semoss/renderer';
 import { Stack, TextField, Modal, Button } from '@semoss/ui';
+
+import { useRootStore } from '@/hooks';
 
 type NewQueryForm = {
     ID: string;
@@ -21,10 +23,11 @@ interface NewQueryOverlayProps {
  * Edit or create a new query
  */
 export const NewQueryOverlay = observer(
-    (props: NewQueryOverlayProps): JSX.Element => {
+    (props: NewQueryOverlayProps): React.JSX.Element => {
         const { onClose = () => null } = props;
 
         const { state } = useBlocks();
+        const { configStore } = useRootStore();
 
         // create a new form
         const {
@@ -69,21 +72,43 @@ export const NewQueryOverlay = observer(
                 return;
             }
 
+            // create the default based on what is there
+            const defaultCells = [];
+            if (configStore.store.config.python) {
+                defaultCells.push({
+                    id: `${Math.floor(Math.random() * 100000)}`,
+                    widget: 'code',
+                    parameters: {
+                        code: '',
+                        type: 'py',
+                    },
+                });
+            } else if (configStore.store.config.r) {
+                defaultCells.push({
+                    id: `${Math.floor(Math.random() * 100000)}`,
+                    widget: 'code',
+                    parameters: {
+                        code: '',
+                        type: 'r',
+                    },
+                });
+            } else {
+                defaultCells.push({
+                    id: `${Math.floor(Math.random() * 100000)}`,
+                    widget: 'code',
+                    parameters: {
+                        code: '',
+                        type: 'pixel',
+                    },
+                });
+            }
+
             state.dispatch({
                 message: ActionMessages.NEW_QUERY,
                 payload: {
                     queryId: data.ID,
                     config: {
-                        cells: [
-                            {
-                                id: `${Math.floor(Math.random() * 100000)}`,
-                                widget: 'code',
-                                parameters: {
-                                    code: '',
-                                    type: 'py',
-                                },
-                            },
-                        ],
+                        cells: defaultCells,
                     },
                 },
             });

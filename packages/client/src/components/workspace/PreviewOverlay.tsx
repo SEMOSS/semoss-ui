@@ -1,6 +1,5 @@
 import { observer } from 'mobx-react-lite';
 import { Button, Modal, styled } from '@semoss/ui';
-import { useNavigate } from 'react-router-dom';
 
 import { Renderer, SerializedState } from '@semoss/renderer';
 import { InsightProvider } from '@semoss/sdk';
@@ -21,7 +20,6 @@ interface PreviewOverlayProps {
 
 export const PreviewOverlay = observer((props: PreviewOverlayProps) => {
     const { state, onClose = () => null } = props;
-    // const navigate = useNavigate();
 
     return (
         <>
@@ -36,7 +34,6 @@ export const PreviewOverlay = observer((props: PreviewOverlayProps) => {
             <Modal.Actions>
                 <Button
                     onClick={() => {
-                        // navigate('..', { relative: 'path' });
                         onClose();
                     }}
                 >

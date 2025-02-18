@@ -10,9 +10,10 @@ import {
     IconButton,
     Tooltip,
     Drawer,
+    Button,
 } from '@semoss/ui';
 // import { Drawer } from '@mui/material';
-import { Menu, MenuOpen, RestartAlt } from '@mui/icons-material';
+import { Menu, MenuOpen, Public, RestartAlt } from '@mui/icons-material';
 import { Layout, TabNode } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import './flexlayout.css';
@@ -244,6 +245,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
                                 <StyledMenuIcon fontSize="inherit" />
                             )}
                         </IconButton>
+
                         <Stack
                             direction="row"
                             alignItems={'center'}
@@ -268,6 +270,23 @@ export const Workspace = observer((props: WorkspaceProps) => {
                         </Stack>
                         {endTopbar}
                         <LoginPopover />
+                        <Button
+                            variant="contained"
+                            size={'small'}
+                            color="primary"
+                            disabled={
+                                !(
+                                    workspace.role === 'OWNER' ||
+                                    workspace.role === 'EDIT'
+                                )
+                            }
+                            endIcon={<Public fontSize="inherit" />}
+                            component={Link}
+                            //@ts-expect-error this is expected. props are forwarded
+                            to={`../../../app/${workspace.appId}`}
+                        >
+                            Show
+                        </Button>
                     </Stack>
                     <StyledContent>
                         <WorkspaceLoading />

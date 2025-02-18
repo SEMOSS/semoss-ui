@@ -60,11 +60,30 @@ interface ConfigStoreInterface {
         /**
          * List of available providers (logins) that are available
          */
-        providers: string[];
+        availableProviders: {
+            provider: string;
+            name: string;
+            isOauth: boolean;
+        }[];
+        /**
+         * Track if native registration is allowed (username/pw)
+         */
+        nativeRegistration: boolean;
+        /**
+         * Version of the app
+         */
         version: {
             datetime: string;
             version: string;
         };
+        /**
+         * Track if r is enabled
+         */
+        r: boolean;
+        /**
+         * Track if python is enabled
+         */
+        python: boolean;
         [key: string]: unknown;
     };
 }
@@ -89,11 +108,14 @@ export class ConfigStore {
         config: {
             databaseMetaKeys: [],
             projectMetaKeys: [],
-            providers: [],
+            availableProviders: [],
+            nativeRegistration: false,
             version: {
                 version: '',
                 datetime: '',
             },
+            r: true,
+            python: true,
         },
     };
     private _generalReactors: Array<string> = [];
@@ -164,14 +186,6 @@ export class ConfigStore {
                     this._store.user.loggedIn = true;
                 }
 
-                // save the providers
-                this._store.config.providers = [];
-                for (const provider in data.loginsAllowed) {
-                    if (data.loginsAllowed[provider]) {
-                        this._store.config.providers.push(provider);
-                    }
-                }
-
                 // save the other config data
                 for (const key in data) {
                     this._store.config[key] = data[key];
@@ -220,9 +234,8 @@ export class ConfigStore {
                             name: string;
                             email: string;
                             admin: boolean;
+                            userEpoch: string;
                         };
-                    } & {
-                        userEpoch: string;
                     },
                 ]
             >('new', `GetUserInfo();`);
@@ -243,13 +256,14 @@ export class ConfigStore {
                     id: '',
                     name: '',
                     email: '',
+                    userEpoch: '',
                     admin: false,
                 };
 
-                // set the userEpoch
-                // TODO: Refactor and clean-up the userEpoc
-                this._store.userEpoch = output.userEpoch;
-                delete output.userEpoch;
+                // TODO: remove userEpoch from the backend
+                if (output.userEpoch) {
+                    delete output.userEpoch;
+                }
 
                 // get the user based on provider
                 if (output['SAML']) {
@@ -264,6 +278,7 @@ export class ConfigStore {
                 this._store.user.id = user.id || '';
                 this._store.user.name = user.name || '';
                 this._store.user.email = user.email || '';
+                this._store.userEpoch = user.userEpoch;
 
                 this._store.user.admin = isAdmin;
 

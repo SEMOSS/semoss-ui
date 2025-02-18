@@ -159,7 +159,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
-                    <StyledToggleTabsGroup
+                    {/* <StyledToggleTabsGroup
                         value={mode}
                         onChange={(e: React.SyntheticEvent, val) => {
                             setMode(val as MODE);
@@ -173,11 +173,13 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                             label="Client Blocks"
                             value={'CLIENT'}
                             disabled={true}
-                            // TODO: Coming next, asked van buren to
-                            // start looking at how to incorporate groupings,
-                            // if not done by 2/26/25, will take it over
-                        />
-                    </StyledToggleTabsGroup>
+                            />
+                    </StyledToggleTabsGroup> */}
+                    {/* 
+                    // TODO: Coming next, asked van buren to
+                    // start looking at how to incorporate groupings,
+                    // if not done by 2/19/25, will take it over 
+                    */}
                 </Stack>
 
                 {/* TODO: Two Different Menus: Client and System */}
