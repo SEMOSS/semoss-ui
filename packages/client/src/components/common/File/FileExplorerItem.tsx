@@ -228,11 +228,41 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
                     </Icon>
                     <StyledTypography variant="body2">{name}</StyledTypography>
                     {isHovered ? (
-                        <IconButton
-                            title={`Delete ${name}`}
-                            onClick={(e) => {
-                                // don't allow it to propagate
-                                e.stopPropagation();
+                        <>
+                            <IconButton
+                                title={`Download ${name}`}
+                                onClick={(e) => {
+                                    // don't allow it to propagate
+                                    e.stopPropagation();
+
+                                    // trigger
+                                    handleDownload(path, name);
+                                    download();
+                                }}
+                                size="small"
+                                color={'default'}
+                            >
+                                <FileDownloadOutlined fontSize="inherit" />
+                            </IconButton>
+                            <IconButton
+                                title={`Copy ${name}`}
+                                onClick={(e) => {
+                                    // don't allow it to propagate
+                                    e.stopPropagation();
+
+                                    // trigger
+                                    navigator.clipboard.writeText(name);
+                                }}
+                                size="small"
+                                color={'default'}
+                            >
+                                <ContentCopyOutlined fontSize="inherit" />
+                            </IconButton>
+                            <IconButton
+                                title={`Delete ${name}`}
+                                onClick={(e) => {
+                                    // don't allow it to propagate
+                                    e.stopPropagation();
 
                                     // trigger
                                     onTrashClick(e, path);
