@@ -30,6 +30,7 @@ export interface BuilderStepItem {
         | ConstraintSettings
         | object
         | boolean
+        | LLMSelectionType
         | undefined;
     required: boolean;
     display: string;
@@ -43,7 +44,7 @@ export interface Builder {
     inputs: BuilderStepItem;
     inputTypes: BuilderStepItem;
     constraints: BuilderStepItem;
-    useDefaultLLM: BuilderStepItem; // new field for LLM checkbox
+    llmSelection: BuilderStepItem; // new field for LLM checkbox
     temperature: BuilderStepItem; // new field for LLM temperature
 }
 
@@ -55,6 +56,11 @@ export interface Prompt {
     intent: string;
     created_by: string;
     date_created: string;
-    useDefaultLLM?: boolean; // optional field for LLM settings
+    llmSelection?: LLMSelectionType; // optional field for LLM settings
     temperature?: string; // optional field for temperature
+}
+
+export enum LLMSelectionType {
+    DEFAULT = 'default',
+    USER_INPUT = 'user_input',
 }

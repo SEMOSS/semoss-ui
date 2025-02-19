@@ -1,10 +1,14 @@
 import { useMemo, useState } from 'react';
-import { Builder } from '../../prompt.types';
+import { Builder, LLMSelectionType } from '../../prompt.types';
 import { StyledStepPaper } from '../../prompt.styled';
 import {
     createFilterOptions,
     Autocomplete,
     FormControlLabel,
+    FormControl,
+    FormLabel,
+    Radio,
+    RadioGroup,
     Checkbox,
 } from '@mui/material';
 import { styled, Box, Grid, Stack, TextField, Typography } from '@semoss/ui';
@@ -31,20 +35,39 @@ export const PromptBuilderContextStep = (props: {
     builder: Builder;
     setBuilderValue: (
         builderStepKey: string,
-        value: string | string[] | boolean,
+        value: string | string[] | boolean | LLMSelectionType,
     ) => void;
 }) => {
     const [cfgLibraryModels, setCfgLibraryModels] = useState(
         InitialCfgLibraryEngineState,
     );
     const filter = createFilterOptions<string>();
-    const showLLMSettings = props.builder.useDefaultLLM.value as boolean;
+    const llmSelection = props.builder.llmSelection.value as LLMSelectionType;
+    const showLLMSettings = llmSelection === LLMSelectionType.DEFAULT;
 
     const isPromptLibraryDisabled =
         !props.builder.model.value || !props.builder.title.value;
 
-    const isPromptContextTestDisabled =
-        !props.builder.model.value || !props.builder.context.value;
+    // Update test prompt disable logic
+    const isPromptContextTestDisabled = () => {
+        const llmSelection = props.builder.llmSelection
+            .value as LLMSelectionType | null;
+        const context = props.builder.context.value;
+
+        // If no context, disable test
+        if (!context) {
+            return true;
+        }
+
+        // If DEFAULT LLM selected, require model to be selected
+        if (llmSelection === LLMSelectionType.DEFAULT) {
+            return !props.builder.model.value;
+        }
+
+        // If USER_INPUT selected or no LLM selection (null), enable test
+        // as model will be selected later or not needed
+        return false;
+    };
 
     const myModels = usePixel<
         { app_id: string; app_name: string; tag: string }[]
@@ -78,10 +101,10 @@ export const PromptBuilderContextStep = (props: {
         }
     };
 
-    const handleUseDefaultLLMChange = (checked: boolean) => {
-        props.setBuilderValue('useDefaultLLM', checked);
-        // Reset model and temperature when unchecking
-        if (!checked) {
+    const handleLLMSelectionChange = (value: LLMSelectionType) => {
+        props.setBuilderValue('llmSelection', value);
+        // Reset model and temperature when changing selection
+        if (value !== LLMSelectionType.DEFAULT) {
             props.setBuilderValue('model', undefined);
             props.setBuilderValue('temperature', '0.7');
         }
@@ -141,19 +164,31 @@ export const PromptBuilderContextStep = (props: {
                                 <TextField {...params} label="Tags" />
                             )}
                         />
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={showLLMSettings}
-                                    onChange={(e) =>
-                                        handleUseDefaultLLMChange(
-                                            e.target.checked,
-                                        )
-                                    }
+                        <FormControl component="fieldset">
+                            <FormLabel component="legend">
+                                LLM Configuration
+                            </FormLabel>
+                            <RadioGroup
+                                value={llmSelection ?? ''}
+                                onChange={(e) =>
+                                    handleLLMSelectionChange(
+                                        (e.target.value as LLMSelectionType) ||
+                                            null,
+                                    )
+                                }
+                            >
+                                <FormControlLabel
+                                    value={LLMSelectionType.DEFAULT}
+                                    control={<Radio />}
+                                    label="Choose Default LLM"
                                 />
-                            }
-                            label="Set user's default LLM and Temperature"
-                        />
+                                <FormControlLabel
+                                    value={LLMSelectionType.USER_INPUT}
+                                    control={<Radio />}
+                                    label="Choose User Input LLM"
+                                />
+                            </RadioGroup>
+                        </FormControl>
                         {showLLMSettings && (
                             <>
                                 <Autocomplete
@@ -232,7 +267,7 @@ export const PromptBuilderContextStep = (props: {
                 />
                 <Stack direction="row">
                     <PromptBuilderContextTestDialogButton
-                        disabled={isPromptContextTestDisabled}
+                        disabled={isPromptContextTestDisabled()}
                         llm={props.builder.model.value as string}
                         context={props.builder.context.value as string}
                     />

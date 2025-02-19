@@ -1,4 +1,4 @@
-import { Builder, Token } from './prompt.types';
+import { Builder, Token, LLMSelectionType } from './prompt.types';
 import {
     INPUT_TYPE_TEXT,
     INPUT_TYPE_SELECT,
@@ -8,7 +8,8 @@ import {
     INPUT_TYPE_DATABASE,
     SELECT_TYPE_MODELS,
     SELECT_TYPE_VECTORS,
-    SELECT_TYPE_USER_INPUT,
+    SELECT_TYPE_STORAGES,
+    SELECT_TYPE_DATABASES,
 } from './prompt.constants';
 import {
     ActionMessages,
@@ -28,8 +29,15 @@ export const PROMPT_RESPONSE_BLOCK_ID = 'prompt-response';
 export const PROMPT_QUERY_ID = 'Prompt Query';
 export const PROMPT_QUERY_DEFINITION_ID = 'Query Definitions';
 export const MODEL_ID = 'Model';
+export const PROMPT_MY_ENGINES_ID = 'MyEngines';
+export const MODELS_CELL_ID = 'models-query';
+export const VECTORS_CELL_ID = 'vectors-query';
+export const STORAGE_CELL_ID = 'storages-query';
+export const DATABASE_CELL_ID = 'databases-query';
 export const MODELS_ID = 'Models';
 export const VECTORS_ID = 'Vectors';
+export const STORAGE_ID = 'Storages';
+export const DATABASE_ID = 'Databases';
 export const PROMPT_MY_ENGINES_MODELS_ID = 'My Engines Models';
 export const PROMPT_MY_ENGINES_VECTORS_ID = 'My Engines Vectors';
 
@@ -80,13 +88,23 @@ function getSelectInputBlock(
     inputTypeMeta: string | null,
 ) {
     let optionsVariable = '';
-    if (inputTypeMeta === SELECT_TYPE_MODELS) {
+    if (
+        inputTypeMeta === SELECT_TYPE_MODELS ||
+        inputTypeMeta === 'auto_model'
+    ) {
         optionsVariable = MODELS_ID;
     } else if (inputTypeMeta === SELECT_TYPE_VECTORS) {
         optionsVariable = VECTORS_ID;
+    } else if (inputTypeMeta === SELECT_TYPE_DATABASES) {
+        optionsVariable = DATABASE_ID;
+    } else if (inputTypeMeta === SELECT_TYPE_STORAGES) {
+        optionsVariable = STORAGE_ID;
     }
     return {
-        id: getIdForInput(inputType, index),
+        id:
+            inputTypeMeta === 'auto_model'
+                ? 'auto-model-select'
+                : getIdForInput(inputType, index),
         widget: 'select',
         parent: {
             id: PROMPT_CONTAINER_BLOCK_ID,
@@ -211,12 +229,13 @@ function getDatabaseQuery() {
 }
 
 export function getQueryForPrompt(
+    builder: Builder,
     tokens: Token[],
     inputTypes: object,
     temperature = '0.7', // Added temperature parameter
 ): Record<string, QueryStateConfig> {
     const prompt = getInputFormatPrompt(tokens, inputTypes);
-
+    const llmSelection = builder.llmSelection.value as LLMSelectionType | null;
     // filter out custom input types
     const customInputTypes = Object.fromEntries(
         Object.entries(inputTypes ?? {}).filter(
@@ -304,6 +323,11 @@ export function getQueryForPrompt(
         return promptQueryFunctionString;
     };
 
+    const engineIdValue =
+        llmSelection === LLMSelectionType.USER_INPUT
+            ? '{{auto-model-select.value}}'
+            : '{{Model}}';
+
     const queryDefinition = `def promptQuery(search_statement:str, ${Object.keys(
         customInputTypes,
     )
@@ -320,7 +344,7 @@ export function getQueryForPrompt(
     }limit = 5) -> str:
     import json
     from gaas_gpt_model import ModelEngine
-    model = ModelEngine(engine_id = "{{${MODEL_ID}}}", insight_id = '\${i}', temperature = ${temperature})
+    model = ModelEngine(engine_id = "${engineIdValue}", insight_id = '\${i}', temperature = ${temperature})
     ${buildQueryDefinitionFunctionCalls()}
     ${buildQueryDefinitionPromptStatement()}
     response = model.ask(question = prompt)
@@ -349,14 +373,8 @@ export function getQueryForPrompt(
         },
     ];
 
-    const myEnginesModels = [];
-    const myEnginesVectors = [];
-
-    const needsModels = Object.values(inputTypes ?? {}).some(
-        (inputType) =>
-            inputType.type === INPUT_TYPE_SELECT &&
-            inputType.meta === SELECT_TYPE_MODELS,
-    );
+    // Need models if using USER_INPUT LLM selection
+    const needsModels = llmSelection === LLMSelectionType.USER_INPUT;
 
     const needsVectors = Object.values(inputTypes ?? {}).some(
         (inputType) =>
@@ -364,37 +382,17 @@ export function getQueryForPrompt(
             inputType.meta === SELECT_TYPE_VECTORS,
     );
 
-    // Add Models cell if needed
-    if (needsModels) {
-        myEnginesModels.push(
-            ...[
-                {
-                    id: 'models-query',
-                    widget: 'code',
-                    parameters: {
-                        type: 'pixel',
-                        code: `MyEngines(engineTypes=['MODEL']);`,
-                    },
-                },
-            ],
-        );
-    }
+    const needsStorages = Object.values(inputTypes ?? {}).some(
+        (inputType) =>
+            inputType.type === INPUT_TYPE_SELECT &&
+            inputType.meta === SELECT_TYPE_STORAGES,
+    );
+    const needsDatabases = Object.values(inputTypes ?? {}).some(
+        (inputType) =>
+            inputType.type === INPUT_TYPE_SELECT &&
+            inputType.meta === SELECT_TYPE_DATABASES,
+    );
 
-    // Add Vectors cell if needed
-    if (needsVectors) {
-        myEnginesVectors.push(
-            ...[
-                {
-                    id: 'vectors-query',
-                    widget: 'code',
-                    parameters: {
-                        type: 'pixel',
-                        code: `MyEngines(engineTypes=['VECTOR']);`,
-                    },
-                },
-            ],
-        );
-    }
     Object.keys(customInputTypes).forEach(
         (customInputTokenIndex, index: number) => {
             if (
@@ -459,19 +457,60 @@ export function getQueryForPrompt(
                 },
             ],
         },
-        ...(needsModels && {
-            [PROMPT_MY_ENGINES_MODELS_ID]: {
-                id: PROMPT_MY_ENGINES_MODELS_ID,
-                cells: myEnginesModels,
-            },
-        }),
-        ...(needsVectors && {
-            [PROMPT_MY_ENGINES_VECTORS_ID]: {
-                id: PROMPT_MY_ENGINES_VECTORS_ID,
-                cells: myEnginesVectors,
-            },
-        }),
     };
+
+    // If we need any engine types, create the MyEngines notebook
+    if (needsModels || needsVectors || needsStorages || needsDatabases) {
+        queryJson[PROMPT_MY_ENGINES_ID] = {
+            id: PROMPT_MY_ENGINES_ID,
+            cells: [],
+        };
+
+        // Add cells for each needed engine type
+        if (needsModels) {
+            queryJson[PROMPT_MY_ENGINES_ID].cells.push({
+                id: MODELS_CELL_ID,
+                widget: 'code',
+                parameters: {
+                    type: 'pixel',
+                    code: "MyEngines(engineTypes=['MODEL']);",
+                },
+            });
+        }
+
+        if (needsVectors) {
+            queryJson[PROMPT_MY_ENGINES_ID].cells.push({
+                id: VECTORS_CELL_ID,
+                widget: 'code',
+                parameters: {
+                    type: 'pixel',
+                    code: "MyEngines(engineTypes=['VECTOR']);",
+                },
+            });
+        }
+
+        if (needsStorages) {
+            queryJson[PROMPT_MY_ENGINES_ID].cells.push({
+                id: STORAGE_CELL_ID,
+                widget: 'code',
+                parameters: {
+                    type: 'pixel',
+                    code: "MyEngines(engineTypes=['STORAGE']);",
+                },
+            });
+        }
+
+        if (needsDatabases) {
+            queryJson[PROMPT_MY_ENGINES_ID].cells.push({
+                id: DATABASE_CELL_ID,
+                widget: 'code',
+                parameters: {
+                    type: 'pixel',
+                    code: "MyEngines(engineTypes=['DATABASE']);",
+                },
+            });
+        }
+    }
 
     return queryJson;
 }
@@ -481,21 +520,30 @@ export async function setBlocksAndOpenUIBuilder(
     monolithStore: MonolithStore,
     navigate: (route: string) => void,
 ) {
-    // Get the temperature value and useDefaultLLM status
+    // Get the temperature value and llmselection status
     const temperature = String(builder.temperature?.value ?? '0.7');
-    const useDefaultLLM = builder.useDefaultLLM?.value ?? false;
-
-    // Check if we need Models/Vectors variables
-    const needsModels = Object.values(builder.inputTypes.value as object).some(
-        (inputType) =>
-            inputType.type === INPUT_TYPE_SELECT &&
-            inputType.meta === SELECT_TYPE_MODELS,
-    );
+    const llmSelection = builder.llmSelection.value as LLMSelectionType | null;
+    const needsModels = llmSelection === LLMSelectionType.USER_INPUT;
 
     const needsVectors = Object.values(builder.inputTypes.value as object).some(
         (inputType) =>
             inputType.type === INPUT_TYPE_SELECT &&
             inputType.meta === SELECT_TYPE_VECTORS,
+    );
+
+    const needsStorages = Object.values(
+        builder.inputTypes.value as object,
+    ).some(
+        (inputType) =>
+            inputType.type === INPUT_TYPE_SELECT &&
+            inputType.meta === SELECT_TYPE_STORAGES,
+    );
+    const needsDatabases = Object.values(
+        builder.inputTypes.value as object,
+    ).some(
+        (inputType) =>
+            inputType.type === INPUT_TYPE_SELECT &&
+            inputType.meta === SELECT_TYPE_DATABASES,
     );
 
     // create the state
@@ -523,14 +571,30 @@ export async function setBlocksAndOpenUIBuilder(
             },
             ...(needsModels && {
                 [MODELS_ID]: {
-                    type: 'query',
-                    to: PROMPT_MY_ENGINES_MODELS_ID,
+                    type: 'cell',
+                    cellId: MODELS_CELL_ID,
+                    to: PROMPT_MY_ENGINES_ID,
                 },
             }),
             ...(needsVectors && {
                 [VECTORS_ID]: {
-                    type: 'query',
-                    to: PROMPT_MY_ENGINES_VECTORS_ID,
+                    type: 'cell',
+                    cellId: VECTORS_CELL_ID,
+                    to: PROMPT_MY_ENGINES_ID,
+                },
+            }),
+            ...(needsStorages && {
+                [STORAGE_ID]: {
+                    type: 'cell',
+                    cellId: STORAGE_CELL_ID,
+                    to: PROMPT_MY_ENGINES_ID,
+                },
+            }),
+            ...(needsDatabases && {
+                [DATABASE_ID]: {
+                    type: 'cell',
+                    cellId: DATABASE_CELL_ID,
+                    to: PROMPT_MY_ENGINES_ID,
                 },
             }),
         },
@@ -556,24 +620,16 @@ export async function setBlocksAndOpenUIBuilder(
                             },
                         },
                         // If needed, also run Models/Vectors queries
-                        ...(needsModels
+                        ...(needsModels ||
+                        needsVectors ||
+                        needsStorages ||
+                        needsDatabases
                             ? [
                                   {
                                       message:
                                           ActionMessages.RUN_QUERY as ActionMessages.RUN_QUERY,
                                       payload: {
-                                          queryId: PROMPT_MY_ENGINES_MODELS_ID,
-                                      },
-                                  },
-                              ]
-                            : []),
-                        ...(needsVectors
-                            ? [
-                                  {
-                                      message:
-                                          ActionMessages.RUN_QUERY as ActionMessages.RUN_QUERY,
-                                      payload: {
-                                          queryId: PROMPT_MY_ENGINES_VECTORS_ID,
+                                          queryId: PROMPT_MY_ENGINES_ID,
                                       },
                                   },
                               ]
@@ -725,6 +781,26 @@ export async function setBlocksAndOpenUIBuilder(
 
     // inputs
     let childInputIds = [];
+
+    // Add auto model select if using USER_INPUT
+    if (llmSelection === LLMSelectionType.USER_INPUT) {
+        const modelSelectBlock = getSelectInputBlock(
+            'select',
+            -1,
+            'Select Model',
+            'auto_model',
+        );
+        childInputIds.push('auto-model-select');
+        state.blocks['auto-model-select'] = modelSelectBlock;
+
+        state.variables['auto-model-select'] = {
+            type: 'block',
+            to: 'auto-model-select',
+            isInput: true,
+            isOutput: false,
+        };
+    }
+
     for (const [tokenIndex, inputType] of Object.entries(
         (builder.inputTypes.value as object) ?? {},
     )) {
@@ -757,6 +833,7 @@ export async function setBlocksAndOpenUIBuilder(
     ];
 
     state.queries = getQueryForPrompt(
+        builder,
         builder.inputs.value as Token[],
         builder.inputTypes.value as object,
         temperature, // Pass temperature to query generation
@@ -781,8 +858,11 @@ export async function setBlocksAndOpenUIBuilder(
         `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify({
             tag: builder.tags.value,
             description: builder.context.value,
-            useDefaultLLM: useDefaultLLM,
-            temperature: temperature,
+            llmSelection,
+            ...(llmSelection === LLMSelectionType.DEFAULT && {
+                model: builder.model.value,
+                temperature,
+            }),
         })}])`,
     );
 

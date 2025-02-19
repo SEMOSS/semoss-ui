@@ -29,10 +29,13 @@ export const INPUT_TYPE_DATABASE = 'database';
 export const SELECT_TYPE_USER_INPUT = 'User Input';
 export const SELECT_TYPE_MODELS = 'Models';
 export const SELECT_TYPE_VECTORS = 'Vectors';
+export const SELECT_TYPE_STORAGES = 'Storages';
+export const SELECT_TYPE_DATABASES = 'Databases';
 export const SELECT_TYPE_OPTIONS = [
     SELECT_TYPE_USER_INPUT,
-    SELECT_TYPE_MODELS,
     SELECT_TYPE_VECTORS,
+    SELECT_TYPE_DATABASES,
+    SELECT_TYPE_STORAGES,
 ];
 
 export const INPUT_TYPES = [

@@ -19,8 +19,6 @@ import {
     INPUT_TYPE_HELP_TEXT,
     INPUT_TYPE_VECTOR,
     INPUT_TYPE_SELECT,
-    SELECT_TYPE_MODELS,
-    SELECT_TYPE_VECTORS,
     SELECT_TYPE_USER_INPUT,
     SELECT_TYPE_OPTIONS,
 } from '../../prompt.constants';
@@ -35,7 +33,7 @@ export const PromptBuilderInputTypeSelection = (props: {
     inputToken: Token;
     inputType: string | null;
     inputTypeMeta: string | null;
-    builder: Builder; // Add builder to props to check useDefaultLLM
+    builder: Builder; // Add builder to props to check llmselection
     cfgLibraryVectorDbs: {
         loading: boolean;
         ids: Array<string>;
@@ -70,7 +68,6 @@ export const PromptBuilderInputTypeSelection = (props: {
     };
 
     const getMetaSelectorOptions = (): Array<string> => {
-        const useDefaultLLM = props.builder.useDefaultLLM?.value as boolean;
         switch (props.inputType) {
             case INPUT_TYPE_VECTOR:
                 return props.cfgLibraryVectorDbs.ids;
@@ -78,9 +75,7 @@ export const PromptBuilderInputTypeSelection = (props: {
                 return props.cfgLibraryDatabases.ids;
             case INPUT_TYPE_SELECT:
                 // Filter out Models option if default LLM is set
-                return useDefaultLLM
-                    ? ['User Input', 'Vectors'] // Remove Models option if default LLM is set
-                    : ['User Input', 'Models', 'Vectors'];
+                return SELECT_TYPE_OPTIONS;
             default:
                 return [];
         }

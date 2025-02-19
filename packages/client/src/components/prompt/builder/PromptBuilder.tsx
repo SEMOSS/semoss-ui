@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { setBlocksAndOpenUIBuilder } from '../prompt.helpers';
 import {
     Builder,
+    LLMSelectionType,
     BuilderStepItem,
     ConstraintSettings,
     Token,
@@ -37,12 +38,6 @@ const StyledBox = styled(Box)(({ theme }) => ({
 }));
 
 const initialBuilder: Builder = {
-    useDefaultLLM: {
-        step: PROMPT_BUILDER_CONTEXT_STEP,
-        value: false,
-        required: false,
-        display: 'Use Default LLM',
-    },
     temperature: {
         step: PROMPT_BUILDER_CONTEXT_STEP,
         value: '0.7',
@@ -90,6 +85,12 @@ const initialBuilder: Builder = {
         value: undefined,
         required: true,
         display: 'Constraints',
+    },
+    llmSelection: {
+        step: PROMPT_BUILDER_CONTEXT_STEP,
+        value: null, // Initially no selection
+        required: false,
+        display: 'LLM Selection',
     },
 };
 
@@ -216,12 +217,16 @@ export const PromptBuilder = () => {
                         return true;
                     }
                     if (builderStepItem.display === 'LLM') {
-                        const useDefaultLLM = builder.useDefaultLLM?.value;
-                        if (!useDefaultLLM) {
-                            return true;
-                        }
+                        const llmSelection = builder.llmSelection
+                            ?.value as LLMSelectionType | null;
+                        return (
+                            llmSelection !== LLMSelectionType.DEFAULT ||
+                            !!builderStepItem.value
+                        );
                     }
-                    return !!builderStepItem.value;
+                    return !builderStepItem.value
+                        ? !!builderStepItem.value
+                        : true;
                 });
             case PROMPT_BUILDER_INPUT_TYPES_STEP:
                 // input type step - required only if there are inputs
