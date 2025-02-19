@@ -4,7 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings, useBlocks } from '@/hooks';
 import { getValueByPath } from '@/utility';
-import { Block, BlockDef, QueryState } from '@/stores';
+import { Block, BlockDef, getBlockElement, QueryState } from '@/stores';
 import { DefaultBlocks } from '@/components/block-defaults';
 import {
     Box,
@@ -21,6 +21,7 @@ import { SketchPicker } from 'react-color';
 import { Input, OutlinedInput } from '@mui/material';
 import EChartsReact from 'echarts-for-react';
 import {
+    ArrowBack,
     Check,
     Close,
     Delete,
@@ -29,6 +30,7 @@ import {
     Label,
     Padding,
 } from '@mui/icons-material';
+import EditIcon from '@mui/icons-material/Edit';
 
 interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
     /**
@@ -88,7 +90,7 @@ const StyledOverlay = styled('div')(() => ({
     justifyContent: 'center',
     width: 'fit-content',
     borderRadius: '12px',
-    padding: '16px',
+    // padding: '16px',
 }));
 const StyledModel = styled('div')(() => ({
     display: 'flex',
@@ -103,8 +105,8 @@ const StyledHeader = styled('div')(() => ({
 }));
 const StyledTitle = styled('span')(() => ({
     fontSize: '16px',
-    fontWeight: 'bold',
-    color: '#3366cc',
+    // fontWeight: 'bold',
+    // color: '#3366cc',
 }));
 const StyledDescription = styled('span')(() => ({
     fontSize: '14px',
@@ -151,12 +153,17 @@ const StyledLabel = styled('label')(() => ({
     display: 'flex',
 }));
 const StyledColorSpan = styled('span')(() => ({ marginLeft: '20px' }));
+const StyledRowSection = styled('div')(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+}));
+const StyledContainerToggle = styled('div')(() => ({}));
 const StyledEmptyContainer2 = styled('div')(() => ({}));
 const StyledEmptyContainer3 = styled('div')(() => ({}));
 
-const ColorPalette = ({ colors, label, onClick }) => {
+const ColorPalette = ({ colors, label, key, onClick, onEditClick }) => {
     return (
-        <StyledColorPalete onClick={() => onClick(colors)}>
+        <StyledColorPalete onClick={() => onClick(colors, label)}>
             {/* Color palette row */}
             <StyledPaleteRow>
                 {colors.map((color, index) => (
@@ -170,6 +177,9 @@ const ColorPalette = ({ colors, label, onClick }) => {
             </StyledPaleteRow>
             {/* Label below the palette */}
             <StyledPaleteLabel>{label}</StyledPaleteLabel>
+            <IconButton onClick={() => onEditClick(key, label)}>
+                <EditIcon />
+            </IconButton>
         </StyledColorPalete>
     );
 };
@@ -178,6 +188,8 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
         const palettes = [
             {
                 label: 'Option 1',
+                palatteLabel: 'Option 1',
+                isCustom: false,
                 colors: [
                     '#007AFF',
                     '#FFEDE9',
@@ -191,6 +203,8 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
             },
             {
                 label: 'Option 2',
+                palatteLabel: 'Option 2',
+                isCustom: false,
                 colors: [
                     '#FF5733',
                     '#33FF57',
@@ -204,6 +218,8 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
             },
             {
                 label: 'Option 3',
+                palatteLabel: 'Option 3',
+                isCustom: false,
                 colors: [
                     '#000000',
                     '#444444',
@@ -215,6 +231,8 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
             },
             {
                 label: 'Option 4',
+                palatteLabel: 'Option 4',
+                isCustom: false,
                 colors: [
                     '#FF0000',
                     '#00FF00',
@@ -228,6 +246,8 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
             },
             {
                 label: 'Option 5',
+                palatteLabel: 'Option 5',
+                isCustom: false,
                 colors: [
                     '#D32F2F',
                     '#FBC02D',
@@ -241,6 +261,8 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
             },
             {
                 label: 'Option 6',
+                palatteLabel: 'Option 6',
+                isCustom: false,
                 colors: [
                     '#1E88E5',
                     '#D81B60',
@@ -254,6 +276,8 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
             },
             {
                 label: 'Option 7',
+                palatteLabel: 'Option 7',
+                isCustom: false,
                 colors: [
                     '#FF6F61',
                     '#6B4226',
@@ -267,6 +291,8 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
             },
             {
                 label: 'Option 8',
+                palatteLabel: 'Option 8',
+                isCustom: false,
                 colors: [
                     '#E63946',
                     '#F1FAEE',
@@ -280,6 +306,8 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
             },
             {
                 label: 'Option 9',
+                palatteLabel: 'Option 9',
+                isCustom: false,
                 colors: [
                     '#F94144',
                     '#F3722C',
@@ -300,7 +328,7 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
         const { data, setData } = useBlockSettings<any>(id);
         const [value, setValue] = useState(data.option);
         const [colorPalatteFlag, setColorPalatteFlag] = useState(false);
-        const [editColorFlag, setEditColorFlag] = useState(false);
+        const [editColorPalatte, setEditColorPalatte] = useState(-1);
         const [editIndex, setEditIndex] = useState(-1);
         const [paletteName, setPaletteName] = useState('');
         const pathVal = 'option';
@@ -309,6 +337,9 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
             left: 0,
         });
         const [colorPalette, setColorPalette] = useState(palettes);
+        const [toggleAddEdit, setToggleAddEdit] = useState<'' | 'add' | 'edit'>(
+            '',
+        );
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
         // const barChartColour = getValueByPath(data.option,'series.0');
         // console.log(barChartColour, 'barChartColour');
@@ -327,27 +358,64 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
             });
         }, [data, pathVal]).get();
 
-        function handleClick(event: MouseEvent<HTMLButtonElement>) {
-            if (showCustomPopover) setShowCustomPopover(null);
-            else setShowCustomPopover(event.currentTarget);
-            console.log(
-                document
-                    .getElementById('elm-track-add-custom')
-                    .getBoundingClientRect(),
-                'elm-track-add-custom',
+        const getStyle = () => {
+            let screenEle = document.getElementById(
+                'outlined-adornment-colours',
             );
+            console.log(screenEle, 'screenEle');
+            // get position of page root block element
+            /*const screenElementSize = screenEle.getBoundingClientRect();
+                // get position of selected block element
+                const selectedElement = getBlockElement(designer.selected);
+                const selectedElementSize = selectedElement.getBoundingClientRect();
+
+                // check for overflow
+                const hasLeftOverflow =
+                    screenElementSize.left === selectedElementSize.left &&
+                    selectedElementSize.width <
+                        STYLED_BUTTON_GROUP_BUTTON_WIDTH * 2;
+                const hasRightOverflow =
+                    screenElementSize.right === selectedElementSize.right &&
+                    selectedElementSize.width <
+                        STYLED_BUTTON_GROUP_BUTTON_WIDTH * 2;
+
+                const leftValue =
+                    size.left + size.width / 2 - STYLED_BUTTON_GROUP_BUTTON_WIDTH;
+                let left: string;
+                if (hasRightOverflow) {
+                    left = `${
+                        leftValue -
+                        (STYLED_BUTTON_GROUP_BUTTON_WIDTH * 2 -
+                            selectedElementSize.width) +
+                        8
+                    }px`;
+                } else if (hasLeftOverflow) {
+                    left = `${size.left - 8}px`;
+                } else {
+                    left = `${leftValue}px`;
+                }
+
+                const top = size.top + size.height;
+
+                return { top, left };*/
+        };
+
+        function handleClick(event: MouseEvent<HTMLButtonElement>) {
+            // if (showCustomPopover) setShowCustomPopover(null);
+            // else setShowCustomPopover(event.currentTarget);
+            setToggleAddEdit('add');
+
             let buttonPosition = event.currentTarget.getBoundingClientRect();
-            console.log(buttonPosition, 'buttonPosition');
             setPopoverPosition((prev) => ({
                 ...prev,
                 top: buttonPosition.top - 250,
                 left: buttonPosition.left - 850,
             }));
-            console.log(popoverPosition, 'popoverPosition');
         }
         function handleClose() {
             setColorPalatteFlag(false);
             setShowCustomPopover(null);
+            setToggleAddEdit('');
         }
         function handleEdit(index) {
             setEditIndex(index);
@@ -355,33 +423,15 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
         }
         function handleColorPicker() {
             setColorPalatteFlag(!colorPalatteFlag);
+            getStyle();
         }
-        function handleColorChange(e) {
-            setColor(e.hex);
-        }
-        function addColorRow(color) {
-            if (!colors.includes(color)) {
-                setColors([...colors, color]);
-            }
-        }
-        function editColorRow(color, index) {
-            colors.splice(index, 1, color);
-        }
-        function handleAdd() {
-            if (paletteName === '' || colors.length === 0) return;
-            setColorPalette((prev) => [
-                ...prev,
-                { label: paletteName, colors: colors },
-            ]);
-            setColors([]);
-            setPaletteName('');
-            handleClose();
-        }
-        useEffect(() => {
-            setValue(computedValue);
-        }, [computedValue]);
-        useEffect(() => {
+        function handleColorChange(e, label) {
+            setPaletteName(label);
             let option = typeof value === 'string' ? JSON.parse(value) : value;
+            let colors =
+                label === '' || label === undefined
+                    ? colorPalette[0]
+                    : colorPalette.find((item) => item.label === label);
             if (
                 option.hasOwnProperty('series') &&
                 option['series'].length > 0
@@ -392,12 +442,125 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                 option['series'][seriesIndex] = {
                     ...option['series'][seriesIndex],
                     ['itemStyle']: {
-                        color: color,
+                        ['color']: colors?.colors[0],
                     },
                 };
             }
+            if (colors?.colors?.length) {
+                option = {
+                    ...option,
+                    ['color']: colors?.colors,
+                };
+            }
             runStateUpdateCustom(option);
-        }, [color]);
+        }
+        function handleEditButtonClick(id, label) {
+            setToggleAddEdit('edit');
+            setPaletteName(label);
+            setEditColorPalatte(id);
+        }
+        function addColorRow(color) {
+            if (!colors.includes(color)) {
+                setColors([...colors, color]);
+            }
+        }
+        function editColorRow(color, index) {
+            colors.splice(index, 1, color);
+        }
+        function duplicateExists() {
+            return availableLabels.includes(paletteName);
+        }
+        function handleAdd() {
+            if (paletteName === '' || colors.length === 0 || duplicateExists())
+                return;
+            setColorPalette((prev) => [
+                ...prev,
+                {
+                    label: paletteName,
+                    colors: colors,
+                    palatteLabel: paletteName,
+                    isCustom: true,
+                },
+            ]);
+            let option = typeof value === 'string' ? JSON.parse(value) : value;
+            let customSettings = { customColorPalette: [] };
+            if (option.hasOwnProperty('customSettings')) {
+                option = {
+                    ...option,
+                    customSettings: {
+                        ...option['customSettings'],
+                    },
+                };
+            } else {
+                option = {
+                    ...option,
+                    customSettings: {},
+                };
+            }
+            if (option['customSettings'].hasOwnProperty('customColorPalette')) {
+                option = {
+                    ...option,
+                    customSettings: {
+                        customColorPalette: [
+                            ...option['customSettings']['customColorPalette'],
+                            {
+                                label: paletteName,
+                                colors: colors,
+                                palatteLabel: paletteName,
+                                isCustom: true,
+                            },
+                        ],
+                    },
+                };
+            } else {
+                option = {
+                    ...option,
+                    customSettings: {
+                        customColorPalette: [
+                            {
+                                label: paletteName,
+                                colors: colors,
+                                palatteLabel: paletteName,
+                                isCustom: true,
+                            },
+                        ],
+                    },
+                };
+            }
+            // customColorPalette:[
+            //     ...option['customSettings']['customColorPalette'],
+            //     {
+            //         label: paletteName,
+            //         colors: colors,
+            //     },
+            // ],
+            setData('option', option as PathValue<any, typeof pathVal>);
+            setColors([]);
+            setPaletteName('');
+            handleClose();
+            setToggleAddEdit('');
+        }
+        useEffect(() => {
+            setValue(computedValue);
+        }, [computedValue]);
+        useEffect(() => {
+            let option =
+                typeof computedValue === 'string'
+                    ? JSON.parse(computedValue)
+                    : computedValue;
+            if (
+                option.hasOwnProperty('customSettings') &&
+                option['customSettings'].hasOwnProperty('customColorPalette')
+            ) {
+                let colorPaletteData = [
+                    ...colorPalette,
+                    ...option['customSettings']['customColorPalette'],
+                ];
+                setColorPalette((prevColourPalatte) => {
+                    return [...colorPaletteData];
+                });
+            }
+        }, []);
         function runStateUpdateCustom(option) {
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
@@ -411,53 +574,46 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                 }
             }, 300);
         }
+        const availableLabels = useMemo(() => {
+            return colorPalette.map((item) => item.label);
+        }, [colorPalette]);
         const open = Boolean(showCustomPopover);
         let customPopoverPositionLeft = popoverPosition.left;
         let customPopoverPositionTop = popoverPosition.top;
-        return (
-            <StyledEmptyContainer>
-                <Popover
-                    id={id}
-                    open={open}
-                    anchorEl={showCustomPopover}
-                    onClose={handleClose}
-                    // anchorOrigin={{
-                    //     vertical: customPopoverPositionTop,
-                    //     horizontal: customPopoverPositionLeft,
-                    // }}
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'left',
-                    }}
-                    // anchorPosition={{ top: -200, left: -450 }}
-                >
-                    <StyledOverlay>
-                        <StyledModel>
-                            <StyledHeader>
-                                <StyledTitle>Custom Color Palette</StyledTitle>
-                                <StyledCloseButton onClick={handleClose}>
-                                    <Icon
-                                        sx={{
-                                            width: '20px',
-                                            height: '20px',
-                                            mt: '6px',
-                                            marginRight: '12px',
-                                            fontSize: '12px',
-                                            fontWeight: 'bold',
-                                            color: 'rgba(0, 0, 0, .5)',
-                                        }}
-                                    >
-                                        <Close />
-                                    </Icon>
-                                </StyledCloseButton>
-                            </StyledHeader>
-                            <StyledDescription>
-                                Pick your color and create your own color
-                                palette
-                            </StyledDescription>
-                        </StyledModel>
-                    </StyledOverlay>
-                    <hr style={{ marginBottom: '20px' }}></hr>
+        const popOverContent = (
+            <>
+                {/* StyledOverlay section for showing header of popup*/}
+                <StyledOverlay>
+                    <StyledModel>
+                        <StyledHeader>
+                            <IconButton
+                                sx={{
+                                    // width: '20px',
+                                    // height: '20px',
+                                    // mt: '6px',
+                                    // marginRight: '12px',
+                                    fontSize: '12px',
+                                    fontWeight: 'bold',
+                                    color: 'rgba(0, 0, 0, .5)',
+                                }}
+                                onClick={(e) => {
+                                    setToggleAddEdit('');
+                                    setShowCustomPopover(null);
+                                    handleClose();
+                                }}
+                            >
+                                <ArrowBack />
+                            </IconButton>
+                            <StyledTitle>
+                                &nbsp;
+                                {toggleAddEdit === 'add' ? 'Create' : 'Edit'} a
+                                Custom Color Palette
+                            </StyledTitle>
+                        </StyledHeader>
+                    </StyledModel>
+                </StyledOverlay>
+                {/*popup name section */}
+                <StyledRowSection>
                     <StyledLabel htmlFor="outlined-adornment-password">
                         Name
                     </StyledLabel>
@@ -467,16 +623,22 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                             display: 'flex',
                             marginRight: '20px',
                         }}
+                        defaultValue={
+                            toggleAddEdit === 'edit' ? paletteName : ''
+                        }
                         onChange={(e) => {
                             setPaletteName(e.target.value);
                         }}
-                        label="Enter Palette Name"
+                        placeholder="Enter Palette Name"
                     ></TextField>
-                    <StyledLabel htmlFor="outlined-adornment-password">
-                        Select Colour
+                </StyledRowSection>
+                {/* colours section */}
+                <StyledRowSection>
+                    <StyledLabel htmlFor="outlined-adornment-colours">
+                        Colours
                     </StyledLabel>
                     <OutlinedInput
-                        id="outlined-adornment-password"
+                        id="outlined-adornment-colours"
                         placeholder="Enter Hex code or Pick Color"
                         aria-label="Select Colour"
                         type={'text'}
@@ -505,233 +667,248 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                         }
                         label="Select Colour"
                     />
-                    {colorPalatteFlag && (
-                        <StyledEmptyContainer
-                            style={{
-                                display: 'inline-block',
-                                borderRadius: '10px',
-                                border: '1px solid #ddd',
-                                margin: '20px',
-                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                </StyledRowSection>
+                {/* show color palette when color palate button is pressed */}
+                {colorPalatteFlag && (
+                    <StyledEmptyContainer
+                        style={{
+                            display: 'inline-block',
+                            borderRadius: '10px',
+                            border: '1px solid #ddd',
+                            margin: '20px',
+                            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                        }}
+                    >
+                        <StyledPicker
+                            onChange={(newColor) => {
+                                setColor(newColor.hex);
                             }}
-                        >
-                            <StyledPicker
-                                onChange={(newColor) => {
-                                    setColor(newColor.hex);
+                            // onChangeComplete={() =>{setColorPalatteFlag(false)}}
+                            color={color}
+                        ></StyledPicker>
+                        <hr></hr>
+                        <StyledButtonContainer>
+                            <StyledButtonClose
+                                onClick={() => {
+                                    setColorPalatteFlag(false);
                                 }}
-                                // onChangeComplete={() =>{setColorPalatteFlag(false)}}
-                                color={color}
-                            ></StyledPicker>
-                            <hr></hr>
-                            <StyledButtonContainer>
-                                <StyledButtonClose
-                                    onClick={() => {
-                                        setColorPalatteFlag(false);
+                            >
+                                <Icon
+                                    sx={{
+                                        width: '20px',
+                                        height: '20px',
+                                        mt: '6px',
+                                        marginRight: '12px',
+                                        fontSize: '12px',
+                                        fontWeight: 'bold',
+                                        color: 'rgba(0, 0, 0, .5)',
                                     }}
                                 >
-                                    <Icon
-                                        sx={{
-                                            width: '20px',
-                                            height: '20px',
-                                            mt: '6px',
-                                            marginRight: '12px',
-                                            fontSize: '12px',
-                                            fontWeight: 'bold',
-                                            color: 'rgba(0, 0, 0, .5)',
-                                        }}
-                                    >
-                                        <Close />
-                                    </Icon>
-                                </StyledButtonClose>
-                                <StyledCheck
-                                    onClick={() => {
-                                        addColorRow(color);
+                                    <Close />
+                                </Icon>
+                            </StyledButtonClose>
+                            <StyledCheck
+                                onClick={() => {
+                                    addColorRow(color);
+                                }}
+                            >
+                                <Icon
+                                    sx={{
+                                        width: '20px',
+                                        height: '20px',
+                                        mt: '6px',
+                                        marginRight: '12px',
+                                        fontSize: '20px',
+                                        fontWeight: 'bold',
+                                        color: 'rgba(0, 81, 255, 0.5)',
                                     }}
                                 >
-                                    <Icon
-                                        sx={{
-                                            width: '20px',
-                                            height: '20px',
-                                            mt: '6px',
-                                            marginRight: '12px',
-                                            fontSize: '20px',
-                                            fontWeight: 'bold',
-                                            color: 'rgba(0, 81, 255, 0.5)',
-                                        }}
-                                    >
-                                        <Check />
-                                    </Icon>
-                                </StyledCheck>
-                            </StyledButtonContainer>
-                        </StyledEmptyContainer>
-                    )}
-                    <div>
-                        {colors.map((color, index) => (
-                            <StyledEmptyContainer key={index}>
+                                    <Check />
+                                </Icon>
+                            </StyledCheck>
+                        </StyledButtonContainer>
+                    </StyledEmptyContainer>
+                )}
+                {/* selected colours section */}
+                <div>
+                    {(
+                        colors ||
+                        colorPalette[editColorPalatte]?.colors ||
+                        []
+                    ).map((color, index) => (
+                        <StyledEmptyContainer key={index}>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'flex-start',
+                                    padding: '8px',
+                                    borderRadius: '4px',
+                                    marginBottom: '8px',
+                                    marginLeft: '20px',
+                                    marginRight: '20px',
+                                }}
+                            >
                                 <div
                                     style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'flex-start',
-                                        padding: '8px',
-                                        borderRadius: '4px',
-                                        marginBottom: '8px',
-                                        marginLeft: '20px',
-                                        marginRight: '20px',
+                                        backgroundColor: color,
+                                        width: '33px',
+                                        height: '33px',
+                                        borderRadius: '20%',
                                     }}
+                                ></div>
+                                <StyledColorSpan>{color}</StyledColorSpan>
+                                {/* Edit button for the colour selected */}
+                                <IconButton
+                                    style={{
+                                        marginLeft: 'auto',
+                                        marginRight: '0px',
+                                    }}
+                                    aria-label={'select colour'}
+                                    edge="end"
                                 >
-                                    <div
+                                    <Edit
                                         style={{
-                                            backgroundColor: color,
                                             width: '33px',
                                             height: '33px',
                                             borderRadius: '20%',
+                                            display: 'block',
                                         }}
-                                    ></div>
-                                    <StyledColorSpan>{color}</StyledColorSpan>
-                                    <IconButton
+                                        onClick={() => {
+                                            handleEdit(index);
+                                            setEditColor(color);
+                                        }}
+                                    ></Edit>
+                                </IconButton>
+                                {/* delete button for the colour selected */}
+                                <IconButton
+                                    aria-label={'select colour'}
+                                    edge="end"
+                                >
+                                    <Delete
                                         style={{
-                                            marginLeft: 'auto',
-                                            marginRight: '0px',
+                                            width: '33px',
+                                            height: '33px',
+                                            borderRadius: '20%',
+                                            display: 'block',
                                         }}
-                                        aria-label={'select colour'}
-                                        edge="end"
-                                    >
-                                        <Edit
-                                            style={{
-                                                width: '33px',
-                                                height: '33px',
-                                                borderRadius: '20%',
-                                                display: 'block',
-                                            }}
-                                            onClick={() => {
-                                                handleEdit(index);
-                                            }}
-                                        ></Edit>
-                                    </IconButton>
-                                    <IconButton
-                                        aria-label={'select colour'}
-                                        edge="end"
-                                    >
-                                        <Delete
-                                            style={{
-                                                width: '33px',
-                                                height: '33px',
-                                                borderRadius: '20%',
-                                                display: 'block',
-                                            }}
-                                            onClick={() => {
-                                                setColors(
-                                                    colors.filter(
-                                                        (item) =>
-                                                            item !== color,
-                                                    ),
-                                                );
-                                            }}
-                                        ></Delete>
-                                    </IconButton>
-                                </div>
-                                {index === editIndex && (
-                                    <StyledEmptyContainer
+                                        onClick={() => {
+                                            setColors(
+                                                colors.filter(
+                                                    (item) => item !== color,
+                                                ),
+                                            );
+                                        }}
+                                    ></Delete>
+                                </IconButton>
+                            </div>
+                            {index === editIndex && (
+                                // Edit color palette when edit button is clicked
+                                <StyledEmptyContainer
+                                    style={{
+                                        display: 'inline-block',
+                                        borderRadius: '10px',
+                                        border: '1px solid #ddd',
+                                        margin: '20px',
+                                        boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                                    }}
+                                >
+                                    <StyledPicker
+                                        onChange={(newColor) => {
+                                            setEditColor(newColor.hex);
+                                        }}
+                                        color={editColor}
+                                    ></StyledPicker>
+                                    <hr></hr>
+                                    <StyledButtonContainer
                                         style={{
-                                            display: 'inline-block',
-                                            borderRadius: '10px',
-                                            border: '1px solid #ddd',
-                                            margin: '20px',
-                                            boxShadow:
-                                                '0 2px 5px rgba(0,0,0,0.2)',
+                                            marginTop: '5px',
+                                            marginBottom: '10px',
                                         }}
                                     >
-                                        <StyledPicker
-                                            onChange={(newColor) => {
-                                                setEditColor(newColor.hex);
-                                            }}
-                                            // onChangeComplete={() =>{setColorPalatteFlag(false)}}
-                                            color={editColor}
-                                        ></StyledPicker>
-                                        <hr></hr>
-                                        <StyledButtonContainer
-                                            style={{
-                                                marginTop: '5px',
-                                                marginBottom: '10px',
+                                        {/* close the color picker without selecting color */}
+                                        <StyledButtonClose
+                                            onClick={() => {
+                                                setColorPalatteFlag(false);
+                                                setEditIndex(-1);
                                             }}
                                         >
-                                            <StyledButtonClose
-                                                onClick={() => {
-                                                    setColorPalatteFlag(false);
+                                            <Icon
+                                                sx={{
+                                                    width: '20px',
+                                                    height: '20px',
+                                                    mt: '6px',
+                                                    marginRight: '12px',
+                                                    fontSize: '12px',
+                                                    fontWeight: 'bold',
+                                                    color: 'rgba(0, 0, 0, .5)',
                                                 }}
                                             >
-                                                <Icon
-                                                    sx={{
-                                                        width: '20px',
-                                                        height: '20px',
-                                                        mt: '6px',
-                                                        marginRight: '12px',
-                                                        fontSize: '12px',
-                                                        fontWeight: 'bold',
-                                                        color: 'rgba(0, 0, 0, .5)',
-                                                    }}
-                                                >
-                                                    <Close />
-                                                </Icon>
-                                            </StyledButtonClose>
-                                            <StyledCheck
-                                                onClick={() => {
-                                                    editColorRow(
-                                                        editColor,
-                                                        index,
-                                                    );
-                                                    setEditIndex(-1);
+                                                <Close />
+                                            </Icon>
+                                        </StyledButtonClose>
+                                        {/* select the color from colour picker */}
+                                        <StyledCheck
+                                            onClick={() => {
+                                                editColorRow(editColor, index);
+                                                setEditIndex(-1);
+                                            }}
+                                        >
+                                            <Icon
+                                                sx={{
+                                                    width: '20px',
+                                                    height: '20px',
+                                                    mt: '6px',
+                                                    marginRight: '12px',
+                                                    fontSize: '20px',
+                                                    fontWeight: 'bold',
+                                                    color: 'rgba(0, 81, 255, 0.5)',
                                                 }}
                                             >
-                                                <Icon
-                                                    sx={{
-                                                        width: '20px',
-                                                        height: '20px',
-                                                        mt: '6px',
-                                                        marginRight: '12px',
-                                                        fontSize: '20px',
-                                                        fontWeight: 'bold',
-                                                        color: 'rgba(0, 81, 255, 0.5)',
-                                                    }}
-                                                >
-                                                    <Check />
-                                                </Icon>
-                                            </StyledCheck>
-                                        </StyledButtonContainer>
-                                    </StyledEmptyContainer>
-                                )}
-                            </StyledEmptyContainer>
-                        ))}
-                    </div>
-                    <StyledButtonContainer
-                        style={{ marginTop: '10px', marginBottom: '20px' }}
-                    >
-                        <StyledButtonClose onClick={handleClose}>
-                            Close
-                        </StyledButtonClose>
-                        <StyledButtonAdd onClick={handleAdd}>
-                            Add
-                        </StyledButtonAdd>
-                    </StyledButtonContainer>
-                </Popover>
-                {/* <div id='elm-track-add-custom'>&nbsp;</div> */}
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <StyledButton
-                        onClick={handleClick}
-                        variant="outlined"
-                        color="primary"
-                        size="small"
-                        style={{ display: 'flex', justifyContent: 'center' }}
-                    >
-                        + Add Custom Color Palette
-                    </StyledButton>
+                                                <Check />
+                                            </Icon>
+                                        </StyledCheck>
+                                    </StyledButtonContainer>
+                                </StyledEmptyContainer>
+                            )}
+                        </StyledEmptyContainer>
+                    ))}
                 </div>
+                <StyledButtonContainer
+                    style={{ marginTop: '10px', marginBottom: '20px' }}
+                >
+                    <StyledButtonClose onClick={handleClose}>
+                        Close
+                    </StyledButtonClose>
+                    <StyledButtonAdd onClick={handleAdd}>Add</StyledButtonAdd>
+                </StyledButtonContainer>
+            </>
+        );
+        return (
+            <StyledEmptyContainer>
+                {toggleAddEdit != '' && (
+                    <StyledContainerToggle>
+                        <>{popOverContent}</>
+                    </StyledContainerToggle>
+                )}
+                {toggleAddEdit === '' && (
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <StyledButton
+                            onClick={handleClick}
+                            variant="outlined"
+                            color="primary"
+                            size="small"
+                        >
+                            + Add Custom Color Palette
+                        </StyledButton>
+                    </div>
+                )}
                 <hr></hr>
                 <div style={{ display: 'block' }}>
                     {colorPalette.map((palette, index) => (
                         <ColorPalette
                             onClick={handleColorChange}
+                            onEditClick={handleEditButtonClick}
                             key={index}
                             colors={palette.colors}
                             label={palette.label}
