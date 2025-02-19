@@ -2,6 +2,8 @@ import { useCallback, useState } from 'react';
 import {
     ContentCopyOutlined,
     DeleteOutline,
+    FileDownloadDoneOutlined,
+    FileDownloadOutlined,
     FolderOutlined,
     InsertDriveFileOutlined,
 } from '@mui/icons-material';
@@ -13,7 +15,9 @@ import {
     TreeView,
     Typography,
 } from '@semoss/ui';
-import { usePixel } from '@/hooks';
+import { usePixel, useRootStore, useWorkspace } from '@/hooks';
+import { Env } from '@/env';
+import { runPixel } from '@/api';
 
 const StyledNode = styled(TreeView.Item)(({ theme }) => ({
     '.MuiCollapse-wrapperInner': {
@@ -74,6 +78,10 @@ interface FileExplorerItemProps {
         event: React.MouseEvent<HTMLButtonElement>,
         path: string,
     ) => void;
+
+    // onDownloadClick?: (
+
+    // ) => void;
 }
 
 export const FileExplorerItem = (props: FileExplorerItemProps) => {
@@ -91,8 +99,79 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
     } = props;
     const [isHovered, setIsHovered] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
+    const { workspace } = useWorkspace();
 
     const isOpen = expanded.indexOf(path) > -1;
+
+    const { configStore, monolithStore } = useRootStore();
+
+    const handleDownload = (path: string, name: string) => {
+        const pixel = `META |DownloadAsset(filePath=["${path}"], space=["${workspace.appId}"]);`;
+
+        monolithStore.runQuery(pixel).then((response) => {
+            const output = response.pixelReturn[0].output,
+                insightId = response.insightId;
+
+            monolithStore.download(insightId, output);
+        });
+    };
+
+    const download = useCallback(async () => {
+        try {
+            //setLoading(true);
+
+            // First call to get the jobId
+            const response = await monolithStore.runQuery<[string]>(
+                `DownloadAsset(filePath=["${path}"], space=["${workspace.appId}"]);`,
+            );
+
+            debugger;
+            const fileKey = response?.pixelReturn[0]?.output;
+
+            if (!fileKey) {
+                throw new Error('Failed to get file key');
+            }
+
+            // Create the download URL
+            const url = `${Env.MODULE}/api/engine/downloadFile?insightId=${
+                configStore?.store?.insightID
+            }&fileKey=${encodeURIComponent(fileKey as string)}`;
+
+            // Use fetch with no-cors mode and get blob
+            const fileResponse = await fetch(url, {
+                method: 'GET',
+                headers: new Headers({
+                    'Content-Type': 'application/pdf',
+                }),
+            });
+            const blob = await fileResponse.blob();
+
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const base64data = reader.result as string;
+                    // Ensure it has the correct data URL prefix
+                    if (
+                        !base64data.startsWith('data:application/pdf;base64,')
+                    ) {
+                        const pdfPrefix = 'data:application/pdf;base64,';
+                        const base64Content = base64data.replace(
+                            /^data:.*?;base64,/,
+                            '',
+                        );
+                        resolve(pdfPrefix + base64Content);
+                    } else {
+                        resolve(base64data);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch (err) {
+            // setError('Failed to load PDF');
+            // setLoading(false);
+        }
+    }, []);
 
     const getAssets = usePixel<
         {
@@ -149,26 +228,11 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
                     </Icon>
                     <StyledTypography variant="body2">{name}</StyledTypography>
                     {isHovered ? (
-                        <>
-                            <IconButton
-                                title={`Copy ${name}`}
-                                onClick={(e) => {
-                                    // don't allow it to propagate
-                                    e.stopPropagation();
-
-                                    // trigger
-                                    navigator.clipboard.writeText(name);
-                                }}
-                                size="small"
-                                color={'default'}
-                            >
-                                <ContentCopyOutlined fontSize="inherit" />
-                            </IconButton>
-                            <IconButton
-                                title={`Delete ${name}`}
-                                onClick={(e) => {
-                                    // don't allow it to propagate
-                                    e.stopPropagation();
+                        <IconButton
+                            title={`Delete ${name}`}
+                            onClick={(e) => {
+                                // don't allow it to propagate
+                                e.stopPropagation();
 
                                     // trigger
                                     onTrashClick(e, path);
