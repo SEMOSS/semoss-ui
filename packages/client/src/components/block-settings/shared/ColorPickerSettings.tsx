@@ -8,6 +8,7 @@ import { Block, BlockDef, QueryState } from '@/stores';
 import { IconButton, InputAdornment, Popover, styled } from '@semoss/ui';
 import { SketchPicker } from 'react-color';
 import { OutlinedInput } from '@mui/material';
+import { EchartVisualizationBlockDef } from '@/components/block-defaults/echart-visualization-blocks';
 
 interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
     /**
@@ -44,8 +45,8 @@ export const ColorPickerSettings = observer<ColorPalatteSettingProps>(
             useState<HTMLButtonElement | null>(null);
         const [color, setColor] = useState('#000000');
         const { data, setData } = useBlockSettings<any>(id);
-        const [value, setValue] = useState(data.option);
-        const pathVal = 'option';
+        const [value, setValue] = useState<string | null>(null);
+        const pathVal = path;
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
         // const barChartColour = getValueByPath(data.option,'series.0');
         // console.log(barChartColour, 'barChartColour');
@@ -72,27 +73,7 @@ export const ColorPickerSettings = observer<ColorPalatteSettingProps>(
         useEffect(() => {
             setValue(computedValue);
         }, [computedValue]);
-        useEffect(() => {
-            let option = typeof value === 'string' ? JSON.parse(value) : value;
-            // let customPath = 'series.0.itemStyle.color';
-            // let customPathArray = customPath.split('.');
 
-            if (
-                option.hasOwnProperty('series') &&
-                option['series'].length > 0
-            ) {
-                let seriesIndex = option['series'].findIndex(
-                    (item) => item.type === 'bar',
-                );
-                option['series'][seriesIndex] = {
-                    ...option['series'][seriesIndex],
-                    ['itemStyle']: {
-                        color: color,
-                    },
-                };
-            }
-            runStateUpdateCustom(option);
-        }, [color]);
         function runStateUpdateCustom(option) {
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
@@ -121,6 +102,7 @@ export const ColorPickerSettings = observer<ColorPalatteSettingProps>(
                     style={{ width: '100%' }}
                     onChange={(e) => {
                         setColor(e.target.value);
+                        runStateUpdateCustom(e.target.value);
                     }}
                     endAdornment={
                         <InputAdornment position="end">
@@ -158,7 +140,10 @@ export const ColorPickerSettings = observer<ColorPalatteSettingProps>(
                     }}
                 >
                     <StyledChartContainer
-                        onChange={(newColor) => setColor(newColor.hex)}
+                        onChange={(newColor) => {
+                            setColor(newColor.hex);
+                            runStateUpdateCustom(newColor.hex);
+                        }}
                         color={color}
                     ></StyledChartContainer>
                 </Popover>
