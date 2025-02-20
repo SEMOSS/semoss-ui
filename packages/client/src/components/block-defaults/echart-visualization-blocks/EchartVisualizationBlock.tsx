@@ -46,42 +46,6 @@ export interface EchartVisualizationBlockDef {
 export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
     const elementRef = useRef<HTMLDivElement>(null);
-    let parentElementHeight: number = 0;
-    function getParentElementUnit(elementRef) {
-        if (
-            elementRef.current?.parentElement?.style?.height
-                .toString()
-                .endsWith('em')
-        ) {
-            return 'em';
-        }
-        if (
-            elementRef.current?.parentElement?.style?.height
-                .toString()
-                .endsWith('px')
-        ) {
-            return 'px';
-        }
-        if (
-            elementRef.current?.parentElement?.style?.height
-                .toString()
-                .endsWith('%')
-        ) {
-            return '%';
-        }
-    }
-    let parentElementUnit: string = getParentElementUnit(elementRef);
-    if (parentElementUnit === 'em') {
-        parentElementHeight = parseInt(
-            elementRef.current?.parentElement?.style?.height
-                .toString()
-                .replace('em', ''),
-        );
-    } else {
-        parentElementHeight = parseInt(
-            elementRef.current?.parentElement?.style?.height,
-        );
-    }
     //get the updated data style when data.style is changed
     const updatedDataStyle = useMemo(() => {
         let isEm =

@@ -32,6 +32,7 @@ const StyledAxisColDiv = styled('div')<{
     justifyContent: justifyContent ?? undefined,
     flexDirection: 'column',
     padding: '0.5rem',
+    marginLeft: '2px',
 }));
 
 export const ScatterPlotChartTitle = observer(

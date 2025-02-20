@@ -22,6 +22,16 @@ const StyledAxisDiv = styled('div')<{
     justifyContent: justifyContent ?? undefined,
     flexDirection: 'row',
     padding: '0.5rem',
+    marginLeft: '4px',
+}));
+const StyledAxis = styled('div')<{
+    display?: string;
+    justifyContent?: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: 'row',
+    padding: '0.5rem',
 }));
 
 const StyledTypography = styled(Typography)({
@@ -80,7 +90,7 @@ export const TooltipScatterPlot = observer(
             setData(path, option as PathValue<D['data'], typeof path>);
         };
         return (
-            <StyledAxisDiv>
+            <StyledAxis>
                 <StyledAxisDiv display="flex" justifyContent="flex-start">
                     <Switch
                         checked={showTooltips}
@@ -94,7 +104,7 @@ export const TooltipScatterPlot = observer(
                         Show Tooltip
                     </StyledTypography>
                 </StyledAxisDiv>
-            </StyledAxisDiv>
+            </StyledAxis>
         );
     },
 );

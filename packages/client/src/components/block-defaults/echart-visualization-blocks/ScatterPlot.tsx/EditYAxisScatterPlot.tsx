@@ -29,6 +29,16 @@ const StyledAxisDiv = styled('div')<{
     justifyContent: justifyContent ?? undefined,
     flexDirection: 'row',
     padding: '0.5rem',
+    marginLeft: '4px',
+}));
+const StyledAxis = styled('div')<{
+    display?: string;
+    justifyContent?: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: 'row',
+    padding: '0.5rem',
 }));
 
 const StyledAxisColDiv = styled('div')<{
@@ -39,6 +49,8 @@ const StyledAxisColDiv = styled('div')<{
     justifyContent: justifyContent ?? undefined,
     flexDirection: 'column',
     padding: '0.5rem',
+    position: 'relative',
+    right: '3px',
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
@@ -344,7 +356,7 @@ export const EditYAxisScatterPlot = observer(
             setData(path, option as PathValue<D['data'], typeof path>);
         };
         return (
-            <StyledAxisDiv>
+            <StyledAxis>
                 <StyledAxisDiv display="flex" justifyContent="flex-start">
                     <Switch
                         checked={showYaxis}
@@ -372,7 +384,7 @@ export const EditYAxisScatterPlot = observer(
                     </StyledTypography>
                 </StyledAxisDiv>
                 {showYaxisTitle && (
-                    <StyledAxisDiv>
+                    <StyledAxis>
                         <StyledAxisColDiv
                             display="flex"
                             justifyContent="flex-start"
@@ -402,7 +414,7 @@ export const EditYAxisScatterPlot = observer(
                                 onChange={(e) => handleChangeYAxisFontSize(e)}
                             />
                         </StyledAxisColDiv>
-                    </StyledAxisDiv>
+                    </StyledAxis>
                 )}
                 <StyledAxisDiv display="flex" justifyContent="flex-start">
                     <Switch
@@ -418,7 +430,7 @@ export const EditYAxisScatterPlot = observer(
                     </StyledTypography>
                 </StyledAxisDiv>
                 {showAxisLabel && (
-                    <StyledAxisDiv>
+                    <StyledAxis>
                         <StyledAxisColDiv
                             display="flex"
                             justifyContent="flex-start"
@@ -452,7 +464,7 @@ export const EditYAxisScatterPlot = observer(
                                 onChange={(e) => rotateYAxis(e)}
                             />
                         </StyledAxisColDiv>
-                    </StyledAxisDiv>
+                    </StyledAxis>
                 )}
                 <StyledAxisDiv display="flex" justifyContent="flex-start">
                     <Switch
@@ -467,15 +479,17 @@ export const EditYAxisScatterPlot = observer(
                         Show Axis Line Ticks
                     </StyledTypography>
                 </StyledAxisDiv>
-                <StyledButton
-                    variant="contained"
-                    color="primary"
-                    size="small"
-                    onClick={Reset}
-                >
-                    Reset
-                </StyledButton>
-            </StyledAxisDiv>
+                <StyledAxisDiv display="flex" justifyContent="flex-end">
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        onClick={Reset}
+                    >
+                        Reset
+                    </Button>
+                </StyledAxisDiv>
+            </StyledAxis>
         );
     },
 );

@@ -31,6 +31,16 @@ const StyledAxisDiv = styled('div')<{
     justifyContent: justifyContent ?? undefined,
     flexDirection: 'row',
     padding: '0.5rem',
+    marginLeft: '4px',
+}));
+const StyledAxis = styled('div')<{
+    display?: string;
+    justifyContent?: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: 'row',
+    padding: '0.5rem',
 }));
 
 const StyledAxisColDiv = styled('div')<{
@@ -41,6 +51,8 @@ const StyledAxisColDiv = styled('div')<{
     justifyContent: justifyContent ?? undefined,
     flexDirection: 'column',
     padding: '0.5rem',
+    position: 'relative',
+    right: '3px',
 }));
 
 const StyledTypography = styled(Typography)({
@@ -236,7 +248,7 @@ export const ValueLabelScatterPlot = observer(
         };
 
         return (
-            <StyledAxisDiv>
+            <StyledAxis>
                 <StyledAxisDiv display="flex" justifyContent="flex-start">
                     <Switch
                         checked={showLabel}
@@ -251,7 +263,7 @@ export const ValueLabelScatterPlot = observer(
                     </StyledTypography>
                 </StyledAxisDiv>
                 {showLabel && (
-                    <StyledAxisDiv>
+                    <StyledAxis>
                         <StyledAxisColDiv
                             display="flex"
                             justifyContent="space-around"
@@ -337,17 +349,19 @@ export const ValueLabelScatterPlot = observer(
                                 onChange={handleLabelSize}
                             />
                         </StyledAxisColDiv>
-                    </StyledAxisDiv>
+                    </StyledAxis>
                 )}
-                <StyledButton
-                    variant="contained"
-                    color="primary"
-                    size="small"
-                    onClick={Reset}
-                >
-                    Reset
-                </StyledButton>
-            </StyledAxisDiv>
+                <StyledAxisDiv display="flex" justifyContent="flex-end">
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        onClick={Reset}
+                    >
+                        Reset
+                    </Button>
+                </StyledAxisDiv>
+            </StyledAxis>
         );
     },
 );
