@@ -17,6 +17,7 @@ import { HoveredMask } from './HoveredMask';
 import { Placeholder } from './Placeholder';
 import { Ghost } from './Ghost';
 import { DeleteDuplicateMask } from './DeleteDuplicateMask';
+import { BlockSettingsMask } from './BlockSettingsMask';
 
 import { useBlocks } from '@semoss/renderer';
 
@@ -263,6 +264,9 @@ export const Screen = observer((props: ScreenProps) => {
                     )}
                     {designer.selected && !designer.drag.active && (
                         <DeleteDuplicateMask screenEle={eleRef.current} />
+                    )}
+                    {designer.selected && !designer.drag.active && (
+                        <BlockSettingsMask screenEle={eleRef.current} />
                     )}
                 </>
             ) : null}
