@@ -1,0 +1,79 @@
+import { CSSProperties, useMemo } from 'react';
+import { observer } from 'mobx-react-lite';
+import { useBlock, useBlocks } from '@/hooks';
+import { BlockDef, BlockComponent } from '@/stores';
+import { Slot } from '@/components/blocks';
+import { Drawer, Stack, styled, Box } from '@semoss/ui';
+
+export interface DrawerBlockDef extends BlockDef<'drawer'> {
+    widget: 'drawer';
+    data: {
+        style: CSSProperties;
+        anchor: 'left' | 'right' | 'top' | 'bottom';
+        drawerWidth: number;
+        designMode: boolean;
+        open: string | boolean | number; // Changed to string to store query
+    };
+    slots: {
+        content: true;
+    };
+}
+
+const DrawerWrapper = styled(Box)<{ $visible: boolean }>(({ $visible }) => ({
+    visibility: $visible ? 'visible' : 'hidden',
+}));
+
+export const DrawerBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data, slots } = useBlock<DrawerBlockDef>(id);
+    const { state } = useBlocks();
+    const isStatic = state.mode === 'static';
+
+    const open = useMemo(() => {
+        let o = false;
+        // Interpret Python
+        if (
+            data.open === true ||
+            data.open === 'true' ||
+            data.open === 1 ||
+            data.open === '1'
+        ) {
+            o = true;
+        }
+
+        return o;
+    }, [data.open]);
+
+    // Helper to determine if modal should be shown
+    const shouldShowModal = isStatic
+        ? data.designMode // In static mode, show when design mode is on
+        : Boolean(open); // In interactive mode, show when query returns true
+
+    // In static mode with design mode on, show as modal but without portal
+    if (!shouldShowModal && !isStatic) {
+        return <></>;
+    }
+
+    return (
+        <DrawerWrapper {...attrs} $visible={shouldShowModal}>
+            <Drawer
+                variant="persistent"
+                anchor={data.anchor ?? 'left'}
+                open={shouldShowModal}
+                // onClose={handleDrawerOpen}
+                PaperProps={{
+                    sx: {
+                        position: 'absolute',
+                        height: '100%',
+                        width: data.drawerWidth,
+                        zIndex: !isStatic ? 40 : 19,
+                        ...data.style,
+                    },
+                }}
+            >
+                <Stack>
+                    <Slot slot={slots.content} />
+                </Stack>
+            </Drawer>
+        </DrawerWrapper>
+    );
+});
