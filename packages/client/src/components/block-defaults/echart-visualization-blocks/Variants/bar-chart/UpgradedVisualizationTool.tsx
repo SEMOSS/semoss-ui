@@ -62,7 +62,10 @@ export const UpgradedVisualizationTool =
                                 width={'100%'}
                                 style={{ padding: '0.95%', width: 'inherit' }}
                             >
-                                <ColorPalatteSettings id={id} path="option" />
+                                <ColorPalatteSettings
+                                    id={id}
+                                    path="option.color"
+                                />
                             </Stack>
                         )}
                     </StyledListItem>
