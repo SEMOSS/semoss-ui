@@ -252,6 +252,16 @@ export const UserTable = (props: UserTableProps) => {
      */
     const updateUser = async (user: User) => {
         try {
+            if (user.exporter === undefined || user.publisher === undefined) {
+                if (user.exporter) {
+                    user.publisher = false;
+                } else if (user.publisher) {
+                    user.exporter = false;
+                } else {
+                    user.publisher = false;
+                    user.exporter = false;
+                }
+            }
             const response = await monolithStore.editMemberInfo(
                 adminMode,
                 user,
@@ -424,7 +434,6 @@ export const UserTable = (props: UserTableProps) => {
                                 </StyledTableTitleMemberCount>
                             </StyledTableTitleMemberCountContainer>
                         </StyledTableTitleMemberContainer>
-
                         <StyledSearchButtonContainer>
                             {isSearch ? (
                                 <Search
@@ -762,7 +771,6 @@ export const UserTable = (props: UserTableProps) => {
                                                     </Table.Row>
                                                 );
                                             }
-
                                             return null;
                                         })}
                                     </Table.Body>
