@@ -52,6 +52,7 @@ export interface TypographyProps {
 
 export const Typography = (props: TypographyProps) => {
     const { sx, color, ...otherProps } = props;
+
     return (
         <MuiTypography
             sx={sx}
