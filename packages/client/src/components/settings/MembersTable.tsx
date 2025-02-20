@@ -822,7 +822,8 @@ export const MembersTable = (props: MembersTableProps) => {
                 onClose={(success) => {
                     // clear out the deleted members
                     setPendingDeletedMembers([]);
-
+                    // clear out the deleted members
+                    setSelectedMembers([]);
                     // close the model
                     setDeleteMembersModal(false);
 

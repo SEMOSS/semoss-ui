@@ -177,7 +177,9 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
             exporter: user?.exporter,
             publisher: user?.exporter,
             type: user?.type,
-            model_usage_restriction: user?.model_usage_restriction,
+            model_usage_restriction: user?.model_usage_restriction
+                ? user?.model_usage_restriction
+                : 'null',
             model_usage_frequency: user?.model_usage_frequency,
             model_max_tokens: user?.model_max_tokens,
             model_max_response_time: user?.model_max_response_time,
@@ -222,6 +224,11 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                 if (isNewUser) {
                     response = await monolithStore.createUser(adminMode, data);
                 } else {
+                    if (data.model_usage_restriction === 'null') {
+                        data.model_max_response_time = null;
+                        data.model_max_tokens = null;
+                        data.model_usage_frequency = null;
+                    }
                     response = await monolithStore.editMemberInfo(
                         adminMode,
                         data,
@@ -527,6 +534,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                         <Stack direction={'column'} gap={1}>
                             <Controller
                                 name="model_usage_restriction"
+                                defaultValue={'null'}
                                 control={control}
                                 rules={{ required: true }}
                                 render={({ field }) => {
