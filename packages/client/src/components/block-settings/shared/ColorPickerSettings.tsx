@@ -9,7 +9,7 @@ import { IconButton, InputAdornment, Popover, styled } from '@semoss/ui';
 import { SketchPicker } from 'react-color';
 import { OutlinedInput } from '@mui/material';
 
-interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
+interface ColorPickerSettingProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
@@ -19,12 +19,10 @@ interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
      */
     path: Paths<Block<D>['data'], 4>;
 }
-const varr = '"Test variable"';
 
 const StyledSketchContainer = styled(SketchPicker)({
     '.custom-sketch-picker .flexbox-fix::before': {
         marginLeft: '32px',
-        content: varr,
         display: 'block',
         fontSize: '12px',
         fontWeight: 'bold',
@@ -46,7 +44,7 @@ const StyledSpanSection = styled('span')(({ color }) => ({
     display: 'block',
     border: '1px solid #000',
 }));
-export const ColorPickerSettings = observer<ColorPalatteSettingProps>(
+export const ColorPickerSettings = observer<ColorPickerSettingProps>(
     <D extends BlockDef = BlockDef>({ id, path }) => {
         const [showPopover, setShowPopover] =
             useState<HTMLButtonElement | null>(null); //show and hide the color picker
