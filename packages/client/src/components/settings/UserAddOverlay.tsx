@@ -4,6 +4,7 @@ import {
     LocalPoliceRounded,
     CloudUploadRounded,
     DownloadForOfflineRounded,
+    Flag,
 } from '@mui/icons-material';
 import {
     styled,
@@ -224,6 +225,19 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                 if (isNewUser) {
                     response = await monolithStore.createUser(adminMode, data);
                 } else {
+                    if (
+                        data.exporter === undefined ||
+                        data.publisher === undefined
+                    ) {
+                        if (data.exporter) {
+                            data.publisher = false;
+                        } else if (data.publisher) {
+                            data.exporter = false;
+                        } else {
+                            data.publisher = false;
+                            data.exporter = false;
+                        }
+                    }
                     if (data.model_usage_restriction === 'null') {
                         data.model_max_response_time = null;
                         data.model_max_tokens = null;

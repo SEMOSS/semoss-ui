@@ -252,6 +252,16 @@ export const UserTable = (props: UserTableProps) => {
      */
     const updateUser = async (user: User) => {
         try {
+            if (user.exporter === undefined || user.publisher === undefined) {
+                if (user.exporter) {
+                    user.publisher = false;
+                } else if (user.publisher) {
+                    user.exporter = false;
+                } else {
+                    user.publisher = false;
+                    user.exporter = false;
+                }
+            }
             const response = await monolithStore.editMemberInfo(
                 adminMode,
                 user,
@@ -675,92 +685,92 @@ export const UserTable = (props: UserTableProps) => {
                                                                 'compute' &&
                                                                 `${user?.model_max_response_time?.toLocaleString()} ms`}
 
-                                                                {user?.model_usage_restriction ===
-                                                                    'token' &&
-                                                                    `${user?.model_max_tokens?.toLocaleString()}`}
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                {formatModelLimitValue(
-                                                                    user?.model_usage_frequency,
-                                                                )}
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                <StyledCenteredBox>
-                                                                    <Checkbox
-                                                                        label="Publisher"
-                                                                        checked={
-                                                                            user.publisher
-                                                                        }
-                                                                        onChange={() => {
-                                                                            updateUser(
-                                                                                {
-                                                                                    ...user,
-                                                                                    publisher:
-                                                                                        !user.publisher,
-                                                                                },
-                                                                            );
-                                                                        }}
-                                                                    />
-                                                                    <Checkbox
-                                                                        label="Exporter"
-                                                                        checked={
-                                                                            user.exporter
-                                                                        }
-                                                                        onChange={() => {
-                                                                            updateUser(
-                                                                                {
-                                                                                    ...user,
-                                                                                    exporter:
-                                                                                        !user.exporter,
-                                                                                },
-                                                                            );
-                                                                        }}
-                                                                    />
-                                                                    <Checkbox
-                                                                        label="Admin"
-                                                                        checked={
-                                                                            user.admin
-                                                                        }
-                                                                        onChange={() => {
-                                                                            updateUser(
-                                                                                {
-                                                                                    ...user,
-                                                                                    admin: !user.admin,
-                                                                                },
-                                                                            );
-                                                                        }}
-                                                                    />
-                                                                </StyledCenteredBox>
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                <StyledCenteredBox>
-                                                                    <IconButton
-                                                                        onClick={() => {
-                                                                            setAddModalOpen(
-                                                                                true,
-                                                                            );
+                                                            {user?.model_usage_restriction ===
+                                                                'token' &&
+                                                                `${user?.model_max_tokens?.toLocaleString()}`}
+                                                        </Table.Cell>
+                                                        <Table.Cell>
+                                                            {formatModelLimitValue(
+                                                                user?.model_usage_frequency,
+                                                            )}
+                                                        </Table.Cell>
+                                                        <Table.Cell>
+                                                            <StyledCenteredBox>
+                                                                <Checkbox
+                                                                    label="Publisher"
+                                                                    checked={
+                                                                        user.publisher
+                                                                    }
+                                                                    onChange={() => {
+                                                                        updateUser(
+                                                                            {
+                                                                                ...user,
+                                                                                publisher:
+                                                                                    !user.publisher,
+                                                                            },
+                                                                        );
+                                                                    }}
+                                                                />
+                                                                <Checkbox
+                                                                    label="Exporter"
+                                                                    checked={
+                                                                        user.exporter
+                                                                    }
+                                                                    onChange={() => {
+                                                                        updateUser(
+                                                                            {
+                                                                                ...user,
+                                                                                exporter:
+                                                                                    !user.exporter,
+                                                                            },
+                                                                        );
+                                                                    }}
+                                                                />
+                                                                <Checkbox
+                                                                    label="Admin"
+                                                                    checked={
+                                                                        user.admin
+                                                                    }
+                                                                    onChange={() => {
+                                                                        updateUser(
+                                                                            {
+                                                                                ...user,
+                                                                                admin: !user.admin,
+                                                                            },
+                                                                        );
+                                                                    }}
+                                                                />
+                                                            </StyledCenteredBox>
+                                                        </Table.Cell>
+                                                        <Table.Cell>
+                                                            <StyledCenteredBox>
+                                                                <IconButton
+                                                                    onClick={() => {
+                                                                        setAddModalOpen(
+                                                                            true,
+                                                                        );
 
-                                                                            setAddModalUser(
-                                                                                user,
-                                                                            );
-                                                                        }}
-                                                                    >
-                                                                        <Edit />
-                                                                    </IconButton>
-                                                                    <IconButton
-                                                                        onClick={() => {
-                                                                            deleteUser(
-                                                                                user,
-                                                                            );
-                                                                        }}
-                                                                    >
-                                                                        <Delete />
-                                                                    </IconButton>
-                                                                </StyledCenteredBox>
-                                                            </Table.Cell>
-                                                        </Table.Row>
-                                                    );
-                                                }
+                                                                        setAddModalUser(
+                                                                            user,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Edit />
+                                                                </IconButton>
+                                                                <IconButton
+                                                                    onClick={() => {
+                                                                        deleteUser(
+                                                                            user,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Delete />
+                                                                </IconButton>
+                                                            </StyledCenteredBox>
+                                                        </Table.Cell>
+                                                    </Table.Row>
+                                                );
+                                            }
                                             return null;
                                         })}
                                     </Table.Body>
@@ -808,7 +818,6 @@ export const UserTable = (props: UserTableProps) => {
                                 </StyledNoUsersDiv>
                             )}
                         </>
-                        
                     )}
                 </StyledTableContainer>
             </StyledMemberInnerContent>
