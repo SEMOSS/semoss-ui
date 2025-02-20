@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useRef, useState, lazy, MouseEvent } from 'react';
-import { computed, set } from 'mobx';
+import { useEffect, useMemo, useRef, useState, MouseEvent } from 'react';
+import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { Paths, PathValue } from '@/types';
-import { useBlockSettings, useBlocks } from '@/hooks';
+import { useBlockSettings } from '@/hooks';
 import { getValueByPath } from '@/utility';
-import { Block, BlockDef, QueryState } from '@/stores';
+import { Block, BlockDef } from '@/stores';
 import { IconButton, InputAdornment, Popover, styled } from '@semoss/ui';
 import { SketchPicker } from 'react-color';
 import { OutlinedInput } from '@mui/material';
-import { EchartVisualizationBlockDef } from '@/components/block-defaults/echart-visualization-blocks';
 
 interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
     /**
@@ -22,7 +21,7 @@ interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
 }
 const varr = '"Test variable"';
 
-const StyledChartContainer = styled(SketchPicker)({
+const StyledSketchContainer = styled(SketchPicker)({
     '.custom-sketch-picker .flexbox-fix::before': {
         marginLeft: '32px',
         content: varr,
@@ -38,25 +37,31 @@ const StyledChartContainer = styled(SketchPicker)({
         overflow: 'hidden',
     },
 });
+const StyledMainContainer = styled('div')({});
+const StyledSpanSection = styled('span')(({ color }) => ({
+    backgroundColor: color,
+    width: '33px',
+    height: '33px',
+    borderRadius: '20%',
+    display: 'block',
+    border: '1px solid #000',
+}));
 export const ColorPickerSettings = observer<ColorPalatteSettingProps>(
-    ({ id, path }) => {
-        const [colors, setColors] = useState([]);
+    <D extends BlockDef = BlockDef>({ id, path }) => {
         const [showPopover, setShowPopover] =
-            useState<HTMLButtonElement | null>(null);
-        const [color, setColor] = useState('#000000');
-        const { data, setData } = useBlockSettings<any>(id);
-        const [value, setValue] = useState<string | null>(null);
-        const pathVal = path;
-        const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
-        // const barChartColour = getValueByPath(data.option,'series.0');
-        // console.log(barChartColour, 'barChartColour');
+            useState<HTMLButtonElement | null>(null); //show and hide the color picker
+        const [color, setColor] = useState('#000000'); //default color and state to maintain color value
+        const { data, setData } = useBlockSettings<any>(id); //data to update the color of the chart
+        const [value, setValue] = useState<string | null>(null); //local state to store a copy of main state
+        const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null); //timeout ref to delay update of state
+        //get the latest value of state and store it in computedValue
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
                     return '';
                 }
 
-                const v = getValueByPath(data, pathVal);
+                const v = getValueByPath(data, path);
                 if (typeof v === 'undefined') {
                     return '';
                 } else if (typeof v === 'string') {
@@ -65,15 +70,16 @@ export const ColorPickerSettings = observer<ColorPalatteSettingProps>(
 
                 return JSON.stringify(v, null, 2);
             });
-        }, [data, pathVal]).get();
-
+        }, [data, path]).get();
+        //close the color picker when color picker is visible
         function handleClose() {
             setShowPopover(null);
         }
+        //update the local state value, when computed value is changed
         useEffect(() => {
             setValue(computedValue);
         }, [computedValue]);
-
+        //update run state update, when color value is changed
         function runStateUpdateCustom(option) {
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
@@ -81,15 +87,16 @@ export const ColorPickerSettings = observer<ColorPalatteSettingProps>(
             }
             timeoutRef.current = setTimeout(() => {
                 try {
-                    setData(pathVal, option as PathValue<any, typeof pathVal>);
+                    setData(path, option as PathValue<D['data'], typeof path>);
                 } catch (e) {
                     console.log(e);
                 }
             }, 300);
         }
+        //detect the current state of popover and update to open variable
         const open = Boolean(showPopover);
         return (
-            <div>
+            <StyledMainContainer>
                 <label htmlFor="outlined-adornment-password">
                     Select Colour
                 </label>
@@ -114,16 +121,9 @@ export const ColorPickerSettings = observer<ColorPalatteSettingProps>(
                                 }}
                                 edge="end"
                             >
-                                <span
-                                    style={{
-                                        backgroundColor: color,
-                                        width: '33px',
-                                        height: '33px',
-                                        borderRadius: '20%',
-                                        display: 'block',
-                                        border: '1px solid #000',
-                                    }}
-                                ></span>
+                                <StyledSpanSection
+                                    color={color}
+                                ></StyledSpanSection>
                             </IconButton>
                         </InputAdornment>
                     }
@@ -139,15 +139,15 @@ export const ColorPickerSettings = observer<ColorPalatteSettingProps>(
                         horizontal: 'left',
                     }}
                 >
-                    <StyledChartContainer
+                    <StyledSketchContainer
                         onChange={(newColor) => {
                             setColor(newColor.hex);
                             runStateUpdateCustom(newColor.hex);
                         }}
                         color={color}
-                    ></StyledChartContainer>
+                    ></StyledSketchContainer>
                 </Popover>
-            </div>
+            </StyledMainContainer>
         );
     },
 );
