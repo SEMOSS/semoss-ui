@@ -7487,16 +7487,6 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'VECTORS',
-                        label: 'Vector',
-                        defaultValue: null,
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
                         fieldName: 'KEEP_INPUT_OUTPUT',
                         label: 'Record Questions and Responses',
                         defaultValue: 'false',
@@ -9191,7 +9181,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false, min: 0 },
                     },
                     {
-                        fieldName: 'httpPAth',
+                        fieldName: 'httpPath',
                         label: 'HTTP Path',
                         defaultValue: '',
                         options: {
