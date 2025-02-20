@@ -743,7 +743,24 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                             labelLine: {
                                 show: true,
                             },
+                            label: {
+                                color: '#000000',
+                            },
+                            itemStyle: {
+                                color: '#5470c6',
+                            },
                         },
+                    ],
+                    color: [
+                        '#5470c6',
+                        '#91cc75',
+                        '#fac858',
+                        '#ee6666',
+                        '#73c0de',
+                        '#3ba272',
+                        '#fc8452',
+                        '#9a60b4',
+                        '#ea7ccc',
                     ],
                     tooltip: {
                         show: true,

@@ -18,6 +18,8 @@ import { ValueLabelScatterPlot } from '../../ScatterPlot.tsx/ValueLabelScatterPl
 import { SizeSettings } from '@/components/block-settings';
 import { ScatterPlotSymbol } from '../../ScatterPlot.tsx/ScatterPlotSymbol';
 import { ScatterPlotChartTitle } from '../../ScatterPlot.tsx/ScatterPlotChartTitle';
+import { ColorPalatteSettings } from '@/components/block-settings/shared/ColorPalatteSettings';
+import { ColorPickerSettings } from '@/components/block-settings/shared/ColorPickerSettings';
 
 interface UpgradedVisualizationToolProps {
     id: string;
@@ -34,8 +36,8 @@ export const UpgradedVisualizationTool =
         const [selectedList, setSelectedList] = useState('');
         return (
             <>
-                <List style={{ width: '100%', height: '100vh' }}>
-                    <ListItem disablePadding>
+                <List style={{ width: '100%' }}>
+                    <StyledListItem disablePadding>
                         <ListItemButton
                             onClick={(e) =>
                                 setSelectedList((prevList) =>
@@ -59,7 +61,18 @@ export const UpgradedVisualizationTool =
                             <ListItemText primary="Colour Palette" />
                             <InfoOutlined />
                         </ListItemButton>
-                    </ListItem>
+                        {selectedList === 'colourpalette' && (
+                            <Stack
+                                width={'100%'}
+                                style={{ padding: '0.95%', width: 'inherit' }}
+                            >
+                                <ColorPalatteSettings
+                                    id={id}
+                                    path="option.color"
+                                />
+                            </Stack>
+                        )}
+                    </StyledListItem>
                     <StyledListItem disablePadding>
                         <ListItemButton
                             onClick={(e) =>
@@ -85,7 +98,7 @@ export const UpgradedVisualizationTool =
                             <InfoOutlined />
                         </ListItemButton>
                         {selectedList === 'colourbyvalue' && (
-                            <p>color by value component</p>
+                            <ColorPickerSettings id={id} path="option" />
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
