@@ -57,7 +57,7 @@ interceptors.request = async (options) => {
     return options;
 };
 
-// setup the reseponse interceptor
+// setup the response interceptor
 interceptors.response = async ({ response }) => {
     if (response.status === 302) {
         throw new UnauthorizedError('Unauthorized');
