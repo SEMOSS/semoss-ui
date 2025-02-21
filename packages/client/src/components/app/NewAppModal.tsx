@@ -6,14 +6,26 @@ import {
     LinearProgress,
     Stack,
     useNotification,
+    TextArea,
+    styled,
+    Autocomplete,
 } from '@semoss/ui';
 import { Controller, useForm } from 'react-hook-form';
 import { SerializedState } from '@/stores';
 import { useRootStore } from '@/hooks';
 import { AppMetadata } from './app.types';
 
+const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
+    paddingTop: `${theme.spacing(1)}!important`,
+}));
+
 type NewAppForm = {
     APP_NAME: string;
+    APP_DESCRIPTION: string;
+    APP_TAGS: string[];
 };
 
 interface NewAppModalProps {
@@ -38,6 +50,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
     const { getValues, handleSubmit, control, watch } = useForm<NewAppForm>({
         defaultValues: {
             APP_NAME: '',
+            APP_DESCRIPTION: '',
         },
     });
 
@@ -64,8 +77,8 @@ export const NewAppModal = (props: NewAppModalProps) => {
                 if (!state) {
                     throw new Error(`State is missing from the blocks app`);
                 }
-
                 // create the project
+                // Waiting on how long it will take to update the CreateAppFromBlocks reactor to pass the metadata. If it takes too long, we plan to call an additional reactor, SetProjectMeta.
                 const { errors, pixelReturn } = await monolithStore.runQuery<
                     [AppMetadata]
                 >(
@@ -81,6 +94,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
                 appId = pixelReturn[0].output.project_id;
             } else if (type === 'code') {
                 // create the pixel
+                // Waiting on how long it will take to update the CreateProject reactor to pass the metadata. If it takes too long, we plan to call an additional reactor, SetProjectMeta.
                 const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["CODE"]);`;
 
                 // create the project
@@ -154,8 +168,8 @@ export const NewAppModal = (props: NewAppModalProps) => {
         <Modal open={open} fullWidth>
             <Modal.Title>New App</Modal.Title>
             <form onSubmit={onSubmit}>
-                <Modal.Content>
-                    <Stack direction="row" spacing={1}>
+                <StyledModalContent>
+                    <Stack direction="column" spacing={1}>
                         <Controller
                             name={'APP_NAME'}
                             control={control}
@@ -174,8 +188,52 @@ export const NewAppModal = (props: NewAppModalProps) => {
                                 );
                             }}
                         />
+                        <Controller
+                            name={'APP_DESCRIPTION'}
+                            control={control}
+                            rules={{ required: false }}
+                            render={({ field }) => {
+                                return (
+                                    <TextArea
+                                        label="Description"
+                                        variant="outlined"
+                                        value={field.value ? field.value : ''}
+                                        onChange={(value) =>
+                                            field.onChange(value)
+                                        }
+                                        rows={3}
+                                    />
+                                );
+                            }}
+                        />
+                        <Controller
+                            name={'APP_TAGS'}
+                            control={control}
+                            rules={{}}
+                            render={({ field }) => {
+                                return (
+                                    <Autocomplete
+                                        value={(field.value as string[]) || []}
+                                        fullWidth
+                                        multiple
+                                        onChange={(_, newValue) => {
+                                            field.onChange(newValue);
+                                        }}
+                                        options={[]}
+                                        freeSolo
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                variant="outlined"
+                                                placeholder='Press "Enter" to add tag'
+                                            />
+                                        )}
+                                    />
+                                );
+                            }}
+                        />
                     </Stack>
-                </Modal.Content>
+                </StyledModalContent>
                 <Modal.Actions>
                     <Stack
                         direction="row"
