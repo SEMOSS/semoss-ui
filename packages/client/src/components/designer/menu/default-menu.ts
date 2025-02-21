@@ -182,6 +182,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 open: false,
                 anchor: 'left',
                 drawerWidth: 240,
+                drawerHeight: '100%',
                 designMode: true,
             },
             listeners: {},

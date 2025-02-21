@@ -13,7 +13,6 @@ import {
     SizeSettings,
     SwitchSettings,
     QueryInputSettings,
-    BorderSettings,
 } from '@/components/block-settings';
 import {
     buildColorSection,
@@ -27,6 +26,7 @@ export const config: BlockConfig<DrawerBlockDef> = {
         style: {},
         anchor: 'left',
         drawerWidth: 240,
+        drawerHeight: '100%',
         designMode: true, // Default to design mode when first dropped
         open: '', // Default to closed
     },
@@ -72,6 +72,16 @@ export const config: BlockConfig<DrawerBlockDef> = {
                     ),
                 },
                 {
+                    description: 'Drawer Height',
+                    render: ({ id }) => (
+                        <SizeSettings
+                            id={id}
+                            label="Drawer Height"
+                            path="drawerHeight"
+                        />
+                    ),
+                },
+                {
                     description: 'Direction',
                     render: ({ id }) => (
                         <ButtonGroupSettings
@@ -86,22 +96,10 @@ export const config: BlockConfig<DrawerBlockDef> = {
                                     isDefault: false,
                                 },
                                 {
-                                    value: 'bottom',
-                                    icon: ArrowUpward,
-                                    title: 'Bottom',
-                                    isDefault: false,
-                                },
-                                {
                                     value: 'left',
                                     icon: ArrowForward,
                                     title: 'Left',
                                     isDefault: true,
-                                },
-                                {
-                                    value: 'right',
-                                    icon: ArrowBack,
-                                    title: 'Right',
-                                    isDefault: false,
                                 },
                             ]}
                         />

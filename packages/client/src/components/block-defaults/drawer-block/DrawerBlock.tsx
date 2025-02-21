@@ -9,8 +9,9 @@ export interface DrawerBlockDef extends BlockDef<'drawer'> {
     widget: 'drawer';
     data: {
         style: CSSProperties;
-        anchor: 'left' | 'right' | 'top' | 'bottom';
+        anchor: 'left' | 'top';
         drawerWidth: number;
+        drawerHeight: number | string;
         designMode: boolean;
         open: string | boolean | number; // Changed to string to store query
     };
@@ -57,13 +58,13 @@ export const DrawerBlock: BlockComponent = observer(({ id }) => {
         <DrawerWrapper {...attrs} $visible={shouldShowModal}>
             <Drawer
                 variant="persistent"
-                anchor={data.anchor ?? 'left'}
+                anchor={data.anchor}
                 open={shouldShowModal}
                 // onClose={handleDrawerOpen}
                 PaperProps={{
                     sx: {
                         position: 'absolute',
-                        height: '100%',
+                        height: data.drawerHeight ?? '100%',
                         width: data.drawerWidth,
                         zIndex: !isStatic ? 40 : 19,
                         ...data.style,
