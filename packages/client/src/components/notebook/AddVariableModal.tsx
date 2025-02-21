@@ -55,6 +55,7 @@ export const AddVariableModal = (props: AddVariableModalProps) => {
                     className="add-variable-modal__content"
                 >
                     <TextField
+                        autoFocus
                         fullWidth
                         label={'Alias'}
                         error={

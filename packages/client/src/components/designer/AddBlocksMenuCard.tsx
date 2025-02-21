@@ -28,9 +28,6 @@ export interface AddBlocksMenuItemProps {
     item: DesignerMenuItem;
 }
 
-const getValidImage = (imageA: string, imageB: string): string | undefined =>
-    BLOCK_IMAGES[imageA] || BLOCK_IMAGES[imageB] || undefined;
-
 /**
  * Individaul block that can be dragged onto the UI
  */

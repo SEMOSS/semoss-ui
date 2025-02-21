@@ -1,3 +1,5 @@
+export { default as ACCORDION_ACTIVE } from './Accordion_Active.png';
+export { default as ACCORDION_HOVER } from './Accordion_Hover.png';
 export { default as AUDIO_INPUT_ACTIVE } from './Audio_Input_Active.png';
 export { default as AUDIO_INPUT_HOVER } from './Audio_Input_Hover.png';
 export { default as AUDIO_PLAYER_ACTIVE } from './Audio_Player_Active.png';

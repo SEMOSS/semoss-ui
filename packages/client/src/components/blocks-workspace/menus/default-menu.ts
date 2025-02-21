@@ -44,7 +44,26 @@ export const SECTION_ORDER = [
     SECTION_FLOWS,
 ];
 
+// TODO: Alphabetical order by name
 export const DEFAULT_MENU: DesignerMenuItem[] = [
+    {
+        section: SECTION_LAYOUT,
+        name: 'Accordion',
+        activeImage: BLOCK_IMAGES['ACCORDION_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['ACCORDION_HOVER'],
+        helperText: 'Click to expand and collapse sections for more details',
+        json: {
+            widget: 'accordion',
+            data: {
+                style: {},
+            },
+            listeners: {},
+            slots: {
+                header: [],
+                content: [],
+            },
+        },
+    },
     {
         section: SECTION_MISC,
         name: 'Theme Block',

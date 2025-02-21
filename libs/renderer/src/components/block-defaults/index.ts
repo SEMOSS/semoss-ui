@@ -1,5 +1,10 @@
 import { Registry } from "../../store";
 
+import {
+    config as AccordionBlockConfig,
+    AccordionBlockDef,
+} from "./accordion-block";
+
 import { config as AudioBlockConfig, AudioBlockDef } from "./audio-block";
 import {
     config as AudioInputBlockConfig,
@@ -77,6 +82,7 @@ import {
 // import { config as StepperBlockConfig, StepperBlockDef } from "./stepper-block";
 
 export type DefaultBlockDefinitions =
+    | AccordionBlockDef
     | AudioBlockDef
     | AudioInputBlockDef
     | ButtonBlockDef
@@ -113,6 +119,7 @@ export type DefaultBlockDefinitions =
 // | StepperBlockDef
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
+    [AccordionBlockConfig.widget]: AccordionBlockConfig,
     [AudioBlockConfig.widget]: AudioBlockConfig,
     [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
@@ -144,6 +151,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
 };
 
 export {
+    AccordionBlockConfig,
     AudioBlockConfig,
     AudioInputBlockConfig,
     ButtonBlockConfig,
@@ -168,5 +176,4 @@ export {
     ModalBlockConfig,
     RadioBlockConfig,
     PDFViewerBlockConfig,
-    // QueryBlockConfig,
 };
