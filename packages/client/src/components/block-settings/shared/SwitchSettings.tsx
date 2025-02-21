@@ -7,6 +7,8 @@ import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
+import { styled, Tooltip, Typography, Stack } from '@mui/material';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 
 interface SwitchSettingsProps<D extends BlockDef = BlockDef> {
     /**
@@ -31,6 +33,11 @@ interface SwitchSettingsProps<D extends BlockDef = BlockDef> {
      */
     description?: string;
 }
+
+const StyledTypography = styled(Typography)(() => ({
+    overflowWrap: 'break-word',
+    whiteSpace: 'normal',
+}));
 
 export const SwitchSettings = observer(
     <D extends BlockDef = BlockDef>({
@@ -103,15 +110,51 @@ export const SwitchSettings = observer(
         };
 
         return (
-            <BaseSettingSection label={label} description={description}>
-                <Switch
-                    checked={value}
-                    onChange={(e) => {
-                        // sync the data on change
-                        onChange(!value);
-                    }}
-                />
-            </BaseSettingSection>
+            <div>
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={2}
+                    marginTop="8px"
+                >
+                    <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={0.5}
+                        width="100%"
+                    >
+                        <StyledTypography variant="body2">
+                            {label}
+                        </StyledTypography>
+                        {description && (
+                            <Tooltip placement="top" title={description} arrow>
+                                <HelpOutlineIcon
+                                    color="action"
+                                    sx={{
+                                        fontSize: 15,
+                                        marginLeft: '5px', // Small margin to separate tooltip from label
+                                    }}
+                                />
+                            </Tooltip>
+                        )}
+                    </Stack>
+                    <Stack
+                        direction="row"
+                        justifyContent="end"
+                        height="16px"
+                        alignItems="center"
+                    >
+                        <Switch
+                            checked={value}
+                            onChange={() => {
+                                // sync the data on change
+                                onChange(!value);
+                            }}
+                            size="small"
+                        />
+                    </Stack>
+                </Stack>
+            </div>
         );
     },
 );
