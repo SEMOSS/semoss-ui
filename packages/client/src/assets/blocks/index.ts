@@ -54,3 +54,21 @@ export { default as UPLOAD_ACTIVE } from './Upload_Active.png';
 export { default as UPLOAD_HOVER } from './Upload_Hover.png';
 export { default as THEME_ACTIVE } from './Theme_Active.png';
 export { default as THEME_HOVER } from './Theme_Hover.png';
+
+// CHARTS
+export { default as AREA_CHART_ACTIVE } from './Area_Chart_Active.png';
+export { default as AREA_CHART_HOVER } from './Area_Chart_Hover.png';
+export { default as BAR_CHART_ACTIVE } from './Bar_Chart_Active.png';
+export { default as BAR_CHART_HOVER } from './Bar_Chart_Hover.png';
+export { default as BAR_CHART_GROUPED_ACTIVE } from './Bar_Chart_Grouped_Active.png';
+export { default as BAR_CHART_GROUPED_HOVER } from './Bar_Chart_Grouped_Hover.png';
+export { default as DATA_GRID_ACTIVE } from './Data_Grid_Active.png';
+export { default as DATA_GRID_HOVER } from './Data_Grid_Hover.png';
+export { default as PIE_CHART_ACTIVE } from './Pie_Chart_Active.png';
+export { default as PIE_CHART_HOVER } from './Pie_Chart_Hover.png';
+export { default as LINE_CHART_ACTIVE } from './Line_Chart_Active.png';
+export { default as LINE_CHART_HOVER } from './Line_Chart_Hover.png';
+export { default as SCATTER_PLOT_ACTIVE } from './Scatter_Plot_Active.png';
+export { default as SCATTER_PLOT_HOVER } from './Scatter_Plot_Hover.png';
+export { default as RADIAL_PLOT_ACTIVE } from './Radial_Plot_Active.png';
+export { default as RADIAL_PLOT_HOVER } from './Radial_Plot_Hover.png';

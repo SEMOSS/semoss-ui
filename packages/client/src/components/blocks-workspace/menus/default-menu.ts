@@ -68,8 +68,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_MISC,
         name: 'Theme Block',
         helperText: 'Determine the theme of your page with our Theme Block',
-        activeImage: '',
-        hoverImage: '',
+        activeImage: BLOCK_IMAGES['THEME_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['THEME_HOVER'],
         json: {
             widget: 'theme',
             data: {
@@ -702,8 +702,10 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_CHARTS,
-        name: 'Grid',
-        helperText: '',
+        name: 'Data Grid',
+        helperText: 'Organize and display data in a tabular format',
+        activeImage: BLOCK_IMAGES['DATA_GRID_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['DATA_GRID_HOVER'],
         json: {
             widget: 'grid',
             data: {
@@ -722,7 +724,10 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_CHARTS,
         name: 'Bar Chart',
-        helperText: '',
+        helperText:
+            'Compare cumulative totals and individual segments across categories',
+        activeImage: BLOCK_IMAGES['BAR_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['BAR_CHART_HOVER'],
         json: {
             widget: 'vega',
             data: {
@@ -764,7 +769,10 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_CHARTS,
         name: 'Grouped Bar Chart',
-        helperText: '',
+        helperText:
+            'Compare individual values across multiple categories side by side',
+        activeImage: BLOCK_IMAGES['BAR_CHART_GROUPED_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['BAR_CHART_GROUPED_HOVER'],
         json: {
             widget: 'vega',
             data: {
@@ -808,7 +816,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_CHARTS,
         name: 'Pie Chart',
-        helperText: '',
+        helperText: 'Show proportions of a whole',
+        activeImage: BLOCK_IMAGES['PIE_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PIE_CHART_HOVER'],
         json: {
             widget: 'vega',
             data: {
@@ -848,7 +858,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_CHARTS,
         name: 'Radial Plot',
-        helperText: '',
+        helperText: 'Compare multiple variables relative to a central point',
+        activeImage: BLOCK_IMAGES['RADIAL_PLOT_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['RADIAL_PLOT_HOVER'],
         json: {
             widget: 'vega',
             data: {
@@ -915,7 +927,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_CHARTS,
         name: 'Line Chart',
-        helperText: '',
+        helperText: 'Display trends over time with continuous data',
+        activeImage: BLOCK_IMAGES['LINE_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['LINE_CHART_HOVER'],
         json: {
             widget: 'vega',
             data: {
@@ -956,7 +970,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_CHARTS,
         name: 'Area Chart',
-        helperText: '',
+        helperText: 'Show trends over time with cumulative data',
+        activeImage: BLOCK_IMAGES['AREA_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['AREA_CHART_HOVER'],
         json: {
             widget: 'vega',
             data: {
@@ -1002,7 +1018,10 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_CHARTS,
         name: 'Area Chart with Gradient',
-        helperText: '',
+        activeImage: BLOCK_IMAGES['AREA_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['AREA_CHART_HOVER'],
+        helperText:
+            'Show trends over time with cumulative data in a different style',
         json: {
             widget: 'vega',
             data: {
@@ -1071,7 +1090,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_CHARTS,
         name: 'Scatter Plot',
-        helperText: '',
+        helperText: 'Show relationships between two variables',
+        activeImage: BLOCK_IMAGES['SCATTER_PLOT_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['SCATTER_PLOT_HOVER'],
         json: {
             widget: 'vega',
             data: {
