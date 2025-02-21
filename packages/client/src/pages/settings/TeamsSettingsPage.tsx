@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef, useReducer, useCallback } from 'react';
-import { useRootStore, useAPI } from '@/hooks';
-import { useSettings } from '@/hooks/useSettings';
 import { useNavigate } from 'react-router-dom';
+import { observer } from 'mobx-react-lite';
 
 import {
     Grid,
@@ -11,18 +10,15 @@ import {
     CircularProgress,
     Stack,
     Typography,
-    Modal,
     Box,
     Button,
-    useNotification,
-    Checkbox,
-    Select,
 } from '@semoss/ui';
 
-import { Controller, useForm } from 'react-hook-form';
-import { TextField } from '@mui/material';
-import { TeamTileCard } from './GenericTeamCard';
-import { observer } from 'mobx-react-lite';
+import { useRootStore, useAPI } from '@/hooks';
+import { useSettings } from '@/hooks/useSettings';
+import { TeamTileCard } from '@/components/teams/TeamTileCard';
+import { AddTeamModal } from '@/components/teams/AddTeamModal';
+import { Add } from '@mui/icons-material';
 
 export interface DBMember {
     ID: string;
@@ -76,24 +72,17 @@ const StyledBackdrop = styled(Backdrop)({
 
 const initialState = {
     favoritedDbs: [],
-    databases: [],
+    teams: [],
 };
 
 const StyledSearchbarDiv = styled('div')({
     display: 'flex',
-    gap: '4px',
+    gap: '16px',
 });
 
 const StyledAddButton = styled(Button)({
     width: '150px',
     borderRadius: '12px',
-});
-
-const StyledFormLabel = styled(Typography)({
-    fontWeight: 500,
-    fontSize: '16px',
-    lineHeight: '28px',
-    letter: '0.15px',
 });
 
 const reducer = (state, action) => {
@@ -108,62 +97,31 @@ const reducer = (state, action) => {
     return state;
 };
 
-type NewTeamForm = {
-    TEAM_NAME: string;
-    TEAM_DESCRIPTION: string;
-    TEAM_TYPE: string;
-    CUSTOM_GROUP: boolean;
-};
-
 export const TeamsSettingsPage = observer(() => {
     const { adminMode } = useSettings();
-    const { monolithStore, configStore } = useRootStore();
+    const { monolithStore } = useRootStore();
     const navigate = useNavigate();
 
     const [addModal, setAddModal] = useState(false);
     const [filteredTeams, setFilteredTeams] = useState([]);
     const [state, dispatch] = useReducer(reducer, initialState);
-    const { databases } = state;
-
-    const notification = useNotification();
+    const { teams } = state;
 
     const [search, setSearch] = useState('');
-
-    const { handleSubmit, control, watch, reset, getValues } =
-        useForm<NewTeamForm>({
-            defaultValues: {
-                TEAM_NAME: '',
-                TEAM_DESCRIPTION: '',
-                TEAM_TYPE: '',
-                CUSTOM_GROUP: false,
-            },
-        });
-
-    const watchCustom = watch('CUSTOM_GROUP');
-    const values = getValues();
 
     // To focus when getting new results
     const searchbarRef = useRef(null);
 
-    // All Engines -------------------------------------
+    // All Teams -------------------------------------
     const getTeams = useAPI(['getTeams', true]);
 
-    // clear value if customGroup is true
-    useEffect(() => {
-        if (watchCustom) {
-            reset({
-                ...values,
-                TEAM_TYPE: '',
-            });
-        }
-    }, [watchCustom]);
-
-    //** reset dataMode if adminMode is toggled */
+    /*
+     **/
     useEffect(() => {
         monolithStore.getTeams(true).then((data) => {
             dispatch({
                 type: 'field',
-                field: 'databases',
+                field: 'teams',
                 value: data,
             });
         });
@@ -182,71 +140,14 @@ export const TeamsSettingsPage = observer(() => {
     useDebounce(
         () => {
             setFilteredTeams(
-                databases.filter((d) =>
+                teams.filter((d) =>
                     d.id.toLowerCase().includes(search.toLowerCase()),
                 ),
             );
         },
-        [databases, search],
+        [teams, search],
         150,
     );
-
-    /**
-     * Method that is called to create the team
-     */
-    const onSubmit = handleSubmit(async (data: NewTeamForm) => {
-        try {
-            // create the pixel
-            if (!state) {
-                throw new Error(`State is missing`);
-            }
-
-            const isCustom = watchCustom
-                ? monolithStore.addTeam(
-                      data.TEAM_NAME,
-                      data.TEAM_DESCRIPTION,
-                      true,
-                      data.TEAM_TYPE,
-                  )
-                : monolithStore.addTeam(
-                      data.TEAM_NAME,
-                      data.TEAM_DESCRIPTION,
-                      false,
-                      data.TEAM_TYPE,
-                  );
-
-            // create the team
-            isCustom.then(() => {
-                dispatch({
-                    type: 'field',
-                    field: 'databases',
-                    value: [
-                        ...databases,
-                        {
-                            id: data.TEAM_NAME,
-                            type: data.TEAM_TYPE,
-                            description: data.TEAM_DESCRIPTION,
-                        },
-                    ],
-                });
-                notification.add({
-                    color: 'success',
-                    message: 'Successfully added group',
-                });
-            });
-
-            setAddModal(false);
-        } catch (e) {
-            console.error(e);
-            notification.add({
-                color: 'error',
-                message: e,
-            });
-        } finally {
-            // close the modal
-            setAddModal(false);
-        }
-    });
 
     return (
         <>
@@ -259,7 +160,7 @@ export const TeamsSettingsPage = observer(() => {
                 >
                     <CircularProgress />
                     <Typography variant="body2">Loading</Typography>
-                    <Typography variant="caption">Databases</Typography>
+                    <Typography variant="caption">Teams</Typography>
                 </Stack>
             </StyledBackdrop>
             <StyledContainer>
@@ -278,9 +179,10 @@ export const TeamsSettingsPage = observer(() => {
                         />
                         <StyledAddButton
                             variant="contained"
+                            startIcon={<Add />}
                             onClick={() => setAddModal(true)}
                         >
-                            + Add New
+                            Add New
                         </StyledAddButton>
                     </StyledSearchbarDiv>
                 </StyledSearchbarContainer>
@@ -301,7 +203,7 @@ export const TeamsSettingsPage = observer(() => {
                                           type={team.type}
                                           description={team.description}
                                           dispatch={dispatch}
-                                          databases={databases}
+                                          teams={teams}
                                           onClick={() => {
                                               navigate(
                                                   `${team.id
@@ -311,12 +213,20 @@ export const TeamsSettingsPage = observer(() => {
                                                   {
                                                       state: {
                                                           name: team.id,
-                                                          description:
-                                                              team.description,
                                                           type: team.type,
                                                       },
                                                   },
                                               );
+                                              //   navigate(
+                                              //       `${team.id
+                                              //           .toLowerCase()
+                                              //           .replace(/['"]+/g, '')
+                                              //           .replace(/\s/g, '-')}${
+                                              //           team.type
+                                              //               ? `?type=${team.type}`
+                                              //               : ''
+                                              //       }`,
+                                              //   );
                                           }}
                                       />
                                   </Grid>
@@ -324,152 +234,29 @@ export const TeamsSettingsPage = observer(() => {
                           })
                         : null}
                 </Grid>
-                <Modal open={addModal} fullWidth>
-                    <Modal.Title>Create New Team</Modal.Title>
-                    <form onSubmit={onSubmit}>
-                        <Modal.Content>
-                            <Stack direction="column" spacing={2}>
-                                <Box>
-                                    <StyledFormLabel variant="subtitle1">
-                                        Team Name
-                                    </StyledFormLabel>
-                                    <Controller
-                                        name={'TEAM_NAME'}
-                                        control={control}
-                                        rules={{ required: true }}
-                                        render={({ field }) => {
-                                            return (
-                                                <TextField
-                                                    label=""
-                                                    value={
-                                                        field.value
-                                                            ? field.value
-                                                            : ''
-                                                    }
-                                                    onChange={(value) =>
-                                                        field.onChange(value)
-                                                    }
-                                                    fullWidth={true}
-                                                />
-                                            );
-                                        }}
-                                    />
-                                </Box>
-                                <Box>
-                                    <StyledFormLabel variant="subtitle1">
-                                        Type
-                                    </StyledFormLabel>
-                                    <Controller
-                                        name={'TEAM_TYPE'}
-                                        control={control}
-                                        rules={{ required: false }}
-                                        render={({ field }) => {
-                                            return (
-                                                <Select
-                                                    label=""
-                                                    value={
-                                                        field.value
-                                                            ? field.value
-                                                            : ''
-                                                    }
-                                                    onChange={(value) =>
-                                                        field.onChange(value)
-                                                    }
-                                                    fullWidth={true}
-                                                    disabled={watchCustom}
-                                                >
-                                                    {configStore.store.config.availableProviders.map(
-                                                        (p, idx) => {
-                                                            return (
-                                                                <Select.Item
-                                                                    key={idx}
-                                                                    value={
-                                                                        p.provider
-                                                                    }
-                                                                >
-                                                                    {p.name}
-                                                                </Select.Item>
-                                                            );
-                                                        },
-                                                    )}
-                                                </Select>
-                                            );
-                                        }}
-                                    />
-                                </Box>
-                                <Box>
-                                    <StyledFormLabel variant="subtitle1">
-                                        Team Description
-                                    </StyledFormLabel>
-                                    <Controller
-                                        name={'TEAM_DESCRIPTION'}
-                                        control={control}
-                                        rules={{ required: true }}
-                                        render={({ field }) => {
-                                            return (
-                                                <TextField
-                                                    label=""
-                                                    value={
-                                                        field.value
-                                                            ? field.value
-                                                            : ''
-                                                    }
-                                                    onChange={(value) =>
-                                                        field.onChange(value)
-                                                    }
-                                                    fullWidth={true}
-                                                />
-                                            );
-                                        }}
-                                    />
-                                </Box>
-                                <Box>
-                                    <StyledFormLabel variant="subtitle1">
-                                        Custom Group?
-                                    </StyledFormLabel>
-                                    <Controller
-                                        name={'CUSTOM_GROUP'}
-                                        control={control}
-                                        rules={{ required: false }}
-                                        render={({ field }) => {
-                                            return (
-                                                <Checkbox
-                                                    label=""
-                                                    value={
-                                                        field.value
-                                                            ? field.value
-                                                            : ''
-                                                    }
-                                                    onChange={(value) =>
-                                                        field.onChange(value)
-                                                    }
-                                                />
-                                            );
-                                        }}
-                                    />
-                                </Box>
-                            </Stack>
-                        </Modal.Content>
-                        <Modal.Actions>
-                            <Stack
-                                direction="row"
-                                spacing={1}
-                                paddingX={2}
-                                paddingBottom={2}
-                            >
-                                <Button
-                                    type="button"
-                                    onClick={() => setAddModal(false)}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button type="submit" variant={'contained'}>
-                                    Save
-                                </Button>
-                            </Stack>
-                        </Modal.Actions>
-                    </form>
-                </Modal>
+
+                <AddTeamModal
+                    open={addModal}
+                    onClose={(team) => {
+                        if (team) {
+                            const obj = {
+                                id: team.id,
+                                description: team.description,
+                            };
+
+                            if (team.type != 'Custom') {
+                                obj['type'] = team.type;
+                            }
+
+                            dispatch({
+                                type: 'field',
+                                field: 'teams',
+                                value: [...teams, obj],
+                            });
+                        }
+                        setAddModal(false);
+                    }}
+                />
             </StyledContainer>
         </>
     );

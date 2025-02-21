@@ -741,6 +741,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                     </StyledNoMembersContainer>
                 )}
             </StyledMemberInnerContent>
+
             <Modal open={addMembersModal} maxWidth="lg">
                 <Modal.Title>Add Members</Modal.Title>
                 <Modal.Content sx={{ width: '50rem' }}>
