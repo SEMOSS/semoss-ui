@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { ConstructionOutlined } from '@mui/icons-material';
-import { useNotification, styled, Typography, Stack } from '@semoss/ui';
+import { useNotification } from '@semoss/ui';
 import { runPixel } from '@/api';
 import {
     SerializedState,
@@ -37,19 +36,6 @@ import {
 import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
 
 const DEFAULT_BORDER_SIZE = 300;
-
-const StyledAlert = styled('div')(({ theme }) => ({
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing(1),
-    paddingLeft: theme.spacing(2),
-    paddingRight: theme.spacing(2),
-    height: theme.spacing(4),
-    borderRadius: '4px',
-    background: 'rgba(253, 237, 225, 1)',
-}));
 
 const DEFAULT_OPTIONS: WorkspaceOptions = {
     version: '',
@@ -337,30 +323,6 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                     options={DEFAULT_OPTIONS}
                     workspace={workspace}
                     endTopbar={<BlocksWorkspaceActions />}
-                    alert={
-                        <StyledAlert>
-                            <Stack
-                                direction="row"
-                                padding={0}
-                                spacing={0.5}
-                                alignItems={'center'}
-                            >
-                                <ConstructionOutlined
-                                    fontSize="small"
-                                    color={'warning'}
-                                />
-                                <Typography
-                                    variant={'caption'}
-                                    fontWeight="bold"
-                                >
-                                    Note:
-                                </Typography>
-                                <Typography variant={'caption'}>
-                                    This feature is currently in alpha.
-                                </Typography>
-                            </Stack>
-                        </StyledAlert>
-                    }
                     factory={FACTORY}
                 />
                 <BlocksWorkspaceDev />
