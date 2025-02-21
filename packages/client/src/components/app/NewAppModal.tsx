@@ -51,6 +51,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
         defaultValues: {
             APP_NAME: '',
             APP_DESCRIPTION: '',
+            APP_TAGS: [],
         },
     });
 
