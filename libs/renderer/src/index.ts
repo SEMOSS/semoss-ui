@@ -46,25 +46,6 @@ export type {
 // REGISTRY AND MENUS
 export { DefaultCells } from "./components/cell-defaults";
 export { DefaultBlocks } from "./components/block-defaults";
-export {
-    CLASS_DIAGRAM,
-    ENTITY_RELATIONSHIP_DIAGRAM,
-    GANTT,
-    SEQUENCE_DIAGRAM,
-    STATE_DIAGRAM,
-    USER_JOURNEY,
-    PIE_CHART,
-    QUADRANT_CHART,
-    REQUIREMENT_DIAGRAM,
-    GIT_DIAGRAM,
-    C4_DIAGRAM,
-    MINDMAP,
-    TIMELINE,
-    SANKEY,
-    XY_Chart,
-    BLOCK_DIAGRAM,
-    GENERAL_MERMAID,
-} from "./components/block-defaults/mermaid-block";
 
 export {
     BLOCK_TYPE_INPUT,
