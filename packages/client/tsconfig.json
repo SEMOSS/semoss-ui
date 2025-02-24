@@ -19,7 +19,8 @@
         "jsx": "react-jsx",
         "incremental": true,
         "experimentalDecorators": true,
-        "outDir": "./dist"
+        "outDir": "./dist",
+        "types": ["vitest/globals", "@testing-library/jest-dom/vitest"]
     },
     "include": ["./src", "./global.d.ts"],
     "exclude": ["./plugins/**/*", "./typings/**/*", "./dist/**/*"]
