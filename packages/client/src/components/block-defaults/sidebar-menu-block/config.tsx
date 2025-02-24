@@ -7,7 +7,7 @@ import {
     Schema,
 } from '@mui/icons-material';
 import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
-import { DrawerBlock, DrawerBlockDef } from './DrawerBlock';
+import { SidebarMenuBlock, SidebarMenuBlockDef } from './SidebarMenuBlock';
 import {
     ButtonGroupSettings,
     SizeSettings,
@@ -19,14 +19,14 @@ import {
     buildBorderSection,
 } from '../block-defaults.shared';
 
-export const config: BlockConfig<DrawerBlockDef> = {
-    widget: 'drawer',
+export const config: BlockConfig<SidebarMenuBlockDef> = {
+    widget: 'sidebar-menu',
     type: BLOCK_TYPE_LAYOUT,
     data: {
         style: {},
         anchor: 'left',
-        drawerWidth: 240,
-        drawerHeight: '100%',
+        sidebarWidth: 240,
+        sidebarHeight: '100%',
         designMode: true, // Default to design mode when first dropped
         open: '', // Default to closed
     },
@@ -34,7 +34,7 @@ export const config: BlockConfig<DrawerBlockDef> = {
     slots: {
         content: [],
     },
-    render: DrawerBlock,
+    render: SidebarMenuBlock,
     icon: Schema,
     contentMenu: [
         {
@@ -62,22 +62,22 @@ export const config: BlockConfig<DrawerBlockDef> = {
                     ),
                 },
                 {
-                    description: 'Drawer Width',
+                    description: 'Sidebar Width',
                     render: ({ id }) => (
                         <SizeSettings
                             id={id}
-                            label="Drawer Width"
-                            path="drawerWidth"
+                            label="Sidebar Width"
+                            path="sidebarWidth"
                         />
                     ),
                 },
                 {
-                    description: 'Drawer Height',
+                    description: 'Sidebar Height',
                     render: ({ id }) => (
                         <SizeSettings
                             id={id}
-                            label="Drawer Height"
-                            path="drawerHeight"
+                            label="Sidebar Height"
+                            path="sidebarHeight"
                         />
                     ),
                 },

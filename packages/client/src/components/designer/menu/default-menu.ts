@@ -33,7 +33,7 @@ import HTML_BLOCK from '@/assets/img/HTML_BLOCK_SM.png';
 import BLOCK_MODAL from '@/assets/img/BLOCK_MODAL.png';
 import BLOCK_THEME from '@/assets/img/BLOCK_THEME.png';
 import BLOCK_ACCORDION from '@/assets/img/BLOCK_ACCORDION.png';
-import BLOCK_DRAWER from '@/assets/img/BLOCK_DRAWER.png';
+import BLOCK_SIDEBARMENU from '@/assets/img/BLOCK_SIDEBARMENU.png';
 
 const SECTION_ELEMENT = 'Element';
 const SECTION_INPUT = 'Input';
@@ -190,16 +190,16 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_LAYOUT,
-        image: BLOCK_DRAWER,
-        name: 'Drawer',
+        image: BLOCK_SIDEBARMENU,
+        name: 'Sidebar-Menu',
         json: {
-            widget: 'drawer',
+            widget: 'sidebar-menu',
             data: {
                 style: {},
                 open: false,
                 anchor: 'left',
-                drawerWidth: 240,
-                drawerHeight: '100%',
+                sidebarWidth: 240,
+                sidebarHeight: '100%',
                 designMode: true,
             },
             listeners: {},

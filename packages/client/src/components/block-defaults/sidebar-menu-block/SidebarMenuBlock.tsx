@@ -5,13 +5,13 @@ import { BlockDef, BlockComponent } from '@/stores';
 import { Slot } from '@/components/blocks';
 import { Drawer, Stack, styled, Box } from '@semoss/ui';
 
-export interface DrawerBlockDef extends BlockDef<'drawer'> {
-    widget: 'drawer';
+export interface SidebarMenuBlockDef extends BlockDef<'sidebar-menu'> {
+    widget: 'sidebar-menu';
     data: {
         style: CSSProperties;
         anchor: 'left' | 'top';
-        drawerWidth: number;
-        drawerHeight: number | string;
+        sidebarWidth: number;
+        sidebarHeight: number | string;
         designMode: boolean;
         open: string | boolean | number; // Changed to string to store query
     };
@@ -20,12 +20,12 @@ export interface DrawerBlockDef extends BlockDef<'drawer'> {
     };
 }
 
-const DrawerWrapper = styled(Box)<{ $visible: boolean }>(({ $visible }) => ({
+const SideBarWrapper = styled(Box)<{ $visible: boolean }>(({ $visible }) => ({
     visibility: $visible ? 'visible' : 'hidden',
 }));
 
-export const DrawerBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots } = useBlock<DrawerBlockDef>(id);
+export const SidebarMenuBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data, slots } = useBlock<SidebarMenuBlockDef>(id);
     const { state } = useBlocks();
     const isStatic = state.mode === 'static';
 
@@ -45,27 +45,27 @@ export const DrawerBlock: BlockComponent = observer(({ id }) => {
     }, [data.open]);
 
     // Helper to determine if modal should be shown
-    const shouldShowModal = isStatic
+    const shouldShowSidebar = isStatic
         ? data.designMode // In static mode, show when design mode is on
         : Boolean(open); // In interactive mode, show when query returns true
 
     // In static mode with design mode on, show as modal but without portal
-    if (!shouldShowModal && !isStatic) {
+    if (!shouldShowSidebar && !isStatic) {
         return <></>;
     }
 
     return (
-        <DrawerWrapper {...attrs} $visible={shouldShowModal}>
+        <SideBarWrapper {...attrs} $visible={shouldShowSidebar}>
             <Drawer
                 variant="persistent"
                 anchor={data.anchor}
-                open={shouldShowModal}
-                // onClose={handleDrawerOpen}
+                open={shouldShowSidebar}
+                // onClose={handleSidebarOpen}
                 PaperProps={{
                     sx: {
                         position: 'absolute',
-                        height: data.drawerHeight ?? '100%',
-                        width: data.drawerWidth,
+                        height: data.sidebarHeight ?? '100%',
+                        width: data.sidebarWidth,
                         zIndex: !isStatic ? 40 : 19,
                         ...data.style,
                     },
@@ -75,6 +75,6 @@ export const DrawerBlock: BlockComponent = observer(({ id }) => {
                     <Slot slot={slots.content} />
                 </Stack>
             </Drawer>
-        </DrawerWrapper>
+        </SideBarWrapper>
     );
 });
