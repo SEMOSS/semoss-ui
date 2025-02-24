@@ -45,7 +45,6 @@ const StyledContentOuter = styled('div')(({ theme }) => ({
     display: 'flex',
     flex: 1,
     minWidth: '100%',
-    // height: '100%',
     height: 'inherit',
 }));
 
@@ -56,7 +55,6 @@ const StyledContentInner = styled('div', {
         flex: 1,
         position: 'relative',
         minWidth: '100%',
-        // height: '100%',
         height: 'inherit',
         cursor: !isHoveredOverSelectedBlock ? 'pointer!important' : 'inherit',
         // iframes should not get pointer events in design mode

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useBlockSettings } from '@/hooks';
 import { observer } from 'mobx-react-lite';
-import { List, styled } from '@semoss/ui';
+import { List, Stack, styled } from '@semoss/ui';
 import ImageIcon from '@mui/icons-material/Image';
 import {
     ListItem,
@@ -27,7 +27,15 @@ import { PieLegend } from '../PieChart/PieLegend';
 import { Legend } from './Legend';
 import { ChartStyling } from './ChartStyling';
 import { ColorPalatteSettings } from '@/components/block-settings/shared/ColorPalatteSettings';
-//upgraded visualization tool props
+//upgraded visualization tool propsimport { EditXAxisScatterPlot } from '../ScatterPlot/EditXAxisScatterPlot';
+import { EditYAxisScatterPlot } from '../ScatterPlot/EditYAxisScatterPlot';
+import { TooltipScatterPlot } from '../ScatterPlot/TooltipScatterPlot';
+import { ValueLabelScatterPlot } from '../ScatterPlot/ValueLabelScatterPlot';
+import { ScatterPlotSymbol } from '../ScatterPlot/ScatterPlotSymbol';
+import { ScatterPlotChartTitle } from '../ScatterPlot/ScatterPlotChartTitle';
+import { ColorPickerSettings } from '@/components/block-settings/shared/ColorPickerSettings';
+import { EditXAxisScatterPlot } from '../ScatterPlot/EditXAxisScatterPlot';
+
 interface UpgradedVisualizationToolProps {
     id: string;
 }
@@ -112,7 +120,8 @@ export const UpgradedVisualizationTool =
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
-                        {data.variation === 'echart-bar-graph' && (
+                        {(data.variation === 'echart-bar-graph' ||
+                            data.variation === 'echart-scatter-plots') && (
                             <ListItemButton
                                 onClick={(e) =>
                                     setSelectedList((prevList) =>
@@ -137,16 +146,25 @@ export const UpgradedVisualizationTool =
                                 <InfoOutlined />
                             </ListItemButton>
                         )}
-                        {selectedList === 'editxaxis' && (
-                            <EditXAxis
-                                id={id}
-                                option={data.option}
-                                path="option"
-                            />
-                        )}
+                        {data.variation === 'echart-bar-graph' &&
+                            selectedList === 'editxaxis' && (
+                                <EditXAxis
+                                    id={id}
+                                    option={data.option}
+                                    path="option"
+                                />
+                            )}
+                        {data.variation === 'echart-scatter-plots' &&
+                            selectedList === 'editxaxis' && (
+                                <EditXAxisScatterPlot
+                                    id={id}
+                                    path={'option'}
+                                ></EditXAxisScatterPlot>
+                            )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
-                        {data.variation === 'echart-bar-graph' && (
+                        {(data.variation === 'echart-bar-graph' ||
+                            data.variation === 'echart-scatter-plots') && (
                             <ListItemButton
                                 onClick={(e) =>
                                     setSelectedList((prevList) =>
@@ -171,16 +189,25 @@ export const UpgradedVisualizationTool =
                                 <InfoOutlined />
                             </ListItemButton>
                         )}
-                        {selectedList === 'edityaxis' && (
-                            <EditYAxis
-                                id={id}
-                                option={data.option}
-                                path="option"
-                            />
-                        )}
+                        {data.variation === 'echart-bar-graph' &&
+                            selectedList === 'edityaxis' && (
+                                <EditYAxis
+                                    id={id}
+                                    option={data.option}
+                                    path="option"
+                                />
+                            )}
+                        {data.variation === 'echart-scatter-plots' &&
+                            selectedList === 'edityaxis' && (
+                                <EditYAxisScatterPlot
+                                    id={id}
+                                    path={'option'}
+                                ></EditYAxisScatterPlot>
+                            )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
-                        {data.variation === 'echart-bar-graph' && (
+                        {(data.variation === 'echart-bar-graph' ||
+                            data.variation === 'echart-scatter-plots') && (
                             <ListItemButton
                                 onClick={(e) =>
                                     setSelectedList((prevList) =>
@@ -205,13 +232,91 @@ export const UpgradedVisualizationTool =
                                 <InfoOutlined />
                             </ListItemButton>
                         )}
-                        {selectedList === 'valuelabel' && (
-                            <CustomizeValueLabels
-                                id={id}
-                                option={data.option}
-                                chartType={BAR_CHART_DATA.JSONVALUE[0]}
-                                path="option"
-                            />
+                        {data.variation === 'echart-scatter-plots' &&
+                            selectedList === 'valuelabel' && (
+                                <ValueLabelScatterPlot
+                                    id={id}
+                                    path={'option'}
+                                ></ValueLabelScatterPlot>
+                            )}
+                        {data.variation === 'echart-bar-graph' &&
+                            selectedList === 'valuelabel' && (
+                                <CustomizeValueLabels
+                                    id={id}
+                                    option={data.option}
+                                    chartType={BAR_CHART_DATA.JSONVALUE[0]}
+                                    path="option"
+                                />
+                            )}
+                    </StyledListItem>
+                    {data.variation === 'echart-scatter-plots' && (
+                        <StyledListItem disablePadding>
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === 'tooltips'
+                                            ? ''
+                                            : 'tooltips',
+                                    )
+                                }
+                                selected={selectedList === 'tooltips'}
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList === 'tooltips'
+                                                ? 'primary'
+                                                : 'disabled'
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary="Tooltips" />
+                                <InfoOutlined />
+                            </ListItemButton>
+                            {selectedList === 'tooltips' && (
+                                <TooltipScatterPlot
+                                    id={id}
+                                    path={'option'}
+                                ></TooltipScatterPlot>
+                            )}
+                        </StyledListItem>
+                    )}
+                    <StyledListItem disablePadding>
+                        <ListItemButton
+                            onClick={(e) =>
+                                setSelectedList((prevList) =>
+                                    prevList === 'resizing' ? '' : 'resizing',
+                                )
+                            }
+                            selected={selectedList === 'resizing'}
+                        >
+                            <ListItemIcon>
+                                <ImageIcon
+                                    fontSize="large"
+                                    color={
+                                        selectedList === 'resizing'
+                                            ? 'primary'
+                                            : 'disabled'
+                                    }
+                                />
+                            </ListItemIcon>
+                            <ListItemText primary="Resizing" />
+                            <InfoOutlined />
+                        </ListItemButton>
+                        {selectedList === 'resizing' && (
+                            <Stack>
+                                <SizeSettings
+                                    id={id}
+                                    label={'Height'}
+                                    path={'style.height'}
+                                ></SizeSettings>
+                                <SizeSettings
+                                    id={id}
+                                    label={'Width'}
+                                    path={'style.width'}
+                                ></SizeSettings>
+                            </Stack>
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
@@ -251,7 +356,8 @@ export const UpgradedVisualizationTool =
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
-                        {data.variation === 'echart-bar-graph' && (
+                        {(data.variation === 'echart-bar-graph' ||
+                            data.variation === 'echart-pie-chart') && (
                             <ListItemButton
                                 onClick={(e) =>
                                     setSelectedList((prevList) =>
@@ -291,6 +397,37 @@ export const UpgradedVisualizationTool =
                             />
                         )}
                     </StyledListItem>
+                    {data.variation === 'echart-scatter-plots' && (
+                        <StyledListItem disablePadding>
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === 'symbol' ? '' : 'symbol',
+                                    )
+                                }
+                                selected={selectedList === 'symbol'}
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList === 'symbol'
+                                                ? 'primary'
+                                                : 'disabled'
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary="Symbol" />
+                                <InfoOutlined />
+                            </ListItemButton>
+                            {selectedList === 'symbol' && (
+                                <ScatterPlotSymbol
+                                    id={id}
+                                    path={'option'}
+                                ></ScatterPlotSymbol>
+                            )}
+                        </StyledListItem>
+                    )}
                     <StyledListItem disablePadding>
                         {data.variation === 'echart-bar-graph' && (
                             <ListItemButton
@@ -357,7 +494,7 @@ export const UpgradedVisualizationTool =
                             <Legend id={id} path="option" />
                         )}
                     </StyledListItem>
-                    <StyledListItem disablePadding>
+                    {/*<StyledListItem disablePadding>
                         <ListItemButton
                             onClick={(e) =>
                                 setSelectedList((prevList) =>
@@ -393,7 +530,7 @@ export const UpgradedVisualizationTool =
                                 />
                             </>
                         )}
-                    </StyledListItem>
+                    </StyledListItem>*/}
                     {/* 
                         BAR Chart Menu for tools completes here
                         Custom section to handle pie chart components for respective menu section 

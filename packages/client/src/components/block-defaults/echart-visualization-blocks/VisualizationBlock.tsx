@@ -8,6 +8,7 @@ import { Pie } from './Variants/PieChart/Pie';
 import { useMemo, useRef } from 'react';
 import { BAR_CHART_DATA } from './Visualization.constants';
 import { PathValue } from '@/types';
+import { ScatterPlotBlock } from './Variants/ScatterPlot/ScatterPlot';
 
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',
@@ -64,6 +65,7 @@ export const VisualizationBlock: BlockComponent = observer(
     <D extends BlockDef = BlockDef>({ id }) => {
         const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
         const { setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+        const elementRef = useRef<HTMLDivElement>(null);
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
         //update chart json when data is changed
         function updateChartJson(data: any, path: any) {
@@ -131,13 +133,42 @@ export const VisualizationBlock: BlockComponent = observer(
                 </StyledNoDataContainer>
             );
         }
-
+        if (typeof data.option === 'string') {
+            try {
+                return (
+                    <StyledNoDataContainer
+                        {...attrs}
+                        style={{ ...updatedDataStyle }}
+                        ref={elementRef}
+                    >
+                        {data.variation === 'echart-bar-graph' && (
+                            <Bar id={id} updateJson={updateChartJson} />
+                        )}
+                        {data.variation === 'echart-pie-chart' && (
+                            <Pie id={id}></Pie>
+                        )}
+                        {data.variation === 'echart-scatter-plots' && (
+                            <ScatterPlotBlock id={id} />
+                        )}
+                    </StyledNoDataContainer>
+                );
+            } catch (e) {
+                return (
+                    <StyledNoDataContainer error {...attrs}>
+                        There was an issue parsing your JSON.
+                    </StyledNoDataContainer>
+                );
+            }
+        }
         return (
             <StyledDataContainer {...attrs} style={{ ...updatedDataStyle }}>
                 {data.variation === 'echart-bar-graph' && (
                     <Bar id={id} updateJson={updateChartJson} />
                 )}
                 {data.variation === 'echart-pie-chart' && <Pie id={id}></Pie>}
+                {data.variation === 'echart-scatter-plots' && (
+                    <ScatterPlotBlock id={id} />
+                )}
             </StyledDataContainer>
         );
     },

@@ -36,7 +36,7 @@ const StyledChartSubSection = styled('div', {
 );
 //initial chart style for chart styling component
 const INITIAL_CHART_STYLE = {
-    title: 'Bar Graph',
+    title: '',
     alignment: 'left',
     textSize: 12,
     fontColour: '#000000',

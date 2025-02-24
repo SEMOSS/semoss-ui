@@ -2,7 +2,6 @@ import { BlockComponent } from '@/stores';
 import { Stack, styled, ToggleTabsGroup } from '@semoss/ui';
 import {
     AIGenerationSettings,
-    CodeEditorSettings,
     JsonSettings,
 } from '@/components/block-settings';
 import { useBlock } from '@/hooks';
@@ -10,6 +9,7 @@ import { useState } from 'react';
 import { UpgradedVisualizationTool } from './Variants/bar-chart/UpgradedVisualizationTool';
 import { FrameOperations } from './Variants/bar-chart/FrameOperations';
 import { FrameOperationsPie } from './Variants/PieChart/FrameOperationsPie';
+import { ScatterPlotBlockSettings } from './Variants/ScatterPlot/ScatterPlotBlockSettings';
 
 const StyledContainer = styled('div')(() => ({
     maxHeight: '50vh',
@@ -92,11 +92,19 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                         {data.variation === 'echart-pie-chart' && (
                             <FrameOperationsPie id={id} path={'option'} />
                         )}
+
+                        {/* Render ScatterPlotBlockSettings component when 'Data' tab is selected */}
+                        {data.variation === 'echart-scatter-plots' && (
+                            <ScatterPlotBlockSettings
+                                id={id}
+                                path={'option'}
+                            ></ScatterPlotBlockSettings>
+                        )}
                     </StyledSubSection>
                 )}
                 {selectedTab === 'Tools' && (
                     <StyledToolsSection>
-                        {/* <VisualizationTool id={id} showTool={true} /> */}
+                        {/* Render UpgradedVisualizationTool component when 'Tools' tab is selected */}
                         <UpgradedVisualizationTool id={id} />
                     </StyledToolsSection>
                 )}

@@ -15,6 +15,7 @@ import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { FontFamily, Pie_Alignment } from '../../Visualization.constants';
+import { ColorPickerSettings } from '@/components/block-settings/shared/ColorPickerSettings';
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
@@ -72,6 +73,7 @@ export const PieValueLabel = observer(
             rotate: 0,
             rotateLabelMinValue: 0,
             rotateLabelMaxValue: 360,
+            color: '#000000',
         });
 
         const computedValue = useMemo(() => {
@@ -172,6 +174,8 @@ export const PieValueLabel = observer(
                 option['reset']['labelLine']['length'];
             option['series'][0]['label']['fontFamily'] =
                 option['reset']['label']['fontFamily'];
+            option['series'][0]['label']['color'] =
+                option['reset']['label']['color'];
             setData(path, option as PathValue<D['data'], typeof path>);
             retainLocalState(option);
         }
@@ -311,6 +315,18 @@ export const PieValueLabel = observer(
                                 );
                             })}
                         </StyledSelect>
+                    </StyledAxisColDiv>
+                )}
+                {showValueLabel && (
+                    <StyledAxisColDiv
+                        display="flex"
+                        justifyContent="space-around"
+                    >
+                        <ColorPickerSettings
+                            id={id}
+                            path="option.series.0.label.color"
+                            colorValue={valueLabel.color}
+                        />
                     </StyledAxisColDiv>
                 )}
                 {showValueLabel && (

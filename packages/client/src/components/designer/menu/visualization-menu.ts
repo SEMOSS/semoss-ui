@@ -49,6 +49,7 @@ import {
 } from '@/components/block-defaults/mermaid-block';
 
 import { DesignerMenuItem } from './menu.types';
+import { truncateSync } from 'fs';
 import {
     BAR_CHART_DATA,
     PIE_CHART_DATA,
@@ -63,6 +64,7 @@ const SECTION_PIE_CHART = 'Pie Chart';
 const SECTION_SCATTER_PLOTS = 'Scatter Plot';
 const SECTION_E_PIE_CHART_TEST = 'Echart Pie Chart';
 const SECTION_ECHART_BAR_CHART = 'Bar E Chart';
+const SECTION_ECHART_SCATTER_PLOTS = 'Scatter Plots E Charts';
 
 /**
  * Show the visualizations in the menu
@@ -918,6 +920,12 @@ export const VISUALIZATION_MENU_INITIAL: DesignerMenuItem[] = [
                             labelLine: {
                                 show: true,
                             },
+                            label: {
+                                color: '#000000',
+                            },
+                            itemStyle: {
+                                color: '#5470c6',
+                            },
                         },
                     ],
                     tooltip: {
@@ -952,6 +960,182 @@ export const VISUALIZATION_MENU_INITIAL: DesignerMenuItem[] = [
                             fontWeight: 'bold',
                             fontFamily: 'Arial Narrow',
                             fontSize: 12,
+                        },
+                    },
+                },
+                frame: {
+                    name: '',
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ECHART_SCATTER_PLOTS,
+        image: SCATTER_PLOT,
+        name: '',
+        json: {
+            widget: 'e-chart',
+            data: {
+                variation: 'echart-scatter-plots',
+                style: {
+                    height: 500,
+                    width: 400,
+                },
+                option: {
+                    title: {
+                        text: '',
+                        left: 'center',
+                        top: 'top',
+                    },
+                    tooltip: {
+                        show: true,
+                        trigger: 'item',
+                        position: 'bottom',
+                    },
+                    xAxis: {
+                        name: '',
+                        pixelName: '',
+                        nameLocation: 'middle',
+                        show: true,
+                        type: 'value',
+                        axisLine: {
+                            show: true,
+                        },
+                        axisTick: {
+                            show: true,
+                            alignWithLabel: true,
+                        },
+                        nameTextStyle: {
+                            fontSize: 12,
+                        },
+                        axisLabel: {
+                            show: true,
+                            rotate: 0,
+                            fontSize: 11,
+                            color: '#000000',
+                        },
+                    },
+                    yAxis: {
+                        name: '',
+                        pixelName: '',
+                        type: 'value',
+                        show: true,
+                        axisLine: {
+                            show: true,
+                        },
+                        axisTick: {
+                            show: true,
+                            alignWithLabel: true,
+                        },
+                        nameTextStyle: {
+                            fontSize: 12,
+                        },
+                        axisLabel: {
+                            show: true,
+                            rotate: 0,
+                            fontSize: 12,
+                            color: '#000000',
+                        },
+                    },
+                    series: [
+                        {
+                            data: [],
+                            label: {
+                                show: true,
+                                rotate: 0,
+                                name: '',
+                                position: 'top',
+                                fontFamily: 'sans-serif',
+                                fontSize: 12,
+                                color: '#000000',
+                            },
+                            symbolSize: 15,
+                            symbol: 'circle',
+                            type: 'scatter',
+                        },
+                    ],
+                    color: [
+                        '#5470c6',
+                        '#91cc75',
+                        '#fac858',
+                        '#ee6666',
+                        '#73c0de',
+                        '#3ba272',
+                        '#fc8452',
+                        '#9a60b4',
+                        '#ea7ccc',
+                    ],
+                    colorPalatteNotClicked: true,
+                    toolbox: {
+                        feature: {
+                            brush: {
+                                type: ['rect'],
+                            },
+                        },
+                    },
+                    brush: {
+                        // Brush configuration
+                        brushType: 'rect', // You can also use 'polygon', 'lineX', or 'lineY'
+                        throttleType: 'debounce', // Throttle brush events
+                        throttleDelay: 300, // Delay for throttle (in ms)
+                        inBrush: {
+                            color: 'rgba(255, 0, 0, 0.3)', // Highlight color for the brushed region
+                        },
+                        outBrush: {
+                            color: 'rgba(0, 0, 0, 0.1)', // Color for points outside the brushed region
+                        },
+                    },
+                    reset: {
+                        axis: {
+                            xaxis: {
+                                show: true,
+                                axisLine: {
+                                    show: true,
+                                },
+                                axisTick: {
+                                    show: true,
+                                    alignWithLabel: true,
+                                },
+                                nameTextStyle: {
+                                    fontSize: 12,
+                                },
+                                axisLabel: {
+                                    show: true,
+                                    rotate: 0,
+                                    fontSize: 11,
+                                    color: '#000000',
+                                },
+                            },
+                            yaxis: {
+                                show: true,
+                                axisLine: {
+                                    show: true,
+                                },
+                                axisTick: {
+                                    show: true,
+                                    alignWithLabel: true,
+                                },
+                                nameTextStyle: {
+                                    fontSize: 12,
+                                },
+                                axisLabel: {
+                                    show: true,
+                                    rotate: 0,
+                                    fontSize: 12,
+                                    color: '#000000',
+                                },
+                            },
+                        },
+                        label: {
+                            show: true,
+                            rotate: 0,
+                            name: '',
+                            position: 'top',
+                            fontFamily: 'sans-serif',
+                            fontSize: 12,
+                            color: '#000000',
                         },
                     },
                 },

@@ -18,6 +18,7 @@ import {
     FontWeights,
     Title_Alignment,
 } from '../../Visualization.constants';
+import { ColorPickerSettings } from '@/components/block-settings/shared/ColorPickerSettings';
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
@@ -64,6 +65,7 @@ export const PieTitle = observer(
             size: 8,
             weight: 'normal',
             family: '',
+            color: '#000000',
         });
         const computedValue = useMemo(() => {
             return computed(() => {
@@ -102,6 +104,7 @@ export const PieTitle = observer(
                 size: options['title']['textStyle']['fontSize'],
                 weight: options['title']['textStyle']['fontWeight'],
                 family: options['title']['textStyle']['fontFamily'],
+                color: options['title']['textStyle']['color'],
             }));
         };
         //Reinitialize the feature when the chart is loaded
@@ -160,6 +163,8 @@ export const PieTitle = observer(
                 option['reset']['title']['textStyle']['fontWeight'];
             option['title']['textStyle']['fontFamily'] =
                 option['reset']['title']['textStyle']['fontFamily'];
+            option['title']['textStyle']['color'] =
+                option['reset']['title']['textStyle']['color'];
             setData(path, option as PathValue<D['data'], typeof path>);
             retainLocalState(option);
         }
@@ -295,6 +300,18 @@ export const PieTitle = observer(
                                 );
                             })}
                         </StyledSelect>
+                    </StyledAxisColDiv>
+                )}
+                {showTitle && (
+                    <StyledAxisColDiv
+                        display="flex"
+                        justifyContent="space-around"
+                    >
+                        <ColorPickerSettings
+                            id={id}
+                            path="option.title.textStyle.color"
+                            colorValue={title.color}
+                        />
                     </StyledAxisColDiv>
                 )}
                 {showTitle && (
