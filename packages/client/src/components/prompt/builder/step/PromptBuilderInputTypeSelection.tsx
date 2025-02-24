@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Token } from '../../prompt.types';
 import { Autocomplete } from '@mui/material';
 import {
@@ -45,7 +45,22 @@ export const PromptBuilderInputTypeSelection = (props: {
         inputTypeMeta: string | null,
     ) => void;
     setInputLabel: (inputTokenIndex: number, inputLabel: string) => void;
+    userPrompt: string;
+    modelId: string;
+    setBuilderValue: (builderStepKey: string, value: string) => void;
+    LlmInputLabel: string;
+    isLLMVersionSelected: boolean;
 }) => {
+    const [inputLabelText, setInputLabelText] = useState(props.LlmInputLabel);
+
+    // Setting TextField label as LLM input label if it exists
+    useEffect(() => {
+        if (props.LlmInputLabel && props.LlmInputLabel.trim() !== '') {
+            setInputLabelText(props.LlmInputLabel);
+            handleInputChange({ target: { value: props.LlmInputLabel } });
+        }
+    }, [props.LlmInputLabel]);
+
     const showMetaAutocomplete =
         props.inputType === INPUT_TYPE_VECTOR ||
         props.inputType === INPUT_TYPE_DATABASE;
@@ -94,6 +109,13 @@ export const PromptBuilderInputTypeSelection = (props: {
         }
     };
 
+    // Handle input label change for textfield
+    const handleInputChange = (e) => {
+        const newValue = e.target.value;
+        setInputLabelText(newValue);
+        props.setInputLabel(props.inputToken.index, newValue);
+    };
+
     return (
         <Grid
             sx={{
@@ -109,20 +131,16 @@ export const PromptBuilderInputTypeSelection = (props: {
                 <Stack spacing={2}>
                     <TextField
                         label="Input Label"
+                        value={inputLabelText}
                         variant="outlined"
-                        onChange={(e) => {
-                            props.setInputLabel(
-                                props.inputToken.index,
-                                e.target.value,
-                            );
-                        }}
+                        onChange={handleInputChange}
                     />
                     <Autocomplete
                         fullWidth
                         disableClearable
                         id="input-token-autocomplete"
                         options={INPUT_TYPES}
-                        value={props.inputType}
+                        value={props.inputType || ''}
                         getOptionLabel={(option) => INPUT_TYPE_DISPLAY[option]}
                         onChange={(_, newInputType: string) => {
                             props.setInputType(
