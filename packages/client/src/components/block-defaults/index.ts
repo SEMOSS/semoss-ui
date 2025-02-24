@@ -61,6 +61,10 @@ import {
     PDFViewerBlockDef,
 } from './pdfViewer-block';
 import { config as ThemeBlockConfig, ThemeBlockDef } from './theme-block';
+import {
+    config as AccordionBlockConfig,
+    AccordionBlockDef,
+} from './accordion-block';
 import { config as DrawerBlockConfig, DrawerBlockDef } from './drawer-block';
 
 export type DefaultBlockDefinitions =
@@ -98,6 +102,7 @@ export type DefaultBlockDefinitions =
     | RadioBlockDef
     | PDFViewerBlockDef
     | ThemeBlockDef
+    | AccordionBlockDef
     | DrawerBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
@@ -129,6 +134,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
     [ThemeBlockConfig.widget]: ThemeBlockConfig,
+    [AccordionBlockConfig.widget]: AccordionBlockConfig,
     [DrawerBlockConfig.widget]: DrawerBlockConfig,
 };
 
@@ -157,5 +163,6 @@ export {
     RadioBlockConfig,
     PDFViewerBlockConfig,
     ThemeBlockConfig,
+    AccordionBlockConfig,
     DrawerBlockConfig,
 };
