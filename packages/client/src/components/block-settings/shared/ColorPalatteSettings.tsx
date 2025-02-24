@@ -6,18 +6,15 @@ import { useBlockSettings } from '@/hooks';
 import { getValueByPath } from '@/utility';
 import { Block, BlockDef } from '@/stores';
 import {
-    Box,
     Button,
     IconButton,
     InputAdornment,
-    Popover,
-    Stack,
     styled,
     TextField,
     Icon,
 } from '@semoss/ui';
 import { SketchPicker } from 'react-color';
-import { Input, OutlinedInput } from '@mui/material';
+import { OutlinedInput } from '@mui/material';
 import {
     ArrowBack,
     Check,
