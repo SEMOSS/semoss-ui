@@ -1,24 +1,5 @@
 import { BlockJSON } from '@semoss/renderer';
 import { lightTheme } from '@semoss/ui';
-import {
-    CLASS_DIAGRAM,
-    ENTITY_RELATIONSHIP_DIAGRAM,
-    GANTT,
-    SEQUENCE_DIAGRAM,
-    STATE_DIAGRAM,
-    USER_JOURNEY,
-    PIE_CHART,
-    QUADRANT_CHART,
-    REQUIREMENT_DIAGRAM,
-    GIT_DIAGRAM,
-    C4_DIAGRAM,
-    MINDMAP,
-    TIMELINE,
-    SANKEY,
-    XY_Chart,
-    BLOCK_DIAGRAM,
-    GENERAL_MERMAID,
-} from '@semoss/renderer';
 
 import type { DesignerMenuItem } from './menu-types';
 import * as BLOCK_IMAGES from '@/assets/blocks';
