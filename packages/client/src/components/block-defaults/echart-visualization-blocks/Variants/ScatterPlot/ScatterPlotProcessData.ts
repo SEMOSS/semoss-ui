@@ -1754,14 +1754,6 @@ export const processData = (apiData, data) => {
                             ),
                         }));
                     }
-                    // const formattedData = apiData.values.map((item) => ({ ...formatColorDataItem(
-                    //     item[0],
-                    //     item[1],
-                    //    item[2],
-                    //     item[3],
-                    // ), }));
-                    // const convertedColors = apiData.values.map((item) => newColor(data, item[3]));
-                    // return { formattedData: formattedData,convertedColors };
                     return apiData.values.map((item, index) => ({
                         ...formatColorDataItem(
                             item[0],
@@ -1769,7 +1761,6 @@ export const processData = (apiData, data) => {
                             item[2],
                             item[3],
                         ),
-                        //  itemStyle: { color: convertedColors[index] }
                     }));
                 }
                 if (label && xAxis && yAxis && size) {
@@ -1881,13 +1872,6 @@ export const processData = (apiData, data) => {
                         ...formatItem(item[0], item[1], item[1]),
                     }));
                 }
-                //     const formattedData = apiData.values.map((item) => ({ ...formatItem(
-                //         item[0],
-                //         item[1],
-                //        item[2]
-                //     ), }));
-                //    // const convertedColors = apiData.values.map((item) => newColor(data, item[1]));
-                //     return { formattedData: formattedData };
                 return apiData.values.map((item) => ({
                     ...formatItem(item[0], item[1], item[2]),
                 }));

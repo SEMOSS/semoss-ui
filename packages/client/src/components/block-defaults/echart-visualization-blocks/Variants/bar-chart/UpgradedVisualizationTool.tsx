@@ -98,7 +98,7 @@ export const UpgradedVisualizationTool =
                             <InfoOutlined />
                         </ListItemButton>
                         {selectedList === 'colourbyvalue' && (
-                            <ColorPickerSettings id={id} path="option" />
+                            <p>color by value component</p>
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>

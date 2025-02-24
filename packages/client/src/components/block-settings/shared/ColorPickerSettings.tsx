@@ -18,6 +18,7 @@ interface ColorPickerSettingProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
+    colorValue: string;
 }
 
 const StyledSketchContainer = styled(SketchPicker)({
@@ -45,13 +46,16 @@ const StyledSpanSection = styled('span')(({ color }) => ({
     border: '1px solid #000',
 }));
 export const ColorPickerSettings = observer<ColorPickerSettingProps>(
-    <D extends BlockDef = BlockDef>({ id, path }) => {
+    <D extends BlockDef = BlockDef>({ id, path, colorValue = '#000000' }) => {
         const [showPopover, setShowPopover] =
             useState<HTMLButtonElement | null>(null); //show and hide the color picker
-        const [color, setColor] = useState('#000000'); //default color and state to maintain color value
+        const [color, setColor] = useState(colorValue); //default color and state to maintain color value
         const { data, setData } = useBlockSettings<any>(id); //data to update the color of the chart
         const [value, setValue] = useState<string | null>(null); //local state to store a copy of main state
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null); //timeout ref to delay update of state
+        const optiontimeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+        const optionPathVal = 'option';
+        const [optionValue, setOptionValue] = useState(data.option);
         //get the latest value of state and store it in computedValue
         const computedValue = useMemo(() => {
             return computed(() => {
@@ -69,6 +73,23 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
                 return JSON.stringify(v, null, 2);
             });
         }, [data, path]).get();
+        const optionComputedValue = useMemo(() => {
+            return computed(() => {
+                if (!data) {
+                    return '';
+                }
+                const v = getValueByPath(data, optionPathVal);
+                if (typeof v === 'undefined') {
+                    return '';
+                } else if (typeof v === 'string') {
+                    return v;
+                }
+                return JSON.stringify(v, null, 2);
+            });
+        }, [data, optionPathVal]).get();
+        useEffect(() => {
+            setOptionValue(optionComputedValue);
+        }, [optionComputedValue]);
         //close the color picker when color picker is visible
         function handleClose() {
             setShowPopover(null);
@@ -76,7 +97,27 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
         //update the local state value, when computed value is changed
         useEffect(() => {
             setValue(computedValue);
+            updateLatestChartDetail();
         }, [computedValue]);
+
+        function updateLatestChartDetail() {
+            if (optiontimeoutRef.current) {
+                clearTimeout(optiontimeoutRef.current);
+                optiontimeoutRef.current = null;
+            }
+            optiontimeoutRef.current = setTimeout(() => {
+                try {
+                    let options = JSON.parse(optionComputedValue);
+                    options['lastUpdatedTime'] = Date.now();
+                    setData(
+                        optionPathVal,
+                        options as PathValue<D['data'], typeof path>,
+                    );
+                } catch (e) {
+                    console.log(e);
+                }
+            }, 300);
+        }
         //update run state update, when color value is changed
         function runStateUpdateCustom(option) {
             if (timeoutRef.current) {
@@ -90,6 +131,7 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
                     console.log(e);
                 }
             }, 300);
+            setShowPopover(null);
         }
         //detect the current state of popover and update to open variable
         const open = Boolean(showPopover);
@@ -103,7 +145,7 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
                     placeholder="Select Colour"
                     aria-label="Select Colour"
                     type={'text'}
-                    value={color}
+                    value={value}
                     style={{ width: '100%' }}
                     onChange={(e) => {
                         setColor(e.target.value);
@@ -120,7 +162,7 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
                                 edge="end"
                             >
                                 <StyledSpanSection
-                                    color={color}
+                                    color={value}
                                 ></StyledSpanSection>
                             </IconButton>
                         </InputAdornment>
@@ -142,7 +184,7 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
                             setColor(newColor.hex);
                             runStateUpdateCustom(newColor.hex);
                         }}
-                        color={color}
+                        color={value}
                     ></StyledSketchContainer>
                 </Popover>
             </StyledMainContainer>

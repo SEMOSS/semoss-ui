@@ -1,3 +1,4 @@
+import { ColorPickerSettings } from '@/components/block-settings/shared/ColorPickerSettings';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { Paths, PathValue } from '@/types';
@@ -72,6 +73,7 @@ export const ValueLabelScatterPlot = observer(
         const [labelRotation, setLabelRotation] = useState(0);
         const [labelFont, setLabelFont] = useState('sans-serif');
         const [labelFontSize, setLabelFontSize] = useState(12);
+        const [labelColor, setLabelColor] = useState('#000000');
 
         const computedValue = useMemo(() => {
             return computed(() => {
@@ -128,6 +130,7 @@ export const ValueLabelScatterPlot = observer(
                         );
                         // Update the show label state
                         setShowLabel(options['series'][0]['label']['show']);
+                        setLabelColor(options['series'][0]['label']['color']);
                     }
                 }
             }
@@ -242,6 +245,8 @@ export const ValueLabelScatterPlot = observer(
                 option['reset']['label']['fontFamily'];
             option['series'][0]['label']['fontSize'] =
                 option['reset']['label']['fontSize'];
+            option['series'][0]['label']['color'] =
+                option['reset']['label']['color'];
 
             // Save the updated chart options back to the state
             setData(path, option as PathValue<D['data'], typeof path>);
@@ -349,6 +354,11 @@ export const ValueLabelScatterPlot = observer(
                                 onChange={handleLabelSize}
                             />
                         </StyledAxisColDiv>
+                        <ColorPickerSettings
+                            id={id}
+                            path={'option.series.0.label.color'}
+                            colorValue={labelColor}
+                        ></ColorPickerSettings>
                     </StyledAxis>
                 )}
                 <StyledAxisDiv display="flex" justifyContent="flex-end">
