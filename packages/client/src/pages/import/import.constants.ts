@@ -9181,7 +9181,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false, min: 0 },
                     },
                     {
-                        fieldName: 'httpPAth',
+                        fieldName: 'httpPath',
                         label: 'HTTP Path',
                         defaultValue: '',
                         options: {
@@ -13350,6 +13350,16 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'S3_REGION',
                         label: 'Region',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'S3_BUCKET',
+                        label: 'Bucket',
                         defaultValue: '',
                         options: {
                             component: 'text-field',

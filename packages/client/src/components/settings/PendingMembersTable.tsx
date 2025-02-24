@@ -1,4 +1,14 @@
 import { useEffect, useState } from 'react';
+import { AxiosResponse } from 'axios';
+import {
+    Add,
+    Check,
+    Close,
+    ExpandLess,
+    ExpandMore,
+    CircleNotifications,
+} from '@mui/icons-material';
+
 import {
     styled,
     Button,
@@ -11,9 +21,8 @@ import {
     RadioGroup,
     Typography,
     useNotification,
+    Stack,
 } from '@semoss/ui';
-import { Add, Check, Close, ExpandLess, ExpandMore } from '@mui/icons-material';
-import { AxiosResponse } from 'axios';
 
 import { useRootStore, usePixel, useSettings } from '@/hooks';
 import { ALL_TYPES } from '@/types';
@@ -79,17 +88,17 @@ const StyledTableTitleMemberContainer = styled('div')({
 
 const StyledTableTitleMemberCountContainer = styled('div')({
     display: 'flex',
-    height: '56px',
+    //height: '56px',
     padding: '6px 16px 6px 8px',
     flexDirection: 'column',
-    justifyContent: 'center',
+    //justifyContent: 'center',
     alignItems: 'center',
     gap: '10px',
 });
 
 const StyledTableTitleMemberCount = styled('div')({
     display: 'flex',
-    flexDirection: 'column',
+    //flexDirection: 'column',
     alignItems: 'flex-start',
 });
 
@@ -123,6 +132,10 @@ const StyledAddMemberContainer = styled('div')({
     justifyContent: 'center',
     alignItems: 'center',
     gap: '10px',
+});
+
+const StyledCircleNotification = styled(CircleNotifications)({
+    color: '#FF5F15',
 });
 
 // maps for permissions,
@@ -211,7 +224,6 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
             ...m,
             PERMISSION: permissionMapper[m.PERMISSION], // comes in as 1,2,3 -> map to Author, Edit, Read-only
         }));
-
         setRenderedMembers(updatedMembers);
     }, [pendingUserAccess.status, pendingUserAccess.data]);
 
@@ -416,7 +428,13 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
         <StyledMemberContent>
             <StyledMemberInnerContent>
                 <StyledTableContainer>
-                    <StyledTableTitleContainer>
+                    <StyledTableTitleContainer
+                        onClick={() => {
+                            if (renderedMembers.length > 0) {
+                                setOpenTable(!openTable);
+                            }
+                        }}
+                    >
                         <StyledTableTitleDiv>
                             <Typography variant={'h6'}>
                                 Pending Requests
@@ -426,11 +444,20 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
                         <StyledTableTitleMemberContainer>
                             <StyledTableTitleMemberCountContainer>
                                 <StyledTableTitleMemberCount>
-                                    <Typography variant={'body1'}>
-                                        {renderedMembers.length < 2
-                                            ? `${renderedMembers.length} pending request`
-                                            : `${renderedMembers.length} pending requests`}
-                                    </Typography>
+                                    <Stack
+                                        alignItems={'center'}
+                                        justifyContent={'flex-start'}
+                                        direction={'row'}
+                                    >
+                                        <Typography variant={'body1'}>
+                                            {renderedMembers.length == 1
+                                                ? `${renderedMembers.length} pending request`
+                                                : `${renderedMembers.length} pending requests`}
+                                        </Typography>
+                                        {renderedMembers.length > 0 && (
+                                            <StyledCircleNotification />
+                                        )}
+                                    </Stack>
                                 </StyledTableTitleMemberCount>
                             </StyledTableTitleMemberCountContainer>
                         </StyledTableTitleMemberContainer>
@@ -489,6 +516,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
                         <StyledFilterButtonContainer>
                             <IconButton
                                 onClick={() => setOpenTable(!openTable)}
+                                disabled={renderedMembers.length == 0}
                             >
                                 {openTable ? <ExpandLess /> : <ExpandMore />}
                             </IconButton>

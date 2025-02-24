@@ -27,6 +27,7 @@ import { Env } from '@/env';
 import GOOGLE from '@/assets/img/google.png';
 import { ENGINE_IMAGES } from '../../pages/import/import.constants';
 import BRAIN from '@/assets/img/BRAIN.png';
+import { TruncatedText } from '../../../../../libs/ui/src/components/TruncatedText';
 
 const StyledCardImg = styled('img')({
     display: 'flex',
@@ -362,7 +363,10 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
                 <StyledLandscapeCardHeaderDiv>
                     <Typography variant={'body1'}>
                         <Typography variant={'body1'}>
-                            {formatDBName(name)}
+                            <TruncatedText variant="body1">
+                                {formatDBName(name)}
+                            </TruncatedText>
+                            {/* {formatDBName(name)} */}
                         </Typography>
                         {sub_type === 'EMBEDDED' ? (
                             <StyledCardImg src={GOOGLE}></StyledCardImg>

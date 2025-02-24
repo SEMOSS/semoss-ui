@@ -30,7 +30,14 @@ export class MonolithStore {
         const response = await axios
             .get<{
                 logins: { [key: string]: unknown };
-                loginsAllowed: { [key: string]: boolean };
+                /**
+                 * List of available providers (logins) that are available
+                 */
+                availableProviders: {
+                    provider: string;
+                    name: string;
+                    isOauth: boolean;
+                }[];
                 [key: string]: unknown;
             }>(`${Env.MODULE}/api/config`)
             .catch((error) => {
@@ -1088,14 +1095,13 @@ export class MonolithStore {
      * @param type
      * @returns
      */
-    async deleteTeam(groupid: string, description: string, type?: string) {
+    async deleteTeam(groupid: string, type?: string) {
         let url = `${Env.MODULE}/api/auth/admin/`,
             postData = '';
 
         url += 'group/deleteGroup';
 
         postData += 'groupId=' + encodeURIComponent(groupid);
-        postData += '&description=' + encodeURIComponent(description);
 
         if (type) {
             postData += '&type=' + encodeURIComponent(type);
@@ -1332,6 +1338,7 @@ export class MonolithStore {
      */
     async editProjectPermisison(
         groupId: string,
+        groupType: string,
         project: {
             projectid: string;
             permission: number;
@@ -1348,8 +1355,8 @@ export class MonolithStore {
         postData += '&projectId=' + encodeURIComponent(project.projectid);
         postData += '&permission=' + encodeURIComponent(project.permission);
 
-        if (project.project_type) {
-            postData += '&type=' + encodeURIComponent(project.project_type);
+        if (groupType) {
+            postData += '&type=' + encodeURIComponent(groupType);
         }
         if (project.endDate) {
             postData += '&endDate=' + encodeURIComponent(project.endDate);
@@ -1373,6 +1380,7 @@ export class MonolithStore {
      */
     async deleteProjectPermission(
         groupId,
+        groupType: string,
         project: {
             projectid: string;
             group_type?: string;
@@ -1385,8 +1393,8 @@ export class MonolithStore {
 
         postData += 'groupId=' + encodeURIComponent(groupId);
         postData += '&projectId=' + encodeURIComponent(project.projectid);
-        if (project.group_type) {
-            postData += '&type=' + encodeURIComponent(project.group_type);
+        if (groupType) {
+            postData += '&type=' + encodeURIComponent(groupType);
         }
 
         const response = await axios.post<{ success: boolean }>(url, postData, {
@@ -1407,6 +1415,7 @@ export class MonolithStore {
      */
     async getTeamProjects(
         groupId: string,
+        groupType: string,
         limit: number,
         offset: number,
         searchTerm: string,
@@ -1420,6 +1429,7 @@ export class MonolithStore {
         const params = {};
 
         groupId && (params['groupId'] = groupId);
+        groupType && (params['groupType'] = groupType);
         limit && (params['limit'] = limit);
         offset && (params['offset'] = offset);
         searchTerm && (params['searchTerm'] = searchTerm);
@@ -1453,7 +1463,7 @@ export class MonolithStore {
      * @param offSet
      * @param searchTerm
      */
-    async getUnassignedTeamProjects(groupId: string) {
+    async getUnassignedTeamProjects(groupId: string, groupType: string) {
         let url = `${Env.MODULE}/api/auth/admin/`;
 
         url += 'group/getAvailableProjectsForGroup';
@@ -1461,6 +1471,7 @@ export class MonolithStore {
         const params = {};
 
         groupId && (params['groupId'] = groupId);
+        groupType && (params['groupType'] = groupType);
 
         const response = await axios
             .get(url, {
@@ -1573,6 +1584,7 @@ export class MonolithStore {
      */
     async deleteEnginePermission(
         groupId: string,
+        groupType: string,
         engine: {
             engineid: string;
             type?: string;
@@ -1584,10 +1596,10 @@ export class MonolithStore {
         url += 'group/removeGroupEnginePermission';
 
         postData += 'groupId=' + encodeURIComponent(groupId);
-        postData += '&engineid=' + encodeURIComponent(engine.engineid);
+        postData += '&engineId=' + encodeURIComponent(engine.engineid);
 
-        if (engine.type) {
-            postData += '&type=' + encodeURIComponent(engine.type);
+        if (groupType) {
+            postData += '&type=' + encodeURIComponent(groupType);
         }
 
         const response = await axios.post<{ success: boolean }>(url, postData, {
@@ -1608,6 +1620,7 @@ export class MonolithStore {
      */
     async getTeamEngines(
         groupId: string,
+        groupType: string,
         limit: number,
         offset: number,
         searchTerm: string,
@@ -1619,6 +1632,7 @@ export class MonolithStore {
         const params = {};
 
         groupId && (params['groupId'] = groupId);
+        groupType && (params['groupType'] = groupType);
         limit && (params['limit'] = limit);
         offset && (params['offset'] = offset);
         searchTerm && (params['searchTerm'] = searchTerm);
@@ -1646,7 +1660,7 @@ export class MonolithStore {
      * @param offSet
      * @param searchTerm
      */
-    async getUnassignedTeamEngines(groupId: string) {
+    async getUnassignedTeamEngines(groupId: string, groupType: string) {
         let url = `${Env.MODULE}/api/auth/admin/`;
 
         url += 'group/getAvailableEnginesForGroup';
@@ -1654,6 +1668,7 @@ export class MonolithStore {
         const params = {};
 
         groupId && (params['groupId'] = groupId);
+        groupType && (params['groupType'] = groupType);
 
         const response = await axios
             .get(url, {
