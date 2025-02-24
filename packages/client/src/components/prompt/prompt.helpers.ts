@@ -92,9 +92,7 @@ function getSelectInputBlock(inputType: string, index: number, label: string) {
 export function getBlockForInput(
     token: Token,
     inputType: string,
-    imputLabel: string,
 ): Block | null {
-    let inpLabel = imputLabel || token.key;
     switch (inputType) {
         case INPUT_TYPE_TEXT:
         case INPUT_TYPE_VECTOR:
@@ -102,19 +100,19 @@ export function getBlockForInput(
             return getTextFieldInputBlock(
                 inputType,
                 token.index,
-                capitalizeLabel(inpLabel),
+                capitalizeLabel(token.key),
             );
         case INPUT_TYPE_DATABASE: {
-            const label = capitalizeLabel(inpLabel).includes('Query')
-                ? capitalizeLabel(inpLabel)
-                : `${capitalizeLabel(inpLabel)} Query`;
+            const label = capitalizeLabel(token.key).includes('Query')
+                ? capitalizeLabel(token.key)
+                : `${capitalizeLabel(token.key)} Query`;
             return getTextFieldInputBlock(inputType, token.index, label);
         }
         case INPUT_TYPE_SELECT:
             return getSelectInputBlock(
                 inputType,
                 token.index,
-                capitalizeLabel(inpLabel),
+                capitalizeLabel(token.key),
             );
         default:
             alert('Block not implemented for this input type yet.');
@@ -598,11 +596,7 @@ export async function setBlocksAndOpenUIBuilder(
         (builder.inputTypes.value as object) ?? {},
     )) {
         const token = builder.inputs.value[tokenIndex] as Token;
-        const inputBlock = getBlockForInput(
-            token,
-            inputType.type,
-            inputType.label,
-        );
+        const inputBlock = getBlockForInput(token, inputType.type);
         if (inputBlock) {
             childInputIds = [...childInputIds, inputBlock.id];
             state.blocks = { ...state.blocks, [inputBlock.id]: inputBlock };
@@ -647,7 +641,6 @@ export async function setBlocksAndOpenUIBuilder(
 
     await monolithStore.runQuery(
         `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify({
-            tag: builder.tags.value,
             description: builder.context.value,
         })}])`,
     );
