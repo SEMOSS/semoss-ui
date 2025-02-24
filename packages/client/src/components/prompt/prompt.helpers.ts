@@ -641,7 +641,6 @@ export async function setBlocksAndOpenUIBuilder(
 
     await monolithStore.runQuery(
         `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify({
-            tag: builder.tags.value,
             description: builder.context.value,
         })}])`,
     );
