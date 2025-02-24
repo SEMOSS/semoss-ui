@@ -19,6 +19,7 @@ interface ColorPickerSettingProps<D extends BlockDef = BlockDef> {
      */
     path: Paths<Block<D>['data'], 4>;
     colorValue: string;
+    onChange: (color: string) => void;
 }
 
 const StyledSketchContainer = styled(SketchPicker)({
@@ -46,7 +47,12 @@ const StyledSpanSection = styled('span')(({ color }) => ({
     border: '1px solid #000',
 }));
 export const ColorPickerSettings = observer<ColorPickerSettingProps>(
-    <D extends BlockDef = BlockDef>({ id, path, colorValue = '#000000' }) => {
+    <D extends BlockDef = BlockDef>({
+        id,
+        path,
+        colorValue = '#000000',
+        onChange,
+    }) => {
         const [showPopover, setShowPopover] =
             useState<HTMLButtonElement | null>(null); //show and hide the color picker
         const [color, setColor] = useState(colorValue); //default color and state to maintain color value
@@ -182,6 +188,7 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
                         onChange={(newColor) => {
                             setColor(newColor.hex);
                             runStateUpdateCustom(newColor.hex);
+                            onChange(newColor.hex);
                         }}
                         color={value}
                     ></StyledSketchContainer>

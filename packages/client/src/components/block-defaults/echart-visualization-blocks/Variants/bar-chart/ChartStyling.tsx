@@ -296,6 +296,12 @@ export const ChartStyling = observer(
                         id={id}
                         path={`option.title.textStyle.color`}
                         colorValue={chartStyle.fontColour}
+                        onChange={(e) =>
+                            handleInputChange(
+                                { target: { value: e } },
+                                'fontColour',
+                            )
+                        }
                     />
                 </StyledChartSubSection>
                 <StyledChartSubSection>

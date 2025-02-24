@@ -13,7 +13,7 @@ import { Sync } from '@mui/icons-material';
 import { Stack } from '@mui/material';
 import { GridBlockColumn } from '../../../grid-block/grid-block.types';
 import { useEffect, useMemo, useState } from 'react';
-import { EchartVisualizationBlockDef } from '../../EchartVisualizationBlock';
+import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
 import { Paths } from '@/types';
@@ -368,6 +368,7 @@ export const ScatterPlotBlockSettings = observer(
                     setDataLabel('');
                     // Remove the label field from the option object
                     const newFields = { ...tempValue };
+                    newFields['series'][0]['data'] = [];
                     delete newFields['_state']['fields'].label;
                     delete newFields['_state']['fields'].labelDataType;
                     // Convert the updated value back to a JSON string
@@ -380,6 +381,7 @@ export const ScatterPlotBlockSettings = observer(
                     setXAxisValue('');
                     // Remove the X-axis field from the option object
                     const newXAxisFields = { ...tempValue };
+                    newXAxisFields['series'][0]['data'] = [];
                     delete newXAxisFields['_state']['fields'].XAxis;
                     delete newXAxisFields['_state']['fields'].XAxisDataType;
                     newXAxisFields['xAxis']['pixelName'] = ''; // Reset the X-axis pixel name
@@ -394,6 +396,7 @@ export const ScatterPlotBlockSettings = observer(
                     setYAxisValue('');
                     // Remove the Y-axis field from the option object
                     const newYAxisFields = { ...tempValue };
+                    newYAxisFields['series'][0]['data'] = [];
                     delete newYAxisFields['_state']['fields'].YAxis;
                     delete newYAxisFields['_state']['fields'].YAxisDataType;
                     newYAxisFields['yAxis']['pixelName'] = ''; // Reset the Y-axis pixel name

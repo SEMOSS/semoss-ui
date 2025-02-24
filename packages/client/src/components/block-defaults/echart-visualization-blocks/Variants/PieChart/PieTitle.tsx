@@ -311,6 +311,7 @@ export const PieTitle = observer(
                             id={id}
                             path="option.title.textStyle.color"
                             colorValue={title.color}
+                            onChange={(e) => handleInputChange('titleColor', e)}
                         />
                     </StyledAxisColDiv>
                 )}

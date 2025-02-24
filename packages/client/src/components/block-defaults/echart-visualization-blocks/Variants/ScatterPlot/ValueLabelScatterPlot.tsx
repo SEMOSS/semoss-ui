@@ -358,6 +358,7 @@ export const ValueLabelScatterPlot = observer(
                             id={id}
                             path={'option.series.0.label.color'}
                             colorValue={labelColor}
+                            onChange={(e) => {}}
                         ></ColorPickerSettings>
                     </StyledAxis>
                 )}

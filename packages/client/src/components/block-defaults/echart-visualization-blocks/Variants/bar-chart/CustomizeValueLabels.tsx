@@ -378,7 +378,10 @@ export const CustomizeValueLabels = observer(
                                 ['color']:
                                     customizeLabelOptionsValue[
                                         displayPositionIndex
-                                    ]['fontcolour'],
+                                    ]['fontcolour'] ||
+                                    option['series'][displayPositionIndex][
+                                        'label'
+                                    ]['color'],
                             },
                         };
                     }
@@ -620,6 +623,14 @@ export const CustomizeValueLabels = observer(
                                 id={id}
                                 path={`option.series.${selectedSeries}.label.color`}
                                 colorValue={fieldSelectedSeries.fontcolour}
+                                onChange={(e) =>
+                                    updateFields(
+                                        'fontcolour',
+                                        { target: { value: e } },
+                                        'text',
+                                        selectedSeries,
+                                    )
+                                }
                             />
                         </StyledSubSection>
                     </>

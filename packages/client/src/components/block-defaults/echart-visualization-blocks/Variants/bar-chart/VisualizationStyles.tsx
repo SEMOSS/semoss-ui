@@ -265,6 +265,12 @@ export const VisualizationStyles = observer(
                                 id={id}
                                 path={`option.series.${selectedSeries}.itemStyle.color`}
                                 colorValue={currentSeriesColor}
+                                onChange={(e) =>
+                                    handleBarColourChange(
+                                        { target: { value: e } },
+                                        selectedSeries,
+                                    )
+                                }
                             />
                         </StyledBarStylesContainer>
                     </StyledBarStylesContainer>

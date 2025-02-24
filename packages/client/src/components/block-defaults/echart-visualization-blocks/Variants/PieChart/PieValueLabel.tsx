@@ -326,6 +326,7 @@ export const PieValueLabel = observer(
                             id={id}
                             path="option.series.0.label.color"
                             colorValue={valueLabel.color}
+                            onChange={(e) => handleInputChange('color', e)}
                         />
                     </StyledAxisColDiv>
                 )}
