@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { useBlock } from '@/hooks';
 import { BlockComponent } from '@/stores';
 import { styled } from '@mui/material';
-import { ScatterPlotBlock } from './Variants/ScatterPlot';
+import { ScatterPlotBlock } from './Variants/ScatterPlot/ScatterPlot';
 import { useMemo, useRef } from 'react';
 
 const StyledNoDataContainer = styled('div', {

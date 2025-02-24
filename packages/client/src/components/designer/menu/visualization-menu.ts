@@ -892,14 +892,23 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                                 fontSize: 12,
                                 color: '#000000',
                             },
-                            itemStyle: {
-                                color: '#000000',
-                            },
                             symbolSize: 15,
                             symbol: 'circle',
                             type: 'scatter',
                         },
                     ],
+                    color: [
+                        '#5470c6',
+                        '#91cc75',
+                        '#fac858',
+                        '#ee6666',
+                        '#73c0de',
+                        '#3ba272',
+                        '#fc8452',
+                        '#9a60b4',
+                        '#ea7ccc',
+                    ],
+                    colorPalatteNotClicked: true,
                     toolbox: {
                         feature: {
                             brush: {

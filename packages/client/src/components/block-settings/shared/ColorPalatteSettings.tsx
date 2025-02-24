@@ -27,6 +27,7 @@ import {
     FormatColorFill,
 } from '@mui/icons-material';
 import EditIcon from '@mui/icons-material/Edit';
+import { EchartVisualizationBlockDef } from '@/components/block-defaults/echart-visualization-blocks';
 
 interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
     /**
@@ -249,6 +250,8 @@ const ColorPalette = ({
 };
 export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
     ({ id, path }) => {
+        const { data: Data } =
+            useBlockSettings<EchartVisualizationBlockDef>(id);
         const palettes = [
             {
                 label: 'Option 1',
@@ -533,7 +536,15 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                     ? colorPalette[0]
                     : colorPalette.find((item) => item.label === label);
             // Update the state with the new color palette data
-            runStateUpdateCustom(colors.colors, pathVal);
+            if (Data.variation == 'echart-scatter-plots') {
+                runStateUpdate(
+                    optionComputedValue,
+                    optionPathVal,
+                    colors.colors,
+                );
+            } else {
+                runStateUpdateCustom(colors.colors, pathVal);
+            }
         }
         /**
          * Handles the click event for the edit palette button.
@@ -761,6 +772,32 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
             timeoutRef.current = setTimeout(() => {
                 try {
                     setData(path, option as PathValue<any, typeof path>);
+                } catch (e) {
+                    console.log(e);
+                }
+            }, 300);
+        }
+        function runStateUpdate(option, path, colors) {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+            }
+            let options = JSON.parse(option);
+            const updatedData = options.series[0].data.map((item) => {
+                if (item.itemStyle) {
+                    const { color, ...restItemStyle } = item.itemStyle;
+                    return { ...item, itemStyle: restItemStyle };
+                }
+                return item;
+            });
+            options.series[0].data = updatedData;
+            options.color = colors;
+            options.colorPalatteNotClicked = false;
+
+            // Set a new timeout to update state with a delay
+            timeoutRef.current = setTimeout(() => {
+                try {
+                    setData(path, options as PathValue<any, typeof path>);
                 } catch (e) {
                     console.log(e);
                 }

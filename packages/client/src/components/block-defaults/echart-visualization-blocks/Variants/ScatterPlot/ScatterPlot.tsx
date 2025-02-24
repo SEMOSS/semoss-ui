@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { useBlock, useFrame } from '@/hooks';
+import { useBlockSettings, useFrame } from '@/hooks';
 import { BlockComponent } from '@/stores';
 import { styled } from '@mui/material';
 import * as echarts from 'echarts/core';
@@ -8,10 +8,10 @@ import { CanvasRenderer } from 'echarts/renderers';
 import { TooltipComponent } from 'echarts/components';
 import EChartsReact from 'echarts-for-react';
 import { useState } from 'react';
-import { VizBlockContextMenu } from '../VizBlockContextMenu';
-import { processData } from '../ScatterPlot.tsx/ScatterPlotProcessData';
-import { formatdatapoints } from '../ScatterPlot.tsx/ScatterPlotTooltipData';
-import { getSelector } from '../ScatterPlot.tsx/ScatterPlotSelector';
+import { VizBlockContextMenu } from '../../VizBlockContextMenu';
+import { processData } from './ScatterPlotProcessData';
+import { formatdatapoints } from './ScatterPlotTooltipData';
+import { getSelector } from './ScatterPlotSelector';
 
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',
@@ -45,7 +45,7 @@ export interface EchartVisualizationBlockDef {
 }
 
 export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
-    const { data } = useBlock<EchartVisualizationBlockDef>(id);
+    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
     echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
@@ -156,11 +156,16 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
         if (processedFrameData && processedFrameData.length > 0) {
             data.option['series'][0]['data'] = processedFrameData;
         }
-        if (!data.option['tooltip'].hasOwnProperty('formatter')) {
-            data.option['tooltip'] = {
-                ...data.option['tooltip'],
-                formatter: formatdatapoints(frame.data, data),
-            };
+        if (frame.data.values.length > 0) {
+            if (
+                !data.option['tooltip'].hasOwnProperty('formatter') ||
+                data.option['tooltip']['formatter'] === ''
+            ) {
+                data.option['tooltip'] = {
+                    ...data.option['tooltip'],
+                    formatter: formatdatapoints(frame.data, data),
+                };
+            }
         }
         return (
             <StyledNoDataContainer>

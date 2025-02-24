@@ -11,9 +11,9 @@ import { BaseSettingSection } from '@/components/block-settings';
 import { Sync } from '@mui/icons-material';
 
 import { Stack } from '@mui/material';
-import { GridBlockColumn } from '../../grid-block/grid-block.types';
+import { GridBlockColumn } from '../../../grid-block/grid-block.types';
 import { useEffect, useMemo, useState } from 'react';
-import { EchartVisualizationBlockDef } from '../EchartVisualizationBlock';
+import { EchartVisualizationBlockDef } from '../../EchartVisualizationBlock';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
 import { Paths } from '@/types';
@@ -264,6 +264,7 @@ export const ScatterPlotBlockSettings = observer(
                 color: colors,
                 colorDataType: colorDataType,
             };
+            tempValue.colorPalatteNotClicked = true;
 
             // Update the color value in the state
             setColor(colors);

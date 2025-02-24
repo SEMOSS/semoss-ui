@@ -8,6 +8,7 @@ export const processData = (apiData, data) => {
         size = '',
         color = '',
         tooltip = '';
+    let colorPalatteNotClicked = true;
     if (data.option.hasOwnProperty('_state')) {
         fields = data.option['_state']['fields'];
         label = fields['label'];
@@ -16,6 +17,7 @@ export const processData = (apiData, data) => {
         size = fields['size'];
         color = fields['color'];
         tooltip = fields['tooltip'];
+        colorPalatteNotClicked = data.option['colorPalatteNotClicked'];
     }
     const formatItem = (label, xAxis, yAxis) => ({
         value: [xAxis, yAxis], // x and y values
@@ -31,7 +33,7 @@ export const processData = (apiData, data) => {
         },
         symbolSize: size, // Individual symbol size
         itemStyle: {
-            color: newColor(data, color), //Individual color
+            color: colorPalatteNotClicked ? newColor(data, color) : undefined, //Individual color
             colorValue: color,
         },
         tooltipValue: tooltip, //tooltip value
@@ -43,7 +45,7 @@ export const processData = (apiData, data) => {
         },
         symbolSize: size, // Individual symbol size
         itemStyle: {
-            color: newColor(data, color), //Individual color
+            color: colorPalatteNotClicked ? newColor(data, color) : undefined, //Individual color
             colorValue: color,
         },
     });
@@ -53,7 +55,7 @@ export const processData = (apiData, data) => {
             formatter: label.toString(), // Use array[0] as the label
         },
         itemStyle: {
-            color: newColor(data, color), //Individual color
+            color: colorPalatteNotClicked ? newColor(data, color) : undefined, //Individual color
             colorValue: color,
         },
         tooltipValue: tooltip, //tooltip value
@@ -72,10 +74,11 @@ export const processData = (apiData, data) => {
             formatter: label.toString(), // Use array[0] as the label
         },
         itemStyle: {
-            color: newColor(data, color), //Individual color
+            color: colorPalatteNotClicked ? newColor(data, color) : undefined, //Individual color
             colorValue: color,
         },
     });
+    //const convertedColors = apiData.values.map((item) => newColor(data, item[1]));
     const formatSizeDataItem = (label, xAxis, yAxis, size) => ({
         value: [xAxis, yAxis], // x and y values
         label: {
@@ -1751,13 +1754,22 @@ export const processData = (apiData, data) => {
                             ),
                         }));
                     }
-                    return apiData.values.map((item) => ({
+                    // const formattedData = apiData.values.map((item) => ({ ...formatColorDataItem(
+                    //     item[0],
+                    //     item[1],
+                    //    item[2],
+                    //     item[3],
+                    // ), }));
+                    // const convertedColors = apiData.values.map((item) => newColor(data, item[3]));
+                    // return { formattedData: formattedData,convertedColors };
+                    return apiData.values.map((item, index) => ({
                         ...formatColorDataItem(
                             item[0],
                             item[1],
                             item[2],
                             item[3],
                         ),
+                        //  itemStyle: { color: convertedColors[index] }
                     }));
                 }
                 if (label && xAxis && yAxis && size) {
@@ -1869,6 +1881,13 @@ export const processData = (apiData, data) => {
                         ...formatItem(item[0], item[1], item[1]),
                     }));
                 }
+                //     const formattedData = apiData.values.map((item) => ({ ...formatItem(
+                //         item[0],
+                //         item[1],
+                //        item[2]
+                //     ), }));
+                //    // const convertedColors = apiData.values.map((item) => newColor(data, item[1]));
+                //     return { formattedData: formattedData };
                 return apiData.values.map((item) => ({
                     ...formatItem(item[0], item[1], item[2]),
                 }));

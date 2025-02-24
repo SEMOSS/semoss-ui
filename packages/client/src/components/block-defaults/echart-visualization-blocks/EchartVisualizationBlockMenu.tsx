@@ -7,7 +7,7 @@ import {
 import { useBlock } from '@/hooks';
 import { useState } from 'react';
 import { UpgradedVisualizationTool } from './Variants/bar-chart/UpgradedVisualizationTool';
-import { ScatterPlotBlockSettings } from './ScatterPlot.tsx/ScatterPlotBlockSettings';
+import { ScatterPlotBlockSettings } from './Variants/ScatterPlot/ScatterPlotBlockSettings';
 
 const StyledContainer = styled('div')(() => ({
     maxHeight: '50vh',

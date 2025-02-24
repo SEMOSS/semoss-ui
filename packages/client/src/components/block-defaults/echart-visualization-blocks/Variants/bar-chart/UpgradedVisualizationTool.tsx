@@ -11,13 +11,13 @@ import {
 } from '@mui/material';
 import { InfoOutlined } from '@mui/icons-material';
 import { EchartVisualizationBlockDef } from '../../EchartVisualizationBlock';
-import { EditXAxisScatterPlot } from '../../ScatterPlot.tsx/EditXAxisScatterPlot';
-import { EditYAxisScatterPlot } from '../../ScatterPlot.tsx/EditYAxisScatterPlot';
-import { TooltipScatterPlot } from '../../ScatterPlot.tsx/TooltipScatterPlot';
-import { ValueLabelScatterPlot } from '../../ScatterPlot.tsx/ValueLabelScatterPlot';
+import { EditXAxisScatterPlot } from '../ScatterPlot/EditXAxisScatterPlot';
+import { EditYAxisScatterPlot } from '../ScatterPlot/EditYAxisScatterPlot';
+import { TooltipScatterPlot } from '../ScatterPlot/TooltipScatterPlot';
+import { ValueLabelScatterPlot } from '../ScatterPlot/ValueLabelScatterPlot';
 import { SizeSettings } from '@/components/block-settings';
-import { ScatterPlotSymbol } from '../../ScatterPlot.tsx/ScatterPlotSymbol';
-import { ScatterPlotChartTitle } from '../../ScatterPlot.tsx/ScatterPlotChartTitle';
+import { ScatterPlotSymbol } from '../ScatterPlot/ScatterPlotSymbol';
+import { ScatterPlotChartTitle } from '../ScatterPlot/ScatterPlotChartTitle';
 import { ColorPalatteSettings } from '@/components/block-settings/shared/ColorPalatteSettings';
 import { ColorPickerSettings } from '@/components/block-settings/shared/ColorPickerSettings';
 
