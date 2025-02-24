@@ -9,6 +9,7 @@ import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { BlockDef } from '@/stores';
 import { EchartVisualizationBlockConfig } from '@/components/block-defaults';
+import { ColorPickerSettings } from '@/components/block-settings/shared/ColorPickerSettings';
 //styled select field to have full width
 const StyledSelect = styled(Select)(() => ({
     width: '100%',
@@ -615,23 +616,11 @@ export const CustomizeValueLabels = observer(
                             </StyledSelect>
                         </StyledSubSection>
                         <StyledSubSection>
-                            <label htmlFor="font-weight">
-                                Select Font Colour
-                            </label>
-                            <StyledTextField
-                                variant={'outlined'}
-                                id="font-weight"
-                                type="color"
-                                value={fieldSelectedSeries.fontcolour}
-                                onChange={(e) =>
-                                    updateFields(
-                                        'fontcolour',
-                                        e,
-                                        'text',
-                                        selectedSeries,
-                                    )
-                                }
-                            ></StyledTextField>
+                            <ColorPickerSettings
+                                id={id}
+                                path={`option.series.${selectedSeries}.label.color`}
+                                colorValue={fieldSelectedSeries.fontcolour}
+                            />
                         </StyledSubSection>
                     </>
                 )}

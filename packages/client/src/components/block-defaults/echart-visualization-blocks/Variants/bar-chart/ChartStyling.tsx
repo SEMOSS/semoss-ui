@@ -8,6 +8,7 @@ import { useBlockSettings } from '@/hooks';
 import { PathValue } from '@/types';
 import { BlockDef } from '@/stores';
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
+import { ColorPickerSettings } from '@/components/block-settings/shared/ColorPickerSettings';
 //Styled select with custom styling
 const StyledSelect = styled(Select)(() => ({
     width: '100%',
@@ -291,12 +292,10 @@ export const ChartStyling = observer(
                     />
                 </StyledChartSubSection>
                 <StyledChartSubSection>
-                    <label htmlFor="change-font-colour">Font Colour</label>
-                    <StyledTextField
-                        value={chartStyle.fontColour}
-                        id="change-font-colour"
-                        type="color"
-                        onChange={(e) => handleInputChange(e, 'fontColour')}
+                    <ColorPickerSettings
+                        id={id}
+                        path={`option.title.textStyle.color`}
+                        colorValue={chartStyle.fontColour}
                     />
                 </StyledChartSubSection>
                 <StyledChartSubSection>

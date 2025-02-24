@@ -1,12 +1,14 @@
 import { observer } from 'mobx-react-lite';
-import { useBlockSettings, useFrame } from '@/hooks';
+import { useBlock, useBlockSettings, useFrame } from '@/hooks';
 import { styled } from '@mui/material';
 import * as echarts from 'echarts/core';
 import EChartsReact from 'echarts-for-react';
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 import { ChartContextMenu } from './ChartContextMenu';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { BlockComponent } from '@/stores';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BlockComponent, BlockDef } from '@/stores';
+import { computed } from 'mobx';
+import { getValueByPath } from '@/utility';
 //Main Container for displaying Bar chart
 const StyledMainContainer = styled('div')(({ theme }) => ({
     height: '100%',
@@ -34,9 +36,10 @@ export interface EChartColumns {
 //bar component properties
 interface BarProps {
     id: string;
+    updateJson: (data: any, path: any) => void;
 }
 
-export const Bar: BlockComponent = observer(({ id }) => {
+export const Bar = observer(({ id, updateJson }: BarProps) => {
     const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number; //x axis position for the click/brush event
@@ -66,6 +69,37 @@ export const Bar: BlockComponent = observer(({ id }) => {
         yAxisColumn: { name: '', selector: '', width: undefined },
         chartInstance: { setOption: null },
     });
+
+    const computedValue = useMemo(() => {
+        return computed(() => {
+            if (!data) {
+                return '';
+            }
+            const v = getValueByPath(data, 'option');
+            if (typeof v === 'undefined') {
+                return '';
+            } else if (typeof v === 'string') {
+                return v;
+            }
+            return JSON.stringify(v, null, 2);
+        });
+    }, [data, 'option']).get();
+
+    let parsedOption = useMemo(() => {
+        return typeof computedValue === 'string'
+            ? JSON.parse(computedValue)
+            : computedValue;
+    }, [computedValue]);
+
+    useEffect(() => {
+        if (
+            data.frame.name &&
+            frameData.data.values.length > 0 &&
+            frameData.isLoading === false
+        ) {
+            updateJson(resultData, 'option');
+        }
+    }, [parsedOption]);
 
     //update frame values to the series data when frame values are changed
     const receiveValueswithCorrections = useCallback(
@@ -203,9 +237,12 @@ export const Bar: BlockComponent = observer(({ id }) => {
         }
     } else {
         //assign the data from frame to exising object based on frame is selected or not
-        resultData = data.frame.name
-            ? receiveValueswithCorrections(data.option)
-            : data.option;
+        resultData =
+            data.frame.name &&
+            frameData.data.values.length > 0 &&
+            frameData.isLoading === false
+                ? receiveValueswithCorrections(parsedOption)
+                : parsedOption;
         return (
             <StyledMainContainer id={id}>
                 <EChartsReact

@@ -26,6 +26,7 @@ import { SizeSettings } from '@/components/block-settings/shared';
 import { PieLegend } from '../PieChart/PieLegend';
 import { Legend } from './Legend';
 import { ChartStyling } from './ChartStyling';
+import { ColorPalatteSettings } from '@/components/block-settings/shared/ColorPalatteSettings';
 //upgraded visualization tool props
 interface UpgradedVisualizationToolProps {
     id: string;
@@ -48,32 +49,33 @@ export const UpgradedVisualizationTool =
                     Custom section to handle bar chart components for respective menu section 
                     BAR Chart Menu for tools start here
                     */}
-                    {data.variation === 'echart-bar-graph' && (
-                        <ListItem disablePadding>
-                            <ListItemButton
-                                onClick={(e) =>
-                                    setSelectedList((prevList) =>
-                                        prevList === 'colourpalette'
-                                            ? ''
-                                            : 'colourpalette',
-                                    )
-                                }
-                                selected={selectedList === 'colourpalette'}
-                            >
-                                <ListItemIcon>
-                                    <ImageIcon
-                                        fontSize="large"
-                                        color={
-                                            selectedList === 'colourpalette'
-                                                ? 'primary'
-                                                : 'disabled'
-                                        }
-                                    />
-                                </ListItemIcon>
-                                <ListItemText primary="Colour Palette" />
-                                <InfoOutlined />
-                            </ListItemButton>
-                        </ListItem>
+                    <ListItem disablePadding>
+                        <ListItemButton
+                            onClick={(e) =>
+                                setSelectedList((prevList) =>
+                                    prevList === 'colourpalette'
+                                        ? ''
+                                        : 'colourpalette',
+                                )
+                            }
+                            selected={selectedList === 'colourpalette'}
+                        >
+                            <ListItemIcon>
+                                <ImageIcon
+                                    fontSize="large"
+                                    color={
+                                        selectedList === 'colourpalette'
+                                            ? 'primary'
+                                            : 'disabled'
+                                    }
+                                />
+                            </ListItemIcon>
+                            <ListItemText primary="Colour Palette" />
+                            <InfoOutlined />
+                        </ListItemButton>
+                    </ListItem>
+                    {selectedList === 'colourpalette' && (
+                        <ColorPalatteSettings id={id} path="option.color" />
                     )}
                     <StyledListItem disablePadding>
                         {data.variation === 'echart-bar-graph' && (

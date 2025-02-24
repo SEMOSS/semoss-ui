@@ -889,6 +889,17 @@ export const VISUALIZATION_MENU_INITIAL: DesignerMenuItem[] = [
                     yAxis: {
                         type: 'value',
                     },
+                    color: [
+                        '#5470c6',
+                        '#91cc75',
+                        '#fac858',
+                        '#ee6666',
+                        '#73c0de',
+                        '#3ba272',
+                        '#fc8452',
+                        '#9a60b4',
+                        '#ea7ccc',
+                    ],
                     series: [
                         {
                             name: 'Category',
@@ -906,9 +917,6 @@ export const VISUALIZATION_MENU_INITIAL: DesignerMenuItem[] = [
                             type: 'bar',
                             labelLine: {
                                 show: true,
-                            },
-                            itemStyle: {
-                                color: '#5470c6',
                             },
                         },
                     ],

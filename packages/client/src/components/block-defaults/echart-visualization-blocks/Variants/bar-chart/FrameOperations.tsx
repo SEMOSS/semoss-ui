@@ -274,8 +274,11 @@ export const FrameOperations = observer(
                         name: columns['yaxis'][i].name,
                         type: 'bar',
                         barWidth: 5,
-                        itemStyle: {
-                            color: COLOUR_PALATTE_DATA[i],
+                        ['itemStyle']: {
+                            ['color']:
+                                tempVal['series'][i]?.['itemStyle']?.[
+                                    'color'
+                                ] ?? COLOUR_PALATTE_DATA[i],
                         },
                     };
                 }

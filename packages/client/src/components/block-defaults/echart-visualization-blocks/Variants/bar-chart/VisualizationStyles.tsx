@@ -9,6 +9,7 @@ import { Paths, PathValue } from '@/types';
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 import { EchartVisualizationBlockConfig } from '@/components/block-defaults';
 import { Block, BlockDef } from '@/stores';
+import { ColorPickerSettings } from '@/components/block-settings/shared/ColorPickerSettings';
 //Styled container for bar chart
 const StyledBarStylesContainer = styled('div')<{
     width?: string;
@@ -218,6 +219,8 @@ export const VisualizationStyles = observer(
                 }
             }, 300);
         }
+        const currentSeriesColor =
+            styleData[selectedSeries]?.barColour || '#5470c6';
         //bar chart component content is rendered into a single variable
         const accordionDetails = (
             <>
@@ -258,16 +261,10 @@ export const VisualizationStyles = observer(
                             />
                         </StyledBarStylesContainer>
                         <StyledBarStylesContainer>
-                            <label htmlFor="bar-colour">
-                                Change Bar Colours
-                            </label>
-                            <StyledTextField
-                                type={'color'}
-                                value={styleData[selectedSeries].barColour}
-                                id="bar-colour"
-                                onChange={(e) =>
-                                    handleBarColourChange(e, selectedSeries)
-                                }
+                            <ColorPickerSettings
+                                id={id}
+                                path={`option.series.${selectedSeries}.itemStyle.color`}
+                                colorValue={currentSeriesColor}
                             />
                         </StyledBarStylesContainer>
                     </StyledBarStylesContainer>
