@@ -18,7 +18,9 @@
         "isolatedModules": true,
         "jsx": "react-jsx",
         "incremental": true,
-        "experimentalDecorators": true
+        "experimentalDecorators": true,
+        "outDir": "./dist"
     },
-    "include": ["./src", "./global.d.ts"]
+    "include": ["./src", "./global.d.ts"],
+    "exclude": ["./plugins/**/*", "./typings/**/*", "./dist/**/*"]
 }
