@@ -1,0 +1,1621 @@
+import { BlockJSON } from '@semoss/renderer';
+import { lightTheme } from '@semoss/ui';
+
+import type { DesignerMenuItem } from './menu-types';
+import * as BLOCK_IMAGES from '@/assets/blocks';
+
+const SECTION_ELEMENT = 'Element';
+const SECTION_INPUT = 'Input';
+const SECTION_LAYOUT = 'Layout';
+const SECTION_PROGRESS = 'Progress';
+const SECTION_TEXT = 'Text';
+
+const SECTION_CHARTS = 'Data Charts';
+const SECTION_FLOWS = 'Mermaid Charts';
+const SECTION_MISC = 'Miscellaneous';
+
+export const SECTION_ORDER = [
+    SECTION_LAYOUT,
+    SECTION_TEXT,
+    SECTION_INPUT,
+    SECTION_PROGRESS,
+    SECTION_ELEMENT,
+    SECTION_MISC,
+    SECTION_CHARTS,
+    SECTION_FLOWS,
+];
+
+// TODO: Alphabetical order by name
+export const DEFAULT_MENU: DesignerMenuItem[] = [
+    {
+        section: SECTION_LAYOUT,
+        name: 'Accordion',
+        activeImage: BLOCK_IMAGES['ACCORDION_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['ACCORDION_HOVER'],
+        helperText: 'Click to expand and collapse sections for more details',
+        json: {
+            widget: 'accordion',
+            data: {
+                style: {},
+            },
+            listeners: {},
+            slots: {
+                header: [],
+                content: [],
+            },
+        },
+    },
+    {
+        section: SECTION_MISC,
+        name: 'Theme Block',
+        helperText: 'Determine the theme of your page with our Theme Block',
+        activeImage: BLOCK_IMAGES['THEME_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['THEME_HOVER'],
+        json: {
+            widget: 'theme',
+            data: {
+                theme: lightTheme,
+            },
+            listeners: {},
+            slots: {
+                children: [],
+            },
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Audio Player',
+        helperText: 'Play back audio responses or other files',
+        activeImage: BLOCK_IMAGES['AUDIO_PLAYER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['AUDIO_PLAYER_HOVER'],
+        json: {
+            widget: 'audio-player',
+            data: {
+                label: 'Audio Player',
+                autoplay: false,
+                controls: true,
+                loop: false,
+                source: '',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Button',
+        helperText: 'Creates a click event',
+        activeImage: BLOCK_IMAGES['BUTTON_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['BUTTON_HOVER'],
+        json: {
+            widget: 'button',
+            data: {
+                style: {},
+                label: 'Submit',
+                loading: false,
+                disabled: false,
+                variant: 'contained',
+                color: 'primary',
+            },
+            listeners: {
+                onClick: [],
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Checkbox',
+        helperText: 'Add a checkbox for user selection',
+        activeImage: BLOCK_IMAGES['CHECKBOX_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['CHECKBOX_HOVER'],
+        json: {
+            widget: 'checkbox',
+            data: {
+                style: {
+                    padding: 'none',
+                },
+                label: 'Example Checkbox',
+                required: false,
+                disabled: false,
+                value: false,
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Radio',
+        helperText: 'User select between multiple items',
+        json: {
+            widget: 'radio',
+            data: {
+                style: {
+                    padding: '4px',
+                },
+                value: 'no_value',
+                label: 'Radio Input',
+                isGroup: false,
+                options: [{ label: 'Default', value: 'no_value' }],
+                size: 'medium',
+                direction: 'column',
+                color: 'primary',
+                labelPlacement: 'end',
+                required: false,
+                disabled: false,
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_LAYOUT,
+        name: 'Modal',
+        helperText: 'Overlay to show more info or action to user',
+        json: {
+            widget: 'modal',
+            data: {
+                style: {},
+                title: 'Modal Title',
+                open: false,
+                fullWidth: true,
+                maxWidth: 'sm',
+                minWidth: 'sm',
+                designMode: true,
+            },
+            listeners: {
+                onSubmit: [],
+            },
+            slots: {
+                content: [],
+                footer: [],
+            },
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Input',
+        helperText: 'Add an input box for typing text',
+        activeImage: BLOCK_IMAGES['INPUT_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['INPUT_HOVER'],
+        json: {
+            widget: 'input',
+            data: {
+                style: {
+                    width: '100%',
+                    padding: '4px',
+                },
+                value: '',
+                label: 'Example Input',
+                hint: '',
+                type: 'text',
+                rows: 1,
+                multiline: false,
+                disabled: false,
+                required: false,
+                loading: false,
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {
+                content: [],
+            },
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Audio Input',
+        helperText: 'Input audio from the user',
+        activeImage: BLOCK_IMAGES['AUDIO_INPUT_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['AUDIO_INPUT_HOVER'],
+        json: {
+            widget: 'audio-input',
+            data: {
+                style: {
+                    width: '50px',
+                    height: '60px',
+                },
+                loading: false,
+                disabled: false,
+                variant: 'contained',
+                color: 'primary',
+                value: '',
+                mode: 'transcribe',
+            },
+            listeners: {
+                onClick: [],
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Select',
+        helperText: 'Choose an option from a dropdown list',
+        activeImage: BLOCK_IMAGES['SELECT_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['SELECT_HOVER'],
+        json: {
+            widget: 'select',
+            data: {
+                style: {
+                    padding: '4px',
+                },
+                value: '',
+                label: 'Example Select Input',
+                hint: '',
+                options: [],
+                required: false,
+                disabled: false,
+                loading: false,
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {
+                content: [],
+            },
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Upload',
+        helperText: 'Upload files like documents or images',
+        activeImage: BLOCK_IMAGES['UPLOAD_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['UPLOAD_HOVER'],
+        json: {
+            widget: 'upload',
+            data: {
+                style: {
+                    width: '100%',
+                    padding: '4px',
+                },
+                value: '',
+                label: 'Example Input',
+                hint: '',
+                loading: false,
+                disabled: false,
+                required: false,
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {
+                content: [],
+            },
+        },
+    },
+    {
+        section: SECTION_LAYOUT,
+        name: 'Container',
+        helperText: 'Create a layout element for custom design',
+        activeImage: BLOCK_IMAGES['CONTAINER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['CONTAINER_HOVER'],
+        json: {
+            widget: 'container',
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '4px',
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                },
+            },
+            listeners: {},
+            slots: {
+                children: [],
+            },
+        },
+    },
+    {
+        section: SECTION_PROGRESS,
+        name: 'Progress',
+        helperText: 'Display progress tracking or status',
+        activeImage: BLOCK_IMAGES['PROGRESS_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PROGRESS_HOVER'],
+        json: {
+            widget: 'progress',
+            data: {
+                type: 'linear',
+                value: 50,
+                includeLabel: true,
+                size: '300px',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        name: 'Iframe',
+        helperText: 'Embed a webpage using a source link',
+        activeImage: BLOCK_IMAGES['IFRAME_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['IFRAME_HOVER'],
+        json: {
+            widget: 'iframe',
+            data: {
+                style: {},
+                src: '',
+                title: '',
+                enableFrameInteractions: true,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        name: 'PDF Viewer',
+        helperText: 'Embed a PDF for viewing',
+        activeImage: BLOCK_IMAGES['PDF_VIEWER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PDF_VIEWER_HOVER'],
+        json: {
+            widget: 'pdfViewer',
+            data: {
+                style: {
+                    width: '100%',
+                    height: '82%',
+                    padding: '8px',
+                },
+                selectedPdf: null,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        name: 'Image',
+        helperText: 'Add an image to your layout',
+        activeImage: BLOCK_IMAGES['IMAGE_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['IMAGE_HOVER'],
+        json: {
+            widget: 'image',
+            data: {
+                style: {
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%',
+                    height: '200px',
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center center',
+                },
+                src: '',
+                title: '',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Logs',
+        helperText: 'Show logs from the notebook',
+        activeImage: BLOCK_IMAGES['LOGS_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['LOGS_HOVER'],
+        json: {
+            widget: 'logs',
+            data: {
+                style: {},
+                queryId: '',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Toggle Button',
+        helperText: 'Switch between multiple options',
+        activeImage: BLOCK_IMAGES['TOGGLE_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['TOGGLE_HOVER'],
+        json: {
+            widget: 'toggle-button',
+            data: {
+                disabled: false,
+                color: 'primary',
+                size: 'small',
+                options: [
+                    {
+                        display: 'on',
+                        value: 'on',
+                    },
+                    {
+                        display: 'off',
+                        value: 'off',
+                    },
+                ],
+                value: null,
+                mandatory: true,
+                multiple: false,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Link',
+        helperText: 'Access a webpage through a clickable URL',
+        activeImage: BLOCK_IMAGES['LINK_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['LINK_HOVER'],
+        json: {
+            widget: 'link',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                href: '',
+                text: 'Insert text',
+            },
+            listeners: {},
+            slots: {},
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Markdown',
+        helperText: 'Show text in markdown format',
+        activeImage: BLOCK_IMAGES['MARKDOWN_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['MARKDOWN_HOVER'],
+        json: {
+            widget: 'markdown',
+            data: {
+                style: {
+                    padding: '4px',
+                },
+                markdown: '**Hello world**',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        name: 'HTML',
+        helperText: 'Write custom HTML manually or with AI assistance',
+        activeImage: BLOCK_IMAGES['HTML_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['HTML_HOVER'],
+        json: {
+            widget: 'html',
+            data: {
+                style: {
+                    padding: '4px',
+                },
+                // default html includes place-holder text and basic styling
+                html: '<html>\r\n    <style>\r\n        html {\r\n            font-family: Roboto;\r\n            text-align: center;\r\n            overflow: hidden;\r\n        }\r\n    </style>\r\n    <body>\r\n        <h2>HTML Block</h2>\r\n    </body>\r\n</html>',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Text',
+        helperText: 'Display Text in header 1',
+        activeImage: BLOCK_IMAGES['H1_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H1_HOVER'],
+        json: {
+            widget: 'text',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Hello world',
+                variant: 'h1',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Text',
+        helperText: 'Display Text in header 2',
+        activeImage: BLOCK_IMAGES['H2_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H2_HOVER'],
+        json: {
+            widget: 'text',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Hello world',
+                variant: 'h2',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Text',
+        helperText: 'Display Text in header 3',
+        activeImage: BLOCK_IMAGES['H3_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H3_HOVER'],
+        json: {
+            widget: 'text',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Hello world',
+                variant: 'h3',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Text',
+        helperText: 'Display Text in header 4',
+        activeImage: BLOCK_IMAGES['H4_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H4_HOVER'],
+        json: {
+            widget: 'text',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Hello world',
+                variant: 'h4',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Text',
+        helperText: 'Display Text in header 5',
+        activeImage: BLOCK_IMAGES['H5_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H5_HOVER'],
+        json: {
+            widget: 'text',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Hello world',
+                variant: 'h5',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Text',
+        helperText: 'Display Text in header 6',
+        activeImage: BLOCK_IMAGES['H6_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H6_HOVER'],
+        json: {
+            widget: 'text',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Hello world',
+                variant: 'h6',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Text',
+        helperText: 'Show text in a regular paragraph style',
+        activeImage: BLOCK_IMAGES['PARAGRAPH_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PARAGRAPH_HOVER'],
+        json: {
+            widget: 'text',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Hello world',
+                variant: 'p',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MISC,
+        name: 'Compare LLMs',
+        helperText: 'Compare large language models against the same context',
+        activeImage: BLOCK_IMAGES['COMPARE_LLMS_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['COMPARE_LLMS_HOVER'],
+        json: {
+            widget: 'llmComparison',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: '',
+                variants: {},
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Vega',
+        helperText: '',
+        json: {
+            widget: 'vega',
+            data: {
+                specJson: '',
+                variation: undefined,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Data Grid',
+        helperText: 'Organize and display data in a tabular format',
+        activeImage: BLOCK_IMAGES['DATA_GRID_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['DATA_GRID_HOVER'],
+        json: {
+            widget: 'grid',
+            data: {
+                frame: {
+                    name: '',
+                },
+                columns: [],
+                view: {
+                    pagination: true,
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Bar Chart',
+        helperText:
+            'Compare cumulative totals and individual segments across categories',
+        activeImage: BLOCK_IMAGES['BAR_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['BAR_CHART_HOVER'],
+        json: {
+            widget: 'vega',
+            data: {
+                variation: 'bar-chart',
+                specJson: JSON.stringify(
+                    {
+                        $schema:
+                            'https://vega.github.io/schema/vega-lite/v5.json',
+                        title: 'Bar Chart',
+                        width: 300,
+                        height: 300,
+                        data: {
+                            values: [
+                                { a: 'A', b: 28 },
+                                { a: 'B', b: 55 },
+                                { a: 'C', b: 43 },
+                                { a: 'D', b: 91 },
+                                { a: 'E', b: 81 },
+                                { a: 'F', b: 53 },
+                                { a: 'G', b: 19 },
+                                { a: 'H', b: 87 },
+                                { a: 'I', b: 52 },
+                            ],
+                        },
+                        mark: 'bar',
+                        encoding: {
+                            x: { field: 'a', type: 'ordinal' },
+                            y: { field: 'b', type: 'quantitative' },
+                        },
+                    },
+                    null,
+                    2,
+                ),
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Grouped Bar Chart',
+        helperText:
+            'Compare individual values across multiple categories side by side',
+        activeImage: BLOCK_IMAGES['BAR_CHART_GROUPED_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['BAR_CHART_GROUPED_HOVER'],
+        json: {
+            widget: 'vega',
+            data: {
+                variation: 'grouped-bar-chart',
+                specJson: JSON.stringify(
+                    {
+                        $schema:
+                            'https://vega.github.io/schema/vega-lite/v5.json',
+                        title: 'Grouped Bar Chart',
+                        width: 300,
+                        height: 300,
+                        data: {
+                            values: [
+                                { category: 'A', group: 'x', value: 0.1 },
+                                { category: 'A', group: 'y', value: 0.6 },
+                                { category: 'A', group: 'z', value: 0.9 },
+                                { category: 'B', group: 'x', value: 0.7 },
+                                { category: 'B', group: 'y', value: 0.2 },
+                                { category: 'B', group: 'z', value: 1.1 },
+                                { category: 'C', group: 'x', value: 0.6 },
+                                { category: 'C', group: 'y', value: 0.1 },
+                                { category: 'C', group: 'z', value: 0.2 },
+                            ],
+                        },
+                        mark: 'bar',
+                        encoding: {
+                            x: { field: 'category' },
+                            y: { field: 'value', type: 'quantitative' },
+                            xOffset: { field: 'group' },
+                            color: { field: 'group' },
+                        },
+                    },
+                    null,
+                    2,
+                ),
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Pie Chart',
+        helperText: 'Show proportions of a whole',
+        activeImage: BLOCK_IMAGES['PIE_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PIE_CHART_HOVER'],
+        json: {
+            widget: 'vega',
+            data: {
+                variation: 'pie-chart',
+                specJson: JSON.stringify(
+                    {
+                        $schema:
+                            'https://vega.github.io/schema/vega-lite/v5.json',
+                        title: 'Pie Chart',
+                        width: 300,
+                        height: 300,
+                        description: 'A simple pie chart with embedded data.',
+                        data: {
+                            values: [
+                                { category: 1, value: 4 },
+                                { category: 2, value: 6 },
+                                { category: 3, value: 10 },
+                                { category: 4, value: 3 },
+                                { category: 5, value: 7 },
+                                { category: 6, value: 8 },
+                            ],
+                        },
+                        mark: 'arc',
+                        encoding: {
+                            theta: { field: 'value', type: 'quantitative' },
+                            color: { field: 'category', type: 'nominal' },
+                        },
+                    },
+                    null,
+                    2,
+                ),
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Radial Plot',
+        helperText: 'Compare multiple variables relative to a central point',
+        activeImage: BLOCK_IMAGES['RADIAL_PLOT_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['RADIAL_PLOT_HOVER'],
+        json: {
+            widget: 'vega',
+            data: {
+                variation: 'radial-plot',
+                specJson: JSON.stringify(
+                    {
+                        $schema:
+                            'https://vega.github.io/schema/vega-lite/v5.json',
+                        title: 'Radial Plot',
+                        width: 300,
+                        height: 300,
+                        description:
+                            'A simple radial chart with embedded data.',
+                        data: {
+                            values: [12, 23, 47, 6, 52, 19],
+                        },
+                        layer: [
+                            {
+                                mark: {
+                                    type: 'arc',
+                                    innerRadius: 20,
+                                    stroke: '#fff',
+                                },
+                            },
+                            {
+                                mark: { type: 'text', radiusOffset: 10 },
+                                encoding: {
+                                    text: {
+                                        field: 'data',
+                                        type: 'quantitative',
+                                    },
+                                },
+                            },
+                        ],
+                        encoding: {
+                            theta: {
+                                field: 'data',
+                                type: 'quantitative',
+                                stack: true,
+                            },
+                            radius: {
+                                field: 'data',
+                                scale: {
+                                    type: 'sqrt',
+                                    zero: true,
+                                    rangeMin: 20,
+                                },
+                            },
+                            color: {
+                                field: 'data',
+                                type: 'nominal',
+                                legend: null,
+                            },
+                        },
+                    },
+                    null,
+                    2,
+                ),
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Line Chart',
+        helperText: 'Display trends over time with continuous data',
+        activeImage: BLOCK_IMAGES['LINE_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['LINE_CHART_HOVER'],
+        json: {
+            widget: 'vega',
+            data: {
+                variation: 'line-chart',
+                specJson: JSON.stringify(
+                    {
+                        $schema:
+                            'https://vega.github.io/schema/vega-lite/v5.json',
+                        title: 'Line Chart',
+                        width: 300,
+                        height: 300,
+                        data: {
+                            values: [
+                                { a: 'A', b: 28 },
+                                { a: 'B', b: 55, predicted: false },
+                                { a: 'D', b: 91, predicted: false },
+                                { a: 'E', b: 81, predicted: false },
+                                { a: 'E', b: 81, predicted: true },
+                                { a: 'G', b: 19, predicted: true },
+                                { a: 'H', b: 87, predicted: true },
+                            ],
+                        },
+                        mark: 'line',
+                        encoding: {
+                            x: { field: 'a', type: 'ordinal' },
+                            y: { field: 'b', type: 'quantitative' },
+                            strokeDash: { field: 'predicted', type: 'nominal' },
+                        },
+                    },
+                    null,
+                    2,
+                ),
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Area Chart',
+        helperText: 'Show trends over time with cumulative data',
+        activeImage: BLOCK_IMAGES['AREA_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['AREA_CHART_HOVER'],
+        json: {
+            widget: 'vega',
+            data: {
+                variation: 'area-chart',
+                specJson: JSON.stringify(
+                    {
+                        $schema:
+                            'https://vega.github.io/schema/vega-lite/v5.json',
+                        title: 'Area Chart',
+                        width: 300,
+                        height: 300,
+                        data: {
+                            values: [
+                                { a: 'A', b: 28 },
+                                { a: 'B', b: 55 },
+                                { a: 'D', b: 91 },
+                                { a: 'E', b: 81 },
+                                { a: 'E', b: 81 },
+                                { a: 'G', b: 19 },
+                                { a: 'H', b: 87 },
+                            ],
+                        },
+                        mark: 'area',
+                        encoding: {
+                            x: {
+                                field: 'a',
+                            },
+                            y: {
+                                aggregate: 'sum',
+                                field: 'b',
+                                title: 'count',
+                            },
+                        },
+                    },
+                    null,
+                    2,
+                ),
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Area Chart with Gradient',
+        activeImage: BLOCK_IMAGES['AREA_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['AREA_CHART_HOVER'],
+        helperText:
+            'Show trends over time with cumulative data in a different style',
+        json: {
+            widget: 'vega',
+            data: {
+                variation: 'area-chart-with-gradient',
+                specJson: JSON.stringify(
+                    {
+                        $schema:
+                            'https://vega.github.io/schema/vega-lite/v5.json',
+                        title: 'Area Chart with Gradient',
+                        width: 300,
+                        height: 300,
+                        description: 'Simple area chart with gradient.',
+                        data: {
+                            values: [
+                                { a: 'A', b: 28 },
+                                { a: 'B', b: 55 },
+                                { a: 'D', b: 91 },
+                                { a: 'E', b: 81 },
+                                { a: 'E', b: 81 },
+                                { a: 'G', b: 19 },
+                                { a: 'H', b: 87 },
+                            ],
+                        },
+                        mark: {
+                            type: 'area',
+                            line: {
+                                color: 'darkgreen',
+                            },
+                            color: {
+                                x1: 1,
+                                y1: 1,
+                                x2: 1,
+                                y2: 0,
+                                gradient: 'linear',
+                                stops: [
+                                    {
+                                        offset: 0,
+                                        color: 'white',
+                                    },
+                                    {
+                                        offset: 1,
+                                        color: 'darkgreen',
+                                    },
+                                ],
+                            },
+                        },
+                        encoding: {
+                            x: {
+                                field: 'a',
+                            },
+                            y: {
+                                aggregate: 'sum',
+                                field: 'b',
+                                title: 'count',
+                            },
+                        },
+                    },
+                    null,
+                    2,
+                ),
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Scatter Plot',
+        helperText: 'Show relationships between two variables',
+        activeImage: BLOCK_IMAGES['SCATTER_PLOT_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['SCATTER_PLOT_HOVER'],
+        json: {
+            widget: 'vega',
+            data: {
+                variation: 'scatter-plot',
+                specJson: JSON.stringify(
+                    {
+                        $schema:
+                            'https://vega.github.io/schema/vega-lite/v5.json',
+                        title: 'Scatter Plot',
+                        width: 300,
+                        height: 300,
+                        description: 'A scatterplot.',
+                        data: {
+                            values: [
+                                { a: 10, b: 28 },
+                                { a: 20, b: 55 },
+                                { a: 30, b: 91 },
+                                { a: 40, b: 81 },
+                                { a: 50, b: 81 },
+                                { a: 60, b: 19 },
+                                { a: 70, b: 87 },
+                            ],
+                        },
+                        mark: 'point',
+                        encoding: {
+                            x: { field: 'a', type: 'quantitative' },
+                            y: { field: 'b', type: 'quantitative' },
+                        },
+                    },
+                    null,
+                    2,
+                ),
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: 'General Mermaid',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: 'Class Diagram',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `---
+title: Alien example
+---
+classDiagram
+    note "From Duck till Zebra"
+    Animal <|-- Duck
+    note for Duck "can fly\ncan swim\ncan dive\ncan help in debugging"
+    Animal <|-- Fish
+    Animal <|-- Zebra
+    Animal : +int age
+    Animal : +String gender
+    Animal: +isMammal()
+    Animal: +mate()
+    class Duck{
+        +String beakColor
+        +swim()
+        +quack()
+    }
+    class Fish{
+        -int sizeInFeet
+        -canEat()
+    }
+    class Zebra{
+        +bool is_wild
+        +run()
+    }
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: 'Sequence Diagram',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `sequenceDiagram
+    participant Alice
+    participant Bob
+    Alice->>Bob: Hi Bob
+    Bob->>Alice: Hi Alice
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: 'State Diagram',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `---
+title: Simple sample
+---
+stateDiagram-v2
+    [*] --> Still
+    Still --> [*]
+
+    Still --> Moving
+    Moving --> Still
+    Moving --> Crash
+    Crash --> [*]
+
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: 'Entity Relationship Diagram',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `---
+title: Order example
+---
+erDiagram
+    CUSTOMER ||--o{ ORDER : places
+    ORDER ||--|{ LINE-ITEM : contains
+    CUSTOMER }|..|{ DELIVERY-ADDRESS : uses
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: 'User Journey',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `journey
+    title My working day
+    section Go to work
+      Make tea: 5: Me
+      Go upstairs: 3: Me
+      Do work: 1: Me, Cat
+    section Go home
+      Go downstairs: 5: Me
+      Sit down: 5: Me
+
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: 'Gantt',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `gantt
+    title A Gantt Diagram
+    dateFormat YYYY-MM-DD
+    section Section
+        A task          :a1, 2014-01-01, 30d
+        Another task    :after a1, 20d
+    section Another
+        Task in Another :2014-01-12, 12d
+        another task    :24d
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: 'Pie Chart',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `pie title Pets adopted by volunteers
+    "Dogs" : 386
+    "Cats" : 85
+    "Rats" : 15
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: 'Quadrant Chart',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `quadrantChart
+    title Reach and engagement of campaigns
+    x-axis Low Reach --> High Reach
+    y-axis Low Engagement --> High Engagement
+    quadrant-1 We should expand
+    quadrant-2 Need to promote
+    quadrant-3 Re-evaluate
+    quadrant-4 May be improved
+    Campaign A: [0.3, 0.6]
+    Campaign B: [0.45, 0.23]
+    Campaign C: [0.57, 0.69]
+    Campaign D: [0.78, 0.34]
+    Campaign E: [0.40, 0.34]
+    Campaign F: [0.35, 0.78]
+
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: 'Requirement Diagram',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `requirementDiagram
+
+requirement test_req {
+id: 1
+text: the test text.
+risk: high
+verifymethod: test
+}
+
+element test_entity {
+type: simulation
+}
+
+test_entity - satisfies -> test_req
+
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: 'Git Diagram',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `---
+title: Example Git diagram
+---
+gitGraph
+   commit
+   commit
+   branch develop
+   checkout develop
+   commit
+   commit
+   checkout main
+   merge develop
+   commit
+   commit
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: SECTION_FLOWS,
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `C4Context
+  title System Context diagram for Internet Banking System
+  Enterprise_Boundary(b0, "BankBoundary0") {
+    Person(customerA, "Banking Customer A", "A customer of the bank, with personal bank accounts.")
+    Person(customerB, "Banking Customer B")
+    Person_Ext(customerC, "Banking Customer C", "desc")
+
+    Person(customerD, "Banking Customer D", "A customer of the bank, <br/> with personal bank accounts.")
+
+    System(SystemAA, "Internet Banking System", "Allows customers to view information about their bank accounts, and make payments.")
+
+    Enterprise_Boundary(b1, "BankBoundary") {
+
+        SystemDb_Ext(SystemE, "Mainframe Banking System", "Stores all of the core banking information about customers, accounts, transactions, etc.")
+
+        System_Boundary(b2, "BankBoundary2") {
+          System(SystemA, "Banking System A")
+          System(SystemB, "Banking System B", "A system of the bank, with personal bank accounts. next line.")
+        }
+
+        System_Ext(SystemC, "E-mail system", "The internal Microsoft Exchange e-mail system.")
+        SystemDb(SystemD, "Banking System D Database", "A system of the bank, with personal bank accounts.")
+
+        Boundary(b3, "BankBoundary3", "boundary") {
+          SystemQueue(SystemF, "Banking System F Queue", "A system of the bank.")
+          SystemQueue_Ext(SystemG, "Banking System G Queue", "A system of the bank, with personal bank accounts.")
+        }
+    }
+}
+
+      BiRel(customerA, SystemAA, "Uses")
+      BiRel(SystemAA, SystemE, "Uses")
+      Rel(SystemAA, SystemC, "Sends e-mails", "SMTP")
+      Rel(SystemC, customerA, "Sends e-mails to")
+
+      UpdateElementStyle(customerA, $fontColor="red", $bgColor="grey", $borderColor="red")
+      UpdateRelStyle(customerA, SystemAA, $textColor="blue", $lineColor="blue", $offsetX="5")
+      UpdateRelStyle(SystemAA, SystemE, $textColor="blue", $lineColor="blue", $offsetY="-10")
+      UpdateRelStyle(SystemAA, SystemC, $textColor="blue", $lineColor="blue", $offsetY="-40", $offsetX="-50")
+      UpdateRelStyle(SystemC, customerA, $textColor="red", $lineColor="red", $offsetX="-50", $offsetY="20")
+
+      UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+
+
+
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: 'Mindmap',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `mindmap
+  root((mindmap))
+    Origins
+      Long history
+      ::icon(fa fa-book)
+      Popularisation
+        British popular psychology author Tony Buzan
+    Research
+      On effectiveness<br/>and features
+      On Automatic creation
+        Uses
+            Creative techniques
+            Strategic planning
+            Argument mapping
+    Tools
+      Pen and paper
+      Mermaid
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: 'Timeline',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `timeline
+    title History of Social Media Platform
+    2002 : LinkedIn
+    2004 : Facebook
+         : Google
+    2005 : Youtube
+    2006 : Twitter
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: 'Sankey',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `---
+config:
+  sankey:
+    showValues: false
+---
+sankey-beta
+
+Agricultural 'waste',Bio-conversion,124.729
+Bio-conversion,Liquid,0.597
+Bio-conversion,Losses,26.862
+Bio-conversion,Solid,280.322
+Bio-conversion,Gas,81.144
+Biofuel imports,Liquid,35
+Biomass imports,Solid,35
+Coal imports,Coal,11.606
+Coal reserves,Coal,63.965
+Coal,Solid,75.571
+District heating,Industry,10.639
+District heating,Heating and cooling - commercial,22.505
+District heating,Heating and cooling - homes,46.184
+Electricity grid,Over generation / exports,104.453
+Electricity grid,Heating and cooling - homes,113.726
+Electricity grid,H2 conversion,27.14
+Electricity grid,Industry,342.165
+Electricity grid,Road transport,37.797
+Electricity grid,Agriculture,4.412
+Electricity grid,Heating and cooling - commercial,40.858
+Electricity grid,Losses,56.691
+Electricity grid,Rail transport,7.863
+Electricity grid,Lighting & appliances - commercial,90.008
+Electricity grid,Lighting & appliances - homes,93.494
+Gas imports,Ngas,40.719
+Gas reserves,Ngas,82.233
+Gas,Heating and cooling - commercial,0.129
+Gas,Losses,1.401
+Gas,Thermal generation,151.891
+Gas,Agriculture,2.096
+Gas,Industry,48.58
+Geothermal,Electricity grid,7.013
+H2 conversion,H2,20.897
+H2 conversion,Losses,6.242
+H2,Road transport,20.897
+Hydro,Electricity grid,6.995
+Liquid,Industry,121.066
+Liquid,International shipping,128.69
+Liquid,Road transport,135.835
+Liquid,Domestic aviation,14.458
+Liquid,International aviation,206.267
+Liquid,Agriculture,3.64
+Liquid,National navigation,33.218
+Liquid,Rail transport,4.413
+Marine algae,Bio-conversion,4.375
+Ngas,Gas,122.952
+Nuclear,Thermal generation,839.978
+Oil imports,Oil,504.287
+Oil reserves,Oil,107.703
+Oil,Liquid,611.99
+Other waste,Solid,56.587
+Other waste,Bio-conversion,77.81
+Pumped heat,Heating and cooling - homes,193.026
+Pumped heat,Heating and cooling - commercial,70.672
+Solar PV,Electricity grid,59.901
+Solar Thermal,Heating and cooling - homes,19.263
+Solar,Solar Thermal,19.263
+Solar,Solar PV,59.901
+Solid,Agriculture,0.882
+Solid,Thermal generation,400.12
+Solid,Industry,46.477
+Thermal generation,Electricity grid,525.531
+Thermal generation,Losses,787.129
+Thermal generation,District heating,79.329
+Tidal,Electricity grid,9.452
+UK land based bioenergy,Bio-conversion,182.01
+Wave,Electricity grid,19.013
+Wind,Electricity grid,289.366
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: 'XY Chart',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `xychart-beta
+    title "Sales Revenue"
+    x-axis [jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec]
+    y-axis "Revenue (in $)" 4000 --> 11000
+    bar [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
+    line [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_FLOWS,
+        name: 'Block Diagram',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `block-beta
+columns 1
+  db(("DB"))
+  blockArrowId6<["&nbsp;&nbsp;&nbsp;"]>(down)
+  block:ID
+    A
+    B["A wide one in the middle"]
+    C
+  end
+  space
+  D
+  ID --> D
+  C --> D
+  style B fill:#969,stroke:#333,stroke-width:4px
+`,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+];

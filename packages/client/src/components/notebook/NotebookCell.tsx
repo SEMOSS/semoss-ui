@@ -1,6 +1,23 @@
 import { useEffect, useState, createElement, useMemo, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
+    ContentCopy,
+    Delete,
+    PlayCircle,
+    CheckCircle,
+    Error,
+    Pending,
+    KeyboardArrowRight,
+    MoreVert,
+    ArrowUpward,
+    ArrowDownward,
+    PlayArrowRounded,
+    LowPriority,
+    LibraryAdd,
+} from '@mui/icons-material';
+
+import { ActionMessages, useBlocks } from '@semoss/renderer';
+import {
     styled,
     Stack,
     Typography,
@@ -16,28 +33,14 @@ import {
     Menu,
     MenuProps,
 } from '@semoss/ui';
-import {
-    ContentCopy,
-    Delete,
-    PlayCircle,
-    CheckCircle,
-    Error,
-    Pending,
-    KeyboardArrowRight,
-    MoreVert,
-    ArrowUpward,
-    ArrowDownward,
-    PlayArrowRounded,
-    LowPriority,
-    LibraryAdd,
-} from '@mui/icons-material';
-import { ActionMessages } from '@/stores';
-import { useBlocks } from '@/hooks';
+
 import { NotebookAddCell } from './NotebookAddCell';
 import { NotebookCellConsole } from './NotebookCellConsole';
 import { Operation } from './operations';
-import { copyTextToClipboard } from '@/utility';
 import { AddVariableModal } from './AddVariableModal';
+
+// TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
+import { copyTextToClipboard } from '@/utility';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     paddingBottom: theme.spacing(2),
@@ -820,7 +823,7 @@ export const NotebookCell = observer(
                     </Collapse>
                 </StyledAddCellContainer>
 
-                <AddVariableModal
+                {/* <AddVariableModal
                     open={variableModal}
                     type={'cell'}
                     to={queryId}
@@ -828,7 +831,7 @@ export const NotebookCell = observer(
                     onClose={() => {
                         setVariableModal(false);
                     }}
-                />
+                /> */}
             </StyledStack>
         );
     },

@@ -3,7 +3,7 @@ import { styled, Button, Stack, Typography } from '@semoss/ui';
 import { useNavigate } from 'react-router-dom';
 import { FileUploadOutlined } from '@mui/icons-material';
 
-import { STATE_VERSION } from '@/stores';
+import { STATE_VERSION } from '@semoss/renderer';
 import {
     NewAppStep,
     AddAppModal,
