@@ -1618,4 +1618,27 @@ columns 1
             slots: {} as BlockJSON['slots'],
         },
     },
+    {
+        section: SECTION_LAYOUT,
+        name: 'Sidebar-Menu',
+        activeImage: BLOCK_IMAGES['SIDEBAR_MENU_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['SIDEBAR_MENU_HOVER'],
+        helperText:
+            'Use the sidebar to navigate between the tools and components',
+        json: {
+            widget: 'sidebar',
+            data: {
+                style: {},
+                open: false,
+                anchor: 'left',
+                sidebarWidth: 240,
+                sidebarHeight: '100%',
+                designMode: true,
+            },
+            listeners: {},
+            slots: {
+                content: [],
+            },
+        },
+    },
 ];
