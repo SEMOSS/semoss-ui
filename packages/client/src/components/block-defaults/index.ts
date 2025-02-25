@@ -65,10 +65,6 @@ import {
     config as AccordionBlockConfig,
     AccordionBlockDef,
 } from './accordion-block';
-import {
-    config as SidebarMenuBlockConfig,
-    SidebarMenuBlockDef,
-} from './sidebar-menu-block';
 
 export type DefaultBlockDefinitions =
     | AudioBlockDef
@@ -105,8 +101,7 @@ export type DefaultBlockDefinitions =
     | RadioBlockDef
     | PDFViewerBlockDef
     | ThemeBlockDef
-    | AccordionBlockDef
-    | SidebarMenuBlockDef;
+    | AccordionBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AudioBlockConfig.widget]: AudioBlockConfig,
@@ -138,7 +133,6 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
     [ThemeBlockConfig.widget]: ThemeBlockConfig,
     [AccordionBlockConfig.widget]: AccordionBlockConfig,
-    [SidebarMenuBlockConfig.widget]: SidebarMenuBlockConfig,
 };
 
 export {
@@ -167,5 +161,4 @@ export {
     PDFViewerBlockConfig,
     ThemeBlockConfig,
     AccordionBlockConfig,
-    SidebarMenuBlockConfig,
 };
