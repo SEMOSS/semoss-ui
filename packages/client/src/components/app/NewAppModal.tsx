@@ -79,7 +79,6 @@ export const NewAppModal = (props: NewAppModalProps) => {
                     throw new Error(`State is missing from the blocks app`);
                 }
                 // create the project
-                // Waiting on how long it will take to update the CreateAppFromBlocks reactor to pass the metadata. If it takes too long, we plan to call an additional reactor, SetProjectMeta.
                 const { errors, pixelReturn } = await monolithStore.runQuery<
                     [AppMetadata]
                 >(
@@ -93,9 +92,34 @@ export const NewAppModal = (props: NewAppModalProps) => {
                 }
 
                 appId = pixelReturn[0].output.project_id;
+
+                // after the project is created run SetProjectMeta to pass metadata
+                const setProjectMetadataResponse = await monolithStore.runQuery(
+                    `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
+                        {
+                            tag: data['APP_TAGS'],
+                            description: data['APP_DESCRIPTION'],
+                        },
+                    )}])`,
+                );
+
+                let output = undefined;
+                let operationType = undefined;
+
+                output = setProjectMetadataResponse.pixelReturn[0].output;
+                operationType =
+                    setProjectMetadataResponse.pixelReturn[0].operationType[0];
+
+                if (operationType.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+
+                    return;
+                }
             } else if (type === 'code') {
                 // create the pixel
-                // Waiting on how long it will take to update the CreateProject reactor to pass the metadata. If it takes too long, we plan to call an additional reactor, SetProjectMeta.
                 const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["CODE"]);`;
 
                 // create the project
@@ -124,10 +148,11 @@ export const NewAppModal = (props: NewAppModalProps) => {
                     saveIndexFilePixel,
                 );
 
-                const output = response.pixelReturn[0].output,
-                    operationType = response.pixelReturn[0].operationType,
-                    outputTwo = response.pixelReturn[1].output,
-                    operationTypeTwo = response.pixelReturn[1].operationType;
+                let output = undefined;
+                let operationType = undefined;
+
+                output = response.pixelReturn[0].output;
+                operationType = response.pixelReturn[0].operationType;
 
                 if (operationType.indexOf('ERROR') > -1) {
                     notification.add({
@@ -137,10 +162,34 @@ export const NewAppModal = (props: NewAppModalProps) => {
                     return false;
                 }
 
-                if (operationTypeTwo.indexOf('ERROR') > -1) {
+                output = response.pixelReturn[1].output;
+                operationType = response.pixelReturn[1].operationType;
+
+                if (operationType.indexOf('ERROR') > -1) {
                     notification.add({
                         color: 'error',
-                        message: outputTwo,
+                        message: output,
+                    });
+                }
+
+                // after the project is created run SetProjectMeta to pass metadata
+                const setProjectMetadataResponse = await monolithStore.runQuery(
+                    `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
+                        {
+                            tag: data['APP_TAGS'],
+                            description: data['APP_DESCRIPTION'],
+                        },
+                    )}])`,
+                );
+
+                output = setProjectMetadataResponse.pixelReturn[0].output;
+                operationType =
+                    setProjectMetadataResponse.pixelReturn[0].operationType;
+
+                if (operationType.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
                     });
                 }
             } else {
