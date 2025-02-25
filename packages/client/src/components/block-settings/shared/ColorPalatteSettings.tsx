@@ -35,6 +35,7 @@ interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
+    onColorPalatteSelected: (option, color) => void;
 }
 const StyledButton = styled(Button)(({}) => ({
     justifyContent: 'center',
@@ -245,8 +246,8 @@ const ColorPalette = ({
         </StyledColorPalete>
     );
 };
-export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
-    ({ id, path }) => {
+export const ColorPalatteSettings = observer(
+    ({ id, path, onColorPalatteSelected }: ColorPalatteSettingProps) => {
         const { data: Data } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
         const palettes = [
@@ -542,6 +543,7 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
             } else {
                 runStateUpdateCustom(colors.colors, pathVal);
             }
+            onColorPalatteSelected(optionComputedValue, colors.colors);
         }
         /**
          * Handles the click event for the edit palette button.

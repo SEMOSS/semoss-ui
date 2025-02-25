@@ -60,6 +60,9 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
         const [value, setValue] = useState<string | null>(null); //local state to store a copy of main state
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null); //timeout ref to delay update of state
         const optiontimeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+        const [colorPickerState, setColorPickerState] = useState<
+            'initial' | 'updated'
+        >('initial');
         const optionPathVal = 'option';
         const [optionValue, setOptionValue] = useState(data.option);
         //get the latest value of state and store it in computedValue
@@ -103,7 +106,9 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
         //update the local state value, when computed value is changed
         useEffect(() => {
             setValue(computedValue);
-            updateLatestChartDetail();
+            if (colorPickerState === 'updated') {
+                updateLatestChartDetail();
+            }
         }, [computedValue]);
 
         function updateLatestChartDetail() {
@@ -155,6 +160,7 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
                     onChange={(e) => {
                         setColor(e.target.value);
                         runStateUpdateCustom(e.target.value);
+                        setColorPickerState('updated');
                     }}
                     endAdornment={
                         <InputAdornment position="end">
@@ -189,6 +195,7 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
                             setColor(newColor.hex);
                             runStateUpdateCustom(newColor.hex);
                             onChange(newColor.hex);
+                            setColorPickerState('updated');
                         }}
                         color={value}
                     ></StyledSketchContainer>
