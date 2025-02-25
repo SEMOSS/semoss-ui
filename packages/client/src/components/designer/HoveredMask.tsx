@@ -1,9 +1,11 @@
 import { useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+
+import { useBlocks } from '@semoss/renderer';
 import { Typography, styled } from '@semoss/ui';
 
+import { useDesigner } from '@/hooks';
 import { getRelativeSize, getBlockElement } from '@/stores';
-import { useBlocks, useDesigner } from '@/hooks';
 
 interface StyledContainerProps {
     top: number;

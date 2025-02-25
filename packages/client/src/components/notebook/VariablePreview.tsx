@@ -1,13 +1,17 @@
 import React, { useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Box, Divider, styled, Typography, Stack } from '@semoss/ui';
-import { Variable } from '@/stores';
-import { BlocksRenderer } from '../blocks-workspace';
 
-import { SerializedState } from '@/stores';
-import { useBlocks } from '@/hooks';
 import { isOutputJSON } from '@/utility';
 import { JsonViewer } from '@textea/json-viewer';
+
+import {
+    SerializedState,
+    useBlocks,
+    Renderer,
+    Variable,
+} from '@semoss/renderer';
+import { InsightProvider } from '@semoss/sdk';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     border: `${theme.spacing(0.25)} solid ${theme.palette.primary.main}`,
@@ -106,7 +110,9 @@ export const VariablePreview = observer(
                 if (config) {
                     return (
                         <StyledBlocksBox>
-                            <BlocksRenderer state={config} preview={true} />
+                            <InsightProvider>
+                                <Renderer state={config} preview={true} />
+                            </InsightProvider>
                         </StyledBlocksBox>
                     );
                 } else {

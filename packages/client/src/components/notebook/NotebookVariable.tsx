@@ -11,15 +11,12 @@ import {
     useNotification,
     Tooltip,
     TextField,
-    LinearProgress,
 } from '@semoss/ui';
-import { Variable } from '@/stores';
 import { ContentCopy, MoreVert, Delete, Edit } from '@mui/icons-material';
-
-import { ActionMessages } from '@/stores';
-import { useBlocks } from '@/hooks';
 import { VariablePreview } from './VariablePreview';
 import { AddVariablePopover } from './AddVariablePopover';
+
+import { ActionMessages, useBlocks, Variable } from '@semoss/renderer';
 
 const StyledListItem = styled(List.Item)(() => ({
     '&.MuiListItem-root': {
@@ -30,15 +27,6 @@ const StyledListItem = styled(List.Item)(() => ({
 
 const StyledTooltip = styled(Tooltip)(() => ({
     fontWeight: 'bold',
-}));
-
-const StyledLinearProgress = styled(LinearProgress)(({ theme }) => ({
-    '&.MuiLinearProgress-root': {
-        height: '2px',
-        backgroundColor: 'transparent',
-        marginTop: '21px',
-        '.MuiLinearProgress-barColorDeterminate': {},
-    },
 }));
 
 const StyledButton = styled('button')(({ theme }) => ({

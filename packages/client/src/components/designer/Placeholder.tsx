@@ -78,7 +78,6 @@ export const Placeholder = observer(() => {
 
     return (
         <StyledPlaceholder
-            id="hey hey hey"
             style={{
                 ...getPlaceholderStyle(
                     designer.drag.placeholderAction,

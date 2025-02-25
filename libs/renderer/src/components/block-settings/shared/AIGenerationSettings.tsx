@@ -1,0 +1,262 @@
+import { useMemo, useState, useRef, useEffect } from "react";
+import { observer } from "mobx-react-lite";
+import { Button, Stack, TextField, useNotification } from "@semoss/ui";
+import { Paths, PathValue } from "../../../types";
+import { useBlockSettings, useBlocks } from "../../../hooks";
+import { Block, BlockDef } from "../../../store";
+import { AutoAwesome } from "@mui/icons-material";
+import { Autocomplete } from "@mui/material";
+import { runPixel, usePixel } from "@semoss/sdk";
+
+type CfgLibraryEngineState = {
+    loading: boolean;
+    ids: string[];
+    display: object;
+};
+
+interface AIGenerationSettingsProps<D extends BlockDef = BlockDef> {
+    /**
+     * Id of the block that is being worked with
+     */
+    id: string;
+
+    /**
+     * Label to pass into the input
+     */
+    label?: string;
+
+    /**
+     * Path to update
+     */
+    path: Paths<Block<D>["data"], 4>;
+
+    /**
+     * Placeholder text in prompt input
+     */
+    placeholder?: string;
+
+    /**
+     * Set path value as object instead of string
+     */
+    valueAsObject?: boolean;
+
+    /**
+     * Append additional context to the end of the prompt
+     */
+    appendPrompt?: string;
+}
+
+export const AIGenerationSettings = observer(
+    <D extends BlockDef = BlockDef>({
+        id,
+        label = "AI",
+        placeholder = null,
+        path,
+        valueAsObject = false,
+        appendPrompt = "",
+    }: AIGenerationSettingsProps<D>) => {
+        const { setData } = useBlockSettings<D>(id);
+        const { state } = useBlocks();
+        const notification = useNotification();
+
+        const [prompt, setPrompt] = useState("");
+        const [responseLoading, setResponseLoading] = useState<boolean>(false);
+
+        const modelIdRef = useRef("");
+        const [modelId, setModelId] = useState<string>("");
+
+        const [models, setModels] = useState<
+            { app_id: string; app_name: string }[]
+        >([]);
+
+        useEffect(() => {
+            modelIdRef.current = modelId;
+        }, [modelId]);
+
+        const [cfgLibraryModels, setCfgLibraryModels] =
+            useState<CfgLibraryEngineState>({
+                loading: true,
+                ids: [],
+                display: {},
+            });
+        const [selectedModel, setSelectedModel] = useState<string>("");
+        const myModels = usePixel<
+            { app_id: string; app_name: string; tag: string }[]
+        >(`MyEngines(engineTypes=['MODEL']);`);
+        useMemo(() => {
+            if (myModels.status !== "SUCCESS") {
+                return;
+            }
+
+            let modelIds: string[] = [];
+            let modelDisplay = {};
+            myModels.data.forEach((model) => {
+                // embeddings models are not set up for response generation
+                if (model.tag !== "embeddings") {
+                    modelIds.push(model.app_id);
+                    modelDisplay[model.app_id] = model.app_name;
+                }
+            });
+            setCfgLibraryModels({
+                loading: false,
+                ids: modelIds,
+                display: modelDisplay,
+            });
+            if (modelIds.length) {
+                setSelectedModel(modelIds[0]);
+            }
+        }, [myModels.status, myModels.data]);
+
+        useEffect(() => {
+            if (myModels.status !== "SUCCESS") {
+                return;
+            }
+
+            setModels(
+                myModels.data.map((d) => ({
+                    app_name: d.app_name ? d.app_name.replace(/_/g, " ") : "",
+                    app_id: d.app_id,
+                })),
+            );
+
+            setModelId(myModels.data[0].app_id);
+        }, [myModels.status, myModels.data]);
+
+        useEffect(() => {
+            if (myModels.status !== "SUCCESS") {
+                return;
+            }
+
+            setModels(
+                myModels.data.map((d) => ({
+                    app_name: d.app_name ? d.app_name.replace(/_/g, " ") : "",
+                    app_id: d.app_id,
+                })),
+            );
+
+            setModelId(myModels.data[0].app_id);
+        }, [myModels.status, myModels.data]);
+
+        const generateAIResponse = async () => {
+            try {
+                setResponseLoading(true);
+
+                // re-wrote LLM prompting section previous approach was throwing error
+                let flattenedPrompt = `${state.flattenVariable(
+                    prompt,
+                )} ${appendPrompt}`;
+                flattenedPrompt = flattenedPrompt.replace(/"/g, "'");
+                const pixel = `LLM(engine = "${modelIdRef.current}", command = "${flattenedPrompt}", paramValues = [ {} ] );`;
+                const res = await runPixel(pixel);
+                const LLMResponse = res.pixelReturn[0].output["response"];
+
+                let trimmedStarterCode = LLMResponse;
+                trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
+
+                trimmedStarterCode = trimmedStarterCode.substring(
+                    trimmedStarterCode.indexOf("\n") + 1,
+                );
+
+                setData(
+                    path,
+                    trimmedStarterCode as PathValue<D["data"], typeof path>,
+                );
+
+                // below is the previos LLM prompting code - not sure if we want or need any of this
+                // const flattenedPrompt = state.flattenVariable(prompt);
+                // const pixel = `LLM(engine=["${selectedModel}"],command=["<encode>${flattenedPrompt} ${appendPrompt}</encode>"], paramValues=[${JSON.stringify(
+                //     {
+                //         max_new_tokens: 4000,
+                //     },
+                // )}]);`;
+                // const { errors, pixelReturn } = await monolithStore.runQuery(
+                //     pixel,
+                // );
+                // let valueToSet = pixelReturn[0]?.output?.response;
+                // if (errors.length > 0 || typeof valueToSet !== 'string') {
+                //     throw new Error(errors.join(''));
+                // }
+                // if (valueAsObject) {
+                //     valueToSet = !!pixelReturn[0].output?.response
+                //         ? JSON.parse(
+                //               pixelReturn[0].output?.response
+                //                   .replaceAll('\\"', '"')
+                //                   .replaceAll('\\n', ''),
+                //           )
+                //         : undefined;
+                //     if (valueToSet === undefined) {
+                //         notification.add({
+                //             color: 'error',
+                //             message:
+                //                 'There was an issue parsing the JSON in your response.',
+                //         });
+                //     }
+                // }
+                // setData(path, "valueToSet" as PathValue<D['data'], typeof path>);
+            } catch (e) {
+                console.error(e);
+
+                notification.add({
+                    color: "error",
+                    message: e.message,
+                });
+            } finally {
+                setResponseLoading(false);
+            }
+        };
+
+        return (
+            <Stack spacing={1} width="100%">
+                <TextField
+                    disabled={!cfgLibraryModels.ids.length || responseLoading}
+                    fullWidth
+                    multiline
+                    rows={5}
+                    value={prompt}
+                    onChange={(e) => {
+                        // sync the data on change
+                        setPrompt(e.target.value);
+                    }}
+                    size="small"
+                    variant="outlined"
+                    autoComplete="off"
+                    placeholder={placeholder}
+                    label="AI Generator"
+                    InputLabelProps={{
+                        shrink: true,
+                    }}
+                />
+                <Autocomplete
+                    disabled={!cfgLibraryModels.ids.length || responseLoading}
+                    disableClearable
+                    fullWidth
+                    id="model-autocomplete"
+                    loading={cfgLibraryModels.loading}
+                    options={cfgLibraryModels.ids}
+                    value={selectedModel}
+                    size="small"
+                    getOptionLabel={(modelId: string) =>
+                        cfgLibraryModels.display[modelId] ?? ""
+                    }
+                    onChange={(_, newModelId) => {
+                        setSelectedModel(newModelId);
+                    }}
+                    renderInput={(params) => (
+                        <TextField {...params} variant="outlined" />
+                    )}
+                />
+                <Button
+                    disabled={
+                        !cfgLibraryModels.ids.length || cfgLibraryModels.loading
+                    }
+                    loading={responseLoading}
+                    variant="outlined"
+                    endIcon={<AutoAwesome />}
+                    onClick={generateAIResponse}
+                >
+                    Generate
+                </Button>
+            </Stack>
+        );
+    },
+);

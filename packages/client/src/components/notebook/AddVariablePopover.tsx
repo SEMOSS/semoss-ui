@@ -1,12 +1,9 @@
-import React, {
-    createElement,
-    useCallback,
-    useEffect,
-    useMemo,
-    useState,
-    Suspense,
-    lazy,
-} from 'react';
+import React, { useEffect, useMemo, useState, Suspense, lazy } from 'react';
+import { MoreSharp, WarningRounded } from '@mui/icons-material';
+import { JsonViewer } from '@textea/json-viewer';
+import { observer } from 'mobx-react-lite';
+import { computed } from 'mobx';
+
 import {
     Alert,
     styled,
@@ -21,33 +18,28 @@ import {
     Grid,
     Checkbox,
 } from '@semoss/ui';
-import { useBlocks } from '@/hooks';
 import {
     ActionMessages,
     SerializedState,
     STATE_VERSION,
     VariableType,
     VariableWithId,
-} from '@/stores';
-import { observer } from 'mobx-react-lite';
-import { computed } from 'mobx';
-import { DefaultBlocks } from '../block-defaults';
-import {
-    BLOCK_TYPE_COMPARE,
+    VARIABLE_TYPES,
+    useBlocks,
+    DefaultBlocks,
     BLOCK_TYPE_INPUT,
-} from '../block-defaults/block-defaults.constants';
-import { BlocksRenderer } from '../blocks-workspace';
-import { VARIABLE_TYPES } from '@/stores';
+    BLOCK_TYPE_COMPARE,
+    Renderer,
+} from '@semoss/renderer';
+
+// TODO: MOVE TO SDK/UTILITY LIB
 import {
     capitalizeFirstLetter,
-    getEngineImage,
     isOutputJSON,
     splitAtPeriod,
-} from '@/utility';
-import { MoreSharp, WarningRounded } from '@mui/icons-material';
-import { JsonViewer } from '@textea/json-viewer';
-
-import { ENGINE_ROUTES } from '@/pages/engine';
+    // getEngineImage,
+} from '../../utility';
+import { InsightProvider } from '@semoss/sdk';
 
 const Editor = lazy(() => import('@monaco-editor/react'));
 
@@ -457,7 +449,11 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                         },
                     };
 
-                    return <BlocksRenderer state={s} preview={true} />;
+                    return (
+                        <InsightProvider>
+                            <Renderer state={s} />
+                        </InsightProvider>
+                    );
                 } else if (variableType === 'query') {
                     const query = state.getQuery(variablePointer);
 
@@ -527,27 +523,11 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                         />
                     );
                 } else {
-                    const image = getEngineImage(
-                        engine.app_type,
-                        engine.app_subtype,
-                        true,
-                    );
-                    const engineDisplay = ENGINE_ROUTES.find(
-                        (engineValue) => engineValue.type === engine.app_type,
-                    );
                     return (
                         <Stack direction="row" alignItems="center">
-                            {image ? (
-                                <StyledImg src={image} />
-                            ) : (
-                                <Icon>
-                                    {engineDisplay ? (
-                                        createElement(engineDisplay.icon)
-                                    ) : (
-                                        <MoreSharp />
-                                    )}
-                                </Icon>
-                            )}
+                            <Icon>
+                                <MoreSharp />
+                            </Icon>
                             <Stack direction="column">
                                 <Typography variant="body2">
                                     {engine.app_name}

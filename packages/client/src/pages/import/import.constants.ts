@@ -13358,6 +13358,16 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'S3_BUCKET',
+                        label: 'Bucket',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'S3_ACCESS_KEY',
                         label: 'Access Key',
                         defaultValue: '',
