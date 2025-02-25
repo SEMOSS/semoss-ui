@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { useBlock, useFrame, useBlocks } from '@/hooks';
+import { useBlock, useFrame, useBlocks, useBlockSettings } from '@/hooks';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BlockComponent } from '@/stores';
 import { styled } from '@mui/material';
@@ -22,15 +22,18 @@ const StyledNoDataContainer = styled('div', {
     width: '80vh',
     color: error ? theme.palette.error.main : 'unset',
 }));
-
-export const Pie: BlockComponent = observer(({ id }) => {
-    const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
+interface PieProps {
+    id: string;
+    updateJson: (data: any, path: any) => void;
+}
+export const Pie = observer(({ id, updateJson }: PieProps) => {
+    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
         mouseY: number;
         value: unknown;
     } | null>(null);
-
+    let resultData: unknown = {};
     // get the frame
     const frame = useFrame(data?.frame?.name, {
         selector: getVisualizationBlockSelector(id),
@@ -70,10 +73,8 @@ export const Pie: BlockComponent = observer(({ id }) => {
             selector += `).as([${selectorFields['Label'][0]}${averageCollection}])|Group(${selectorFields['Label'][0]})|Sort(${selectorFields['Label'][0]})`;
             return selector;
         }
-
         return null;
     }
-    const [value, setValue] = useState<any>({});
     //Trying out different approach for TrendLine, work in progress
     const computedValue = useMemo(() => {
         return computed(() => {
@@ -89,18 +90,20 @@ export const Pie: BlockComponent = observer(({ id }) => {
             return JSON.stringify(v, null, 2);
         });
     }, [data, 'option']).get();
-
-    // update the value whenever the computed one changes
-    useEffect(() => {
-        let computedValue1 = JSON.parse(computedValue);
-        if (frame.data.values.length > 0 && computedValue1) {
-            let processedFrameData = formatDataPoints(data.option);
-            if (processedFrameData) {
-                computedValue1['series'][0]['data'] = processedFrameData;
-            }
-            setValue(processedFrameData);
-        }
+    let parsedOption = useMemo(() => {
+        return typeof computedValue === 'string'
+            ? JSON.parse(computedValue)
+            : computedValue;
     }, [computedValue]);
+    useEffect(() => {
+        if (
+            data?.frame?.name &&
+            frame?.data?.values.length > 0 &&
+            frame?.isLoading === false
+        ) {
+            updateJson(parsedOption, 'option');
+        }
+    }, [frame.data.values]);
     //format the frame option data for echart
     const formatDataPoints = useCallback(
         (resultData: unknown) => {
@@ -127,13 +130,6 @@ export const Pie: BlockComponent = observer(({ id }) => {
         },
         [frame.data.values],
     );
-    function debounce(fn, delay) {
-        let timer;
-        return (...args) => {
-            clearTimeout(timer);
-            timer = setTimeout(() => fn(...args), delay);
-        };
-    }
     const onClickChart = {
         contextmenu: (params) => {
             //  let currentOption = chart.getOption();
@@ -166,7 +162,7 @@ export const Pie: BlockComponent = observer(({ id }) => {
         try {
             const lineOptions = JSON.parse(data.option);
             return (
-                <StyledChartContainer {...attrs}>
+                <StyledChartContainer>
                     <ReactECharts
                         option={lineOptions}
                         onEvents={onClickChart}
@@ -175,19 +171,22 @@ export const Pie: BlockComponent = observer(({ id }) => {
             );
         } catch (e) {
             return (
-                <StyledNoDataContainer error {...attrs}>
+                <StyledNoDataContainer error>
                     There was an issue parsing your JSON.
                 </StyledNoDataContainer>
             );
         }
     } else {
-        const formatedOption = data?.frame?.name
-            ? formatDataPoints(data.option)
-            : data.option;
+        resultData =
+            data?.frame?.name &&
+            frame.data.values.length > 0 &&
+            frame.isLoading === false
+                ? formatDataPoints(parsedOption)
+                : parsedOption;
         return (
-            <StyledChartContainer {...attrs}>
+            <StyledChartContainer>
                 <ReactECharts
-                    option={formatedOption}
+                    option={resultData}
                     onEvents={onClickChart}
                     style={{
                         height: 'inherit',

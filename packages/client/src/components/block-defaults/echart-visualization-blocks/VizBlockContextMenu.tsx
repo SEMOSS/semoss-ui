@@ -24,8 +24,6 @@ export interface VizBlockContextMenuProps {
 export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
     ({ id = '', frame = null, contextMenu = null, onClose = () => null }) => {
         const { data } = useBlock<EchartVisualizationBlockDef>(id);
-        console.log(contextMenu, 'contextMenu');
-
         return (
             <Menu
                 open={contextMenu !== null}

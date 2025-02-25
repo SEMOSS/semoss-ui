@@ -145,7 +145,7 @@ export const VisualizationBlock: BlockComponent = observer(
                             <Bar id={id} updateJson={updateChartJson} />
                         )}
                         {data.variation === 'echart-pie-chart' && (
-                            <Pie id={id}></Pie>
+                            <Pie id={id} updateJson={updateChartJson}></Pie>
                         )}
                         {data.variation === 'echart-scatter-plots' && (
                             <ScatterPlotBlock id={id} />
@@ -165,7 +165,9 @@ export const VisualizationBlock: BlockComponent = observer(
                 {data.variation === 'echart-bar-graph' && (
                     <Bar id={id} updateJson={updateChartJson} />
                 )}
-                {data.variation === 'echart-pie-chart' && <Pie id={id}></Pie>}
+                {data.variation === 'echart-pie-chart' && (
+                    <Pie id={id} updateJson={updateChartJson}></Pie>
+                )}
                 {data.variation === 'echart-scatter-plots' && (
                     <ScatterPlotBlock id={id} />
                 )}

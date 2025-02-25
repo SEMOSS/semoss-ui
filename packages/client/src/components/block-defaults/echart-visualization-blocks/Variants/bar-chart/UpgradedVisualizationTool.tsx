@@ -83,7 +83,11 @@ export const UpgradedVisualizationTool =
                         </ListItemButton>
                     </ListItem>
                     {selectedList === 'colourpalette' && (
-                        <ColorPalatteSettings id={id} path="option.color" />
+                        <ColorPalatteSettings
+                            id={id}
+                            path="option.color"
+                            onColorPalatteSelected={(option, color) => {}}
+                        />
                     )}
                     <StyledListItem disablePadding>
                         {data.variation === 'echart-bar-graph' && (
@@ -356,8 +360,7 @@ export const UpgradedVisualizationTool =
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
-                        {(data.variation === 'echart-bar-graph' ||
-                            data.variation === 'echart-pie-chart') && (
+                        {data.variation === 'echart-bar-graph' && (
                             <ListItemButton
                                 onClick={(e) =>
                                     setSelectedList((prevList) =>
@@ -650,6 +653,44 @@ export const UpgradedVisualizationTool =
                             <PieTitle id={id} path={'option'} />
                         )}
                     </StyledListItem>
+
+                    <StyledListItem disablePadding>
+                        {data.variation === 'echart-scatter-plots' && (
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === 'scatter-plots-title'
+                                            ? ''
+                                            : 'scatter-plots-title',
+                                    )
+                                }
+                                selected={
+                                    selectedList === 'scatter-plots-title'
+                                }
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList ===
+                                            'scatter-plots-title'
+                                                ? 'primary'
+                                                : 'disabled'
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary="Chart Title" />
+                                <InfoOutlined />
+                            </ListItemButton>
+                        )}
+                        {selectedList === 'scatter-plots-title' && (
+                            <ScatterPlotChartTitle
+                                id={id}
+                                path={'option'}
+                            ></ScatterPlotChartTitle>
+                        )}
+                    </StyledListItem>
+
                     <StyledListItem disablePadding>
                         {data.variation === 'echart-pie-chart' && (
                             <ListItemButton
@@ -680,7 +721,6 @@ export const UpgradedVisualizationTool =
                             <PieValueLabel id={id} path={'option'} />
                         )}
                     </StyledListItem>
-                    {/* Pie Chart menu for tools completes here */}
                 </List>
             </>
         );
