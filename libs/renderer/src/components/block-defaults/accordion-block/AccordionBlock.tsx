@@ -2,7 +2,7 @@ import { CSSProperties } from "react";
 import { observer } from "mobx-react-lite";
 import { ExpandMore } from "@mui/icons-material";
 
-import { Accordion, styled } from "@semoss/ui";
+import { Accordion, Stack, styled } from "@semoss/ui";
 
 import { Slot } from "../../blocks";
 import { useBlock } from "../../../hooks";
@@ -64,10 +64,14 @@ export const AccordionBlock: BlockComponent = observer(({ id }) => {
             disableGutters={true}
         >
             <AccordionTrigger
-                sx={{ backgroundColor: data.triggerBgColor }}
+                sx={{
+                    backgroundColor: data.triggerBgColor,
+                }}
                 expandIcon={data.showExpandIcon && <ExpandMore />}
             >
-                <Slot slot={slots.header} />
+                <Stack sx={{ width: "100%" }}>
+                    <Slot slot={slots.header} />
+                </Stack>
             </AccordionTrigger>
             <AccordionContent sx={{ backgroundColor: data.contentBgColor }}>
                 <Slot slot={slots.content} />
