@@ -37,6 +37,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             widget: 'accordion',
             data: {
                 style: {},
+                triggerBgColor: '',
+                contentBgColor: '',
+                showExpandIcon: true,
             },
             listeners: {},
             slots: {
