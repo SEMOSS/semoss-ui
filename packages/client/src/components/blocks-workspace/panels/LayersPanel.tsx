@@ -296,7 +296,6 @@ export const LayersPanel = observer((): JSX.Element => {
             currentDropPosition === 'inside' &&
             (!overBlock.slots || Object.keys(overBlock.slots).length === 0)
         ) {
-            console.log('Cannot drop on non container element');
             return;
         }
 
@@ -312,7 +311,6 @@ export const LayersPanel = observer((): JSX.Element => {
         ) {
             // This is dragging to bottom of a container - should place it after the container
             // at the parent level
-            console.log('Moving block to be after container at parent level');
 
             state.dispatch({
                 message: ActionMessages.MOVE_BLOCK,
@@ -330,7 +328,7 @@ export const LayersPanel = observer((): JSX.Element => {
             });
         } else if (currentDropPosition === 'inside' && overBlock.slots) {
             // Moving inside a container
-            console.log('Moving inside a container');
+
             state.dispatch({
                 message: ActionMessages.MOVE_BLOCK,
                 payload: {
@@ -342,9 +340,6 @@ export const LayersPanel = observer((): JSX.Element => {
                 },
             });
         } else {
-            // Handle other cases (top, regular)
-            console.log(`Moving block with position: ${currentDropPosition}`);
-
             // Default movement logic based on currentDropPosition
             if (overBlock.parent) {
                 state.dispatch({
@@ -433,7 +428,6 @@ export const LayersPanel = observer((): JSX.Element => {
             const mouseY = e.clientY - rect.top;
             const height = rect.height;
 
-            // Use consistent thresholds regardless of container status
             const topThreshold = Math.min(height * 0.25, 15); // 25% from top or 15px, whichever is smaller
             const bottomThreshold = isContainer
                 ? height * 0.7
