@@ -163,6 +163,13 @@ export const ToggleTrendline = observer(
                         ];
                     }
                 });
+                option = {
+                    ...option,
+                    ['customSettings']: {
+                        ...option['customSettings'],
+                        ['toolsUpdated']: true,
+                    },
+                };
                 runStateUpdate(option);
             } else {
                 let displayPositionData = option['series'].filter(
@@ -190,6 +197,13 @@ export const ToggleTrendline = observer(
                     option['series'][seriesIndex]['data'] = lineData;
                 }
             });
+            option = {
+                ...option,
+                ['customSettings']: {
+                    ...option['customSettings'],
+                    ['toolsUpdated']: true,
+                },
+            };
             runStateUpdate(option);
             removeLineObject();
         }

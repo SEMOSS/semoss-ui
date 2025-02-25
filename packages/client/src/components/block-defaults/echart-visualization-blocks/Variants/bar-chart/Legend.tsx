@@ -82,6 +82,13 @@ export const Legend = observer(
                     },
                 };
             }
+            option = {
+                ...option,
+                ['customSettings']: {
+                    ...option['customSettings'],
+                    ['toolsUpdated']: true,
+                },
+            };
             runStateUpdateCustom(option);
         }
         //updating the state of Block with a debounce time

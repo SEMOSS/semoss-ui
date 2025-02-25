@@ -62,7 +62,6 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
     const frameData = useFrame(data.frame.name, {
         selector: selector,
     });
-
     let chartOperationData = useRef({
         brushSelected: [],
         contextMenu: null,
@@ -92,14 +91,20 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
     }, [computedValue]);
 
     useEffect(() => {
+        let toolsUpdated =
+            parsedOption.hasOwnProperty('customSettings') &&
+            parsedOption['customSettings'].hasOwnProperty('toolsUpdated')
+                ? parsedOption['customSettings']['toolsUpdated']
+                : false;
         if (
             data.frame.name &&
             frameData.data.values.length > 0 &&
-            frameData.isLoading === false
+            frameData.isLoading === false &&
+            !toolsUpdated
         ) {
             updateJson(resultData, 'option');
         }
-    }, [parsedOption]);
+    }, [frameData.data.values]);
 
     //update frame values to the series data when frame values are changed
     const receiveValueswithCorrections = useCallback(
