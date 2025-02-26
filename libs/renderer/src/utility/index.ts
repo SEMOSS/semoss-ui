@@ -116,6 +116,30 @@ export const cancellablePromise = <R>(
 };
 
 /**
+ * Ignore the result of a promise
+ * @param executor - function that returns a promise
+ * @returns
+ */
+export const syncronousPromise = <R>(
+    executor: () => Promise<R>,
+): {
+    promise: Promise<R>;
+    cancel: () => void;
+} => {
+    return {
+        promise: new Promise<R>((resolve, reject) => {
+            try {
+                const response = executor();
+                return resolve(response);
+            } catch (err) {
+                return reject(err);
+            }
+        }),
+        cancel: () => {},
+    };
+};
+
+/**
  * Deep copy an object
  *
  * @param instance - instance of the object that we want to copy

@@ -1,7 +1,11 @@
 import { makeAutoObservable, runInAction, toJS } from "mobx";
 
 import { runPixel, download } from "@semoss/sdk";
-import { cancellablePromise, getValueByPath } from "../../utility";
+import {
+    cancellablePromise,
+    getValueByPath,
+    syncronousPromise,
+} from "../../utility";
 
 import {
     ActionMessages,
@@ -418,9 +422,9 @@ export class StateStore {
 
                 this.updateQuery(queryId, path, value);
             } else if (ActionMessages.RUN_QUERY === action.message) {
-                const { queryId } = action.payload;
+                const { queryId, detail } = action.payload;
 
-                this.runQuery(queryId);
+                return this.runQuery(queryId, detail);
             } else if (ActionMessages.NEW_CELL === action.message) {
                 const { queryId, cellId, config, previousCellId } =
                     action.payload;
@@ -441,7 +445,7 @@ export class StateStore {
             } else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
 
-                this.dispatchEvent(name, detail);
+                return this.dispatchEvent(name, detail);
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { id, alias } = action.payload;
 
@@ -1182,33 +1186,40 @@ export class StateStore {
      * Run a query
      * @param queryId - name of the query that we are running
      */
-    private runQuery = (queryId: string): void => {
+    private runQuery = (
+        queryId: string,
+        detail: Record<string, boolean> = { isSync: false },
+    ) => {
         const q = this._store.queries[queryId];
 
         const key = `query--${queryId};`;
 
         // cancel a previous command
-        this._utils.queryPromises[key]?.cancel();
+        if (this._utils.queryPromises[key] && detail?.isSync === false) {
+            this._utils.queryPromises[key].cancel();
+        }
 
         // setup the promise
-        const p = cancellablePromise(async () => {
-            // run the query
-            await q._run();
-
-            // turn it off
-            return true;
-        });
-
-        p.promise
-            .then(() => {
-                // noop
-            })
-            .catch((e) => {
-                console.error("ERROR:", e);
-            });
+        const p = detail?.isSync
+            ? syncronousPromise(async () => {
+                  await q._run(detail);
+                  return true;
+              })
+            : cancellablePromise(async () => {
+                  await q._run();
+                  return true;
+              });
 
         // save the promise
         this._utils.queryPromises[key] = p;
+
+        p.promise.catch((e) => {
+            console.error("ERROR:", e);
+        });
+
+        if (detail?.isSync) {
+            return p.promise;
+        }
     };
 
     /**

@@ -9,6 +9,7 @@ import {
     getPixelConsole,
     getPixelAsyncResult,
     runPixelAsync,
+    runPixel as RunPixel,
 } from "@semoss/sdk";
 
 export interface CellStateStoreInterface<D extends CellDef = CellDef> {
@@ -256,7 +257,10 @@ export class CellState<D extends CellDef = CellDef> {
      * Helper function to run a pixel
      * @param rawPixel - pixel to be formatted and run
      */
-    private async runPixel(rawPixel: string) {
+    private async runPixel(
+        rawPixel: string,
+        detail: Record<string, boolean> = { isSync: false },
+    ) {
         // Gets rid of braces and evaluate parameters in query
         // const filled = this._state.flattenVar(raw);
         const filled = this._state.flattenVariable(rawPixel);
@@ -265,48 +269,68 @@ export class CellState<D extends CellDef = CellDef> {
         this._store.messages = [];
         this._store.operation = [];
         this._store.output = undefined;
+        let finalResults = [];
 
-        // start polling
-        const { jobId } = await runPixelAsync(filled, this._state.insightId);
+        if (detail["isSync"] === true) {
+            //syncronous
+            const { errors, pixelReturn: results } = await RunPixel(
+                filled,
+                this._state.insightId,
+            );
+            finalResults = [...results];
 
-        // Set up polling in order to get full stdout
-        let isPolling = true;
-        while (isPolling) {
-            try {
-                // get the reponse from the job id
-                const data = await getPixelConsole(jobId);
+            if (errors.length > 0) {
+                throw new Error(errors.join(""));
+            }
+        } else {
+            // start polling
+            const { jobId } = await runPixelAsync(
+                filled,
+                this._state.insightId,
+            );
 
-                const { message: messages, status } = data;
+            // Set up polling in order to get full stdout
+            let isPolling = true;
+            while (isPolling) {
+                try {
+                    // get the reponse from the job id
+                    const { message, status } = await getPixelConsole(jobId);
 
-                // add the new messages
-                runInAction(() => {
-                    messages.forEach((mess) => {
-                        this._store.messages.push(mess);
+                    // add the new message
+                    runInAction(() => {
+                        message.forEach((mess) => {
+                            this._store.messages.push(mess);
+                        });
                     });
-                });
-                // Currently console does not get pass STREAMING
-                if (status === "Complete") {
-                    isPolling = false;
-                } else if (status === "Streaming") {
-                    isPolling = false;
-                } else {
-                    // poll
-                    await new Promise((resolve) => setTimeout(resolve, 2000));
-                }
-            } catch (error) {
-                console.error("Error during polling:", error.message);
 
-                // turn it off
-                isPolling = false;
+                    // Currently console does not get pass STREAMING
+                    if (status === "Complete") {
+                        isPolling = false;
+                    } else if (status === "Streaming") {
+                        isPolling = false;
+                    } else {
+                        // poll
+                        await new Promise((resolve) =>
+                            setTimeout(resolve, 2000),
+                        );
+                    }
+                } catch (error) {
+                    console.error("Error during polling:", error.message);
+
+                    // turn it off
+                    isPolling = false;
+                }
+            }
+
+            const { errors, results } = await getPixelAsyncResult(jobId);
+            finalResults = [...results];
+
+            if (errors.length > 0) {
+                throw new Error(errors.join(""));
             }
         }
 
-        const { errors, results } = await getPixelAsyncResult(jobId);
-        if (errors.length > 0) {
-            throw new Error(errors.join(""));
-        }
-
-        const last = results[results.length - 1];
+        const last = finalResults[finalResults.length - 1];
 
         // set the output per operation
         let output: unknown;
@@ -338,7 +362,7 @@ export class CellState<D extends CellDef = CellDef> {
     /**
      * Run the cell
      */
-    async _run() {
+    async _run(detail?: Record<string, boolean>) {
         const start = new Date();
 
         try {
@@ -355,7 +379,7 @@ export class CellState<D extends CellDef = CellDef> {
 
             // Determine if multiple pixels need to be ran.
             if (typeof raw === "string") {
-                const { opType, output } = await this.runPixel(raw);
+                const { opType, output } = await this.runPixel(raw, detail);
 
                 runInAction(() => {
                     // store the operation and output
@@ -370,7 +394,7 @@ export class CellState<D extends CellDef = CellDef> {
                 const outputs = [];
 
                 for (const str of raw) {
-                    const { opType, output } = await this.runPixel(str);
+                    const { opType, output } = await this.runPixel(str, detail);
                     opTypes = [...opTypes, ...opType];
                     outputs.push(output);
                 }

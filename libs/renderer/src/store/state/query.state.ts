@@ -241,7 +241,7 @@ export class QueryState {
     /**
      * Run the query
      */
-    _run = async () => {
+    _run = async (detail: Record<string, boolean> = { isSync: false }) => {
         try {
             // check the loading state
             if (this._store.isLoading) {
@@ -256,7 +256,7 @@ export class QueryState {
                 const cell = this._store.cells[s];
 
                 // run the cell
-                await cell._run();
+                await cell._run(detail);
             }
         } catch (e) {
             // if a cell errors out of the runPixel and causes a break/catch here,

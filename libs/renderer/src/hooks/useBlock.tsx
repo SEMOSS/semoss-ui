@@ -166,7 +166,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
          * @param actions - Actions to dispatch
          * @param intercept - Intercept and modify an action
          */
-        const dispatchAction = (
+        const dispatchAction = async (
             actions: ListenerActions[],
             intercept?: (action: ListenerActions) => ListenerActions | null,
         ) => {
@@ -176,7 +176,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
             }
 
             // go through each one and trigger it
-            actions.forEach((a) => {
+            for (const a of actions) {
                 // convert back to a normal action
                 let action: ListenerActions | null = a;
 
@@ -189,8 +189,8 @@ export const useBlock = <D extends BlockDef = BlockDef>(
                     return;
                 }
 
-                state.dispatch(action);
-            });
+                await state.dispatch(action);
+            }
         };
 
         // create the listeners

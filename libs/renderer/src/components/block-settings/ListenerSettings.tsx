@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { observer } from "mobx-react-lite";
 import { toJS } from "mobx";
 import {
@@ -25,6 +25,7 @@ import {
     useNotification,
     styled,
     Modal,
+    Checkbox,
 } from "@semoss/ui";
 
 import { useBlockSettings, useBlocks } from "../../hooks";
@@ -78,6 +79,16 @@ export const ListenerSettings = observer(
 
         const [actionIndex, setActionIndex] = useState(-1);
         const [openModal, setOpenModal] = useState(false);
+        const [isSyncOn, setIsSyncOn] = useState<boolean>(false);
+
+        useEffect(() => {
+            if (blockListeners.length && blockListeners[0]?.payload?.detail) {
+                let ele = blockListeners[0];
+                setIsSyncOn(ele.payload?.detail["isSync"] as boolean);
+            } else {
+                setIsSyncOn(false);
+            }
+        }, [id]);
 
         /**
          * Open the overlay to create a edit action
@@ -213,8 +224,26 @@ export const ListenerSettings = observer(
             );
         }, [blockListeners]);
 
+        const handleExcecutionTypeChange = () => {
+            let updated = [...blockListeners];
+            updated = updated.map((item) => {
+                item.payload["detail"] = {
+                    ...item.payload["detail"],
+                    isSync: Boolean(!isSyncOn),
+                };
+                return item;
+            });
+            setListener(listener, updated);
+            setIsSyncOn(!isSyncOn);
+        };
+
         return (
             <>
+                <Checkbox
+                    checked={isSyncOn}
+                    onChange={handleExcecutionTypeChange}
+                    label="Run notebooks synchronously"
+                />
                 <DndContext
                     collisionDetection={closestCenter}
                     onDragEnd={handleDragEnd}
@@ -327,6 +356,7 @@ export const ListenerSettings = observer(
                         id={id}
                         listener={listener}
                         actionIdx={actionIndex}
+                        isSyncOn={isSyncOn}
                         onClose={() => setOpenModal(false)}
                     />
                 </Modal>

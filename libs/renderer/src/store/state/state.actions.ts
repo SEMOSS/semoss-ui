@@ -174,6 +174,7 @@ export interface RunQueryAction extends Action {
     message: ActionMessages.RUN_QUERY;
     payload: {
         queryId: string;
+        detail?: Record<string, boolean>;
     };
 }
 
