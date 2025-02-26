@@ -49,7 +49,7 @@ export const PromptLibraryDialog = (props: {
             JSON.stringify(props.builder),
         );
         templateBuilder.title.value = templateBuilder.title.value ?? title;
-        templateBuilder.tags.value = tags;
+        // templateBuilder.tags.value = tags;
         templateBuilder.inputs.value = inputs;
         templateBuilder.inputTypes.value = inputTypes;
         try {

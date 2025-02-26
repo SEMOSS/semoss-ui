@@ -6,9 +6,16 @@
         "preinstall": "npx only-allow pnpm",
         "prepare": "husky install",
         "fix": "pnpm run --filter=@semoss/legacy --filter=@semoss/ui --filter=@semoss/client fix",
-        "dev": "npx nx run-many -t dev -p @semoss/ui @semoss/client @semoss/legacy",
+        
+        "dev": "npx nx run-many -t dev -p @semoss/ui @semoss/sdk @semoss/renderer @semoss/client @semoss/legacy",
         "dev:client": "nx run @semoss/client:dev",
         "dev:legacy": "nx run @semoss/legacy:dev",
+        "dev:example": "nx run @semoss/example:dev",
+
+        "nx:dep-graph": "nx dep-graph",
+        "nx:reset": "nx reset",
+        "nx:generate-react-lib": "echo \"TODO: create a nx generator for react rollup/webpack library\"",
+
         "build": "npx nx run-many -t build -p @semoss/client @semoss/legacy"
     },
     "author": "",

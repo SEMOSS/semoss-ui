@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled } from '@semoss/ui';
-import { useBlocks, useDesigner } from '@/hooks';
+import { useDesigner } from '@/hooks';
 
 import {
     getRelativeSize,
@@ -11,11 +11,15 @@ import {
     getNearestSlotElement,
 } from '@/stores';
 
+// TODO: FIX
 import { SelectedMask } from './SelectedMask';
 import { HoveredMask } from './HoveredMask';
 import { Placeholder } from './Placeholder';
 import { Ghost } from './Ghost';
 import { DeleteDuplicateMask } from './DeleteDuplicateMask';
+import { BlockSettingsMask } from './BlockSettingsMask';
+
+import { useBlocks } from '@semoss/renderer';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -260,6 +264,9 @@ export const Screen = observer((props: ScreenProps) => {
                     )}
                     {designer.selected && !designer.drag.active && (
                         <DeleteDuplicateMask screenEle={eleRef.current} />
+                    )}
+                    {designer.selected && !designer.drag.active && (
+                        <BlockSettingsMask screenEle={eleRef.current} />
                     )}
                 </>
             ) : null}

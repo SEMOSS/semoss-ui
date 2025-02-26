@@ -447,7 +447,7 @@ export const MetamodelView = (props: MetamodelViewProps) => {
                 message: output,
             });
         } else {
-            navigate(`/database/${output.database_id}`);
+            navigate(`/engine/database/${output.database_id}`);
             return;
         }
     };
