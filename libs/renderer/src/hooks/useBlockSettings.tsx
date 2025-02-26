@@ -117,7 +117,7 @@ export const useBlockSettings = <D extends BlockDef = BlockDef>(
                 },
             });
         },
-        [],
+        [id],
     );
 
     return {
