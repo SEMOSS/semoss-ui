@@ -36,7 +36,20 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         json: {
             widget: 'accordion',
             data: {
-                style: {},
+                style: {
+                    padding: '20px',
+                },
+                triggerBgColor: '',
+                contentBgColor: '',
+                showExpandIcon: false,
+                // -------------------------------------------
+                // John B:
+                // We may need to track styles differently.
+                // Can handle this in a migration function
+                // accordionStyles:
+                // accordionHeaderStyles:
+                // accordionContentStyles:
+                // -------------------------------------------
             },
             listeners: {},
             slots: {
