@@ -93,30 +93,32 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
                 appId = pixelReturn[0].output.project_id;
 
-                // after the project is created run SetProjectMeta to pass metadata
-                const setProjectMetadataResponse = await monolithStore.runQuery(
-                    `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
-                        {
-                            tag: data['APP_TAGS'],
-                            description: data['APP_DESCRIPTION'],
-                        },
-                    )}])`,
-                );
+                // after the project is created check for metadata. If true, run SetProjectMeta
+                if (data['APP_TAGS'].length || data['APP_DESCRIPTION']) {
+                    const setProjectMetadataResponse =
+                        await monolithStore.runQuery(
+                            `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
+                                {
+                                    tag: data['APP_TAGS'],
+                                    description: data['APP_DESCRIPTION'],
+                                },
+                            )}])`,
+                        );
 
-                let output = undefined;
-                let operationType = undefined;
+                    const output =
+                        setProjectMetadataResponse.pixelReturn[0].output;
+                    const operationType =
+                        setProjectMetadataResponse.pixelReturn[0]
+                            .operationType[0];
 
-                output = setProjectMetadataResponse.pixelReturn[0].output;
-                operationType =
-                    setProjectMetadataResponse.pixelReturn[0].operationType[0];
+                    if (operationType.indexOf('ERROR') > -1) {
+                        notification.add({
+                            color: 'error',
+                            message: output,
+                        });
 
-                if (operationType.indexOf('ERROR') > -1) {
-                    notification.add({
-                        color: 'error',
-                        message: output,
-                    });
-
-                    return;
+                        return;
+                    }
                 }
             } else if (type === 'code') {
                 // create the pixel
@@ -172,25 +174,28 @@ export const NewAppModal = (props: NewAppModalProps) => {
                     });
                 }
 
-                // after the project is created run SetProjectMeta to pass metadata
-                const setProjectMetadataResponse = await monolithStore.runQuery(
-                    `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
-                        {
-                            tag: data['APP_TAGS'],
-                            description: data['APP_DESCRIPTION'],
-                        },
-                    )}])`,
-                );
+                // after the project is created check for metadata. If true, run SetProjectMeta
+                if (data['APP_TAGS'].length || data['APP_DESCRIPTION']) {
+                    const setProjectMetadataResponse =
+                        await monolithStore.runQuery(
+                            `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
+                                {
+                                    tag: data['APP_TAGS'],
+                                    description: data['APP_DESCRIPTION'],
+                                },
+                            )}])`,
+                        );
 
-                output = setProjectMetadataResponse.pixelReturn[0].output;
-                operationType =
-                    setProjectMetadataResponse.pixelReturn[0].operationType;
+                    output = setProjectMetadataResponse.pixelReturn[0].output;
+                    operationType =
+                        setProjectMetadataResponse.pixelReturn[0].operationType;
 
-                if (operationType.indexOf('ERROR') > -1) {
-                    notification.add({
-                        color: 'error',
-                        message: output,
-                    });
+                    if (operationType.indexOf('ERROR') > -1) {
+                        notification.add({
+                            color: 'error',
+                            message: output,
+                        });
+                    }
                 }
             } else {
                 return;
