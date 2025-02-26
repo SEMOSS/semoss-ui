@@ -95,29 +95,8 @@ export const VisualizationBlock: BlockComponent = observer(
                 data.style.height.toString().endsWith('px') &&
                 data.style.width.toString().endsWith('px');
             if (isEm || isPx) return { ...data.style }; //if values mentioned in em or px, then return same style
-            //if any of style is different from % then, take that value and convert % value to px equivalent
-            let calculatedHeight =
-                data.style.height.toString().endsWith('em') ||
-                data.style.height.toString().endsWith('px')
-                    ? data.style.height
-                    : BAR_CHART_DATA.HEIGHT;
+            let calculatedHeight = data.style.height;
             let calculatedWidth = data.style.width;
-            if (data.style.height.toString().endsWith('%')) {
-                let heightGivenInPercent = parseInt(
-                    data.style.height.toString().replace('%', ''),
-                );
-                let height = parseInt(
-                    data.style.height.toString().replace('%', ''),
-                );
-                calculatedHeight =
-                    (calculatedHeight * heightGivenInPercent) / 100;
-                //return updated style
-                return {
-                    ...data.style,
-                    height: calculatedHeight + 'px',
-                    width: calculatedWidth,
-                };
-            }
             //return updated style
             return {
                 ...data.style,

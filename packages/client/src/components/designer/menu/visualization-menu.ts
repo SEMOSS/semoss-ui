@@ -1067,7 +1067,6 @@ export const VISUALIZATION_MENU_INITIAL: DesignerMenuItem[] = [
                         '#9a60b4',
                         '#ea7ccc',
                     ],
-                    colorPalatteNotClicked: true,
                     toolbox: {
                         feature: {
                             brush: {

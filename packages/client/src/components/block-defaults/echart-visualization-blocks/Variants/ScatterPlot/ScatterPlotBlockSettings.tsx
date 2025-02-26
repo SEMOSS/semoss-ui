@@ -264,8 +264,6 @@ export const ScatterPlotBlockSettings = observer(
                 color: colors,
                 colorDataType: colorDataType,
             };
-            tempValue.colorPalatteNotClicked = true;
-
             // Update the color value in the state
             setColor(colors);
 

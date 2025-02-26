@@ -782,16 +782,7 @@ export const ColorPalatteSettings = observer(
                 timeoutRef.current = null;
             }
             let options = JSON.parse(option);
-            const updatedData = options.series[0].data.map((item) => {
-                if (item.itemStyle) {
-                    const { color, ...restItemStyle } = item.itemStyle;
-                    return { ...item, itemStyle: restItemStyle };
-                }
-                return item;
-            });
-            options.series[0].data = updatedData;
             options.color = colors;
-            options.colorPalatteNotClicked = false;
 
             // Set a new timeout to update state with a delay
             timeoutRef.current = setTimeout(() => {
