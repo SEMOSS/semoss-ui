@@ -533,15 +533,15 @@ export const ColorPalatteSettings = observer<ColorPalatteSettingProps>(
                     ? colorPalette[0]
                     : colorPalette.find((item) => item.label === label);
             // Update the state with the new color palette data
-            if (Data.variation == 'echart-scatter-plots') {
-                runStateUpdate(
-                    optionComputedValue,
-                    optionPathVal,
-                    colors.colors,
-                );
-            } else {
-                runStateUpdateCustom(colors.colors, pathVal);
-            }
+            // if (Data.variation == 'echart-scatter-plots') {
+            //     runStateUpdate(
+            //         optionComputedValue,
+            //         optionPathVal,
+            //         colors.colors,
+            //     );
+            // } else {
+            runStateUpdateCustom(colors.colors, pathVal);
+            // }
         }
         /**
          * Handles the click event for the edit palette button.

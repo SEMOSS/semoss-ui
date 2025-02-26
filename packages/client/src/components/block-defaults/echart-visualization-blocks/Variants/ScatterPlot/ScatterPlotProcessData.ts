@@ -8,7 +8,6 @@ export const processData = (apiData, data) => {
         size = '',
         color = '',
         tooltip = '';
-    let colorPalatteNotClicked = true;
     if (data.option.hasOwnProperty('_state')) {
         fields = data.option['_state']['fields'];
         label = fields['label'];
@@ -17,7 +16,6 @@ export const processData = (apiData, data) => {
         size = fields['size'];
         color = fields['color'];
         tooltip = fields['tooltip'];
-        colorPalatteNotClicked = data.option['colorPalatteNotClicked'];
     }
     const formatItem = (label, xAxis, yAxis) => ({
         value: [xAxis, yAxis], // x and y values
@@ -26,40 +24,85 @@ export const processData = (apiData, data) => {
         },
     });
 
-    const formatDataItem = (label, xAxis, yAxis, size, color, tooltip) => ({
-        value: [xAxis, yAxis], // x and y values
-        label: {
-            formatter: label.toString(), // Use array[0] as the label
-        },
-        symbolSize: size, // Individual symbol size
-        itemStyle: {
-            color: colorPalatteNotClicked ? newColor(data, color) : undefined, //Individual color
-            colorValue: color,
-        },
-        tooltipValue: tooltip, //tooltip value
-    });
-    const formatData = (label, xAxis, yAxis, size, color) => ({
-        value: [xAxis, yAxis], // x and y values
-        label: {
-            formatter: label.toString(), // Use array[0] as the label
-        },
-        symbolSize: size, // Individual symbol size
-        itemStyle: {
-            color: colorPalatteNotClicked ? newColor(data, color) : undefined, //Individual color
-            colorValue: color,
-        },
-    });
-    const formatItemData = (label, xAxis, yAxis, color, tooltip) => ({
-        value: [xAxis, yAxis], // x and y values
-        label: {
-            formatter: label.toString(), // Use array[0] as the label
-        },
-        itemStyle: {
-            color: colorPalatteNotClicked ? newColor(data, color) : undefined, //Individual color
-            colorValue: color,
-        },
-        tooltipValue: tooltip, //tooltip value
-    });
+    const formatDataItem = (
+        label,
+        xAxis,
+        yAxis,
+        size,
+        color,
+        tooltip,
+        colorMap = null,
+    ) => {
+        if (!colorMap.has(color)) {
+            colorMap.set(
+                color,
+                data.option['color'][
+                    colorMap.size % data.option['color']?.length
+                ],
+            );
+        }
+        return {
+            value: [xAxis, yAxis], // x and y values
+            label: {
+                formatter: label.toString(), // Use array[0] as the label
+            },
+            symbolSize: size, // Individual symbol size
+            itemStyle: {
+                color: colorMap.get(color),
+                colorValue: color,
+            },
+            tooltipValue: tooltip, //tooltip value
+        };
+    };
+    const formatData = (label, xAxis, yAxis, size, color, colorMap = null) => {
+        if (!colorMap.has(color)) {
+            colorMap.set(
+                color,
+                data.option['color'][
+                    colorMap.size % data.option['color']?.length
+                ],
+            );
+        }
+        return {
+            value: [xAxis, yAxis], // x and y values
+            label: {
+                formatter: label.toString(), // Use array[0] as the label
+            },
+            symbolSize: size, // Individual symbol size
+            itemStyle: {
+                color: colorMap.get(color),
+                colorValue: color,
+            },
+        };
+    };
+    const formatItemData = (
+        label,
+        xAxis,
+        yAxis,
+        color,
+        tooltip,
+        colorMap = null,
+    ) => {
+        if (!colorMap.has(color)) {
+            colorMap.set(
+                color,
+                data.option['color'][
+                    colorMap.size % data.option['color']?.length
+                ],
+            );
+        }
+        return {
+            value: [xAxis, yAxis], // x and y values
+            label: {
+                formatter: label.toString(), // Use array[0] as the label
+            },
+            itemStyle: {
+                color: colorMap.get(color),
+                colorValue: color,
+            },
+            tooltipValue: tooltip, //tooltip value
+        };
+    };
     const formatItems = (label, xAxis, yAxis, size, tooltip) => ({
         value: [xAxis, yAxis], // x and y values
         label: {
@@ -68,17 +111,32 @@ export const processData = (apiData, data) => {
         symbolSize: size, // Individual symbol size
         tooltipValue: tooltip, //tooltip value
     });
-    const formatColorDataItem = (label, xAxis, yAxis, color) => ({
-        value: [xAxis, yAxis], // x and y values
-        label: {
-            formatter: label.toString(), // Use array[0] as the label
-        },
-        itemStyle: {
-            color: colorPalatteNotClicked ? newColor(data, color) : undefined, //Individual color
-            colorValue: color,
-        },
-    });
-    //const convertedColors = apiData.values.map((item) => newColor(data, item[1]));
+    const formatColorDataItem = (
+        label,
+        xAxis,
+        yAxis,
+        color,
+        colorMap = null,
+    ) => {
+        if (!colorMap.has(color)) {
+            colorMap.set(
+                color,
+                data.option['color'][
+                    colorMap.size % data.option['color']?.length
+                ],
+            );
+        }
+        return {
+            value: [xAxis, yAxis], // x and y values
+            label: {
+                formatter: label.toString(),
+            },
+            itemStyle: {
+                color: colorMap.get(color),
+                colorValue: color,
+            },
+        };
+    };
     const formatSizeDataItem = (label, xAxis, yAxis, size) => ({
         value: [xAxis, yAxis], // x and y values
         label: {
@@ -98,6 +156,7 @@ export const processData = (apiData, data) => {
         if (data.option.hasOwnProperty('_state')) {
             if (data.option['_state'].hasOwnProperty('fields')) {
                 if (label && xAxis && yAxis && size && color && tooltip) {
+                    const colorMap = new Map();
                     if (
                         xAxis === yAxis &&
                         xAxis === size &&
@@ -112,6 +171,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[1],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -129,6 +189,7 @@ export const processData = (apiData, data) => {
                                 item[0],
                                 item[0],
                                 item[0],
+                                colorMap,
                             ),
                         }));
                     }
@@ -146,6 +207,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[0],
                                 item[0],
+                                colorMap,
                             ),
                         }));
                     }
@@ -163,6 +225,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[0],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -180,6 +243,7 @@ export const processData = (apiData, data) => {
                                 item[0],
                                 item[1],
                                 item[0],
+                                colorMap,
                             ),
                         }));
                     }
@@ -197,6 +261,7 @@ export const processData = (apiData, data) => {
                                 item[0],
                                 item[0],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -209,6 +274,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[2],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -221,6 +287,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[0],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -233,6 +300,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[1],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -245,6 +313,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[2],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -261,6 +330,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[1],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -277,6 +347,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[2],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -293,6 +364,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[1],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -309,6 +381,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[2],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -325,6 +398,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[1],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -341,6 +415,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[2],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -357,6 +432,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[1],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -373,6 +449,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[2],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -389,6 +466,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[0],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -405,6 +483,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[0],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -421,6 +500,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[0],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -437,6 +517,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[0],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -449,6 +530,7 @@ export const processData = (apiData, data) => {
                                 item[0],
                                 item[2],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -461,6 +543,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[2],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -473,6 +556,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[0],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -485,6 +569,7 @@ export const processData = (apiData, data) => {
                                 item[0],
                                 item[0],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -497,6 +582,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[0],
                                 item[0],
+                                colorMap,
                             ),
                         }));
                     }
@@ -509,6 +595,7 @@ export const processData = (apiData, data) => {
                                 item[0],
                                 item[2],
                                 item[0],
+                                colorMap,
                             ),
                         }));
                     }
@@ -521,6 +608,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[1],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -533,6 +621,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[2],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -545,6 +634,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[1],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -557,6 +647,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[0],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -569,6 +660,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[3],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -581,6 +673,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[3],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -593,6 +686,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[3],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -605,6 +699,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[3],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -617,6 +712,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[1],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -629,6 +725,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[2],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -641,6 +738,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[2],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -653,6 +751,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[1],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -665,6 +764,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[2],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -677,6 +777,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[3],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -689,6 +790,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[3],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -701,6 +803,7 @@ export const processData = (apiData, data) => {
                                 item[0],
                                 item[2],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -713,6 +816,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[0],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -725,6 +829,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[3],
                                 item[0],
+                                colorMap,
                             ),
                         }));
                     }
@@ -737,6 +842,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[0],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -749,6 +855,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[0],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -761,6 +868,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[0],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -773,6 +881,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[0],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -785,6 +894,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[1],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -797,6 +907,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[2],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -809,6 +920,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[3],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -821,6 +933,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[3],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -833,6 +946,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[1],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -845,6 +959,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[2],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -857,6 +972,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[2],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -869,6 +985,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[1],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -881,6 +998,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[3],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -893,6 +1011,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[3],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -905,6 +1024,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[1],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -917,6 +1037,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[2],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -929,6 +1050,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[0],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -941,6 +1063,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[3],
                                 item[4],
+                                colorMap,
                             ),
                         }));
                     }
@@ -953,6 +1076,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[0],
                                 item[4],
+                                colorMap,
                             ),
                         }));
                     }
@@ -965,6 +1089,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[4],
                                 item[5],
+                                colorMap,
                             ),
                         }));
                     }
@@ -977,6 +1102,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[4],
                                 item[5],
+                                colorMap,
                             ),
                         }));
                     }
@@ -989,6 +1115,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[3],
                                 item[4],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1001,6 +1128,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[1],
                                 item[4],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1013,6 +1141,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[4],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1025,6 +1154,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[3],
                                 item[4],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1037,6 +1167,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[2],
                                 item[4],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1049,6 +1180,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[4],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1061,6 +1193,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[3],
                                 item[4],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1073,6 +1206,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[4],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1085,6 +1219,7 @@ export const processData = (apiData, data) => {
                                 item[3],
                                 item[4],
                                 item[4],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1096,10 +1231,12 @@ export const processData = (apiData, data) => {
                             item[3],
                             item[4],
                             item[5],
+                            colorMap,
                         ),
                     }));
                 }
                 if (label && xAxis && yAxis && size && color) {
+                    const colorMap = new Map();
                     if (xAxis == yAxis && xAxis == size && label == color) {
                         return apiData.values.map((item) => ({
                             ...formatData(
@@ -1108,6 +1245,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[1],
                                 item[0],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1119,6 +1257,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[1],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1130,6 +1269,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[2],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1141,6 +1281,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[2],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1152,6 +1293,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[2],
                                 item[0],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1163,6 +1305,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[1],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1174,6 +1317,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[1],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1185,6 +1329,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[2],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1196,6 +1341,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[1],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1207,6 +1353,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[2],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1218,6 +1365,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[1],
                                 item[0],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1229,6 +1377,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[2],
                                 item[0],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1240,6 +1389,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[2],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1251,6 +1401,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[3],
                                 item[0],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1262,6 +1413,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[3],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1273,6 +1425,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[1],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1284,6 +1437,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[2],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1295,6 +1449,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[3],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1306,6 +1461,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[3],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1316,10 +1472,12 @@ export const processData = (apiData, data) => {
                             item[2],
                             item[3],
                             item[4],
+                            colorMap,
                         ),
                     }));
                 }
                 if (label && xAxis && yAxis && color && tooltip) {
+                    const colorMap = new Map();
                     if (xAxis == yAxis && xAxis == tooltip && label == color) {
                         return apiData.values.map((item) => ({
                             ...formatItemData(
@@ -1328,6 +1486,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[0],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1339,6 +1498,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[1],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1350,6 +1510,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[1],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1361,6 +1522,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[0],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1372,6 +1534,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[2],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1383,6 +1546,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[1],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1394,6 +1558,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[2],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1405,6 +1570,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[1],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1416,6 +1582,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[2],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1427,6 +1594,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[0],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1438,6 +1606,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[0],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1449,6 +1618,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[2],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1460,6 +1630,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[0],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1471,6 +1642,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[3],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1482,6 +1654,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[1],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1493,6 +1666,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[2],
                                 item[3],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1504,6 +1678,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[3],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1515,6 +1690,7 @@ export const processData = (apiData, data) => {
                                 item[2],
                                 item[3],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1525,6 +1701,7 @@ export const processData = (apiData, data) => {
                             item[2],
                             item[3],
                             item[4],
+                            colorMap,
                         ),
                     }));
                 }
@@ -1694,6 +1871,7 @@ export const processData = (apiData, data) => {
                     }));
                 }
                 if (label && xAxis && yAxis && color) {
+                    const colorMap = new Map();
                     if (xAxis === yAxis && xAxis === color) {
                         return apiData.values.map((item) => ({
                             ...formatColorDataItem(
@@ -1701,6 +1879,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[1],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1711,6 +1890,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[1],
                                 item[0],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1721,6 +1901,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[1],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1731,6 +1912,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[2],
                                 item[1],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1741,6 +1923,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[2],
                                 item[2],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1751,6 +1934,7 @@ export const processData = (apiData, data) => {
                                 item[1],
                                 item[2],
                                 item[0],
+                                colorMap,
                             ),
                         }));
                     }
@@ -1760,6 +1944,7 @@ export const processData = (apiData, data) => {
                             item[1],
                             item[2],
                             item[3],
+                            colorMap,
                         ),
                     }));
                 }

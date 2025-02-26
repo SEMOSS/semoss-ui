@@ -370,6 +370,7 @@ export const ScatterPlotBlockSettings = observer(
                     const newFields = { ...tempValue };
                     delete newFields['_state']['fields'].label;
                     delete newFields['_state']['fields'].labelDataType;
+                    newFields['series'][0]['data'] = [];
                     // Convert the updated value back to a JSON string
                     setValue(JSON.stringify(newFields));
                     // Update the data with the new option
@@ -382,6 +383,7 @@ export const ScatterPlotBlockSettings = observer(
                     const newXAxisFields = { ...tempValue };
                     delete newXAxisFields['_state']['fields'].XAxis;
                     delete newXAxisFields['_state']['fields'].XAxisDataType;
+                    newXAxisFields['series'][0]['data'] = [];
                     newXAxisFields['xAxis']['pixelName'] = ''; // Reset the X-axis pixel name
                     newXAxisFields['xAxis']['name'] = ''; // Reset the X-axis name
                     // Convert the updated value back to a JSON string
@@ -394,8 +396,10 @@ export const ScatterPlotBlockSettings = observer(
                     setYAxisValue('');
                     // Remove the Y-axis field from the option object
                     const newYAxisFields = { ...tempValue };
+                    console.log(newYAxisFields, 'newYAxisFields');
                     delete newYAxisFields['_state']['fields'].YAxis;
                     delete newYAxisFields['_state']['fields'].YAxisDataType;
+                    newYAxisFields['series'][0]['data'] = []; // Reset the Y-axis pixel name
                     newYAxisFields['yAxis']['pixelName'] = ''; // Reset the Y-axis pixel name
                     newYAxisFields['yAxis']['name'] = ''; // Reset the Y-axis name
                     // Convert the updated value back to a JSON string

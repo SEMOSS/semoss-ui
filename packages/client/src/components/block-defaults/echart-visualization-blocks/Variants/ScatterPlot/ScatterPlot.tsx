@@ -87,6 +87,7 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
     const onClickChart = {
         contextmenu: (params) => {
             if (params.data) {
+                console.log(data, 'data');
                 let labelName = data.option['series'][0]['label']['name'];
                 setContextMenu(
                     contextMenu === null
@@ -152,19 +153,31 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
             );
         }
     } else {
-        let processedFrameData = processData(frame.data, data);
-        if (processedFrameData && processedFrameData.length > 0) {
-            data.option['series'][0]['data'] = processedFrameData;
-        }
-        if (frame.data.values.length > 0) {
-            if (
-                !data.option['tooltip'].hasOwnProperty('formatter') ||
-                data.option['tooltip']['formatter'] === ''
-            ) {
-                data.option['tooltip'] = {
-                    ...data.option['tooltip'],
-                    formatter: formatdatapoints(frame.data, data),
-                };
+        if (data.option.hasOwnProperty('_state')) {
+            if (data.option['_state'].hasOwnProperty('fields')) {
+                if (
+                    data.option['_state']['fields'].hasOwnProperty('label') &&
+                    data.option['_state']['fields'].hasOwnProperty('XAxis') &&
+                    data.option['_state']['fields'].hasOwnProperty('YAxis')
+                ) {
+                    let processedFrameData = processData(frame.data, data);
+                    if (processedFrameData && processedFrameData.length > 0) {
+                        data.option['series'][0]['data'] = processedFrameData;
+                    }
+                    if (frame.data.values.length > 0) {
+                        if (
+                            !data.option['tooltip'].hasOwnProperty(
+                                'formatter',
+                            ) ||
+                            data.option['tooltip']['formatter'] === ''
+                        ) {
+                            data.option['tooltip'] = {
+                                ...data.option['tooltip'],
+                                formatter: formatdatapoints(frame.data, data),
+                            };
+                        }
+                    }
+                }
             }
         }
         return (

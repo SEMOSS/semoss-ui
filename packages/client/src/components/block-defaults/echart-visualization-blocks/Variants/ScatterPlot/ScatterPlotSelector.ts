@@ -498,7 +498,9 @@ export const getSelector = (data) => {
                     }
                     return (selector = `Select(${labelName},${selectors.xAxis}(${xAxisName}),${selectors.yAxis}(${yAxisName})).as([${labelName}, ${xAxisName},${yAxisName}])|Group(${labelName})`);
                 }
+                return '';
             }
+            return '';
         }
         return '';
     }
