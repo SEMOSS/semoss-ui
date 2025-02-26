@@ -112,7 +112,6 @@ const ColourByValue = observer(
                     let xAxisPosition = getXAxisPositions(appliedItem);
                     //take all the series indexes to update the data
                     let filteredSeriesIndex = getFilteredSeriesIndex();
-                    console.log('xAxisposition', xAxisPosition);
                     if (xAxisPosition.length) {
                         filteredSeriesIndex.forEach((item, index) => {
                             let seriesIndexData = item;
@@ -179,6 +178,7 @@ const ColourByValue = observer(
                 option['customSettings'] = {
                     ...option['customSettings'],
                     ['appliedColourByValue']: appliedRules,
+                    ['toolsUpdated']: true,
                 };
                 optionUpdated = option;
                 runStateUpdateCustom(optionUpdated);
@@ -251,18 +251,9 @@ const ColourByValue = observer(
                                     : item;
                             }),
                         );
-                        console.log(
-                            'valuestocolour',
-                            option['xAxis']['data'].map((item) => {
-                                return item.hasOwnProperty('value')
-                                    ? item.value
-                                    : item;
-                            }),
-                        );
                         let dataArray = option['xAxis']['data'].map(
                             convertSeriesDataToValue,
                         );
-                        console.log('dataArray in xaxis', dataArray);
                         setNewRules((prevValues) => {
                             return {
                                 ...prevValues,
@@ -282,14 +273,9 @@ const ColourByValue = observer(
                             setValuesToColour(
                                 option['series'][seriesIndex]['data'],
                             );
-                            console.log(
-                                'valuestocolour',
-                                option['series'][seriesIndex]['data'],
-                            );
                             let dataArray = option['series'][seriesIndex][
                                 'data'
                             ].map(convertSeriesDataToValue);
-                            console.log('dataArray in series', dataArray);
                             setNewRules((prevValues) => {
                                 return {
                                     ...prevValues,

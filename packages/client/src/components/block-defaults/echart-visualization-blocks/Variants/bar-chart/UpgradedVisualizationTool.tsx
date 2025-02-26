@@ -35,6 +35,7 @@ import { ScatterPlotSymbol } from '../ScatterPlot/ScatterPlotSymbol';
 import { ScatterPlotChartTitle } from '../ScatterPlot/ScatterPlotChartTitle';
 import { ColorPickerSettings } from '@/components/block-settings/shared/ColorPickerSettings';
 import { EditXAxisScatterPlot } from '../ScatterPlot/EditXAxisScatterPlot';
+import { updateSeriesColor } from '../shared/chart-utility';
 
 interface UpgradedVisualizationToolProps {
     id: string;
@@ -86,7 +87,21 @@ export const UpgradedVisualizationTool =
                         <ColorPalatteSettings
                             id={id}
                             path="option.color"
-                            onColorPalatteSelected={(option, color) => {}}
+                            onColorPalatteSelected={(option, color) => {
+                                if (data.variation === 'echart-bar-graph') {
+                                    let optionToSend =
+                                        typeof option === 'string'
+                                            ? JSON.parse(option)
+                                            : option;
+                                    let colorParent = 'itemStyle';
+                                    let updatedOption = updateSeriesColor(
+                                        optionToSend,
+                                        color,
+                                        colorParent,
+                                    );
+                                    setData('option', updatedOption);
+                                }
+                            }}
                         />
                     )}
                     <StyledListItem disablePadding>

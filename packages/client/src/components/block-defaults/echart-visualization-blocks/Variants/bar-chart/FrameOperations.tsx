@@ -262,7 +262,7 @@ export const FrameOperations = observer(
                 if (columns['yaxis'].length) {
                     tempVal['yAxis'] = {
                         ...tempVal['yAxis'],
-                        ['name']: columns['yaxis'][0]?.name,
+                        ['name']: columns['yaxis'][0]?.name || pixelName[0],
                         ['pixelname']: pixelName,
                         ['pixelvalue']: pixelValue,
                     };
@@ -276,12 +276,17 @@ export const FrameOperations = observer(
                         barWidth: 5,
                         ['itemStyle']: {
                             ['color']:
-                                tempVal['series'][i]?.['itemStyle']?.[
-                                    'color'
-                                ] ?? COLOUR_PALATTE_DATA[i],
+                                tempVal['color'][i] ?? COLOUR_PALATTE_DATA[i],
                         },
                     };
                 }
+                tempVal = {
+                    ...tempVal,
+                    ['customSettings']: {
+                        ...tempVal['customSettings'],
+                        ['toolsUpdated']: false,
+                    },
+                };
                 dispatchData(tempVal);
                 setData('columns', columnsmerged);
             }

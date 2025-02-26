@@ -270,6 +270,13 @@ export const EditYAxis = observer(
                         };
                     }
                 }
+                option = {
+                    ...option,
+                    ['customSettings']: {
+                        ...option['customSettings'],
+                        ['toolsUpdated']: true,
+                    },
+                };
                 optionUpdated = option;
                 runStateUpdateCustom(optionUpdated);
             }

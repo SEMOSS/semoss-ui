@@ -120,38 +120,41 @@ export const CustomizeValueLabels = observer(
                 let fieldsDataToUpdate = seriesData.map((seriesChartData) => {
                     if (
                         option['series'][seriesChartData]['label'] === undefined
-                    )
+                    ) {
                         return {
                             ...DEFAULT_VALUE_LABELS,
                             seriesIndex: seriesChartData,
                         };
-                    return {
-                        show:
-                            option['series'][seriesChartData]['label'].show ??
-                            false,
-                        position:
-                            option['series'][seriesChartData]['label']
-                                .position ?? undefined,
-                        rotate:
-                            option['series'][seriesChartData]['label'].rotate ??
-                            '',
-                        alignment:
-                            option['series'][seriesChartData]['label'].align ??
-                            '',
-                        font:
-                            option['series'][seriesChartData]['label']
-                                .fontFamily ?? '',
-                        fontsize:
-                            option['series'][seriesChartData]['label']
-                                .fontSize ?? '',
-                        fontweight:
-                            option['series'][seriesChartData]['label']
-                                .fontWeight ?? '',
-                        fontcolour:
-                            option['series'][seriesChartData]['label'].color ??
-                            '',
-                        seriesIndex: seriesChartData,
-                    };
+                    } else {
+                        return {
+                            show:
+                                option['series'][seriesChartData]['label']
+                                    .show ?? false,
+                            position:
+                                option['series'][seriesChartData]['label']
+                                    .position ?? DEFAULT_VALUE_LABELS.position,
+                            rotate:
+                                option['series'][seriesChartData]['label']
+                                    .rotate ?? DEFAULT_VALUE_LABELS.rotate,
+                            alignment:
+                                option['series'][seriesChartData]['label']
+                                    .align ?? DEFAULT_VALUE_LABELS.alignment,
+                            font:
+                                option['series'][seriesChartData]['label']
+                                    .fontFamily ?? DEFAULT_VALUE_LABELS.font,
+                            fontsize:
+                                option['series'][seriesChartData]['label']
+                                    .fontSize ?? DEFAULT_VALUE_LABELS.fontsize,
+                            fontweight:
+                                option['series'][seriesChartData]['label']
+                                    .fontWeight ??
+                                DEFAULT_VALUE_LABELS.fontweight,
+                            fontcolour:
+                                option['series'][seriesChartData]['label']
+                                    .color ?? DEFAULT_VALUE_LABELS.fontcolour,
+                            seriesIndex: seriesChartData,
+                        };
+                    }
                 });
                 setFieldData((prevFieldsData) => {
                     return fieldsDataToUpdate;
@@ -387,6 +390,12 @@ export const CustomizeValueLabels = observer(
                     }
                 }
             });
+            option = {
+                ...option,
+                ['customSettings']: {
+                    ['toolsUpdated']: true,
+                },
+            };
             optionUpdated = option;
             runStateUpdateCustom(optionUpdated);
         }

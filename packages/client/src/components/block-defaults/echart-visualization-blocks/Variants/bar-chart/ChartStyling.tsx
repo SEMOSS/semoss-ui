@@ -215,6 +215,13 @@ export const ChartStyling = observer(
                         },
                     };
                 }
+                option = {
+                    ...option,
+                    ['customSettings']: {
+                        ...option['customSettings'],
+                        ['toolsUpdated']: true,
+                    },
+                };
                 optionUpdated = option;
                 runStateUpdate(optionUpdated);
             }

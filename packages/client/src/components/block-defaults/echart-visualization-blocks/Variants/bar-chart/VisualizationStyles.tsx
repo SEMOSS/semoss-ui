@@ -198,6 +198,13 @@ export const VisualizationStyles = observer(
                     }
                 }
             });
+            option = {
+                ...option,
+                ['çustomSettings']: {
+                    ...option['çustomSettings'],
+                    ['toolsUpdated']: true,
+                },
+            };
             runStateUpdateCustom(option);
         }
         //this function will update chart json to new option value
