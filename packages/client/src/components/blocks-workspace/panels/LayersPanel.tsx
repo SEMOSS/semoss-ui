@@ -1,6 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Actions, DockLocation, TabNode } from 'flexlayout-react';
+import { CSS } from '@dnd-kit/utilities';
+import { restrictToFirstScrollableAncestor } from '@dnd-kit/modifiers';
+import {
+    DndContext,
+    useDraggable,
+    useDroppable,
+    MouseSensor,
+    TouchSensor,
+    useSensor,
+    useSensors,
+    UniqueIdentifier,
+    DragStartEvent,
+    closestCenter,
+} from '@dnd-kit/core';
 import {
     Add,
     ChevronRight,
@@ -29,20 +43,6 @@ import {
 import { AddVariableModal } from '@/components/notebook';
 import { useDesigner, useWorkspace } from '@/hooks';
 import { Panel } from '@/components/workspace';
-import {
-    DndContext,
-    useDraggable,
-    useDroppable,
-    MouseSensor,
-    TouchSensor,
-    useSensor,
-    useSensors,
-    UniqueIdentifier,
-    DragStartEvent,
-    closestCenter,
-} from '@dnd-kit/core';
-import { restrictToFirstScrollableAncestor } from '@dnd-kit/modifiers';
-import { CSS } from '@dnd-kit/utilities';
 
 const customCollisionDetection = (args) => {
     const collisions = closestCenter(args);
