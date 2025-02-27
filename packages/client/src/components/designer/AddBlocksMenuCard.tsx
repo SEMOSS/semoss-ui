@@ -1,22 +1,26 @@
 import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled, Card, Tooltip } from '@semoss/ui';
 
-import { ActionMessages } from '@/stores';
-import { useBlocks, useDesigner } from '@/hooks';
-import { THEME } from '@/constants';
+import { ActionMessages, useBlocks } from '@semoss/renderer';
+import { styled, Card, Tooltip, Stack, Typography } from '@semoss/ui';
 
-import { DesignerMenuItem } from './menu';
+import { useDesigner } from '@/hooks';
+import { DesignerMenuItem } from '../blocks-workspace/menus/menu-types';
+import { BlockCardContent, blockCardWidth } from './BlockMenuCardContent';
+import * as BLOCK_IMAGES from '@/assets/blocks';
 
-const StyledCard = styled(Card)(({ theme }) => ({
-    height: '100%',
-    width: '100%',
-    padding: theme.spacing(2),
+const StyledCard = styled(Card)({
     cursor: 'grab',
-    border: `1px solid rgba(0, 0, 0, 0.23)`,
+    border: `1px solid rgba(0, 0, 0, 0.12)`,
     //TODO: styled needs to be updated to match the theme
-    borderRadius: '12px', //  theme.shape.borderRadiusLg
+    borderRadius: '6px',
     justifyContent: 'center',
+});
+
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    color: theme.palette.secondary.dark,
+    width: blockCardWidth,
+    userSelect: 'none',
 }));
 
 export interface AddBlocksMenuItemProps {
@@ -35,6 +39,9 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
     // track if it is this one that is dragging
     const [local, setLocal] = useState(false);
 
+    // track if this is being hovered
+    const [hovered, setHovered] = useState<boolean>(false);
+
     /**
      * Handle the mousedown on the widget.
      */
@@ -46,7 +53,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 return true;
             },
             item.name,
-            item.image,
+            item.hoverImage,
         );
 
         // clear the hovered
@@ -139,11 +146,38 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         };
     }, [designer.drag.active, local, handleDocumentMouseUp]);
 
+    console.log(item);
+
     return (
-        <StyledCard onMouseDown={handleMouseDown}>
-            <Tooltip title={`Add ${item.name}`}>
-                <img draggable={false} src={item.image || THEME.logo} />
-            </Tooltip>
-        </StyledCard>
+        <Stack
+            spacing={1}
+            alignItems="center"
+            height="100%"
+            justifyContent="flex-end"
+        >
+            <StyledTypography
+                variant="body2"
+                fontWeight="medium"
+                align="center"
+            >
+                {item.name}
+            </StyledTypography>
+            <StyledCard onMouseDown={handleMouseDown}>
+                <Tooltip
+                    title={item.helperText ?? item.name}
+                    arrow
+                    placement="bottom"
+                    onOpen={() => setHovered(true)}
+                    onClose={() => setHovered(false)}
+                >
+                    <div>
+                        <BlockCardContent
+                            image={hovered ? item.hoverImage : item.activeImage}
+                            name={item.name}
+                        />
+                    </div>
+                </Tooltip>
+            </StyledCard>
+        </Stack>
     );
 });

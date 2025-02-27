@@ -1,9 +1,11 @@
 import { useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled, TextField, Divider } from '@semoss/ui';
-import { ActionMessages } from '@/stores';
-import { useBlocks, useDesigner } from '@/hooks';
 import { Autocomplete } from '@mui/material';
+
+import { styled, TextField, Divider } from '@semoss/ui';
+import { ActionMessages, useBlocks } from '@semoss/renderer';
+
+import { useDesigner } from '@/hooks';
 
 const STYLED_FONT_STYLE_INPUT_WIDTH = 232;
 const STYLED_FONT_SIZE_INPUT_WIDTH = 168;

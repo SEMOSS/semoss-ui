@@ -35,6 +35,7 @@ export * from "./components/InputAdornment";
 export * from "./components/LinearProgress";
 export * from "./components/Link";
 export * from "./components/List";
+export * from "./components/LoadingScreen";
 export * from "./components/Menu";
 export * from "./components/Modal";
 export * from "./components/Notification";

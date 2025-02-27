@@ -6,14 +6,26 @@ import {
     LinearProgress,
     Stack,
     useNotification,
+    TextArea,
+    styled,
+    Autocomplete,
 } from '@semoss/ui';
 import { Controller, useForm } from 'react-hook-form';
 import { SerializedState } from '@/stores';
 import { useRootStore } from '@/hooks';
 import { AppMetadata } from './app.types';
 
+const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
+    paddingTop: `${theme.spacing(1)}!important`,
+}));
+
 type NewAppForm = {
     APP_NAME: string;
+    APP_DESCRIPTION: string;
+    APP_TAGS: string[];
 };
 
 interface NewAppModalProps {
@@ -38,6 +50,8 @@ export const NewAppModal = (props: NewAppModalProps) => {
     const { getValues, handleSubmit, control, watch } = useForm<NewAppForm>({
         defaultValues: {
             APP_NAME: '',
+            APP_DESCRIPTION: '',
+            APP_TAGS: [],
         },
     });
 
@@ -64,7 +78,6 @@ export const NewAppModal = (props: NewAppModalProps) => {
                 if (!state) {
                     throw new Error(`State is missing from the blocks app`);
                 }
-
                 // create the project
                 const { errors, pixelReturn } = await monolithStore.runQuery<
                     [AppMetadata]
@@ -79,6 +92,34 @@ export const NewAppModal = (props: NewAppModalProps) => {
                 }
 
                 appId = pixelReturn[0].output.project_id;
+
+                // after the project is created check for metadata. If true, run SetProjectMeta
+                if (data['APP_TAGS'].length || data['APP_DESCRIPTION']) {
+                    const setProjectMetadataResponse =
+                        await monolithStore.runQuery(
+                            `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
+                                {
+                                    tag: data['APP_TAGS'],
+                                    description: data['APP_DESCRIPTION'],
+                                },
+                            )}])`,
+                        );
+
+                    const output =
+                        setProjectMetadataResponse.pixelReturn[0].output;
+                    const operationType =
+                        setProjectMetadataResponse.pixelReturn[0]
+                            .operationType[0];
+
+                    if (operationType.indexOf('ERROR') > -1) {
+                        notification.add({
+                            color: 'error',
+                            message: output,
+                        });
+
+                        return;
+                    }
+                }
             } else if (type === 'code') {
                 // create the pixel
                 const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["CODE"]);`;
@@ -109,10 +150,11 @@ export const NewAppModal = (props: NewAppModalProps) => {
                     saveIndexFilePixel,
                 );
 
-                const output = response.pixelReturn[0].output,
-                    operationType = response.pixelReturn[0].operationType,
-                    outputTwo = response.pixelReturn[1].output,
-                    operationTypeTwo = response.pixelReturn[1].operationType;
+                let output = undefined;
+                let operationType = undefined;
+
+                output = response.pixelReturn[0].output;
+                operationType = response.pixelReturn[0].operationType;
 
                 if (operationType.indexOf('ERROR') > -1) {
                     notification.add({
@@ -122,11 +164,38 @@ export const NewAppModal = (props: NewAppModalProps) => {
                     return false;
                 }
 
-                if (operationTypeTwo.indexOf('ERROR') > -1) {
+                output = response.pixelReturn[1].output;
+                operationType = response.pixelReturn[1].operationType;
+
+                if (operationType.indexOf('ERROR') > -1) {
                     notification.add({
                         color: 'error',
-                        message: outputTwo,
+                        message: output,
                     });
+                }
+
+                // after the project is created check for metadata. If true, run SetProjectMeta
+                if (data['APP_TAGS'].length || data['APP_DESCRIPTION']) {
+                    const setProjectMetadataResponse =
+                        await monolithStore.runQuery(
+                            `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
+                                {
+                                    tag: data['APP_TAGS'],
+                                    description: data['APP_DESCRIPTION'],
+                                },
+                            )}])`,
+                        );
+
+                    output = setProjectMetadataResponse.pixelReturn[0].output;
+                    operationType =
+                        setProjectMetadataResponse.pixelReturn[0].operationType;
+
+                    if (operationType.indexOf('ERROR') > -1) {
+                        notification.add({
+                            color: 'error',
+                            message: output,
+                        });
+                    }
                 }
             } else {
                 return;
@@ -154,8 +223,8 @@ export const NewAppModal = (props: NewAppModalProps) => {
         <Modal open={open} fullWidth>
             <Modal.Title>New App</Modal.Title>
             <form onSubmit={onSubmit}>
-                <Modal.Content>
-                    <Stack direction="row" spacing={1}>
+                <StyledModalContent>
+                    <Stack direction="column" spacing={1}>
                         <Controller
                             name={'APP_NAME'}
                             control={control}
@@ -174,8 +243,52 @@ export const NewAppModal = (props: NewAppModalProps) => {
                                 );
                             }}
                         />
+                        <Controller
+                            name={'APP_DESCRIPTION'}
+                            control={control}
+                            rules={{ required: false }}
+                            render={({ field }) => {
+                                return (
+                                    <TextArea
+                                        label="Description"
+                                        variant="outlined"
+                                        value={field.value ? field.value : ''}
+                                        onChange={(value) =>
+                                            field.onChange(value)
+                                        }
+                                        rows={3}
+                                    />
+                                );
+                            }}
+                        />
+                        <Controller
+                            name={'APP_TAGS'}
+                            control={control}
+                            rules={{}}
+                            render={({ field }) => {
+                                return (
+                                    <Autocomplete
+                                        value={(field.value as string[]) || []}
+                                        fullWidth
+                                        multiple
+                                        onChange={(_, newValue) => {
+                                            field.onChange(newValue);
+                                        }}
+                                        options={[]}
+                                        freeSolo
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                variant="outlined"
+                                                placeholder='Press "Enter" to add tag'
+                                            />
+                                        )}
+                                    />
+                                );
+                            }}
+                        />
                     </Stack>
-                </Modal.Content>
+                </StyledModalContent>
                 <Modal.Actions>
                     <Stack
                         direction="row"

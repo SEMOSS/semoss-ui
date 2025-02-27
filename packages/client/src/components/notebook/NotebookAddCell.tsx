@@ -1,14 +1,29 @@
 import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled, Button, Divider, MenuProps, Menu, Stack } from '@semoss/ui';
-
-import { useBlocks } from '@/hooks';
 import {
+    styled,
+    Button,
+    Divider,
+    MenuProps,
+    Menu,
+    Stack,
+    Modal,
+} from '@semoss/ui';
+
+import {
+    useBlocks,
     ActionMessages,
+    DefaultCells,
     CellStateConfig,
-    NewCellAction,
     QueryState,
-} from '@/stores';
+    DefaultCellDefinitions,
+    TransformationCells,
+    QueryImportCellConfig,
+    CodeCellConfig,
+    DataImportFormModal,
+} from '@semoss/renderer';
+
+import { NewCellAction } from '@/stores';
 import {
     ChangeCircleOutlined,
     Code,
@@ -17,15 +32,8 @@ import {
     KeyboardArrowUp,
     TextFields,
 } from '@mui/icons-material';
-import {
-    DefaultCellDefinitions,
-    DefaultCells,
-    TransformationCells,
-} from '@/components/cell-defaults';
-import { QueryImportCellConfig } from '../cell-defaults/query-import-cell';
-import { CodeCellConfig } from '../cell-defaults/code-cell';
+
 import { ModelBrain } from '@/assets/img/ModelBrain';
-import { DataImportFormModal } from './DataImportFormModal';
 
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
@@ -316,13 +324,17 @@ export const NotebookAddCell = observer(
                 </Stack>
 
                 {isDataImportModalOpen && (
-                    <DataImportFormModal
-                        setIsDataImportModalOpen={setIsDataImportModalOpen}
-                        query={query}
-                        previousCellId={previousCellId}
-                        cell={null}
-                        editMode={false}
-                    />
+                    <Modal
+                        open={setIsDataImportModalOpen as unknown as boolean}
+                    >
+                        <DataImportFormModal
+                            setIsDataImportModalOpen={setIsDataImportModalOpen}
+                            query={query}
+                            previousCellId={previousCellId}
+                            cell={null}
+                            editMode={false}
+                        />
+                    </Modal>
                 )}
             </>
         );

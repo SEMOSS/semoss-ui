@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
+
 import {
     Avatar,
     styled,
@@ -14,13 +15,16 @@ import {
 } from '@semoss/ui';
 import { EditOutlined, ShareRounded } from '@mui/icons-material';
 
-import { Env } from '@/env';
+import { Env } from '@semoss/sdk';
 import { WorkspaceStore } from '@/stores';
 import { useRootStore } from '@/hooks';
 import { LoadingScreen, ShareOverlay } from '@/components/ui';
-import { BlocksRenderer } from '@/components/blocks-workspace';
+// import { BlocksRenderer } from '@/components/blocks-workspace';
 import { CodeRenderer } from '@/components/code-workspace';
 import { Link } from 'react-router-dom';
+
+import { Renderer } from '@semoss/renderer';
+import { InsightProvider } from '@semoss/sdk';
 
 const StyledViewport = styled('div')(() => ({
     height: '100%',
@@ -72,6 +76,15 @@ export const AppPage = observer(() => {
     // hide the screen while it loads
     if (!workspace) {
         return <LoadingScreen.Trigger description="Initializing app" />;
+    }
+
+    /**
+     * Initialize insight for app building
+     */
+    if (workspace.type === 'BLOCKS') {
+        Env.update({
+            MODULE: process.env.MODULE || '',
+        });
     }
 
     return (
@@ -126,7 +139,11 @@ export const AppPage = observer(() => {
             </Stack>
             <StyledContent>
                 {workspace.type === 'BLOCKS' ? (
-                    <BlocksRenderer appId={appId} />
+                    <>
+                        <InsightProvider>
+                            <Renderer appId={appId} />
+                        </InsightProvider>
+                    </>
                 ) : null}
                 {workspace.type === 'CODE' ? (
                     <CodeRenderer appId={appId} />

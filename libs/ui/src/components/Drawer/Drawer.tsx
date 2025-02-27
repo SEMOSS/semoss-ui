@@ -58,6 +58,11 @@ interface DrawerProps {
      * @default 'temporary'
      */
     variant?: "permanent" | "persistent" | "temporary";
+    /**
+     * The duration for the transition, in milliseconds.
+     * You may specify a single timeout for all transitions, or individually with an object.
+     */
+    transitionDuration?: number | { enter: number; exit: number };
 }
 
 export const Drawer = (props: DrawerProps) => {
