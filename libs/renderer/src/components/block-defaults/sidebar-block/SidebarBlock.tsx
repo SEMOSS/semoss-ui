@@ -1,7 +1,7 @@
 import { CSSProperties, useMemo } from "react";
 import { observer } from "mobx-react-lite";
 
-import { Drawer, Stack, styled, Box } from "@semoss/ui";
+import { Drawer, Stack } from "@semoss/ui";
 
 import { useBlock, useBlocks } from "../../../hooks";
 import { BlockDef, BlockComponent } from "../../../store";
