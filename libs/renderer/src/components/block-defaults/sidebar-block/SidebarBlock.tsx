@@ -1,7 +1,7 @@
 import { CSSProperties, useMemo } from "react";
 import { observer } from "mobx-react-lite";
 
-import { Drawer, Stack, styled, Box } from "@semoss/ui";
+import { Drawer, Stack } from "@semoss/ui";
 
 import { useBlock, useBlocks } from "../../../hooks";
 import { BlockDef, BlockComponent } from "../../../store";
@@ -21,10 +21,6 @@ export interface SidebarBlockDef extends BlockDef<"sidebar"> {
         content: true;
     };
 }
-
-const SideBarWrapper = styled(Box)<{ $visible: boolean }>(({ $visible }) => ({
-    visibility: $visible ? "visible" : "hidden",
-}));
 
 export const SidebarBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, slots } = useBlock<SidebarBlockDef>(id);
@@ -51,31 +47,26 @@ export const SidebarBlock: BlockComponent = observer(({ id }) => {
         ? data.designMode // In static mode, show when design mode is on
         : Boolean(open); // In interactive mode, show when query returns true
 
-    // In static mode with design mode on, show as modal but without portal
-    if (!shouldShowSidebar && !isStatic) {
-        return <></>;
-    }
-
     return (
-        <SideBarWrapper {...attrs} $visible={shouldShowSidebar}>
-            <Drawer
-                variant="persistent"
-                anchor={data.anchor}
-                open={shouldShowSidebar}
-                PaperProps={{
-                    sx: {
-                        position: "absolute",
-                        height: data.sidebarHeight ?? "100%",
-                        width: data.sidebarWidth,
-                        zIndex: !isStatic ? 40 : 19,
-                        ...data.style,
-                    },
-                }}
-            >
-                <Stack>
-                    <Slot slot={slots.content} />
-                </Stack>
-            </Drawer>
-        </SideBarWrapper>
+        <Drawer
+            {...attrs}
+            variant="persistent"
+            anchor={data.anchor}
+            open={shouldShowSidebar}
+            PaperProps={{
+                sx: {
+                    position: "absolute",
+                    height: data.sidebarHeight ?? "100%",
+                    width: data.sidebarWidth,
+                    zIndex: !isStatic ? 40 : 19,
+                    ...data.style,
+                },
+            }}
+            transitionDuration={250}
+        >
+            <Stack>
+                <Slot slot={slots.content} />
+            </Stack>
+        </Drawer>
     );
 });
