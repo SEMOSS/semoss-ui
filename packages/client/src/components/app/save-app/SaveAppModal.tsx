@@ -103,7 +103,7 @@ export const SaveAppModal = (props: SaveAppProps) => {
         setIsLoading(true);
 
         try {
-            handleFormSubmit(data);
+            await handleFormSubmit(data);
         } catch (e) {
             console.error(e);
             setShowErrorMessage(true);
@@ -112,8 +112,6 @@ export const SaveAppModal = (props: SaveAppProps) => {
             setIsLoading(false);
         }
     });
-
-    console.log({ steps });
 
     return (
         <Modal open={open} fullWidth>

@@ -18,12 +18,13 @@ export const config: BlockConfig<SidebarBlockDef> = {
     widget: "sidebar",
     type: BLOCK_TYPE_LAYOUT,
     data: {
-        style: {},
-        anchor: "left",
-        sidebarWidth: 240,
-        sidebarHeight: "100%",
         designMode: true, // Default to design mode when first dropped
         open: "", // Default to closed
+        anchor: "left",
+        style: {
+            width: "240px",
+            height: "100%",
+        },
     },
     listeners: {},
     slots: {
@@ -42,40 +43,27 @@ export const config: BlockConfig<SidebarBlockDef> = {
                             id={id}
                             label="Design Mode"
                             path="designMode"
-                            description="Enable to edit modal content"
+                            description="Enable this in order to edit sidebar content without interference from app interactions."
                         />
                     ),
                 },
                 {
-                    description: "Open",
+                    description: "Open State",
                     render: ({ id }) => (
                         <QueryInputSettings
                             id={id}
-                            label="Open Modal"
+                            label="Open State"
                             path="open"
                         />
                     ),
                 },
-                {
-                    description: "Sidebar Width",
-                    render: ({ id }) => (
-                        <SizeSettings
-                            id={id}
-                            label="Sidebar Width"
-                            path="sidebarWidth"
-                        />
-                    ),
-                },
-                {
-                    description: "Sidebar Height",
-                    render: ({ id }) => (
-                        <SizeSettings
-                            id={id}
-                            label="Sidebar Height"
-                            path="sidebarHeight"
-                        />
-                    ),
-                },
+            ],
+        },
+    ],
+    styleMenu: [
+        {
+            name: "Layout",
+            children: [
                 {
                     description: "Direction",
                     render: ({ id }) => (
@@ -102,8 +90,31 @@ export const config: BlockConfig<SidebarBlockDef> = {
                 },
             ],
         },
-    ],
-    styleMenu: [
+        {
+            name: "Dimensions",
+            children: [
+                {
+                    description: "Width",
+                    render: ({ id }) => (
+                        <SizeSettings
+                            id={id}
+                            label="Width"
+                            path="style.width"
+                        />
+                    ),
+                },
+                {
+                    description: "Height",
+                    render: ({ id }) => (
+                        <SizeSettings
+                            id={id}
+                            label="Height"
+                            path="style.height"
+                        />
+                    ),
+                },
+            ],
+        },
         buildColorSection(),
         {
             name: "Spacing",

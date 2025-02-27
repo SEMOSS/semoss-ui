@@ -12,8 +12,6 @@ export interface SidebarBlockDef extends BlockDef<"sidebar"> {
     data: {
         style: CSSProperties;
         anchor: "left" | "top";
-        sidebarWidth: number;
-        sidebarHeight: number | string;
         designMode: boolean;
         open: string | boolean | number; // Changed to string to store query
     };
@@ -56,8 +54,8 @@ export const SidebarBlock: BlockComponent = observer(({ id }) => {
             PaperProps={{
                 sx: {
                     position: "absolute",
-                    height: data.sidebarHeight ?? "100%",
-                    width: data.sidebarWidth,
+                    height: data.style.height ?? "100%",
+                    width: data.style.width,
                     zIndex: !isStatic ? 40 : 19,
                     ...data.style,
                 },

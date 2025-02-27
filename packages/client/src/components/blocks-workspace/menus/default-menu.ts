@@ -43,6 +43,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 contentBgColor: '',
                 showExpandIcon: false,
                 // -------------------------------------------
+                // TODO:
                 // John B:
                 // We may need to track styles differently.
                 // Can handle this in a migration function
@@ -1641,11 +1642,12 @@ columns 1
         json: {
             widget: 'sidebar',
             data: {
-                style: {},
+                style: {
+                    width: '240px',
+                    height: '100%',
+                },
                 open: false,
                 anchor: 'left',
-                sidebarWidth: 240,
-                sidebarHeight: '100%',
                 designMode: true,
             },
             listeners: {},
