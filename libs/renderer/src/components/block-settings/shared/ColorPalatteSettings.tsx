@@ -1,20 +1,9 @@
 import { useEffect, useMemo, useRef, useState, MouseEvent } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { Paths, PathValue } from "@/types";
-import { useBlockSettings } from "@/hooks";
-import { getValueByPath } from "@/utility";
-import { Block, BlockDef } from "@/stores";
-import {
-    Button,
-    IconButton,
-    InputAdornment,
-    styled,
-    TextField,
-    Icon,
-} from "@semoss/ui";
 import { SketchPicker } from "react-color";
 import { OutlinedInput } from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
 import {
     ArrowBack,
     Check,
@@ -23,8 +12,21 @@ import {
     Edit,
     FormatColorFill,
 } from "@mui/icons-material";
-import EditIcon from "@mui/icons-material/Edit";
-import { EchartVisualizationBlockDef } from "@/components/block-defaults/echart-visualization-blocks";
+
+import {
+    Button,
+    IconButton,
+    InputAdornment,
+    styled,
+    TextField,
+    Icon,
+} from "@semoss/ui";
+
+import { Paths, PathValue } from "../../../types";
+import { useBlockSettings } from "../../../hooks";
+import { getValueByPath } from "../../../utility";
+import { Block, BlockDef } from "../../../store";
+import { EchartVisualizationBlockDef } from "../../block-defaults/echart-visualization-blocks";
 
 interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
     /**
