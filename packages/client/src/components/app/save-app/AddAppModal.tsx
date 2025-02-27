@@ -152,6 +152,7 @@ export const AddAppModal = (props: AddAppProps) => {
                 [data[ADD_APP_FORM_FIELD_UPLOAD]],
                 configStore.store.insightID,
             );
+            // *** Waiting on the ImportApp reactor to be ready so that we can hook up the metadata ****.
             const resp = await monolithStore.runQuery(
                 `UploadProjectApp(filePath=["${upload[0].fileLocation}"], global=[${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}]);`,
             );
@@ -267,7 +268,7 @@ export const AddAppModal = (props: AddAppProps) => {
             open={open}
             handleClose={handleClose}
             title="Upload app from my computer"
-            steps={addAppFormSteps}
+            steps={projectZipFormSteps}
             defaultFormValues={defaultFormValues}
             handleFormSubmit={createApp}
             errorMessage="There was an error creating your app. Please check your zip file and try again."
