@@ -14,7 +14,6 @@ import {
     LinearProgress,
     TextField,
     Typography,
-    Checkbox,
     Divider,
     Box,
     ButtonGroup,
@@ -99,11 +98,6 @@ const StyledImage = styled('img')(() => ({
     // width: '100%',
     objectFit: 'cover',
 }));
-
-const StyledRememberBox = styled(Box)({
-    display: 'flex',
-    justifyContent: 'space-between',
-});
 
 const StyledAction = styled(Button)({
     display: 'flex',
@@ -305,9 +299,9 @@ export const LoginPage = observer(() => {
     );
 
     const isNative = Object.prototype.hasOwnProperty.call(
-            availableProvidersMap,
-            'native',
-        ),
+        availableProvidersMap,
+        'native',
+    ),
         isLdap = Object.prototype.hasOwnProperty.call(
             availableProvidersMap,
             'ldap',
@@ -891,24 +885,24 @@ export const LoginPage = observer(() => {
                                                                     }
                                                                     helperText={
                                                                         error &&
-                                                                        (error.includes(
-                                                                            'Password must be at least 8 characters in length',
-                                                                        ) ||
-                                                                            error.includes(
-                                                                                'Password must have atleast one uppercase character',
+                                                                            (error.includes(
+                                                                                'Password must be at least 8 characters in length',
                                                                             ) ||
-                                                                            error.includes(
-                                                                                'Password must have atleast one lowercase character',
-                                                                            ) ||
-                                                                            error.includes(
-                                                                                'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
-                                                                            ) ||
-                                                                            error.includes(
-                                                                                'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
-                                                                            ))
+                                                                                error.includes(
+                                                                                    'Password must have atleast one uppercase character',
+                                                                                ) ||
+                                                                                error.includes(
+                                                                                    'Password must have atleast one lowercase character',
+                                                                                ) ||
+                                                                                error.includes(
+                                                                                    'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
+                                                                                ) ||
+                                                                                error.includes(
+                                                                                    'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
+                                                                                ))
                                                                             ? error.includes(
-                                                                                  'Passwords do no match',
-                                                                              )
+                                                                                'Passwords do no match',
+                                                                            )
                                                                                 ? 'Passwords do not match'
                                                                                 : 'Passwords must be at least 8 characters in length and contain one lowercase, one uppercase, one special character.'
                                                                             : ''
@@ -1116,53 +1110,6 @@ export const LoginPage = observer(() => {
                                             )}
                                             {!register && (
                                                 <>
-                                                    <StyledRememberBox>
-                                                        <Controller
-                                                            name={
-                                                                'REMEMBER_LOGIN'
-                                                            }
-                                                            control={control}
-                                                            rules={{
-                                                                required: false,
-                                                            }}
-                                                            render={({
-                                                                field,
-                                                            }) => {
-                                                                return (
-                                                                    <Checkbox
-                                                                        label="Keep me logged in"
-                                                                        checked={
-                                                                            field.value
-                                                                        }
-                                                                        value={
-                                                                            field.value
-                                                                                ? field.value
-                                                                                : false
-                                                                        }
-                                                                        onChange={(
-                                                                            e: React.ChangeEvent<HTMLInputElement>,
-                                                                        ) =>
-                                                                            field.onChange(
-                                                                                e
-                                                                                    .target
-                                                                                    .checked,
-                                                                            )
-                                                                        }
-                                                                    />
-                                                                );
-                                                            }}
-                                                        />
-                                                        <StyledButtonText
-                                                            variant="text"
-                                                            onClick={() =>
-                                                                setForgotPassword(
-                                                                    true,
-                                                                )
-                                                            }
-                                                        >
-                                                            Forgot Password
-                                                        </StyledButtonText>
-                                                    </StyledRememberBox>
                                                     <Button
                                                         fullWidth
                                                         variant={'contained'}
@@ -1173,21 +1120,21 @@ export const LoginPage = observer(() => {
                                                     </Button>
                                                     {configStore.store.config
                                                         .nativeRegistration && (
-                                                        <StyledRegisterNowBox>
-                                                            Don&apos;t have an
-                                                            account?{' '}
-                                                            <StyledButtonText
-                                                                variant="text"
-                                                                onClick={() =>
-                                                                    setRegister(
-                                                                        true,
-                                                                    )
-                                                                }
-                                                            >
-                                                                Register Now
-                                                            </StyledButtonText>
-                                                        </StyledRegisterNowBox>
-                                                    )}
+                                                            <StyledRegisterNowBox>
+                                                                Don&apos;t have an
+                                                                account?{' '}
+                                                                <StyledButtonText
+                                                                    variant="text"
+                                                                    onClick={() =>
+                                                                        setRegister(
+                                                                            true,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Register Now
+                                                                </StyledButtonText>
+                                                            </StyledRegisterNowBox>
+                                                        )}
                                                 </>
                                             )}
                                         </>
