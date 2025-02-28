@@ -51,7 +51,7 @@ export const InputAudioSettings = observer(
 
         const [recording, setRecording] = useState(false);
         const [transcript, setTranscript] = useState(
-            data.value.toString() ?? "",
+            data.value?.toString() ?? "",
         );
         const [interimTranscript, setInterimTranscript] = useState("");
         const [mediaRecorder, setMediaRecorder] =
