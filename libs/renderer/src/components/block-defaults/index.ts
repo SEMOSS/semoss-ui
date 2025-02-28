@@ -70,6 +70,7 @@ import {
     config as VegaVisualizationBlockConfig,
     VegaVisualizationBlockDef,
 } from "./vega-visualization-block";
+import { config as SidebarBlockConfig, SidebarBlockDef } from "./sidebar-block";
 
 // import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
 
@@ -102,6 +103,7 @@ export type DefaultBlockDefinitions =
     | PageBlockDef
     | ProgressBlockDef
     | SelectBlockDef
+    | SidebarBlockDef
     | TextBlockDef
     | ThemeBlockDef
     | ToggleButtonBlockDef
@@ -140,6 +142,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
     [ProgressBlockConfig.widget]: ProgressBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
+    [SidebarBlockConfig.widget]: SidebarBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [ThemeBlockConfig.widget]: ThemeBlockConfig,
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
@@ -168,6 +171,7 @@ export {
     LogsBlockConfig,
     ProgressBlockConfig,
     SelectBlockConfig,
+    SidebarBlockConfig,
     TextBlockConfig,
     ThemeBlockConfig,
     UploadBlockConfig,

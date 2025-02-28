@@ -43,6 +43,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 contentBgColor: '',
                 showExpandIcon: false,
                 // -------------------------------------------
+                // TODO:
                 // John B:
                 // We may need to track styles differently.
                 // Can handle this in a migration function
@@ -1629,6 +1630,30 @@ columns 1
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_LAYOUT,
+        name: 'Sidebar-Menu',
+        activeImage: BLOCK_IMAGES['SIDEBAR_MENU_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['SIDEBAR_MENU_HOVER'],
+        helperText:
+            'Use the sidebar to navigate between the tools and components',
+        json: {
+            widget: 'sidebar',
+            data: {
+                style: {
+                    width: '240px',
+                    height: '100%',
+                },
+                open: false,
+                anchor: 'left',
+                designMode: true,
+            },
+            listeners: {},
+            slots: {
+                content: [],
+            },
         },
     },
 ];
