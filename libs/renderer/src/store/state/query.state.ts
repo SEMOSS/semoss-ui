@@ -241,7 +241,7 @@ export class QueryState {
     /**
      * Run the query
      */
-    _run = async (detail: Record<string, boolean> = { isSync: false }) => {
+    _run = async (detail?: Record<string, boolean>) => {
         try {
             // check the loading state
             if (this._store.isLoading) {
