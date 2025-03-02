@@ -1,0 +1,8 @@
+echo '
+INFO: This project uses a pre-push hook to run unit tests automatically.
+'
+
+npx run test -- --run || {
+  echo "ERROR: The unit tests failed. Please address the issues before proceeding."
+  exit 1
+}

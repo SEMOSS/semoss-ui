@@ -1,5 +1,15 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-npx lint-staged
-npx lint-staged
+echo '
+INFO: This project has a pre-commit hook to execute linting, automatically fixing issues when possible.
+Example:
+    "git commit -m <message>"
+'
+
+npx lint-staged || {
+  echo "ERROR: Linting issues were found in the committed files. Please address them before proceeding."
+  exit 1
+}
+
+# npx lint-staged
