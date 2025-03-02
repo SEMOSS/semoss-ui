@@ -1,11 +1,34 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-echo '
-INFO: This project uses a pre-push hook to run unit tests automatically.
-'
+echo 'INFO: This project uses a pre-push hook to run unit tests automatically.'
 
-npx run test -- --run || {
-  echo "ERROR: The unit tests failed. Please address the issues before proceeding."
-  exit 1
-}
+echo 'Checking commit scope from the latest commit...'
+
+#retrieve the latest commit message
+LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
+
+#try to extract scope to determine where to run tests: type(scope): message
+SCOPE=$(echo "$LAST_COMMIT_MSG" | grep -oE '^[a-zA-z]+\\(([^)]+)\\):' | sed -E 's/^[a-zA-Z]+\\(([^)]+)\\):.*/\\1/')
+
+if [-n "$SCOPE"]; then
+    echo "Detected commit scope: '$SCOPE'"
+
+    FILE_PATTERN="*$SCOPE*/test"
+    echo "Running Vitest tests matching pattern: $FILE_PATTERN"
+    npx run test $FILE_PATTERN || {
+        echo "Vitest failed for scope '$SCOPE'. Aborting push."
+        exit 1
+    }
+else
+    echo "No commit scope detected. Running the full testing suite..."
+    npx run test || {
+        echo "Vitest failed for scope '$SCOPE'. Aborting push."
+        exit 1
+    }
+fi    
+
+# npx run test -- --run || {
+#   echo "ERROR: The unit tests failed. Please address the issues before proceeding."
+#   exit 1
+# }
