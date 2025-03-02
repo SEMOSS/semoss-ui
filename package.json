@@ -10,8 +10,7 @@
         "dev:client": "nx run @semoss/client:dev",
         "dev:legacy": "nx run @semoss/legacy:dev",
         "build": "npx nx run-many -t build -p @semoss/client @semoss/legacy",
-        "lint-staged": "lint-staged",
-        "test": "vitest"
+        "lint-staged": "lint-staged"
     },
     "author": "",
     "license": "Apache-2.0",
