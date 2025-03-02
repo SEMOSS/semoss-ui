@@ -6077,7 +6077,8 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'FUNCTION_TYPE',
                         label: 'Function Type',
-                        defaultValue: 'AZURE_DOCUMENT_INTELLIGENCE',
+                        defaultValue:
+                            'AZURE_DOCUMENT_INTELLIGENCE_CUSTOM_EMBEDDINGS',
                         options: {
                             component: 'text-field',
                         },
