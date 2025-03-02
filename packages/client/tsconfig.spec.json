@@ -7,12 +7,15 @@
             "vitest/importMeta",
             "vite/client",
             "node",
-            "vitest"
+            "vitest",
+            "@testing-library/jest-dom",
+            "@testing-library/jest-dom/jest-globals"
         ]
     },
     "include": [
         "vite.config.ts",
         "vitest.config.ts",
+        "vitest.setup.ts",
         "src/**/*.test.ts",
         "src/**/*.spec.ts",
         "src/**/*.test.tsx",
@@ -22,5 +25,6 @@
         "src/**/*.test.jsx",
         "src/**/*.spec.jsx",
         "src/**/*.d.ts"
-    ]
+    ],
+    "exclude": ["node_modules", "./cypress.config.ts", "cypress"]
 }

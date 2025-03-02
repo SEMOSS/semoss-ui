@@ -27,7 +27,7 @@ export default defineConfig({
         watch: false,
         globals: true,
         environment: 'jsdom',
-        include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+        include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
         deps: {
             // Required for vitest-canvas-mock
             inline: ['vitest-canvas-mock'],

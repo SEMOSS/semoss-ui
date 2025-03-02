@@ -22,6 +22,6 @@
         "outDir": "./dist",
         "types": ["vitest/globals", "@testing-library/jest-dom/vitest"]
     },
-    "include": ["./src", "./global.d.ts"],
+    "include": ["./src", "./global.d.ts", "./test"],
     "exclude": ["./plugins/**/*", "./typings/**/*", "./dist/**/*"]
 }
