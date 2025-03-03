@@ -32,6 +32,7 @@ import BLOCK_RADIO from '@/assets/img/BLOCK_RADIO.png';
 import HTML_BLOCK from '@/assets/img/HTML_BLOCK_SM.png';
 import BLOCK_MODAL from '@/assets/img/BLOCK_MODAL.png';
 import BLOCK_THEME from '@/assets/img/BLOCK_THEME.png';
+import MOSAIC from '@/assets/img/MOSAIC.png';
 
 const SECTION_ELEMENT = 'Element';
 const SECTION_INPUT = 'Input';
@@ -56,6 +57,27 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 theme: lightTheme,
             },
             listeners: {},
+            slots: {
+                children: [],
+            },
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        image: MOSAIC,
+        name: 'Ratings Block',
+        json: {
+            widget: 'ratings-block',
+            data: {
+                style: {},
+                size: 'small',
+                type: 'star',
+                value: 2,
+                max: 5,
+            },
+            listeners: {
+                onChange: [],
+            },
             slots: {
                 children: [],
             },

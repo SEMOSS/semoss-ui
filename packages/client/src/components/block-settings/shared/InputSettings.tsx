@@ -9,38 +9,15 @@ import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
 
 interface InputSettingsProps<D extends BlockDef = BlockDef> {
-    /**
-     * Id of the block that is being worked with
-     */
     id: string;
-
-    /**
-     * Label to pass into the input
-     */
     label: string;
-
-    /**
-     * Path to update
-     */
     path: Paths<Block<D>['data'], 4>;
-
-    /**
-     * Secondary to update
-     */
     secondaryPath?: Paths<Block<D>['data'], 4>;
-
-    /** Type of input to render for settings */
     type?: string;
-
-    /**
-     * Parse input as object to set value
-     */
     valueAsObject?: boolean;
-
-    /**
-     * What to be displayed on the tooltip to explain setting
-     */
     description?: string;
+    limit?: number;
+    min?: number;
 }
 
 export const InputSettings = observer(
@@ -52,16 +29,19 @@ export const InputSettings = observer(
         type = 'text',
         valueAsObject = false,
         description,
+        limit,
+        min,
     }: InputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
 
-        // track the value
-        const [value, setValue] = useState('');
+        // Initialize state with defaultValue
 
-        // track the ref to debounce the input
+        const [value, setValue] = useState<string | number>('');
+
+        // Track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-        // get the value of the input (wrapped in usememo because of path prop)
+        // Get the value of the input (wrapped in useMemo because of path prop)
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
@@ -71,7 +51,7 @@ export const InputSettings = observer(
                 const v = getValueByPath(data, path);
                 if (typeof v === 'undefined') {
                     return '';
-                } else if (typeof v === 'string') {
+                } else if (typeof v === 'string' || typeof v === 'number') {
                     return v;
                 }
 
@@ -79,7 +59,7 @@ export const InputSettings = observer(
             });
         }, [data, path]).get();
 
-        // update the value whenever the computed one changes
+        // Update the value whenever the computed one changes
         useEffect(() => {
             setValue(computedValue);
         }, [computedValue]);
@@ -88,10 +68,18 @@ export const InputSettings = observer(
          * Sync the data on change
          */
         const onChange = (value: string) => {
-            // set the value
+            // Set the value
+            if (
+                limit &&
+                ((Number(value) > limit && type === 'number') ||
+                    (limit && min && Number(value) < min))
+            ) {
+                return;
+            }
+
             setValue(value);
 
-            // clear out he old timeout
+            // Clear out the old timeout
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = null;
@@ -99,7 +87,8 @@ export const InputSettings = observer(
 
             timeoutRef.current = setTimeout(() => {
                 try {
-                    let valueToSet = value;
+                    let valueToSet: string | number = value;
+
                     if (valueAsObject) {
                         try {
                             valueToSet = !!value
@@ -108,8 +97,11 @@ export const InputSettings = observer(
                         } catch (e) {
                             console.log(e);
                         }
+                    } else if (type === 'number') {
+                        valueToSet = Number(value);
                     }
-                    // set the value
+
+                    // Set the value
                     setData(
                         path,
                         valueToSet as PathValue<D['data'], typeof path>,
@@ -135,7 +127,7 @@ export const InputSettings = observer(
                     fullWidth
                     value={value}
                     onChange={(e) => {
-                        // sync the data on change
+                        // Sync the data on change
                         onChange(e.target.value);
                     }}
                     placeholder={

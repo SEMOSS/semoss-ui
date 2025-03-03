@@ -21,6 +21,7 @@ import {
     config as MarkdownBlockConfig,
     MarkdownBlockDef,
 } from './markdown-block';
+import { config as RatingsBlockConfig, RatingsBlockDef } from './ratings-block';
 import { config as HTMLBlockConfig, HTMLBlockDef } from './html-block';
 import { config as PageBlockConfig, PageBlockDef } from './page-block';
 import { config as SelectBlockConfig, SelectBlockDef } from './select-block';
@@ -96,7 +97,8 @@ export type DefaultBlockDefinitions =
     | ModalBlockDef
     | RadioBlockDef
     | PDFViewerBlockDef
-    | ThemeBlockDef;
+    | ThemeBlockDef
+    | RatingsBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AudioBlockConfig.widget]: AudioBlockConfig,
@@ -127,6 +129,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
     [ThemeBlockConfig.widget]: ThemeBlockConfig,
+    [RatingsBlockConfig.widget]: RatingsBlockConfig,
 };
 
 export {
@@ -154,4 +157,5 @@ export {
     RadioBlockConfig,
     PDFViewerBlockConfig,
     ThemeBlockConfig,
+    RatingsBlockConfig,
 };
