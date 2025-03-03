@@ -11,7 +11,7 @@ BASE_COMMIT=$(git merge-base origin/vitesting-2 HEAD)
 # List changed files between BASE_COMMIT and HEAD that match test
 CHANGED_TEST_FILES=$(git diff --name-only "$BASE_COMMIT" HEAD | grep -E '(\.test\.|\.spec\.)')
 
-if [ -z "$CHANGED_TEST_FILES "]; then
+if [ -z "$CHANGED_TEST_FILES" ]; then
     echo "No new or changed test files detected."
 
     exit 0
