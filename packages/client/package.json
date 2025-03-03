@@ -1,7 +1,6 @@
 {
     "name": "@semoss/client",
     "scripts": {
-        "precommit": "lint-staged",
         "dev-old": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --watch --mode=development --node-env=development",
         "lint": "nx eslint:lint",
         "lint:fix": "nx eslint:lint --fix",
