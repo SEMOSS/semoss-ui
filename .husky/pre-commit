@@ -6,4 +6,3 @@ npx lint-staged && npx vitest --watch=false --passWithNoTests --changed || {
   exit 1
 }
 
-# npx lint-staged
