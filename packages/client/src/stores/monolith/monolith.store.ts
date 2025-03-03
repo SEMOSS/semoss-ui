@@ -546,7 +546,7 @@ export class MonolithStore {
         const params = {};
 
         params['engineTypes'] = engineType;
-        search && (params['filterWord'] = search);
+        search && (params['filterWord'] = encodeURIComponent(search));
 
         offset && (params['offset'] = offset);
 
@@ -629,7 +629,7 @@ export class MonolithStore {
             }>(url, {
                 params: {
                     engineId: databaseId,
-                    searchTerm: user,
+                    searchTerm: encodeURIComponent(user),
                     permission: permission,
                     offset: offset,
                     limit: limit,
@@ -692,7 +692,7 @@ export class MonolithStore {
                     engineId: engineId,
                     limit: limit,
                     offset: offset,
-                    searchTerm: searchTerm,
+                    searchTerm: encodeURIComponent(searchTerm),
                 },
             })
             .catch((error) => {
@@ -1138,7 +1138,7 @@ export class MonolithStore {
         groupId && (params['groupId'] = groupId);
         limit && (params['limit'] = limit);
         offset && (params['offset'] = offset);
-        searchTerm && (params['searchTerm'] = searchTerm);
+        searchTerm && (params['searchTerm'] = encodeURIComponent(searchTerm));
 
         const response = await axios
             .get(url, {
@@ -1432,7 +1432,7 @@ export class MonolithStore {
         groupType && (params['groupType'] = groupType);
         limit && (params['limit'] = limit);
         offset && (params['offset'] = offset);
-        searchTerm && (params['searchTerm'] = searchTerm);
+        searchTerm && (params['searchTerm'] = encodeURIComponent(searchTerm));
 
         // searchTerm
         //     ? (params['searchTerm'] = searchTerm)
@@ -1635,7 +1635,7 @@ export class MonolithStore {
         groupType && (params['groupType'] = groupType);
         limit && (params['limit'] = limit);
         offset && (params['offset'] = offset);
-        searchTerm && (params['searchTerm'] = searchTerm);
+        searchTerm && (params['searchTerm'] = encodeURIComponent(searchTerm));
 
         const response = await axios
             .get(url, {
@@ -1779,7 +1779,7 @@ export class MonolithStore {
 
         const params = {};
 
-        search && (params['filterWord'] = search);
+        search && (params['filterWord'] = encodeURIComponent(search));
 
         offset && (params['offset'] = offset);
 
@@ -1823,7 +1823,7 @@ export class MonolithStore {
 
         const response = await axios.get(url, {
             params: {
-                projectId: projectId,
+                projectId: encodeURIComponent(projectId),
             },
         });
 
@@ -1928,7 +1928,7 @@ export class MonolithStore {
                     projectId: appId,
                     limit: limit,
                     offset: offset,
-                    searchTerm: searchTerm,
+                    searchTerm: encodeURIComponent(searchTerm),
                 },
             })
             .catch((error) => {
@@ -2257,11 +2257,11 @@ export class MonolithStore {
                 }[]
             >(url, {
                 params: {
-                    insightId: id,
-                    projectId: projectid,
+                    insightId: encodeURIComponent(id),
+                    projectId: encodeURIComponent(projectid),
                     offset: offset,
                     limit: limit,
-                    userId: user,
+                    userId: encodeURIComponent(user),
 
                     // projectId: projectId,
                     //             permission: permission,
@@ -2300,7 +2300,10 @@ export class MonolithStore {
         // get the response
         const response = await axios
             .get(url, {
-                params: { projectId: projectId, insightId: insightId },
+                params: {
+                    projectId: encodeURIComponent(projectId),
+                    insightId: encodeURIComponent(insightId),
+                },
             })
             .catch((error) => {
                 throw Error(error);
@@ -2580,7 +2583,7 @@ export class MonolithStore {
         url += 'app/getAppUsers';
         const response = await axios
             .get(url, {
-                params: { appId: appId },
+                params: { appId: encodeURIComponent(appId) },
             })
             .catch((error) => {
                 throw Error(error);
@@ -2672,7 +2675,7 @@ export class MonolithStore {
                 }[]
             >(url, {
                 params: {
-                    filterWord: searchTerm,
+                    filterWord: encodeURIComponent(searchTerm),
                     offset: offset,
                     limit: limit,
                 },
