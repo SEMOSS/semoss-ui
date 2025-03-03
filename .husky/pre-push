@@ -3,27 +3,24 @@
 
 echo 'INFO: This project uses a pre-push hook to run unit tests automatically.'
 
-echo 'Checking commit scope from the latest commit...'
+echo 'Checking for new or changed test files...'
 
-#retrieve the latest commit message
-LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
+# Determine the common ancestor commit with your base branch
+BASE_COMMIT=$(git merge-base origin/main HEAD)
 
-#try to extract scope to determine where to run tests: type(scope): message
-SCOPE=$(echo "$LAST_COMMIT_MSG" | grep -oE '^[a-zA-z]+\\(([^)]+)\\):' | sed -E 's/^[a-zA-Z]+\\(([^)]+)\\):.*/\\1/')
+# List changed files between BASE_COMMIT and HEAD that match test
+CHANGED_TEST_FILES=$(git diff --name-only "$BASE_COMMIT" HEAD | grep -E '(\.test\.|\.spec\.)')
 
-if [-n "$SCOPE"]; then
-    echo "Detected commit scope: '$SCOPE'"
+if [ -z "$CHANGED_TEST_FILES "]; then
+    echo "No new or changed test files detected."
 
-    FILE_PATTERN="*$SCOPE*/test"
-    echo "Running Vitest tests matching pattern: $FILE_PATTERN"
-    npx run test $FILE_PATTERN || {
-        echo "Vitest failed for scope '$SCOPE'. Aborting push."
-        exit 1
-    }
+    exit 0
 else
-    echo "No commit scope detected. Running the full testing suite..."
-    npx run test || {
-        echo "Vitest failed for scope '$SCOPE'. Aborting push."
+    echo "Detected changed test files:"
+    echo "$CHANGED_TEST_FILES"
+    echo "Running Vitest on changed test files..."
+    npx run test $CHANGED_TEST_FILES || {
+        echo "Vitests failed. Aborting push."
         exit 1
     }
 fi    

@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 
 import { ProjectTileCard } from '../src/components/app/AppCards';
 
-test('app card displays', async () => {
+test('app card display', async () => {
     render(<ProjectTileCard name="app-card-title" />);
 
     const cardElement = await screen.getByText('app-card-title');
