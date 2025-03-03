@@ -9,14 +9,7 @@
         "format:fix": "prettier . --write --plugin-search-dir=.",
         "fix": "run-s format:fix lint:fix",
         "type-check": "tsc --pretty --noEmit",
-        "test": "vitest --changed HEAD~1"
-    },
-    "lint-staged": {
-        "*.{js,jsx,ts,tsx,json}": [
-            "prettier --write",
-            "eslint --fix",
-            "vitest run --relatedFiles"
-        ]
+        "test": "vitest -watch=false --passWithNoTests --changed"
     },
     "nx": {
         "targets": {
