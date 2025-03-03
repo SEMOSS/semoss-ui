@@ -9,7 +9,7 @@
         "format:fix": "prettier . --write --plugin-search-dir=.",
         "fix": "run-s format:fix lint:fix",
         "type-check": "tsc --pretty --noEmit",
-        "test": "vitest -watch=false --passWithNoTests --changed"
+        "test": "vitest --watch=false --passWithNoTests --changed"
     },
     "nx": {
         "targets": {
