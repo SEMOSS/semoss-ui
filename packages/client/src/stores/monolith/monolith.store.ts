@@ -2676,6 +2676,16 @@ export class MonolithStore {
                     offset: offset,
                     limit: limit,
                 },
+                paramsSerializer: (params) => {
+                    return Object.keys(params)
+                        .map(
+                            (key) =>
+                                `${encodeURIComponent(
+                                    key,
+                                )}=${encodeURIComponent(params[key])}`,
+                        )
+                        .join('&');
+                },
             })
             .catch((error) => {
                 throw Error(error);
