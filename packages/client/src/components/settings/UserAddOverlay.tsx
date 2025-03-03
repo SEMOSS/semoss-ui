@@ -238,6 +238,12 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                             data.exporter = false;
                         }
                     }
+                    if (data.model_usage_restriction === 'token') {
+                        data.model_max_response_time = null;
+                    }
+                    if (data.model_usage_restriction === 'compute') {
+                        data.model_max_tokens = null;
+                    }
                     if (data.model_usage_restriction === 'null') {
                         data.model_max_response_time = null;
                         data.model_max_tokens = null;
