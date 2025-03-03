@@ -2,10 +2,12 @@ import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Stack, Typography, styled } from '@semoss/ui';
 
-import { ActionMessages, getRelativeSize, getBlockElement } from '@/stores';
-import { useBlocks, useDesigner } from '@/hooks';
+import { useDesigner } from '@/hooks';
+import { getRelativeSize, getBlockElement } from '@/stores';
 
 import { DragIndicator } from '@mui/icons-material';
+
+import { ActionMessages, useBlocks } from '@semoss/renderer';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'absolute',

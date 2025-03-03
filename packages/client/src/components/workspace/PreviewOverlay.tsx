@@ -1,7 +1,8 @@
 import { observer } from 'mobx-react-lite';
 import { Button, Modal, styled } from '@semoss/ui';
-import { SerializedState } from '@/stores';
-import { BlocksRenderer } from '../blocks-workspace';
+
+import { Renderer, SerializedState } from '@semoss/renderer';
+import { InsightProvider } from '@semoss/sdk';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     height: '60vh',
@@ -25,7 +26,9 @@ export const PreviewOverlay = observer((props: PreviewOverlayProps) => {
             <Modal.Title>Preview</Modal.Title>
             <Modal.Content>
                 <StyledContainer>
-                    <BlocksRenderer state={state} />
+                    <InsightProvider>
+                        <Renderer state={state} />
+                    </InsightProvider>
                 </StyledContainer>
             </Modal.Content>
             <Modal.Actions>

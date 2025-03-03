@@ -87,35 +87,6 @@ export const PromptBuilderContextStep = (props: {
                             }
                         />
                         <Autocomplete
-                            value={(props.builder.tags.value as string[]) ?? []}
-                            fullWidth
-                            multiple
-                            onChange={(_, newValue) => {
-                                props.setBuilderValue('tags', newValue);
-                            }}
-                            filterOptions={(options, params) => {
-                                const filtered = filter(options, params);
-
-                                const { inputValue } = params;
-                                const isExisting = options.some(
-                                    (option) => inputValue === option,
-                                );
-                                if (inputValue !== '' && !isExisting) {
-                                    filtered.push(inputValue);
-                                }
-
-                                return filtered;
-                            }}
-                            options={[]}
-                            renderOption={(props, option) => (
-                                <li {...props}>{option}</li>
-                            )}
-                            freeSolo
-                            renderInput={(params) => (
-                                <TextField {...params} label="Tags" />
-                            )}
-                        />
-                        <Autocomplete
                             disableClearable
                             fullWidth
                             id="model-autocomplete"

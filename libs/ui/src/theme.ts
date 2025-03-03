@@ -132,6 +132,7 @@ export const lightTheme: CustomThemeOptions = {
             primary: "#000000",
             main: "#000000",
             secondary: "#666666",
+            white: "#FFFFFF",
             disabled: "#9E9E9E",
         },
         error: {

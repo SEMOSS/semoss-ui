@@ -43,12 +43,6 @@ const initialBuilder: Builder = {
         required: true,
         display: 'Name',
     },
-    tags: {
-        step: PROMPT_BUILDER_CONTEXT_STEP,
-        value: [],
-        required: false,
-        display: 'Tags',
-    },
     model: {
         step: PROMPT_BUILDER_CONTEXT_STEP,
         value: undefined,
