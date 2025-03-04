@@ -6,6 +6,29 @@ import { RootStoreContext } from '@/contexts';
 import { AppWrapper } from './AppWrapper';
 
 // add interceptors
+axios.interceptors.request.use(
+    (config) => {
+        // Check if the request is a GET request
+        if (config.method === 'get' && config.params) {
+            config.paramsSerializer = (params) => {
+                return Object.keys(params)
+                    .map(
+                        (key) =>
+                            `${encodeURIComponent(key)}=${encodeURIComponent(
+                                params[key],
+                            )}`,
+                    )
+                    .join('&');
+            };
+        }
+        return config;
+    },
+    (error) => {
+        // Handle request error
+        return Promise.reject(error);
+    },
+);
+
 axios.interceptors.response.use(
     function (response) {
         return response;
