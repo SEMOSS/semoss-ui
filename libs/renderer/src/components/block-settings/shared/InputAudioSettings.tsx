@@ -50,7 +50,9 @@ export const InputAudioSettings = observer(
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
         const [recording, setRecording] = useState(false);
-        const [transcript, setTranscript] = useState(data.value + "" ?? "");
+        const [transcript, setTranscript] = useState(
+            data.value?.toString() ?? "",
+        );
         const [interimTranscript, setInterimTranscript] = useState("");
         const [mediaRecorder, setMediaRecorder] =
             useState<MediaRecorder | null>(null);
