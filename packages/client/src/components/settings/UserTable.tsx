@@ -162,7 +162,7 @@ const StyledNoUsersDiv = styled('div')(({ theme }) => ({
     alignItems: 'center',
 }));
 
-const formatModelLimitValue = (input: string) => {
+const formatValue = (input: string) => {
     if (input !== undefined) {
         const mappings: Record<string, string> = {
             TOKEN: 'Token',
@@ -171,6 +171,7 @@ const formatModelLimitValue = (input: string) => {
             WEEK: 'Weekly',
             MONTH: 'Monthly',
             NULL: 'None',
+            NATIVE: 'Native',
         };
         return mappings[input.toUpperCase()] || input;
     }
@@ -673,10 +674,12 @@ export const UserTable = (props: UserTableProps) => {
                                                             {user.email}
                                                         </Table.Cell>
                                                         <Table.Cell>
-                                                            {user.type}
+                                                            {formatValue(
+                                                                user.type,
+                                                            )}
                                                         </Table.Cell>
                                                         <Table.Cell>
-                                                            {formatModelLimitValue(
+                                                            {formatValue(
                                                                 user?.model_usage_restriction,
                                                             )}
                                                         </Table.Cell>
@@ -690,7 +693,7 @@ export const UserTable = (props: UserTableProps) => {
                                                                 `${user?.model_max_tokens?.toLocaleString()}`}
                                                         </Table.Cell>
                                                         <Table.Cell>
-                                                            {formatModelLimitValue(
+                                                            {formatValue(
                                                                 user?.model_usage_frequency,
                                                             )}
                                                         </Table.Cell>

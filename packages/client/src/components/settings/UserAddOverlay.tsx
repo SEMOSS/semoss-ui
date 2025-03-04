@@ -312,13 +312,17 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                                 control={control}
                                 rules={{}}
                                 render={({ field }) => {
+                                    // Change value to match option.provider value.
+                                    // add more logic here if more providers are added.
+                                    let value = field.value;
+                                    if (value === 'Native') {
+                                        value = 'native';
+                                    }
                                     return (
                                         <Select
                                             label="Type"
                                             disabled={isNewUser ? false : true}
-                                            value={
-                                                field.value ? field.value : ''
-                                            }
+                                            value={value ? value : ''}
                                             onChange={(e) => {
                                                 field.onChange(e.target.value);
                                             }}
@@ -387,7 +391,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                                 }}
                             />
                         </Stack>
-                        {type === 'Native' && (
+                        {type.toLowerCase() === 'native' && (
                             <>
                                 <Controller
                                     name="password"
