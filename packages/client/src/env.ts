@@ -13,7 +13,7 @@ export class Env {
         ORIGIN: window.location.origin || '',
         PATH: window.location.pathname.includes('SemossWeb')
             ? window.location.pathname.split('SemossWeb')[0].replace(/\/$/, '')
-            : '' || '',
+            : '',
     };
 
     /**
