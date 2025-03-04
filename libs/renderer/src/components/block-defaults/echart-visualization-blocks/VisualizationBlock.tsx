@@ -1,14 +1,14 @@
+import { useEffect, useMemo, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { styled } from "@mui/material";
 
-import { useBlock, useBlockSettings } from "../../../hooks";
-import { BlockComponent, BlockDef } from "../../../store";
-import { PathValue } from "../../../types";
 import { Bar } from "./Variants/bar-chart/Bar";
 import { Pie } from "./Variants/PieChart/Pie";
-import { useMemo, useRef } from "react";
 import { BAR_CHART_DATA } from "./Visualization.constants";
 import { ScatterPlotBlock } from "./Variants/ScatterPlot/ScatterPlot";
+import { useBlock, useBlocks, useBlockSettings } from "../../../hooks";
+import { BlockComponent, BlockDef } from "../../../store";
+import { PathValue } from "../../../types";
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -65,9 +65,17 @@ export const VisualizationBlock: BlockComponent = observer(
     <D extends BlockDef = BlockDef>({ id }) => {
         const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
         const { setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+        const { state } = useBlocks();
+
         const elementRef = useRef<HTMLDivElement>(null);
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
-        //update chart json when data is changed
+
+        /**
+         *
+         * @param data
+         * @param path
+         * @description update chart json when data is changed
+         */
         function updateChartJson(data: any, path: any) {
             const parsedData =
                 typeof data === "string" ? JSON.parse(data) : data;
@@ -86,7 +94,10 @@ export const VisualizationBlock: BlockComponent = observer(
                 }
             }, 300);
         }
-        //get the updated data style when data.style is changed
+
+        /**
+         * @description get the updated data style when data.style is changed
+         */
         const updatedDataStyle = useMemo(() => {
             let isEm =
                 data.style.height.toString().endsWith("em") &&
@@ -112,6 +123,7 @@ export const VisualizationBlock: BlockComponent = observer(
                 </StyledNoDataContainer>
             );
         }
+
         if (typeof data.option === "string") {
             try {
                 return (
