@@ -245,7 +245,7 @@ export const LoginPage = observer(() => {
 
     const [forgotPassword, setForgotPassword] = useState(false);
     const [loginType, setLoginType] = useState<
-        'native' | 'ldap' | 'linOtp' | ''
+        'native' | 'ldap' | 'linotp' | ''
     >('');
     const [register, setRegister] = useState(false);
     const [showOTPCodeField, setShowOTPCodeField] = useState(false);
@@ -314,14 +314,14 @@ export const LoginPage = observer(() => {
         ),
         isLinOTP = Object.prototype.hasOwnProperty.call(
             availableProvidersMap,
-            'linOtp',
+            'linotp',
         );
 
     // check if it requires username or password
     const hasUsernamePassword = isNative || isLdap || isLinOTP;
 
     const hasMoreThanOneUserNamePassword =
-        (isNative && isLdap) || (isNative && isLdap) || (isLdap && isLinOTP);
+        (isNative && isLdap) || (isNative && isLinOTP) || (isLdap && isLinOTP);
 
     // set initial selected login type from config.
     useEffect(() => {
@@ -330,7 +330,7 @@ export const LoginPage = observer(() => {
         } else if (isLdap) {
             setLoginType('ldap');
         } else if (isLinOTP) {
-            setLoginType('linOtp');
+            setLoginType('linotp');
         }
     }, [isNative, isLdap, isLinOTP]);
 
@@ -376,7 +376,7 @@ export const LoginPage = observer(() => {
                             setIsLoading(false);
                         });
                 }
-                if (loginType === 'linOtp') {
+                if (loginType === 'linotp') {
                     await configStore
                         .loginOTP(data.USERNAME, data.PASSWORD)
                         .then(() => {
@@ -599,11 +599,11 @@ export const LoginPage = observer(() => {
                                     {isLinOTP && (
                                         <StyledButtonGroupItem
                                             onClick={() => {
-                                                setLoginType('linOtp');
+                                                setLoginType('linotp');
                                                 setSuccess('');
                                                 setError('');
                                             }}
-                                            selected={loginType === 'linOtp'}
+                                            selected={loginType === 'linotp'}
                                         >
                                             LinOTP
                                         </StyledButtonGroupItem>
