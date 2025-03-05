@@ -1,29 +1,31 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useNotification } from '@semoss/ui';
-import { runPixel } from '@/api';
+import { ConstructionOutlined } from '@mui/icons-material';
+
+import { useNotification, styled, Typography, Stack } from '@semoss/ui';
+import { Env, InsightProvider } from '@semoss/sdk';
 import {
-    SerializedState,
     StateStore,
-    WorkspaceStore,
+    Blocks,
+    SerializedState,
+    DefaultCells,
+    DefaultBlocks,
     MigrationManager,
     STATE_VERSION,
-    DesignerStore,
-    WorkspaceOptions,
-} from '@/stores';
+} from '@semoss/renderer';
+
+import { runPixel } from '@/api';
+import { WorkspaceStore, DesignerStore, WorkspaceOptions } from '@/stores';
 import { DesignerContext } from '@/contexts';
-import { DefaultCells } from '@/components/cell-defaults';
-import { DefaultBlocks } from '@/components/block-defaults';
-import { Blocks } from '@/components/blocks';
+import { LoadingScreen } from '@/components/ui';
+import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
+import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
 import {
     Workspace,
     SettingsPanel,
     FileExplorerPanel,
     FileEditorPanel,
 } from '@/components/workspace';
-import { LoadingScreen } from '@/components/ui';
-import { DEFAULT_MENU, VISUALIZATION_MENU } from '@/components/designer';
-import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 import {
     VariablesPanel,
     BlocksMenuPanel,
@@ -33,7 +35,7 @@ import {
     NotebookExplorerPanel,
     NotebookViewerPanel,
 } from './panels';
-import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
+import { DEFAULT_MENU } from './menus/default-menu';
 
 const DEFAULT_BORDER_SIZE = 300;
 
@@ -63,14 +65,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                     config: {},
                                     helpText:
                                         'UI components that can be used to display for your app',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Visualizations',
-                                    component: 'viz',
-                                    config: {},
-                                    helpText:
-                                        'Visualizations to be used within the designer',
                                 },
                                 {
                                     type: 'tab',
@@ -198,13 +192,6 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
         return <SelectedBlockPanel />;
     } else if (component === 'blocks') {
         return <BlocksMenuPanel title={'Add Blocks'} items={DEFAULT_MENU} />;
-    } else if (component === 'viz') {
-        return (
-            <BlocksMenuPanel
-                title={'Add Visualization'}
-                items={VISUALIZATION_MENU}
-            />
-        );
     } else if (component === 'file-explorer') {
         return <FileExplorerPanel layout={layout} />;
     } else if (component === 'file-editor') {
@@ -215,6 +202,15 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
         return <NotebookViewerPanel id={config.id} />;
     }
 
+    // TODO: Clean out session storage for old workspaces
+    // else if (component === 'viz') {
+    //     return (
+    //         <BlocksMenuPanel
+    //             title={'Add Visualization'}
+    //             items={VISUALIZATION_MENU}
+    //         />
+    //     );
+    // }
     return <>{component}</>;
 };
 
@@ -312,21 +308,30 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         return <LoadingScreen.Trigger />;
     }
 
+    /**
+     * Initialize insight for app building
+     */
+    Env.update({
+        MODULE: process.env.MODULE || '',
+    });
+
     return (
-        <Blocks state={state} registry={DefaultBlocks}>
-            <DesignerContext.Provider
-                value={{
-                    designer: designer,
-                }}
-            >
-                <Workspace
-                    options={DEFAULT_OPTIONS}
-                    workspace={workspace}
-                    endTopbar={<BlocksWorkspaceActions />}
-                    factory={FACTORY}
-                />
-                <BlocksWorkspaceDev />
-            </DesignerContext.Provider>
-        </Blocks>
+        <InsightProvider>
+            <Blocks state={state} registry={DefaultBlocks}>
+                <DesignerContext.Provider
+                    value={{
+                        designer: designer,
+                    }}
+                >
+                    <Workspace
+                        options={DEFAULT_OPTIONS}
+                        workspace={workspace}
+                        endTopbar={<BlocksWorkspaceActions />}
+                        factory={FACTORY}
+                    />
+                    <BlocksWorkspaceDev />
+                </DesignerContext.Provider>
+            </Blocks>
+        </InsightProvider>
     );
 });

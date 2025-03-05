@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled } from '@semoss/ui';
-import { useBlocks, useDesigner } from '@/hooks';
+import { useDesigner } from '@/hooks';
 
 import {
     getRelativeSize,
@@ -11,12 +11,15 @@ import {
     getNearestSlotElement,
 } from '@/stores';
 
+// TODO: FIX
 import { SelectedMask } from './SelectedMask';
 import { HoveredMask } from './HoveredMask';
 import { Placeholder } from './Placeholder';
 import { Ghost } from './Ghost';
 import { DeleteDuplicateMask } from './DeleteDuplicateMask';
 import { BlockSettingsMask } from './BlockSettingsMask';
+
+import { useBlocks } from '@semoss/renderer';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -45,7 +48,7 @@ const StyledContentOuter = styled('div')(({ theme }) => ({
     display: 'flex',
     flex: 1,
     minWidth: '100%',
-    height: '100%',
+    height: 'inherit',
 }));
 
 const StyledContentInner = styled('div', {
@@ -55,7 +58,7 @@ const StyledContentInner = styled('div', {
         flex: 1,
         position: 'relative',
         minWidth: '100%',
-        height: '100%',
+        height: 'inherit',
         cursor: !isHoveredOverSelectedBlock ? 'pointer!important' : 'inherit',
         // iframes should not get pointer events in design mode
         iframe: {

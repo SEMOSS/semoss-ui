@@ -3,7 +3,9 @@
         "baseUrl": ".",
         "paths": {
             "@/*": ["./src/*"],
-            "@semoss/ui": ["../../libs/ui/src/index.ts"]
+            "@semoss/ui": ["../../libs/ui/src/index.ts"],
+            "@semoss/renderer": ["../../libs/renderer/src/index.ts"],
+            "@semoss/sdk": ["../../libs/sdk/src/index.ts"]
         },
         "target": "es6",
         "lib": ["dom", "dom.iterable", "esnext"],
@@ -20,5 +22,9 @@
         "incremental": true,
         "experimentalDecorators": true
     },
-    "include": ["./src", "./global.d.ts"]
+    "include": [
+        "./src",
+        "./global.d.ts",
+        "../../libs/renderer/src/store/state/migration"
+    ]
 }

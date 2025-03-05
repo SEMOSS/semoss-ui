@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 
 import { useDesigner } from '@/hooks';
 import { ErrorBoundary } from '@/components/common';
-import { Renderer } from '@/components/blocks';
+import { RendererEngine } from '@semoss/renderer';
 
 import { Screen } from './Screen';
 interface DesignerPanelProps {
@@ -23,7 +23,7 @@ export const Designer = observer(
         return (
             <Screen>
                 <ErrorBoundary title={'Something went wrong!'}>
-                    <Renderer id={id} />
+                    <RendererEngine id={id} />
                 </ErrorBoundary>
             </Screen>
         );

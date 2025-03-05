@@ -252,7 +252,7 @@ export const EngineShell = (props: EngineShellProps) => {
                     <StyledChipContainer>
                         {metaVals.tag &&
                             (metaVals.tag as string[]).map((tag, i) => {
-                                return <Chip key={i} label={tag} />;
+                                if (i < 2) return <Chip key={i} label={tag} />;
                             })}
                     </StyledChipContainer>
                 </StyledInfoLeft>
