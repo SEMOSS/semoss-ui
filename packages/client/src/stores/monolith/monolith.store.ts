@@ -2642,11 +2642,11 @@ export class MonolithStore {
         limit?: number,
     ) {
         let getAllUsersURL = `${Env.MODULE}/api/auth/`;
-        let getAllUsersCountURL = `${Env.MODULE}/api/auth/`;
+        let getNumUsersURL = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
             getAllUsersURL += 'admin/';
-            getAllUsersCountURL += 'admin/';
+            getNumUsersURL += 'admin/';
         } else {
             return;
         }
@@ -2682,12 +2682,10 @@ export class MonolithStore {
             .catch((error) => {
                 throw Error(error);
             });
-        getAllUsersCountURL += 'user/getAllUsersCount';
-        const count = await axios
-            .get<number>(getAllUsersCountURL)
-            .catch((error) => {
-                throw Error(error);
-            });
+        getNumUsersURL += 'user/getNumUsers';
+        const count = await axios.get<number>(getNumUsersURL).catch((error) => {
+            throw Error(error);
+        });
 
         // there was no response, that is an error
         if (!response || !count) {
