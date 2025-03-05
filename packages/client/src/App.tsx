@@ -12,12 +12,22 @@ axios.interceptors.request.use(
         if (config.method === 'get' && config.params) {
             config.paramsSerializer = (params) => {
                 return Object.keys(params)
-                    .map(
-                        (key) =>
-                            `${encodeURIComponent(key)}=${encodeURIComponent(
-                                params[key],
-                            )}`,
-                    )
+                    .map((key) => {
+                        if (params[key] === undefined) {
+                            return '';
+                        }
+
+                        return `${encodeURIComponent(key)}=${encodeURIComponent(
+                            params[key],
+                        )}`;
+                    })
+                    .filter((p) => {
+                        if (p) {
+                            return true;
+                        }
+
+                        return false;
+                    })
                     .join('&');
             };
         }
