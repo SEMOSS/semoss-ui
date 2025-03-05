@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { styled } from "@mui/material";
 
-import { Bar } from "./Variants/bar-chart/Bar";
-import { Pie } from "./Variants/PieChart/Pie";
+import { Bar } from "./variant/bar-chart/Bar";
+import { Pie } from "./variant/pie-chart/Pie";
 import { BAR_CHART_DATA } from "./Visualization.constants";
-import { ScatterPlotBlock } from "./Variants/ScatterPlot/ScatterPlot";
+import { ScatterPlotBlock } from "./variant/scatter-plot/ScatterPlot";
 import { useBlock, useBlocks, useBlockSettings } from "../../../hooks";
 import { BlockComponent, BlockDef } from "../../../store";
 import { PathValue } from "../../../types";

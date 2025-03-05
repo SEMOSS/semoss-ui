@@ -31,7 +31,7 @@ const DEV_BLOCKS = [];
 if (process.env.NODE_ENV === 'development') {
     DEV_BLOCKS.push({
         section: SECTION_CHARTS,
-        name: 'Pie Chart (e-charts)',
+        name: 'Pie Chart',
         helperText: 'Show proportions of a whole',
         activeImage: BLOCK_IMAGES['PIE_CHART_ACTIVE'],
         hoverImage: BLOCK_IMAGES['PIE_CHART_HOVER'],
@@ -188,7 +188,7 @@ if (process.env.NODE_ENV === 'development') {
     });
     DEV_BLOCKS.push({
         section: SECTION_CHARTS,
-        name: 'Bar Chart (e-charts)',
+        name: 'Bar Chart',
         helperText:
             'Compare cumulative totals and individual segments across categories',
         activeImage: BLOCK_IMAGES['BAR_CHART_ACTIVE'],
@@ -296,7 +296,7 @@ if (process.env.NODE_ENV === 'development') {
     });
     DEV_BLOCKS.push({
         section: SECTION_CHARTS,
-        name: 'Scatter Plot (e-charts)',
+        name: 'Scatter Plot',
         helperText: 'Show relationships between two variables',
         activeImage: BLOCK_IMAGES['SCATTER_PLOT_ACTIVE'],
         hoverImage: BLOCK_IMAGES['SCATTER_PLOT_HOVER'],
@@ -1176,51 +1176,6 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_CHARTS,
-        name: 'Bar Chart',
-        helperText:
-            'Compare cumulative totals and individual segments across categories',
-        activeImage: BLOCK_IMAGES['BAR_CHART_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['BAR_CHART_HOVER'],
-        json: {
-            widget: 'vega',
-            data: {
-                variation: 'bar-chart',
-                specJson: JSON.stringify(
-                    {
-                        $schema:
-                            'https://vega.github.io/schema/vega-lite/v5.json',
-                        title: 'Bar Chart',
-                        width: 300,
-                        height: 300,
-                        data: {
-                            values: [
-                                { a: 'A', b: 28 },
-                                { a: 'B', b: 55 },
-                                { a: 'C', b: 43 },
-                                { a: 'D', b: 91 },
-                                { a: 'E', b: 81 },
-                                { a: 'F', b: 53 },
-                                { a: 'G', b: 19 },
-                                { a: 'H', b: 87 },
-                                { a: 'I', b: 52 },
-                            ],
-                        },
-                        mark: 'bar',
-                        encoding: {
-                            x: { field: 'a', type: 'ordinal' },
-                            y: { field: 'b', type: 'quantitative' },
-                        },
-                    },
-                    null,
-                    2,
-                ),
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
         name: 'Grouped Bar Chart',
         helperText:
             'Compare individual values across multiple categories side by side',
@@ -1256,48 +1211,6 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                             y: { field: 'value', type: 'quantitative' },
                             xOffset: { field: 'group' },
                             color: { field: 'group' },
-                        },
-                    },
-                    null,
-                    2,
-                ),
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Pie Chart',
-        helperText: 'Show proportions of a whole',
-        activeImage: BLOCK_IMAGES['PIE_CHART_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['PIE_CHART_HOVER'],
-        json: {
-            widget: 'vega',
-            data: {
-                variation: 'pie-chart',
-                specJson: JSON.stringify(
-                    {
-                        $schema:
-                            'https://vega.github.io/schema/vega-lite/v5.json',
-                        title: 'Pie Chart',
-                        width: 300,
-                        height: 300,
-                        description: 'A simple pie chart with embedded data.',
-                        data: {
-                            values: [
-                                { category: 1, value: 4 },
-                                { category: 2, value: 6 },
-                                { category: 3, value: 10 },
-                                { category: 4, value: 3 },
-                                { category: 5, value: 7 },
-                                { category: 6, value: 8 },
-                            ],
-                        },
-                        mark: 'arc',
-                        encoding: {
-                            theta: { field: 'value', type: 'quantitative' },
-                            color: { field: 'category', type: 'nominal' },
                         },
                     },
                     null,
@@ -1540,49 +1453,136 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
-    {
-        section: SECTION_CHARTS,
-        name: 'Scatter Plot',
-        helperText: 'Show relationships between two variables',
-        activeImage: BLOCK_IMAGES['SCATTER_PLOT_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['SCATTER_PLOT_HOVER'],
-        json: {
-            widget: 'vega',
-            data: {
-                variation: 'scatter-plot',
-                specJson: JSON.stringify(
-                    {
-                        $schema:
-                            'https://vega.github.io/schema/vega-lite/v5.json',
-                        title: 'Scatter Plot',
-                        width: 300,
-                        height: 300,
-                        description: 'A scatterplot.',
-                        data: {
-                            values: [
-                                { a: 10, b: 28 },
-                                { a: 20, b: 55 },
-                                { a: 30, b: 91 },
-                                { a: 40, b: 81 },
-                                { a: 50, b: 81 },
-                                { a: 60, b: 19 },
-                                { a: 70, b: 87 },
-                            ],
-                        },
-                        mark: 'point',
-                        encoding: {
-                            x: { field: 'a', type: 'quantitative' },
-                            y: { field: 'b', type: 'quantitative' },
-                        },
-                    },
-                    null,
-                    2,
-                ),
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
+    // {
+    //     section: SECTION_CHARTS,
+    //     name: 'Scatter Plot',
+    //     helperText: 'Show relationships between two variables',
+    //     activeImage: BLOCK_IMAGES['SCATTER_PLOT_ACTIVE'],
+    //     hoverImage: BLOCK_IMAGES['SCATTER_PLOT_HOVER'],
+    //     json: {
+    //         widget: 'vega',
+    //         data: {
+    //             variation: 'scatter-plot',
+    //             specJson: JSON.stringify(
+    //                 {
+    //                     $schema:
+    //                         'https://vega.github.io/schema/vega-lite/v5.json',
+    //                     title: 'Scatter Plot',
+    //                     width: 300,
+    //                     height: 300,
+    //                     description: 'A scatterplot.',
+    //                     data: {
+    //                         values: [
+    //                             { a: 10, b: 28 },
+    //                             { a: 20, b: 55 },
+    //                             { a: 30, b: 91 },
+    //                             { a: 40, b: 81 },
+    //                             { a: 50, b: 81 },
+    //                             { a: 60, b: 19 },
+    //                             { a: 70, b: 87 },
+    //                         ],
+    //                     },
+    //                     mark: 'point',
+    //                     encoding: {
+    //                         x: { field: 'a', type: 'quantitative' },
+    //                         y: { field: 'b', type: 'quantitative' },
+    //                     },
+    //                 },
+    //                 null,
+    //                 2,
+    //             ),
+    //         },
+    //         listeners: {},
+    //         slots: {} as BlockJSON['slots'],
+    //     },
+    // },
+    // {
+    //     section: SECTION_CHARTS,
+    //     name: 'Bar Chart',
+    //     helperText:
+    //         'Compare cumulative totals and individual segments across categories',
+    //     activeImage: BLOCK_IMAGES['BAR_CHART_ACTIVE'],
+    //     hoverImage: BLOCK_IMAGES['BAR_CHART_HOVER'],
+    //     json: {
+    //         widget: 'vega',
+    //         data: {
+    //             variation: 'bar-chart',
+    //             specJson: JSON.stringify(
+    //                 {
+    //                     $schema:
+    //                         'https://vega.github.io/schema/vega-lite/v5.json',
+    //                     title: 'Bar Chart',
+    //                     width: 300,
+    //                     height: 300,
+    //                     data: {
+    //                         values: [
+    //                             { a: 'A', b: 28 },
+    //                             { a: 'B', b: 55 },
+    //                             { a: 'C', b: 43 },
+    //                             { a: 'D', b: 91 },
+    //                             { a: 'E', b: 81 },
+    //                             { a: 'F', b: 53 },
+    //                             { a: 'G', b: 19 },
+    //                             { a: 'H', b: 87 },
+    //                             { a: 'I', b: 52 },
+    //                         ],
+    //                     },
+    //                     mark: 'bar',
+    //                     encoding: {
+    //                         x: { field: 'a', type: 'ordinal' },
+    //                         y: { field: 'b', type: 'quantitative' },
+    //                     },
+    //                 },
+    //                 null,
+    //                 2,
+    //             ),
+    //         },
+    //         listeners: {},
+    //         slots: {} as BlockJSON['slots'],
+    //     },
+    // },
+    // {
+    //     section: SECTION_CHARTS,
+    //     name: 'Pie Chart',
+    //     helperText: 'Show proportions of a whole',
+    //     activeImage: BLOCK_IMAGES['PIE_CHART_ACTIVE'],
+    //     hoverImage: BLOCK_IMAGES['PIE_CHART_HOVER'],
+    //     json: {
+    //         widget: 'vega',
+    //         data: {
+    //             variation: 'pie-chart',
+    //             specJson: JSON.stringify(
+    //                 {
+    //                     $schema:
+    //                         'https://vega.github.io/schema/vega-lite/v5.json',
+    //                     title: 'Pie Chart',
+    //                     width: 300,
+    //                     height: 300,
+    //                     description: 'A simple pie chart with embedded data.',
+    //                     data: {
+    //                         values: [
+    //                             { category: 1, value: 4 },
+    //                             { category: 2, value: 6 },
+    //                             { category: 3, value: 10 },
+    //                             { category: 4, value: 3 },
+    //                             { category: 5, value: 7 },
+    //                             { category: 6, value: 8 },
+    //                         ],
+    //                     },
+    //                     mark: 'arc',
+    //                     encoding: {
+    //                         theta: { field: 'value', type: 'quantitative' },
+    //                         color: { field: 'category', type: 'nominal' },
+    //                     },
+    //                 },
+    //                 null,
+    //                 2,
+    //             ),
+    //         },
+    //         listeners: {},
+    //         slots: {} as BlockJSON['slots'],
+    //     },
+    // },
     // -------------------------------------------------------------
     // CHARTS END
     // ----------------------------------------------------------

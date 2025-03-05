@@ -5,10 +5,10 @@ import { Stack, styled, ToggleTabsGroup } from "@semoss/ui";
 import { useBlock } from "../../../hooks";
 import { BlockComponent } from "../../../store";
 import { AIGenerationSettings, JsonSettings } from "../../block-settings";
-import { UpgradedVisualizationTool } from "./Variants/bar-chart/UpgradedVisualizationTool";
-import { FrameOperations } from "./Variants/bar-chart/FrameOperations";
-import { FrameOperationsPie } from "./Variants/PieChart/FrameOperationsPie";
-import { ScatterPlotBlockSettings } from "./Variants/ScatterPlot/ScatterPlotBlockSettings";
+import { UpgradedVisualizationTool } from "./variant/bar-chart/UpgradedVisualizationTool";
+import { FrameOperations } from "./variant/bar-chart/FrameOperations";
+import { FrameOperationsPie } from "./variant/pie-chart/FrameOperationsPie";
+import { ScatterPlotBlockSettings } from "./variant/scatter-plot/ScatterPlotBlockSettings";
 
 const StyledContainer = styled("div")(() => ({
     maxHeight: "50vh",

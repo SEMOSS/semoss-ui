@@ -8,7 +8,7 @@ import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 
 import { Autocomplete, IconButton, TextField } from "@semoss/ui";
 
-import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks";
+import { EchartVisualizationBlockDef } from "../../../echart-visualization-block";
 import { BaseSettingSection } from "../../../../block-settings";
 import { Block, BlockDef } from "../../../../../store";
 import { Paths, PathValue } from "../../../../../types";
