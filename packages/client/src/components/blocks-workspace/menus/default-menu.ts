@@ -25,8 +25,460 @@ export const SECTION_ORDER = [
     SECTION_FLOWS,
 ];
 
+// Development Environment Blocks
+const DEV_BLOCKS = [];
+
+if (process.env.NODE_ENV === 'development') {
+    DEV_BLOCKS.push({
+        section: SECTION_CHARTS,
+        name: 'Pie Chart',
+        helperText: 'Show proportions of a whole',
+        activeImage: BLOCK_IMAGES['PIE_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PIE_CHART_HOVER'],
+        json: {
+            widget: 'e-chart',
+            data: {
+                variation: 'echart-pie-chart',
+                frame: {
+                    name: '',
+                },
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '4px',
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                    width: '450px',
+                    height: '350px',
+                },
+                option: {
+                    dataset: {
+                        source: [
+                            { name: 'a', value: 85 },
+                            { name: 'b', value: 79 },
+                        ],
+                    },
+                    // color: ['#40A0FF','#9A74B6','#FBB83A','#F18630','#51ACA8','#187687','#CD5498','#364A90'],
+                    color: [
+                        '#ff6f61',
+                        '#6b5b95',
+                        '#88b04b',
+                        '#f7cac9',
+                        '#92a8d1',
+                        '#034f84',
+                        '#f7786b',
+                        '#deeaee',
+                    ],
+                    title: {
+                        text: '',
+                        left: 'center',
+                        show: true,
+                        textStyle: {
+                            fontSize: 18,
+                            color: '#ff6f61',
+                            fontWeight: 'normal',
+                        },
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                        show: false,
+                    },
+                    legend: {
+                        show: false,
+                        orient: 'vertical',
+                        left: 'left',
+                        top: 'top',
+                        textStyle: {
+                            fontSize: 10,
+                            color: '#000000',
+                        },
+                    },
+                    series: [
+                        {
+                            name: 'Access From',
+                            type: 'pie',
+                            radius: '50%',
+                            label: {
+                                show: true,
+                                position: 'outside',
+                                fontSize: 10,
+                                color: '#000000',
+                                backgroundColor: '',
+                                rotate: 0,
+                            },
+                            labelLine: {
+                                length: 30,
+                            },
+                            data: [
+                                { value: 1048, name: 'Search Engine' },
+                                { value: 735, name: 'Direct' },
+                                { value: 580, name: 'Email' },
+                                { value: 484, name: 'Union Ads' },
+                                { value: 300, name: 'Video Ads' },
+                            ],
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0.5, 0, 0, 0.5)',
+                                },
+                            },
+                        },
+                    ],
+                    reset: {
+                        radius: '50%',
+                        title: {
+                            text: '',
+                            left: 'center',
+                            show: true,
+                            textStyle: {
+                                fontSize: 18,
+                                color: '#ff6f61',
+                                fontWeight: 'normal',
+                                fontFamily: '',
+                            },
+                        },
+                        label: {
+                            show: true,
+                            position: 'outside',
+                            fontSize: 10,
+                            color: '#000000',
+                            backgroundColor: '',
+                            rotate: 0,
+                            fontFamily: '',
+                        },
+                        labelLine: {
+                            length: 30,
+                        },
+                    },
+                },
+
+                specJson: JSON.stringify(
+                    {
+                        $schema: '',
+                        title: 'E Pie Chart',
+                        width: 300,
+                        height: 200,
+                        data: {
+                            values: [
+                                { a: 'A', b: 28 },
+                                { a: 'B', b: 55 },
+                                { a: 'C', b: 43 },
+                                { a: 'D', b: 91 },
+                                { a: 'E', b: 81 },
+                                { a: 'F', b: 53 },
+                                { a: 'G', b: 19 },
+                                { a: 'H', b: 87 },
+                                { a: 'I', b: 52 },
+                            ],
+                        },
+                        mark: 'pie',
+                        encoding: {
+                            x: { field: 'a', type: 'ordinal' },
+                            y: { field: 'b', type: 'quantitative' },
+                        },
+                    },
+                    null,
+                    2,
+                ),
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    });
+    DEV_BLOCKS.push({
+        section: SECTION_CHARTS,
+        name: 'Bar Chart',
+        helperText:
+            'Compare cumulative totals and individual segments across categories',
+        activeImage: BLOCK_IMAGES['BAR_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['BAR_CHART_HOVER'],
+        json: {
+            widget: 'e-chart',
+            data: {
+                variation: 'echart-bar-graph',
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '4px',
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                    width: '450px',
+                    height: '350px',
+                },
+                frame: {
+                    name: '',
+                },
+                option: {
+                    xAxis: {
+                        type: 'category',
+                        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    },
+                    yAxis: {
+                        type: 'value',
+                    },
+                    color: [
+                        '#5470c6',
+                        '#91cc75',
+                        '#fac858',
+                        '#ee6666',
+                        '#73c0de',
+                        '#3ba272',
+                        '#fc8452',
+                        '#9a60b4',
+                        '#ea7ccc',
+                    ],
+                    series: [
+                        {
+                            name: 'Category',
+                            data: [
+                                {
+                                    value: 120,
+                                },
+                                200,
+                                150,
+                                80,
+                                70,
+                                110,
+                                130,
+                            ],
+                            type: 'bar',
+                            labelLine: {
+                                show: true,
+                            },
+                            label: {
+                                color: '#000000',
+                            },
+                            itemStyle: {
+                                color: '#5470c6',
+                            },
+                        },
+                    ],
+                    tooltip: {
+                        show: true,
+                        trigger: 'axis',
+                    },
+                    dataZoom: [
+                        {
+                            show: true,
+                            start: 0,
+                            end: 100,
+                            yAxisIndex: 0,
+                        },
+                    ],
+                    brush: {
+                        toolbox: ['rect', 'polygon'],
+                    },
+                    toolbox: {
+                        show: true,
+                        feature: {
+                            dataZoom: {
+                                show: true,
+                            },
+                        },
+                    },
+                    title: {
+                        text: 'Bar Graph',
+                        show: true,
+                        left: 'left',
+                        textStyle: {
+                            color: '#000000',
+                            fontWeight: 'bold',
+                            fontFamily: 'Arial Narrow',
+                            fontSize: 12,
+                        },
+                    },
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    });
+    DEV_BLOCKS.push({
+        section: SECTION_CHARTS,
+        name: 'Scatter Plot',
+        helperText: 'Show relationships between two variables',
+        activeImage: BLOCK_IMAGES['SCATTER_PLOT_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['SCATTER_PLOT_HOVER'],
+        json: {
+            widget: 'e-chart',
+            data: {
+                variation: 'echart-scatter-plots',
+                style: {
+                    height: 500,
+                    width: 400,
+                },
+                option: {
+                    title: {
+                        text: '',
+                        left: 'center',
+                        top: 'top',
+                    },
+                    tooltip: {
+                        show: true,
+                        trigger: 'item',
+                        position: 'bottom',
+                    },
+                    xAxis: {
+                        name: '',
+                        pixelName: '',
+                        nameLocation: 'middle',
+                        show: true,
+                        type: 'value',
+                        axisLine: {
+                            show: true,
+                        },
+                        axisTick: {
+                            show: true,
+                            alignWithLabel: true,
+                        },
+                        nameTextStyle: {
+                            fontSize: 12,
+                        },
+                        axisLabel: {
+                            show: true,
+                            rotate: 0,
+                            fontSize: 11,
+                            color: '#000000',
+                        },
+                    },
+                    yAxis: {
+                        name: '',
+                        pixelName: '',
+                        type: 'value',
+                        show: true,
+                        axisLine: {
+                            show: true,
+                        },
+                        axisTick: {
+                            show: true,
+                            alignWithLabel: true,
+                        },
+                        nameTextStyle: {
+                            fontSize: 12,
+                        },
+                        axisLabel: {
+                            show: true,
+                            rotate: 0,
+                            fontSize: 12,
+                            color: '#000000',
+                        },
+                    },
+                    series: [
+                        {
+                            data: [],
+                            label: {
+                                show: true,
+                                rotate: 0,
+                                name: '',
+                                position: 'top',
+                                fontFamily: 'sans-serif',
+                                fontSize: 12,
+                                color: '#000000',
+                            },
+                            symbolSize: 15,
+                            symbol: 'circle',
+                            type: 'scatter',
+                        },
+                    ],
+                    color: [
+                        '#5470c6',
+                        '#91cc75',
+                        '#fac858',
+                        '#ee6666',
+                        '#73c0de',
+                        '#3ba272',
+                        '#fc8452',
+                        '#9a60b4',
+                        '#ea7ccc',
+                    ],
+                    toolbox: {
+                        feature: {
+                            brush: {
+                                type: ['rect'],
+                            },
+                        },
+                    },
+                    brush: {
+                        // Brush configuration
+                        brushType: 'rect', // You can also use 'polygon', 'lineX', or 'lineY'
+                        throttleType: 'debounce', // Throttle brush events
+                        throttleDelay: 300, // Delay for throttle (in ms)
+                        inBrush: {
+                            color: 'rgba(255, 0, 0, 0.3)', // Highlight color for the brushed region
+                        },
+                        outBrush: {
+                            color: 'rgba(0, 0, 0, 0.1)', // Color for points outside the brushed region
+                        },
+                    },
+                    reset: {
+                        axis: {
+                            xaxis: {
+                                show: true,
+                                axisLine: {
+                                    show: true,
+                                },
+                                axisTick: {
+                                    show: true,
+                                    alignWithLabel: true,
+                                },
+                                nameTextStyle: {
+                                    fontSize: 12,
+                                },
+                                axisLabel: {
+                                    show: true,
+                                    rotate: 0,
+                                    fontSize: 11,
+                                    color: '#000000',
+                                },
+                            },
+                            yaxis: {
+                                show: true,
+                                axisLine: {
+                                    show: true,
+                                },
+                                axisTick: {
+                                    show: true,
+                                    alignWithLabel: true,
+                                },
+                                nameTextStyle: {
+                                    fontSize: 12,
+                                },
+                                axisLabel: {
+                                    show: true,
+                                    rotate: 0,
+                                    fontSize: 12,
+                                    color: '#000000',
+                                },
+                            },
+                        },
+                        label: {
+                            show: true,
+                            rotate: 0,
+                            name: '',
+                            position: 'top',
+                            fontFamily: 'sans-serif',
+                            fontSize: 12,
+                            color: '#000000',
+                        },
+                    },
+                },
+                frame: {
+                    name: '',
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    });
+}
+
 // TODO: Alphabetical order by name
 export const DEFAULT_MENU: DesignerMenuItem[] = [
+    // -------------------------------------------------------------
+    // BLOCKS START
+    // ----------------------------------------------------------
+    ...DEV_BLOCKS,
     {
         section: SECTION_LAYOUT,
         name: 'Accordion',
@@ -681,6 +1133,12 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
+    // -------------------------------------------------------------
+    // BLOCK END
+    // ----------------------------------------------------------
+    // -------------------------------------------------------------
+    // CHART START
+    // ----------------------------------------------------------
     {
         section: SECTION_CHARTS,
         name: 'Vega',
@@ -711,51 +1169,6 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 view: {
                     pagination: true,
                 },
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Bar Chart',
-        helperText:
-            'Compare cumulative totals and individual segments across categories',
-        activeImage: BLOCK_IMAGES['BAR_CHART_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['BAR_CHART_HOVER'],
-        json: {
-            widget: 'vega',
-            data: {
-                variation: 'bar-chart',
-                specJson: JSON.stringify(
-                    {
-                        $schema:
-                            'https://vega.github.io/schema/vega-lite/v5.json',
-                        title: 'Bar Chart',
-                        width: 300,
-                        height: 300,
-                        data: {
-                            values: [
-                                { a: 'A', b: 28 },
-                                { a: 'B', b: 55 },
-                                { a: 'C', b: 43 },
-                                { a: 'D', b: 91 },
-                                { a: 'E', b: 81 },
-                                { a: 'F', b: 53 },
-                                { a: 'G', b: 19 },
-                                { a: 'H', b: 87 },
-                                { a: 'I', b: 52 },
-                            ],
-                        },
-                        mark: 'bar',
-                        encoding: {
-                            x: { field: 'a', type: 'ordinal' },
-                            y: { field: 'b', type: 'quantitative' },
-                        },
-                    },
-                    null,
-                    2,
-                ),
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -798,48 +1211,6 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                             y: { field: 'value', type: 'quantitative' },
                             xOffset: { field: 'group' },
                             color: { field: 'group' },
-                        },
-                    },
-                    null,
-                    2,
-                ),
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Pie Chart',
-        helperText: 'Show proportions of a whole',
-        activeImage: BLOCK_IMAGES['PIE_CHART_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['PIE_CHART_HOVER'],
-        json: {
-            widget: 'vega',
-            data: {
-                variation: 'pie-chart',
-                specJson: JSON.stringify(
-                    {
-                        $schema:
-                            'https://vega.github.io/schema/vega-lite/v5.json',
-                        title: 'Pie Chart',
-                        width: 300,
-                        height: 300,
-                        description: 'A simple pie chart with embedded data.',
-                        data: {
-                            values: [
-                                { category: 1, value: 4 },
-                                { category: 2, value: 6 },
-                                { category: 3, value: 10 },
-                                { category: 4, value: 3 },
-                                { category: 5, value: 7 },
-                                { category: 6, value: 8 },
-                            ],
-                        },
-                        mark: 'arc',
-                        encoding: {
-                            theta: { field: 'value', type: 'quantitative' },
-                            color: { field: 'category', type: 'nominal' },
                         },
                     },
                     null,
@@ -1082,49 +1453,142 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
-    {
-        section: SECTION_CHARTS,
-        name: 'Scatter Plot',
-        helperText: 'Show relationships between two variables',
-        activeImage: BLOCK_IMAGES['SCATTER_PLOT_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['SCATTER_PLOT_HOVER'],
-        json: {
-            widget: 'vega',
-            data: {
-                variation: 'scatter-plot',
-                specJson: JSON.stringify(
-                    {
-                        $schema:
-                            'https://vega.github.io/schema/vega-lite/v5.json',
-                        title: 'Scatter Plot',
-                        width: 300,
-                        height: 300,
-                        description: 'A scatterplot.',
-                        data: {
-                            values: [
-                                { a: 10, b: 28 },
-                                { a: 20, b: 55 },
-                                { a: 30, b: 91 },
-                                { a: 40, b: 81 },
-                                { a: 50, b: 81 },
-                                { a: 60, b: 19 },
-                                { a: 70, b: 87 },
-                            ],
-                        },
-                        mark: 'point',
-                        encoding: {
-                            x: { field: 'a', type: 'quantitative' },
-                            y: { field: 'b', type: 'quantitative' },
-                        },
-                    },
-                    null,
-                    2,
-                ),
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
+    // {
+    //     section: SECTION_CHARTS,
+    //     name: 'Scatter Plot',
+    //     helperText: 'Show relationships between two variables',
+    //     activeImage: BLOCK_IMAGES['SCATTER_PLOT_ACTIVE'],
+    //     hoverImage: BLOCK_IMAGES['SCATTER_PLOT_HOVER'],
+    //     json: {
+    //         widget: 'vega',
+    //         data: {
+    //             variation: 'scatter-plot',
+    //             specJson: JSON.stringify(
+    //                 {
+    //                     $schema:
+    //                         'https://vega.github.io/schema/vega-lite/v5.json',
+    //                     title: 'Scatter Plot',
+    //                     width: 300,
+    //                     height: 300,
+    //                     description: 'A scatterplot.',
+    //                     data: {
+    //                         values: [
+    //                             { a: 10, b: 28 },
+    //                             { a: 20, b: 55 },
+    //                             { a: 30, b: 91 },
+    //                             { a: 40, b: 81 },
+    //                             { a: 50, b: 81 },
+    //                             { a: 60, b: 19 },
+    //                             { a: 70, b: 87 },
+    //                         ],
+    //                     },
+    //                     mark: 'point',
+    //                     encoding: {
+    //                         x: { field: 'a', type: 'quantitative' },
+    //                         y: { field: 'b', type: 'quantitative' },
+    //                     },
+    //                 },
+    //                 null,
+    //                 2,
+    //             ),
+    //         },
+    //         listeners: {},
+    //         slots: {} as BlockJSON['slots'],
+    //     },
+    // },
+    // {
+    //     section: SECTION_CHARTS,
+    //     name: 'Bar Chart',
+    //     helperText:
+    //         'Compare cumulative totals and individual segments across categories',
+    //     activeImage: BLOCK_IMAGES['BAR_CHART_ACTIVE'],
+    //     hoverImage: BLOCK_IMAGES['BAR_CHART_HOVER'],
+    //     json: {
+    //         widget: 'vega',
+    //         data: {
+    //             variation: 'bar-chart',
+    //             specJson: JSON.stringify(
+    //                 {
+    //                     $schema:
+    //                         'https://vega.github.io/schema/vega-lite/v5.json',
+    //                     title: 'Bar Chart',
+    //                     width: 300,
+    //                     height: 300,
+    //                     data: {
+    //                         values: [
+    //                             { a: 'A', b: 28 },
+    //                             { a: 'B', b: 55 },
+    //                             { a: 'C', b: 43 },
+    //                             { a: 'D', b: 91 },
+    //                             { a: 'E', b: 81 },
+    //                             { a: 'F', b: 53 },
+    //                             { a: 'G', b: 19 },
+    //                             { a: 'H', b: 87 },
+    //                             { a: 'I', b: 52 },
+    //                         ],
+    //                     },
+    //                     mark: 'bar',
+    //                     encoding: {
+    //                         x: { field: 'a', type: 'ordinal' },
+    //                         y: { field: 'b', type: 'quantitative' },
+    //                     },
+    //                 },
+    //                 null,
+    //                 2,
+    //             ),
+    //         },
+    //         listeners: {},
+    //         slots: {} as BlockJSON['slots'],
+    //     },
+    // },
+    // {
+    //     section: SECTION_CHARTS,
+    //     name: 'Pie Chart',
+    //     helperText: 'Show proportions of a whole',
+    //     activeImage: BLOCK_IMAGES['PIE_CHART_ACTIVE'],
+    //     hoverImage: BLOCK_IMAGES['PIE_CHART_HOVER'],
+    //     json: {
+    //         widget: 'vega',
+    //         data: {
+    //             variation: 'pie-chart',
+    //             specJson: JSON.stringify(
+    //                 {
+    //                     $schema:
+    //                         'https://vega.github.io/schema/vega-lite/v5.json',
+    //                     title: 'Pie Chart',
+    //                     width: 300,
+    //                     height: 300,
+    //                     description: 'A simple pie chart with embedded data.',
+    //                     data: {
+    //                         values: [
+    //                             { category: 1, value: 4 },
+    //                             { category: 2, value: 6 },
+    //                             { category: 3, value: 10 },
+    //                             { category: 4, value: 3 },
+    //                             { category: 5, value: 7 },
+    //                             { category: 6, value: 8 },
+    //                         ],
+    //                     },
+    //                     mark: 'arc',
+    //                     encoding: {
+    //                         theta: { field: 'value', type: 'quantitative' },
+    //                         color: { field: 'category', type: 'nominal' },
+    //                     },
+    //                 },
+    //                 null,
+    //                 2,
+    //             ),
+    //         },
+    //         listeners: {},
+    //         slots: {} as BlockJSON['slots'],
+    //     },
+    // },
+    // -------------------------------------------------------------
+    // CHARTS END
+    // ----------------------------------------------------------
+    // -------------------------------------------------------------
+    // MERMAID START
+    // ----------------------------------------------------------
     {
         section: SECTION_FLOWS,
         name: 'General Mermaid',

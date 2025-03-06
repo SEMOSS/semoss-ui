@@ -162,7 +162,7 @@ const StyledNoUsersDiv = styled('div')(({ theme }) => ({
     alignItems: 'center',
 }));
 
-const formatModelLimitValue = (input: string) => {
+const formatValue = (input: string) => {
     if (input !== undefined) {
         const mappings: Record<string, string> = {
             TOKEN: 'Token',
@@ -171,6 +171,7 @@ const formatModelLimitValue = (input: string) => {
             WEEK: 'Weekly',
             MONTH: 'Monthly',
             NULL: 'None',
+            NATIVE: 'Native',
         };
         return mappings[input.toUpperCase()] || input;
     }
@@ -189,10 +190,10 @@ interface User {
     phoneextension?: string;
     countrycode?: string;
     username?: string;
-    usage_restriction?: string;
-    usage_frequency?: string;
-    max_tokens?: number;
-    max_response_time?: number;
+    model_usage_restriction?: string;
+    model_usage_frequency?: string;
+    model_max_tokens?: number;
+    model_max_response_time?: number;
     unit?: string;
 }
 
@@ -212,7 +213,6 @@ export const UserTable = (props: UserTableProps) => {
 
     const [page, setPage] = useState<number>(0);
     const [rowsPerPage, setRowsPerPage] = useState<number>(5);
-    const [displayedUsers, setDisplayedUsers] = useState([]);
     const [isSearch, setIsSearch] = useState<boolean>(false);
     const [search, setSearch] = useState<string>('');
 
@@ -240,21 +240,12 @@ export const UserTable = (props: UserTableProps) => {
     // track if the page is loading
     const isLoading =
         getUsers.status === 'INITIAL' || getUsers.status === 'LOADING';
-    const totalUsers = getUsers.status === 'SUCCESS' ? getUsers.data.length : 0;
-    const hasUsers = getUsers.status === 'SUCCESS' && getUsers.data.length > 0;
-
-    // Set the displayed users when the data, page, or rowsPerPage change.
-    useEffect(() => {
-        if (getUsers.status === 'SUCCESS') {
-            const displayed = getUsers.data.slice(
-                page * rowsPerPage,
-                (page + 1) * rowsPerPage,
-            );
-            setDisplayedUsers(displayed);
-        } else {
-            setDisplayedUsers([]);
-        }
-    }, [getUsers.status, page, rowsPerPage]);
+    const renderedMembers =
+        getUsers.status === 'SUCCESS' ? getUsers.data['users'] : [];
+    const totalUsers =
+        getUsers.status === 'SUCCESS' ? getUsers.data['totalUsers'] : 0;
+    const hasUsers =
+        getUsers.status === 'SUCCESS' && getUsers.data['totalUsers'] > 0;
 
     /**
      * Update a user
@@ -262,6 +253,16 @@ export const UserTable = (props: UserTableProps) => {
      */
     const updateUser = async (user: User) => {
         try {
+            if (user.exporter === undefined || user.publisher === undefined) {
+                if (user.exporter) {
+                    user.publisher = false;
+                } else if (user.publisher) {
+                    user.exporter = false;
+                } else {
+                    user.publisher = false;
+                    user.exporter = false;
+                }
+            }
             const response = await monolithStore.editMemberInfo(
                 adminMode,
                 user,
@@ -384,16 +385,16 @@ export const UserTable = (props: UserTableProps) => {
 
     // Avatars rendered
     const Avatars = useMemo(() => {
-        if (!displayedUsers.length) {
+        if (!renderedMembers.length) {
             return [];
         }
 
         let i = 0;
         const avatarList = [];
-        while (i < 5 && i < displayedUsers.length) {
+        while (i < 5 && i < renderedMembers.length) {
             avatarList.push(
                 <Avatar key={i}>
-                    {(displayedUsers[i].name || ' ').charAt(0).toUpperCase()}
+                    {(renderedMembers[i].name || ' ').charAt(0).toUpperCase()}
                 </Avatar>,
             );
 
@@ -401,7 +402,7 @@ export const UserTable = (props: UserTableProps) => {
         }
 
         return avatarList;
-    }, [displayedUsers.length]);
+    }, [renderedMembers.length]);
 
     return (
         <StyledMemberContent>
@@ -434,7 +435,6 @@ export const UserTable = (props: UserTableProps) => {
                                 </StyledTableTitleMemberCount>
                             </StyledTableTitleMemberCountContainer>
                         </StyledTableTitleMemberContainer>
-
                         <StyledSearchButtonContainer>
                             {isSearch ? (
                                 <Search
@@ -502,17 +502,17 @@ export const UserTable = (props: UserTableProps) => {
                                                 <Checkbox
                                                     checked={
                                                         selectedMembers.length ===
-                                                            displayedUsers.length &&
-                                                        displayedUsers.length >
+                                                            renderedMembers.length &&
+                                                        renderedMembers.length >
                                                             0
                                                     }
                                                     onChange={() => {
                                                         if (
                                                             selectedMembers.length !==
-                                                            displayedUsers.length
+                                                            renderedMembers.length
                                                         ) {
                                                             setSelectedMembers(
-                                                                displayedUsers,
+                                                                renderedMembers,
                                                             );
                                                         } else {
                                                             setSelectedMembers(
@@ -549,8 +549,7 @@ export const UserTable = (props: UserTableProps) => {
                                         </Table.Row>
                                     </Table.Head>
                                     <Table.Body>
-                                        {displayedUsers.map((x, i) => {
-                                            const user = displayedUsers[i];
+                                        {renderedMembers.map((user) => {
                                             let isSelected = false;
                                             if (user) {
                                                 isSelected =
@@ -562,224 +561,219 @@ export const UserTable = (props: UserTableProps) => {
                                                             );
                                                         },
                                                     );
-                                                if (user) {
-                                                    return (
-                                                        <Table.Row
-                                                            key={user.id}
+                                                return (
+                                                    <Table.Row key={user.id}>
+                                                        <StyledTableCell
+                                                            size="medium"
+                                                            padding="checkbox"
                                                         >
-                                                            <StyledTableCell
-                                                                size="medium"
-                                                                padding="checkbox"
-                                                            >
-                                                                <StyledCheckbox
-                                                                    checked={
+                                                            <StyledCheckbox
+                                                                checked={
+                                                                    isSelected
+                                                                }
+                                                                onChange={() => {
+                                                                    if (
                                                                         isSelected
+                                                                    ) {
+                                                                        const selMembers =
+                                                                            [];
+                                                                        selectedMembers.forEach(
+                                                                            (
+                                                                                u,
+                                                                            ) => {
+                                                                                if (
+                                                                                    u.id !==
+                                                                                    user.id
+                                                                                )
+                                                                                    selMembers.push(
+                                                                                        u,
+                                                                                    );
+                                                                            },
+                                                                        );
+                                                                        setSelectedMembers(
+                                                                            selMembers,
+                                                                        );
+                                                                    } else {
+                                                                        setSelectedMembers(
+                                                                            [
+                                                                                ...selectedMembers,
+                                                                                user,
+                                                                            ],
+                                                                        );
                                                                     }
-                                                                    onChange={() => {
-                                                                        if (
-                                                                            isSelected
-                                                                        ) {
-                                                                            const selMembers =
-                                                                                [];
-                                                                            selectedMembers.forEach(
-                                                                                (
-                                                                                    u,
-                                                                                ) => {
-                                                                                    if (
-                                                                                        u.id !==
-                                                                                        user.id
-                                                                                    )
-                                                                                        selMembers.push(
-                                                                                            u,
-                                                                                        );
-                                                                                },
-                                                                            );
-                                                                            setSelectedMembers(
-                                                                                selMembers,
-                                                                            );
-                                                                        } else {
-                                                                            setSelectedMembers(
-                                                                                [
-                                                                                    ...selectedMembers,
-                                                                                    user,
-                                                                                ],
-                                                                            );
+                                                                }}
+                                                            />
+                                                        </StyledTableCell>
+                                                        <Table.Cell>
+                                                            <StyledCenteredBox>
+                                                                <AvatarWrapper>
+                                                                    <Avatar>
+                                                                        {user.name[0].toUpperCase()}
+                                                                    </Avatar>
+                                                                </AvatarWrapper>
+                                                                <Stack
+                                                                    direction={
+                                                                        'column'
+                                                                    }
+                                                                    spacing={0}
+                                                                    flex={1}
+                                                                >
+                                                                    <StyledPrimaryText
+                                                                        variant="body1"
+                                                                        noWrap={
+                                                                            true
                                                                         }
-                                                                    }}
-                                                                />
-                                                            </StyledTableCell>
-                                                            <Table.Cell>
-                                                                <StyledCenteredBox>
-                                                                    <AvatarWrapper>
-                                                                        <Avatar>
-                                                                            {user.name[0].toUpperCase()}
-                                                                        </Avatar>
-                                                                    </AvatarWrapper>
+                                                                        title={`Name: ${user.name}`}
+                                                                    >
+                                                                        {user.name || (
+                                                                            <>
+                                                                                &nbsp;
+                                                                            </>
+                                                                        )}
+                                                                    </StyledPrimaryText>
                                                                     <Stack
                                                                         direction={
-                                                                            'column'
+                                                                            'row'
+                                                                        }
+                                                                        alignItems={
+                                                                            'center'
                                                                         }
                                                                         spacing={
-                                                                            0
+                                                                            1
                                                                         }
-                                                                        flex={1}
+                                                                        width={
+                                                                            '150px'
+                                                                        }
+                                                                        title={`Id: ${user.id}`}
                                                                     >
-                                                                        <StyledPrimaryText
-                                                                            variant="body1"
+                                                                        <StyledSecondaryText
+                                                                            variant="body2"
                                                                             noWrap={
                                                                                 true
                                                                             }
-                                                                            title={`Name: ${user.name}`}
                                                                         >
-                                                                            {user.name || (
+                                                                            ID:
+                                                                        </StyledSecondaryText>
+                                                                        <StyledPrimaryText
+                                                                            variant="body2"
+                                                                            noWrap={
+                                                                                true
+                                                                            }
+                                                                        >
+                                                                            {user.id || (
                                                                                 <>
                                                                                     &nbsp;
                                                                                 </>
                                                                             )}
                                                                         </StyledPrimaryText>
-                                                                        <Stack
-                                                                            direction={
-                                                                                'row'
-                                                                            }
-                                                                            alignItems={
-                                                                                'center'
-                                                                            }
-                                                                            spacing={
-                                                                                1
-                                                                            }
-                                                                            width={
-                                                                                '150px'
-                                                                            }
-                                                                            title={`Id: ${user.id}`}
-                                                                        >
-                                                                            <StyledSecondaryText
-                                                                                variant="body2"
-                                                                                noWrap={
-                                                                                    true
-                                                                                }
-                                                                            >
-                                                                                ID:
-                                                                            </StyledSecondaryText>
-                                                                            <StyledPrimaryText
-                                                                                variant="body2"
-                                                                                noWrap={
-                                                                                    true
-                                                                                }
-                                                                            >
-                                                                                {user.id || (
-                                                                                    <>
-                                                                                        &nbsp;
-                                                                                    </>
-                                                                                )}
-                                                                            </StyledPrimaryText>
-                                                                        </Stack>
                                                                     </Stack>
-                                                                </StyledCenteredBox>
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                {user.email}
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                {user.type}
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                {formatModelLimitValue(
-                                                                    user?.model_usage_restriction,
-                                                                )}
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                {user?.model_usage_restriction ===
-                                                                    'compute' &&
-                                                                    `${user?.model_max_response_time?.toLocaleString()} ms`}
+                                                                </Stack>
+                                                            </StyledCenteredBox>
+                                                        </Table.Cell>
+                                                        <Table.Cell>
+                                                            {user.email}
+                                                        </Table.Cell>
+                                                        <Table.Cell>
+                                                            {formatValue(
+                                                                user.type,
+                                                            )}
+                                                        </Table.Cell>
+                                                        <Table.Cell>
+                                                            {formatValue(
+                                                                user?.model_usage_restriction,
+                                                            )}
+                                                        </Table.Cell>
+                                                        <Table.Cell>
+                                                            {user?.model_usage_restriction ===
+                                                                'compute' &&
+                                                                `${user?.model_max_response_time?.toLocaleString()} ms`}
 
-                                                                {user?.model_usage_restriction ===
-                                                                    'token' &&
-                                                                    `${user?.model_max_tokens?.toLocaleString()}`}
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                {formatModelLimitValue(
-                                                                    user?.model_usage_frequency,
-                                                                )}
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                <StyledCenteredBox>
-                                                                    <Checkbox
-                                                                        label="Publisher"
-                                                                        checked={
-                                                                            user.publisher
-                                                                        }
-                                                                        onChange={() => {
-                                                                            updateUser(
-                                                                                {
-                                                                                    ...user,
-                                                                                    publisher:
-                                                                                        !user.publisher,
-                                                                                },
-                                                                            );
-                                                                        }}
-                                                                    />
-                                                                    <Checkbox
-                                                                        label="Exporter"
-                                                                        checked={
-                                                                            user.exporter
-                                                                        }
-                                                                        onChange={() => {
-                                                                            updateUser(
-                                                                                {
-                                                                                    ...user,
-                                                                                    exporter:
-                                                                                        !user.exporter,
-                                                                                },
-                                                                            );
-                                                                        }}
-                                                                    />
-                                                                    <Checkbox
-                                                                        label="Admin"
-                                                                        checked={
-                                                                            user.admin
-                                                                        }
-                                                                        onChange={() => {
-                                                                            updateUser(
-                                                                                {
-                                                                                    ...user,
-                                                                                    admin: !user.admin,
-                                                                                },
-                                                                            );
-                                                                        }}
-                                                                    />
-                                                                </StyledCenteredBox>
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                <StyledCenteredBox>
-                                                                    <IconButton
-                                                                        onClick={() => {
-                                                                            setAddModalOpen(
-                                                                                true,
-                                                                            );
+                                                            {user?.model_usage_restriction ===
+                                                                'token' &&
+                                                                `${user?.model_max_tokens?.toLocaleString()}`}
+                                                        </Table.Cell>
+                                                        <Table.Cell>
+                                                            {formatValue(
+                                                                user?.model_usage_frequency,
+                                                            )}
+                                                        </Table.Cell>
+                                                        <Table.Cell>
+                                                            <StyledCenteredBox>
+                                                                <Checkbox
+                                                                    label="Publisher"
+                                                                    checked={
+                                                                        user.publisher
+                                                                    }
+                                                                    onChange={() => {
+                                                                        updateUser(
+                                                                            {
+                                                                                ...user,
+                                                                                publisher:
+                                                                                    !user.publisher,
+                                                                            },
+                                                                        );
+                                                                    }}
+                                                                />
+                                                                <Checkbox
+                                                                    label="Exporter"
+                                                                    checked={
+                                                                        user.exporter
+                                                                    }
+                                                                    onChange={() => {
+                                                                        updateUser(
+                                                                            {
+                                                                                ...user,
+                                                                                exporter:
+                                                                                    !user.exporter,
+                                                                            },
+                                                                        );
+                                                                    }}
+                                                                />
+                                                                <Checkbox
+                                                                    label="Admin"
+                                                                    checked={
+                                                                        user.admin
+                                                                    }
+                                                                    onChange={() => {
+                                                                        updateUser(
+                                                                            {
+                                                                                ...user,
+                                                                                admin: !user.admin,
+                                                                            },
+                                                                        );
+                                                                    }}
+                                                                />
+                                                            </StyledCenteredBox>
+                                                        </Table.Cell>
+                                                        <Table.Cell>
+                                                            <StyledCenteredBox>
+                                                                <IconButton
+                                                                    onClick={() => {
+                                                                        setAddModalOpen(
+                                                                            true,
+                                                                        );
 
-                                                                            setAddModalUser(
-                                                                                user,
-                                                                            );
-                                                                        }}
-                                                                    >
-                                                                        <Edit />
-                                                                    </IconButton>
-                                                                    <IconButton
-                                                                        onClick={() => {
-                                                                            deleteUser(
-                                                                                user,
-                                                                            );
-                                                                        }}
-                                                                    >
-                                                                        <Delete />
-                                                                    </IconButton>
-                                                                </StyledCenteredBox>
-                                                            </Table.Cell>
-                                                        </Table.Row>
-                                                    );
-                                                }
+                                                                        setAddModalUser(
+                                                                            user,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Edit />
+                                                                </IconButton>
+                                                                <IconButton
+                                                                    onClick={() => {
+                                                                        deleteUser(
+                                                                            user,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Delete />
+                                                                </IconButton>
+                                                            </StyledCenteredBox>
+                                                        </Table.Cell>
+                                                    </Table.Row>
+                                                );
                                             }
-
                                             return null;
                                         })}
                                     </Table.Body>
