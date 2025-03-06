@@ -190,7 +190,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
         if (user) {
             setSelectedRole(user?.permission as SETTINGS_ROLE);
             setRestriction(
-                user?.usage_restriction !== 'null'
+                user?.usage_restriction !== undefined
                     ? user?.usage_restriction
                     : 'null',
             );

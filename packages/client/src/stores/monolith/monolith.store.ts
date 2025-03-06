@@ -2641,15 +2641,17 @@ export class MonolithStore {
         offset?: number,
         limit?: number,
     ) {
-        let url = `${Env.MODULE}/api/auth/`;
+        let getAllUsersURL = `${Env.MODULE}/api/auth/`;
+        let getNumUsersURL = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
-            url += 'admin/';
+            getAllUsersURL += 'admin/';
+            getNumUsersURL += 'admin/';
         } else {
             return;
         }
 
-        url += 'user/getAllUsers';
+        getAllUsersURL += 'user/getAllUsers';
         // get the response
         const response = await axios
             .get<
@@ -2665,12 +2667,12 @@ export class MonolithStore {
                     phoneextension?: string;
                     countrycode?: string;
                     username?: string;
-                    usage_restriction?: string;
-                    usage_frequency?: string;
-                    max_tokens?: number;
-                    max_response_time?: number;
+                    model_usage_restriction?: string;
+                    model_usage_frequency?: string;
+                    model_max_tokens?: number;
+                    model_max_response_time?: number;
                 }[]
-            >(url, {
+            >(getAllUsersURL, {
                 params: {
                     filterWord: searchTerm,
                     offset: offset,
@@ -2680,13 +2682,22 @@ export class MonolithStore {
             .catch((error) => {
                 throw Error(error);
             });
+        getNumUsersURL += 'user/getNumUsers';
+        const count = await axios.get<number>(getNumUsersURL).catch((error) => {
+            throw Error(error);
+        });
 
         // there was no response, that is an error
-        if (!response) {
+        if (!response || !count) {
             throw Error('No Response to get Members');
         }
 
-        return response.data;
+        const finalResponse = {
+            users: response.data,
+            totalUsers: searchTerm !== '' ? response.data.length : count.data,
+        };
+
+        return finalResponse;
     }
 
     /**

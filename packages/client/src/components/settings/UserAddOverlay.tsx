@@ -4,6 +4,7 @@ import {
     LocalPoliceRounded,
     CloudUploadRounded,
     DownloadForOfflineRounded,
+    Flag,
 } from '@mui/icons-material';
 import {
     styled,
@@ -224,6 +225,25 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                 if (isNewUser) {
                     response = await monolithStore.createUser(adminMode, data);
                 } else {
+                    if (
+                        data.exporter === undefined ||
+                        data.publisher === undefined
+                    ) {
+                        if (data.exporter) {
+                            data.publisher = false;
+                        } else if (data.publisher) {
+                            data.exporter = false;
+                        } else {
+                            data.publisher = false;
+                            data.exporter = false;
+                        }
+                    }
+                    if (data.model_usage_restriction === 'token') {
+                        data.model_max_response_time = null;
+                    }
+                    if (data.model_usage_restriction === 'compute') {
+                        data.model_max_tokens = null;
+                    }
                     if (data.model_usage_restriction === 'null') {
                         data.model_max_response_time = null;
                         data.model_max_tokens = null;
@@ -292,13 +312,17 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                                 control={control}
                                 rules={{}}
                                 render={({ field }) => {
+                                    // Change value to match option.provider value.
+                                    // add more logic here if more providers are added.
+                                    let value = field.value;
+                                    if (value === 'Native') {
+                                        value = 'native';
+                                    }
                                     return (
                                         <Select
                                             label="Type"
                                             disabled={isNewUser ? false : true}
-                                            value={
-                                                field.value ? field.value : ''
-                                            }
+                                            value={value ? value : ''}
                                             onChange={(e) => {
                                                 field.onChange(e.target.value);
                                             }}
@@ -367,7 +391,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                                 }}
                             />
                         </Stack>
-                        {type === 'Native' && (
+                        {type.toLowerCase() === 'native' && (
                             <>
                                 <Controller
                                     name="password"
