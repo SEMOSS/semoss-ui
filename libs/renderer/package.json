@@ -79,7 +79,10 @@
         "rollup-plugin-terser": "^7.0.2",
         "tslib": "2.5.3",
         "vega": "^5.27.0",
-        "vega-lite": "^5.16.3"
+        "vega-lite": "^5.16.3",
+        "echarts": "^5.5.1",
+        "echarts-for-react": "^3.0.2",
+        "react-color": "^2.19.3"
     },
     "peerDependencies": {
         "@mui/material": "5.13.5",
