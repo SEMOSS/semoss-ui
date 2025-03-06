@@ -22,6 +22,11 @@ import {
     ContainerBlockDef,
 } from "./container-block";
 
+import {
+    config as EchartVisualizationBlockConfig,
+    EchartVisualizationBlockDef,
+} from "./echart-visualization-block";
+
 import { config as GridBlockConfig, GridBlockDef } from "./grid-block";
 
 import { config as HTMLBlockConfig, HTMLBlockDef } from "./html-block";
@@ -102,6 +107,7 @@ export type DefaultBlockDefinitions =
     | MermaidBlockDef
     | ModalBlockDef
     | PageBlockDef
+    | PDFViewerBlockDef
     | ProgressBlockDef
     | SelectBlockDef
     | SidebarBlockDef
@@ -112,7 +118,8 @@ export type DefaultBlockDefinitions =
     | UploadBlockDef
     | VegaVisualizationBlockDef
     | RadioBlockDef
-    | PDFViewerBlockDef;
+    | ThemeBlockDef
+    | EchartVisualizationBlockDef;
 // | BodyBlockDef
 // | DividerBlockDef
 // | FooterBlockDef
@@ -129,6 +136,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
+    [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
     [GridBlockConfig.widget]: GridBlockConfig,
     [IframeBlockConfig.widget]: IframeBlockConfig,
     [ImageBlockConfig.widget]: ImageBlockConfig,
@@ -180,6 +188,7 @@ export {
     ThemeBlockConfig,
     UploadBlockConfig,
     VegaVisualizationBlockConfig,
+    EchartVisualizationBlockConfig,
     MermaidBlockConfig,
     ModalBlockConfig,
     RadioBlockConfig,
