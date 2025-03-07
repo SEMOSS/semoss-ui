@@ -1,3 +1,3 @@
-import { LineSettings, LineBlock } from './LineChart';
+import { LineSettings, Line } from './LineChart';
 
-export { LineSettings, LineBlock };
+export { LineSettings, Line };

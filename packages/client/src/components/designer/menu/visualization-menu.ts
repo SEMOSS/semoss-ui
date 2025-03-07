@@ -817,6 +817,7 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                     },
                     tooltip: {
                         trigger: 'axis',
+                        show: true,
                     },
                     legend: {
                         show: true,
@@ -836,6 +837,7 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                             fontSize: 10,
                         },
                         data: ['A', 'B', 'C', 'D', 'E'],
+                        show: true,
                     },
                     axisTick: {
                         show: true,
@@ -863,6 +865,7 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                         nameTextStyle: {
                             fontSize: 10,
                         },
+                        show: true,
                     },
                     color: [
                         '#ff6f61',
@@ -886,42 +889,46 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                             label: {
                                 show: true,
                                 position: 'top',
-                                rotate: 45,
+                                rotate: 0,
                                 fontSize: 12,
                                 color: '#000000',
                             },
                         },
-                        // {
-                        //     name: 'b',
-                        //     type: 'line',
-                        //     data: [28, 30, 22, 35, 30],
-                        //     lineStyle: {
-                        //         type: 'solid',
-                        //         width: 1,
-                        //     },
-                        //     label: { show: true, position: 'top', rotate: 45, fontSize: 12, color: '#000000' }
-                        // },
-                        // {
-                        //     name: 'c',
-                        //     type: 'line',
-                        //     data: [28, 30, 22, 35, 30],
-                        //     lineStyle: {
-                        //         type: 'solid',
-                        //         width: 1,
-                        //     },
-                        //     label: { show: true, position: 'top', rotate: 45, fontSize: 12, color: '#000000' }
-                        // },
-                        // {
-                        //     name: 'd',
-                        //     type: 'line',
-                        //     data: [28, 30, 22, 35, 30],
-                        //     lineStyle: {
-                        //         type: 'solid',
-                        //         width: 1,
-                        //     },
-                        //     label: { show: true, position: 'top', rotate: 45, fontSize: 12, color: '#000000' }
-                        // },
                     ],
+                    reset: {
+                        title: {
+                            text: '',
+                            left: 'center',
+                            show: true,
+                            textStyle: {
+                                fontSize: 18,
+                                color: '#ff6f61',
+                                fontWeight: 'normal',
+                                fontFamily: '',
+                            },
+                        },
+                        xAxis: {
+                            name: '',
+                            updatedName: null,
+                            axisTick: true,
+                            axisLabelFont: 10,
+                        },
+                        yAxis: {
+                            name: '',
+                            updatedName: null,
+                            axisTick: true,
+                            axisLabelFont: 10,
+                        },
+                        label: {
+                            show: true,
+                            position: 'top',
+                            fontSize: 10,
+                            color: '#000000',
+                            backgroundColor: '',
+                            rotate: 0,
+                            fontFamily: '',
+                        },
+                    },
                     toolbox: {
                         feature: {
                             brush: {
@@ -932,6 +939,11 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                                     'lineY',
                                     'clear',
                                 ],
+                                brushType: 'rect',
+                                xAxisIndex: 'all',
+                                yAxisIndex: 'all',
+                                brushMode: 'single',
+                                brushLink: 'all',
                             },
                         },
                     },
@@ -946,6 +958,9 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                         outBrush: {
                             color: 'rgba(0, 0, 0, 0.1)', // Color for points outside the brushed region
                         },
+                        xAxisIndex: 'all', // Apply brush on x-axis
+                        brushMode: 'single',
+                        brushLink: 'all',
                     },
                 },
             },

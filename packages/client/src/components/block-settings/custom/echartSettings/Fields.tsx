@@ -95,6 +95,7 @@ export const Fields = observer(
                 try {
                     // set the value
                     setData('option', newSpec);
+                    console.log('New Spec', newSpec);
                 } catch (e) {
                     console.log(e);
                 }
@@ -104,8 +105,10 @@ export const Fields = observer(
         const handleAxisChange = (
             newValue: string[],
             axis: 'xAxis' | 'yAxis',
+            addedChips?: string,
         ) => {
             // insert the new value
+            console.log(addedChips, 'Added Chips');
             let tempValue = JSON.parse(value);
             tempValue[axis] = {
                 ...tempValue[axis],
@@ -120,6 +123,7 @@ export const Fields = observer(
                         ...tempValue['series'][i],
                         name: newValue[i],
                         type: 'line',
+                        data: tempValue['series'][i]?.data ?? [],
                         lineStyle: {
                             type: 'solid',
                             width: 1,
@@ -133,22 +137,29 @@ export const Fields = observer(
                         },
                     };
                 }
-            }
+                // setTooltip([...tooltip, addedChips]);
 
+                // let newTooltip = tooltip.filter(x => x !== addedChips)
+                // console.log('New Tooltip', newTooltip);
+                // setTooltip(newTooltip);
+                //console.log("Tooltip Value", tooltip);
+            }
+            // console.log('New Value', newValue);
+            // console.log('X Axis', xAxis);
+            //console.log("Tooltip outside Value", tooltip);
             tempValue['_state']['fields'] = {
                 ...tempValue['_state']['fields'],
                 xAxis: axis === 'xAxis' ? [newValue[0]] : xAxis,
                 yAxis: axis === 'yAxis' ? newValue : yAxis,
                 tooltip: tooltip,
             };
-
+            delete tempValue['tooltip']['formatter'];
             // set the value
             setValue(JSON.stringify(tempValue));
             dispatchData(tempValue);
         };
 
         const handleRemoveLines = (removedChips, segment) => {
-            console.log(removedChips);
             let tempValue = JSON.parse(value);
             if (segment === 'xAxis') {
                 setXAxis([]);
@@ -193,48 +204,26 @@ export const Fields = observer(
             dispatchData(tempValue);
         };
 
-        const handleTooltipChange = (newValue: string[]) => {
-            setTooltip(newValue);
-            // insert the new value
+        const handleTooltipChange = (newValue: string[], addedChips) => {
             let tempValue = JSON.parse(value);
-            if (!tempValue['tooltip'].hasOwnProperty('formatter')) {
-                tempValue['tooltip'] = {
-                    ...tempValue['tooltip'],
-                    formatter:
-                        ((params) => {
-                            let formatterStringArr = ['<div>'];
-                            formatterStringArr.push(
-                                `<strong>${params[0].name}</strong><br>`,
-                            );
-                            params.forEach((param) => {
-                                const { value, seriesName, color } = param;
-                                formatterStringArr.push(
-                                    `<span style="color:${color}">\u25CF</span> Average of ${seriesName}:<strong> ${value?.toFixed(
-                                        1,
-                                    )}</strong><br>`,
-                                );
-                            });
-                            const { data } = params[0];
-                            const tooltips = Object.entries(data);
-                            tooltips.shift();
-                            if (tooltips.length) {
-                                tooltips.forEach((tooltip) => {
-                                    formatterStringArr.push(
-                                        `Average of ${tooltip[0]}: <strong>${tooltip[1]}</strong><br>`,
-                                    );
-                                });
-                            }
-                            formatterStringArr.push('</div>');
-                            return formatterStringArr.join('');
-                        }) + '',
-                };
+            console.log('Tooltip Value inside the tooltip function', tooltip);
+            console.log('New Value inside the tooltip function', newValue);
+            if (!yAxis.includes(addedChips)) {
+                setTooltip(newValue);
+
+                if (
+                    !tempValue['_state']['fields']['xAxis'].includes(
+                        newValue,
+                    ) &&
+                    !tempValue['_state']['fields']['yAxis'].includes(newValue)
+                ) {
+                    tempValue['_state']['fields'] = {
+                        ...tempValue['_state']['fields'],
+                        tooltip: newValue,
+                    };
+                }
             }
-
-            tempValue['_state']['fields'] = {
-                ...tempValue['_state']['fields'],
-                tooltip: newValue,
-            };
-
+            // insert the new value
             // set the value
             setValue(JSON.stringify(tempValue));
             dispatchData(tempValue);
@@ -260,7 +249,34 @@ export const Fields = observer(
                 </li>
             );
         };
-
+        const tooltipRenderOption = (
+            props: any,
+            option: string,
+            { selected }: any,
+        ) => {
+            const { ...optionProps } = props;
+            console.log('Selected Tooltip', option, selected);
+            return (
+                <li
+                    {...optionProps}
+                    // aria-disabled={
+                    //     xAxis.includes(option) || yAxis.includes(option)
+                    // }
+                >
+                    <Checkbox
+                        icon={icon}
+                        checkedIcon={checkedIcon}
+                        style={{ marginRight: 8 }}
+                        //checked={selected}
+                        checked={selected}
+                        // disabled={
+                        //     xAxis.includes(option) || yAxis.includes(option)
+                        // }
+                    />
+                    {option}
+                </li>
+            );
+        };
         return (
             <>
                 <BaseSettingSection label="x-Axis">
@@ -283,6 +299,7 @@ export const Fields = observer(
                             handleAxisChange(
                                 value.sort((a, b) => a.localeCompare(b)),
                                 'xAxis',
+                                details.option,
                             );
                         }}
                         renderOption={renderOption}
@@ -315,6 +332,7 @@ export const Fields = observer(
                             handleAxisChange(
                                 value.sort((a, b) => a.localeCompare(b)),
                                 'yAxis',
+                                details.option,
                             );
                         }}
                         renderOption={renderOption}
@@ -346,9 +364,10 @@ export const Fields = observer(
                                 handleRemoveLines(details.option, 'tooltip');
                             handleTooltipChange(
                                 value.sort((a, b) => a.localeCompare(b)),
+                                details.option,
                             );
                         }}
-                        renderOption={renderOption}
+                        renderOption={tooltipRenderOption}
                         renderInput={(params) => (
                             <TextField
                                 {...params}

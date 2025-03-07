@@ -1,22 +1,16 @@
 import { observer } from 'mobx-react-lite';
-import { useBlock, useFrame, useBlocks } from '@/hooks';
+import { useFrame, useBlocks, useBlockSettings } from '@/hooks';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { BlockComponent } from '@/stores';
 import { styled } from '@mui/material';
-import * as echarts from 'echarts';
 import ReactECharts from 'echarts-for-react';
 import { EchartVisualizationBlockDef } from '../../EchartVisualizationBlock';
 import { CustomContextMenu } from './CustomContextMenu';
-import { PathValue } from '@/types';
 import { getValueByPath } from '@/utility';
 import { computed } from 'mobx';
 
 const StyledChartContainer = styled('div')(() => ({
-    // width: 'fit-content',
-    minWidth: '50px',
-    minHeight: '50px',
+    height: '100%',
 }));
-
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',
 })<{ error?: boolean }>(({ error = false, theme }) => ({
@@ -24,22 +18,61 @@ const StyledNoDataContainer = styled('div', {
     width: '80vh',
     color: error ? theme.palette.error.main : 'unset',
 }));
-
-export const LineBlock: BlockComponent = observer(({ id }) => {
-    const { data, attrs, setData } = useBlock<EchartVisualizationBlockDef>(id);
-    const { state } = useBlocks();
+interface LineProps {
+    id: string;
+    updateJson: (data: any, path: any) => void;
+}
+export const Line = observer(({ id, updateJson }: LineProps) => {
+    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
         mouseY: number;
         value: unknown;
     } | null>(null);
+    let resultData: unknown = {};
 
+    function getVisualizationBlockSelector(id: string) {
+        if (this._store.blocks[id]) {
+            //get the options JSON of the selected block
+            let blockJSON = this._store.blocks[id].data.option;
+
+            //initialize the selector string
+            let selector = 'Select(';
+
+            //if there are no fields, return null
+            if (!blockJSON['_state']) return null;
+
+            //get the fields
+            let selectorFields = blockJSON['_state']['fields'];
+
+            //  get the y axis and tooltip properties
+            let dynamicYAndTooltipSet = [
+                ...new Set([
+                    ...selectorFields['yAxis'],
+                    ...selectorFields['tooltip'],
+                ]),
+            ];
+
+            // start forming the selector string
+            selector += `${selectorFields['xAxis'][0]}`;
+
+            // add dynamic y axis and tooltip fields to the selector string
+            let averageCollection = '';
+            for (let i = 0; i < dynamicYAndTooltipSet.length; i++) {
+                averageCollection += `, Average(${dynamicYAndTooltipSet[i]})`;
+                selector += `, Average(${dynamicYAndTooltipSet[i]})`;
+            }
+
+            selector += `).as([${selectorFields['xAxis'][0]}${averageCollection}])|Group(${selectorFields['xAxis'][0]})|Sort(${selectorFields['xAxis'][0]})`;
+            return selector;
+        }
+
+        return null;
+    }
     // get the frame
     const frame = useFrame(data.frame.name, {
-        selector: state.getVisualizationBlockSelector(id),
+        selector: getVisualizationBlockSelector(id),
     });
-    const [value, setValue] = useState<any>({});
-    //Trying out different approach for TrendLine, work in progress
     const computedValue = useMemo(() => {
         return computed(() => {
             if (!data) {
@@ -54,19 +87,15 @@ export const LineBlock: BlockComponent = observer(({ id }) => {
             return JSON.stringify(v, null, 2);
         });
     }, [data, 'option']).get();
-
-    // update the value whenever the computed one changes
     useEffect(() => {
-        let computedValue1 = JSON.parse(computedValue);
-        if (frame.data.values.length > 0 && computedValue1) {
-            let processedFrameData = formatDataPoints(data.option);
-            if (processedFrameData) {
-                computedValue1['series'][0]['data'] = processedFrameData;
-            }
-            setData('option', processedFrameData, true);
-            setValue(processedFrameData);
+        if (
+            data?.frame?.name &&
+            frame?.data?.values.length > 0 &&
+            frame?.isLoading === false
+        ) {
+            updateJson(resultData, 'option');
         }
-    }, [computedValue]);
+    }, [frame.data.values]);
     //format the frame option data for echart
     const formatDataPoints = useCallback(
         (resultData: unknown) => {
@@ -88,46 +117,63 @@ export const LineBlock: BlockComponent = observer(({ id }) => {
                 for (let index = 0; index < yAxisListLength; index++) {
                     resultData['series'][index]['data'] = valuesDataSet.map(
                         (x) => {
-                            return { value: x[index] };
+                            return x[index];
                         },
                     );
+                    resultData['series'][index]['name'] = headersDataSet[index];
                 }
                 resultData['series'] = resultData['series'].filter((x) =>
                     resultData['yAxis']['name'].includes(x.name),
                 );
                 valuesDataSet.map((x) => x.splice(0, yAxisListLength));
                 headersDataSet.splice(0, yAxisListLength);
-
-                if (valuesDataSet[0].length > 0) {
-                    resultData['tooltip']['formatter'] = eval(
-                        resultData['tooltip']['formatter'],
-                    );
-
-                    resultData['series'][0]['data'] = resultData['series'][0][
-                        'data'
-                    ].map((x, index) => {
-                        let arr = valuesDataSet[index].map((y, idx) => {
-                            return {
-                                [headersDataSet[idx]]: isNaN(y)
-                                    ? null
-                                    : y.toFixed(1),
-                            };
-                        });
-                        let result = arr.reduce((acc, curr) => {
-                            return { ...acc, ...curr };
-                        }, {});
-                        return {
-                            ...x,
-                            ...result,
-                        };
+                let customTooltipData = [];
+                data.option['_state']?.['fields']['tooltip'].map((x, index) => {
+                    customTooltipData.push({
+                        name: x,
+                        data: valuesDataSet.map((y) => y[index]),
                     });
+                });
+                if (!resultData['tooltip'].hasOwnProperty('formatter')) {
+                    let customTooltipData = [];
+                    data.option['_state']?.['fields']['tooltip'].map(
+                        (x, index) => {
+                            customTooltipData.push({
+                                name: x,
+                                data: valuesDataSet.map((y) => y[index]),
+                            });
+                        },
+                    );
+                    resultData['tooltip'] = {
+                        ...resultData['tooltip'],
+                        formatter: ((customTooltipData) => (params) => {
+                            let formatterStringArr = ['<div>'];
+                            let dataIndex = params[0]?.dataIndex;
+                            formatterStringArr.push(
+                                `<strong>${params[0].name}</strong><br>`,
+                            );
+                            params.forEach((param) => {
+                                let { value, seriesName, color } = param;
+                                if (!isNaN(value) && value !== undefined) {
+                                    value = value.toFixed(1);
+                                }
+                                formatterStringArr.push(
+                                    `<span style="color:${color}">\u25CF</span> Average of ${seriesName}:<strong> ${value}</strong><br>`,
+                                );
+                            });
+                            customTooltipData.forEach((data) => {
+                                formatterStringArr.push(
+                                    `<span style="color:">\u25CF</span> ${data.name}:<strong> ${data.data[dataIndex]}</strong><br>`,
+                                );
+                            });
+                            formatterStringArr.push(`</div>`);
+                            return formatterStringArr.join(' ');
+                        })(customTooltipData),
+                    };
                 } else {
                     delete resultData['tooltip']['formatter'];
                 }
-            } else {
-                delete resultData['tooltip']['formatter'];
             }
-            setData('option', resultData as PathValue<any, any>);
             return resultData;
         },
         [frame.data.values],
@@ -143,8 +189,9 @@ export const LineBlock: BlockComponent = observer(({ id }) => {
         // update the frame
         frame.filter(`SetFrameFilter(${name}==[${value}])`);
     }, 2000);
-    const echartsLoaded = (chart) => {
+    const echartsLoaded = debounce((chart) => {
         chart.on('brushSelected', (params) => {
+            console.log('params', params);
             let selectedData = params.batch[0].selected[0].dataIndex;
             const currentOption = chart.getOption();
             let labelData = currentOption.series[0].data;
@@ -157,13 +204,15 @@ export const LineBlock: BlockComponent = observer(({ id }) => {
                     currentOption.series[0].label.name,
                 );
             }
-        });
-    };
+        }),
+            chart.on('brushEnd', (params) => {
+                console.log('End params', params);
+            });
+    }, 2000);
     const onClickChart = {
         contextmenu: (params) => {
-            //  let currentOption = chart.getOption();
             if (params.data) {
-                let labelName = data.option['series'][0]['name'];
+                let labelName = params.seriesName;
                 setContextMenu(
                     contextMenu === null
                         ? {
@@ -171,7 +220,7 @@ export const LineBlock: BlockComponent = observer(({ id }) => {
                               mouseY: params.event.event.clientY,
                               value: {
                                   label: labelName,
-                                  value: params.data.value,
+                                  value: params.data,
                               },
                           }
                         : // repeated contextmenu when it is already open closes it with Chrome 84 on Ubuntu
@@ -191,35 +240,41 @@ export const LineBlock: BlockComponent = observer(({ id }) => {
         try {
             const lineOptions = JSON.parse(data.option);
             return (
-                <StyledChartContainer {...attrs}>
+                <StyledChartContainer>
                     <ReactECharts
                         option={lineOptions}
+                        onEvents={onClickChart}
                         onChartReady={(chart) => {
                             echartsLoaded(chart);
                         }}
-                        onEvents={onClickChart}
                     />
                 </StyledChartContainer>
             );
         } catch (e) {
             return (
-                <StyledNoDataContainer error {...attrs}>
+                <StyledNoDataContainer error>
                     There was an issue parsing your JSON.
                 </StyledNoDataContainer>
             );
         }
     } else {
-        const formatedOption = data.frame.name
-            ? formatDataPoints(data.option)
-            : data.option;
+        resultData =
+            data?.frame?.name &&
+            frame.data.values.length > 0 &&
+            frame.isLoading === false
+                ? formatDataPoints(JSON.parse(computedValue))
+                : JSON.parse(computedValue);
         return (
-            <StyledChartContainer {...attrs}>
+            <StyledChartContainer>
                 <ReactECharts
-                    option={formatedOption}
+                    option={resultData}
+                    onEvents={onClickChart}
                     onChartReady={(chart) => {
                         echartsLoaded(chart);
                     }}
-                    onEvents={onClickChart}
+                    style={{
+                        height: 'inherit',
+                    }}
                 />
                 <CustomContextMenu
                     id={id}

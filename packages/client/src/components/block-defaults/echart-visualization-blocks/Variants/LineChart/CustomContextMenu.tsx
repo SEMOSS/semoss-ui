@@ -7,21 +7,17 @@ import { EchartVisualizationBlockDef } from '../../EchartVisualizationBlock';
 export interface VizBlockContextMenuProps {
     /** ID of the block */
     id: string;
-
     /** Frame that the user is interacting with */
     frame: ReturnType<typeof useFrame>;
-
     /** Context Menu */
     contextMenu: {
         mouseX: number;
         mouseY: number;
         value: any;
     } | null;
-
     /** Close the context menu */
     onClose: () => void;
 }
-
 export const CustomContextMenu: React.FC<VizBlockContextMenuProps> = observer(
     ({ id = '', frame = null, contextMenu = null, onClose = () => null }) => {
         const { data } = useBlock<EchartVisualizationBlockDef>(id);

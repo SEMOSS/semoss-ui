@@ -1,256 +1,360 @@
+import { useBlockSettings } from '@/hooks';
+import { Block, BlockDef } from '@/stores';
+import { Paths, PathValue } from '@/types';
+import { getValueByPath } from '@/utility';
+import { styled, Switch, TextField, Select, Button } from '@semoss/ui';
+import { computed } from 'mobx';
+import { observer } from 'mobx-react-lite';
+import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
-    Accordion,
-    Button,
-    MenuItem,
-    Select,
-    styled,
-    TextField,
-} from '@semoss/ui';
-import CustomAccordianBlock from './CustomAccordianBlock';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { useEffect, useState } from 'react';
+    FontFamily,
+    FontWeights,
+    Title_Alignment,
+} from '../../Visualization.constants';
+import { ColorPickerSettings } from '@/components/block-settings/shared/ColorPickerSettings';
+interface JsonSettingsProps<D extends BlockDef = BlockDef> {
+    /**
+     * Id of the block that is being worked with
+     */
+    id: string;
 
+    path: Paths<Block<D>['data'], 4>;
+}
+const StyledAxisDiv = styled('div')<{
+    display?: string;
+    justifyContent?: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: 'row',
+    padding: '0.5rem',
+}));
+const StyledButton = styled(Button)({
+    left: '80%',
+});
+const StyledAxisColDiv = styled('div')<{
+    display?: string;
+    justifyContent: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: 'column',
+    padding: '0.5rem',
+}));
+const StyledTextField = styled(TextField)(({ theme }) => ({
+    width: '100%',
+}));
 const StyledSelect = styled(Select)(() => ({
     width: '100%',
 }));
-
-export const CustomizeTitle = ({ updateChart, data }) => {
-    const [titleData, setTitleData] = useState({
-        titleName: '',
-        alignment: 'center',
-        titleSize: 16,
-        titleColor: '#000000',
-        titleFontWeight: 'normal',
-        titleFontFamily: '',
-    });
-    const fontWeights = [
-        'bold',
-        'normal',
-        '100',
-        '200',
-        '300',
-        '400',
-        '500',
-        '600',
-        '700',
-        '800',
-        '900',
-    ];
-    const fontFamilys = [
-        'Arail',
-        'Arail Black',
-        'Arail Narrow',
-        'Calibri',
-        'Century Gothic',
-        'Comic Sans MS',
-        'Courier New',
-        'Garamond',
-        'Georgia',
-        'Helvetica',
-        'Inter',
-        'Open Sans',
-        'Sans-Serif',
-        'Segoe UI',
-        'Times New Roman',
-        'Verdana',
-    ];
-    const accordianExpanded = false;
-    const Alignment = ['left', 'right', 'center'];
-    const updateFields = (e) => {
-        const { name, value } = e.target;
-        setTitleData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
-    };
-    useEffect(() => {
-        let option = data.option;
-        setTitleData((prev) => ({
-            ...prev,
-            titleName: option['title'].text,
-            titleFontWeight: option['title']['textStyle'].fontWeight,
-            titleSize: option['title']['textStyle'].fontSize,
-            titleFontFamily: option['title']['textStyle'].fontFamily,
-            titleColor: option['title']['textStyle'].color,
-        }));
-    }, []);
-    const getAccordianDetails = (
-        <div
-            style={{
-                display: 'block',
-                border: '1px solid gray',
-                padding: '0.5rem',
-                width: '100%',
-            }}
-        >
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
-                <label
-                    style={{ paddingTop: '0.5rem' }}
-                    htmlFor="label-position"
-                >
-                    Enter Chart Title
-                </label>
-                <TextField
-                    variant={'outlined'}
-                    id="font-weight"
-                    label="Enter Chart Title"
-                    name="titleName"
-                    value={titleData.titleName}
-                    onChange={updateFields}
-                ></TextField>
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
-                <label
-                    style={{ paddingTop: '0.5rem' }}
-                    htmlFor="label-position"
-                >
-                    Choose a alignment for the title
-                </label>
-                <StyledSelect
-                    id="label-position"
-                    label="Select Position"
-                    name="alignment"
-                    value={titleData.alignment}
-                    onChange={updateFields}
-                >
-                    <Select.Item key="-1" value="">
-                        Select
-                    </Select.Item>
-                    {Alignment.map((label, index) => {
-                        return (
-                            <Select.Item value={label} key={index}>
-                                {label}
+export const LineTitle = observer(
+    <D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
+        const { data, setData } = useBlockSettings<D>(id);
+        const [value, setValue] = useState('');
+        const [showTitle, setShowTitle] = useState(true);
+        const [title, setTitle] = useState({
+            name: '',
+            alignment: 'center',
+            size: 8,
+            weight: 'normal',
+            family: '',
+            color: '#000000',
+        });
+        const computedValue = useMemo(() => {
+            return computed(() => {
+                if (!data) {
+                    return '';
+                }
+                const v = getValueByPath(data, path);
+                if (typeof v === 'undefined') {
+                    return '';
+                } else if (typeof v === 'string') {
+                    return v;
+                }
+                return JSON.stringify(v, null, 2);
+            });
+        }, [data, path]).get();
+        useEffect(() => {
+            setValue(computedValue);
+        }, [computedValue, data]);
+        useEffect(() => {
+            if (data.hasOwnProperty('option')) {
+                reInitializeFeatures(data.option);
+            }
+        }, [id]);
+        useEffect(() => {
+            if (data.hasOwnProperty('option')) {
+                retainLocalState(data.option);
+            }
+        }, [showTitle]);
+        /**
+         * Retains the local state of the feature on toggle switch and on reset button
+         * With the local state we will be displaying the values in the fields
+         */
+        const retainLocalState = (options) => {
+            setTitle((prev) => ({
+                // Retain the title name
+                name: options['title']['text'],
+                // Retain the alignment of the title
+                alignment: options['title']['left'],
+                // Retain the font size of the title
+                size: options['title']['textStyle']['fontSize'],
+                // Retain the font weight of the title
+                weight: options['title']['textStyle']['fontWeight'],
+                // Retain the font family of the title
+                family: options['title']['textStyle']['fontFamily'],
+                // Retain the color of the title
+                color: options['title']['textStyle']['color'],
+            }));
+        };
+        //Reinitialize the feature when the chart is loaded
+        const reInitializeFeatures = (options) => {
+            setShowTitle(options['title'].show ?? true);
+        };
+        /**
+         * Handle the change event for any Title input
+         * @param title - name of the input field
+         * @param inputValue - value of the input field
+         */
+        function handleInputChange(title: string, inputValue) {
+            let option = JSON.parse(value);
+            if (title === 'showTitle') {
+                // Update the showTitle property of the option
+                option['title'].show = inputValue;
+                // Update the showTitle state
+                setShowTitle(inputValue);
+            } else if (title === 'titleName') {
+                // Update the titleName property of the option
+                option['title']['text'] = inputValue;
+                // Update the titleName state
+                setTitle((prev) => ({
+                    ...prev,
+                    name: inputValue,
+                }));
+            } else if (title === 'titleAlignment') {
+                // Update the titleAlignment property of the option
+                option['title']['left'] = inputValue;
+                // Update the titleAlignment state
+                setTitle((prev) => ({
+                    ...prev,
+                    alignment: inputValue,
+                }));
+            } else if (title === 'titleSize') {
+                // Update the titleSize property of the option
+                option['title']['textStyle']['fontSize'] = inputValue;
+                // Update the titleSize state
+                setTitle((prev) => ({
+                    ...prev,
+                    size: inputValue,
+                }));
+            } else if (title === 'titleWeight') {
+                // Update the titleWeight property of the option
+                option['title']['textStyle']['fontWeight'] = inputValue;
+                // Update the titleWeight state
+                setTitle((prev) => ({
+                    ...prev,
+                    weight: inputValue,
+                }));
+            } else if (title === 'titleFamily') {
+                // Update the titleFamily property of the option
+                option['title']['textStyle']['fontFamily'] = inputValue;
+                // Update the titleFamily state
+                setTitle((prev) => ({
+                    ...prev,
+                    family: inputValue,
+                }));
+            }
+            // Update the data with the new option
+            setData(path, option as PathValue<D['data'], typeof path>);
+        }
+        /**
+         * Resets the title feature to its default values.
+         * Default values are defined in the 'reset' object of the option.
+         */
+        function handleReset() {
+            // Parse the current option value
+            let option = JSON.parse(value);
+            // Reset show property of the title
+            option['title'].show = option['reset']['title']['show'];
+            // Reset text property of the title
+            option['title']['text'] = option['reset']['title']['text'];
+            // Reset alignment of the title
+            option['title']['left'] = option['reset']['title']['left'];
+            // Reset font size of the title
+            option['title']['textStyle']['fontSize'] =
+                option['reset']['title']['textStyle']['fontSize'];
+            // Reset font weight of the title
+            option['title']['textStyle']['fontWeight'] =
+                option['reset']['title']['textStyle']['fontWeight'];
+            // Reset font family of the title
+            option['title']['textStyle']['fontFamily'] =
+                option['reset']['title']['textStyle']['fontFamily'];
+            // Reset color of the title
+            option['title']['textStyle']['color'] =
+                option['reset']['title']['textStyle']['color'];
+            // Update the data with the reset option
+            setData(path, option as PathValue<D['data'], typeof path>);
+            // Retain the local state with the updated option
+            retainLocalState(option);
+        }
+        return (
+            <StyledAxisDiv>
+                <StyledAxisDiv display="flex" justifyContent="space-around">
+                    <Switch
+                        checked={showTitle}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            handleInputChange('showTitle', e.target.checked)
+                        }
+                        title="Show Title"
+                    />
+                    <label>Show Title</label>
+                </StyledAxisDiv>
+                {showTitle && (
+                    <StyledAxisColDiv
+                        display="flex"
+                        justifyContent="space-around"
+                    >
+                        <label htmlFor="title-name">Title Name</label>
+                        <StyledTextField
+                            id="name"
+                            name="name"
+                            value={title?.name}
+                            onChange={(e) =>
+                                handleInputChange('titleName', e.target.value)
+                            }
+                        />
+                    </StyledAxisColDiv>
+                )}
+                {showTitle && (
+                    <StyledAxisColDiv
+                        display="flex"
+                        justifyContent="space-around"
+                    >
+                        <label htmlFor="title-alignment">
+                            Select Alignment
+                        </label>
+                        <StyledSelect
+                            id="alignment"
+                            name="alignment"
+                            value={title?.alignment}
+                            onChange={(e) =>
+                                handleInputChange(
+                                    'titleAlignment',
+                                    e.target.value,
+                                )
+                            }
+                        >
+                            <Select.Item key="-1" value="">
+                                Select
                             </Select.Item>
-                        );
-                    })}
-                </StyledSelect>
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
-                <label
-                    style={{ paddingTop: '0.5rem' }}
-                    htmlFor="label-position"
-                >
-                    Chart Title Size
-                </label>
-                <TextField
-                    variant={'outlined'}
-                    id="font-weight"
-                    label="Enter Chart Title Size"
-                    name="titleSize"
-                    value={titleData.titleSize}
-                    onChange={updateFields}
-                ></TextField>
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
-                <label style={{ paddingTop: '0.5rem' }} htmlFor="Dummy-input">
-                    Font Color
-                </label>
-                <input
-                    type="color"
-                    name="titleColor"
-                    value={titleData.titleColor}
-                    onChange={updateFields}
-                    style={{
-                        width: '40px',
-                        height: '30px',
-                        border: 'none',
-                        padding: 0,
-                        cursor: 'pointer',
-                    }}
-                ></input>
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
-                <label htmlFor="label-position">Select Font Weight</label>
-                <StyledSelect
-                    id="label-position"
-                    label="Select Font Color"
-                    name="titleFontWeight"
-                    value={titleData.titleFontWeight}
-                    onChange={updateFields}
-                >
-                    <Select.Item key="-1" value="">
-                        Select
-                    </Select.Item>
-                    {fontWeights.map((label, index) => {
-                        return (
-                            <Select.Item value={label} key={index}>
-                                {label}
+                            {Title_Alignment.map((label, index) => {
+                                return (
+                                    <Select.Item value={label} key={index}>
+                                        {label}
+                                    </Select.Item>
+                                );
+                            })}
+                        </StyledSelect>
+                    </StyledAxisColDiv>
+                )}
+                {showTitle && (
+                    <StyledAxisColDiv
+                        display="flex"
+                        justifyContent="space-around"
+                    >
+                        <label htmlFor="title-size">Text Size</label>
+                        <StyledTextField
+                            id="size"
+                            name="size"
+                            value={title?.size}
+                            onChange={(e) =>
+                                handleInputChange('titleSize', e.target.value)
+                            }
+                        />
+                    </StyledAxisColDiv>
+                )}
+                {showTitle && (
+                    <StyledAxisColDiv
+                        display="flex"
+                        justifyContent="space-around"
+                    >
+                        <label htmlFor="title-font-weight">
+                            Select Font Weight
+                        </label>
+                        <StyledSelect
+                            id="font-weight"
+                            name="fontWeight"
+                            value={title?.weight}
+                            onChange={(e) =>
+                                handleInputChange('titleWeight', e.target.value)
+                            }
+                        >
+                            <Select.Item key="-1" value="">
+                                Select
                             </Select.Item>
-                        );
-                    })}
-                </StyledSelect>
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
-                <label htmlFor="label-position">Select Font Family</label>
-                <StyledSelect
-                    id="label-position"
-                    label="Select Font Family"
-                    name="titleFontFamily"
-                    value={titleData.titleFontFamily}
-                    onChange={updateFields}
-                >
-                    <Select.Item key="-1" value="">
-                        Select
-                    </Select.Item>
-                    {fontFamilys.map((label, index) => {
-                        return (
-                            <Select.Item value={label} key={index}>
-                                {label}
+                            {FontWeights.map((label, index) => {
+                                return (
+                                    <Select.Item value={label} key={index}>
+                                        {label}
+                                    </Select.Item>
+                                );
+                            })}
+                        </StyledSelect>
+                    </StyledAxisColDiv>
+                )}
+                {showTitle && (
+                    <StyledAxisColDiv
+                        display="flex"
+                        justifyContent="space-around"
+                    >
+                        <label htmlFor="title-font-family">
+                            Select Font Family
+                        </label>
+                        <StyledSelect
+                            id="font-family"
+                            name="fontFamily"
+                            value={title?.family}
+                            onChange={(e) =>
+                                handleInputChange('titleFamily', e.target.value)
+                            }
+                        >
+                            <Select.Item key="-1" value="">
+                                Select
                             </Select.Item>
-                        );
-                    })}
-                </StyledSelect>
-            </div>
-            <br />
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                    display: 'flex',
-                    justifyContent: 'space-around',
-                }}
-            >
-                <Button onClick={() => updateChart(titleData)}>Execute</Button>
-            </div>
-        </div>
-    );
-
-    return (
-        <CustomAccordianBlock
-            accordianExpanded={accordianExpanded}
-            accordianSummaryProps={<ExpandMoreIcon />}
-            accordianSummary="Customize Title"
-            accordianDetails={getAccordianDetails}
-        />
-    );
-};
+                            {FontFamily.map((label, index) => {
+                                return (
+                                    <Select.Item value={label} key={index}>
+                                        {label}
+                                    </Select.Item>
+                                );
+                            })}
+                        </StyledSelect>
+                    </StyledAxisColDiv>
+                )}
+                {showTitle && (
+                    <StyledAxisColDiv
+                        display="flex"
+                        justifyContent="space-around"
+                    >
+                        <ColorPickerSettings
+                            id={id}
+                            path="option.title.textStyle.color"
+                            colorValue={title.color}
+                            onChange={(e) => handleInputChange('titleColor', e)}
+                        />
+                    </StyledAxisColDiv>
+                )}
+                {showTitle && (
+                    <StyledButton
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        onClick={handleReset}
+                    >
+                        Reset
+                    </StyledButton>
+                )}
+            </StyledAxisDiv>
+        );
+    },
+);

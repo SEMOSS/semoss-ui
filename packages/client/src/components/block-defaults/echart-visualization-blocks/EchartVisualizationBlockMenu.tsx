@@ -49,6 +49,7 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
 }));
 import { LineSettings } from './Variants';
 import { EchartVisualizationBlockDef } from './EchartVisualizationBlock';
+import { FrameOperationsLine } from './Variants/LineChart/FrameOperationsLine';
 
 export const EchartVisualizationBlockMenu: BlockComponent = ({ id }) => {
     const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
@@ -57,7 +58,8 @@ export const EchartVisualizationBlockMenu: BlockComponent = ({ id }) => {
     const SelectVariant = () => {
         switch (data.variation) {
             case 'echart-line-chart':
-                return <LineSettings id={id} path={'option'} />;
+                return <></>;
+            // return <LineSettings id={id} path={'option'} />;
             default:
                 return <></>;
         }
@@ -72,21 +74,21 @@ export const EchartVisualizationBlockMenu: BlockComponent = ({ id }) => {
             {/* Not sure if we want to delete JsonSettings but it's no longer in use here */}
             {/* <JsonSettings id={id} path="option" /> */}
             {/* <CodeEditorSettings id={id} path="specJson" /> */}
-            <StyledToggleTabsGroup
-                value={selectedTab}
-                onChange={(e: React.SyntheticEvent, val: string) => {
-                    setSelectedTab(val);
-                }}
-            >
-                <StyledToggleTabsGroupItem label="Data" value={'Data'} />
-                <StyledToggleTabsGroupItem label="Tools" value={'Tools'} />
-                <StyledToggleTabsGroupItem label="JSON" value={'JSON'} />
-            </StyledToggleTabsGroup>
+            <div style={{ alignSelf: 'center' }}>
+                <StyledToggleTabsGroup
+                    value={selectedTab}
+                    onChange={(e: React.SyntheticEvent, val: string) => {
+                        setSelectedTab(val);
+                    }}
+                >
+                    <StyledToggleTabsGroupItem label="Data" value={'Data'} />
+                    <StyledToggleTabsGroupItem label="Tools" value={'Tools'} />
+                    <StyledToggleTabsGroupItem label="JSON" value={'JSON'} />
+                </StyledToggleTabsGroup>
+            </div>
             <StyledContainer>
                 {selectedTab === 'Data' && (
-                    <StyledSubSection>
-                        <span>Data Tab Selected</span>
-                    </StyledSubSection>
+                    <FrameOperationsLine id={id} path={'option'} />
                 )}
                 {selectedTab === 'Tools' && (
                     <StyledToolsSection>
