@@ -30,46 +30,37 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
         value: unknown;
     } | null>(null);
     let resultData: unknown = {};
-
+    // get the frame
     function getVisualizationBlockSelector(id: string) {
-        if (this._store.blocks[id]) {
+        if (id) {
             //get the options JSON of the selected block
-            let blockJSON = this._store.blocks[id].data.option;
-
+            let blockJSON = data.option;
             //initialize the selector string
             let selector = 'Select(';
-
             //if there are no fields, return null
             if (!blockJSON['_state']) return null;
-
             //get the fields
             let selectorFields = blockJSON['_state']['fields'];
-
-            //  get the y axis and tooltip properties
+            //  get the value and tooltip properties
             let dynamicYAndTooltipSet = [
                 ...new Set([
                     ...selectorFields['yAxis'],
                     ...selectorFields['tooltip'],
                 ]),
             ];
-
             // start forming the selector string
             selector += `${selectorFields['xAxis'][0]}`;
-
             // add dynamic y axis and tooltip fields to the selector string
             let averageCollection = '';
             for (let i = 0; i < dynamicYAndTooltipSet.length; i++) {
                 averageCollection += `, Average(${dynamicYAndTooltipSet[i]})`;
                 selector += `, Average(${dynamicYAndTooltipSet[i]})`;
             }
-
             selector += `).as([${selectorFields['xAxis'][0]}${averageCollection}])|Group(${selectorFields['xAxis'][0]})|Sort(${selectorFields['xAxis'][0]})`;
             return selector;
         }
-
         return null;
     }
-    // get the frame
     const frame = useFrame(data.frame.name, {
         selector: getVisualizationBlockSelector(id),
     });
