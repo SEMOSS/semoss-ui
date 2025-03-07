@@ -76,6 +76,7 @@ import {
     VegaVisualizationBlockDef,
 } from "./vega-visualization-block";
 import { config as SidebarBlockConfig, SidebarBlockDef } from "./sidebar-block";
+import { config as TimeBlockConfig, TimeBlockDef } from "./time-picker-block";
 
 // import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
 
@@ -117,7 +118,8 @@ export type DefaultBlockDefinitions =
     | VegaVisualizationBlockDef
     | RadioBlockDef
     | ThemeBlockDef
-    | EchartVisualizationBlockDef;
+    | EchartVisualizationBlockDef
+    | TimeBlockDef;
 // | BodyBlockDef
 // | DividerBlockDef
 // | FooterBlockDef
@@ -157,6 +159,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [RadioBlockConfig.widget]: RadioBlockConfig,
+    [TimeBlockConfig.widget]: TimeBlockConfig,
     // [StepperBlockConfig.widget]: StepperBlockConfig,
     // [QueryBlockConfig.widget]: QueryBlockConfig,
 };
@@ -189,4 +192,5 @@ export {
     ModalBlockConfig,
     RadioBlockConfig,
     PDFViewerBlockConfig,
+    TimeBlockConfig,
 };
