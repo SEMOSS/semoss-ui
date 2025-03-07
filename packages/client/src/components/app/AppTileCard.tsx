@@ -201,6 +201,10 @@ interface AppTileCardProps {
      * Action triggered when deleted
      */
     onDelete?: () => void;
+    /**
+     * Mode
+     */
+    mode?: string;
 }
 
 export const AppTileCard = (props: AppTileCardProps) => {
@@ -214,6 +218,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
         appType,
         systemApp,
         onDelete,
+        mode,
     } = props;
 
     const notification = useNotification();
@@ -325,33 +330,35 @@ export const AppTileCard = (props: AppTileCardProps) => {
             {!systemApp && (
                 <StyledContainer>
                     <StyledOverlayContent>
-                        <StyledIconButton
-                            size={'small'}
-                            title={
-                                isFavorite
-                                    ? `Unbookmark ${
-                                          app.project_name
-                                              ? app.project_name
-                                              : ''
-                                      }`
-                                    : `Bookmark ${
-                                          app.project_name
-                                              ? app.project_name
-                                              : ''
-                                      }`
-                            }
-                            onClick={(e) => {
-                                e.stopPropagation();
+                        {mode !== 'Discoverable' && (
+                            <StyledIconButton
+                                size={'small'}
+                                title={
+                                    isFavorite
+                                        ? `Unbookmark ${
+                                              app.project_name
+                                                  ? app.project_name
+                                                  : ''
+                                          }`
+                                        : `Bookmark ${
+                                              app.project_name
+                                                  ? app.project_name
+                                                  : ''
+                                          }`
+                                }
+                                onClick={(e) => {
+                                    e.stopPropagation();
 
-                                favorite(isFavorite);
-                            }}
-                        >
-                            {isFavorite ? (
-                                <Bookmark color="primary" />
-                            ) : (
-                                <BookmarkBorder />
-                            )}{' '}
-                        </StyledIconButton>
+                                    favorite(isFavorite);
+                                }}
+                            >
+                                {isFavorite ? (
+                                    <Bookmark color="primary" />
+                                ) : (
+                                    <BookmarkBorder />
+                                )}{' '}
+                            </StyledIconButton>
+                        )}
                     </StyledOverlayContent>
                 </StyledContainer>
             )}

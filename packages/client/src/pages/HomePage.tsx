@@ -203,16 +203,13 @@ export const HomePage = observer((): JSX.Element => {
     /**
      * @desc Get & Sets Favorited Apps
      */
-    let favoritePixel =
-        mode === 'Mine' ? 'MyProjects' : 'MyDiscoverableProjects';
-    favoritePixel += `(metaKeys = ${JSON.stringify([
+    let favoritePixel = `MyProjects(metaKeys = ${JSON.stringify([
         ...metaKeys,
         'description',
     ])}, metaFilters=[${JSON.stringify(
         metaFilters,
     )}], filterWord=["${search}"], onlyFavorites=[true]);`;
     const getFavoritedApps = usePixel(favoritePixel);
-
     useEffect(() => {
         if (getFavoritedApps.status !== 'SUCCESS') {
             dispatch({
@@ -222,12 +219,13 @@ export const HomePage = observer((): JSX.Element => {
             });
             return;
         }
-
-        dispatch({
-            type: 'field',
-            field: 'favoritedApps',
-            value: getFavoritedApps.data,
-        });
+        if (mode === 'Mine') {
+            dispatch({
+                type: 'field',
+                field: 'favoritedApps',
+                value: getFavoritedApps.data,
+            });
+        }
     }, [getFavoritedApps.status, getFavoritedApps.data]);
 
     /**
@@ -275,7 +273,7 @@ export const HomePage = observer((): JSX.Element => {
     const isFavorited = (id) => {
         const favorites = favoritedApps;
 
-        if (!favorites) return false;
+        if (!favorites || mode === 'Discoverable') return false;
         return favorites.some((el) => el.project_id === id);
     };
 
@@ -406,6 +404,7 @@ export const HomePage = observer((): JSX.Element => {
                                         favorite={() => {
                                             favoriteApp(app);
                                         }}
+                                        mode={mode}
                                     />
                                 );
                             })}
@@ -427,6 +426,7 @@ export const HomePage = observer((): JSX.Element => {
                                     href="../../../"
                                     systemApp={true}
                                     appType={'BI'}
+                                    mode={mode}
                                 />
                             )}
 
@@ -438,6 +438,7 @@ export const HomePage = observer((): JSX.Element => {
                                     href="../../../#!/embed-terminal"
                                     systemApp={true}
                                     appType={'TERMINAL'}
+                                    mode={mode}
                                 />
                             )}
                         </StyledSection>
@@ -482,6 +483,7 @@ export const HomePage = observer((): JSX.Element => {
                                             onDelete={() => {
                                                 removeApp(app);
                                             }}
+                                            mode={mode}
                                         />
                                     );
                                 })}

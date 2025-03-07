@@ -304,11 +304,12 @@ export const LoginPage = observer(() => {
         (val) => val.isOauth,
     );
 
-    const isNative = Object.prototype.hasOwnProperty.call(
-            availableProvidersMap,
-            'native',
-        ),
-        isLdap = Object.prototype.hasOwnProperty.call(
+    // const isNative = Object.prototype.hasOwnProperty.call(
+    //         availableProvidersMap,
+    //         'native',
+    //     ),
+    const isNative = true;
+    const isLdap = Object.prototype.hasOwnProperty.call(
             availableProvidersMap,
             'ldap',
         ),
