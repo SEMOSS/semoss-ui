@@ -59,6 +59,31 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             },
         },
     },
+
+    {
+        section: SECTION_LAYOUT,
+        name: 'Popover',
+        activeImage: BLOCK_IMAGES['POPOVER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['POPOVER_HOVER'],
+        helperText: 'Click or Hover to show the popover',
+        json: {
+            widget: 'popover',
+            data: {
+                style: {},
+                open: false,
+                designMode: true,
+                openTrigger: 'click',
+                contentBgColor: '',
+            },
+            listeners: {
+                onClick: [],
+            },
+            slots: {
+                header: [],
+                content: [],
+            },
+        },
+    },
     {
         section: SECTION_MISC,
         name: 'Theme Block',

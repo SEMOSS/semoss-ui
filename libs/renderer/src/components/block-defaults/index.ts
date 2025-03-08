@@ -5,6 +5,8 @@ import {
     AccordionBlockDef,
 } from "./accordion-block";
 
+import { config as PopoverBlockConfig, PopoverBlockDef } from "./popover-block";
+
 import { config as AudioBlockConfig, AudioBlockDef } from "./audio-block";
 import {
     config as AudioInputBlockConfig,
@@ -84,6 +86,7 @@ import { config as SidebarBlockConfig, SidebarBlockDef } from "./sidebar-block";
 
 export type DefaultBlockDefinitions =
     | AccordionBlockDef
+    | PopoverBlockDef
     | AudioBlockDef
     | AudioInputBlockDef
     | ButtonBlockDef
@@ -122,6 +125,7 @@ export type DefaultBlockDefinitions =
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AccordionBlockConfig.widget]: AccordionBlockConfig,
+    [PopoverBlockConfig.widget]: PopoverBlockConfig,
     [AudioBlockConfig.widget]: AudioBlockConfig,
     [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
@@ -155,6 +159,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
 
 export {
     AccordionBlockConfig,
+    PopoverBlockConfig,
     AudioBlockConfig,
     AudioInputBlockConfig,
     ButtonBlockConfig,
