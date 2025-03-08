@@ -49,7 +49,6 @@ const StyledContainer = styled("div")(({ theme }) => ({
 
 export const ButtonBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, listeners } = useBlock<ButtonBlockDef>(id);
-
     return (
         <StyledContainer {...attrs}>
             <StyledButton
