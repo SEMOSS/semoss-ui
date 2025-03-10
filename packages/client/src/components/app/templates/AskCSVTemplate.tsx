@@ -1,4 +1,5 @@
 import { ActionMessages } from '@/stores';
+import QUERY from '@/assets/img/query.jpeg';
 import {
     ButtonBlockConfig,
     ContainerBlockConfig,
@@ -6,8 +7,7 @@ import {
     InputBlockConfig,
     PageBlockConfig,
     TextBlockConfig,
-} from '@/components/block-defaults';
-import QUERY from '@/assets/img/query.jpeg';
+} from '@semoss/renderer';
 
 import { Template } from './templates.types';
 

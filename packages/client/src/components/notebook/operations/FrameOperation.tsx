@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react-lite';
-import { LinearProgress, Table, Typography, styled } from '@semoss/ui';
 
-import { useBlocksPixel } from '@/hooks/useBlocksPixel';
+import { useBlocksPixel } from '@semoss/renderer';
+import { LinearProgress, Table, Typography, styled } from '@semoss/ui';
 
 const StyledTableContainer = styled(Table.Container)(() => ({
     height: '200px',

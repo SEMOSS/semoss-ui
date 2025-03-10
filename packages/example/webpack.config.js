@@ -1,0 +1,127 @@
+const { NxAppWebpackPlugin } = require('@nx/webpack/app-plugin');
+const { NxReactWebpackPlugin } = require('@nx/react/webpack-plugin');
+const webpack = require('webpack');
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
+
+const config = {
+    entry: './src/main.tsx',
+    performance: {
+        hints: false,
+    },
+    output: {
+        path: path.resolve(__dirname, 'dist'),
+        filename: '[name].js',
+        clean: true,
+    },
+    optimization: {
+        minimize: true,
+        minimizer: [new TerserPlugin({})],
+        removeAvailableModules: false,
+        removeEmptyChunks: false,
+        splitChunks: {
+            chunks: 'async',
+            cacheGroups: {
+                defaultVendors: {
+                    idHint: 'vendors',
+                },
+            },
+        },
+    },
+    plugins: [
+        new NxAppWebpackPlugin({
+            tsConfig: './tsconfig.json',
+            compiler: 'babel',
+            main: './src/main.tsx',
+            babelConfig: 'packages/example/.babelrc',
+            // index: './src/template.html',
+            baseHref: '/',
+            outputHashing:
+                process.env['NODE_ENV'] == 'production' ? 'all' : 'none',
+            watch: process.env['NODE_ENV'] == 'production' ? false : true,
+            memoryLimit: 8192,
+        }),
+        new NxReactWebpackPlugin({
+            svgr: false,
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Renderer Usage',
+            scriptLoading: 'module',
+            template: path.resolve(__dirname, './src/template.html'),
+            filename: 'index.html',
+        }),
+
+        // importMetaEnv.webpack({ example: '.env.local' }),
+        new webpack.ProvidePlugin({
+            React: 'react',
+            ReactDOM: 'react-dom',
+        }),
+        // new webpack.DefinePlugin({
+        //     'process.env': JSON.stringify({
+        //         ...process.env,
+        //     }),
+        // }),
+        new MiniCssExtractPlugin({
+            filename: '[name].css',
+            chunkFilename: '[id].css',
+        }),
+    ],
+    module: {
+        rules: [
+            {
+                test: /\.(eot|svg|ttf|woff|woff2|png|jpg|jpeg|gif)$/i,
+                type: 'asset',
+            },
+            {
+                test: /\.tsx?$/,
+                use: 'ts-loader',
+                exclude: /node_modules/,
+            },
+            {
+                test: /\.css$/,
+                use: ['style-loader', 'css-loader'],
+            },
+
+            {
+                // when bundling application's own source code
+                // transpile using Babel which uses .babelrc file
+                // and instruments code using babel-plugin-istanbul
+                test: /\.js/,
+                exclude: /(node_modules|bower_components)/,
+                use: [
+                    {
+                        loader: 'babel-loader',
+                    },
+                ],
+            },
+            // Add your rules for custom modules here
+            // Learn more about loaders from https://webpack.js.org/loaders/
+        ],
+    },
+    resolve: {
+        extensions: ['.tsx', '.ts', '.js'],
+        alias: {
+            '@': path.resolve(__dirname, './src'),
+            react: path.resolve('./node_modules/react'),
+            '@semoss/ui': path.resolve(__dirname, '../../libs/ui/src/index.ts'),
+        },
+    },
+    devServer: {
+        host: 'localhost',
+        port: 9999,
+        open: true,
+        proxy: {
+            '/': {
+                target: 'http://localhost:9090',
+                changeOrigin: true,
+            },
+        },
+    },
+};
+
+module.exports = (_, context) => {
+    config.mode = 'development';
+    return config;
+};

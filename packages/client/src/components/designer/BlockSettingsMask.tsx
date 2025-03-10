@@ -1,8 +1,11 @@
 import { useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+
 import { styled } from '@semoss/ui';
+import { useBlocks } from '@semoss/renderer';
+
+import { useDesigner } from '@/hooks';
 import { getRelativeSize, getBlockElement } from '@/stores';
-import { useBlocks, useDesigner } from '@/hooks';
 import { TextSettingsMask } from './settings-mask/TextSettingsMask';
 
 const STYLED_FONT_STYLE_INPUT_WIDTH = 232;

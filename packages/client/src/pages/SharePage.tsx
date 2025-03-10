@@ -6,8 +6,11 @@ import { styled, useNotification } from '@semoss/ui';
 import { useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { CodeRenderer } from '@/components/code-workspace';
-import { BlocksRenderer } from '@/components/blocks-workspace';
+
 import { AppType, AppMetadata } from '@/components/app';
+
+import { Renderer } from '@semoss/renderer';
+import { Env, InsightProvider } from '@semoss/sdk';
 
 const StyledViewport = styled('div')(() => ({
     display: 'flex',
@@ -87,10 +90,21 @@ export const SharePage = observer(() => {
         return <LoadingScreen.Trigger description="Initializing app" />;
     }
 
+    /**
+     * Initialize insight for app building
+     */
+    Env.update({
+        MODULE: process.env.MODULE || '',
+    });
+
     return (
         <StyledViewport>
             {type === 'CODE' ? <CodeRenderer appId={appId} /> : null}
-            {type === 'BLOCKS' ? <BlocksRenderer appId={appId} /> : null}
+            {type === 'BLOCKS' ? (
+                <InsightProvider>
+                    <Renderer appId={appId} />
+                </InsightProvider>
+            ) : null}
         </StyledViewport>
     );
 });
