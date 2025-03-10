@@ -330,6 +330,27 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_ELEMENT,
+        image: BLOCK_IMAGE,
+        name: 'Chip',
+        json: {
+            widget: 'chip',
+            data: {
+                style: {
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%',
+                    height: '200px',
+                },
+                src: '',
+                title: '',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
         image: BLOCK_PDF_VIEWER,
         name: 'PDF Viewer',
         json: {

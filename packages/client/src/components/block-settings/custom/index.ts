@@ -11,3 +11,4 @@ export { SelectInputValueSettings } from './SelectInputValueSettings';
 export { GridSettings } from './grid';
 export { QueryInputSettings } from './QueryInputSettings';
 export { OptionsSettings } from './OptionsSettings';
+export { ChipSettings } from './ChipSettings';
