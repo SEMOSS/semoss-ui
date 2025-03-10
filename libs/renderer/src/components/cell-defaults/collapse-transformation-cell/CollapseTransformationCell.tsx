@@ -56,10 +56,20 @@ export const CollapseTransformationCell: CellComponent<CollapseTransformationCel
         const { cell, isExpanded } = props;
         const { state } = useBlocks();
 
+        /**
+         * Cell that Transformation will be made to
+         */
         const targetCell: CellState<QueryImportCellDef> = computed(() => {
-            return cell.query.cells[
-                cell.parameters.targetCell.id
-            ] as CellState<QueryImportCellDef>;
+            let c;
+            Object.values(state.queries).forEach((query) => {
+                if (query.cells[cell.parameters.targetCell.id]) {
+                    c = query.cells[
+                        cell.parameters.targetCell.id
+                    ] as CellState<QueryImportCellDef>;
+                }
+            });
+
+            return c;
         }).get();
 
         const cellTransformation: Transformation<CollapseTransformationDef> =
@@ -81,10 +91,14 @@ export const CollapseTransformationCell: CellComponent<CollapseTransformationCel
          */
         const frames = useMemo(() => {
             const frameList = [];
-            Object.values(cell.query.cells).forEach((cell) => {
-                if (cell.widget === "query-import") {
-                    frameList.push(cell);
-                }
+
+            Object.keys(state.queries).forEach((queryKey) => {
+                const query = state.queries[queryKey];
+                Object.values(query.cells).forEach((cell) => {
+                    if (cell.widget === "query-import") {
+                        frameList.push(cell);
+                    }
+                });
             });
 
             return frameList;

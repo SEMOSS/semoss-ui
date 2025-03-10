@@ -25,7 +25,7 @@ import {
 import {
     config as EchartVisualizationBlockConfig,
     EchartVisualizationBlockDef,
-} from "./echart-visualization-blocks";
+} from "./echart-visualization-block";
 
 import { config as GridBlockConfig, GridBlockDef } from "./grid-block";
 

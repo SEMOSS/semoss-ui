@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState, MouseEvent } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { Paths, PathValue } from "@/types";
-import { useBlockSettings } from "@/hooks";
-import { getValueByPath } from "@/utility";
-import { Block, BlockDef } from "@/stores";
-import { IconButton, InputAdornment, Popover, styled } from "@semoss/ui";
 import { SketchPicker } from "react-color";
 import { OutlinedInput } from "@mui/material";
 
+import { IconButton, InputAdornment, Popover, styled } from "@semoss/ui";
+
+import { Paths, PathValue } from "../../../types";
+import { useBlockSettings } from "../../../hooks";
+import { getValueByPath } from "../../../utility";
+import { Block, BlockDef } from "../../../store";
 interface ColorPickerSettingProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with

@@ -26,7 +26,7 @@ import { Paths, PathValue } from "../../../types";
 import { useBlockSettings } from "../../../hooks";
 import { getValueByPath } from "../../../utility";
 import { Block, BlockDef } from "../../../store";
-import { EchartVisualizationBlockDef } from "../../block-defaults/echart-visualization-blocks";
+import { EchartVisualizationBlockDef } from "../../block-defaults/echart-visualization-block";
 
 interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
     /**
