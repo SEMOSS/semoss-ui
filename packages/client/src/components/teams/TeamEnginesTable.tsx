@@ -874,7 +874,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                             value={selectedNonCredentialedEngines}
                             inputValue={searchEngineInput}
                             getOptionLabel={(option: any) => {
-                                return `${option.engine_name}`;
+                                return `${option.engine_name} ID: ${option.engine_id}`;
                             }}
                             isOptionEqualToValue={(option, value) => {
                                 return option.engine_name === value.engine_name;

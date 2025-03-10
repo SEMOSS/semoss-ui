@@ -887,7 +887,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                             value={selectedNonCredentialedProjects}
                             inputValue={searchProjectInput}
                             getOptionLabel={(option: any) => {
-                                return `${option.project_name}`;
+                                return `${option.project_name} ID: ${option.project_id}`;
                             }}
                             isOptionEqualToValue={(option, value) => {
                                 return (
