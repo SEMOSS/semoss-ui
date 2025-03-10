@@ -471,6 +471,187 @@ if (process.env.NODE_ENV === 'development') {
             slots: {} as BlockJSON['slots'],
         },
     });
+    DEV_BLOCKS.push({
+        section: SECTION_CHARTS,
+        name: 'Echart Line Chart',
+        helperText: 'Show relationships between two variables',
+        activeImage: BLOCK_IMAGES['LINE_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['LINE_CHART_HOVER'],
+        json: {
+            widget: 'e-chart',
+            data: {
+                variation: 'echart-line-graph',
+                style: {
+                    height: 500,
+                    width: 400,
+                },
+                option: {
+                    title: {
+                        text: 'ECharts Line Chart',
+                        left: 'center',
+                        top: 20,
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'normal',
+                            color: '#000000',
+                        },
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        show: true,
+                    },
+                    legend: {
+                        show: true,
+                    },
+                    xAxis: {
+                        type: 'category',
+                        name: 'a',
+                        nameLocation: 'middle',
+                        nameGap: 30,
+                        axisTick: {
+                            show: true,
+                        },
+                        axisLabel: {
+                            rotate: 0,
+                        },
+                        nameTextStyle: {
+                            fontSize: 10,
+                        },
+                        data: ['A', 'B', 'C', 'D', 'E'],
+                        show: true,
+                    },
+                    axisTick: {
+                        show: true,
+                    },
+                    yAxis: {
+                        type: 'value',
+                        name: 'b',
+                        nameLocation: 'middle',
+                        nameGap: 40,
+                        axisLabel: {
+                            rotate: 0,
+                        },
+                        axisLine: {
+                            show: true,
+                        },
+                        axisTick: {
+                            show: true,
+                        },
+                        legend: {
+                            show: true,
+                        },
+                        tooltip: {
+                            show: true,
+                        },
+                        nameTextStyle: {
+                            fontSize: 10,
+                        },
+                        show: true,
+                    },
+                    color: [
+                        '#ff6f61',
+                        '#6b5b95',
+                        '#88b04b',
+                        '#f7cac9',
+                        '#92a8d1',
+                        '#034f84',
+                        '#f7786b',
+                        '#deeaee',
+                    ],
+                    series: [
+                        {
+                            name: 'a',
+                            type: 'line',
+                            data: [28, 30, 22, 35, 30],
+                            lineStyle: {
+                                type: 'solid',
+                                width: 1,
+                            },
+                            label: {
+                                show: true,
+                                position: 'top',
+                                rotate: 0,
+                                fontSize: 12,
+                                color: '#000000',
+                            },
+                        },
+                    ],
+                    reset: {
+                        title: {
+                            text: '',
+                            left: 'center',
+                            show: true,
+                            textStyle: {
+                                fontSize: 18,
+                                color: '#ff6f61',
+                                fontWeight: 'normal',
+                                fontFamily: '',
+                            },
+                        },
+                        xAxis: {
+                            name: '',
+                            updatedName: null,
+                            axisTick: true,
+                            axisLabelFont: 10,
+                        },
+                        yAxis: {
+                            name: '',
+                            updatedName: null,
+                            axisTick: true,
+                            axisLabelFont: 10,
+                        },
+                        label: {
+                            show: true,
+                            position: 'top',
+                            fontSize: 10,
+                            color: '#000000',
+                            backgroundColor: '',
+                            rotate: 0,
+                            fontFamily: '',
+                        },
+                    },
+                    toolbox: {
+                        feature: {
+                            brush: {
+                                type: [
+                                    'rect',
+                                    'polygon',
+                                    'lineX',
+                                    'lineY',
+                                    'clear',
+                                ],
+                                brushType: 'rect',
+                                xAxisIndex: 'all',
+                                yAxisIndex: 'all',
+                                brushMode: 'single',
+                                brushLink: 'all',
+                            },
+                        },
+                    },
+                    brush: {
+                        // Brush configuration
+                        brushType: 'rect', // You can also use 'polygon', 'lineX', or 'lineY'
+                        throttleType: 'debounce', // Throttle brush events
+                        throttleDelay: 300, // Delay for throttle (in ms)
+                        inBrush: {
+                            color: 'rgba(255, 0, 0, 0.3)', // Highlight color for the brushed region
+                        },
+                        outBrush: {
+                            color: 'rgba(0, 0, 0, 0.1)', // Color for points outside the brushed region
+                        },
+                        xAxisIndex: 'all', // Apply brush on x-axis
+                        brushMode: 'single',
+                        brushLink: 'all',
+                    },
+                },
+                frame: {
+                    name: '',
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    });
 }
 
 // TODO: Alphabetical order by name
