@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { styled } from "@mui/material";
+import { Stack, styled } from "@mui/material";
 
 import { useBlock, useBlockSettings } from "../../../hooks";
 import { BlockComponent, BlockDef } from "../../../store";
@@ -9,6 +9,7 @@ import { Pie } from "./Variants/PieChart/Pie";
 import { useMemo, useRef } from "react";
 import { BAR_CHART_DATA } from "./Visualization.constants";
 import { ScatterPlotBlock } from "./Variants/ScatterPlot/ScatterPlot";
+import { StackChart } from "./Variants/stack-chart/StackChart";
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -129,6 +130,9 @@ export const VisualizationBlock: BlockComponent = observer(
                         {data.variation === "echart-scatter-plots" && (
                             <ScatterPlotBlock id={id} />
                         )}
+                        {data.variation === "echart-stack-chart" && (
+                            <StackChart id={id} />
+                        )}
                     </StyledNoDataContainer>
                 );
             } catch (e) {
@@ -149,6 +153,9 @@ export const VisualizationBlock: BlockComponent = observer(
                 )}
                 {data.variation === "echart-scatter-plots" && (
                     <ScatterPlotBlock id={id} />
+                )}
+                {data.variation === "echart-stack-chart" && (
+                    <StackChart id={id} />
                 )}
             </StyledDataContainer>
         );
