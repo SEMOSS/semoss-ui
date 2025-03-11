@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* eslint-disable no-unused-vars */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
@@ -7,7 +8,7 @@ import { useBlocks, useBlockSettings } from '../../../hooks';
 import { ActionMessages, Block, BlockDef } from '@/stores';
 import { getValueByPath } from '../../../utility';
 import { BaseSettingSection } from '../BaseSettingSection';
-import { Autocomplete, Chip, TextField } from '@mui/material';
+import { Autocomplete, Chip, Stack, TextField } from '@mui/material';
 
 interface ChipSettingsProps<D extends BlockDef = BlockDef> {
     id: string;
@@ -104,9 +105,11 @@ export const ChipSettings = observer(
             }, 300);
         };
 
-        // const chipSelect = (key: string) => {
-        //     const selected = options.map()
-        // };
+        const [chipVisible, setChipVisible] = useState(true);
+
+        const handleDelete = () => {
+            setChipVisible(false);
+        };
 
         return (
             <BaseSettingSection label={label}>
@@ -120,15 +123,30 @@ export const ChipSettings = observer(
                     options={options.map((option) => option.value)}
                     renderOption={(props, option) => (
                         <li {...props}>
-                            <div
+                            <Stack
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px',
                                 }}
                             >
-                                {<Chip />}
-                            </div>
+                                {(() => {
+                                    switch (option) {
+                                        case 'Chip':
+                                            return <Chip />;
+                                        case 'Delete':
+                                            return (
+                                                <Chip onDelete={handleDelete} />
+                                            );
+                                        // case 'Link':
+                                        //     return <Chip componet = "a" href=""/>;
+                                        case 'outlined':
+                                            return <Chip variant="outlined" />;
+                                        case 'filled':
+                                            return <Chip />;
+                                    }
+                                })()}
+                            </Stack>
                         </li>
                     )}
                     renderInput={(params) => <TextField {...params} />}

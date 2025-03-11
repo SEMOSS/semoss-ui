@@ -4,34 +4,36 @@ import {
     buildDimensionsSection,
     buildListener,
 } from '../block-defaults.shared';
+import { CSSProperties } from 'react';
 import { ChipBlockDef, ChipBlock } from './ChipBlock';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
-import { InputSettings, SelectInputSettings } from '../../block-settings';
+import {
+    InputSettings,
+    SelectInputSettings,
+    SwitchSettings,
+} from '../../block-settings';
+
 import { ChipSettings } from '../../block-settings/custom/ChipSettings';
 import { Face } from '@mui/icons-material';
+
+export const DefaultStyles: CSSProperties = {};
 
 export const config: BlockConfig<ChipBlockDef> = {
     widget: 'chip',
     type: BLOCK_TYPE_DISPLAY,
     data: {
-        style: {
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            width: '100%',
-            height: '200px',
-        },
-        color: 'primary',
+        style: DefaultStyles,
+        color: 'default',
         size: 'small',
         icon: <Face />,
         type: 'chip',
-        variant: 'filled',
+        //variant: 'filled',
         label: '',
         src: '',
         title: '',
     },
     listeners: {
-        //onClick: [],
+        onClick: [],
     },
     slots: {},
     render: ChipBlock,
@@ -49,20 +51,16 @@ export const config: BlockConfig<ChipBlockDef> = {
                             path="type"
                             options={[
                                 {
-                                    value: 'Chip',
+                                    value: 'Chip', //default
                                     display: 'Chip',
                                 },
                                 {
-                                    value: 'Click',
-                                    display: 'Click',
+                                    value: 'Delete', //onDelete={}
+                                    display: 'Deleteable Chip',
                                 },
                                 {
-                                    value: 'Delete',
-                                    display: 'Delete',
-                                },
-                                {
-                                    value: 'Link',
-                                    display: 'Link',
+                                    value: 'Link', //component = "a" href = " " clickable
+                                    display: 'Link Chip',
                                 },
                             ]}
                         />
@@ -72,6 +70,16 @@ export const config: BlockConfig<ChipBlockDef> = {
                     description: 'Label',
                     render: ({ id }) => (
                         <InputSettings id={id} label="Label" path="label" />
+                    ),
+                },
+                {
+                    description: 'clickable',
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label={'Clickable'}
+                            path={'clickable'}
+                        />
                     ),
                 },
             ],
@@ -133,6 +141,34 @@ export const config: BlockConfig<ChipBlockDef> = {
                                     value: 'purple',
                                     display: 'purple',
                                 },
+                                {
+                                    value: 'indigo',
+                                    display: 'indigo',
+                                },
+                                {
+                                    value: 'turqoise',
+                                    display: 'turqoise',
+                                },
+                                {
+                                    value: 'lcgreen',
+                                    display: 'lcgreen',
+                                },
+                                {
+                                    value: 'lcpink',
+                                    display: 'lcpink',
+                                },
+                                {
+                                    value: 'lcpurple',
+                                    display: 'lcpurple',
+                                },
+                                {
+                                    value: 'lcindigo',
+                                    display: 'lcindigo',
+                                },
+                                {
+                                    value: 'lcprimary',
+                                    display: 'lcprimary',
+                                },
                             ]}
                         />
                     ),
@@ -140,7 +176,7 @@ export const config: BlockConfig<ChipBlockDef> = {
                 {
                     description: 'Size',
                     render: ({ id }) => (
-                        <ChipSettings
+                        <SelectInputSettings
                             id={id}
                             label="Size"
                             path="size"

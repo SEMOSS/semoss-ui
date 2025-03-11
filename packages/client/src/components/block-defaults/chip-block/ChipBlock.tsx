@@ -2,7 +2,7 @@
 /* eslint-disable no-undef */
 import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
-import { Chip, styled } from '@semoss/ui';
+import { Chip, Stack } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 import { CSSProperties } from 'react';
 
@@ -11,33 +11,39 @@ export interface ChipBlockDef extends BlockDef<'chip'> {
     data: {
         type: string;
         label: string;
-        variant?: 'filled';
-        icon: JSX.Element;
-        size: 'small' | 'medium';
         style: CSSProperties;
-        color: 'primary' | 'default' | 'pink' | 'green' | 'purple';
+        //variant: 'filled' | 'outlined';
+        disabled?: boolean;
+        icon?: React.ReactElement;
+        size: 'small' | 'medium';
+        color:
+            | 'primary'
+            | 'default'
+            | 'pink'
+            | 'green'
+            | 'purple'
+            | 'indigo'
+            | 'turqoise'
+            | 'lcgreen'
+            | 'lcpink'
+            | 'lcpurple'
+            | 'lcindigo'
+            | 'lcprimary';
+        clickable?: boolean;
         src: string;
         title: string;
+    };
+    listeners: {
+        onClick: true;
     };
     slots: never;
 }
 
-// eslint-disable-next-line no-unused-vars
-const StyledLabel = styled('span', {
-    shouldForwardProp: (prop) => prop !== 'loading',
-})<{ loading?: boolean }>(({ loading }) => ({
-    visibility: loading ? 'hidden' : 'visible',
-}));
-
-// const handleDelete = () => {
-//     console.log('fake deleted');
-// };
-
 export const ChipBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data /* listeners */ } = useBlock<ChipBlockDef>(id);
+    const { attrs, data, listeners } = useBlock<ChipBlockDef>(id);
 
     return (
-        <div
+        <Stack
             {...attrs}
             style={{
                 display: 'flex',
@@ -47,17 +53,20 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
                 width: 'fit-content',
                 paddingInline: '10px',
             }}
+            onClick={() => {
+                listeners.onClick();
+            }}
         >
             {
-                // eslint-disable-next-line prettier/prettier
                 <Chip
                     label={data.label || null}
-                    variant={data.variant || null}
+                    //variant={data.variant || null}
                     color={data.color}
                     size={data.size}
-                    icon={data.icon || null} /*onDelete={} onClick={}*/
+                    icon={data.icon || null}
+                    clickable={data.clickable}
                 />
             }
-        </div>
+        </Stack>
     );
 });
