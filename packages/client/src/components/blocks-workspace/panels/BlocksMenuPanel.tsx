@@ -1,7 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Search, SearchOff } from '@mui/icons-material';
-
 import {
     styled,
     Grid,
@@ -10,12 +8,13 @@ import {
     ToggleTabsGroup,
     Typography,
     Divider,
+    InputAdornment,
 } from '@semoss/ui';
-
 import { DesignerMenuItem } from '../menus/menu-types';
 import { AddBlocksMenuCard } from '@/components/designer';
 import { Panel } from '@/components/workspace';
 import { SECTION_ORDER } from '../menus/default-menu';
+import { Search, Tune } from '@mui/icons-material';
 
 const StyledTitle = styled('div')(({ theme }) => ({
     paddingTop: theme.spacing(1.5),
@@ -158,6 +157,18 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                         fullWidth
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Search />
+                                </InputAdornment>
+                            ),
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <Tune />
+                                </InputAdornment>
+                            ),
+                        }}
                     />
                     {/* <StyledToggleTabsGroup
                         value={mode}
