@@ -552,7 +552,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         name: 'Divider',
         helperText: 'Separate content with a horizontal line',
         activeImage: BLOCK_IMAGES['DIVIDER_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['DIVIDER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['DIVIDER_HOVER'],
         json: {
             widget: 'divider',
             data: {
