@@ -16,30 +16,6 @@ const StyledContainer = styled('div')(({ theme }) => ({
 }));
 
 export const EngineReportPage = () => {
-    const { id, type } = useEngine();
-    const usagePerUserPixel = [
-        'DATABASE',
-        'STORAGE',
-        'MODEL',
-        'VECTOR',
-        'FUNCTION',
-    ].includes(type)
-        ? `GetEngineUsagePerUser(engine='${id}');`
-        : '';
-    const usagePerProjectPixel = [
-        'DATABASE',
-        'STORAGE',
-        'MODEL',
-        'VECTOR',
-        'FUNCTION',
-    ].includes(type)
-        ? `GetEngineUsagePerProject(engine='${id}');`
-        : '';
-
-    const usagePerUser = usePixel<SETTINGS_PENDING_USER[]>(usagePerUserPixel);
-    const usagePerProject =
-        usePixel<SETTINGS_PENDING_USER[]>(usagePerProjectPixel);
-
     return (
         <SettingsContext.Provider value={{ adminMode: false }}>
             <StyledContainer>

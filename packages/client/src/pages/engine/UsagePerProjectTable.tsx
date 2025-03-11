@@ -1,50 +1,128 @@
-import { Table, Typography, styled } from '@semoss/ui';
-
-const UsagePerProject = {
-    value: {
-        headers: [
-            'Total Requests',
-            'Total Tokens',
-            'PROJECT_NAME',
-            'PROJECT_ID',
-        ],
-        values: [
-            [4, 1500, 'Playground V3', '1a3c3b49-8ce4-4e66-bf42-204c3cbbfcb0'],
-        ],
-    },
-};
-const StyledTableContainer = styled(Table.Container)({
-    borderRadius: '12px',
-    background: '#FFF',
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-});
+import { useEngine, usePixel } from '@/hooks';
+import { Table, Typography, styled, Search } from '@semoss/ui';
+import { useState, useRef, useEffect } from 'react';
 
 export const UsagePerProjectTable = () => {
+    const [search, setSearch] = useState<string>('');
+    const UsagePerProjectSearchRef = useRef<HTMLInputElement | null>(null);
+    const [page, setPage] = useState<number>(0);
+    const [rowsPerPage, setRowsPerPage] = useState<number>(5);
+
+    useEffect(() => {
+        UsagePerProjectSearchRef.current?.focus();
+    }, [search]);
+
+    const { id, type } = useEngine();
+    const usagePerProjectPixel = ['MODEL'].includes(type)
+        ? `GetEngineUsagePerProject(engine='${id}');`
+        : '';
+
+    const usagePerProject = usePixel(usagePerProjectPixel);
+
+    const outputData: Record<string, any>[] =
+        usagePerProject.status === 'SUCCESS' &&
+        Array.isArray(usagePerProject.data)
+            ? usagePerProject.data
+            : [];
+
+    const headers = outputData.length > 0 ? Object.keys(outputData[0]) : [];
+    const rows = outputData.length > 0 ? outputData : [];
+
+    const filteredRows = rows.filter((row) =>
+        Object.values(row).some((value) =>
+            value?.toString().toLowerCase().includes(search.toLowerCase()),
+        ),
+    );
+
+    const paginatedRows = filteredRows.slice(
+        page * rowsPerPage,
+        page * rowsPerPage + rowsPerPage,
+    );
+
+    const StyledTableContainer = styled(Table.Container)({
+        borderRadius: '12px',
+        background: '#FFF',
+        boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+    });
+
+    const StyledSearchButtonContainer = styled('div')({
+        display: 'flex',
+        alignItems: 'center',
+        background: 'white',
+    });
+
+    const Grid = styled('div')({
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+    });
+
     return (
         <>
-            <Typography variant={'h6'}>Usage Per Project</Typography>
+            <Grid>
+                <Typography variant={'h6'}>Usage Per Project</Typography>
+                <StyledSearchButtonContainer>
+                    <Search
+                        inputRef={UsagePerProjectSearchRef}
+                        placeholder="Search"
+                        size="small"
+                        value={search}
+                        onChange={(e) => {
+                            setSearch(e.target.value);
+                            setPage(0); // Reset page to 0 when searching
+                        }}
+                    />
+                </StyledSearchButtonContainer>
+            </Grid>
             <StyledTableContainer>
                 <Table>
                     <Table.Head>
                         <Table.Row>
-                            {UsagePerProject.value.headers.map(
-                                (header, index) => (
-                                    <Table.Cell key={index}>
-                                        {header}
-                                    </Table.Cell>
-                                ),
-                            )}
+                            {headers.map((header, index) => (
+                                <Table.Cell key={index}>{header}</Table.Cell>
+                            ))}
                         </Table.Row>
                     </Table.Head>
                     <Table.Body>
-                        {UsagePerProject.value.values.map((row, index) => (
-                            <Table.Row key={index}>
-                                {row.map((column, i) => (
-                                    <Table.Cell key={i}>{column}</Table.Cell>
-                                ))}
+                        {paginatedRows.length > 0 ? (
+                            paginatedRows.map((row, rowIndex) => (
+                                <Table.Row key={rowIndex}>
+                                    {headers.map((header, colIndex) => (
+                                        <Table.Cell key={colIndex}>
+                                            {row[header]}
+                                        </Table.Cell>
+                                    ))}
+                                </Table.Row>
+                            ))
+                        ) : (
+                            <Table.Row>
+                                <Table.Cell
+                                    colSpan={headers.length}
+                                    align="center"
+                                >
+                                    No filtered data found
+                                </Table.Cell>
                             </Table.Row>
-                        ))}
+                        )}
                     </Table.Body>
+                    <Table.Footer>
+                        <Table.Row>
+                            <Table.Pagination
+                                onPageChange={(e, v) => setPage(v)}
+                                page={page}
+                                rowsPerPage={rowsPerPage}
+                                rowsPerPageOptions={[5, 10, 20]}
+                                onRowsPerPageChange={(e) => {
+                                    setRowsPerPage(
+                                        parseInt(e.target.value, 10),
+                                    );
+                                    setPage(0);
+                                }}
+                                count={filteredRows.length}
+                            />
+                        </Table.Row>
+                    </Table.Footer>
                 </Table>
             </StyledTableContainer>
         </>

@@ -87,12 +87,12 @@ export const ENGINE_ROUTES: {
                 component: EngineSmssPage,
                 restrict: ['OWNER'],
             },
-            {
-                name: 'Usage Report',
-                path: 'usageReport',
-                component: EngineReportPage,
-                restrict: ['OWNER'],
-            },
+            // {
+            //     name: 'Usage Report',
+            //     path: 'usageReport',
+            //     component: EngineReportPage,
+            //     restrict: ['OWNER'],
+            // },
         ],
     },
     {
@@ -186,12 +186,12 @@ export const ENGINE_ROUTES: {
                 restrict: ['OWNER'],
             },
 
-            {
-                name: 'Usage Report',
-                path: 'usageReport',
-                component: EngineReportPage,
-                restrict: ['OWNER'],
-            },
+            // {
+            //     name: 'Usage Report',
+            //     path: 'usageReport',
+            //     component: EngineReportPage,
+            //     restrict: ['OWNER'],
+            // },
         ],
     },
     {
@@ -238,12 +238,12 @@ export const ENGINE_ROUTES: {
                 component: EngineSmssPage,
                 restrict: ['OWNER'],
             },
-            {
-                name: 'Usage Report',
-                path: 'usageReport',
-                component: EngineReportPage,
-                restrict: ['OWNER'],
-            },
+            // {
+            //     name: 'Usage Report',
+            //     path: 'usageReport',
+            //     component: EngineReportPage,
+            //     restrict: ['OWNER'],
+            // },
         ],
     },
     {
@@ -278,12 +278,12 @@ export const ENGINE_ROUTES: {
                 component: EngineSmssPage,
                 restrict: ['OWNER'],
             },
-            {
-                name: 'Usage Report',
-                path: 'usageReport',
-                component: EngineReportPage,
-                restrict: ['OWNER'],
-            },
+            // {
+            //     name: 'Usage Report',
+            //     path: 'usageReport',
+            //     component: EngineReportPage,
+            //     restrict: ['OWNER'],
+            // },
         ],
     },
 ];
