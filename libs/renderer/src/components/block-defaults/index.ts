@@ -76,7 +76,7 @@ import {
     VegaVisualizationBlockDef,
 } from "./vega-visualization-block";
 import { config as SidebarBlockConfig, SidebarBlockDef } from "./sidebar-block";
-
+import { config as DateBlockConfig, DateBlockDef } from "./date-picker-block";
 // import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
 
 // import { config as BodyBlockConfig, BodyBlockDef } from "./body-block";
@@ -117,7 +117,8 @@ export type DefaultBlockDefinitions =
     | VegaVisualizationBlockDef
     | RadioBlockDef
     | ThemeBlockDef
-    | EchartVisualizationBlockDef;
+    | EchartVisualizationBlockDef
+    | DateBlockDef;
 // | BodyBlockDef
 // | DividerBlockDef
 // | FooterBlockDef
@@ -157,6 +158,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [RadioBlockConfig.widget]: RadioBlockConfig,
+    [DateBlockConfig.widget]: DateBlockConfig,
     // [StepperBlockConfig.widget]: StepperBlockConfig,
     // [QueryBlockConfig.widget]: QueryBlockConfig,
 };
@@ -189,4 +191,5 @@ export {
     ModalBlockConfig,
     RadioBlockConfig,
     PDFViewerBlockConfig,
+    DateBlockConfig,
 };
