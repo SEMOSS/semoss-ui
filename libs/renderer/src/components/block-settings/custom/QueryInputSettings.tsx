@@ -9,6 +9,9 @@ import {
     CellState,
     QueryState,
     Variable,
+    INPUT_BLOCK_TYPES,
+    VariableType,
+    ActionMessages,
 } from "../../../store";
 import { getValueByPath } from "../../../utility";
 import { BaseSettingSection } from "../BaseSettingSection";
@@ -21,8 +24,9 @@ import {
     IconButton,
     Divider,
     styled,
+    useNotification,
 } from "@semoss/ui";
-import { Autocomplete } from "@mui/material";
+import { Autocomplete, Popper } from "@mui/material";
 import {
     CalendarMonth,
     Close,
@@ -31,6 +35,7 @@ import {
     Gesture,
     Inventory2Outlined,
     Layers,
+    LibraryAdd,
     OpenInNew,
     SwitchAccessShortcutOutlined,
     TokenOutlined,
@@ -76,7 +81,14 @@ interface Option {
     /**
      * type of block
      */
-    blockType: "block" | "query" | "cell" | "query-prop" | "cell-prop";
+    blockType: "block" | "query" | "cell" | "query-prop" | "cell-prop" | "cell";
+
+    /**
+     * whether the option is variabilized
+     * @type {boolean}
+     * @default false
+     */
+    variabilized: boolean;
 }
 
 const StyledModalHeader = styled(Stack)(({ theme }) => ({
@@ -97,6 +109,7 @@ export const QueryInputSettings = observer(
     }: QueryInputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
         const { state, notebook } = useBlocks();
+        const notification = useNotification();
 
         // track the value
         const [value, setValue] = useState("");
@@ -158,6 +171,7 @@ export const QueryInputSettings = observer(
 
         const optionMap = useMemo<Record<string, Option>>(() => {
             const pathMap = {};
+            const variabilizedList = [];
 
             Object.entries(state.variables).forEach(
                 (keyValue: [string, Variable]) => {
@@ -166,6 +180,9 @@ export const QueryInputSettings = observer(
                     const variable = keyValue[1];
 
                     const ref = state.getVariable(variable.to, variable.type);
+                    if (!variabilizedList.includes(variable.cellId)) {
+                        variabilizedList.push(variable.cellId);
+                    }
 
                     pathMap[alias] = {
                         id: alias,
@@ -173,6 +190,7 @@ export const QueryInputSettings = observer(
                         type: typeof ref,
                         display: alias,
                         blockType: variable.type,
+                        variabilized: true,
                     };
 
                     if (variable.type === "query") {
@@ -184,6 +202,7 @@ export const QueryInputSettings = observer(
                                 type: typeof q[f], // TODO: get value
                                 display: `${alias}.${f}`,
                                 blockType: "query-prop",
+                                variabilized: true,
                             };
                         }
                     }
@@ -199,13 +218,71 @@ export const QueryInputSettings = observer(
                                 type: typeof c[f], // TODO: get value
                                 display: `${alias}.${f}`,
                                 blockType: "cell-prop",
+                                variabilized: true,
                             };
                         }
                     }
                 },
             );
+            Object.entries(state.blocks).forEach(
+                (keyValue: [string, Block]) => {
+                    const alias = keyValue[0];
+                    const block = keyValue[1];
+                    //filter only valid(variabilizable) blocks
+                    if (INPUT_BLOCK_TYPES.indexOf(block.widget) > -1) {
+                        pathMap[alias] = {
+                            id: alias,
+                            path: alias,
+                            type: typeof block,
+                            display: alias,
+                            blockType: "block",
+                            variabilized: Object.keys(state.variables).includes(
+                                alias,
+                            ),
+                        };
+                    }
+                },
+            );
+
+            Object.entries(state.queries).forEach(
+                (keyValue: [string, QueryState]) => {
+                    const alias = keyValue[0];
+                    const query = keyValue[1];
+
+                    pathMap[alias] = {
+                        id: alias,
+                        path: alias,
+                        type: typeof query,
+                        display: alias,
+                        blockType: "query",
+                        variabilized: Object.keys(state.variables).includes(
+                            alias,
+                        ),
+                    };
+
+                    if (query.cellList.length > 0) {
+                        Object.entries(query.cells).forEach(
+                            (keyValue: [string, CellState]) => {
+                                const cellAlias = keyValue[0];
+                                const cell = keyValue[1];
+
+                                if (!variabilizedList.includes(cell.id)) {
+                                    pathMap[`${alias}.${cellAlias}`] = {
+                                        id: `${alias}.${cellAlias}`,
+                                        path: `${alias}.${cellAlias}`,
+                                        type: typeof cell,
+                                        display: `${alias}.${cellAlias}`,
+                                        blockType: "cell",
+                                        variabilized: false,
+                                    };
+                                }
+                            },
+                        );
+                    }
+                },
+            );
             return pathMap;
-        }, [state, notebook]);
+        }, [state, notebook, value]);
 
         // handle 'input' changes vs 'selections'
         const handleInputChange = (event, newInputValue, reason) => {
@@ -277,6 +354,62 @@ export const QueryInputSettings = observer(
             }
         };
 
+        /**
+         * @name handleVariablize
+         * Adds a new variable to the state
+         */
+        const handleVariablize = (option: Option) => {
+            // add variable
+            const success = state.dispatch({
+                message: ActionMessages.ADD_VARIABLE,
+                payload: {
+                    id:
+                        option.blockType === "cell"
+                            ? option?.path?.split(".")[1]
+                            : option.id,
+                    to:
+                        option.blockType === "cell"
+                            ? option?.path?.split(".")[0]
+                            : option?.path,
+                    cellId:
+                        option.blockType === "cell"
+                            ? option?.path?.split(".")[1]
+                            : null,
+                    type: option.blockType as VariableType,
+                },
+            });
+
+            // Create notification
+            notification.add({
+                color: success ? "success" : "error",
+                message: success
+                    ? `Successfully added ${option.id}`
+                    : `Unable to add ${option.id}, due to syntax or a duplicated alias`,
+            });
+        };
+
+        // Sort options based on their block type
+        const SortedOptions = useMemo(() => {
+            const sortedKeys = Object.keys(optionMap).sort((a, b) => {
+                return optionMap[a]["blockType"].localeCompare(
+                    optionMap[b]["blockType"],
+                );
+            });
+
+            return sortedKeys as string[]; //sortedData.sort();
+        }, [optionMap, value]);
+
+        // Popper for Autocomplete
+        const FixedPopper = function (props) {
+            return (
+                <Popper
+                    {...props}
+                    style={{ width: "250px" }}
+                    placement="bottom-start"
+                />
+            );
+        };
+
         return (
             <>
                 <BaseSettingSection label={label}>
@@ -288,7 +421,7 @@ export const QueryInputSettings = observer(
                         value={value}
                         inputValue={inputValue}
                         onInputChange={handleInputChange}
-                        options={Object.keys(optionMap).sort()}
+                        options={Object.keys(optionMap)}
                         getOptionLabel={(o: string) => {
                             return optionMap?.[o]?.path as string;
                         }}
@@ -309,17 +442,23 @@ export const QueryInputSettings = observer(
                                 //text to right of cursor
                                 const rightText =
                                     value.substring(cursorPosition);
-                                const valf = optionMap?.[val]?.path || "";
+                                const option = optionMap?.[val];
+                                const valf =
+                                    option.blockType === "cell"
+                                        ? option?.path?.split(".")[1]
+                                        : option?.path || "";
 
                                 // reform and submit
                                 onChange(
                                     leftText + " {{" + valf + "}} " + rightText,
                                 );
+                                // if variablizable and not already variabilized, variablize the option
+                                if (!optionMap?.[val]?.variabilized) {
+                                    handleVariablize(optionMap?.[val]);
+                                }
                             }
                         }}
-                        filterOptions={(options) => {
-                            return options.sort();
-                        }}
+                        filterOptions={() => SortedOptions}
                         renderOption={(props, o) => {
                             const option = optionMap[o];
                             return (
@@ -329,14 +468,24 @@ export const QueryInputSettings = observer(
                                         justifyContent="space-between"
                                         sx={{
                                             width: "100%",
-                                            pl: getIndent(option.blockType),
+                                            // pl: getIndent(option.blockType),
                                         }}
                                     >
                                         <Typography variant="body2">
                                             {option.display}
                                         </Typography>
                                         {/* TODO: Icon should actually reflect value data type */}
-                                        <Icon>{getIcon(option.blockType)}</Icon>
+                                        {!option.variabilized && (
+                                            <IconButton size="small">
+                                                <LibraryAdd
+                                                    fontSize="small"
+                                                    titleAccess="Add as variable"
+                                                />
+                                            </IconButton>
+                                        )}
+                                        {/* <Stack direction="row" alignItems={"center"}>
+                                            <Icon>{getIcon(option.blockType)}</Icon>
+                                        </Stack> */}
                                     </Stack>
                                 </li>
                             );
@@ -354,6 +503,8 @@ export const QueryInputSettings = observer(
                                 }}
                             />
                         )}
+                        groupBy={(option) => optionMap[option]?.blockType}
+                        PopperComponent={FixedPopper}
                     />
                     <IconButton size="small" onClick={() => setOpen(true)}>
                         <OpenInNew />
