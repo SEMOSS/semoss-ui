@@ -557,7 +557,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             widget: 'divider',
             data: {
                 style: {
-                    padding: '4px',
+                    padding: '0px',
                     width: '100%',
                 },
                 variant: 'fullWidth',
