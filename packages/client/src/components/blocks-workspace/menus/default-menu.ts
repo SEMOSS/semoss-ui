@@ -471,6 +471,102 @@ if (process.env.NODE_ENV === 'development') {
             slots: {} as BlockJSON['slots'],
         },
     });
+    DEV_BLOCKS.push({
+        section: SECTION_CHARTS,
+        name: 'Map Chart',
+        activeImage: BLOCK_IMAGES['WORLD_MAP_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['WORLD_MAP_HOVER'],
+        helperText: 'Show data on a map',
+        json: {
+            widget: 'e-chart',
+            data: {
+                variation: 'echart-map-graph',
+                style: {
+                    height: 500,
+                    width: 400,
+                },
+                option: {
+                    series: [
+                        {
+                            data: [],
+                            name: '',
+                            label: {
+                                show: false,
+                                rotate: 0,
+                                name: '',
+                                position: 'top',
+                                fontFamily: 'sans-serif',
+                                fontSize: 12,
+                                color: '#000000',
+                            },
+                            symbolSize: 5,
+                            symbol: 'circle',
+                        },
+                    ],
+                    symbolSize: 5,
+                    tooltip: {
+                        show: true,
+                        trigger: 'item',
+                        position: 'bottom',
+                    },
+                    color: [
+                        '#5470c6',
+                        '#91cc75',
+                        '#fac858',
+                        '#ee6666',
+                        '#73c0de',
+                        '#3ba272',
+                        '#fc8452',
+                        '#9a60b4',
+                        '#ea7ccc',
+                    ],
+                    legend: {
+                        show: true,
+                        orient: 'horizontal',
+                        bottom: 'bottom',
+                        textStyle: {
+                            fontSize: 10,
+                        },
+                    },
+                    toolbox: {
+                        feature: {
+                            brush: {
+                                type: ['rect'],
+                            },
+                        },
+                    },
+                    brush: {
+                        // Brush configuration
+                        brushType: 'rect', // You can also use 'polygon', 'lineX', or 'lineY'
+                        throttleType: 'debounce', // Throttle brush events
+                        throttleDelay: 300, // Delay for throttle (in ms)
+                        inBrush: {
+                            color: 'rgba(255, 0, 0, 0.3)', // Highlight color for the brushed region
+                        },
+                        outBrush: {
+                            color: 'rgba(0, 0, 0, 0.1)', // Color for points outside the brushed region
+                        },
+                    },
+                    title: {
+                        text: 'Map Graph',
+                        show: true,
+                        left: 'left',
+                        textStyle: {
+                            color: '#000000',
+                            fontWeight: 'bold',
+                            fontFamily: 'Arial Narrow',
+                            fontSize: 12,
+                        },
+                    },
+                },
+                frame: {
+                    name: '',
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    });
 }
 
 // TODO: Alphabetical order by name

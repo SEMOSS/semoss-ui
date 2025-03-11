@@ -9,6 +9,7 @@ import { ScatterPlotBlock } from "./variant/scatter-plot/ScatterPlot";
 import { useBlock, useBlocks, useBlockSettings } from "../../../hooks";
 import { BlockComponent, BlockDef } from "../../../store";
 import { PathValue } from "../../../types";
+import { Map } from "./variant/map-chart/Map";
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -141,6 +142,9 @@ export const VisualizationBlock: BlockComponent = observer(
                         {data.variation === "echart-scatter-plots" && (
                             <ScatterPlotBlock id={id} />
                         )}
+                        {data.variation === "echart-map-graph" && (
+                            <Map id={id}></Map>
+                        )}
                     </StyledNoDataContainer>
                 );
             } catch (e) {
@@ -162,6 +166,7 @@ export const VisualizationBlock: BlockComponent = observer(
                 {data.variation === "echart-scatter-plots" && (
                     <ScatterPlotBlock id={id} />
                 )}
+                {data.variation === "echart-map-graph" && <Map id={id}></Map>}
             </StyledDataContainer>
         );
     },

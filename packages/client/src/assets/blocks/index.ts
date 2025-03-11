@@ -74,3 +74,5 @@ export { default as SCATTER_PLOT_ACTIVE } from './Scatter_Plot_Active.png';
 export { default as SCATTER_PLOT_HOVER } from './Scatter_Plot_Hover.png';
 export { default as RADIAL_PLOT_ACTIVE } from './Radial_Plot_Active.png';
 export { default as RADIAL_PLOT_HOVER } from './Radial_Plot_Hover.png';
+export { default as WORLD_MAP_ACTIVE } from './World Map _Active.png';
+export { default as WORLD_MAP_HOVER } from './World Map _Hover.png';
