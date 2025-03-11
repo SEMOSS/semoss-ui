@@ -40,8 +40,8 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
         <div
             id={id}
             style={{
-                // border: "solid green",
                 // position Set to relative so we can have a modal to attach to page block
+                // height: 'inherit',
                 position: "relative",
                 width: "100%",
                 height: "100%",
