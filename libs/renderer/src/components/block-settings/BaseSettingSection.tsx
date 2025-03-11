@@ -21,7 +21,8 @@ export const BaseSettingSection = (props: {
             direction="row"
             alignItems="center"
             justifyContent="space-between"
-            spacing={2}
+            // spacing={2}
+            padding="8px 16px"
         >
             <StyledTypography variant="body2">{props.label}</StyledTypography>
             {!!props.description?.length && (
@@ -38,7 +39,7 @@ export const BaseSettingSection = (props: {
             <Stack
                 direction="row"
                 justifyContent="end"
-                spacing={1}
+                // spacing={1}
                 width="100%"
             >
                 {props.children}

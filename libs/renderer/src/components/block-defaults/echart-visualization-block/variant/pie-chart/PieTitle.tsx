@@ -30,14 +30,18 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 
     path: Paths<Block<D>["data"], 4>;
 }
+
 const StyledAxisDiv = styled("div")<{
     display?: string;
     justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
+    gap?: string;
+}>(({ theme, display, justifyContent, gap }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
+    padding: "8px 16px",
+    alignItems: "center",
+    gap: gap ?? undefined,
 }));
 const StyledButton = styled(Button)({
     left: "80%",
@@ -173,8 +177,9 @@ export const PieTitle = observer(
         }
         return (
             <StyledAxisDiv>
-                <StyledAxisDiv display="flex" justifyContent="space-around">
+                <StyledAxisDiv display="flex" gap="8px">
                     <Switch
+                        size="small"
                         checked={showTitle}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                             handleInputChange("showTitle", e.target.checked)

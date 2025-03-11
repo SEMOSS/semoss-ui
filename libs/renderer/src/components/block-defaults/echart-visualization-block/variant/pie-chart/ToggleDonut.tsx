@@ -20,16 +20,15 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 const StyledAxisDiv = styled("div")<{
     display?: string;
     justifyContent?: string;
-}>(({ display, justifyContent }) => ({
+    gap?: string;
+}>(({ theme, display, justifyContent, gap }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
+    padding: "8px 16px",
+    alignItems: "center",
+    gap: gap ?? undefined,
 }));
-
-const StyledTypography = styled(Typography)({
-    paddingLeft: "10px",
-});
 
 export const ToogleDonut = observer(
     <D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
@@ -82,7 +81,7 @@ export const ToogleDonut = observer(
         };
         return (
             <StyledAxisDiv>
-                <StyledAxisDiv display="flex" justifyContent="flex-start">
+                <StyledAxisDiv display="flex" gap="8px">
                     <Switch
                         checked={showDonut}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -91,9 +90,7 @@ export const ToogleDonut = observer(
                         title="Toggle Donut"
                         size="small"
                     />
-                    <StyledTypography variant="body1">
-                        Toggle ON / OFF
-                    </StyledTypography>
+                    <label> Toggle ON / OFF</label>
                 </StyledAxisDiv>
             </StyledAxisDiv>
         );

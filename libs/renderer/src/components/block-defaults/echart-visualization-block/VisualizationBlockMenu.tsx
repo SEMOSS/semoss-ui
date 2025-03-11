@@ -14,6 +14,7 @@ const StyledContainer = styled("div")(() => ({
     maxHeight: "50vh",
 }));
 const StyledSubSection = styled("div")(() => ({
+    padding: "8px 16px",
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
@@ -29,7 +30,6 @@ const StyledStack = styled(Stack)(() => ({
     },
 }));
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
-    border: "1px",
     minHeight: "42px",
     color: theme.palette.secondary.light,
     borderRadius: theme.shape.borderRadius,
@@ -41,12 +41,15 @@ const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
     ">.MuiTabs-scroller": {
         display: "flex",
         justifyContent: "space-around",
+        ".MuiTabs-flexContainer": {
+            flex: 1,
+        },
     },
 }));
 const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
     height: "38px",
-    // width:'33%',
-    padding: "8px 11px",
+    padding: "8px 16px",
+
     "&.MuiTab-root": {
         borderRadius: theme.shape.borderRadius,
     },
@@ -66,6 +69,7 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
             {/* <JsonSettings id={id} path="option" /> */}
             {/* <CodeEditorSettings id={id} path="specJson" /> */}
             <StyledToggleTabsGroup
+                variant="fullWidth"
                 value={selectedTab}
                 style={{
                     width: "100% !important",

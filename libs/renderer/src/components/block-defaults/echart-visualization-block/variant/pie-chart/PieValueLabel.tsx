@@ -30,14 +30,20 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 const StyledAxisDiv = styled("div")<{
     display?: string;
     justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
+    gap?: string;
+}>(({ theme, display, justifyContent, gap }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
+    padding: "8px 16px",
+    alignItems: "center",
+    gap: gap ?? undefined,
 }));
-const StyledButton = styled(Button)({
-    left: "80%",
+const StyledButtonWrapper = styled("div")({
+    display: "flex",
+    justifyContent: "flex-end",
+    margin: "8px 16px",
+    // left: "80%",
 });
 const StyledAxisColDiv = styled("div")<{
     display?: string;
@@ -184,8 +190,9 @@ export const PieValueLabel = observer(
         }
         return (
             <StyledAxisDiv>
-                <StyledAxisDiv display="flex" justifyContent="space-around">
+                <StyledAxisDiv display="flex" gap="8px">
                     <Switch
+                        size="small"
                         checked={showValueLabel}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                             handleInputChange(
@@ -334,14 +341,16 @@ export const PieValueLabel = observer(
                     </StyledAxisColDiv>
                 )}
                 {showValueLabel && (
-                    <StyledButton
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        onClick={handleReset}
-                    >
-                        Reset
-                    </StyledButton>
+                    <StyledButtonWrapper>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            onClick={handleReset}
+                        >
+                            Reset
+                        </Button>
+                    </StyledButtonWrapper>
                 )}
             </StyledAxisDiv>
         );

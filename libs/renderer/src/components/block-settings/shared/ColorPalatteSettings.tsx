@@ -140,6 +140,7 @@ const StyledTitle = styled("span")(() => ({
 const StyledCustomPaletteAdd = styled("div")(() => ({
     display: "flex",
     justifyContent: "center",
+    padding: "16px",
 }));
 const StyledCustomPaletteEdit = styled("div")(() => ({
     display: "block",
