@@ -16,7 +16,9 @@
         "nx:reset": "nx reset",
         "nx:generate-react-lib": "echo \"TODO: create a nx generator for react rollup/webpack library\"",
 
-        "build": "npx nx run-many -t build -p @semoss/client @semoss/legacy"
+        "build": "npx nx run-many -t build -p @semoss/client @semoss/legacy",
+        
+        "test": "vitest --watch=false --passWithNoTests --changed"
     },
     "author": "",
     "license": "Apache-2.0",
