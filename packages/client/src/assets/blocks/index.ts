@@ -60,6 +60,8 @@ export { default as THEME_ACTIVE } from './Theme_Active.png';
 export { default as THEME_HOVER } from './Theme_Hover.png';
 export { default as SIDEBAR_MENU_ACTIVE } from './Sidebar_Menu_Active.png';
 export { default as SIDEBAR_MENU_HOVER } from './Sidebar_Menu_Hover.png';
+export { default as SWITCH_ACTIVE } from './Switch_Active.png';
+export { default as SWITCH_HOVER } from './Switch_Hover.png';
 
 // CHARTS
 export { default as AREA_CHART_ACTIVE } from './Area_Chart_Active.png';

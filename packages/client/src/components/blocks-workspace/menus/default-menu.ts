@@ -549,6 +549,32 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_INPUT,
+        name: 'Switch',
+        helperText: 'Toggle between two states',
+        activeImage: BLOCK_IMAGES['SWITCH_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['SWITCH_HOVER'],
+        json: {
+            widget: 'switch',
+            data: {
+                style: {
+                    width: 'fit-content',
+                    padding: '4px',
+                },
+                label: 'Toggle Switch',
+                value: false,
+                disabled: false,
+                color: 'primary',
+                size: 'medium',
+                helperText: '',
+                required: false,
+                labelPlacement: 'end',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
         name: 'Button',
         helperText: 'Creates a click event',
         activeImage: BLOCK_IMAGES['BUTTON_ACTIVE'],
