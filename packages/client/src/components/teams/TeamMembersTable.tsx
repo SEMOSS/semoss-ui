@@ -195,6 +195,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
+    const AUTOCOMPLETE_LIMIT = 10;
+    const AUTOCOMPLETE_OFFSET = 0;
 
     /** Member Table State */
     const [membersPage, setMembersPage] = useState<number>(1);
@@ -218,6 +220,30 @@ export const TeamMembersTable = (props: MembersTableProps) => {
     const [hasMembers, setHasMembers] = useState(false);
 
     const limit = 5;
+    const [searchMemberInput, setSearchMemberInput] = useState<string>('');
+    const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
+    const [isScrollBottom, setIsScrollBottom] = useState(false);
+    const [canCollect, setCanCollect] = useState<boolean>(true);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [searchLoading, setSearchLoading] = useState(false);
+
+    const nearBottom = (
+        target: {
+            scrollHeight?: number;
+            scrollTop?: number;
+            clientHeight?: number;
+        } = {},
+    ) => {
+        const diff = Math.round(target.scrollHeight - target.scrollTop);
+        return diff - 25 <= target.clientHeight;
+    };
+
+    /**
+     * @name getAdditionalUsersNonGroup
+     */
+    const getAdditionalUsersNonGroup = () => {
+        setOffset(offset + AUTOCOMPLETE_LIMIT);
+    };
 
     const memberSearchRef = useRef(undefined);
 
@@ -249,6 +275,32 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                 setHasMembers(true);
             });
     }, []);
+
+    useEffect(() => {
+        if (isScrollBottom) {
+            if (canCollect) {
+                getAdditionalUsersNonGroup();
+            }
+        }
+    }, [isScrollBottom]);
+
+    useEffect(() => {
+        if (searchMemberInput) {
+            setSearchLoading(true);
+        }
+        const timer = setTimeout(() => {
+            if (!offset) {
+                getUsersNonGroup(false);
+            } else {
+                if (canCollect) {
+                    getUsersNonGroup(false);
+                } else {
+                    getUsersNonGroup(true);
+                }
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [offset, searchMemberInput]);
 
     /**
      * @name submitNonGroupUsers
@@ -386,15 +438,25 @@ export const TeamMembersTable = (props: MembersTableProps) => {
      * @name getUsersNonGroup
      * @desc Gets all users without credentials
      */
-    const getUsersNonGroup = async () => {
+    const getUsersNonGroup = async (reset: boolean) => {
+        if (isLoading) {
+            return;
+        }
+        setIsLoading(true);
         try {
             let response;
             // possibly add more db table columns / keys here to get id type for display under username
             // eslint-disable-next-line prefer-const
-            response = await monolithStore.getNonTeamUsers(groupId);
+            response = await monolithStore.getNonTeamUsers(
+                groupId,
+                AUTOCOMPLETE_LIMIT,
+                offset,
+                searchMemberInput,
+            );
 
             // ignore if there is no response
             if (response) {
+                let requests = reset ? [] : nonCredentialedUsers;
                 const users = response.map((val) => {
                     return {
                         ...val,
@@ -403,16 +465,19 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                         ],
                     };
                 });
-
-                setNonCredentialedUsers(users);
+                requests = requests.concat(users);
+                setNonCredentialedUsers(requests);
+                setCanCollect(users.length === AUTOCOMPLETE_LIMIT);
+                setIsLoading(false);
+                setSearchLoading(false);
             }
         } catch (e) {
             notification.add({
                 color: 'error',
                 message: String(e),
             });
-        } finally {
-            setAddMembersModal(true);
+            setIsLoading(false);
+            setSearchLoading(false);
         }
     };
 
@@ -546,7 +611,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                                 <Button
                                     variant={'contained'}
                                     onClick={() => {
-                                        getUsersNonGroup();
+                                        setAddMembersModal(true);
+                                        getUsersNonGroup(false);
                                     }}
                                 >
                                     Add Members{' '}
@@ -732,7 +798,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                             <Button
                                 variant={'contained'}
                                 onClick={() => {
-                                    getUsersNonGroup();
+                                    setAddMembersModal(true);
+                                    getUsersNonGroup(false);
                                 }}
                             >
                                 Add Members{' '}
@@ -748,13 +815,18 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                     <StyledModalContentText>
                         <Autocomplete
                             label="Search"
+                            loading={isLoading || searchLoading}
                             multiple={true}
+                            freeSolo={false}
+                            filterOptions={(x) => x}
                             options={nonCredentialedUsers}
+                            includeInputInList={true}
                             limitTags={2}
                             getLimitTagsText={() =>
                                 ` +${selectedNonCredentialedUsers.length - 2}`
                             }
-                            value={[...selectedNonCredentialedUsers]}
+                            value={selectedNonCredentialedUsers}
+                            inputValue={searchMemberInput}
                             getOptionLabel={(option: any) => {
                                 return `${option.name}`;
                             }}
@@ -763,6 +835,23 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                             }}
                             onChange={(event, newValue: any) => {
                                 setSelectedNonCredentialedUsers([...newValue]);
+                            }}
+                            ListboxProps={{
+                                onScroll: ({ target }) =>
+                                    setIsScrollBottom(
+                                        nearBottom(
+                                            target as {
+                                                scrollHeight?: number;
+                                                scrollTop?: number;
+                                                clientHeight?: number;
+                                            },
+                                        ),
+                                    ),
+                            }}
+                            onInputChange={(event, newValue) => {
+                                setSearchMemberInput(newValue);
+                                setOffset(0);
+                                setNonCredentialedUsers([]);
                             }}
                         />
 
@@ -897,7 +986,11 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                 <Modal.Actions>
                     <Button
                         variant="outlined"
-                        onClick={() => setAddMembersModal(false)}
+                        onClick={() => {
+                            setAddMembersModal(false);
+                            setOffset(0);
+                            setNonCredentialedUsers([]);
+                        }}
                     >
                         Cancel
                     </Button>
