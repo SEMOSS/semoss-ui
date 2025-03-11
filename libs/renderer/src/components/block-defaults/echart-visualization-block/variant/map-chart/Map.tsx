@@ -134,8 +134,8 @@ export const Map: BlockComponent = observer(({ id }) => {
             geo: {
                 map: "world",
                 roam: true,
-                // zoom: 5,
-                // center: [0, 0],
+                zoom: 1,
+                center: [0, 0],
             },
             series: [
                 {
@@ -160,6 +160,39 @@ export const Map: BlockComponent = observer(({ id }) => {
             ...data.option["tooltip"],
             formatter: formatdatapoints(frame.data, data),
         };
+    }
+
+    // Calculate bounding box
+    const lats = data.option["series"][0]["data"].map((d) => d.value[0]);
+    const lons = data.option["series"][0]["data"].map((d) => d.value[1]);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLon = Math.min(...lons);
+    const maxLon = Math.max(...lons);
+
+    // Compute center
+    const centerLat = (minLat + maxLat) / 2;
+    const centerLon = (minLon + maxLon) / 2;
+
+    // Adjust zoom level based on spread
+    const latDiff = maxLat - minLat;
+    const lonDiff = maxLon - minLon;
+    const maxDiff = Math.max(latDiff, lonDiff);
+    let zoomLevel = 4;
+
+    // Default zoom
+    if (maxDiff < 1) zoomLevel = 8;
+    else if (maxDiff < 5) zoomLevel = 6;
+    else if (maxDiff < 10) zoomLevel = 5;
+    else if (maxDiff < 20) zoomLevel = 4;
+    else zoomLevel = 1;
+
+    if (frame.data.values.length > 0) {
+        updatedOption["geo"][0]["center"] = [
+            centerLat ? centerLat : 0,
+            centerLon ? centerLon : 0,
+        ];
+        updatedOption["geo"][0]["zoom"] = zoomLevel ? zoomLevel : 4;
     }
 
     if (frame.data.values.length > 0) {
@@ -206,7 +239,6 @@ export const Map: BlockComponent = observer(({ id }) => {
                         mapRef.current.clear();
 
                         updatedOption["series"] = updatedOption["series"][0];
-
                         mapRef.current.setOption(updatedOption);
 
                         data.option["series"][0]["name"] =

@@ -527,6 +527,16 @@ if (process.env.NODE_ENV === 'development') {
                         textStyle: {
                             fontSize: 10,
                         },
+                        type: 'scroll',
+                        pageButtonItemGap: 5,
+                        pageTextSize: {
+                            color: '#000000',
+                            fontSize: 10,
+                        },
+                        left: 'center',
+                        top: 'bottom',
+                        itemWidth: 15,
+                        itemHeight: 10,
                     },
                     toolbox: {
                         feature: {
