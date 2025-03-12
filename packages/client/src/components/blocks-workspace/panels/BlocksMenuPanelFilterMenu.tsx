@@ -1,5 +1,5 @@
 import { Popover } from '@mui/material';
-import { Box, Divider, Stack } from '@semoss/ui';
+import { Box, Button, Divider, Stack } from '@semoss/ui';
 
 export interface BlocksMenuPanelFilterMenuProps {
     anchorEl: null | HTMLElement;
@@ -30,7 +30,12 @@ export const BlocksMenuPanelFilterMenu = ({
                 <Divider orientation="horizontal" />
                 <Box>Checkboxes</Box>
                 <Divider orientation="horizontal" />
-                <Box>Buttons</Box>
+                <Stack direction="row" paddingX={4} paddingY={2} spacing={2}>
+                    <Button variant="outlined" color="secondary">
+                        Clear All
+                    </Button>
+                    <Button variant="contained">Apply</Button>
+                </Stack>
             </Stack>
         </Popover>
     );
