@@ -1,4 +1,4 @@
-import { Menu } from '@semoss/ui';
+import { Popover } from '@mui/material';
 
 export interface BlocksMenuPanelFilterMenuProps {
     anchorEl: null | HTMLElement;
@@ -10,8 +10,21 @@ export const BlocksMenuPanelFilterMenu = ({
     onClose,
 }: BlocksMenuPanelFilterMenuProps) => {
     return (
-        <Menu open={Boolean(anchorEl)} onClose={onClose} anchorEl={anchorEl}>
-            Hello world
-        </Menu>
+        <Popover
+            open={Boolean(anchorEl)}
+            onClose={onClose}
+            anchorEl={anchorEl}
+            anchorOrigin={{
+                horizontal: 'right',
+                vertical: 'bottom',
+            }}
+            id="blocks-filter-menu"
+            transformOrigin={{
+                horizontal: 'right',
+                vertical: 'top',
+            }}
+        >
+            Hi World
+        </Popover>
     );
 };
