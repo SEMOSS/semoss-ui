@@ -132,6 +132,15 @@ const numberValidate = (number: string) => {
     );
 };
 
+const emailValidate = (email: string) => {
+    if (!email) {
+        return true;
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+};
+
 interface UserAddOverlayProps {
     /**
      * Track if the model is open or close
@@ -245,6 +254,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                         data.model_max_tokens = null;
                     }
                     if (data.model_usage_restriction === 'null') {
+                        data.model_usage_restriction = null;
                         data.model_max_response_time = null;
                         data.model_max_tokens = null;
                         data.model_usage_frequency = null;
@@ -290,9 +300,16 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
         (e) => {
             console.warn(e);
 
+            let errorMessages = [];
+            for (const error in e) {
+                if (e[error].hasOwnProperty('message')) {
+                    errorMessages.push(e[error]['message'] + '.');
+                }
+            }
+
             notification.add({
                 color: 'error',
-                message: 'Form is Invalid',
+                message: 'Form is Invalid. ' + errorMessages.join(' '),
             });
         },
     );
@@ -461,7 +478,18 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                                 name={'email'}
                                 control={control}
                                 rules={{
-                                    required: true,
+                                    required: false,
+                                    validate: (value) => {
+                                        if (value == '') {
+                                            return true;
+                                        }
+                                        emailValidate(value);
+                                    },
+                                    pattern: {
+                                        value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                                        message:
+                                            'Email does not match a valid format',
+                                    },
                                 }}
                                 render={({ field }) => {
                                     return (
