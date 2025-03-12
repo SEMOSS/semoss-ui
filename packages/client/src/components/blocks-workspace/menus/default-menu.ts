@@ -493,11 +493,11 @@ if (process.env.NODE_ENV === 'development') {
                         top: 'top',
                     },
                     tooltip: {
-                        show: true,
+                        show: false,
                         trigger: 'axis',
                         position: 'bottom',
                         axisPointer: {
-                            type: 'none',
+                            type: 'line',
                         },
                     },
                     xAxis: {
@@ -525,6 +525,7 @@ if (process.env.NODE_ENV === 'development') {
                             fontSize: 11,
                             color: '#000000',
                         },
+                        nameGap: 25,
                     },
                     yAxis: {
                         name: '',
@@ -558,7 +559,7 @@ if (process.env.NODE_ENV === 'development') {
                         },
                     },
                     legend: {
-                        show: true,
+                        show: false,
                         data: [],
                         selectedMode: 'multiple',
                         orient: 'horizontal',

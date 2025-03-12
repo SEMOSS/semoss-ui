@@ -89,23 +89,20 @@ export const StackChartBarStyle = observer(
          */
         const reinitializeFeatures = (options: any) => {
             if (options.hasOwnProperty("barWidth")) {
-                // Set the showTooltips state to the value of the show property of the tooltip object
                 setBarWidth(options["barWidth"]);
             }
             if (options.hasOwnProperty("flipAxis")) {
                 setFlipAxis(options["flipAxis"]);
             }
         };
-        /**
-         * Handles the switch change event for the tooltip by toggling the showTooltips state and updating the tooltip options in the data.
-         * @param e The switch change event.
-         */
+        // this function is used to set the barWidth of the stack chart
         const stackbarWidth = (e) => {
             let option = JSON.parse(value);
             setBarWidth(e.target.value);
             option["barWidth"] = e.target.value;
             setData(path, option as PathValue<D["data"], typeof path>);
         };
+        // this function is used to flip the axis of the stack chart
         const flipAxisStack = (e: ChangeEvent<HTMLInputElement>) => {
             let option = JSON.parse(value);
             setFlipAxis(e.target.checked);
@@ -134,12 +131,12 @@ export const StackChartBarStyle = observer(
                     <Slider
                         size="small"
                         min={0}
-                        max={30}
+                        max={40}
                         value={barWidth}
                         valueLabelDisplay="auto"
                         marks={[
                             { value: 0, label: "0" },
-                            { value: 30, label: "30" },
+                            { value: 40, label: "40" },
                         ]}
                         onChange={(e) => stackbarWidth(e)}
                     />

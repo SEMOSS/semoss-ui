@@ -68,7 +68,16 @@ export const StackChart: BlockComponent = observer(({ id }) => {
         category = fields["category"];
         tooltip = fields["tooltip"];
     }
-    const getSelectors = () => {
+    /**
+     * Function to get the type of selector to be used for the stack chart
+     * @returns An object with the selectors for xAxis, yAxis, size and tooltip
+     */
+    const getSelectors = (): {
+        xAxis: string;
+        yAxis: string;
+        size: string;
+        tooltip: string;
+    } => {
         return {
             xAxis: getSelectorType("XAxisDataType"),
             yAxis: getSelectorType("YAxisDataType"),
@@ -76,10 +85,12 @@ export const StackChart: BlockComponent = observer(({ id }) => {
             tooltip: getSelectorType("tooltipDataType"),
         };
     };
+    // getSelectorType function to get the type of selector to be used for the stack chart
     const getSelectorType = (type) => {
         return fields[type] === "NUMBER" ? "Average" : "Count";
     };
     const selectors = getSelectors();
+    //selector fuction which will return the pixel expression to send payload to the server
     const selector = (data) => {
         if (data.hasOwnProperty("columns")) {
             if (data.option.hasOwnProperty("_state")) {
@@ -115,6 +126,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
             }
         }
     };
+    // useFrame hook to get the frame data
     const frame = useFrame(data?.frame?.name, {
         selector: selector(data),
     });
@@ -127,6 +139,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
         });
         return selectedIndexes;
     };
+    //Brushing of data points
     const echartsLoaded = (chart) => {
         chart.on("brushSelected", (params) => {
             let selectedDataIndexes = [];
@@ -148,10 +161,20 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                     data.option["flipAxis"] === true
                         ? currentOption.yAxis[0].data
                         : currentOption.xAxis[0].data;
-                const filteredXaxis = selectedDataIndexes.map((index) => {
-                    let value = xAxisData[index];
-                    return typeof value === "string" ? value : String(value); // Ensure it returns a string if needed
-                });
+                let filteredXaxis = [...selectedDataIndexes]
+                    .filter((index) => {
+                        return data.option["series"].some((series) => {
+                            let yValue = series.data[index]?.value;
+                            return (
+                                yValue !== null &&
+                                yValue !== 0 &&
+                                yValue !== undefined &&
+                                yValue !== "NaN" &&
+                                yValue !== ""
+                            );
+                        });
+                    })
+                    .map((index) => xAxisData[index]);
                 handleSelection(
                     filteredXaxis,
                     currentOption["_state"]["fields"]["XAxis"],
@@ -159,11 +182,13 @@ export const StackChart: BlockComponent = observer(({ id }) => {
             }
         });
     };
+    //Brushed Data points selection and pixel expression of brushed data points to send to the server
     const handleSelection = (value: any, name: any) => {
         // update the frame
         frame.filter(`SetFrameFilter(${name}==[${JSON.stringify(value)}])`);
     };
 
+    //  Context menu to show on right click
     const onClickChart = {
         contextmenu: (params) => {
             if (params.data) {
@@ -191,7 +216,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
             }
         },
     };
-
+    //  Process the API data to render the Stack Chart
     const processData = (apiData, data) => {
         let xAxisData = [];
         let groupedData = {};
@@ -249,7 +274,13 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                                                 item.category === category,
                                         ) || {};
                                     return {
-                                        value: point.y ?? "", //  Ensure alignment
+                                        value:
+                                            isNaN(point.y) ||
+                                            point.y === undefined
+                                                ? point.y
+                                                : parseFloat(point.y)
+                                                      .toFixed(2)
+                                                      .replace(/\.00$/, ""),
                                         category: point.category ?? "",
                                         itemStyle: {
                                             color: categoryColorMap[category],
@@ -305,7 +336,13 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                                                 item.category === category,
                                         ) || {};
                                     return {
-                                        value: point.y ?? "", //  Ensure alignment
+                                        value:
+                                            isNaN(point.y) ||
+                                            point.y === undefined
+                                                ? point.y
+                                                : parseFloat(point.y)
+                                                      .toFixed(2)
+                                                      .replace(/\.00$/, ""),
                                         category: point.category ?? "",
                                         itemStyle: {
                                             color: categoryColorMap[category],
@@ -361,7 +398,13 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                                                 item.category === category,
                                         ) || {};
                                     return {
-                                        value: point.y ?? "", //  Ensure alignment
+                                        value:
+                                            isNaN(point.y) ||
+                                            point.y === undefined
+                                                ? point.y
+                                                : parseFloat(point.y)
+                                                      .toFixed(2)
+                                                      .replace(/\.00$/, ""),
                                         category: point.category ?? "",
                                         itemStyle: {
                                             color: categoryColorMap[category],
@@ -412,7 +455,12 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                                     (item) => item.category === category,
                                 ) || {};
                             return {
-                                value: point.y ?? "", //  Ensure alignment
+                                value:
+                                    isNaN(point.y) || point.y === undefined
+                                        ? point.y
+                                        : parseFloat(point.y)
+                                              .toFixed(2)
+                                              .replace(/\.00$/, ""),
                                 category: point.category ?? "",
                                 itemStyle: {
                                     color: categoryColorMap[category],
@@ -471,7 +519,13 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                                                 item.category === category,
                                         ) || {};
                                     return {
-                                        value: point.y ?? "", //  Ensure alignment
+                                        value:
+                                            isNaN(point.y) ||
+                                            point.y === undefined
+                                                ? point.y
+                                                : parseFloat(point.y)
+                                                      .toFixed(2)
+                                                      .replace(/\.00$/, ""),
                                         category: point.category ?? "",
                                         itemStyle: {
                                             color: categoryColorMap[category],
@@ -524,7 +578,12 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                                     (item) => item.category === category,
                                 ) || {};
                             return {
-                                value: point.y ?? "", //  Ensure alignment
+                                value:
+                                    isNaN(point.y) || point.y === undefined
+                                        ? point.y
+                                        : parseFloat(point.y)
+                                              .toFixed(2)
+                                              .replace(/\.00$/, ""),
                                 category: point.category ?? "",
                                 itemStyle: {
                                     color: categoryColorMap[category],
@@ -539,7 +598,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
         }
         return { xAxisData: [], series: [], maxStackSize: 0, legendData: [] };
     };
-
+    // this function is used to show the data in tooltip
     const formatdatapoints = (apiData, data, maxStackSize) => {
         if (apiData["values"]) {
             if (data.option.hasOwnProperty("_state")) {
@@ -554,6 +613,12 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                             let tooltipText = `${params[0].axisValue} <br/>`;
                             let tooltipValues = [];
                             let totalTooltipValue = 0;
+                            let tooltipPrefix =
+                                data.option["_state"]["fields"][
+                                    "tooltipDataType"
+                                ] === "NUMBER"
+                                    ? "Average of"
+                                    : "Count of";
                             params.forEach((param) => {
                                 let tooltipValue = param.data.tooltipValue;
                                 if (param.data.category !== "") {
@@ -571,7 +636,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                             });
                             if (maxStackSize > 0) {
                                 let average = totalTooltipValue / maxStackSize;
-                                tooltipText += `${selectors.tooltip} ${tooltip}: ${average} <br/>`;
+                                tooltipText += `${tooltipPrefix} ${tooltip}: ${average} <br/>`;
                             }
                             return tooltipText.trim();
                         };

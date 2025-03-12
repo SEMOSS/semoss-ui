@@ -65,10 +65,6 @@ const StyledTypography = styled(Typography)({
     paddingLeft: "10px",
 });
 
-const StyledButton = styled(Button)({
-    left: "100%",
-});
-
 export const EditXAxisStackChart = observer(
     <D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);

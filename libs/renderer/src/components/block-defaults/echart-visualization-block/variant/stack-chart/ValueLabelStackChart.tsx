@@ -341,12 +341,12 @@ export const ValueLabelStackChart = observer(
                                 onChange={handleLabelSize}
                             />
                         </StyledAxisColDiv>
-                        {/* <ColorPickerSettings
+                        <ColorPickerSettings
                             id={id}
                             path={"option.label.color"}
                             colorValue={labelColor}
                             onChange={(e) => {}}
-                        ></ColorPickerSettings> */}
+                        ></ColorPickerSettings>
                     </StyledAxis>
                 )}
                 <StyledAxisDiv display="flex" justifyContent="flex-end">
