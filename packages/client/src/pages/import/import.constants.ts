@@ -95,7 +95,7 @@ export const stepsOne = [
     {
         name: 'Build Database',
         description: '',
-        disabled: true,
+        disabled: false,
         data: 'BUILD_DATABASE', // DOES NOT MATTER AT THE MOMENT, Tie this into one DS
     },
     {
@@ -8104,6 +8104,68 @@ export const CONNECTION_OPTIONS = {
         ],
     },
     DATABASE: {
+        'Create Database': [
+            {
+                name: 'H2',
+                description: 'Create database tables',
+                disable: false,
+                icon: ZIP,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
+                    },
+                    {
+                        fieldName: 'DATABASE_DESCRIPTION',
+                        label: 'Database Description',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'DATABASE_TAGS',
+                        label: 'Tags',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'TABLE_METADATA',
+                        label: 'Database Form',
+                        defaultValue: null,
+                        options: {
+                            component: 'build-database',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                ],
+            },
+        ],
         'File Uploads': [
             {
                 name: 'ZIP',
@@ -8125,7 +8187,7 @@ export const CONNECTION_OPTIONS = {
             },
             {
                 name: 'CSV',
-                disable: true,
+                disable: false,
                 icon: CSV,
                 fields: [
                     // baseUpload

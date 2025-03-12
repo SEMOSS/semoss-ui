@@ -21,6 +21,7 @@ import { ExpandLess, ExpandMore, Help } from '@mui/icons-material';
 import { useStepper, useRootStore } from '@/hooks';
 import { useNavigate } from 'react-router-dom';
 import { useFieldArray, useForm, Form, Controller } from 'react-hook-form';
+import { BuildDatabase } from './BuildDatabase';
 
 const StyledFlexEnd = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -72,6 +73,17 @@ const reducer = (state, action) => {
     return state;
 };
 
+async function executeSequentially(promiseFunctions: any[]) {
+    await promiseFunctions.reduce(async (prevPromise, nextFunc) => {
+        await prevPromise;
+        try {
+            await nextFunc();
+        } catch (error) {
+            Promise.reject(error);
+        }
+    }, Promise.resolve());
+}
+
 export const ImportForm = (props) => {
     const { submitFunc, fields } = props;
 
@@ -101,6 +113,7 @@ export const ImportForm = (props) => {
         getValues,
         setFocus,
     } = useForm();
+    console.log(handleSubmit);
 
     /** Used to Trigger useEffect anytime these vals change */
     const fieldsToWatch = useMemo(() => {
@@ -266,7 +279,7 @@ export const ImportForm = (props) => {
         const defaultVals = {};
         const defFields = [];
         const advFields = [];
-
+        console.log({ fields });
         for (const f of fields) {
             const finalFieldState = f;
 
@@ -466,6 +479,8 @@ export const ImportForm = (props) => {
      */
     const onSubmit = async (data) => {
         setFormLoading(true);
+        console.log({ steps });
+        console.log({ data });
         // If it's a File Upload
         if (steps[1].id.includes('File Uploads')) {
             if (steps[1].title === 'ZIP') {
@@ -498,7 +513,177 @@ export const ImportForm = (props) => {
             setFormLoading(false);
             return;
         }
+        if (steps[1].id.includes('Create Database')) {
+            if (steps[1].title === 'H2') {
+                // const upload = await monolithStore.uploadFile(
+                //     [data.ZIP],
+                //     configStore.store.insightID,
+                // );
 
+                // const pixelString =
+                //     steps[0].data === 'DATABASE'
+                //         ? `UploadDatabase(filePath=["${upload[0].fileLocation}"])`
+                //         : `UploadEngine(filePath=["${upload[0].fileLocation}"], engineTypes=["${steps[0].data}"])`;
+
+                // console.log(pixelString);
+
+                const typeMap = (type) => {
+                    switch (type) {
+                        case 'date': {
+                            return new Date();
+                        }
+                        case 'int':
+                        case 'string':
+                        default:
+                            return null;
+                    }
+                };
+
+                let asyncTasks: (() => Promise<boolean>)[] = [];
+                let created = false;
+                for (let table in data.TABLE_METADATA) {
+                    const t = data.TABLE_METADATA[table];
+                    console.log(t);
+                    asyncTasks.push(async () => {
+                        const csvStringify = (data) => {
+                            const headers = [
+                                ...data.map((a) => a.name.replace(/ /g, '_')),
+                            ];
+                            const rows = [
+                                null,
+                                null,
+                                ...data
+                                    .map((row) => {
+                                        return typeMap(row.type) || null;
+                                    })
+                                    .join(', '),
+                            ];
+
+                            return `${headers}\n${rows}`;
+                        };
+
+                        // Mimic a csv upload to create the table
+                        const d = csvStringify(t.columns);
+                        const csvBlob = new Blob([d], { type: 'text/csv' });
+                        const csv = {
+                            ...csvBlob,
+                            name: `${t.name}.csv`,
+                            lastModified: Date.now(),
+                            webkitRelativePath: '',
+                        };
+                        const formData = new FormData();
+                        formData.append(t.name, csvBlob, csv.name);
+                        const files = [formData.get(t.name) as File];
+
+                        const uploadResult = await monolithStore.uploadFile(
+                            files,
+                            configStore.store.insightID,
+                        );
+
+                        const filePath = uploadResult[0].fileLocation;
+
+                        // Grab predicted types
+                        const pixelResponse = await monolithStore.runQuery(
+                            `PredictDataTypes ( filePath=["${filePath}"] ) ;`,
+                        );
+                        const myjsonobj = pixelResponse.pixelReturn[0]
+                            .output as any;
+                        const dataRange = JSON.stringify(
+                            myjsonobj.dataTypes,
+                        ).replaceAll('{"dataTypes":', '');
+
+                        const frameHeaders = myjsonobj.headers
+                            .map((a) => 'DND__' + a.replace(/ /g, '_'))
+                            .join(', ');
+                        const aliasHeaders = myjsonobj.headers
+                            .map((a) => a.replace(/ /g, '_'))
+                            .join(', ');
+
+                        console.log({ frameHeaders, aliasHeaders });
+
+                        // Create the new table
+                        const uploadpixel_1 = `META | FileRead(filePath=["${filePath}"], dataTypeMap=[${dataRange}], additionalDataTypes=[{}], delimiter=[","],newHeaders=[{}],fileName=["${data.NAME.replace(
+                            /-/g,
+                            '',
+                        )}.csv"]) | Select(${frameHeaders}).as([${aliasHeaders}]) | Import(frame=[CreateFrame(frameType=[GRID], override=[true]).as(["${data.NAME.replace(
+                            /-/g,
+                            '',
+                        )}__Preview"])]); Frame( frame=[${data.NAME.replace(
+                            /-/g,
+                            '',
+                        )}__Preview] )|QueryAll()|Limit(20)|Collect(2)|CreateForm(targetDatabase=["${
+                            data.NAME
+                        }"], targetTable=["${
+                            t.name
+                        }"], override=[false], insertId=[false]);`;
+
+                        const uploadPixel = `databaseVar = RdbmsUploadTableData(database=["${data.NAME}"], filePath=["${filePath}"], delimiter=[","],  dataTypeMap=[${dataRange}], additionalDataTypes=[{}], descriptionMap=[{}], logicalNamesMap=[{}], existing=[${created}]);`;
+
+                        console.log({ uploadPixel });
+                        const response = await monolithStore.runQuery(
+                            uploadPixel,
+                        );
+
+                        const output = response.pixelReturn[0].output,
+                            operationType =
+                                response.pixelReturn[0].operationType;
+
+                        if (operationType.indexOf('ERROR') > -1) {
+                            notification.add({
+                                color: 'error',
+                                message: output,
+                            });
+                            throw new Error(output);
+                        }
+                        created = true;
+                        // const { errors: addTableErrors } =
+                        //     await monolithStore.runQuery(uploadpixel);
+                        // // throw errors
+                        // if (addTableErrors.length > 0) {
+                        //     throw new Error(addTableErrors.join(''));
+                        // }
+                        return true;
+                    });
+                }
+
+                await executeSequentially(asyncTasks);
+                if (asyncTasks.length > 0) {
+                    const response = await monolithStore.runQuery(
+                        'ExtractDatabaseMeta( database=[databaseVar]);',
+                    );
+
+                    const output = response.pixelReturn[0].output,
+                        operationType = response.pixelReturn[0].operationType;
+
+                    if (operationType.indexOf('ERROR') > -1) {
+                        notification.add({
+                            color: 'error',
+                            message: output,
+                        });
+                        setFormLoading(false);
+                        return;
+                    }
+                }
+
+                // const response = await monolithStore.runQuery(pixelString);
+                // const output = response.pixelReturn[0].output,
+                //     operationType = response.pixelReturn[0].operationType;
+
+                // if (operationType.indexOf('ERROR') > -1) {
+                //     notification.add({
+                //         color: 'error',
+                //         message: output,
+                //     });
+                //     setFormLoading(false);
+                //     return;
+                // }
+
+                // navigate(`/engine/${(steps[0].data as string).toUpperCase()}`);
+                // return;
+            }
+            setFormLoading(false);
+            return;
+        }
         // If its one of the other engines that just has an input form and done
         if (steps[0].data === 'DATABASE') {
             // Add new step for connection details for metamodeling
@@ -907,6 +1092,29 @@ export const ImportForm = (props) => {
                                                                 newValues,
                                                             );
                                                         }}
+                                                    />
+                                                </StyledDropzoneField>
+                                            );
+                                        } else if (
+                                            val.options.component ===
+                                            'build-database'
+                                        ) {
+                                            return (
+                                                <StyledDropzoneField>
+                                                    <Typography
+                                                        variant={'body1'}
+                                                    >
+                                                        {val.label}
+                                                    </Typography>
+                                                    <BuildDatabase
+                                                        onChange={(
+                                                            newValues,
+                                                        ) => {
+                                                            field.onChange(
+                                                                newValues,
+                                                            );
+                                                        }}
+                                                        value={field.value}
                                                     />
                                                 </StyledDropzoneField>
                                             );

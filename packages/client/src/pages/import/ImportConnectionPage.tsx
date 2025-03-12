@@ -38,6 +38,7 @@ export const ImportConnectionPage = () => {
         fields: unknown[];
         secondaryFields?: unknown[];
     }) => {
+        console.log({ values });
         // let pixel = ''; // 'VECTOR' | 'STORAGE' | 'MODEL' | 'FUNCTION' | 'UPLOAD'
         setIsLoading(true);
         if (values.type === 'STORAGE') {
