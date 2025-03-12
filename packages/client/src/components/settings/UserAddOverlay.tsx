@@ -368,7 +368,6 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                             />
                             <Controller
                                 name="id"
-                                // disabled={isNewUser ? false : true}
                                 control={control}
                                 rules={{}}
                                 render={({ field }) => {
@@ -388,7 +387,6 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                             />
                             <Controller
                                 name="username"
-                                // disabled={!isNewUser && user?.type === 'Native' ? true : false}
                                 control={control}
                                 rules={{}}
                                 render={({ field }) => {
@@ -396,13 +394,17 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                                         <TextField
                                             label="Username"
                                             disabled={
-                                                !isNewUser &&
-                                                user?.type === 'Native'
+                                                user?.type === 'NATIVE' ||
+                                                type === 'NATIVE'
                                                     ? true
                                                     : false
                                             }
                                             value={
-                                                field.value ? field.value : ''
+                                                isNewUser && type === 'NATIVE'
+                                                    ? 'This wil match the User Id'
+                                                    : field.value
+                                                    ? field.value
+                                                    : ''
                                             }
                                             onChange={(e) => {
                                                 field.onChange(e.target.value);
