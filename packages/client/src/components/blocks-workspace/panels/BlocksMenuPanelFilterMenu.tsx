@@ -1,10 +1,15 @@
 import { Popover } from '@mui/material';
-import { Box, Button, Divider, Stack } from '@semoss/ui';
+import { Box, Button, Divider, Stack, styled } from '@semoss/ui';
 
 export interface BlocksMenuPanelFilterMenuProps {
     anchorEl: null | HTMLElement;
     onClose: () => void;
 }
+
+const FlexButton = styled(Button)({
+    flex: 1,
+    textWrap: 'nowrap',
+});
 
 export const BlocksMenuPanelFilterMenu = ({
     anchorEl,
@@ -31,10 +36,10 @@ export const BlocksMenuPanelFilterMenu = ({
                 <Box>Checkboxes</Box>
                 <Divider orientation="horizontal" />
                 <Stack direction="row" paddingX={4} paddingY={2} spacing={2}>
-                    <Button variant="outlined" color="secondary">
+                    <FlexButton variant="outlined" color="secondary">
                         Clear All
-                    </Button>
-                    <Button variant="contained">Apply</Button>
+                    </FlexButton>
+                    <FlexButton variant="contained">Apply</FlexButton>
                 </Stack>
             </Stack>
         </Popover>
