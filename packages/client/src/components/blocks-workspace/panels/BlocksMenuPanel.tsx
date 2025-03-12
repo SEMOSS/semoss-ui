@@ -152,7 +152,6 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                 </StyledTitle>
                 <Stack paddingTop={2} paddingLeft={2} paddingRight={2}>
                     <TextField
-                        // TODO: start + end icons
                         placeholder="Search Components"
                         size="small"
                         fullWidth
