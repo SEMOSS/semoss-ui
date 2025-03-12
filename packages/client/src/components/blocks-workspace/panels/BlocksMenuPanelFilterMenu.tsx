@@ -1,5 +1,14 @@
+import { Close } from '@mui/icons-material';
 import { Popover } from '@mui/material';
-import { Box, Button, Divider, Stack, styled } from '@semoss/ui';
+import {
+    Box,
+    Button,
+    Divider,
+    IconButton,
+    Stack,
+    styled,
+    Typography,
+} from '@semoss/ui';
 
 export interface BlocksMenuPanelFilterMenuProps {
     anchorEl: null | HTMLElement;
@@ -31,7 +40,19 @@ export const BlocksMenuPanelFilterMenu = ({
             }}
         >
             <Stack>
-                <Box>Filter By</Box>
+                <Stack
+                    paddingX={2}
+                    paddingTop={2}
+                    paddingBottom={1}
+                    alignItems="center"
+                    justifyContent="space-between"
+                    direction="row"
+                >
+                    <Typography variant="body2">I'm a typography</Typography>
+                    <IconButton size="small">
+                        <Close />
+                    </IconButton>
+                </Stack>
                 <Divider orientation="horizontal" />
                 <Box>Checkboxes</Box>
                 <Divider orientation="horizontal" />
