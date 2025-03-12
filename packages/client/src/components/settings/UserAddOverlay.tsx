@@ -304,8 +304,16 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 
             let errorMessages = [];
             for (const error in e) {
-                if (e[error].hasOwnProperty('message')) {
+                if (
+                    e[error].hasOwnProperty('message') &&
+                    e[error]['message'] !== ''
+                ) {
                     errorMessages.push(e[error]['message'] + '.');
+                } else if (
+                    e[error].hasOwnProperty('type') &&
+                    e[error]['type'] === 'required'
+                ) {
+                    errorMessages.push(error + ' is a required field.');
                 }
             }
 
