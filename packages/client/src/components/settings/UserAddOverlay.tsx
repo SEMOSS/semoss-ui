@@ -231,6 +231,20 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 
             try {
                 let response: AxiosResponse<boolean> | null = null;
+
+                if (data.model_usage_restriction === 'token') {
+                    data.model_max_response_time = null;
+                }
+                if (data.model_usage_restriction === 'compute') {
+                    data.model_max_tokens = null;
+                }
+                if (data.model_usage_restriction === 'null') {
+                    data.model_usage_restriction = null;
+                    data.model_max_response_time = null;
+                    data.model_max_tokens = null;
+                    data.model_usage_frequency = null;
+                }
+
                 if (isNewUser) {
                     response = await monolithStore.createUser(adminMode, data);
                 } else {
@@ -246,18 +260,6 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                             data.publisher = false;
                             data.exporter = false;
                         }
-                    }
-                    if (data.model_usage_restriction === 'token') {
-                        data.model_max_response_time = null;
-                    }
-                    if (data.model_usage_restriction === 'compute') {
-                        data.model_max_tokens = null;
-                    }
-                    if (data.model_usage_restriction === 'null') {
-                        data.model_usage_restriction = null;
-                        data.model_max_response_time = null;
-                        data.model_max_tokens = null;
-                        data.model_usage_frequency = null;
                     }
                     response = await monolithStore.editMemberInfo(
                         adminMode,
@@ -329,17 +331,13 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                                 control={control}
                                 rules={{}}
                                 render={({ field }) => {
-                                    // Change value to match option.provider value.
-                                    // add more logic here if more providers are added.
-                                    let value = field.value;
-                                    if (value === 'Native') {
-                                        value = 'native';
-                                    }
                                     return (
                                         <Select
                                             label="Type"
                                             disabled={isNewUser ? false : true}
-                                            value={value ? value : ''}
+                                            value={
+                                                field.value ? field.value : ''
+                                            }
                                             onChange={(e) => {
                                                 field.onChange(e.target.value);
                                             }}
@@ -348,12 +346,10 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                                                 (option, i) => {
                                                     return (
                                                         <Select.Item
-                                                            value={
-                                                                option.provider
-                                                            }
+                                                            value={option.label}
                                                             key={i}
                                                         >
-                                                            {option.name}
+                                                            {option.label}
                                                         </Select.Item>
                                                     );
                                                 },
