@@ -100,7 +100,7 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                                 path={"option"}
                             ></ScatterPlotBlockSettings>
                         )}
-                        {data.variation === "echart-map-graph" && (
+                        {data.variation === "echart-world-map-chart" && (
                             <MapChartBlockSettings id={id} path={"option"} />
                         )}
                     </StyledSubSection>

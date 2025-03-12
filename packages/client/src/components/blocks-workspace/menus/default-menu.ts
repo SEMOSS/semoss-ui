@@ -473,14 +473,14 @@ if (process.env.NODE_ENV === 'development') {
     });
     DEV_BLOCKS.push({
         section: SECTION_CHARTS,
-        name: 'Map Chart',
+        name: 'World Map Chart',
         activeImage: BLOCK_IMAGES['WORLD_MAP_ACTIVE'],
         hoverImage: BLOCK_IMAGES['WORLD_MAP_HOVER'],
         helperText: 'Show data on a map',
         json: {
             widget: 'e-chart',
             data: {
-                variation: 'echart-map-graph',
+                variation: 'echart-world-map-chart',
                 style: {
                     height: 500,
                     width: 400,

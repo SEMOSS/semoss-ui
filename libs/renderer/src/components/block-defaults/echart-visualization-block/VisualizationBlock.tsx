@@ -142,7 +142,7 @@ export const VisualizationBlock: BlockComponent = observer(
                         {data.variation === "echart-scatter-plots" && (
                             <ScatterPlotBlock id={id} />
                         )}
-                        {data.variation === "echart-map-graph" && (
+                        {data.variation === "echart-world-map-chart" && (
                             <Map id={id}></Map>
                         )}
                     </StyledNoDataContainer>
@@ -166,7 +166,9 @@ export const VisualizationBlock: BlockComponent = observer(
                 {data.variation === "echart-scatter-plots" && (
                     <ScatterPlotBlock id={id} />
                 )}
-                {data.variation === "echart-map-graph" && <Map id={id}></Map>}
+                {data.variation === "echart-world-map-chart" && (
+                    <Map id={id}></Map>
+                )}
             </StyledDataContainer>
         );
     },

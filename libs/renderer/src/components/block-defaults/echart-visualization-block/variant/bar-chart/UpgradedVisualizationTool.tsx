@@ -275,7 +275,7 @@ export const UpgradedVisualizationTool =
                             )}
                     </StyledListItem>
                     {(data.variation === "echart-scatter-plots" ||
-                        data.variation === "echart-map-graph") && (
+                        data.variation === "echart-world-map-chart") && (
                         <StyledListItem disablePadding>
                             <ListItemButton
                                 onClick={(e) =>
@@ -307,7 +307,7 @@ export const UpgradedVisualizationTool =
                                         path={"option"}
                                     ></TooltipScatterPlot>
                                 )}
-                            {data.variation === "echart-map-graph" &&
+                            {data.variation === "echart-world-map-chart" &&
                                 selectedList === "tooltips" && (
                                     <TooltipMapChart id={id} path={"option"} />
                                 )}
@@ -596,7 +596,7 @@ export const UpgradedVisualizationTool =
                     </StyledListItem>
                     <StyledListItem disablePadding>
                         {(data.variation === "echart-pie-chart" ||
-                            data.variation === "echart-map-graph") && (
+                            data.variation === "echart-world-map-chart") && (
                             <ListItemButton
                                 onClick={(e) =>
                                     setSelectedList((prevList) =>
@@ -619,7 +619,7 @@ export const UpgradedVisualizationTool =
                                 <InfoOutlined />
                             </ListItemButton>
                         )}
-                        {data.variation === "echart-map-graph" &&
+                        {data.variation === "echart-world-map-chart" &&
                             selectedList === "legend" && (
                                 <LegendToggleMapChart id={id} path={"option"} />
                             )}
@@ -754,7 +754,7 @@ export const UpgradedVisualizationTool =
                             <PieValueLabel id={id} path={"option"} />
                         )}
                     </StyledListItem>
-                    {data.variation === "echart-map-graph" && (
+                    {data.variation === "echart-world-map-chart" && (
                         <StyledListItem disablePadding>
                             <ListItemButton
                                 onClick={(e) =>

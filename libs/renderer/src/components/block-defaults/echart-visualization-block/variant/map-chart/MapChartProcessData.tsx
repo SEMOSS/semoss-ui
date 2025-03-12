@@ -16,7 +16,7 @@ export const processData = (apiData, data) => {
         tooltip = fields["tooltip"];
     }
     const formatItem = (label, latitude, longitude) => ({
-        value: [latitude, longitude], // latitude and longitude values
+        value: [longitude, latitude], // latitude and longitude values
         label: {
             formatter: label.toString(), // Use array[0] as the label
         },
@@ -40,7 +40,7 @@ export const processData = (apiData, data) => {
             );
         }
         return {
-            value: [latitude, longitude], // latitude and longitude values
+            value: [longitude, latitude], // latitude and longitude values
             label: {
                 formatter: label.toString(), // Use array[0] as the label
             },
@@ -69,7 +69,7 @@ export const processData = (apiData, data) => {
             );
         }
         return {
-            value: [latitude, longitude], // latitude and longitude values
+            value: [longitude, latitude], // latitude and longitude values
             label: {
                 formatter: label.toString(), // Use array[0] as the label
             },
@@ -97,7 +97,7 @@ export const processData = (apiData, data) => {
             );
         }
         return {
-            value: [latitude, longitude], // latitude and longitude values
+            value: [longitude, latitude], // latitude and longitude values
             label: {
                 formatter: label.toString(), // Use array[0] as the label
             },
@@ -109,7 +109,7 @@ export const processData = (apiData, data) => {
         };
     };
     const formatItems = (label, latitude, longitude, size, tooltip) => ({
-        value: [latitude, longitude], // latitude and longitude values
+        value: [longitude, latitude], // latitude and longitude values
         label: {
             formatter: label.toString(), // Use array[0] as the label
         },
@@ -132,7 +132,7 @@ export const processData = (apiData, data) => {
             );
         }
         return {
-            value: [latitude, longitude], // latitude and longitude values
+            value: [longitude, latitude], // latitude and longitude values
             label: {
                 formatter: label.toString(),
             },
@@ -143,14 +143,14 @@ export const processData = (apiData, data) => {
         };
     };
     const formatSizeDataItem = (label, latitude, longitude, size) => ({
-        value: [latitude, longitude], // latitude and longitude values
+        value: [longitude, latitude], // latitude and longitude values
         label: {
             formatter: label.toString(), // Use array[0] as the label
         },
         symbolSize: size, // Individual symbol size
     });
     const formatTooltipDataItem = (label, latitude, longitude, tooltip) => ({
-        value: [latitude, longitude], // latitude and longitude values
+        value: [longitude, latitude], // latitude and longitude values
         label: {
             formatter: label.toString(), // Use array[0] as the label
         },
