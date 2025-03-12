@@ -81,7 +81,9 @@ export const PieLegend = observer(
                         title="Show Legend"
                         size="small"
                     />
-                    <label>Show Legend</label>
+                    <Typography variant="body2" color="secondary">
+                        Show Legend
+                    </Typography>
                 </StyledAxisDiv>
             </StyledAxisDiv>
         );

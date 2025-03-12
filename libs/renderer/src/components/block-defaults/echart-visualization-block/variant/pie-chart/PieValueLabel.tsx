@@ -43,7 +43,6 @@ const StyledButtonWrapper = styled("div")({
     display: "flex",
     justifyContent: "flex-end",
     margin: "8px 16px",
-    // left: "80%",
 });
 const StyledAxisColDiv = styled("div")<{
     display?: string;
@@ -53,6 +52,8 @@ const StyledAxisColDiv = styled("div")<{
     justifyContent: justifyContent ?? undefined,
     flexDirection: "column",
     padding: "0.5rem",
+    gap: "8px",
+    marginBottom: "8px",
 }));
 const StyledAxisSpan = styled("span")<{
     display?: string;
@@ -202,16 +203,19 @@ export const PieValueLabel = observer(
                         }
                         title="Show Value Label"
                     />
-                    <label>Show Value Label</label>
+
+                    <Typography variant="body2" color="secondary">
+                        Show Value Label
+                    </Typography>
                 </StyledAxisDiv>
                 {showValueLabel && (
                     <StyledAxisColDiv
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="value-name">
+                        <Typography variant="body2" color="secondary">
                             Choose a position for Value Label
-                        </label>
+                        </Typography>
                         <StyledSelect
                             id="position"
                             name="position"
@@ -241,9 +245,13 @@ export const PieValueLabel = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="rotate-label">
+                        <Typography variant="body2" color="secondary">
                             Rotate Value Label:
-                        </label>
+                        </Typography>
+
+                        <Typography variant="body2" color="secondary">
+                            Choose a position for Value Label
+                        </Typography>
                         <Slider
                             aria-label="Always visible"
                             value={valueLabel.rotate}
@@ -269,7 +277,9 @@ export const PieValueLabel = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="title-size">Value Label Size</label>
+                        <Typography variant="body2" color="secondary">
+                            Value Label Size
+                        </Typography>
                         <StyledTextField
                             id="size"
                             name="size"
@@ -285,9 +295,9 @@ export const PieValueLabel = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="title-size">
+                        <Typography variant="body2" color="secondary">
                             Value Label Line Length
-                        </label>
+                        </Typography>
                         <StyledTextField
                             id="length"
                             name="length"
@@ -303,9 +313,10 @@ export const PieValueLabel = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="title-font-family">
+                        <Typography variant="body2" color="secondary">
                             Select Font Family
-                        </label>
+                        </Typography>
+
                         <StyledSelect
                             id="font-family"
                             name="fontFamily"

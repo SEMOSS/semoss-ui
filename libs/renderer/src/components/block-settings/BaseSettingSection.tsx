@@ -18,13 +18,15 @@ export const BaseSettingSection = (props: {
 }) => {
     return (
         <Stack
-            direction="row"
-            alignItems="center"
+            direction="column"
+            alignItems="start"
             justifyContent="space-between"
             // spacing={2}
             padding="8px 16px"
         >
-            <StyledTypography variant="body2">{props.label}</StyledTypography>
+            <StyledTypography variant="body2" color="secondary">
+                {props.label}
+            </StyledTypography>
             {!!props.description?.length && (
                 <Tooltip placement="top" title={props.description} arrow>
                     <HelpOutlineIcon

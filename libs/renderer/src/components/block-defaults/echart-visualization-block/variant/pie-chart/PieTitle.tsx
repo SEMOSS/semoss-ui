@@ -43,8 +43,10 @@ const StyledAxisDiv = styled("div")<{
     alignItems: "center",
     gap: gap ?? undefined,
 }));
-const StyledButton = styled(Button)({
-    left: "80%",
+const StyledButtonWrapper = styled("div")({
+    display: "flex",
+    justifyContent: "flex-end",
+    padding: "8px 16px",
 });
 const StyledAxisColDiv = styled("div")<{
     display?: string;
@@ -54,6 +56,8 @@ const StyledAxisColDiv = styled("div")<{
     justifyContent: justifyContent ?? undefined,
     flexDirection: "column",
     padding: "0.5rem",
+    gap: "8px",
+    marginBottom: "8px",
 }));
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: "100%",
@@ -186,14 +190,18 @@ export const PieTitle = observer(
                         }
                         title="Show Title"
                     />
-                    <label>Show Title</label>
+                    <Typography variant="body2" color="secondary">
+                        Show Title
+                    </Typography>
                 </StyledAxisDiv>
                 {showTitle && (
                     <StyledAxisColDiv
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="title-name">Title Name</label>
+                        <Typography variant="body2" color="secondary">
+                            Title Name
+                        </Typography>
                         <StyledTextField
                             id="name"
                             name="name"
@@ -209,9 +217,9 @@ export const PieTitle = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="title-alignment">
+                        <Typography variant="body2" color="secondary">
                             Select Alignment
-                        </label>
+                        </Typography>
                         <StyledSelect
                             id="alignment"
                             name="alignment"
@@ -241,7 +249,9 @@ export const PieTitle = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="title-size">Text Size</label>
+                        <Typography variant="body2" color="secondary">
+                            Text Size
+                        </Typography>
                         <StyledTextField
                             id="size"
                             name="size"
@@ -257,9 +267,9 @@ export const PieTitle = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="title-font-weight">
+                        <Typography variant="body2" color="secondary">
                             Select Font Weight
-                        </label>
+                        </Typography>
                         <StyledSelect
                             id="font-weight"
                             name="fontWeight"
@@ -286,9 +296,9 @@ export const PieTitle = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="title-font-family">
+                        <Typography variant="body2" color="secondary">
                             Select Font Family
-                        </label>
+                        </Typography>
                         <StyledSelect
                             id="font-family"
                             name="fontFamily"
@@ -324,14 +334,16 @@ export const PieTitle = observer(
                     </StyledAxisColDiv>
                 )}
                 {showTitle && (
-                    <StyledButton
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        onClick={handleReset}
-                    >
-                        Reset
-                    </StyledButton>
+                    <StyledButtonWrapper>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            onClick={handleReset}
+                        >
+                            Reset
+                        </Button>
+                    </StyledButtonWrapper>
                 )}
             </StyledAxisDiv>
         );

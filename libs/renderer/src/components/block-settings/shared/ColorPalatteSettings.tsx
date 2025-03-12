@@ -20,6 +20,7 @@ import {
     styled,
     TextField,
     Icon,
+    Typography,
 } from "@semoss/ui";
 
 import { Paths, PathValue } from "../../../types";
@@ -44,13 +45,9 @@ const StyledButton = styled(Button)(({}) => ({
     display: "flex",
 }));
 const StyledTextField = styled(TextField)(({}) => ({
-    marginLeft: "20px",
     display: "flex",
-    marginRight: "20px",
 }));
 const StyledOutlinedInput = styled(OutlinedInput)(({}) => ({
-    marginRight: "20px",
-    marginLeft: "20px",
     display: "flex",
 }));
 const StyledEditIcon = styled(Edit)(({}) => ({
@@ -143,7 +140,10 @@ const StyledCustomPaletteAdd = styled("div")(() => ({
     padding: "16px",
 }));
 const StyledCustomPaletteEdit = styled("div")(() => ({
-    display: "block",
+    // display: "block",
+    display: "flex",
+    justifyContent: "center",
+    flexWrap: "wrap",
 }));
 const StyledButtonClose = styled(Button)(() => ({
     background: "transparent",
@@ -157,7 +157,6 @@ const StyledButtonAdd = styled(Button)(() => ({
     background: "#007AFF",
     color: "#fff",
     fontSize: "14px",
-    padding: "6px 16px",
     border: "none",
     borderRadius: "8px",
     cursor: "pointer",
@@ -172,19 +171,20 @@ const StyledCheck = styled(Button)(() => ({
 const StyledButtonContainer = styled("div")(() => ({
     display: "flex",
     justifyContent: "flex-end",
+    padding: "8px 16px",
 }));
 const StyledPaleteLabel = styled("div")(() => ({
     fontSize: "14px",
     fontWeight: "normal",
 }));
-const StyledLabel = styled("label")(() => ({
-    marginLeft: "20px",
-    display: "flex",
-}));
+
 const StyledColorSpan = styled("span")(() => ({ marginLeft: "20px" }));
 const StyledRowSection = styled("div")(() => ({
     display: "flex",
     flexDirection: "column",
+    gap: "8px",
+    padding: "8px 16px",
+    marginBottom: "8px",
 }));
 const StyledContainerToggle = styled("div")(() => ({}));
 const StyledSelectedColorContainer = styled("div")(() => ({
@@ -829,9 +829,9 @@ export const ColorPalatteSettings = observer(
                 </StyledOverlay>
                 {/*popup name section */}
                 <StyledRowSection>
-                    <StyledLabel htmlFor="outlined-adornment-password">
+                    <Typography variant="body2" color="secondary">
                         Name
-                    </StyledLabel>
+                    </Typography>
                     <StyledTextField
                         defaultValue={
                             toggleAddEdit === "edit" ? paletteName : ""
@@ -845,9 +845,9 @@ export const ColorPalatteSettings = observer(
                 {/* colours section */}
                 {toggleAddEdit !== "edit" && (
                     <StyledRowSection>
-                        <StyledLabel htmlFor="outlined-adornment-colours">
+                        <Typography variant="body2" color="secondary">
                             Colours
-                        </StyledLabel>
+                        </Typography>
                         <StyledOutlinedInput
                             id="outlined-adornment-colours"
                             placeholder="Enter Hex code or Pick Color"
@@ -1029,7 +1029,7 @@ export const ColorPalatteSettings = observer(
                     ))}
                 </StyledEmptyContainer>
                 <StyledButtonContainer
-                    style={{ marginTop: "10px", marginBottom: "20px" }}
+                // style={{ marginTop: "10px", marginBottom: "20px" }}
                 >
                     {toggleAddEdit === "edit" && (
                         <>
@@ -1043,10 +1043,16 @@ export const ColorPalatteSettings = observer(
                     )}
                     {toggleAddEdit !== "edit" && (
                         <>
-                            <StyledButtonClose onClick={handleClose}>
+                            <StyledButtonClose
+                                size="small"
+                                onClick={handleClose}
+                            >
                                 Close
                             </StyledButtonClose>
-                            <StyledButtonAdd onClick={handleAddPalette}>
+                            <StyledButtonAdd
+                                size="small"
+                                onClick={handleAddPalette}
+                            >
                                 Add
                             </StyledButtonAdd>
                         </>

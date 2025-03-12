@@ -90,7 +90,9 @@ export const ToogleDonut = observer(
                         title="Toggle Donut"
                         size="small"
                     />
-                    <label> Toggle ON / OFF</label>
+                    <Typography variant="body2" color="secondary">
+                        Donut Toggle ON / OFF
+                    </Typography>
                 </StyledAxisDiv>
             </StyledAxisDiv>
         );

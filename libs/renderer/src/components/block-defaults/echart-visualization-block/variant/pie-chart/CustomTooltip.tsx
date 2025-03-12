@@ -2,7 +2,7 @@ import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 
-import { styled, Switch } from "@semoss/ui";
+import { styled, Switch, Typography } from "@semoss/ui";
 
 import { useBlockSettings } from "../../../../../hooks";
 import { Block, BlockDef } from "../../../../../store";
@@ -81,7 +81,9 @@ export const CustomTooltip = observer(
                         title="Show Tooltip"
                         size="small"
                     />
-                    <label>Show Tooltip</label>
+                    <Typography variant="body2" color="secondary">
+                        Show Tooltip
+                    </Typography>
                 </StyledAxisDiv>
             </StyledAxisDiv>
         );

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, MouseEvent } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { SketchPicker } from "react-color";
-import { OutlinedInput } from "@mui/material";
+import { OutlinedInput, Typography } from "@mui/material";
 
 import { IconButton, InputAdornment, Popover, styled } from "@semoss/ui";
 
@@ -39,7 +39,12 @@ const StyledSketchContainer = styled(SketchPicker)({
         overflow: "hidden",
     },
 });
-const StyledMainContainer = styled("div")({});
+const StyledMainContainer = styled("div")({
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    marginBottom: "8px",
+});
 const StyledSpanSection = styled("span")(({ color }) => ({
     backgroundColor: color,
     width: "33px",
@@ -149,9 +154,9 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
         const open = Boolean(showPopover);
         return (
             <StyledMainContainer>
-                <label htmlFor="outlined-adornment-password">
+                <Typography variant="body2" color="secondary">
                     Select Colour
-                </label>
+                </Typography>
                 <OutlinedInput
                     id="outlined-adornment-password"
                     placeholder="Select Colour"
