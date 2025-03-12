@@ -16,6 +16,7 @@ import { AddBlocksMenuCard } from '@/components/designer';
 import { Panel } from '@/components/workspace';
 import { SECTION_ORDER } from '../menus/default-menu';
 import { Search, Tune } from '@mui/icons-material';
+import { BlocksMenuPanelFilterMenu } from './BlocksMenuPanelFilterMenu';
 
 const StyledTitle = styled('div')(({ theme }) => ({
     paddingTop: theme.spacing(1.5),
@@ -100,6 +101,8 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
     const [search, setSearch] = useState('');
     const [mode, setMode] = useState<MODE>('SYSTEM');
 
+    const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+
     const sortedItems = useMemo(() => {
         const sectionRecord: Record<string, DesignerMenuItem[]> = {};
 
@@ -165,7 +168,12 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                             ),
                             endAdornment: (
                                 <InputAdornment position="end">
-                                    <IconButton size="small">
+                                    <IconButton
+                                        size="small"
+                                        onClick={(e) =>
+                                            setMenuAnchorEl(e.currentTarget)
+                                        }
+                                    >
                                         <Tune />
                                     </IconButton>
                                 </InputAdornment>
@@ -244,6 +252,10 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                     </Stack>
                 )}
             </Stack>
+            <BlocksMenuPanelFilterMenu
+                anchorEl={menuAnchorEl}
+                onClose={() => setMenuAnchorEl(null)}
+            />
         </Panel>
     );
 });
