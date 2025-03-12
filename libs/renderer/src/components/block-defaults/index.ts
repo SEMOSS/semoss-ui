@@ -71,6 +71,10 @@ import {
     VegaVisualizationBlockDef,
 } from "./vega-visualization-block";
 import { config as SidebarBlockConfig, SidebarBlockDef } from "./sidebar-block";
+import {
+    config as EchartVisualizationBlockConfig,
+    EchartVisualizationBlockDef,
+} from "./echart-visualization-blocks";
 
 // import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
 
@@ -110,7 +114,8 @@ export type DefaultBlockDefinitions =
     | UploadBlockDef
     | VegaVisualizationBlockDef
     | RadioBlockDef
-    | PDFViewerBlockDef;
+    | PDFViewerBlockDef
+    | EchartVisualizationBlockDef;
 // | BodyBlockDef
 // | DividerBlockDef
 // | FooterBlockDef
@@ -149,6 +154,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [RadioBlockConfig.widget]: RadioBlockConfig,
+    [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
     // [StepperBlockConfig.widget]: StepperBlockConfig,
     // [QueryBlockConfig.widget]: QueryBlockConfig,
 };
@@ -180,4 +186,5 @@ export {
     ModalBlockConfig,
     RadioBlockConfig,
     PDFViewerBlockConfig,
+    EchartVisualizationBlockConfig,
 };

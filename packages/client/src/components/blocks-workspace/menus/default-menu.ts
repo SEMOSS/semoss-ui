@@ -43,7 +43,6 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 contentBgColor: '',
                 showExpandIcon: false,
                 // -------------------------------------------
-                // TODO:
                 // John B:
                 // We may need to track styles differently.
                 // Can handle this in a migration function
@@ -1126,6 +1125,83 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
+        section: SECTION_CHARTS,
+        name: 'Gannt Chart',
+        helperText: 'Gannt chart for task management',
+        activeImage: BLOCK_IMAGES['GANTT_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['GANTT_CHART_HOVER'],
+        json: {
+            widget: 'e-chart',
+            data: {
+                variation: 'echart-gannt-chart',
+                option: {
+                    tooltip: {
+                        show: true,
+                    },
+                    xAxis: {
+                        type: 'time',
+                        splitLine: {
+                            show: false,
+                        },
+                    },
+                    yAxis: {
+                        type: 'category',
+                        data: ['Task A', 'Task B', 'Task C'],
+                    },
+                    series: [
+                        {
+                            type: 'custom',
+
+                            data: [
+                                {
+                                    task: 'Task A',
+                                    start: '2024-02-01',
+                                    end: '2024-02-05',
+                                    resource: 'A',
+                                },
+                                {
+                                    task: 'Task B',
+                                    start: '2024-02-03',
+                                    end: '2024-02-08',
+                                    resource: 'B',
+                                },
+                                {
+                                    task: 'Task C',
+                                    start: '2024-02-06',
+                                    end: '2024-02-12',
+                                    resource: 'C',
+                                },
+                                {
+                                    task: 'Task D',
+                                    start: '2024-02-02',
+                                    end: '2024-02-11',
+                                    resource: 'B',
+                                },
+                                {
+                                    task: 'Task E',
+                                    start: '2024-02-03',
+                                    end: '2024-02-10',
+                                    resource: 'A',
+                                },
+                                {
+                                    task: 'Task F',
+                                    start: '2024-02-07',
+                                    end: '2024-02-11',
+                                    resource: 'C',
+                                },
+                            ],
+                        },
+                    ],
+                    customSettings: {
+                        columnDetails: {},
+                    },
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
         section: SECTION_FLOWS,
         name: 'General Mermaid',
         helperText: '',
@@ -1630,30 +1706,6 @@ columns 1
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_LAYOUT,
-        name: 'Sidebar-Menu',
-        activeImage: BLOCK_IMAGES['SIDEBAR_MENU_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['SIDEBAR_MENU_HOVER'],
-        helperText:
-            'Use the sidebar to navigate between the tools and components',
-        json: {
-            widget: 'sidebar',
-            data: {
-                style: {
-                    width: '240px',
-                    height: '100%',
-                },
-                open: false,
-                anchor: 'left',
-                designMode: true,
-            },
-            listeners: {},
-            slots: {
-                content: [],
-            },
         },
     },
 ];

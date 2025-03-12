@@ -74,3 +74,5 @@ export { default as SCATTER_PLOT_ACTIVE } from './Scatter_Plot_Active.png';
 export { default as SCATTER_PLOT_HOVER } from './Scatter_Plot_Hover.png';
 export { default as RADIAL_PLOT_ACTIVE } from './Radial_Plot_Active.png';
 export { default as RADIAL_PLOT_HOVER } from './Radial_Plot_Hover.png';
+export { default as GANTT_CHART_ACTIVE } from './Gantt Chart_Active.png';
+export { default as GANTT_CHART_HOVER } from './Gantt Chart_Hover.png';
