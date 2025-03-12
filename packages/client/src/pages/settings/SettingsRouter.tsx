@@ -17,6 +17,7 @@ import { InsightSettingsPage } from './InsightSettingsPage';
 import { InsightSettingsDetailPage } from './InsightSettingsDetailPage';
 
 import { MemberSettingsPage } from './MemberSettingsPage';
+import { MemberMetricsPage } from './MemberMetricsPage';
 import { ConfigurationsPage } from './ConfigurationsPage';
 import { AdminQueryPage } from './AdminQueryPage';
 import { MyProfilePage } from './MyProfilePage';
@@ -30,6 +31,7 @@ const SETTINGS_COMPONETS = {
     insight: InsightSettingsPage,
     'insight/:id/:projectId': InsightSettingsDetailPage,
     members: MemberSettingsPage,
+    'members-metrics': MemberMetricsPage,
     'social-properties': ConfigurationsPage,
     'admin-query': AdminQueryPage,
     'my-profile': MyProfilePage,

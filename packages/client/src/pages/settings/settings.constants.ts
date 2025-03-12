@@ -160,6 +160,14 @@ export const SETTINGS_ROUTES: {
         admin: true,
     },
     {
+        title: 'Member Metrics',
+        path: 'members-metrics',
+        description: 'Search member metrics, tracking users, dbs, and queries.',
+        icon: mdiAccountGroup,
+        history: ['settings/'],
+        admin: true,
+    },
+    {
         title: 'Team Permissions',
         path: 'team-permissions',
         description: 'View and edit permissions for teams',
