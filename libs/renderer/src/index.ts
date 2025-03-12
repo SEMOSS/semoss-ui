@@ -10,7 +10,7 @@
 /**
  * PRE-CANNED MODULE THAT HANDLES APP INTERACTION (END-USER)
  */
-export * from "./Renderer";
+export { Renderer } from "./Renderer";
 export { RendererEngine } from "./components/blocks";
 
 /**

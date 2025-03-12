@@ -20,7 +20,7 @@
     },
     "keywords": [],
     "author": "",
-    "license": "ISC",
+    "license": "Apache-2.0",
     "dependencies": {
         "@babel/core": "7.22.5",
         "cross-env": "7.0.3",
