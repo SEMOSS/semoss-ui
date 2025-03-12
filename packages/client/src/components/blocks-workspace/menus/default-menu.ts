@@ -548,6 +548,31 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
+        section: SECTION_ELEMENT,
+        name: 'Divider',
+        helperText: 'Separate content with a horizontal line',
+        activeImage: BLOCK_IMAGES['DIVIDER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['DIVIDER_HOVER'],
+        json: {
+            widget: 'divider',
+            data: {
+                style: {
+                    padding: '0px',
+                    width: '100%',
+                },
+                variant: 'fullWidth',
+                orientation: 'horizontal',
+                textAlign: 'center',
+                flexItem: false,
+                light: false,
+                text: '',
+                showText: false,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
         section: SECTION_INPUT,
         name: 'Button',
         helperText: 'Creates a click event',
