@@ -260,6 +260,18 @@ export const QueryInputSettings = observer(
                         ),
                     };
 
+                    const q = state.getQuery(alias);
+                    for (const f in q._exposed) {
+                        pathMap[`${alias}.${f}`] = {
+                            id: `${alias}.${f}`,
+                            path: `${alias}.${f}`,
+                            type: typeof q[f], // TODO: get value
+                            display: `${alias}.${f}`,
+                            blockType: "query-prop",
+                            variabilized: true,
+                        };
+                    }
+
                     if (query.cellList.length > 0) {
                         Object.entries(query.cells).forEach(
                             (keyValue: [string, CellState]) => {
@@ -399,17 +411,6 @@ export const QueryInputSettings = observer(
             return sortedKeys as string[]; //sortedData.sort();
         }, [optionMap, value]);
 
-        // Popper for Autocomplete
-        const FixedPopper = function (props) {
-            return (
-                <Popper
-                    {...props}
-                    style={{ width: "250px" }}
-                    placement="bottom-start"
-                />
-            );
-        };
-
         return (
             <>
                 <BaseSettingSection label={label}>
@@ -466,6 +467,7 @@ export const QueryInputSettings = observer(
                                     <Stack
                                         direction="row"
                                         justifyContent="space-between"
+                                        alignItems="center"
                                         sx={{
                                             width: "100%",
                                             // pl: getIndent(option.blockType),
@@ -504,7 +506,6 @@ export const QueryInputSettings = observer(
                             />
                         )}
                         groupBy={(option) => optionMap[option]?.blockType}
-                        PopperComponent={FixedPopper}
                     />
                     <IconButton size="small" onClick={() => setOpen(true)}>
                         <OpenInNew />

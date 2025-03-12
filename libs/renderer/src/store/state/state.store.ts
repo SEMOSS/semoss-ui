@@ -1415,6 +1415,8 @@ export class StateStore {
             console.log("----------------------------");
             console.log("remove old variable due to name change");
             console.log("----------------------------");
+            if (oldVar.type === "block") delete this._store.blocks[oldVar.id];
+            if (oldVar.type === "query") delete this._store.queries[oldVar.id];
             delete this._store.variables[oldVar.id];
         }
 
