@@ -9,6 +9,7 @@ import {
     Typography,
     Divider,
     InputAdornment,
+    IconButton,
 } from '@semoss/ui';
 import { DesignerMenuItem } from '../menus/menu-types';
 import { AddBlocksMenuCard } from '@/components/designer';
@@ -165,7 +166,9 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                             ),
                             endAdornment: (
                                 <InputAdornment position="end">
-                                    <Tune />
+                                    <IconButton size="small">
+                                        <Tune />
+                                    </IconButton>
                                 </InputAdornment>
                             ),
                         }}
