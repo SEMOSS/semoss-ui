@@ -13,6 +13,7 @@ import { getSelector } from "./ScatterPlotSelector";
 import { processData } from "./ScatterPlotProcessData";
 import { formatdatapoints } from "./ScatterPlotTooltipData";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
+import { EChartsOption } from "echarts";
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -183,7 +184,7 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
         return (
             <StyledNoDataContainer>
                 <EChartsReact
-                    option={data.option}
+                    option={data.option as EChartsOption}
                     onChartReady={(chart) => {
                         echartsLoaded(chart);
                     }}
