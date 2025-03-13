@@ -499,11 +499,11 @@ if (process.env.NODE_ENV === 'development') {
                                 fontSize: 12,
                                 color: '#000000',
                             },
-                            symbolSize: 5,
+                            symbolSize: 15,
                             symbol: 'circle',
                         },
                     ],
-                    symbolSize: 5,
+                    symbolSize: 15,
                     tooltip: {
                         show: true,
                         trigger: 'item',

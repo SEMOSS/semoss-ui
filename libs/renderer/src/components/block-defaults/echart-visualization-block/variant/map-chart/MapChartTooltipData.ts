@@ -70,7 +70,7 @@ export const formatdatapoints = (apiData, data) => {
                         ) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                 ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
                                 ${tooltip}: ${Data.tooltipValue}<br>
                             `
@@ -110,7 +110,7 @@ export const formatdatapoints = (apiData, data) => {
                         ) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                     ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
                                      ${tooltip}: ${Data.tooltipValue}<br>
                                 `
@@ -124,7 +124,7 @@ export const formatdatapoints = (apiData, data) => {
                         ) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                     ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
@@ -135,7 +135,7 @@ export const formatdatapoints = (apiData, data) => {
                         ) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                         ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
@@ -266,7 +266,7 @@ export const formatdatapoints = (apiData, data) => {
                         ) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                 ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
@@ -277,7 +277,7 @@ export const formatdatapoints = (apiData, data) => {
                         ) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                 ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
@@ -288,7 +288,7 @@ export const formatdatapoints = (apiData, data) => {
                         ) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                 ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
                                  ${tooltip}: ${Data.tooltipValue}<br>
                             `
@@ -314,7 +314,7 @@ export const formatdatapoints = (apiData, data) => {
                         ) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                                 `${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>` +
                                 ` ${tooltip}: ${Data.tooltipValue}<br>`
                             );
@@ -326,7 +326,7 @@ export const formatdatapoints = (apiData, data) => {
                         ) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                                 `${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>` +
                                 ` ${tooltip}: ${Data.tooltipValue}<br>`
                             );
@@ -360,7 +360,7 @@ export const formatdatapoints = (apiData, data) => {
                         ) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                 ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
@@ -373,7 +373,7 @@ export const formatdatapoints = (apiData, data) => {
                         ) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                                 `${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
@@ -390,7 +390,7 @@ export const formatdatapoints = (apiData, data) => {
                         ) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                 ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
                                  ${tooltip}: ${Data.tooltipValue}<br>`
                             );
@@ -401,14 +401,14 @@ export const formatdatapoints = (apiData, data) => {
                         ) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                 ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
                         if (latitude == longitude && label == size) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                 ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
                                  ${tooltip}: ${Data.tooltipValue}<br>`
                             );
@@ -416,7 +416,7 @@ export const formatdatapoints = (apiData, data) => {
                         if (latitude == longitude && label == color) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                  ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
                                   ${tooltip}: ${Data.tooltipValue}<br>`
                             );
@@ -424,7 +424,7 @@ export const formatdatapoints = (apiData, data) => {
                         if (latitude == longitude && label == tooltip) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                 ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
                                  ${tooltip}: ${Data.tooltipValue}<br>`
                             );
@@ -447,14 +447,14 @@ export const formatdatapoints = (apiData, data) => {
                         if (latitude === tooltip && label === color) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                                 `${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
                         if (longitude === tooltip && label === color) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                                 `${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
@@ -487,14 +487,14 @@ export const formatdatapoints = (apiData, data) => {
                         if (latitude === color && latitude === tooltip) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                 ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
                         if (longitude === color && longitude === tooltip) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                                 `${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
@@ -527,7 +527,7 @@ export const formatdatapoints = (apiData, data) => {
                         if (latitude === color && longitude === tooltip) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                                 `${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
@@ -538,7 +538,7 @@ export const formatdatapoints = (apiData, data) => {
                                 Data.value[1]
                             }<br>
                                 ${selectors.size} ${size}: ${
-                                Data.symbolSize
+                                Data.tempSymbolSize
                             }<br>
                                 ${selectors.color} ${color}: ${
                                 Data.itemStyle.colorValue
@@ -552,7 +552,7 @@ export const formatdatapoints = (apiData, data) => {
                                 Data.value[1]
                             }<br>
                                 ${selectors.size} ${size}: ${
-                                Data.symbolSize
+                                Data.tempSymbolSize
                             }<br>
                                 ${selectors.color} ${color}: ${
                                 Data.itemStyle.colorValue
@@ -562,7 +562,7 @@ export const formatdatapoints = (apiData, data) => {
                         if (latitude == longitude) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                                 `${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>` +
                                 ` ${tooltip}: ${Data.tooltipValue}<br>`
                             );
@@ -574,7 +574,7 @@ export const formatdatapoints = (apiData, data) => {
                                 Data.value[1]
                             }<br>
                                 ${selectors.size} ${size}: ${
-                                Data.symbolSize
+                                Data.tempSymbolSize
                             }<br>
                                 ${selectors.color} ${color}: ${
                                 Data.itemStyle.colorValue
@@ -589,7 +589,7 @@ export const formatdatapoints = (apiData, data) => {
                                 Data.value[1]
                             }<br>
                                 ${selectors.size} ${size}: ${
-                                Data.symbolSize
+                                Data.tempSymbolSize
                             }<br>
                                 ${selectors.color} ${color}: ${
                                 Data.itemStyle.colorValue
@@ -600,7 +600,7 @@ export const formatdatapoints = (apiData, data) => {
                         if (tooltip === label) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                                 `${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>` +
                                 ` ${tooltip}: ${Data.tooltipValue}<br>`
                             );
@@ -615,7 +615,7 @@ export const formatdatapoints = (apiData, data) => {
                         if (latitude === color) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                 ${selectors.color} ${color}: ${Data.value[0]}<br>
                                  ${tooltip}: ${Data.tooltipValue}<br>`
                             );
@@ -623,7 +623,7 @@ export const formatdatapoints = (apiData, data) => {
                         if (latitude === tooltip) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                                 `${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
@@ -637,7 +637,7 @@ export const formatdatapoints = (apiData, data) => {
                         if (longitude === color) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                                 `${selectors.color} ${color}: ${Data.value[1]}<br>` +
                                 ` ${tooltip}: ${Data.tooltipValue}<br>`
                             );
@@ -649,7 +649,7 @@ export const formatdatapoints = (apiData, data) => {
                                 Data.value[1]
                             }<br>
                                 ${selectors.size} ${size}: ${
-                                Data.symbolSize
+                                Data.tempSymbolSize
                             }<br>
                                 ${selectors.color} ${color}: ${
                                 Data.itemStyle.colorValue
@@ -659,8 +659,8 @@ export const formatdatapoints = (apiData, data) => {
                         if (size === color) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-                                `${selectors.color} ${color}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
+                                `${selectors.color} ${color}: ${Data.tempSymbolSize}<br>` +
                                 ` ${tooltip}: ${Data.tooltipValue}<br>`
                             );
                         }
@@ -671,7 +671,7 @@ export const formatdatapoints = (apiData, data) => {
                                 Data.value[1]
                             }<br>
                                 ${selectors.size} ${size}: ${
-                                Data.symbolSize
+                                Data.tempSymbolSize
                             }<br>
                                 ${selectors.color} ${color}: ${
                                 Data.itemStyle.colorValue
@@ -681,13 +681,13 @@ export const formatdatapoints = (apiData, data) => {
                         if (color === tooltip) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                 ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
                         return (
                             getToolTipContent(Color, Data, apiData) +
-                            `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                            `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                             `${selectors.color} ${apiData.headers[4]}: ${Data.itemStyle.colorValue}<br>` +
                             ` ${apiData.headers[5]}: ${Data.tooltipValue}<br>`
                         );
@@ -712,14 +712,14 @@ export const formatdatapoints = (apiData, data) => {
                         ) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                     ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
                         if (latitude == longitude && label == color) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                                 `${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
@@ -768,21 +768,21 @@ export const formatdatapoints = (apiData, data) => {
                         if (latitude == longitude) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                     ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
                         if (label === color) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                                 `${selectors.color} ${data.option["_state"]["fields"]["color"]}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
                         if (size === color) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                                 `${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
@@ -801,20 +801,20 @@ export const formatdatapoints = (apiData, data) => {
                         if (latitude === color) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>
                                 ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
                         if (longitude === color) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                                 `${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
                             );
                         }
                         return (
                             getToolTipContent(Color, Data, apiData) +
-                            `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                            `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                             `${selectors.color} ${apiData.headers[4]}: ${Data.itemStyle.colorValue}<br>`
                         );
                     };
@@ -957,7 +957,7 @@ export const formatdatapoints = (apiData, data) => {
                         ) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>`
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>`
                             );
                         }
                         if (latitude === size && latitude === tooltip) {
@@ -975,14 +975,14 @@ export const formatdatapoints = (apiData, data) => {
                         if (latitude == longitude) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>` +
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>` +
                                 ` ${tooltip}: ${Data.tooltipValue}<br>`
                             );
                         }
                         if (size === tooltip) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>`
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>`
                             );
                         }
                         if (latitude === size) {
@@ -1000,13 +1000,13 @@ export const formatdatapoints = (apiData, data) => {
                         if (latitude === tooltip) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>`
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>`
                             );
                         }
                         if (longitude === tooltip) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>`
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>`
                             );
                         }
                         return `
@@ -1015,7 +1015,7 @@ export const formatdatapoints = (apiData, data) => {
                             Data.value[1]
                         }<br>
                             ${selectors.size} ${apiData.headers[3]}: ${
-                            Data.symbolSize
+                            Data.tempSymbolSize
                         }<br>
                             ${apiData.headers[4]}: ${Data.tooltipValue}<br>
                         `;
@@ -1074,7 +1074,7 @@ export const formatdatapoints = (apiData, data) => {
                         if (latitude == longitude) {
                             return (
                                 getToolTipContent(Color, Data, apiData) +
-                                `${selectors.size} ${size}: ${Data.symbolSize}<br>`
+                                `${selectors.size} ${size}: ${Data.tempSymbolSize}<br>`
                             );
                         }
                         if (latitude == size) {
@@ -1085,7 +1085,7 @@ export const formatdatapoints = (apiData, data) => {
                         }
                         return (
                             getToolTipContent(Color, Data, apiData) +
-                            `${selectors.size} ${apiData.headers[3]}: ${Data.symbolSize}<br>`
+                            `${selectors.size} ${apiData.headers[3]}: ${Data.tempSymbolSize}<br>`
                         );
                     };
                 }

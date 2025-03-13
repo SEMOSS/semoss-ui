@@ -39,12 +39,14 @@ export const processData = (apiData, data) => {
                 ],
             );
         }
+        const adjustedSize = Math.min(size + data.option["symbolSize"], 50);
         return {
             value: [longitude, latitude], // latitude and longitude values
             label: {
                 formatter: label.toString(), // Use array[0] as the label
             },
-            symbolSize: size, // Individual symbol size
+            tempSymbolSize: size, // Individual symbol size
+            symbolSize: adjustedSize, // Individual symbol size
             itemStyle: {
                 color: colorMap.get(color),
                 colorValue: color,
@@ -68,12 +70,14 @@ export const processData = (apiData, data) => {
                 ],
             );
         }
+        const adjustedSize = Math.min(size + data.option["symbolSize"], 50);
         return {
             value: [longitude, latitude], // latitude and longitude values
             label: {
                 formatter: label.toString(), // Use array[0] as the label
             },
-            symbolSize: size, // Individual symbol size
+            tempSymbolSize: size, // Individual symbol size
+            symbolSize: adjustedSize, // Individual symbol size
             itemStyle: {
                 color: colorMap.get(color),
                 colorValue: color,
@@ -108,14 +112,18 @@ export const processData = (apiData, data) => {
             tooltipValue: tooltip, //tooltip value
         };
     };
-    const formatItems = (label, latitude, longitude, size, tooltip) => ({
-        value: [longitude, latitude], // latitude and longitude values
-        label: {
-            formatter: label.toString(), // Use array[0] as the label
-        },
-        symbolSize: size, // Individual symbol size
-        tooltipValue: tooltip, //tooltip value
-    });
+    const formatItems = (label, latitude, longitude, size, tooltip) => {
+        const adjustedSize = Math.min(size + data.option["symbolSize"], 50);
+        return {
+            value: [longitude, latitude], // latitude and longitude values
+            label: {
+                formatter: label.toString(), // Use array[0] as the label
+            },
+            tempSymbolSize: size, // Individual symbol size
+            symbolSize: adjustedSize, // Individual symbol size
+            tooltipValue: tooltip, //tooltip value
+        };
+    };
     const formatColorDataItem = (
         label,
         latitude,
@@ -142,13 +150,18 @@ export const processData = (apiData, data) => {
             },
         };
     };
-    const formatSizeDataItem = (label, latitude, longitude, size) => ({
-        value: [longitude, latitude], // latitude and longitude values
-        label: {
-            formatter: label.toString(), // Use array[0] as the label
-        },
-        symbolSize: size, // Individual symbol size
-    });
+    const formatSizeDataItem = (label, latitude, longitude, size) => {
+        const adjustedSize = Math.min(size + data.option["symbolSize"], 50);
+
+        return {
+            value: [longitude, latitude], // latitude and longitude values
+            label: {
+                formatter: label.toString(), // Use array[0] as the label
+            },
+            tempSymbolSize: size, // Individual symbol size
+            symbolSize: adjustedSize, // Individual symbol size
+        };
+    };
     const formatTooltipDataItem = (label, latitude, longitude, tooltip) => ({
         value: [longitude, latitude], // latitude and longitude values
         label: {
