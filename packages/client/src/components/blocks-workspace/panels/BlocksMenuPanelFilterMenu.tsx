@@ -34,7 +34,7 @@ export const BlocksMenuPanelFilterMenu = ({
         useState<typeof categoryMap>(categoryMap);
 
     useEffect(() => {
-        setLocalCategoryMap(categoryMap);
+        if (anchorEl) setLocalCategoryMap(categoryMap);
     }, [categoryMap, anchorEl]);
 
     return (
@@ -64,7 +64,7 @@ export const BlocksMenuPanelFilterMenu = ({
                     <Typography variant="body2" color="primary">
                         Filter By
                     </Typography>
-                    <IconButton size="small">
+                    <IconButton size="small" onClick={onClose}>
                         <Close />
                     </IconButton>
                 </Stack>
@@ -74,7 +74,17 @@ export const BlocksMenuPanelFilterMenu = ({
                         <MenuItem
                             key={category.id}
                             value={category.id}
-                            onClick={() => null}
+                            onClick={() =>
+                                setLocalCategoryMap((prev) => {
+                                    const newMap = { ...prev };
+                                    const newCategory = {
+                                        ...newMap[category.id],
+                                    };
+                                    newCategory.enabled = !newCategory.enabled;
+                                    newMap[category.id] = newCategory;
+                                    return newMap;
+                                })
+                            }
                         >
                             <ListItemIcon>
                                 <Checkbox checked={category.enabled} />
