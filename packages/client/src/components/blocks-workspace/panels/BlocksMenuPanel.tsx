@@ -290,6 +290,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                 anchorEl={menuAnchorEl}
                 onClose={() => setMenuAnchorEl(null)}
                 categoryMap={filterCategoryMap}
+                setCategoryMap={setFilterCategoryMap}
             />
         </Panel>
     );

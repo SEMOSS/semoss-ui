@@ -18,6 +18,7 @@ export interface BlocksMenuPanelFilterMenuProps {
     anchorEl: null | HTMLElement;
     onClose: () => void;
     categoryMap: Record<string, FilterCategory>;
+    setCategoryMap: (newMap: Record<string, FilterCategory>) => void;
 }
 
 const FlexButton = styled(Button)({
@@ -29,6 +30,7 @@ export const BlocksMenuPanelFilterMenu = ({
     anchorEl,
     onClose,
     categoryMap,
+    setCategoryMap,
 }: BlocksMenuPanelFilterMenuProps) => {
     const [localCategoryMap, setLocalCategoryMap] =
         useState<typeof categoryMap>(categoryMap);
@@ -95,10 +97,25 @@ export const BlocksMenuPanelFilterMenu = ({
                 </List>
                 <Divider orientation="horizontal" />
                 <Stack direction="row" paddingX={4} paddingY={2} spacing={2}>
-                    <FlexButton variant="outlined" color="secondary">
+                    <FlexButton
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => {
+                            const newMap = { ...categoryMap };
+                            Object.keys(newMap).forEach((id) => {
+                                newMap[id] = { ...newMap[id], enabled: false };
+                            });
+                            setCategoryMap(newMap);
+                        }}
+                    >
                         Clear All
                     </FlexButton>
-                    <FlexButton variant="contained">Apply</FlexButton>
+                    <FlexButton
+                        variant="contained"
+                        onClick={() => setCategoryMap(localCategoryMap)}
+                    >
+                        Apply
+                    </FlexButton>
                 </Stack>
             </Stack>
         </Popover>
