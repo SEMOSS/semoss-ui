@@ -48,7 +48,9 @@ export const BlocksMenuPanelFilterMenu = ({
                     justifyContent="space-between"
                     direction="row"
                 >
-                    <Typography variant="body2">I'm a typography</Typography>
+                    <Typography variant="body2" color="primary">
+                        Filter By
+                    </Typography>
                     <IconButton size="small">
                         <Close />
                     </IconButton>
