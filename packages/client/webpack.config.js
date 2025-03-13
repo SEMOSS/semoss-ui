@@ -16,6 +16,8 @@ const TerserPlugin = require('terser-webpack-plugin');
 
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
+const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
+
 dotenv.config({ path: '../../.env.local' });
 dotenv.config({ path: '../../.env' });
 
@@ -31,16 +33,47 @@ const config = {
         filename: isProduction ? '[name].[contenthash].js' : '[name].js',
         clean: true,
     },
+    cache: {
+        type: 'filesystem',
+        cacheDirectory: path.resolve(__dirname, '.webpack_cache'),
+    },
+    devServer: {
+        hot: true,
+        liveReload: false,
+        open: true,
+        historyApiFallback: true,
+    },
     optimization: {
         minimize: !isProduction,
-        minimizer: [new TerserPlugin({})],
-        removeAvailableModules: false,
-        removeEmptyChunks: false,
+        minimizer: [
+            new TerserPlugin({
+                parallel: true,
+                terserOptions: {
+                    compress: {
+                        drop_console: true,
+                    },
+                },
+            }),
+        ],
         splitChunks: {
-            chunks: 'async',
+            chunks: 'all',
+            minSize: 20000,
+            maxSize: 700000,
+            maxAsyncRequests: 30,
+            maxInitialRequests: 30,
+            automaticNameDelimiter: '-',
             cacheGroups: {
-                defaultVendors: {
-                    idHint: 'vendors',
+                vendors: {
+                    test: /[\\/]node_modules[\\/]/,
+                    name: 'vendors',
+                    chunks: 'all',
+                },
+                common: {
+                    test: /[\\/]src[\\/]components[\\/]/,
+                    minSize: 30000,
+                    minChunks: 2,
+                    name: 'common',
+                    chunks: 'all',
                 },
             },
         },
@@ -85,7 +118,7 @@ const config = {
             filename: isProduction ? '[name].[contenthash].css' : '[name].css',
             chunkFilename: isProduction ? '[id].[contenthash].css' : '[id].css',
         }),
-
+        !isProduction && new ReactRefreshWebpackPlugin(),
         // new MonacoWebpackPlugin({
         //     languages: ['javascript', 'typescript'],
         // }),
@@ -100,15 +133,16 @@ const config = {
                 type: 'asset',
             },
             {
-                test: /\.tsx?$/,
-                use: 'ts-loader',
+                test: /\.(tsx|ts)?$/,
                 exclude: /node_modules/,
+                use: {
+                    loader: 'babel-loader',
+                },
             },
             {
                 test: /\.css$/,
                 use: ['style-loader', 'css-loader'],
             },
-
             {
                 // when bundling application's own source code
                 // transpile using Babel which uses .babelrc file
