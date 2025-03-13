@@ -284,6 +284,7 @@ export const LoginPage = observer(() => {
         string,
         {
             provider: string;
+            label: string;
             name: string;
             isOauth: boolean;
         }
