@@ -81,7 +81,7 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
             <StyledContainer>
                 {selectedTab === "Data" && (
                     <StyledSubSection>
-                        {data.variation === "echart-gannt-chart" && (
+                        {data.variation === "echart-gantt-chart" && (
                             <GanttFrameSection id={id} />
                         )}
                     </StyledSubSection>

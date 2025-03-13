@@ -1126,14 +1126,14 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_CHARTS,
-        name: 'Gannt Chart',
+        name: 'Gantt Chart',
         helperText: 'Gannt chart for task management',
         activeImage: BLOCK_IMAGES['GANTT_CHART_ACTIVE'],
         hoverImage: BLOCK_IMAGES['GANTT_CHART_HOVER'],
         json: {
             widget: 'e-chart',
             data: {
-                variation: 'echart-gannt-chart',
+                variation: 'echart-gantt-chart',
                 option: {
                     tooltip: {
                         show: true,

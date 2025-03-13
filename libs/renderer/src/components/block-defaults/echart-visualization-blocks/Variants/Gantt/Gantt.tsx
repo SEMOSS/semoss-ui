@@ -1,17 +1,28 @@
 import ReactECharts from "echarts-for-react";
 import { observer } from "mobx-react-lite";
 import { useBlock, useBlockSettings, useFrame } from "../../../../../hooks";
-import { styled } from "@mui/material";
+import { styled, TableContainer } from "@mui/material";
 import { useEffect, useMemo } from "react";
 import { computed } from "mobx";
 import { getValueByPath } from "@/utility";
-import { Table } from "@semoss/ui";
+import { Paper, Table } from "@mui/material";
+import { TableHead } from "@mui/material";
+import { TableRow, TableCell, TableBody } from "@mui/material";
+// import { TableCell } from "@semoss/ui/dist/components/Table/TableCell";
+// import { TableBody } from "@semoss/ui/dist/components/Table/TableBody";
 
 const StyledMainContainer = styled("div")(({ theme }) => ({}));
 
 const StyledSubContainer = styled("div")(({ theme }) => ({
     padding: "0.5rem",
 }));
+
+const StyledTableCell = styled(TableCell)<{ backgroundColor?: string }>(
+    ({ backgroundColor }) => ({
+        backgroundColor: backgroundColor ?? "#fff",
+        border: "1px solid #e6e6e6",
+    }),
+);
 
 interface GanttProps {
     id: string;
@@ -530,6 +541,41 @@ export const Gantt = observer(({ id, updateChart }: GanttProps) => {
         return option;
     }, [frame.data.values, data.columns, computedValue]);
 
+    function getQuarterAndMonthList() {
+        let startMonth = "Oct";
+        let month = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        ];
+        let startIndex = month.indexOf(startMonth);
+        let startIndexTemp = startIndex;
+        let quarterObject = {};
+        [1, 2, 3, 4].forEach((item) => {
+            quarterObject["Q" + item] = [];
+            let countsPerQuarter = 3;
+            for (let i = 0; i < countsPerQuarter; i++) {
+                if (startIndexTemp == month.length) {
+                    startIndexTemp = month.length % 12;
+                }
+                quarterObject["Q" + item][i] = month[startIndexTemp];
+                startIndexTemp++;
+            }
+        });
+        let monthBasedQuarter = {};
+
+        console.log(quarterObject, "QuarterObject");
+    }
+
     useEffect(() => {
         if (!frame.isLoading && frame.data.values.length > 0) {
             updateChart(dataOption, "option");
@@ -550,27 +596,108 @@ export const Gantt = observer(({ id, updateChart }: GanttProps) => {
         return chartToolTip;
     }
     console.log(dataOption, "dataOptionEcharts");
+    const rows = [
+        {
+            month1: "Jan",
+            month2: "Feb",
+            month3: "Mar",
+        },
+        {
+            month1: "Apr",
+            month2: "May",
+            month3: "Jun",
+        },
+        {
+            month1: "Jul",
+            month2: "Aug",
+            month3: "Sep",
+        },
+        {
+            month1: "Oct",
+            month2: "Nov",
+            month3: "Dec",
+        },
+    ];
+    let rows1 = [
+        {
+            name: "Frozen yoghurt",
+            calories: 159,
+            fat: 6.0,
+            carbs: 24,
+            protein: 4.0,
+        },
+    ];
+    getQuarterAndMonthList();
     return (
         <>
             <StyledMainContainer id={id}>
-                {/* <StyledSubContainer>
-                    <table>
-                        <thead>
-                            <tr>
-                                <td>Col 1</td>
-                                <td>Col 2</td>
-                                <td>Col 3</td>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Data 1</td>
-                                <td>Data 2</td>
-                                <td>Data 3</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </StyledSubContainer> */}
+                <Table aria-label="simple table">
+                    <TableHead>
+                        <TableRow>
+                            <StyledTableCell
+                                backgroundColor="#0471f0"
+                                size="small"
+                                colSpan={3}
+                                align="center"
+                            >
+                                Q1
+                            </StyledTableCell>
+                            {/* <StyledTableCell backgroundColor="#0471f0" size='small' align="right">Calories</StyledTableCell> */}
+                            <StyledTableCell
+                                backgroundColor="#0471f0"
+                                size="small"
+                                colSpan={3}
+                                align="center"
+                            >
+                                Q2
+                            </StyledTableCell>
+                            <StyledTableCell
+                                backgroundColor="#0471f0"
+                                size="small"
+                                colSpan={3}
+                                align="center"
+                            >
+                                Q3
+                            </StyledTableCell>
+                            <StyledTableCell
+                                backgroundColor="#0471f0"
+                                size="small"
+                                colSpan={3}
+                                align="center"
+                            >
+                                Q4
+                            </StyledTableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        <TableRow
+                            sx={{
+                                "&:last-child td, &:last-child th": {
+                                    border: "1px solid grey",
+                                },
+                            }}
+                        >
+                            {rows.map((row, index) => (
+                                <>
+                                    <StyledTableCell
+                                        component="th"
+                                        scope="row"
+                                        size="small"
+                                    >
+                                        {row.month1}
+                                    </StyledTableCell>
+                                    <StyledTableCell size="small" align="right">
+                                        {row.month2}
+                                    </StyledTableCell>
+                                    <StyledTableCell size="small" align="right">
+                                        {row.month3}
+                                    </StyledTableCell>
+                                </>
+                            ))}
+                        </TableRow>
+                    </TableBody>
+                </Table>
+
                 <ReactECharts option={dataOption} />
             </StyledMainContainer>
         </>

@@ -6,6 +6,7 @@ import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import {
     Autocomplete,
     Button,
+    Chip,
     IconButton,
     Select,
     Slider,
@@ -29,6 +30,14 @@ const StyledAppliedContainer = styled("div")(() => ({
     border: "1px solid grey",
     borderRadius: 9,
     padding: "10px",
+}));
+const StyledSpan = styled("span")<{ backgroundColor: string }>((props) => ({
+    backgroundColor: props.backgroundColor ?? "",
+    padding: "3px",
+    borderRadius: "50px",
+    width: "15px",
+    height: "15px",
+    display: "flex",
 }));
 const INITIAL_CUSTOM_STYLE = {
     dimension: "",
@@ -405,6 +414,7 @@ export const CustomizeSymbol = observer(({ id }: CustomizeSymbolProps) => {
                         (dimItem) => dimItem.selector === item.dimension,
                     )?.["name"] || item,
             itemData: index,
+            itemColor: item.symbolColor,
         };
     });
     return (
@@ -416,23 +426,21 @@ export const CustomizeSymbol = observer(({ id }: CustomizeSymbolProps) => {
                 <StyledAppliedContainer>
                     {updatedInstances.length > 0 &&
                         updatedInstances.map((item, index) => (
-                            <>
-                                <span
-                                    onClick={(e) =>
-                                        applyToCurrentCustom(item.itemData)
-                                    }
-                                >
-                                    {item.label}
-                                </span>
-                                <IconButton
-                                    onClick={(e) =>
-                                        deleteAppliedData(item.itemData)
-                                    }
-                                >
-                                    <DeleteForever />
-                                </IconButton>
-                                <br />
-                            </>
+                            <Chip
+                                size="small"
+                                label={item.label}
+                                onClick={() =>
+                                    applyToCurrentCustom(item.itemData)
+                                }
+                                onDelete={() =>
+                                    deleteAppliedData(item.itemData)
+                                }
+                                icon={
+                                    <StyledSpan
+                                        backgroundColor={item.itemColor}
+                                    ></StyledSpan>
+                                }
+                            />
                         ))}
                     {updatedInstances.length == 0 && (
                         <span>No Symbols Applied.</span>
