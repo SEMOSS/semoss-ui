@@ -89,6 +89,13 @@ interface Option {
      * @default false
      */
     variabilized: boolean;
+
+    /**
+     * Group alias for grouping options
+     * @type {string}
+     * @default ""
+     */
+    groupAlias: string;
 }
 
 const StyledModalHeader = styled(Stack)(({ theme }) => ({
@@ -97,6 +104,24 @@ const StyledModalHeader = styled(Stack)(({ theme }) => ({
     justifyContent: "space-between",
     alignItems: "center",
 }));
+
+// Group name mapper function
+const groupAliasMapper = (type: string) => {
+    switch (type) {
+        case "query":
+            return "Notebook";
+        case "cell":
+            return "Cell";
+        case "cell-prop":
+            return "Cell-prop";
+        case "block":
+            return "Block";
+        case "query-prop":
+            return "Notebook-prop";
+        default:
+            return type.charAt(0).toUpperCase() + type.slice(1);
+    }
+};
 
 /**
  * Specifically for selecting a query for to associate with a UI block
@@ -173,16 +198,30 @@ export const QueryInputSettings = observer(
             const pathMap = {};
             const variabilizedList = [];
 
+            // iterate over the variables
             Object.entries(state.variables).forEach(
                 (keyValue: [string, Variable]) => {
-                    console.log(keyValue[0]);
                     const alias = keyValue[0];
                     const variable = keyValue[1];
 
                     const ref = state.getVariable(variable.to, variable.type);
-                    if (!variabilizedList.includes(variable.cellId)) {
+
+                    // check if the variable is variabilized
+                    if (
+                        variable.type === "block" &&
+                        !variabilizedList.includes(variable.to)
+                    )
+                        variabilizedList.push(variable.to);
+                    else if (
+                        variable.type === "cell" &&
+                        !variabilizedList.includes(variable.cellId)
+                    )
                         variabilizedList.push(variable.cellId);
-                    }
+                    else if (
+                        variable.type === "query" &&
+                        !variabilizedList.includes(variable.to)
+                    )
+                        variabilizedList.push(variable.to);
 
                     pathMap[alias] = {
                         id: alias,
@@ -191,6 +230,7 @@ export const QueryInputSettings = observer(
                         display: alias,
                         blockType: variable.type,
                         variabilized: true,
+                        groupAlias: groupAliasMapper(variable.type),
                     };
 
                     if (variable.type === "query") {
@@ -203,6 +243,7 @@ export const QueryInputSettings = observer(
                                 display: `${alias}.${f}`,
                                 blockType: "query-prop",
                                 variabilized: true,
+                                groupAlias: groupAliasMapper("query-prop"),
                             };
                         }
                     }
@@ -219,17 +260,23 @@ export const QueryInputSettings = observer(
                                 display: `${alias}.${f}`,
                                 blockType: "cell-prop",
                                 variabilized: true,
+                                groupAlias: groupAliasMapper("cell-prop"),
                             };
                         }
                     }
                 },
             );
+
+            // iterate over the blocks
             Object.entries(state.blocks).forEach(
                 (keyValue: [string, Block]) => {
                     const alias = keyValue[0];
                     const block = keyValue[1];
                     //filter only valid(variabilizable) blocks
-                    if (INPUT_BLOCK_TYPES.indexOf(block.widget) > -1) {
+                    if (
+                        INPUT_BLOCK_TYPES.indexOf(block.widget) > -1 &&
+                        !variabilizedList.includes(alias)
+                    ) {
                         pathMap[alias] = {
                             id: alias,
                             path: alias,
@@ -239,39 +286,45 @@ export const QueryInputSettings = observer(
                             variabilized: Object.keys(state.variables).includes(
                                 alias,
                             ),
+                            groupAlias: groupAliasMapper("block"),
                         };
                     }
                 },
             );
 
+            // iterate over the Queries
             Object.entries(state.queries).forEach(
                 (keyValue: [string, QueryState]) => {
                     const alias = keyValue[0];
                     const query = keyValue[1];
 
-                    pathMap[alias] = {
-                        id: alias,
-                        path: alias,
-                        type: typeof query,
-                        display: alias,
-                        blockType: "query",
-                        variabilized: Object.keys(state.variables).includes(
-                            alias,
-                        ),
-                    };
-
-                    const q = state.getQuery(alias);
-                    for (const f in q._exposed) {
-                        pathMap[`${alias}.${f}`] = {
-                            id: `${alias}.${f}`,
-                            path: `${alias}.${f}`,
-                            type: typeof q[f], // TODO: get value
-                            display: `${alias}.${f}`,
-                            blockType: "query-prop",
-                            variabilized: true,
+                    if (!variabilizedList.includes(alias)) {
+                        pathMap[alias] = {
+                            id: alias,
+                            path: alias,
+                            type: typeof query,
+                            display: alias,
+                            blockType: "query",
+                            variabilized: Object.keys(state.variables).includes(
+                                alias,
+                            ),
+                            groupAlias: groupAliasMapper("query"),
                         };
-                    }
 
+                        const q = state.getQuery(alias);
+                        for (const f in q._exposed) {
+                            pathMap[`${alias}.${f}`] = {
+                                id: `${alias}.${f}`,
+                                path: `${alias}.${f}`,
+                                type: typeof q[f], // TODO: get value
+                                display: `${alias}.${f}`,
+                                blockType: "query-prop",
+                                variabilized: true,
+                                groupAlias: groupAliasMapper("query-prop"),
+                            };
+                        }
+                    }
+                    // iterate over the un-variabilized cells
                     if (query.cellList.length > 0) {
                         Object.entries(query.cells).forEach(
                             (keyValue: [string, CellState]) => {
@@ -286,7 +339,27 @@ export const QueryInputSettings = observer(
                                         display: `${alias}.${cellAlias}`,
                                         blockType: "cell",
                                         variabilized: false,
+                                        groupAlias: groupAliasMapper("cell"),
                                     };
+
+                                    const q = state.getQuery(alias);
+                                    const c = q.getCell(cellAlias);
+
+                                    for (const f in c._exposed) {
+                                        pathMap[`${alias}.${cellAlias}.${f}`] =
+                                            {
+                                                id: `${alias}.${cellAlias}.${f}`,
+                                                path: `${alias}.${cellAlias}.${f}`,
+                                                type: typeof c[f], // TODO: get value
+                                                display: `${alias}.${cellAlias}.${f}`,
+                                                blockType: "cell-prop",
+                                                variabilized: true,
+                                                groupAlias:
+                                                    groupAliasMapper(
+                                                        "cell-prop",
+                                                    ),
+                                            };
+                                    }
                                 }
                             },
                         );
@@ -395,7 +468,7 @@ export const QueryInputSettings = observer(
             notification.add({
                 color: success ? "success" : "error",
                 message: success
-                    ? `Successfully added ${option.id}`
+                    ? `Successfully added ${option.id} as a variable.`
                     : `Unable to add ${option.id}, due to syntax or a duplicated alias`,
             });
         };
@@ -505,7 +578,7 @@ export const QueryInputSettings = observer(
                                 }}
                             />
                         )}
-                        groupBy={(option) => optionMap[option]?.blockType}
+                        groupBy={(option) => optionMap[option]?.groupAlias}
                     />
                     <IconButton size="small" onClick={() => setOpen(true)}>
                         <OpenInNew />
