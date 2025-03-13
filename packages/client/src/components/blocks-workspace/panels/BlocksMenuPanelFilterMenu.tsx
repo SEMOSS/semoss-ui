@@ -26,6 +26,10 @@ const FlexButton = styled(Button)({
     textWrap: 'nowrap',
 });
 
+const StyledTitle = styled(Typography)(({ theme }) => ({
+    color: theme.palette.primary.main,
+}));
+
 export const BlocksMenuPanelFilterMenu = ({
     anchorEl,
     onClose,
@@ -63,9 +67,7 @@ export const BlocksMenuPanelFilterMenu = ({
                     justifyContent="space-between"
                     direction="row"
                 >
-                    <Typography variant="body2" color="primary">
-                        Filter By
-                    </Typography>
+                    <StyledTitle variant="body2">Filter By</StyledTitle>
                     <IconButton size="small" onClick={onClose}>
                         <Close />
                     </IconButton>

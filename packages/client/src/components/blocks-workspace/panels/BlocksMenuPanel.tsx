@@ -17,6 +17,7 @@ import { Panel } from '@/components/workspace';
 import { SECTION_ORDER } from '../menus/default-menu';
 import { Search, Tune } from '@mui/icons-material';
 import { BlocksMenuPanelFilterMenu } from './BlocksMenuPanelFilterMenu';
+import { Badge } from '@mui/material';
 
 const StyledTitle = styled('div')(({ theme }) => ({
     paddingTop: theme.spacing(1.5),
@@ -136,6 +137,13 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
             enabled: false,
         },
     });
+    const anyEnabledFilter = useMemo(
+        () =>
+            Object.values(filterCategoryMap).some(
+                (category) => category.enabled,
+            ),
+        [filterCategoryMap],
+    );
 
     const sortedItems = useMemo(() => {
         const sectionRecord: Record<string, DesignerMenuItem[]> = {};
@@ -208,7 +216,14 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                                             setMenuAnchorEl(e.currentTarget)
                                         }
                                     >
-                                        <Tune />
+                                        <Badge
+                                            badgeContent={
+                                                anyEnabledFilter ? ' ' : 0
+                                            }
+                                            color="primary"
+                                        >
+                                            <Tune />
+                                        </Badge>
                                     </IconButton>
                                 </InputAdornment>
                             ),
