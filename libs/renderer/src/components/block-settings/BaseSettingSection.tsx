@@ -15,14 +15,15 @@ export const BaseSettingSection = (props: {
     children: ReactNode;
     wide?: boolean;
     description?: string;
+    labelDirection?: "row" | "column";
 }) => {
+    const labelDirection = props.labelDirection || "row";
     return (
         <Stack
-            direction="column"
+            direction={labelDirection}
             alignItems="start"
             justifyContent="space-between"
             // spacing={2}
-            padding="8px 16px"
         >
             <StyledTypography variant="body2" color="secondary">
                 {props.label}
@@ -41,7 +42,7 @@ export const BaseSettingSection = (props: {
             <Stack
                 direction="row"
                 justifyContent="end"
-                // spacing={1}
+                spacing={1}
                 width="100%"
             >
                 {props.children}

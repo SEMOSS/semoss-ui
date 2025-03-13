@@ -17,14 +17,13 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 
     path: Paths<Block<D>["data"], 4>;
 }
-const StyledAxisDiv = styled("div")<{
+const StyledAxis = styled("div")<{
     display?: string;
     justifyContent?: string;
 }>(({ theme, display, justifyContent }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
 }));
 
 const StyledAxisColDiv = styled("div")<{
@@ -34,8 +33,8 @@ const StyledAxisColDiv = styled("div")<{
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "column",
-    padding: "0.5rem",
-    marginLeft: "2px",
+    padding: "8px 16px",
+    gap: "8px",
 }));
 
 export const ScatterPlotChartTitle = observer(
@@ -100,9 +99,11 @@ export const ScatterPlotChartTitle = observer(
             setData(path, option as PathValue<D["data"], typeof path>);
         };
         return (
-            <StyledAxisDiv>
+            <StyledAxis>
                 <StyledAxisColDiv display="flex" justifyContent="space-around">
-                    <Typography variant="body2">Chart Title</Typography>
+                    <Typography variant="body2" color="secondary">
+                        Chart Title
+                    </Typography>
                     <TextField
                         id="Chart Title"
                         size="small"
@@ -112,7 +113,7 @@ export const ScatterPlotChartTitle = observer(
                         }}
                     />
                 </StyledAxisColDiv>
-            </StyledAxisDiv>
+            </StyledAxis>
         );
     },
 );

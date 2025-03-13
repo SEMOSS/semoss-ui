@@ -30,6 +30,10 @@ const StyledAxisDiv = styled("div")<{
     gap: gap ?? undefined,
 }));
 
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    color: theme.palette.text.primary,
+}));
+
 export const ToogleDonut = observer(
     <D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
@@ -90,9 +94,9 @@ export const ToogleDonut = observer(
                         title="Toggle Donut"
                         size="small"
                     />
-                    <Typography variant="body2" color="secondary">
+                    <StyledTypography variant="body2">
                         Donut Toggle ON / OFF
-                    </Typography>
+                    </StyledTypography>
                 </StyledAxisDiv>
             </StyledAxisDiv>
         );

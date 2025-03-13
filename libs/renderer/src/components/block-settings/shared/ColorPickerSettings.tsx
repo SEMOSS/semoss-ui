@@ -2,9 +2,15 @@ import { useEffect, useMemo, useRef, useState, MouseEvent } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { SketchPicker } from "react-color";
-import { OutlinedInput, Typography } from "@mui/material";
+import { OutlinedInput } from "@mui/material";
 
-import { IconButton, InputAdornment, Popover, styled } from "@semoss/ui";
+import {
+    IconButton,
+    InputAdornment,
+    Popover,
+    styled,
+    Typography,
+} from "@semoss/ui";
 
 import { Paths, PathValue } from "../../../types";
 import { useBlockSettings } from "../../../hooks";
@@ -43,6 +49,7 @@ const StyledMainContainer = styled("div")({
     display: "flex",
     flexDirection: "column",
     gap: "8px",
+    padding: "8px 16px",
     marginBottom: "8px",
 });
 const StyledSpanSection = styled("span")(({ color }) => ({
@@ -158,6 +165,7 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
                     Select Colour
                 </Typography>
                 <OutlinedInput
+                    size="small"
                     id="outlined-adornment-password"
                     placeholder="Select Colour"
                     aria-label="Select Colour"

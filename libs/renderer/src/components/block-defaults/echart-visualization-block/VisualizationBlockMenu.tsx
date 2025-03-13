@@ -14,7 +14,12 @@ const StyledContainer = styled("div")(() => ({
     maxHeight: "50vh",
 }));
 const StyledSubSection = styled("div")(() => ({
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
     padding: "8px 16px",
+}));
+const StyledJsonSection = styled("div")(() => ({
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
@@ -112,9 +117,9 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                     </StyledToolsSection>
                 )}
                 {selectedTab === "JSON" && (
-                    <StyledSubSection>
+                    <StyledJsonSection>
                         <JsonSettings id={id} path="option" height="100vh" />
-                    </StyledSubSection>
+                    </StyledJsonSection>
                 )}
             </StyledContainer>
             {!data.variation && (

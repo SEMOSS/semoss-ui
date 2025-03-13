@@ -39,6 +39,15 @@ const StyledAxisDiv = styled("div")<{
     alignItems: "center",
     gap: gap ?? undefined,
 }));
+
+const StyledAxis = styled("div")<{
+    display?: string;
+    justifyContent?: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "row",
+}));
 const StyledButtonWrapper = styled("div")({
     display: "flex",
     justifyContent: "flex-end",
@@ -51,7 +60,7 @@ const StyledAxisColDiv = styled("div")<{
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "column",
-    padding: "0.5rem",
+    padding: "8px 16px",
     gap: "8px",
     marginBottom: "8px",
 }));
@@ -190,8 +199,12 @@ export const PieValueLabel = observer(
             retainLocalState(option);
         }
         return (
-            <StyledAxisDiv>
-                <StyledAxisDiv display="flex" gap="8px">
+            <StyledAxis>
+                <StyledAxisDiv
+                    display="flex"
+                    gap="8px"
+                    style={{ marginTop: "8px" }}
+                >
                     <Switch
                         size="small"
                         checked={showValueLabel}
@@ -204,7 +217,7 @@ export const PieValueLabel = observer(
                         title="Show Value Label"
                     />
 
-                    <Typography variant="body2" color="secondary">
+                    <Typography variant="body2" color="primary">
                         Show Value Label
                     </Typography>
                 </StyledAxisDiv>
@@ -217,6 +230,7 @@ export const PieValueLabel = observer(
                             Choose a position for Value Label
                         </Typography>
                         <StyledSelect
+                            size="small"
                             id="position"
                             name="position"
                             value={valueLabel?.position}
@@ -253,6 +267,7 @@ export const PieValueLabel = observer(
                             Choose a position for Value Label
                         </Typography>
                         <Slider
+                            size="small"
                             aria-label="Always visible"
                             value={valueLabel.rotate}
                             min={valueLabel.rotateLabelMinValue}
@@ -281,6 +296,7 @@ export const PieValueLabel = observer(
                             Value Label Size
                         </Typography>
                         <StyledTextField
+                            size="small"
                             id="size"
                             name="size"
                             value={valueLabel?.size}
@@ -299,6 +315,7 @@ export const PieValueLabel = observer(
                             Value Label Line Length
                         </Typography>
                         <StyledTextField
+                            size="small"
                             id="length"
                             name="length"
                             value={valueLabel?.lineLength}
@@ -318,6 +335,7 @@ export const PieValueLabel = observer(
                         </Typography>
 
                         <StyledSelect
+                            size="small"
                             id="font-family"
                             name="fontFamily"
                             value={valueLabel?.family}
@@ -339,17 +357,12 @@ export const PieValueLabel = observer(
                     </StyledAxisColDiv>
                 )}
                 {showValueLabel && (
-                    <StyledAxisColDiv
-                        display="flex"
-                        justifyContent="space-around"
-                    >
-                        <ColorPickerSettings
-                            id={id}
-                            path="option.series.0.label.color"
-                            colorValue={valueLabel.color}
-                            onChange={(e) => handleInputChange("color", e)}
-                        />
-                    </StyledAxisColDiv>
+                    <ColorPickerSettings
+                        id={id}
+                        path="option.series.0.label.color"
+                        colorValue={valueLabel.color}
+                        onChange={(e) => handleInputChange("color", e)}
+                    />
                 )}
                 {showValueLabel && (
                     <StyledButtonWrapper>
@@ -363,7 +376,7 @@ export const PieValueLabel = observer(
                         </Button>
                     </StyledButtonWrapper>
                 )}
-            </StyledAxisDiv>
+            </StyledAxis>
         );
     },
 );

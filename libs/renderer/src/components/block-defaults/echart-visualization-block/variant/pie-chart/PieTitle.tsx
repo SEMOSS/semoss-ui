@@ -31,6 +31,15 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     path: Paths<Block<D>["data"], 4>;
 }
 
+const StyledAxis = styled("div")<{
+    display?: string;
+    justifyContent?: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "row",
+}));
+
 const StyledAxisDiv = styled("div")<{
     display?: string;
     justifyContent?: string;
@@ -55,7 +64,7 @@ const StyledAxisColDiv = styled("div")<{
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "column",
-    padding: "0.5rem",
+    padding: "8px 16px",
     gap: "8px",
     marginBottom: "8px",
 }));
@@ -180,8 +189,12 @@ export const PieTitle = observer(
             retainLocalState(option);
         }
         return (
-            <StyledAxisDiv>
-                <StyledAxisDiv display="flex" gap="8px">
+            <StyledAxis>
+                <StyledAxisDiv
+                    display="flex"
+                    gap="8px"
+                    style={{ marginTop: "8px" }}
+                >
                     <Switch
                         size="small"
                         checked={showTitle}
@@ -203,6 +216,7 @@ export const PieTitle = observer(
                             Title Name
                         </Typography>
                         <StyledTextField
+                            size="small"
                             id="name"
                             name="name"
                             value={title?.name}
@@ -221,6 +235,7 @@ export const PieTitle = observer(
                             Select Alignment
                         </Typography>
                         <StyledSelect
+                            size="small"
                             id="alignment"
                             name="alignment"
                             value={title?.alignment}
@@ -253,6 +268,7 @@ export const PieTitle = observer(
                             Text Size
                         </Typography>
                         <StyledTextField
+                            size="small"
                             id="size"
                             name="size"
                             value={title?.size}
@@ -271,6 +287,7 @@ export const PieTitle = observer(
                             Select Font Weight
                         </Typography>
                         <StyledSelect
+                            size="small"
                             id="font-weight"
                             name="fontWeight"
                             value={title?.weight}
@@ -300,6 +317,7 @@ export const PieTitle = observer(
                             Select Font Family
                         </Typography>
                         <StyledSelect
+                            size="small"
                             id="font-family"
                             name="fontFamily"
                             value={title?.family}
@@ -321,17 +339,12 @@ export const PieTitle = observer(
                     </StyledAxisColDiv>
                 )}
                 {showTitle && (
-                    <StyledAxisColDiv
-                        display="flex"
-                        justifyContent="space-around"
-                    >
-                        <ColorPickerSettings
-                            id={id}
-                            path="option.title.textStyle.color"
-                            colorValue={title.color}
-                            onChange={(e) => handleInputChange("titleColor", e)}
-                        />
-                    </StyledAxisColDiv>
+                    <ColorPickerSettings
+                        id={id}
+                        path="option.title.textStyle.color"
+                        colorValue={title.color}
+                        onChange={(e) => handleInputChange("titleColor", e)}
+                    />
                 )}
                 {showTitle && (
                     <StyledButtonWrapper>
@@ -345,7 +358,7 @@ export const PieTitle = observer(
                         </Button>
                     </StyledButtonWrapper>
                 )}
-            </StyledAxisDiv>
+            </StyledAxis>
         );
     },
 );

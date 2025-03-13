@@ -24,15 +24,18 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 
     path: Paths<Block<D>["data"], 4>;
 }
+
 const StyledAxisDiv = styled("div")<{
     display?: string;
     justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
+    gap?: string;
+}>(({ theme, display, justifyContent, gap }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
-    marginLeft: "4px",
+    padding: "8px 16px",
+    alignItems: "center",
+    gap: gap ?? undefined,
 }));
 
 const StyledAxis = styled("div")<{
@@ -42,8 +45,19 @@ const StyledAxis = styled("div")<{
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
 }));
+
+// const StyledAxisColDiv = styled("div")<{
+//     display?: string;
+//     justifyContent: string;
+// }>(({ theme, display, justifyContent }) => ({
+//     display: display ?? undefined,
+//     justifyContent: justifyContent ?? undefined,
+//     flexDirection: "column",
+//     padding: "0.5rem",
+//     position: "relative",
+//     right: "3px",
+// }));
 
 const StyledAxisColDiv = styled("div")<{
     display?: string;
@@ -52,18 +66,17 @@ const StyledAxisColDiv = styled("div")<{
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "column",
-    padding: "0.5rem",
-    position: "relative",
-    right: "3px",
+    padding: "8px 16px",
+    gap: "8px",
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: "100%",
 }));
 
-const StyledTypography = styled(Typography)({
-    paddingLeft: "10px",
-});
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    color: theme.palette.text.primary,
+}));
 
 const StyledButton = styled(Button)({
     left: "100%",
@@ -400,7 +413,11 @@ export const EditXAxisScatterPlot = observer(
         };
         return (
             <StyledAxis>
-                <StyledAxisDiv display="flex" justifyContent="flex-start">
+                <StyledAxisDiv
+                    display="flex"
+                    justifyContent="flex-start"
+                    gap="8px"
+                >
                     <Switch
                         checked={showXaxis}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -409,11 +426,15 @@ export const EditXAxisScatterPlot = observer(
                         title="Show/Hide Axis"
                         size="small"
                     />
-                    <StyledTypography variant="body1">
+                    <StyledTypography variant="body2">
                         Show/Hide Axis
                     </StyledTypography>
                 </StyledAxisDiv>
-                <StyledAxisDiv display="flex" justifyContent="flex-start">
+                <StyledAxisDiv
+                    display="flex"
+                    justifyContent="flex-start"
+                    gap="8px"
+                >
                     <Switch
                         checked={showXaxisTitle}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -422,7 +443,7 @@ export const EditXAxisScatterPlot = observer(
                         title="Show Axis Title"
                         size="small"
                     />
-                    <StyledTypography variant="body1">
+                    <StyledTypography variant="body2">
                         Show Axis Title
                     </StyledTypography>
                 </StyledAxisDiv>
@@ -432,7 +453,7 @@ export const EditXAxisScatterPlot = observer(
                             display="flex"
                             justifyContent="space-around"
                         >
-                            <Typography variant="body2">
+                            <Typography variant="body2" color="secondary">
                                 Set X Axis Title
                             </Typography>
                             <StyledTextField
@@ -448,7 +469,7 @@ export const EditXAxisScatterPlot = observer(
                             display="flex"
                             justifyContent="space-around"
                         >
-                            <Typography variant="body2">
+                            <Typography variant="body2" color="secondary">
                                 Edit Axis Title Font Size
                             </Typography>
                             <TextField
@@ -462,7 +483,11 @@ export const EditXAxisScatterPlot = observer(
                     </StyledAxis>
                 )}
 
-                <StyledAxisDiv display="flex" justifyContent="flex-start">
+                <StyledAxisDiv
+                    display="flex"
+                    justifyContent="flex-start"
+                    gap="8px"
+                >
                     <Switch
                         checked={showAxisLabel}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -471,7 +496,7 @@ export const EditXAxisScatterPlot = observer(
                         title="Show Labels"
                         size="small"
                     />
-                    <StyledTypography variant="body1">
+                    <StyledTypography variant="body2">
                         Show Labels
                     </StyledTypography>
                 </StyledAxisDiv>
@@ -481,7 +506,7 @@ export const EditXAxisScatterPlot = observer(
                             display="flex"
                             justifyContent="space-around"
                         >
-                            <Typography variant="body2">
+                            <Typography variant="body2" color="secondary">
                                 Edit Label Font Size
                             </Typography>
                             <TextField
@@ -516,7 +541,11 @@ export const EditXAxisScatterPlot = observer(
                         </StyledAxisColDiv>
                     </StyledAxis>
                 )}
-                <StyledAxisDiv display="flex" justifyContent="flex-start">
+                <StyledAxisDiv
+                    display="flex"
+                    justifyContent="flex-start"
+                    gap="8px"
+                >
                     <Switch
                         checked={showXaxisTick}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -525,7 +554,7 @@ export const EditXAxisScatterPlot = observer(
                         title="Show/Hide Axis"
                         size="small"
                     />
-                    <StyledTypography variant="body1">
+                    <StyledTypography variant="body2">
                         Show Axis Line Ticks
                     </StyledTypography>
                 </StyledAxisDiv>

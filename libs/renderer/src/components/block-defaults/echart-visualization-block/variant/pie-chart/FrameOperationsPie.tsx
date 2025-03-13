@@ -263,8 +263,14 @@ export const FrameOperationsPie = observer(
         };
 
         return (
-            <>
-                <BaseSettingSection label="Frame">
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.5rem",
+                }}
+            >
+                <BaseSettingSection labelDirection="column" label="Frame">
                     <Autocomplete
                         fullWidth
                         multiple={false}
@@ -295,7 +301,7 @@ export const FrameOperationsPie = observer(
                         <Sync />
                     </IconButton>
                 </BaseSettingSection>
-                <BaseSettingSection label="Label">
+                <BaseSettingSection labelDirection="column" label="Label">
                     <Autocomplete
                         size="small"
                         fullWidth
@@ -322,7 +328,7 @@ export const FrameOperationsPie = observer(
                         )}
                     />
                 </BaseSettingSection>
-                <BaseSettingSection label="Value">
+                <BaseSettingSection labelDirection="column" label="Value">
                     <Autocomplete
                         size="small"
                         fullWidth
@@ -380,7 +386,7 @@ export const FrameOperationsPie = observer(
                         )}
                     />
                 </BaseSettingSection> */}
-            </>
+            </div>
         );
     },
 );
