@@ -40,3 +40,9 @@ export interface DesignerMenuItem {
      */
     hoverImage?: string;
 }
+
+export interface FilterCategory {
+    id: string;
+    display: string;
+    enabled: boolean;
+}

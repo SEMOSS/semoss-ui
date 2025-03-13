@@ -11,7 +11,7 @@ import {
     InputAdornment,
     IconButton,
 } from '@semoss/ui';
-import { DesignerMenuItem } from '../menus/menu-types';
+import { DesignerMenuItem, FilterCategory } from '../menus/menu-types';
 import { AddBlocksMenuCard } from '@/components/designer';
 import { Panel } from '@/components/workspace';
 import { SECTION_ORDER } from '../menus/default-menu';
@@ -102,6 +102,40 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
     const [mode, setMode] = useState<MODE>('SYSTEM');
 
     const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+    const [filterCategoryMap, setFilterCategoryMap] = useState<
+        Record<string, FilterCategory>
+    >({
+        most_used_components: {
+            id: 'most_used_components',
+            display: 'Most Used Components',
+            enabled: false,
+        },
+        text: {
+            id: 'text',
+            display: 'Text',
+            enabled: false,
+        },
+        formatting: {
+            id: 'formatting',
+            display: 'Formatting',
+            enabled: false,
+        },
+        inputs: {
+            id: 'inputs',
+            display: 'Inputs',
+            enabled: false,
+        },
+        action: {
+            id: 'action',
+            display: 'Action',
+            enabled: false,
+        },
+        loading: {
+            id: 'loading',
+            display: 'Loading',
+            enabled: false,
+        },
+    });
 
     const sortedItems = useMemo(() => {
         const sectionRecord: Record<string, DesignerMenuItem[]> = {};
@@ -255,6 +289,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
             <BlocksMenuPanelFilterMenu
                 anchorEl={menuAnchorEl}
                 onClose={() => setMenuAnchorEl(null)}
+                categoryMap={filterCategoryMap}
             />
         </Panel>
     );

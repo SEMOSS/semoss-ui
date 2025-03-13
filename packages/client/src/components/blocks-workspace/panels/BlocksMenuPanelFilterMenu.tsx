@@ -1,18 +1,23 @@
 import { Close } from '@mui/icons-material';
-import { Popover } from '@mui/material';
+import { ListItemIcon, ListItemText, Popover } from '@mui/material';
 import {
-    Box,
     Button,
+    Checkbox,
     Divider,
     IconButton,
+    List,
+    MenuItem,
     Stack,
     styled,
     Typography,
 } from '@semoss/ui';
+import { FilterCategory } from '../menus/menu-types';
+import { useEffect, useState } from 'react';
 
 export interface BlocksMenuPanelFilterMenuProps {
     anchorEl: null | HTMLElement;
     onClose: () => void;
+    categoryMap: Record<string, FilterCategory>;
 }
 
 const FlexButton = styled(Button)({
@@ -23,7 +28,15 @@ const FlexButton = styled(Button)({
 export const BlocksMenuPanelFilterMenu = ({
     anchorEl,
     onClose,
+    categoryMap,
 }: BlocksMenuPanelFilterMenuProps) => {
+    const [localCategoryMap, setLocalCategoryMap] =
+        useState<typeof categoryMap>(categoryMap);
+
+    useEffect(() => {
+        setLocalCategoryMap(categoryMap);
+    }, [categoryMap, anchorEl]);
+
     return (
         <Popover
             open={Boolean(anchorEl)}
@@ -56,7 +69,20 @@ export const BlocksMenuPanelFilterMenu = ({
                     </IconButton>
                 </Stack>
                 <Divider orientation="horizontal" />
-                <Box>Checkboxes</Box>
+                <List>
+                    {Object.values(localCategoryMap).map((category) => (
+                        <MenuItem
+                            key={category.id}
+                            value={category.id}
+                            onClick={() => null}
+                        >
+                            <ListItemIcon>
+                                <Checkbox checked={category.enabled} />
+                            </ListItemIcon>
+                            <ListItemText primary={category.display} />
+                        </MenuItem>
+                    ))}
+                </List>
                 <Divider orientation="horizontal" />
                 <Stack direction="row" paddingX={4} paddingY={2} spacing={2}>
                     <FlexButton variant="outlined" color="secondary">
