@@ -136,14 +136,21 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 
     // get the rendered items
     const renderedItems: DesignerMenuItem[][] = useMemo(() => {
+        const filteredItems = anyEnabledFilter
+            ? sortedItems.filter(
+                  (sectionItems) =>
+                      filterCategoryMap[sectionItems[0].section].enabled,
+              )
+            : sortedItems;
+
         if (!search) {
-            return sortedItems;
+            return filteredItems;
         }
 
         const s = search.replace(/[^a-z0-9]/gi, '').toLowerCase();
 
         return (
-            sortedItems
+            filteredItems
                 .map((sectionItems) =>
                     // pattern match on s
                     sectionItems.filter((item) =>
@@ -156,7 +163,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                 // only include sections that have remaining blocks
                 .filter((sectionItems) => sectionItems.length)
         );
-    }, [sortedItems, search]);
+    }, [sortedItems, search, filterCategoryMap]);
 
     useEffect(() => {
         setFilterCategoryMap(() => {
