@@ -146,8 +146,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         };
     }, [designer.drag.active, local, handleDocumentMouseUp]);
 
-    console.log(item);
-
     return (
         <Stack
             spacing={1}
