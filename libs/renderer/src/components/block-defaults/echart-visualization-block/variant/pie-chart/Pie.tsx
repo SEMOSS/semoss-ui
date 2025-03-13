@@ -90,14 +90,6 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
                     ...selectorFields["tooltip"],
                 ]),
             );
-            console.log(
-                dynamicYAndTooltipSet,
-                new Set([
-                    ...selectorFields["Value"],
-                    ...selectorFields["tooltip"],
-                ]),
-                "PieChart",
-            );
 
             // start forming the selector string
             selector += `${selectorFields["Label"][0]}`;
