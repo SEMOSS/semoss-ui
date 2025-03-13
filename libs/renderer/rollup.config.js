@@ -12,6 +12,8 @@ import { terser } from "rollup-plugin-terser";
 import json from "@rollup/plugin-json";
 
 import packageJson from "./package.json";
+import builtins from "rollup-plugin-node-builtins";
+import babel from "@rollup/plugin-babel";
 
 export default defineConfig({
     input: "src/index.ts",
@@ -38,13 +40,26 @@ export default defineConfig({
             outputToFilesystem: true,
         }),
         json(),
-        resolve(),
+        resolve({ browser: true, preferBuiltins: true }),
         commonjs(),
-        image(),
-        url({
-            include: ["**/*.png", "**/*.jpg", "**/*.svg"],
-            limit: 8192,
+        // builtins(),
+        babel({
+            exclude: "node_modules/**",
+            presets: [
+                [
+                    "@babel/preset-env",
+                    {
+                        useBuiltIns: "entry",
+                        corejs: 3,
+                    },
+                ],
+            ],
         }),
+        // image(),
+        // url({
+        //     include: ["**/*.png", "**/*.jpg", "**/*.svg"],
+        //     limit: 8192,
+        // }),
         postcss(),
         bundleSize(),
     ],
