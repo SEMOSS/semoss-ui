@@ -93,7 +93,7 @@ export const BlocksMenuPanelFilterMenu = ({
                             <ListItemIcon>
                                 <Checkbox checked={category.enabled} />
                             </ListItemIcon>
-                            <ListItemText primary={category.display} />
+                            <ListItemText primary={category.id} />
                         </MenuItem>
                     ))}
                 </List>

@@ -43,6 +43,6 @@ export interface DesignerMenuItem {
 
 export interface FilterCategory {
     id: string;
-    display: string;
     enabled: boolean;
+    type: 'SECTION';
 }

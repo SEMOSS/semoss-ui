@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
@@ -105,38 +105,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
     const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
     const [filterCategoryMap, setFilterCategoryMap] = useState<
         Record<string, FilterCategory>
-    >({
-        most_used_components: {
-            id: 'most_used_components',
-            display: 'Most Used Components',
-            enabled: false,
-        },
-        text: {
-            id: 'text',
-            display: 'Text',
-            enabled: false,
-        },
-        formatting: {
-            id: 'formatting',
-            display: 'Formatting',
-            enabled: false,
-        },
-        inputs: {
-            id: 'inputs',
-            display: 'Inputs',
-            enabled: false,
-        },
-        action: {
-            id: 'action',
-            display: 'Action',
-            enabled: false,
-        },
-        loading: {
-            id: 'loading',
-            display: 'Loading',
-            enabled: false,
-        },
-    });
+    >({});
     const anyEnabledFilter = useMemo(
         () =>
             Object.values(filterCategoryMap).some(
@@ -188,6 +157,24 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                 .filter((sectionItems) => sectionItems.length)
         );
     }, [sortedItems, search]);
+
+    useEffect(() => {
+        setFilterCategoryMap(() => {
+            const uniqueSectionMap = items.reduce((acc, curr) => {
+                acc[curr.section] = true;
+                return acc;
+            }, {});
+            const sortedSections = Object.keys(uniqueSectionMap).sort();
+            return sortedSections.reduce((acc, curr) => {
+                acc[curr] = {
+                    id: curr,
+                    enabled: false,
+                    type: 'SECTION',
+                } satisfies FilterCategory;
+                return acc;
+            }, {});
+        });
+    }, [items]);
 
     return (
         <Panel>
