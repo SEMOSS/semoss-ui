@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { useSearchParams, useLocation } from "react-router-dom";
+import {
+    useSearchParams,
+    useLocation,
+    Routes,
+    Route,
+    HashRouter,
+} from "react-router-dom";
 
 import { runPixel, useInsight } from "@semoss/sdk";
 import {
@@ -41,7 +47,7 @@ export interface RendererProps {
 /**
  * Render a block app
  */
-export const Renderer = observer((props: RendererProps) => {
+export const RendererWrapper = observer((props: RendererProps) => {
     const { appId, state, preview } = props;
     // const notification = useNotification();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -193,5 +199,18 @@ export const Renderer = observer((props: RendererProps) => {
                 <RendererEngine id={homePage} />
             </Blocks>
         </Notification>
+    );
+});
+
+export const Renderer = observer((props: RendererProps) => {
+    return (
+        <HashRouter>
+            <Routes>
+                <Route
+                    path="/"
+                    element={<RendererWrapper {...props} />}
+                ></Route>
+            </Routes>
+        </HashRouter>
     );
 });
