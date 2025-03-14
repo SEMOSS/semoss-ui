@@ -138,8 +138,6 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
         }).filter((section) => section.length > 0);
     }, [items, SECTION_ORDER]);
 
-    console.log(JSON.parse(localStorage.getItem('blocksFilterMenuUseMap')));
-
     // get the rendered items
     const renderedItems: DesignerMenuItem[][] = useMemo(() => {
         // calculate whether any sections are being filtered
@@ -147,12 +145,41 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
             (filter) => filter.type === 'SECTION' && filter.enabled,
         );
 
+        // room to improve this logic in the future, but for now just keep 6 most used blocks
+        const localStorageMap: Record<string, BlockLocalStorageData> =
+            JSON.parse(localStorage.getItem('blocksFilterMenuUseMap')) ?? {};
+        const mostUsedSet = Object.values(localStorageMap)
+            .filter((item) => item.use_count)
+            .sort((a, b) => a.use_count - b.use_count)
+            .slice(0, 6)
+            .reduce((acc, curr) => {
+                acc.add(curr.name);
+                return acc;
+            }, new Set<string>());
+
         // filter out sections
-        const filteredItems = sortedItems.filter(
-            (sectionItems) =>
-                !anySectionFilter ||
-                filterCategoryMap[sectionItems[0].section].enabled,
-        );
+        const selectSectionItems = (
+            sectionItems: DesignerMenuItem[],
+        ): DesignerMenuItem[] => {
+            if (filterCategoryMap[sectionItems[0].section]?.enabled) {
+                // this section is a selected filter; show all of its items
+                return sectionItems;
+            } else if (filterCategoryMap['Most Used Components']?.enabled) {
+                // "Most Used Components" is enabled; return this section's items if they are in most used
+                return sectionItems.filter((item) =>
+                    mostUsedSet.has(item.name),
+                );
+            } else if (anySectionFilter) {
+                // There are section filters applied, but this section is not selected, return nothing
+                return [];
+            } else {
+                // There are no filters applied, return everything
+                return sectionItems;
+            }
+        };
+        const filteredItems = sortedItems
+            .map(selectSectionItems)
+            .filter((sectionItems) => sectionItems.length);
 
         if (!search) {
             return filteredItems;
