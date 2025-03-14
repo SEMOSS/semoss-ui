@@ -154,6 +154,15 @@ export const GanttTargetLine = observer(({ id }: GanttTargetLineProps) => {
                 },
             };
         }
+        if (targetLineData.hasOwnProperty("showTodayDate")) {
+            option["customSettings"] = {
+                ...option["customSettings"],
+                ["gantttools"]: {
+                    ...option["customSettings"]["gantttools"],
+                    ["showTodayDate"]: targetLineData.showTodayDate,
+                },
+            };
+        }
 
         setTimeout(() => {
             try {
@@ -163,7 +172,12 @@ export const GanttTargetLine = observer(({ id }: GanttTargetLineProps) => {
     }
     function resetToInitialState() {
         setTargetLineData((prevTargetLine) => {
-            return INITIAL_TARGET_LINE;
+            return {
+                targetdate: "",
+                targetlabel: "",
+                targetcolor: "#FF0000",
+                showTodayDate: false,
+            };
         });
     }
     function convertTimeZone(date) {
