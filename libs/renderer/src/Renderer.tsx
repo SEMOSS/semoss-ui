@@ -1,21 +1,8 @@
 import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import {
-    useSearchParams,
-    useLocation,
-    Routes,
-    Route,
-    HashRouter,
-} from "react-router-dom";
 
-import { runPixel, useInsight } from "@semoss/sdk";
-import {
-    Button,
-    LoadingScreen,
-    Notification,
-    Typography,
-    useNotification,
-} from "@semoss/ui";
+import { runPixel, useInsight, InsightProvider, Env } from "@semoss/sdk";
+import { Notification, Typography } from "@semoss/ui";
 
 import { Blocks, RendererEngine } from "./components/blocks";
 import { DefaultBlocks } from "./components/block-defaults";
@@ -38,10 +25,14 @@ export interface RendererProps {
     state?: SerializedState;
 
     /**
-     * TODO: REMOVE
-     * Do we want to see load screen. Ex: preview on tooltip
+     * TODO: Do we want to see load screen. Ex: preview on tooltip
      * */
     preview?: boolean;
+
+    /**
+     * Used to update Env for InsightProvider
+     */
+    MODULE?: string;
 }
 
 /**
@@ -49,15 +40,11 @@ export interface RendererProps {
  */
 export const RendererWrapper = observer((props: RendererProps) => {
     const { appId, state, preview } = props;
-    // const notification = useNotification();
-    const [searchParams, setSearchParams] = useSearchParams();
     const { insightId, isAuthorized } = useInsight();
-
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [stateStore, setStateStore] = useState<StateStore | null>();
-    const queryStringParams = new URLSearchParams(useLocation().search);
-
     const [homePage, setHomePage] = useState("");
+    // const notification = useNotification();
 
     useEffect(() => {
         if (isAuthorized) {
@@ -66,7 +53,8 @@ export const RendererWrapper = observer((props: RendererProps) => {
 
             let stateFilter;
 
-            searchParams.forEach((value, key) => {
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.forEach((value, key) => {
                 if (key === "state") {
                     stateFilter = JSON.parse(value);
                 }
@@ -124,9 +112,6 @@ export const RendererWrapper = observer((props: RendererProps) => {
 
                     // Replace variable values with query params
                     const params = {};
-                    queryStringParams.forEach((value, key) => {
-                        params[key] = value;
-                    });
 
                     // create a new state store
                     const store = new StateStore({
@@ -181,13 +166,11 @@ export const RendererWrapper = observer((props: RendererProps) => {
         return (
             <Typography variant="h6">Authorizing Renderer SDK...</Typography>
         );
-        // return <LoadingScreen.Trigger message="Authorizing Renderer SDK"/>;
     }
 
     if (!stateStore || (isLoading && !preview)) {
         if (!preview) {
             return <Typography variant="h6">Initializing Blocks...</Typography>;
-            // return <LoadingScreen.Trigger message="Initializing Blocks"/>;
         } else {
             return <Typography variant="h6">Fetching Preview...</Typography>;
         }
@@ -203,14 +186,13 @@ export const RendererWrapper = observer((props: RendererProps) => {
 });
 
 export const Renderer = observer((props: RendererProps) => {
+    Env.update({
+        MODULE: props.MODULE || "/Monolith",
+    });
+
     return (
-        <HashRouter>
-            <Routes>
-                <Route
-                    path="/"
-                    element={<RendererWrapper {...props} />}
-                ></Route>
-            </Routes>
-        </HashRouter>
+        <InsightProvider>
+            <RendererWrapper {...props} />
+        </InsightProvider>
     );
 });

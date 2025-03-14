@@ -1,6 +1,4 @@
 import React from 'react';
-
-import { Env, InsightProvider } from '@semoss/sdk';
 import { ActionMessages, Renderer, SerializedState } from '@semoss/renderer';
 
 const state: SerializedState = {
@@ -6392,15 +6390,9 @@ const s: SerializedState = {
 };
 
 export const Ncrt = () => {
-    Env.update({
-        MODULE: 'vha-supply',
-    });
-
     return (
         <div style={{ height: '100vh', width: '100vw' }}>
-            <InsightProvider>
-                <Renderer state={state} />
-            </InsightProvider>
+            <Renderer state={state} MODULE={'/vha-supply'} />
         </div>
     );
 };

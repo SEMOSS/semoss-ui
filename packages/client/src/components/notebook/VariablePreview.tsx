@@ -11,7 +11,6 @@ import {
     Renderer,
     Variable,
 } from '@semoss/renderer';
-import { InsightProvider } from '@semoss/sdk';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     border: `${theme.spacing(0.25)} solid ${theme.palette.primary.main}`,
@@ -110,9 +109,11 @@ export const VariablePreview = observer(
                 if (config) {
                     return (
                         <StyledBlocksBox>
-                            <InsightProvider>
-                                <Renderer state={config} preview={true} />
-                            </InsightProvider>
+                            <Renderer
+                                state={config}
+                                preview={true}
+                                MODULE={process.env.MODULE}
+                            />
                         </StyledBlocksBox>
                     );
                 } else {

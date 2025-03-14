@@ -1,6 +1,4 @@
 import React from 'react';
-
-import { Env, InsightProvider } from '@semoss/sdk';
 import { Renderer, SerializedState } from '@semoss/renderer';
 
 const state: SerializedState = {
@@ -885,15 +883,9 @@ const state: SerializedState = {
 };
 
 export const LandingPage = () => {
-    Env.update({
-        MODULE: 'Monolith',
-    });
-
     return (
         <div style={{ width: '100%' }}>
-            <InsightProvider>
-                <Renderer state={state} />
-            </InsightProvider>
+            <Renderer state={state} MODULE={'Monolith'} />
         </div>
     );
 };

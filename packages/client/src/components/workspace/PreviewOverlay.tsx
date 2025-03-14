@@ -26,9 +26,7 @@ export const PreviewOverlay = observer((props: PreviewOverlayProps) => {
             <Modal.Title>Preview</Modal.Title>
             <Modal.Content>
                 <StyledContainer>
-                    <InsightProvider>
-                        <Renderer state={state} />
-                    </InsightProvider>
+                    <Renderer state={state} MODULE={process.env.MODULE} />
                 </StyledContainer>
             </Modal.Content>
             <Modal.Actions>
