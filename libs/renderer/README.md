@@ -100,26 +100,15 @@ export const BLOCKS = {
 
 ```
 import { Renderer, ActionMessages, SerializedState } from '@semoss/renderer';
-import { Env, InsightProvider } from '@semoss/sdk';
 import { BLOCKS } from './constants.ts
 ```
 
-3. Within your react component, update your Environment using our published sdk. (May be optional for certain projects)
+3. Invoke `<InsightProvider />` and `<Renderer />` within the JSX of your react component
 
 ```
-Env.update({
-    MODULE: process.env.MODULE || '',
-});
+<Renderer state={BLOCKS} MODULE={process.env.MODULE}/>
 ```
 
-This allows you to hit the necessary endpoints that are used to run pixels within the renderer package
-
-4. Invoke `<InsightProvider />` and `<Renderer />` within the JSX of your react component
-
-```
-<InsightProvider>
-    <Renderer state={BLOCKS} />
-</InsightProvider>
-```
+MODULE allows you to hit the necessary endpoints that are used to run pixels within the renderer package
 
 State prop represents the constant we have in `./constants.ts`. Reference step 1
