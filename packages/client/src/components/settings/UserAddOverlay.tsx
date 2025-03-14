@@ -231,6 +231,20 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 
             try {
                 let response: AxiosResponse<boolean> | null = null;
+
+                if (data.model_usage_restriction === 'token') {
+                    data.model_max_response_time = null;
+                }
+                if (data.model_usage_restriction === 'compute') {
+                    data.model_max_tokens = null;
+                }
+                if (data.model_usage_restriction === 'null') {
+                    data.model_usage_restriction = null;
+                    data.model_max_response_time = null;
+                    data.model_max_tokens = null;
+                    data.model_usage_frequency = null;
+                }
+
                 if (isNewUser) {
                     response = await monolithStore.createUser(adminMode, data);
                 } else {
@@ -246,18 +260,6 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                             data.publisher = false;
                             data.exporter = false;
                         }
-                    }
-                    if (data.model_usage_restriction === 'token') {
-                        data.model_max_response_time = null;
-                    }
-                    if (data.model_usage_restriction === 'compute') {
-                        data.model_max_tokens = null;
-                    }
-                    if (data.model_usage_restriction === 'null') {
-                        data.model_usage_restriction = null;
-                        data.model_max_response_time = null;
-                        data.model_max_tokens = null;
-                        data.model_usage_frequency = null;
                     }
                     response = await monolithStore.editMemberInfo(
                         adminMode,
@@ -302,8 +304,16 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 
             let errorMessages = [];
             for (const error in e) {
-                if (e[error].hasOwnProperty('message')) {
+                if (
+                    e[error].hasOwnProperty('message') &&
+                    e[error]['message'] !== ''
+                ) {
                     errorMessages.push(e[error]['message'] + '.');
+                } else if (
+                    e[error].hasOwnProperty('type') &&
+                    e[error]['type'] === 'required'
+                ) {
+                    errorMessages.push(error + ' is a required field.');
                 }
             }
 
@@ -329,17 +339,13 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                                 control={control}
                                 rules={{}}
                                 render={({ field }) => {
-                                    // Change value to match option.provider value.
-                                    // add more logic here if more providers are added.
-                                    let value = field.value;
-                                    if (value === 'Native') {
-                                        value = 'native';
-                                    }
                                     return (
                                         <Select
                                             label="Type"
                                             disabled={isNewUser ? false : true}
-                                            value={value ? value : ''}
+                                            value={
+                                                field.value ? field.value : ''
+                                            }
                                             onChange={(e) => {
                                                 field.onChange(e.target.value);
                                             }}
@@ -348,12 +354,10 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                                                 (option, i) => {
                                                     return (
                                                         <Select.Item
-                                                            value={
-                                                                option.provider
-                                                            }
+                                                            value={option.label}
                                                             key={i}
                                                         >
-                                                            {option.name}
+                                                            {option.label}
                                                         </Select.Item>
                                                     );
                                                 },
@@ -364,7 +368,6 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                             />
                             <Controller
                                 name="id"
-                                // disabled={isNewUser ? false : true}
                                 control={control}
                                 rules={{}}
                                 render={({ field }) => {
@@ -384,7 +387,6 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                             />
                             <Controller
                                 name="username"
-                                // disabled={!isNewUser && user?.type === 'Native' ? true : false}
                                 control={control}
                                 rules={{}}
                                 render={({ field }) => {
@@ -392,13 +394,17 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                                         <TextField
                                             label="Username"
                                             disabled={
-                                                !isNewUser &&
-                                                user?.type === 'Native'
+                                                user?.type === 'NATIVE' ||
+                                                type === 'NATIVE'
                                                     ? true
                                                     : false
                                             }
                                             value={
-                                                field.value ? field.value : ''
+                                                isNewUser && type === 'NATIVE'
+                                                    ? 'This wil match the User Id'
+                                                    : field.value
+                                                    ? field.value
+                                                    : ''
                                             }
                                             onChange={(e) => {
                                                 field.onChange(e.target.value);
