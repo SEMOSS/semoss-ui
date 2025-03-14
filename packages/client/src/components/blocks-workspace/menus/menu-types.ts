@@ -46,3 +46,9 @@ export interface FilterCategory {
     enabled: boolean;
     type: 'SECTION' | 'MOST_USED_COMPONENTS';
 }
+
+export interface BlockLocalStorageData {
+    name: string;
+    use_count: number;
+    last_used: number; // timestamp
+}

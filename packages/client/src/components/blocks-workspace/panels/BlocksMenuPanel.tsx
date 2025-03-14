@@ -11,7 +11,11 @@ import {
     InputAdornment,
     IconButton,
 } from '@semoss/ui';
-import { DesignerMenuItem, FilterCategory } from '../menus/menu-types';
+import {
+    BlockLocalStorageData,
+    DesignerMenuItem,
+    FilterCategory,
+} from '../menus/menu-types';
 import { AddBlocksMenuCard } from '@/components/designer';
 import { Panel } from '@/components/workspace';
 import { SECTION_ORDER } from '../menus/default-menu';
@@ -134,12 +138,16 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
         }).filter((section) => section.length > 0);
     }, [items, SECTION_ORDER]);
 
+    console.log(JSON.parse(localStorage.getItem('blocksFilterMenuUseMap')));
+
     // get the rendered items
     const renderedItems: DesignerMenuItem[][] = useMemo(() => {
+        // calculate whether any sections are being filtered
         const anySectionFilter = Object.values(filterCategoryMap).some(
             (filter) => filter.type === 'SECTION' && filter.enabled,
         );
 
+        // filter out sections
         const filteredItems = sortedItems.filter(
             (sectionItems) =>
                 !anySectionFilter ||
