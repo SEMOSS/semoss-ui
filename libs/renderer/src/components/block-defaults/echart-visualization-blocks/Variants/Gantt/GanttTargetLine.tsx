@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useBlocks, useBlockSettings } from "../../../../../hooks";
 import styled from "@emotion/styled";
-import { Switch, TextField } from "@semoss/ui";
+import { Button, Switch, TextField } from "@semoss/ui";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { computed } from "mobx";
@@ -15,20 +15,24 @@ const StyledMainContainer = styled("div")(() => ({
     display: "flex",
     flexDirection: "column",
     padding: "0.75rem",
+    borderBottom: "1px solid #E6E6E6",
 }));
 const StyledSubContainer = styled("div")(() => ({
     display: "flex",
     flexDirection: "column",
 }));
-
+const StyledLabel = styled("label")(() => ({
+    paddingLeft: "10px",
+}));
+const INITIAL_TARGET_LINE = {
+    targetdate: "",
+    targetlabel: "",
+    targetcolor: "#FF0000",
+    showTodayDate: false,
+};
 export const GanttTargetLine = observer(({ id }: GanttTargetLineProps) => {
     const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
-    const [targetLineData, setTargetLineData] = useState({
-        targetdate: "",
-        targetlabel: "",
-        targetcolor: "#FF0000",
-        showTodayDate: false,
-    });
+    const [targetLineData, setTargetLineData] = useState(INITIAL_TARGET_LINE);
     const computedValue = useMemo(() => {
         return computed(() => {
             if (!data) {
@@ -59,6 +63,10 @@ export const GanttTargetLine = observer(({ id }: GanttTargetLineProps) => {
             if (gantttool?.["targetDate"]) {
                 targetLineDataTemp["targetdate"] = gantttool["targetDate"];
             }
+            if (gantttool?.["showTodayDate"]) {
+                targetLineDataTemp["showTodayDate"] =
+                    gantttool["showTodayDate"];
+            }
             setTargetLineData((prevTargetLineData) => {
                 return {
                     ...prevTargetLineData,
@@ -68,13 +76,14 @@ export const GanttTargetLine = observer(({ id }: GanttTargetLineProps) => {
         }
     }, []);
 
-    function updateFields(e, field = "") {
+    function updateFields(e, field = "", directVal = undefined) {
         if (field != "") {
             console.log(e, field, e.target.value, "fieldChange");
             setTargetLineData((prevTargetLineData) => {
                 return {
                     ...prevTargetLineData,
-                    [field]: e.target.value,
+                    [field]:
+                        directVal != undefined ? directVal : e.target.value,
                 };
             });
         }
@@ -136,7 +145,7 @@ export const GanttTargetLine = observer(({ id }: GanttTargetLineProps) => {
                 },
             };
         }
-        if (targetLineData.targetdate != "") {
+        if (targetLineData.hasOwnProperty("targetdate")) {
             option["customSettings"] = {
                 ...option["customSettings"],
                 ["gantttools"]: {
@@ -152,16 +161,52 @@ export const GanttTargetLine = observer(({ id }: GanttTargetLineProps) => {
             } catch (e) {}
         }, 300);
     }
+    function resetToInitialState() {
+        setTargetLineData((prevTargetLine) => {
+            return INITIAL_TARGET_LINE;
+        });
+    }
+    function convertTimeZone(date) {
+        let currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        let dateConvertedToTimeZone = new Date(date).toLocaleString("en-US", {
+            timeZone: currentTimezone,
+        });
+
+        return (
+            new Date(dateConvertedToTimeZone).getFullYear() +
+            "-" +
+            (new Date(dateConvertedToTimeZone).getMonth() + 1 < 10
+                ? "0" + (new Date(dateConvertedToTimeZone).getMonth() + 1)
+                : new Date(dateConvertedToTimeZone).getMonth() + 1) +
+            "-" +
+            (new Date(dateConvertedToTimeZone).getDate() < 10
+                ? "0" + new Date(dateConvertedToTimeZone).getDate()
+                : new Date(dateConvertedToTimeZone).getDate())
+        );
+    }
     return (
         <StyledMainContainer>
-            {/* <StyledSubContainer>
-                <Switch checked={targetLineData.showTodayDate} onChange={(e: ChangeEvent<HTMLInputElement>)=>{
-                    if(e.target.checked){
-                        updateFields({target:{value:new Date()}}, 'targetdate');
-                    }
-                }} />
-                <label htmlFor=''>Show Today Date</label>
-            </StyledSubContainer> */}
+            <StyledSubContainer style={{ flexDirection: "row" }}>
+                <Switch
+                    checked={targetLineData.showTodayDate}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                        if (e.target.hasOwnProperty("checked")) {
+                            updateFields(e, "showTodayDate", e.target.checked);
+                            updateFields(
+                                {
+                                    target: {
+                                        value: e.target.checked
+                                            ? convertTimeZone(new Date())
+                                            : "",
+                                    },
+                                },
+                                "targetdate",
+                            );
+                        }
+                    }}
+                />
+                <StyledLabel htmlFor="">Show Today Date</StyledLabel>
+            </StyledSubContainer>
             <StyledSubContainer>
                 <label htmlFor="">Select Target Date</label>
                 <TextField
@@ -185,6 +230,23 @@ export const GanttTargetLine = observer(({ id }: GanttTargetLineProps) => {
                     value={targetLineData.targetcolor}
                     onChange={(e) => updateFields(e, "targetcolor")}
                 />
+            </StyledSubContainer>
+            <StyledSubContainer
+                style={{
+                    width: "100%",
+                    display: "block",
+                    textAlign: "end",
+                    paddingTop: "0.5rem",
+                }}
+            >
+                <Button
+                    color="primary"
+                    variant="contained"
+                    size="small"
+                    onClick={resetToInitialState}
+                >
+                    Reset
+                </Button>
             </StyledSubContainer>
         </StyledMainContainer>
     );

@@ -2,12 +2,13 @@ import ReactECharts from "echarts-for-react";
 import { observer } from "mobx-react-lite";
 import { useBlock, useBlockSettings, useFrame } from "../../../../../hooks";
 import { styled, TableContainer } from "@mui/material";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { getValueByPath } from "@/utility";
 import { Paper, Table } from "@mui/material";
 import { TableHead } from "@mui/material";
 import { TableRow, TableCell, TableBody } from "@mui/material";
+import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 // import { TableCell } from "@semoss/ui/dist/components/Table/TableCell";
 // import { TableBody } from "@semoss/ui/dist/components/Table/TableBody";
 
@@ -16,6 +17,13 @@ const StyledMainContainer = styled("div")(({ theme }) => ({}));
 const StyledSubContainer = styled("div")(({ theme }) => ({
     padding: "0.5rem",
 }));
+
+const StyledContainer = styled("div")(() => ({
+    display: "flex",
+    justifyContent: "flex-start",
+}));
+
+const StyledDataSpan = styled("span")(({}) => ({}));
 
 const StyledTableCell = styled(TableCell)<{ backgroundColor?: string }>(
     ({ backgroundColor }) => ({
@@ -45,6 +53,12 @@ export const Gantt = observer(({ id, updateChart }: GanttProps) => {
             return JSON.stringify(v, null, 2);
         });
     }, [data, "option"]).get();
+    const [contextMenu, setContextMenu] = useState<{
+        mouseX: number; //x axis position for the click/brush event
+        mouseY: number; //y axis position for the click/brush event
+        value: unknown; //value can be of object or string or number type
+    } | null>(null);
+    const tableRef = useRef(null);
     let selector = "";
     if (data.columns !== undefined) {
         selector = `Select(${data.columns
@@ -302,6 +316,10 @@ export const Gantt = observer(({ id, updateChart }: GanttProps) => {
             option["customSettings"]?.["gantttools"]?.[
                 "showDisplayValueLabels"
             ] || false;
+        let mainSeriesName =
+            option["customSettings"]?.["columnDetails"]?.["task"]?.["name"];
+        let mainSeriesFrameName =
+            option["customSettings"]?.["columnDetails"]?.["task"]?.["selector"];
         if (
             option["series"].some(
                 (series) => series.name === "targetDateSegment",
@@ -313,9 +331,9 @@ export const Gantt = observer(({ id, updateChart }: GanttProps) => {
             targetDateSegment[0] = {
                 ...targetDateSegment[0],
                 targetDateSegment: true,
-                name: targetDateSegment[0]?.["data"]?.length
-                    ? "Target Data Segment"
-                    : "",
+                // name: targetDateSegment[0]?.["data"]?.length
+                //     ? "Target Data Segment"
+                //     : "",
                 renderItem: (params, api) => {
                     const x = api.coord([api.value(0), 0])[0];
                     const targetText =
@@ -365,7 +383,13 @@ export const Gantt = observer(({ id, updateChart }: GanttProps) => {
                     };
                 },
             };
-            lineData = targetDateSegment;
+            if (
+                option["customSettings"]?.["gantttools"]?.["targetDate"] != ""
+            ) {
+                lineData = targetDateSegment;
+            } else {
+                lineData = [];
+            }
         }
         option = {
             ...option,
@@ -407,7 +431,8 @@ export const Gantt = observer(({ id, updateChart }: GanttProps) => {
                 {
                     type: "custom",
                     chartrendered: true,
-                    name: seriesData.length ? "Gannt Chart" : "",
+                    name: mainSeriesName,
+                    frameName: mainSeriesFrameName,
                     renderItem: function (params, api) {
                         console.log(params, api, "api");
                         console.log(
@@ -530,7 +555,7 @@ export const Gantt = observer(({ id, updateChart }: GanttProps) => {
                     name: milestoneData.length ? "Milestones" : "",
                     milestonerendered: true,
                     label: {
-                        show: true,
+                        show: showDisplayValueLabels ? true : false,
                         position: "top",
                         formatter: "{b}",
                     },
@@ -541,8 +566,8 @@ export const Gantt = observer(({ id, updateChart }: GanttProps) => {
         return option;
     }, [frame.data.values, data.columns, computedValue]);
 
-    function getQuarterAndMonthList() {
-        let startMonth = "Oct";
+    function getQuarterAndMonthList(startFiscalMonth) {
+        let startMonth = startFiscalMonth;
         let month = [
             "Jan",
             "Feb",
@@ -571,9 +596,53 @@ export const Gantt = observer(({ id, updateChart }: GanttProps) => {
                 startIndexTemp++;
             }
         });
-        let monthBasedQuarter = {};
-
-        console.log(quarterObject, "QuarterObject");
+        let monthBasedQuarter = [];
+        let lastMonthInQuarter = "";
+        month.forEach((item, index) => {
+            let monthExistsInQuarter = "";
+            for (let i = 0; i < 4; i++) {
+                if (
+                    quarterObject["Q" + (i + 1)].some(
+                        (qoItem) => item === qoItem,
+                    )
+                ) {
+                    monthExistsInQuarter = "Q" + (i + 1);
+                }
+            }
+            let quarterExistsInArray = monthBasedQuarter
+                .reverse()
+                .findIndex(
+                    (mbitem, mbindex) => monthExistsInQuarter === mbitem.name,
+                );
+            if (
+                quarterExistsInArray >= 0 &&
+                lastMonthInQuarter == monthExistsInQuarter
+            ) {
+                monthBasedQuarter[quarterExistsInArray]["month"] = [
+                    ...monthBasedQuarter[quarterExistsInArray]["month"],
+                    item,
+                ];
+            } else {
+                monthBasedQuarter = [
+                    ...monthBasedQuarter,
+                    {
+                        name: monthExistsInQuarter,
+                        month: [item],
+                        order: monthBasedQuarter.length + 1,
+                    },
+                ];
+            }
+            lastMonthInQuarter = monthExistsInQuarter;
+            // console.log(monthExistsInQuarter, quarterExistsInArray, 'monthBasedQuarter');
+        });
+        monthBasedQuarter.forEach((item, index) => {
+            item["colSpan"] = item.month.length;
+        });
+        monthBasedQuarter = monthBasedQuarter.sort(
+            (item, item1) => item.order - item1.order,
+        );
+        console.log(quarterObject, monthBasedQuarter, "QuarterObject");
+        return monthBasedQuarter;
     }
 
     useEffect(() => {
@@ -596,109 +665,168 @@ export const Gantt = observer(({ id, updateChart }: GanttProps) => {
         return chartToolTip;
     }
     console.log(dataOption, "dataOptionEcharts");
-    const rows = [
-        {
-            month1: "Jan",
-            month2: "Feb",
-            month3: "Mar",
+
+    const enableFiscalAxis =
+        dataOption["customSettings"]?.["gantttools"]?.["enableFiscalAxis"] ||
+        false;
+    const fiscalStartMonth =
+        dataOption["customSettings"]?.["gantttools"]?.["fiscalYearStart"] ||
+        "Jan";
+    const fiscalAxisBackgroundColor =
+        dataOption["customSettings"]?.["gantttools"]?.[
+            "fiscalAxisBackgroundColor"
+        ] || "#0471f0";
+    const quarterAndMonth = getQuarterAndMonthList(fiscalStartMonth);
+    const tableHeight = tableRef.current?.getBoundingClientRect()?.height
+        ? tableRef.current?.getBoundingClientRect()?.height
+        : 70;
+    let seriesName =
+        dataOption["customSettings"]?.["columnDetails"]?.["task"]?.name || "";
+    console.log("quarterandmonth", quarterAndMonth);
+    const onClickChart = {
+        //when contextmenu event is raised, default context menu made hidden, and custom component is shown
+        contextmenu: (params) => {
+            if (params.data) {
+                console.log(params, "params");
+                let taskColumn = params.data.name;
+                let parsedJson = JSON.parse(computedValue);
+                let taskName =
+                    parsedJson["series"][params.seriesIndex]["frameName"];
+                setContextMenu(
+                    contextMenu === null
+                        ? {
+                              mouseX: params.event.event.clientX,
+                              mouseY: params.event.event.clientY,
+                              value: {
+                                  label: taskName,
+                                  value: taskColumn,
+                              },
+                          }
+                        : // repeated contextmenu when it is already open closes it with Chrome 84 on Ubuntu
+                          // Other native context menus might behave different.
+                          // With this behavior we prevent contextmenu from the backdrop to re-locale existing context menus.
+                          null,
+                );
+                params.event.event.preventDefault();
+            } else {
+                params.event.event.preventDefault();
+            }
         },
-        {
-            month1: "Apr",
-            month2: "May",
-            month3: "Jun",
-        },
-        {
-            month1: "Jul",
-            month2: "Aug",
-            month3: "Sep",
-        },
-        {
-            month1: "Oct",
-            month2: "Nov",
-            month3: "Dec",
-        },
-    ];
-    let rows1 = [
-        {
-            name: "Frozen yoghurt",
-            calories: 159,
-            fat: 6.0,
-            carbs: 24,
-            protein: 4.0,
-        },
-    ];
-    getQuarterAndMonthList();
+    };
     return (
         <>
             <StyledMainContainer id={id}>
-                <Table aria-label="simple table">
-                    <TableHead>
-                        <TableRow>
-                            <StyledTableCell
-                                backgroundColor="#0471f0"
-                                size="small"
-                                colSpan={3}
-                                align="center"
-                            >
-                                Q1
-                            </StyledTableCell>
-                            {/* <StyledTableCell backgroundColor="#0471f0" size='small' align="right">Calories</StyledTableCell> */}
-                            <StyledTableCell
-                                backgroundColor="#0471f0"
-                                size="small"
-                                colSpan={3}
-                                align="center"
-                            >
-                                Q2
-                            </StyledTableCell>
-                            <StyledTableCell
-                                backgroundColor="#0471f0"
-                                size="small"
-                                colSpan={3}
-                                align="center"
-                            >
-                                Q3
-                            </StyledTableCell>
-                            <StyledTableCell
-                                backgroundColor="#0471f0"
-                                size="small"
-                                colSpan={3}
-                                align="center"
-                            >
-                                Q4
-                            </StyledTableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        <TableRow
-                            sx={{
-                                "&:last-child td, &:last-child th": {
-                                    border: "1px solid grey",
-                                },
+                {enableFiscalAxis && (
+                    <StyledContainer>
+                        <StyledDataSpan
+                            style={{
+                                backgroundColor: fiscalAxisBackgroundColor,
+                                height: tableHeight + "px",
+                                width: "50px",
+                                textAlign: "center",
+                                display: "flex",
+                                margin: "auto",
+                                alignContent: "space-around",
+                                flexWrap: "wrap",
+                                borderRadius: "5px",
+                                justifyContent: "center",
                             }}
                         >
-                            {rows.map((row, index) => (
-                                <>
-                                    <StyledTableCell
-                                        component="th"
-                                        scope="row"
+                            {seriesName}
+                        </StyledDataSpan>
+                        <Table aria-label="simple table" ref={tableRef}>
+                            <TableHead>
+                                <TableRow>
+                                    {quarterAndMonth.length &&
+                                        quarterAndMonth.map((item) => (
+                                            <StyledTableCell
+                                                backgroundColor={
+                                                    fiscalAxisBackgroundColor
+                                                }
+                                                size="small"
+                                                colSpan={item.colSpan}
+                                                align="center"
+                                            >
+                                                {item.name}
+                                            </StyledTableCell>
+                                        ))}
+                                    {/* <StyledTableCell backgroundColor="#0471f0" size='small' align="right">Calories</StyledTableCell> */}
+                                    {/* <StyledTableCell
+                                        backgroundColor="#0471f0"
                                         size="small"
+                                        colSpan={3}
+                                        align="center"
                                     >
-                                        {row.month1}
+                                        Q2
                                     </StyledTableCell>
-                                    <StyledTableCell size="small" align="right">
-                                        {row.month2}
+                                    <StyledTableCell
+                                        backgroundColor="#0471f0"
+                                        size="small"
+                                        colSpan={3}
+                                        align="center"
+                                    >
+                                        Q3
                                     </StyledTableCell>
-                                    <StyledTableCell size="small" align="right">
-                                        {row.month3}
-                                    </StyledTableCell>
-                                </>
-                            ))}
-                        </TableRow>
-                    </TableBody>
-                </Table>
+                                    <StyledTableCell
+                                        backgroundColor="#0471f0"
+                                        size="small"
+                                        colSpan={3}
+                                        align="center"
+                                    >
+                                        Q4
+                                    </StyledTableCell> */}
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                <TableRow
+                                    sx={{
+                                        "&:last-child td, &:last-child th": {
+                                            border: "1px solid grey",
+                                        },
+                                    }}
+                                >
+                                    {quarterAndMonth.length &&
+                                        quarterAndMonth.map((item) =>
+                                            item["month"].map((monthItem) => (
+                                                <StyledTableCell
+                                                    component={"td"}
+                                                    scope="row"
+                                                    size="small"
+                                                >
+                                                    {monthItem}
+                                                </StyledTableCell>
+                                            )),
+                                        )}
+                                    {/*rows.map((row, index) => (
+                                        <>
+                                            <StyledTableCell
+                                                component="th"
+                                                scope="row"
+                                                size="small"
+                                            >
+                                                {row.month1}
+                                            </StyledTableCell>
+                                            <StyledTableCell size="small" align="right">
+                                                {row.month2}
+                                            </StyledTableCell>
+                                            <StyledTableCell size="small" align="right">
+                                                {row.month3}
+                                            </StyledTableCell>
+                                        </>
+                                    ))*/}
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </StyledContainer>
+                )}
 
-                <ReactECharts option={dataOption} />
+                <ReactECharts option={dataOption} onEvents={onClickChart} />
+                <VizBlockContextMenu
+                    id={id}
+                    frame={frame}
+                    contextMenu={contextMenu}
+                    onClose={() => setContextMenu(null)}
+                />
             </StyledMainContainer>
         </>
     );

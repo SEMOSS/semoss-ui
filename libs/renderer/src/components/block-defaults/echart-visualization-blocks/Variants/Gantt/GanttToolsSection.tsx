@@ -17,6 +17,7 @@ import { CustomizeSymbol } from "./CustomizeSymbol";
 import { GanttLegend } from "./GanttLegend";
 import { GanttGroupView } from "./GanttGroupView";
 import { GanttDisplayValueLabels } from "./GanttDisplayValueLabels";
+import { GanttFiscal } from "./GanttFiscal";
 
 interface GanttToolsSectionProps {
     id: string;
@@ -59,6 +60,7 @@ export const GanttToolsSection = observer(({ id }: GanttToolsSectionProps) => {
                         <InfoOutlined />
                     </ListItemButton>
                 </ListItem>
+                {selectedList === "fiscalaxis" && <GanttFiscal id={id} />}
                 <ListItem disablePadding>
                     <ListItemButton
                         onClick={(e) =>

@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { Menu, MenuItem } from "@mui/material";
-import { useBlock, useFrame } from "@/hooks";
+import { useBlock, useFrame } from "../../../hooks";
 import { EchartVisualizationBlockDef } from "./VisualizationBlock";
 
 export interface VizBlockContextMenuProps {

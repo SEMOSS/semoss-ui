@@ -39,6 +39,11 @@ const StyledSpan = styled("span")<{ backgroundColor: string }>((props) => ({
     height: "15px",
     display: "flex",
 }));
+
+const StyledMainContainer = styled("div")(({}) => ({
+    padding: "0.5rem",
+    borderBottom: "1px solid #E6E6E6",
+}));
 const INITIAL_CUSTOM_STYLE = {
     dimension: "",
     symbol: "",
@@ -187,6 +192,24 @@ export const CustomizeSymbol = observer(({ id }: CustomizeSymbolProps) => {
             option["customSettings"]["gantttools"]?.["customizeSymbol"] || [];
         setAppliedSymbolData((prevAppliedSymbol) => customizeSettings);
     }, []);
+    function convertTimeZone(date) {
+        let currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        let dateConvertedToTimeZone = new Date(date).toLocaleString("en-US", {
+            timeZone: currentTimezone,
+        });
+
+        return (
+            new Date(dateConvertedToTimeZone).getFullYear() +
+            "-" +
+            (new Date(dateConvertedToTimeZone).getMonth() + 1 < 10
+                ? "0" + (new Date(dateConvertedToTimeZone).getMonth() + 1)
+                : new Date(dateConvertedToTimeZone).getMonth() + 1) +
+            "-" +
+            (new Date(dateConvertedToTimeZone).getDate() < 10
+                ? "0" + new Date(dateConvertedToTimeZone).getDate()
+                : new Date(dateConvertedToTimeZone).getDate())
+        );
+    }
     function updateFields(e, field, directValue = undefined) {
         setCustomizeSymbolData((prevSymbolData) => {
             return {
@@ -214,19 +237,12 @@ export const CustomizeSymbol = observer(({ id }: CustomizeSymbolProps) => {
     const showSymbolColor = customizeSymbolData.symbolColorSelected
         ? true
         : false;
+    dimensionInstance[dimensionSelected]?.forEach((item, index) => {
+        console.log(new Date(item).getTimezoneOffset());
+    });
     const dimensionInstanceToRender =
         dimensionInstance[dimensionSelected]?.map((item, index) => {
-            return (
-                new Date(item).getFullYear() +
-                "-" +
-                (new Date(item).getMonth() + 1 < 10
-                    ? "0" + (new Date(item).getMonth() + 1)
-                    : new Date(item).getMonth() + 1) +
-                "-" +
-                (new Date(item).getDate() < 10
-                    ? "0" + new Date(item).getDate()
-                    : new Date(item).getDate())
-            );
+            return convertTimeZone(item);
         }) || [];
     const dimensionNameSelected =
         dimensionList.find(
@@ -418,34 +434,39 @@ export const CustomizeSymbol = observer(({ id }: CustomizeSymbolProps) => {
         };
     });
     return (
-        <>
+        <StyledMainContainer>
             <StyledSubContainer>
                 <label htmlFor="applied-custom-style">
                     Applied (Add Multiple Symbol)
                 </label>
-                <StyledAppliedContainer>
-                    {updatedInstances.length > 0 &&
-                        updatedInstances.map((item, index) => (
-                            <Chip
-                                size="small"
-                                label={item.label}
-                                onClick={() =>
-                                    applyToCurrentCustom(item.itemData)
-                                }
-                                onDelete={() =>
-                                    deleteAppliedData(item.itemData)
-                                }
-                                icon={
-                                    <StyledSpan
-                                        backgroundColor={item.itemColor}
-                                    ></StyledSpan>
-                                }
-                            />
-                        ))}
-                    {updatedInstances.length == 0 && (
-                        <span>No Symbols Applied.</span>
-                    )}
-                </StyledAppliedContainer>
+                {updatedInstances.length > 0 && (
+                    <StyledAppliedContainer>
+                        {updatedInstances.length > 0 &&
+                            updatedInstances.map((item, index) => (
+                                <Chip
+                                    size="small"
+                                    label={item.label}
+                                    onClick={() =>
+                                        applyToCurrentCustom(item.itemData)
+                                    }
+                                    onDelete={() =>
+                                        deleteAppliedData(item.itemData)
+                                    }
+                                    icon={
+                                        <StyledSpan
+                                            backgroundColor={item.itemColor}
+                                        ></StyledSpan>
+                                    }
+                                />
+                            ))}
+                    </StyledAppliedContainer>
+                )}
+                {updatedInstances.length == 0 && (
+                    <TextField
+                        placeholder="No Symbol Applied"
+                        disabled={true}
+                    />
+                )}
             </StyledSubContainer>
             {dimensionListUpdated.length > 0 && (
                 <StyledSubContainer>
@@ -595,6 +616,6 @@ export const CustomizeSymbol = observer(({ id }: CustomizeSymbolProps) => {
                     Execute
                 </Button>
             </StyledSubContainer>
-        </>
+        </StyledMainContainer>
     );
 });
