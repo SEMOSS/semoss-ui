@@ -44,5 +44,5 @@ export interface DesignerMenuItem {
 export interface FilterCategory {
     id: string;
     enabled: boolean;
-    type: 'SECTION';
+    type: 'SECTION' | 'MOST_USED_COMPONENTS';
 }

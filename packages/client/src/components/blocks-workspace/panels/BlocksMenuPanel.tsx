@@ -136,12 +136,15 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 
     // get the rendered items
     const renderedItems: DesignerMenuItem[][] = useMemo(() => {
-        const filteredItems = anyEnabledFilter
-            ? sortedItems.filter(
-                  (sectionItems) =>
-                      filterCategoryMap[sectionItems[0].section].enabled,
-              )
-            : sortedItems;
+        const anySectionFilter = Object.values(filterCategoryMap).some(
+            (filter) => filter.type === 'SECTION' && filter.enabled,
+        );
+
+        const filteredItems = sortedItems.filter(
+            (sectionItems) =>
+                !anySectionFilter ||
+                filterCategoryMap[sectionItems[0].section].enabled,
+        );
 
         if (!search) {
             return filteredItems;
@@ -172,14 +175,23 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                 return acc;
             }, {});
             const sortedSections = Object.keys(uniqueSectionMap).sort();
-            return sortedSections.reduce((acc, curr) => {
-                acc[curr] = {
-                    id: curr,
-                    enabled: false,
-                    type: 'SECTION',
-                } satisfies FilterCategory;
-                return acc;
-            }, {});
+            return sortedSections.reduce(
+                (acc, curr) => {
+                    acc[curr] = {
+                        id: curr,
+                        enabled: false,
+                        type: 'SECTION',
+                    } satisfies FilterCategory;
+                    return acc;
+                },
+                {
+                    'Most Used Components': {
+                        id: 'Most Used Components',
+                        enabled: false,
+                        type: 'MOST_USED_COMPONENTS',
+                    } satisfies FilterCategory,
+                },
+            );
         });
     }, [items]);
 
