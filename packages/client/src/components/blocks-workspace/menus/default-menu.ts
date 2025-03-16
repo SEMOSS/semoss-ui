@@ -891,6 +891,32 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
+        section: SECTION_ELEMENT,
+        name: 'Icon',
+        helperText: 'Add an icon to your layout',
+        activeImage: BLOCK_IMAGES['ICON_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['ICON_HOVER'],
+        json: {
+            widget: 'icon',
+            data: {
+                style: {
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '50px',
+                    height: '50px',
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center center',
+                },
+                src: '',
+                title: '',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
         section: SECTION_TEXT,
         name: 'Logs',
         helperText: 'Show logs from the notebook',
