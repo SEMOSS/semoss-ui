@@ -48,6 +48,7 @@ export interface FilterCategory {
 }
 
 export interface BlockLocalStorageData {
+    widget: string;
     name: string;
     use_count: number;
     last_used: number; // timestamp

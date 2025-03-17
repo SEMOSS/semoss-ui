@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import { Badge } from '@mui/material';
+import { Search, Tune } from '@mui/icons-material';
+
 import {
     styled,
     Grid,
@@ -11,17 +14,16 @@ import {
     InputAdornment,
     IconButton,
 } from '@semoss/ui';
+
+import { AddBlocksMenuCard } from '@/components/designer';
+import { Panel } from '@/components/workspace';
+import { SECTION_ORDER } from '../menus/default-menu';
+import { BlocksMenuPanelFilterMenu } from './BlocksMenuPanelFilterMenu';
 import {
     BlockLocalStorageData,
     DesignerMenuItem,
     FilterCategory,
 } from '../menus/menu-types';
-import { AddBlocksMenuCard } from '@/components/designer';
-import { Panel } from '@/components/workspace';
-import { SECTION_ORDER } from '../menus/default-menu';
-import { Search, Tune } from '@mui/icons-material';
-import { BlocksMenuPanelFilterMenu } from './BlocksMenuPanelFilterMenu';
-import { Badge } from '@mui/material';
 
 const StyledTitle = styled('div')(({ theme }) => ({
     paddingTop: theme.spacing(1.5),
@@ -147,13 +149,13 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 
         // room to improve this logic in the future, but for now just keep 6 most used blocks
         const localStorageMap: Record<string, BlockLocalStorageData> =
-            JSON.parse(localStorage.getItem('blocksFilterMenuUseMap')) ?? {};
+            JSON.parse(localStorage.getItem('blocks--frequently-used')) ?? {};
         const mostUsedSet = Object.values(localStorageMap)
             .filter((item) => item.use_count)
             .sort((a, b) => a.use_count - b.use_count)
             .slice(0, 6)
             .reduce((acc, curr) => {
-                acc.add(curr.name);
+                acc.add(curr.widget);
                 return acc;
             }, new Set<string>());
 
@@ -167,7 +169,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
             } else if (filterCategoryMap['Most Used Components']?.enabled) {
                 // "Most Used Components" is enabled; return this section's items if they are in most used
                 return sectionItems.filter((item) =>
-                    mostUsedSet.has(item.name),
+                    mostUsedSet.has(item.json.widget),
                 );
             } else if (anySectionFilter) {
                 // There are section filters applied, but this section is not selected, return nothing

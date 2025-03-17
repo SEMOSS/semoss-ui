@@ -82,16 +82,16 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 
         // Track block in session storage
         localStorage.setItem(
-            'blocksFilterMenuUseMap',
+            'blocks--frequently-used',
             (() => {
                 const map: Record<string, BlockLocalStorageData> =
                     JSON.parse(
-                        localStorage.getItem('blocksFilterMenuUseMap'),
+                        localStorage.getItem('blocks--frequently-used'),
                     ) ?? {};
-                console.log(map);
-                map[item.name] = {
+                map[item.json.widget] = {
+                    widget: item.json.widget,
                     name: item.name,
-                    use_count: (map[item.name]?.use_count ?? 0) + 1,
+                    use_count: (map[item.json.widget]?.use_count ?? 0) + 1,
                     last_used: Date.now(),
                 };
                 return JSON.stringify(map);
