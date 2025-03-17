@@ -53,6 +53,7 @@ import OPEN_AI from '@/assets/img/OPEN_AI.png';
 import AZURE_OPEN_AI from '@/assets/img/OPEN_AI.png';
 import CLAUDE from '@/assets/img/CLAUDE_AI.png';
 import VERTEX from '@/assets/img/VERTEX_AI.png';
+import Amazon_Titan from '@/assets/img/Amazon_Titan.png';
 //Local Models
 import BRAIN from '@/assets/img/BRAIN.png';
 import META from '@/assets/img/META.png';
@@ -72,6 +73,11 @@ import REPLIT from '@/assets/img/REPLIT_CODE.png';
 // Functions
 import RESTAPI from '@/assets/img/rest-api.svg';
 import AWS_COMPREHEND from '@/assets/img/AWS_COMPREHEND.png';
+import AWS_POLLY from '@/assets/img/AWS_POLLY.png';
+import GOOGLE_SPEECH_TO_TEXT from '@/assets/img/GOOGLE_SPEECH_TO_TEXT.png';
+import GOOGLE_OCR from '@/assets/img/GOOGLE_OCR.png';
+import AWS_TEXTRACT from '@/assets/img/AWS_TEXTRACT.png';
+import AWS_TRANSCRIBE from '@/assets/img/AWS_TRANSCRIBE.png';
 //Vector
 import CHROMADB from '@/assets/img/CHROMADB.png';
 import PINECONE from '@/assets/img/PINECONE.png';
@@ -5245,7 +5251,7 @@ export const CONNECTION_OPTIONS = {
             {
                 name: 'AWS TITAN TEXT EMBEDDINGS',
                 disable: true,
-                icon: AMAZON_S3, //need to change the icon
+                icon: Amazon_Titan,
                 fields: [
                     {
                         fieldName: 'NAME',
@@ -5689,300 +5695,9 @@ export const CONNECTION_OPTIONS = {
     FUNCTION: {
         Function: [
             {
-                name: 'REST',
+                name: 'AWS Image Text Extraction',
                 disable: false,
-                icon: RESTAPI,
-                fields: [
-                    {
-                        fieldName: 'FUNCTION_TYPE',
-                        label: 'Function Type',
-                        defaultValue: 'REST',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'NAME',
-                        label: 'Catalog Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: {
-                            required: true,
-                            pattern: {
-                                value: /^[\w\-\s]+$/,
-                                message:
-                                    'Catalog names can only contain alphanumeric characters and dashes.',
-                            },
-                            custom: {
-                                value: 'CheckEngineName ( "[VALUE]") ;',
-                                message:
-                                    'This Catalog name has already been used, please try another.',
-                            },
-                        },
-                    },
-                    {
-                        fieldName: 'URL',
-                        label: 'URL',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'HTTP_METHOD',
-                        label: 'Http Method',
-                        defaultValue: 'POST',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'GET',
-                                    value: 'GET',
-                                },
-                                {
-                                    display: 'HEAD',
-                                    value: 'HEAD',
-                                },
-                                {
-                                    display: 'POST',
-                                    value: 'POST',
-                                },
-                                {
-                                    display: 'PUT',
-                                    value: 'PUT',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'CONTENT_TYPE',
-                        label: 'POST Message Body Type',
-                        defaultValue: 'json',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'json',
-                                    value: 'json',
-                                },
-                                {
-                                    display: 'x-www-form-urlencoded',
-                                    value: 'x-www-form-urlencoded',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'HEADERS',
-                        label: 'Http Headers',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: false },
-                    },
-                    {
-                        fieldName: 'FUNCTION_PARAMETERS',
-                        label: 'Function Parameters',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
-                        label: 'Function Required Parameters',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'FUNCTION_NAME',
-                        label: 'Function Name (metadata)',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'FUNCTION_DESCRIPTION',
-                        label: 'Function Description (metadata)',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                ],
-            },
-            {
-                name: 'Azure OCR',
-                disable: false,
-                icon: RESTAPI,
-                fields: [
-                    {
-                        fieldName: 'FUNCTION_TYPE',
-                        label: 'Function Type',
-                        defaultValue: 'AZUREOCR',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'NAME',
-                        label: 'Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'URL',
-                        label: 'URL',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'API_KEY',
-                        label: 'API Key',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'FUNCTION_NAME',
-                        label: 'Function Name (metadata)',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'FUNCTION_DESCRIPTION',
-                        label: 'Function Description (metadata)',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                ],
-            },
-            {
-                name: 'Azure speech to text',
-                disable: false,
-                icon: AZURE_SPEECH_TO_TEXT,
-                fields: [
-                    {
-                        fieldName: 'FUNCTION_TYPE',
-                        label: 'Function Type',
-                        defaultValue: 'AZURE SPEECH TO TEXT',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'NAME',
-                        label: 'Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'SPEECH_KEY',
-                        label: 'Speech Key',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'SPEECH_REGION',
-                        label: 'Speech region',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
-                        label: 'Function Required Parameters',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'FUNCTION_NAME',
-                        label: 'Function Name (metadata)',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'FUNCTION_DESCRIPTION',
-                        label: 'Function Description (metadata)',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                ],
-            },
-            {
-                name: 'AWS - Image Text Extraction',
-                disable: false,
-                icon: AMAZON_S3,
+                icon: AWS_TEXTRACT,
                 fields: [
                     {
                         fieldName: 'FUNCTION_TYPE',
@@ -6088,9 +5803,9 @@ export const CONNECTION_OPTIONS = {
                 ],
             },
             {
-                name: 'AWS POLLY',
+                name: 'AWS Polly',
                 disable: false,
-                icon: AMAZON_S3, //need to change the icon
+                icon: AWS_POLLY,
                 fields: [
                     {
                         fieldName: 'FUNCTION_TYPE',
@@ -6178,7 +5893,7 @@ export const CONNECTION_OPTIONS = {
             {
                 name: 'AWS Transcribe',
                 disable: false,
-                icon: AMAZON_S3,
+                icon: AWS_TRANSCRIBE,
                 fields: [
                     {
                         fieldName: 'FUNCTION_TYPE',
@@ -6361,9 +6076,134 @@ export const CONNECTION_OPTIONS = {
                 ],
             },
             {
+                name: 'Azure Document Intelligence',
+                disable: false,
+                icon: RESTAPI,
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue:
+                            'AZURE_DOCUMENT_INTELLIGENCE_CUSTOM_EMBEDDINGS',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'URL',
+                        label: 'URL',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'API_KEY',
+                        label: 'API Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
+                name: 'Azure Speech To Text',
+                disable: false,
+                icon: AZURE_SPEECH_TO_TEXT,
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'AZURE SPEECH TO TEXT',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'SPEECH_KEY',
+                        label: 'Speech Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'SPEECH_REGION',
+                        label: 'Speech region',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        label: 'Function Required Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
                 name: 'Google Speech To Text',
                 disable: false,
-                icon: GOOGLE_CLOUD, //need to change the icon
+                icon: GOOGLE_SPEECH_TO_TEXT,
                 fields: [
                     {
                         fieldName: 'FUNCTION_TYPE',
@@ -6442,7 +6282,7 @@ export const CONNECTION_OPTIONS = {
             {
                 name: 'Google OCR',
                 disable: false,
-                icon: GOOGLE_CLOUD, //need to change the icon
+                icon: GOOGLE_OCR,
                 fields: [
                     {
                         fieldName: 'FUNCTION_TYPE',
@@ -6540,6 +6380,153 @@ export const CONNECTION_OPTIONS = {
                         fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
                         label: 'Function Required Parameters',
                         defaultValue: '["isFilePresentInBucket","filePath"]',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
+                name: 'REST',
+                disable: false,
+                icon: RESTAPI,
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'REST',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
+                    },
+                    {
+                        fieldName: 'URL',
+                        label: 'URL',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'HTTP_METHOD',
+                        label: 'Http Method',
+                        defaultValue: 'POST',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'GET',
+                                    value: 'GET',
+                                },
+                                {
+                                    display: 'HEAD',
+                                    value: 'HEAD',
+                                },
+                                {
+                                    display: 'POST',
+                                    value: 'POST',
+                                },
+                                {
+                                    display: 'PUT',
+                                    value: 'PUT',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CONTENT_TYPE',
+                        label: 'POST Message Body Type',
+                        defaultValue: 'json',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'json',
+                                    value: 'json',
+                                },
+                                {
+                                    display: 'x-www-form-urlencoded',
+                                    value: 'x-www-form-urlencoded',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'HEADERS',
+                        label: 'Http Headers',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'FUNCTION_PARAMETERS',
+                        label: 'Function Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        label: 'Function Required Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
                         options: {
                             component: 'text-field',
                         },
@@ -14305,7 +14292,7 @@ export const ENGINE_IMAGES = {
         },
         {
             name: 'AWS_TITAN_TEXT_EMBEDDINGS',
-            icon: AMAZON_S3, //need to change the icon
+            icon: Amazon_Titan,
         },
         {
             name: 'Stablity AI',
@@ -14339,23 +14326,23 @@ export const ENGINE_IMAGES = {
         },
         {
             name: 'AWS - Image Text Extraction',
-            icon: AMAZON_S3, //need to change the icon
+            icon: AWS_TEXTRACT,
         },
         {
             name: 'AWS POLLY',
-            icon: AMAZON_S3, //need to change the icon
+            icon: AWS_POLLY,
         },
         {
             name: 'AWS Transcribe',
-            icon: AMAZON_S3, //need to change the icon
+            icon: AWS_TRANSCRIBE,
         },
         {
             name: 'Google Speech To Text',
-            icon: GOOGLE_CLOUD, //need to change the icon
+            icon: GOOGLE_SPEECH_TO_TEXT,
         },
         {
             name: 'Google OCR',
-            icon: GOOGLE_CLOUD, //need to change the icon
+            icon: GOOGLE_OCR,
         },
     ],
     VECTOR: [
