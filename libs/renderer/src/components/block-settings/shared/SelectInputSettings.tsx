@@ -37,7 +37,7 @@ interface SelectInputSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Options for select
      */
-    options: Array<{ value: string; display: string }>;
+    options: Array<{ value: string; display: string; isDefault?: boolean }>;
 
     /**
      * Whether an empty 'None' option should be in the select
@@ -111,6 +111,13 @@ export const SelectInputSettings = observer(
         useEffect(() => {
             setValue(computedValue);
         }, [computedValue]);
+
+        useEffect(() => {
+            const defaultOption = options.find((option) => option.isDefault);
+            if (defaultOption) {
+                setValue(defaultOption.value);
+            }
+        }, [options]);
 
         /**
          * Sync the data on change

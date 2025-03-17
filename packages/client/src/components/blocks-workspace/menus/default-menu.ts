@@ -573,6 +573,31 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
+        section: SECTION_ELEMENT,
+        name: 'Divider',
+        helperText: 'Separate content with a horizontal line',
+        activeImage: BLOCK_IMAGES['DIVIDER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['DIVIDER_HOVER'],
+        json: {
+            widget: 'divider',
+            data: {
+                style: {
+                    padding: '0px',
+                    width: '100%',
+                },
+                variant: 'fullWidth',
+                orientation: 'horizontal',
+                textAlign: 'center',
+                flexItem: false,
+                light: false,
+                text: '',
+                showText: false,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
         section: SECTION_INPUT,
         name: 'Button',
         helperText: 'Creates a click event',
@@ -620,6 +645,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_INPUT,
         name: 'Radio',
+        activeImage: BLOCK_IMAGES['RADIO_BUTTON_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['RADIO_BUTTON_HOVER'],
         helperText: 'User select between multiple items',
         json: {
             widget: 'radio',
@@ -647,6 +674,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_LAYOUT,
         name: 'Modal',
+        activeImage: BLOCK_IMAGES['MODAL_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['MODAL_HOVER'],
         helperText: 'Overlay to show more info or action to user',
         json: {
             widget: 'modal',
@@ -875,6 +904,32 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     alignItems: 'center',
                     width: '100%',
                     height: '200px',
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center center',
+                },
+                src: '',
+                title: '',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        name: 'Icon',
+        helperText: 'Add an icon to your layout',
+        activeImage: BLOCK_IMAGES['ICON_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['ICON_HOVER'],
+        json: {
+            widget: 'icon',
+            data: {
+                style: {
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '50px',
+                    height: '50px',
                     backgroundSize: 'contain',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center center',
@@ -1409,8 +1464,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_CHARTS,
         name: 'Area Chart with Gradient',
-        activeImage: BLOCK_IMAGES['AREA_CHART_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['AREA_CHART_HOVER'],
+        activeImage: BLOCK_IMAGES['AREA_CHART_GRADIENT_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['AREA_CHART_GRADIENT_HOVER'],
         helperText:
             'Show trends over time with cumulative data in a different style',
         json: {
@@ -1617,16 +1672,18 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_FLOWS,
         name: 'General Mermaid',
-        helperText: '',
+        activeImage: BLOCK_IMAGES['MERMAIDJS_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['MERMAIDJS_HOVER'],
+        helperText: 'Customize and display MermaidJS diagrams',
         json: {
             widget: 'mermaid',
             data: {
                 text: `graph TD;
-    A-->B;
-    A-->C;
-    B-->D;
-    C-->D;
-`,
+                        A-->B;
+                        A-->C;
+                        B-->D;
+                        C-->D;
+                    `,
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],

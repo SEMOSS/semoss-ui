@@ -1188,7 +1188,12 @@ export class MonolithStore {
      * @name getNonTeamUsers
      * @param groupId
      */
-    async getNonTeamUsers(groupId: string) {
+    async getNonTeamUsers(
+        groupId: string,
+        limit: number,
+        offset: number,
+        searchTerm: string,
+    ) {
         let url = `${Env.MODULE}/api/auth/admin/`;
 
         url += 'group/getNonGroupMembers';
@@ -1196,6 +1201,9 @@ export class MonolithStore {
         const params = {};
 
         groupId && (params['groupId'] = groupId);
+        limit && (params['limit'] = limit);
+        offset && (params['offset'] = offset);
+        searchTerm && (params['searchTerm'] = searchTerm);
 
         const response = await axios
             .get(url, {
@@ -1463,7 +1471,13 @@ export class MonolithStore {
      * @param offSet
      * @param searchTerm
      */
-    async getUnassignedTeamProjects(groupId: string, groupType: string) {
+    async getUnassignedTeamProjects(
+        groupId: string,
+        groupType: string,
+        limit: number,
+        offset: number,
+        searchTerm: string,
+    ) {
         let url = `${Env.MODULE}/api/auth/admin/`;
 
         url += 'group/getAvailableProjectsForGroup';
@@ -1472,6 +1486,9 @@ export class MonolithStore {
 
         groupId && (params['groupId'] = groupId);
         groupType && (params['groupType'] = groupType);
+        limit && (params['limit'] = limit);
+        offset && (params['offset'] = offset);
+        searchTerm && (params['searchTerm'] = searchTerm);
 
         const response = await axios
             .get(url, {
@@ -1660,7 +1677,13 @@ export class MonolithStore {
      * @param offSet
      * @param searchTerm
      */
-    async getUnassignedTeamEngines(groupId: string, groupType: string) {
+    async getUnassignedTeamEngines(
+        groupId: string,
+        groupType: string,
+        limit: number,
+        offset: number,
+        searchTerm: string,
+    ) {
         let url = `${Env.MODULE}/api/auth/admin/`;
 
         url += 'group/getAvailableEnginesForGroup';
@@ -1669,6 +1692,9 @@ export class MonolithStore {
 
         groupId && (params['groupId'] = groupId);
         groupType && (params['groupType'] = groupType);
+        limit && (params['limit'] = limit);
+        offset && (params['offset'] = offset);
+        searchTerm && (params['searchTerm'] = searchTerm);
 
         const response = await axios
             .get(url, {
@@ -2777,39 +2803,38 @@ export class MonolithStore {
         if (user.id) {
             newUserInfo += 'userId=' + encodeURIComponent(user.id);
         }
+        if (user.type) {
+            newUserInfo += '&type=' + encodeURIComponent(user.type);
+        }
+        if (user.type === 'NATIVE') {
+            newUserInfo += '&username=' + encodeURIComponent(user.id);
+        } else if (user.username) {
+            newUserInfo += '&username=' + encodeURIComponent(user.username);
+        }
+        if (user.password) {
+            newUserInfo += '&password=' + encodeURIComponent(user.password);
+        }
         if (user.admin) {
             newUserInfo += '&admin=' + encodeURIComponent(user.admin);
         }
         if (user.publisher) {
             newUserInfo += '&publisher=' + encodeURIComponent(user.publisher);
         }
-
         if (user.exporter) {
             newUserInfo += '&exporter=' + encodeURIComponent(user.exporter);
         }
-
         if (user.name) {
             newUserInfo += '&name=' + encodeURIComponent(user.name);
         }
-
         if (user.email) {
             newUserInfo += '&email=' + encodeURIComponent(user.email);
         }
-
         if (user.phone) {
             newUserInfo += '&phone=' + encodeURIComponent(user.phone);
         }
-
         if (user.phoneextension) {
             newUserInfo +=
                 '&phoneextension=' + encodeURIComponent(user.phoneextension);
-        }
-
-        if (user.type) {
-            newUserInfo += '&type=' + encodeURIComponent(user.type);
-        }
-        if (user.password) {
-            newUserInfo += '&password=' + encodeURIComponent(user.password);
         }
 
         if (user.model_usage_restriction) {

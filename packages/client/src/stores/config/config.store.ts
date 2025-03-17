@@ -63,6 +63,7 @@ interface ConfigStoreInterface {
         availableProviders: {
             provider: string;
             name: string;
+            label: string;
             isOauth: boolean;
         }[];
         /**

@@ -197,6 +197,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
+    const AUTOCOMPLETE_LIMIT = 10;
+    const AUTOCOMPLETE_OFFSET = 0;
 
     /** Engine Table State */
     const [enginesPage, setEnginesPage] = useState<number>(1);
@@ -221,6 +223,30 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
     const [hasEngines, setHasEngines] = useState(false);
 
     const limit = 5;
+    const [searchEngineInput, setSearchEngineInput] = useState<string>('');
+    const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
+    const [isScrollBottom, setIsScrollBottom] = useState(false);
+    const [canCollect, setCanCollect] = useState<boolean>(true);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [searchLoading, setSearchLoading] = useState(false);
+
+    const nearBottom = (
+        target: {
+            scrollHeight?: number;
+            scrollTop?: number;
+            clientHeight?: number;
+        } = {},
+    ) => {
+        const diff = Math.round(target.scrollHeight - target.scrollTop);
+        return diff - 25 <= target.clientHeight;
+    };
+
+    /**
+     * @name getAdditionalEngines
+     */
+    const getAdditionalEngines = () => {
+        setOffset(offset + AUTOCOMPLETE_LIMIT);
+    };
 
     const engineSearchRef = useRef(undefined);
 
@@ -253,6 +279,32 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                 setHasEngines(true);
             });
     }, []);
+
+    useEffect(() => {
+        if (isScrollBottom) {
+            if (canCollect) {
+                getAdditionalEngines();
+            }
+        }
+    }, [isScrollBottom]);
+
+    useEffect(() => {
+        if (searchEngineInput) {
+            setSearchLoading(true);
+        }
+        const timer = setTimeout(() => {
+            if (!offset) {
+                getEngines(false);
+            } else {
+                if (canCollect) {
+                    getEngines(false);
+                } else {
+                    getEngines(true);
+                }
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [offset, searchEngineInput]);
 
     /**
      * @name submitNonGroupEngines
@@ -394,7 +446,11 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
      * @name getEngines
      * @desc Gets all engines without credentials
      */
-    const getEngines = async () => {
+    const getEngines = async (reset: boolean) => {
+        if (isLoading) {
+            return;
+        }
+        setIsLoading(true);
         try {
             let response;
             // possibly add more db table columns / keys here to get id type for display under engines
@@ -402,10 +458,14 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
             response = await monolithStore.getUnassignedTeamEngines(
                 groupId,
                 groupType,
+                AUTOCOMPLETE_LIMIT,
+                offset,
+                searchEngineInput,
             );
 
             // ignore if there is no response
             if (response) {
+                let requests = reset ? [] : nonCredentialedEngines;
                 const engines = response.map((val) => {
                     return {
                         ...val,
@@ -415,15 +475,19 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                     };
                 });
 
-                setNonCredentialedEngines(engines);
+                requests = requests.concat(engines);
+                setNonCredentialedEngines(requests);
+                setCanCollect(engines.length === AUTOCOMPLETE_LIMIT);
+                setIsLoading(false);
+                setSearchLoading(false);
             }
         } catch (e) {
             notification.add({
                 color: 'error',
                 message: String(e),
             });
-        } finally {
-            setAddEngineModal(true);
+            setIsLoading(false);
+            setSearchLoading(false);
         }
     };
 
@@ -559,7 +623,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                                 <Button
                                     variant={'contained'}
                                     onClick={() => {
-                                        getEngines();
+                                        getEngines(true);
+                                        setAddEngineModal(true);
                                     }}
                                 >
                                     Add Engines{' '}
@@ -780,7 +845,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                             <Button
                                 variant={'contained'}
                                 onClick={() => {
-                                    getEngines();
+                                    getEngines(true);
+                                    setAddEngineModal(true);
                                 }}
                             >
                                 Add Engines
@@ -795,15 +861,20 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                     <StyledModalContentText>
                         <Autocomplete
                             label="Select Engine"
+                            loading={searchLoading}
                             multiple={true}
+                            freeSolo={false}
+                            filterOptions={(x) => x}
                             options={nonCredentialedEngines}
+                            includeInputInList={true}
                             limitTags={2}
                             getLimitTagsText={() =>
                                 ` +${selectedNonCredentialedEngines.length - 2}`
                             }
-                            value={[...selectedNonCredentialedEngines]}
+                            value={selectedNonCredentialedEngines}
+                            inputValue={searchEngineInput}
                             getOptionLabel={(option: any) => {
-                                return `${option.engine_name}`;
+                                return `${option.engine_name} ID: ${option.engine_id}`;
                             }}
                             isOptionEqualToValue={(option, value) => {
                                 return option.engine_name === value.engine_name;
@@ -812,6 +883,23 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                                 setSelectedNonCredentialedEngines([
                                     ...newValue,
                                 ]);
+                            }}
+                            ListboxProps={{
+                                onScroll: ({ target }) =>
+                                    setIsScrollBottom(
+                                        nearBottom(
+                                            target as {
+                                                scrollHeight?: number;
+                                                scrollTop?: number;
+                                                clientHeight?: number;
+                                            },
+                                        ),
+                                    ),
+                            }}
+                            onInputChange={(event, newValue) => {
+                                setSearchEngineInput(newValue);
+                                setOffset(0);
+                                setNonCredentialedEngines([]);
                             }}
                         />
 
@@ -1118,7 +1206,11 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                 <Modal.Actions>
                     <Button
                         variant="outlined"
-                        onClick={() => setAddEngineModal(false)}
+                        onClick={() => {
+                            setAddEngineModal(false);
+                            setOffset(0);
+                            setNonCredentialedEngines([]);
+                        }}
                     >
                         Cancel
                     </Button>
