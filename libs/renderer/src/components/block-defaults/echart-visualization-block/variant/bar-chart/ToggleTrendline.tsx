@@ -277,7 +277,6 @@ export const ToggleTrendline = observer(
             }, 300);
         }
         const trendlineData = (
-            // <div style={{ width: "100%", display: "block" }}>
             <StyledAxis>
                 <StyledAxisColDiv display="flex" justifyContent="flex-start">
                     <Typography variant="body2" color="secondary">
@@ -314,7 +313,6 @@ export const ToggleTrendline = observer(
                         Update TrendLine
                     </Button>
                 </StyledAxisDiv>
-                {/* // </div> */}
             </StyledAxis>
         );
         return <>{trendlineData}</>;

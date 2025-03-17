@@ -47,18 +47,6 @@ const StyledAxis = styled("div")<{
     flexDirection: "row",
 }));
 
-// const StyledAxisColDiv = styled("div")<{
-//     display?: string;
-//     justifyContent: string;
-// }>(({ theme, display, justifyContent }) => ({
-//     display: display ?? undefined,
-//     justifyContent: justifyContent ?? undefined,
-//     flexDirection: "column",
-//     padding: "0.5rem",
-//     position: "relative",
-//     right: "3px",
-// }));
-
 const StyledAxisColDiv = styled("div")<{
     display?: string;
     justifyContent: string;

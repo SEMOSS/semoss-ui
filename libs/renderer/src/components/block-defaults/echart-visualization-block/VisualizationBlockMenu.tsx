@@ -31,7 +31,8 @@ const StyledToolsSection = styled("div")(() => ({
 }));
 const StyledStack = styled(Stack)(() => ({
     ">.MuiBox-root": {
-        width: "100%",
+        width: "90%",
+        margin: "auto",
     },
 }));
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
@@ -41,6 +42,7 @@ const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
     alignItems: "center",
     padding: "0px 3px",
     width: "100%",
+    margin: "0 auto",
     display: "flex",
     justifyContent: "space-between",
     ">.MuiTabs-scroller": {

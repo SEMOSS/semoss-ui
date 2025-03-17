@@ -27,7 +27,6 @@ const StyledSelect = styled(Select)(() => ({
 //a main section field with custom styling
 const StyledMainSection = styled("div")(() => ({
     display: "block",
-    // padding: "0.5rem",
     width: "100%",
 }));
 //a sub section field with custom styling
