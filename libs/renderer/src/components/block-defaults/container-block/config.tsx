@@ -7,6 +7,7 @@ import {
     buildDimensionsSection,
     buildBorderSection,
     buildColorSection,
+    buildPositionSection,
 } from "../block-defaults.shared";
 
 import { ContainerBlockDef, ContainerBlock } from "./ContainerBlock";
@@ -35,6 +36,7 @@ export const config: BlockConfig<ContainerBlockDef> = {
     contentMenu: [],
     styleMenu: [
         buildLayoutSection(),
+        buildPositionSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
         buildColorSection(),
