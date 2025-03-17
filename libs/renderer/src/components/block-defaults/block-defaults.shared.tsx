@@ -21,6 +21,7 @@ import {
     VerticalAlignBottom,
     VerticalAlignCenter,
     VerticalAlignTop,
+    RestartAlt,
 } from "@mui/icons-material";
 import { DistinctPathButtonGroupSettings } from "../block-settings/shared/DistinctPathButtonGroupSettings";
 import { SelectInputSettings } from "../block-settings/shared/SelectInputSettings";
@@ -240,6 +241,24 @@ export const buildColorSection = () => ({
                     id={id}
                     label="Background Color"
                     path="style.backgroundColor"
+                />
+            ),
+        },
+        {
+            description: "Reset Background Color",
+            render: ({ id }) => (
+                <ButtonGroupSettings
+                    id={id}
+                    path="style.backgroundColor"
+                    label="Reset Color"
+                    options={[
+                        {
+                            value: "#FFFFFF00",
+                            icon: RestartAlt,
+                            title: "Reset",
+                            isDefault: true,
+                        },
+                    ]}
                 />
             ),
         },
