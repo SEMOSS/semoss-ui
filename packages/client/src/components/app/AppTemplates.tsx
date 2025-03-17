@@ -8,6 +8,10 @@ import {
     AskLLMTemplate,
     BlocksGuideTemplate,
     LandingPageTemplate,
+    CreateDiabetesTemplate,
+    DisplayDiabetesTemplate,
+    DeleteDiabetesTemplate,
+    UpdateDiabetesTemplate,
 } from './templates';
 
 const DEFAULT_TEMPLATE = [
@@ -15,6 +19,10 @@ const DEFAULT_TEMPLATE = [
     AskLLMTemplate,
     AskCSVTemplate,
     BlocksGuideTemplate,
+    CreateDiabetesTemplate,
+    DisplayDiabetesTemplate,
+    DeleteDiabetesTemplate,
+    UpdateDiabetesTemplate,
 ];
 
 // const StyledFilter = styled('div')(({ theme }) => ({
