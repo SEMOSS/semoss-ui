@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { Navigate } from 'react-router-dom';
+
 import {
     styled,
     useNotification,
@@ -6,19 +9,11 @@ import {
     Button,
     TextField,
     Select,
-    Stack,
+    Table,
     TextArea,
 } from '@semoss/ui';
-import {
-    Table,
-    TableHead,
-    TableBody,
-    TableRow,
-    TableCell,
-} from '@mui/material';
+
 import { useRootStore, useSettings } from '@/hooks';
-import { Controller, useForm } from 'react-hook-form';
-import { Navigate } from 'react-router-dom';
 
 const StyledContainer = styled('div')(() => ({
     display: 'flex',
@@ -198,26 +193,32 @@ export const AdminQueryPage = () => {
         } else if (output.type === 'table') {
             return (
                 <Table sx={{ padding: '10px' }}>
-                    <TableHead>
-                        <TableRow>
+                    <Table.Head>
+                        <Table.Row>
                             {output.value.headers.map((header, index) => (
-                                <TableCell key={index} sx={{ padding: '10px' }}>
+                                <Table.Cell
+                                    key={index}
+                                    sx={{ padding: '10px' }}
+                                >
                                     {header}
-                                </TableCell>
+                                </Table.Cell>
                             ))}
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
+                        </Table.Row>
+                    </Table.Head>
+                    <Table.Body>
                         {output.value.values.map((row, index) => (
-                            <TableRow key={index}>
+                            <Table.Row key={index}>
                                 {row.map((column, i) => (
-                                    <TableCell key={i} sx={{ padding: '10px' }}>
+                                    <Table.Cell
+                                        key={i}
+                                        sx={{ padding: '10px' }}
+                                    >
                                         {column}
-                                    </TableCell>
+                                    </Table.Cell>
                                 ))}
-                            </TableRow>
+                            </Table.Row>
                         ))}
-                    </TableBody>
+                    </Table.Body>
                 </Table>
             );
         }
