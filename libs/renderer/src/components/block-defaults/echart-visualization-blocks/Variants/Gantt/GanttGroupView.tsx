@@ -5,6 +5,8 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { getValueByPath } from "@/utility";
 import { styled, Switch } from "@semoss/ui";
+import { BlockDef } from "@/store";
+import { PathValue } from "@/types";
 
 interface GanttGroupViewProps {
     id: string;
@@ -16,73 +18,81 @@ const StyledMainContainer = styled("div")(({}) => ({
 const StyledLabel = styled("label")(({}) => ({
     paddingLeft: "10px",
 }));
-export const GanttGroupView = observer(({ id }: GanttGroupViewProps) => {
-    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
-    const [groupViewData, setGroupViewData] = useState(false);
-    const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
-    const computedValue = useMemo(() => {
-        return computed(() => {
-            if (!data) {
-                return "";
-            }
-            const v = getValueByPath(data, "option");
-            if (typeof v === "undefined") {
-                return "";
-            } else if (typeof v === "string") {
-                return v;
-            }
-            return JSON.stringify(v, null, 2);
-        });
-    }, [data, "option"]).get();
-    useEffect(() => {
-        let parsedJson = JSON.parse(computedValue);
-        if (parsedJson["customSettings"]?.["gantttools"]?.["showGroupView"]) {
-            setGroupViewData((prevGroupViewData) => {
-                return parsedJson["customSettings"]["gantttools"][
-                    "showGroupView"
-                ];
+export const GanttGroupView = observer(
+    <D extends BlockDef = BlockDef>({ id, path }) => {
+        const { data, setData } =
+            useBlockSettings<EchartVisualizationBlockDef>(id);
+        const [groupViewData, setGroupViewData] = useState(false);
+        const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+        const computedValue = useMemo(() => {
+            return computed(() => {
+                if (!data) {
+                    return "";
+                }
+                const v = getValueByPath(data, "option");
+                if (typeof v === "undefined") {
+                    return "";
+                } else if (typeof v === "string") {
+                    return v;
+                }
+                return JSON.stringify(v, null, 2);
             });
-        }
-    }, []);
-    function updateFields(e) {
-        setGroupViewData((prevGroupViewData) => e.target.checked);
-        let option = JSON.parse(computedValue);
-        option = {
-            ...option,
-            ["customSettings"]: {
-                ...option["customSettings"],
-                ["gantttools"]: {
-                    ...option["customSettings"]["gantttools"],
-                    ["showGroupView"]: e.target.checked,
-                },
-            },
-        };
-        runStateUpdateCustom(option);
-    }
-    function runStateUpdateCustom(option) {
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
-        }
-        timeoutRef.current = setTimeout(() => {
-            try {
-                setData("option", option);
-            } catch (e) {
-                console.log(e);
+        }, [data, "option"]).get();
+        useEffect(() => {
+            let parsedJson = JSON.parse(computedValue);
+            if (
+                parsedJson["customSettings"]?.["gantttools"]?.["showGroupView"]
+            ) {
+                setGroupViewData((prevGroupViewData) => {
+                    return parsedJson["customSettings"]["gantttools"][
+                        "showGroupView"
+                    ];
+                });
             }
-        }, 300);
-    }
-    return (
-        <>
-            <StyledMainContainer>
-                <Switch
-                    checked={groupViewData}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        updateFields(e)
-                    }
-                />
-                <StyledLabel>Show Group View</StyledLabel>
-            </StyledMainContainer>
-        </>
-    );
-});
+        }, []);
+        function updateFields(e) {
+            setGroupViewData((prevGroupViewData) => e.target.checked);
+            let option = JSON.parse(computedValue);
+            option = {
+                ...option,
+                ["customSettings"]: {
+                    ...option["customSettings"],
+                    ["gantttools"]: {
+                        ...option["customSettings"]["gantttools"],
+                        ["showGroupView"]: e.target.checked,
+                    },
+                },
+            };
+            runStateUpdateCustom(option);
+        }
+        function runStateUpdateCustom(option) {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+            }
+            timeoutRef.current = setTimeout(() => {
+                try {
+                    setData(
+                        "option",
+                        option as PathValue<D["data"], typeof path>,
+                    );
+                } catch (e) {
+                    console.log(e);
+                }
+            }, 300);
+        }
+        return (
+            <>
+                <StyledMainContainer>
+                    <Switch
+                        checked={groupViewData}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            updateFields(e)
+                        }
+                    />
+                    <StyledLabel>Show Group View</StyledLabel>
+                </StyledMainContainer>
+            </>
+        );
+    },
+);

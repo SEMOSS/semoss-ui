@@ -10,6 +10,8 @@ import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { Autocomplete } from "@mui/material";
 import { Button, Select, TextField } from "@semoss/ui";
 import { Label, Sync } from "@mui/icons-material";
+import { BlockDef } from "@/store";
+import { PathValue } from "@/types";
 
 interface GanttFrameSectionProps {
     id: string;
@@ -25,437 +27,420 @@ const StyledDataSection = styled("div")(() => ({
 const StyledSelect = styled(Select)(() => ({
     width: "100%",
 }));
-export const GanttFrameSection = observer(({ id }: GanttFrameSectionProps) => {
-    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
-    const [columnsData, setColumnsData] = useState([]);
-    const [framesData, setFramesData] = useState({
-        task: "",
-        startdate: "",
-        enddate: "",
-        taskgroup: "",
-        taskprogress: "",
-        milestone: "",
-        tooltip: [],
-    });
-    // track the ref to debounce the input
-    const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
-
-    // get all of the frames
-    const getFrames = useBlocksPixel<string[]>("GetFrames();", {
-        data: [],
-    });
-    const options = getFrames.status === "SUCCESS" ? getFrames.data : [];
-    // using frameheaders hook to get the header details for the selected frame
-    const frameHeaders = useFrameHeaders(data.frame?.name);
-    const columns = frameHeaders.data.list.map((item) => {
-        return {
-            name: item.alias,
-            selector: item.header,
-            width: undefined,
-        };
-    });
-    let columnsSelected = data.columns;
-
-    //additional function to trigger a sync, when a frame is newly selected
-    // function syncHeaders() {
-    //     if(timeoutRef.current){
-    //         clearTimeout(timeoutRef.current);
-    //         timeoutRef.current = null;
-    //     }
-    //     timeoutRef.current = setTimeout(()=>{
-    //         const columns = frameHeaders.data.list.map((item) => {
-    //             return {
-    //                 name: item.alias,
-    //                 selector: item.header,
-    //                 width: undefined,
-    //             };
-    //         });
-    //         console.log('columns', columns);
-    //         setColumnsData((prevColumns) => {
-    //             return columns;
-    //         });
-    //     },100);
-    // }
-
-    useEffect(() => {
-        let optionData = data.option;
-        if (
-            optionData.hasOwnProperty("customSettings") &&
-            optionData["customSettings"].hasOwnProperty("columnDetails")
-        ) {
-            let columnDetails =
-                optionData["customSettings"]["columnDetails"] || {};
-            let fieldsState = { ...framesData };
-            Object.keys(columnDetails).forEach((item, index) => {
-                if (
-                    typeof columnDetails[item] === "object" &&
-                    Array.isArray(columnDetails[item])
-                ) {
-                    fieldsState[item] = columnDetails[item].map(
-                        (item) => item.selector,
-                    );
-                } else {
-                    fieldsState[item] = columnDetails[item]["selector"];
-                }
-            });
-            console.log(fieldsState, "fieldsState", framesData);
-            setFramesData((prevFramesData) => {
-                return {
-                    ...prevFramesData,
-                    ...fieldsState,
-                };
-            });
-        }
-    }, []);
-
-    useEffect(() => {
-        if (
-            framesData.task != "" &&
-            framesData.startdate != "" &&
-            framesData.enddate != "" &&
-            columns.length
-        ) {
-            let columnsToSet = [];
-            let columnsObject = {};
-
-            let columnsTask = columns.find(
-                (item) => item.selector === framesData.task,
-            );
-            if (columnsTask.hasOwnProperty("name")) {
-                columnsToSet.push(columnsTask);
-                columnsObject["task"] = columnsTask;
-            }
-            let columnsStartDate = columns.find(
-                (item) => item.selector === framesData.startdate,
-            );
-            if (columnsStartDate.hasOwnProperty("name")) {
-                columnsToSet.push(columnsStartDate);
-                columnsObject["startdate"] = columnsStartDate;
-            }
-            let columnsEndDate = columns.find(
-                (item) => item.selector === framesData.enddate,
-            );
-            if (columnsEndDate.hasOwnProperty("name")) {
-                columnsToSet.push(columnsEndDate);
-                columnsObject["enddate"] = columnsEndDate;
-            }
-            if (framesData?.taskgroup !== "") {
-                let columnsTaskGroup = columns.find(
-                    (item) => item.selector === framesData.taskgroup,
-                );
-                console.log("framesData", framesData, columnsTaskGroup);
-                if (
-                    columnsTaskGroup != undefined &&
-                    columnsTaskGroup.hasOwnProperty("name")
-                ) {
-                    columnsToSet.push(columnsTaskGroup);
-                    columnsObject["taskgroup"] = columnsTaskGroup;
-                }
-            }
-            if (framesData?.taskprogress !== "") {
-                let columnsTaskProgress = columns.find(
-                    (item) => item.selector === framesData.taskprogress,
-                );
-                console.log("framesData", framesData, columnsTaskProgress);
-                if (
-                    columnsTaskProgress != undefined &&
-                    columnsTaskProgress.hasOwnProperty("name")
-                ) {
-                    columnsToSet.push(columnsTaskProgress);
-                    columnsObject["taskprogress"] = columnsTaskProgress;
-                }
-            }
-            if (framesData.milestone !== "") {
-                let columnsMileStone = columns.find(
-                    (item) => item.selector === framesData.milestone,
-                );
-                if (
-                    columnsMileStone != undefined &&
-                    columnsMileStone.hasOwnProperty("name")
-                ) {
-                    columnsToSet.push(columnsMileStone);
-                    columnsObject["milestone"] = columnsMileStone;
-                }
-            }
-            if (framesData?.tooltip?.length) {
-                let columnsToolTip = columns.filter((item) =>
-                    framesData.tooltip.includes(item.selector),
-                );
-                console.log("selectedTooltip", columnsToolTip);
-                if (columnsToolTip.length) {
-                    columnsToSet = [...columnsToSet, ...columnsToolTip];
-                    columnsObject["tooltip"] = columnsToolTip;
-                }
-            }
-            let tempDataSet = new Set(columnsToSet);
-            columnsToSet = Array.from(tempDataSet);
-            let columnsIndexToSet = getColumnIndexToSetData(
-                columnsObject,
-                columnsToSet,
-            );
-            setData("columns", columnsToSet);
-            if (
-                data.option.hasOwnProperty("customSettings") &&
-                data.option["customSettings"].hasOwnProperty("columnDetails")
-            ) {
-                let option = data.option;
-                option = {
-                    ...option,
-                    ["customSettings"]: {
-                        ...option["customSettings"],
-                        ["columnDetails"]: {
-                            ...columnsObject,
-                        },
-                        ["columnIndexDetails"]: {
-                            ...columnsIndexToSet,
-                        },
-                    },
-                };
-                setData("option", option);
-            }
-        }
-    }, [framesData]);
-
-    function getColumnIndexToSetData(columnsObject, columnsToSet) {
-        let colIndex = {};
-        Object.keys(columnsObject).forEach((item, index) => {
-            if (
-                typeof columnsObject[item] === "object" &&
-                Array.isArray(columnsObject[item])
-            ) {
-                colIndex[item] = [];
-                columnsObject[item].forEach((colObjItem, colObjIndex) => {
-                    let indexToUpdate = columnsToSet.findIndex(
-                        (colSetItem, colSetIndex) =>
-                            colSetItem.selector === colObjItem.selector,
-                    );
-                    colIndex[item].push(indexToUpdate);
-                });
-                colIndex[item].sort();
-            } else {
-                colIndex[item] = columnsToSet.findIndex(
-                    (colSetItem, colSetIndex) =>
-                        colSetItem.selector === columnsObject[item].selector,
-                );
-            }
+export const GanttFrameSection = observer(
+    <D extends BlockDef = BlockDef>({ id, path }) => {
+        const { data, setData } =
+            useBlockSettings<EchartVisualizationBlockDef>(id);
+        const [columnsData, setColumnsData] = useState([]);
+        const [framesData, setFramesData] = useState({
+            task: "",
+            startdate: "",
+            enddate: "",
+            taskgroup: "",
+            taskprogress: "",
+            milestone: "",
+            tooltip: [],
         });
-        console.log(colIndex, "colIndex");
-        return colIndex;
-    }
+        // track the ref to debounce the input
+        const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-    function updateFields(fieldName, event) {
-        setFramesData((prevFrameData) => {
+        // get all of the frames
+        const getFrames = useBlocksPixel<string[]>("GetFrames();", {
+            data: [],
+        });
+        const options = getFrames.status === "SUCCESS" ? getFrames.data : [];
+        // using frameheaders hook to get the header details for the selected frame
+        const frameHeaders = useFrameHeaders(data.frame?.name);
+        const columns = frameHeaders.data.list.map((item) => {
             return {
-                ...prevFrameData,
-                [fieldName]: event.target.value,
+                name: item.alias,
+                selector: item.header,
+                width: undefined,
             };
         });
-        // setData('columns',);
-    }
+        let columnsSelected = data.columns;
 
-    return (
-        <StyledMainContainer>
-            <StyledFrameSection>
-                <Autocomplete
-                    fullWidth
-                    id="Echart-Frame"
-                    multiple={false}
-                    disabled={getFrames.status !== "SUCCESS"}
-                    value={data.frame?.name}
-                    options={options}
-                    getOptionLabel={(option) => {
-                        return option;
-                    }}
-                    onChange={(_, value) => {
-                        // update the frame
-                        setData("frame.name", value);
-                    }}
-                    freeSolo={false}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            placeholder="Select frame"
-                            size="small"
-                            variant="outlined"
-                        />
-                    )}
-                />
-            </StyledFrameSection>
-            <StyledDataSection>
-                <label htmlFor="task-field">Task</label>
-                <StyledSelect
-                    id="task-field"
-                    label="Select X Axis Field"
-                    SelectProps={{
-                        multiple: false,
-                    }}
-                    value={framesData.task}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        updateFields("task", e)
-                    }
-                >
-                    <Select.Item key="-1" value="">
-                        Select X Axis Field
-                    </Select.Item>
-                    {columns?.map((label, index) => {
-                        return (
-                            <Select.Item value={label.selector} key={index}>
-                                {label.name}
-                            </Select.Item>
+        useEffect(() => {
+            let optionData = data.option;
+            if (
+                optionData.hasOwnProperty("customSettings") &&
+                optionData["customSettings"].hasOwnProperty("columnDetails")
+            ) {
+                let columnDetails =
+                    optionData["customSettings"]["columnDetails"] || {};
+                let fieldsState = { ...framesData };
+                Object.keys(columnDetails).forEach((item, index) => {
+                    if (
+                        typeof columnDetails[item] === "object" &&
+                        Array.isArray(columnDetails[item])
+                    ) {
+                        fieldsState[item] = columnDetails[item].map(
+                            (item) => item.selector,
                         );
-                    })}
-                </StyledSelect>
-            </StyledDataSection>
-            <StyledDataSection>
-                <label htmlFor="start-date-field">Start Date</label>
-                <StyledSelect
-                    id="start-date-field"
-                    label="Select Start Date"
-                    SelectProps={{
-                        multiple: false,
-                    }}
-                    value={framesData.startdate}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        updateFields("startdate", e)
+                    } else {
+                        fieldsState[item] = columnDetails[item]["selector"];
                     }
-                >
-                    <Select.Item key="-1" value="">
-                        Select Start Date
-                    </Select.Item>
-                    {columns?.map((label, index) => {
-                        return (
-                            <Select.Item value={label.selector} key={index}>
-                                {label.name}
-                            </Select.Item>
-                        );
-                    })}
-                </StyledSelect>
-            </StyledDataSection>
-            <StyledDataSection>
-                <label htmlFor="end-date-field">End Date</label>
-                <StyledSelect
-                    id="end-date-field"
-                    label="Select End Date"
-                    SelectProps={{
-                        multiple: false,
-                    }}
-                    value={framesData.enddate}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        updateFields("enddate", e)
+                });
+                setFramesData((prevFramesData) => {
+                    return {
+                        ...prevFramesData,
+                        ...fieldsState,
+                    };
+                });
+            }
+        }, []);
+
+        useEffect(() => {
+            if (
+                framesData.task != "" &&
+                framesData.startdate != "" &&
+                framesData.enddate != "" &&
+                columns.length
+            ) {
+                let columnsToSet = [];
+                let columnsObject = {};
+
+                let columnsTask = columns.find(
+                    (item) => item.selector === framesData.task,
+                );
+                if (columnsTask.hasOwnProperty("name")) {
+                    columnsToSet.push(columnsTask);
+                    columnsObject["task"] = columnsTask;
+                }
+                let columnsStartDate = columns.find(
+                    (item) => item.selector === framesData.startdate,
+                );
+                if (columnsStartDate.hasOwnProperty("name")) {
+                    columnsToSet.push(columnsStartDate);
+                    columnsObject["startdate"] = columnsStartDate;
+                }
+                let columnsEndDate = columns.find(
+                    (item) => item.selector === framesData.enddate,
+                );
+                if (columnsEndDate.hasOwnProperty("name")) {
+                    columnsToSet.push(columnsEndDate);
+                    columnsObject["enddate"] = columnsEndDate;
+                }
+                if (framesData?.taskgroup !== "") {
+                    let columnsTaskGroup = columns.find(
+                        (item) => item.selector === framesData.taskgroup,
+                    );
+                    if (
+                        columnsTaskGroup != undefined &&
+                        columnsTaskGroup.hasOwnProperty("name")
+                    ) {
+                        columnsToSet.push(columnsTaskGroup);
+                        columnsObject["taskgroup"] = columnsTaskGroup;
                     }
-                >
-                    <Select.Item key="-1" value="">
-                        Select End Date
-                    </Select.Item>
-                    {columns?.map((label, index) => {
-                        return (
-                            <Select.Item value={label.selector} key={index}>
-                                {label.name}
-                            </Select.Item>
-                        );
-                    })}
-                </StyledSelect>
-            </StyledDataSection>
-            <StyledDataSection>
-                <label htmlFor="task-group-field">Task Group</label>
-                <StyledSelect
-                    id="task-group-field"
-                    label="Select Task Group"
-                    SelectProps={{
-                        multiple: false,
-                    }}
-                    value={framesData.taskgroup}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        updateFields("taskgroup", e)
+                }
+                if (framesData?.taskprogress !== "") {
+                    let columnsTaskProgress = columns.find(
+                        (item) => item.selector === framesData.taskprogress,
+                    );
+                    if (
+                        columnsTaskProgress != undefined &&
+                        columnsTaskProgress.hasOwnProperty("name")
+                    ) {
+                        columnsToSet.push(columnsTaskProgress);
+                        columnsObject["taskprogress"] = columnsTaskProgress;
                     }
-                >
-                    <Select.Item key="-1" value="">
-                        Select Task Group
-                    </Select.Item>
-                    {columns?.map((label, index) => {
-                        return (
-                            <Select.Item value={label.selector} key={index}>
-                                {label.name}
-                            </Select.Item>
-                        );
-                    })}
-                </StyledSelect>
-            </StyledDataSection>
-            <StyledDataSection>
-                <label htmlFor="task-progress-field">Task Progress</label>
-                <StyledSelect
-                    id="task-progress-field"
-                    label="Select Task Progress"
-                    SelectProps={{
-                        multiple: false,
-                    }}
-                    value={framesData.taskprogress}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        updateFields("taskprogress", e)
+                }
+                if (framesData.milestone !== "") {
+                    let columnsMileStone = columns.find(
+                        (item) => item.selector === framesData.milestone,
+                    );
+                    if (
+                        columnsMileStone != undefined &&
+                        columnsMileStone.hasOwnProperty("name")
+                    ) {
+                        columnsToSet.push(columnsMileStone);
+                        columnsObject["milestone"] = columnsMileStone;
                     }
-                >
-                    <Select.Item key="-1" value="">
-                        Select Task Progress
-                    </Select.Item>
-                    {columns?.map((label, index) => {
-                        return (
-                            <Select.Item value={label.selector} key={index}>
-                                {label.name}
-                            </Select.Item>
-                        );
-                    })}
-                </StyledSelect>
-            </StyledDataSection>
-            <StyledDataSection>
-                <label htmlFor="milestone-field">MileStone</label>
-                <StyledSelect
-                    id="milestone-field"
-                    label="Select MileStone"
-                    SelectProps={{
-                        multiple: false,
-                    }}
-                    value={framesData.milestone}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        updateFields("milestone", e)
+                }
+                if (framesData?.tooltip?.length) {
+                    let columnsToolTip = columns.filter((item) =>
+                        framesData.tooltip.includes(item.selector),
+                    );
+                    if (columnsToolTip.length) {
+                        columnsToSet = [...columnsToSet, ...columnsToolTip];
+                        columnsObject["tooltip"] = columnsToolTip;
                     }
-                >
-                    <Select.Item key="-1" value="">
-                        Select Milestone
-                    </Select.Item>
-                    {columns?.map((label, index) => {
-                        return (
-                            <Select.Item value={label.selector} key={index}>
-                                {label.name}
-                            </Select.Item>
+                }
+                let tempDataSet = new Set(columnsToSet);
+                columnsToSet = Array.from(tempDataSet);
+                let columnsIndexToSet = getColumnIndexToSetData(
+                    columnsObject,
+                    columnsToSet,
+                );
+                setData("columns", columnsToSet);
+                if (
+                    data.option.hasOwnProperty("customSettings") &&
+                    data.option["customSettings"].hasOwnProperty(
+                        "columnDetails",
+                    )
+                ) {
+                    let option = data.option;
+                    option = {
+                        ...option,
+                        ["customSettings"]: {
+                            ...option["customSettings"],
+                            ["columnDetails"]: {
+                                ...columnsObject,
+                            },
+                            ["columnIndexDetails"]: {
+                                ...columnsIndexToSet,
+                            },
+                        },
+                    };
+                    setData(
+                        "option",
+                        option as PathValue<D["data"], typeof path>,
+                    );
+                }
+            }
+        }, [framesData]);
+
+        function getColumnIndexToSetData(columnsObject, columnsToSet) {
+            let colIndex = {};
+            Object.keys(columnsObject).forEach((item, index) => {
+                if (
+                    typeof columnsObject[item] === "object" &&
+                    Array.isArray(columnsObject[item])
+                ) {
+                    colIndex[item] = [];
+                    columnsObject[item].forEach((colObjItem, colObjIndex) => {
+                        let indexToUpdate = columnsToSet.findIndex(
+                            (colSetItem, colSetIndex) =>
+                                colSetItem.selector === colObjItem.selector,
                         );
-                    })}
-                </StyledSelect>
-            </StyledDataSection>
-            <StyledDataSection>
-                <label htmlFor="tooltip-field">Tooltip</label>
-                <StyledSelect
-                    id="tooltip-field"
-                    label="Select Tooltip"
-                    SelectProps={{
-                        multiple: true,
-                    }}
-                    value={framesData.tooltip}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        updateFields("tooltip", e)
-                    }
-                >
-                    <Select.Item key="-1" value="">
-                        Select Tooltip
-                    </Select.Item>
-                    {columns?.map((label, index) => {
-                        return (
-                            <Select.Item value={label.selector} key={index}>
-                                {label.name}
-                            </Select.Item>
-                        );
-                    })}
-                </StyledSelect>
-            </StyledDataSection>
-        </StyledMainContainer>
-    );
-});
+                        colIndex[item].push(indexToUpdate);
+                    });
+                    colIndex[item].sort();
+                } else {
+                    colIndex[item] = columnsToSet.findIndex(
+                        (colSetItem, colSetIndex) =>
+                            colSetItem.selector ===
+                            columnsObject[item].selector,
+                    );
+                }
+            });
+            return colIndex;
+        }
+
+        function updateFields(fieldName, event) {
+            setFramesData((prevFrameData) => {
+                return {
+                    ...prevFrameData,
+                    [fieldName]: event.target.value,
+                };
+            });
+            // setData('columns',);
+        }
+
+        return (
+            <StyledMainContainer>
+                <StyledFrameSection>
+                    <Autocomplete
+                        fullWidth
+                        id="Echart-Frame"
+                        multiple={false}
+                        disabled={getFrames.status !== "SUCCESS"}
+                        value={data.frame?.name}
+                        options={options}
+                        getOptionLabel={(option) => {
+                            return option;
+                        }}
+                        onChange={(_, value) => {
+                            // update the frame
+                            setData("frame.name", value);
+                        }}
+                        freeSolo={false}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="Select frame"
+                                size="small"
+                                variant="outlined"
+                            />
+                        )}
+                    />
+                </StyledFrameSection>
+                <StyledDataSection>
+                    <label htmlFor="task-field">Task</label>
+                    <StyledSelect
+                        id="task-field"
+                        label="Select X Axis Field"
+                        SelectProps={{
+                            multiple: false,
+                        }}
+                        value={framesData.task}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            updateFields("task", e)
+                        }
+                    >
+                        <Select.Item key="-1" value="">
+                            Select X Axis Field
+                        </Select.Item>
+                        {columns?.map((label, index) => {
+                            return (
+                                <Select.Item value={label.selector} key={index}>
+                                    {label.name}
+                                </Select.Item>
+                            );
+                        })}
+                    </StyledSelect>
+                </StyledDataSection>
+                <StyledDataSection>
+                    <label htmlFor="start-date-field">Start Date</label>
+                    <StyledSelect
+                        id="start-date-field"
+                        label="Select Start Date"
+                        SelectProps={{
+                            multiple: false,
+                        }}
+                        value={framesData.startdate}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            updateFields("startdate", e)
+                        }
+                    >
+                        <Select.Item key="-1" value="">
+                            Select Start Date
+                        </Select.Item>
+                        {columns?.map((label, index) => {
+                            return (
+                                <Select.Item value={label.selector} key={index}>
+                                    {label.name}
+                                </Select.Item>
+                            );
+                        })}
+                    </StyledSelect>
+                </StyledDataSection>
+                <StyledDataSection>
+                    <label htmlFor="end-date-field">End Date</label>
+                    <StyledSelect
+                        id="end-date-field"
+                        label="Select End Date"
+                        SelectProps={{
+                            multiple: false,
+                        }}
+                        value={framesData.enddate}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            updateFields("enddate", e)
+                        }
+                    >
+                        <Select.Item key="-1" value="">
+                            Select End Date
+                        </Select.Item>
+                        {columns?.map((label, index) => {
+                            return (
+                                <Select.Item value={label.selector} key={index}>
+                                    {label.name}
+                                </Select.Item>
+                            );
+                        })}
+                    </StyledSelect>
+                </StyledDataSection>
+                <StyledDataSection>
+                    <label htmlFor="task-group-field">Task Group</label>
+                    <StyledSelect
+                        id="task-group-field"
+                        label="Select Task Group"
+                        SelectProps={{
+                            multiple: false,
+                        }}
+                        value={framesData.taskgroup}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            updateFields("taskgroup", e)
+                        }
+                    >
+                        <Select.Item key="-1" value="">
+                            Select Task Group
+                        </Select.Item>
+                        {columns?.map((label, index) => {
+                            return (
+                                <Select.Item value={label.selector} key={index}>
+                                    {label.name}
+                                </Select.Item>
+                            );
+                        })}
+                    </StyledSelect>
+                </StyledDataSection>
+                <StyledDataSection>
+                    <label htmlFor="task-progress-field">Task Progress</label>
+                    <StyledSelect
+                        id="task-progress-field"
+                        label="Select Task Progress"
+                        SelectProps={{
+                            multiple: false,
+                        }}
+                        value={framesData.taskprogress}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            updateFields("taskprogress", e)
+                        }
+                    >
+                        <Select.Item key="-1" value="">
+                            Select Task Progress
+                        </Select.Item>
+                        {columns?.map((label, index) => {
+                            return (
+                                <Select.Item value={label.selector} key={index}>
+                                    {label.name}
+                                </Select.Item>
+                            );
+                        })}
+                    </StyledSelect>
+                </StyledDataSection>
+                <StyledDataSection>
+                    <label htmlFor="milestone-field">MileStone</label>
+                    <StyledSelect
+                        id="milestone-field"
+                        label="Select MileStone"
+                        SelectProps={{
+                            multiple: false,
+                        }}
+                        value={framesData.milestone}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            updateFields("milestone", e)
+                        }
+                    >
+                        <Select.Item key="-1" value="">
+                            Select Milestone
+                        </Select.Item>
+                        {columns?.map((label, index) => {
+                            return (
+                                <Select.Item value={label.selector} key={index}>
+                                    {label.name}
+                                </Select.Item>
+                            );
+                        })}
+                    </StyledSelect>
+                </StyledDataSection>
+                <StyledDataSection>
+                    <label htmlFor="tooltip-field">Tooltip</label>
+                    <StyledSelect
+                        id="tooltip-field"
+                        label="Select Tooltip"
+                        SelectProps={{
+                            multiple: true,
+                        }}
+                        value={framesData.tooltip}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            updateFields("tooltip", e)
+                        }
+                    >
+                        <Select.Item key="-1" value="">
+                            Select Tooltip
+                        </Select.Item>
+                        {columns?.map((label, index) => {
+                            return (
+                                <Select.Item value={label.selector} key={index}>
+                                    {label.name}
+                                </Select.Item>
+                            );
+                        })}
+                    </StyledSelect>
+                </StyledDataSection>
+            </StyledMainContainer>
+        );
+    },
+);

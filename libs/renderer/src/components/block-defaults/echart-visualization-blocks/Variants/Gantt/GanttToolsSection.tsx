@@ -60,7 +60,9 @@ export const GanttToolsSection = observer(({ id }: GanttToolsSectionProps) => {
                         <InfoOutlined />
                     </ListItemButton>
                 </ListItem>
-                {selectedList === "fiscalaxis" && <GanttFiscal id={id} />}
+                {selectedList === "fiscalaxis" && (
+                    <GanttFiscal id={id} path={"option"} />
+                )}
                 <ListItem disablePadding>
                     <ListItemButton
                         onClick={(e) =>
@@ -87,7 +89,9 @@ export const GanttToolsSection = observer(({ id }: GanttToolsSectionProps) => {
                         <InfoOutlined />
                     </ListItemButton>
                 </ListItem>
-                {selectedList === "targetdate" && <GanttTargetLine id={id} />}
+                {selectedList === "targetdate" && (
+                    <GanttTargetLine id={id} path={"option"} />
+                )}
                 <ListItem disablePadding>
                     <ListItemButton
                         onClick={(e) =>
@@ -117,7 +121,7 @@ export const GanttToolsSection = observer(({ id }: GanttToolsSectionProps) => {
                     </ListItemButton>
                 </ListItem>
                 {selectedList === "customizesymbol" && (
-                    <CustomizeSymbol id={id} />
+                    <CustomizeSymbol id={id} path={"option"} />
                 )}
                 <ListItem disablePadding>
                     <ListItemButton
@@ -149,7 +153,7 @@ export const GanttToolsSection = observer(({ id }: GanttToolsSectionProps) => {
                 </ListItem>
                 {selectedList === "togglelegendgantt" && (
                     <>
-                        <GanttLegend id={id} />
+                        <GanttLegend id={id} path={"option"} />
                     </>
                 )}
                 <ListItem disablePadding>
@@ -182,7 +186,7 @@ export const GanttToolsSection = observer(({ id }: GanttToolsSectionProps) => {
                 </ListItem>
                 {selectedList === "togglegroupview" && (
                     <>
-                        <GanttGroupView id={id} />
+                        <GanttGroupView id={id} path={"option"} />
                     </>
                 )}
                 <ListItem disablePadding>
@@ -215,7 +219,7 @@ export const GanttToolsSection = observer(({ id }: GanttToolsSectionProps) => {
                 </ListItem>
                 {selectedList === "displayvaluelabels" && (
                     <>
-                        <GanttDisplayValueLabels id={id} />
+                        <GanttDisplayValueLabels id={id} path="option" />
                     </>
                 )}
             </List>

@@ -5,10 +5,9 @@ import { styled, Switch } from "@semoss/ui";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { getValueByPath } from "@/utility";
+import { BlockDef } from "../../../../../store";
+import { PathValue } from "@/types";
 
-interface GanttDisplayValueLabelsProps {
-    id: string;
-}
 const StyledMainContainer = styled("div")(({}) => ({
     padding: "0.5rem",
     borderBottom: "1px solid #E6E6E6",
@@ -17,7 +16,7 @@ const StyledLabel = styled("label")(({}) => ({
     paddingLeft: "10px",
 }));
 export const GanttDisplayValueLabels = observer(
-    ({ id }: GanttDisplayValueLabelsProps) => {
+    <D extends BlockDef = BlockDef>({ id, path }) => {
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
         const [displayValueLabelsData, setDisplayValueLabelsData] =
@@ -75,7 +74,10 @@ export const GanttDisplayValueLabels = observer(
             }
             timeoutRef.current = setTimeout(() => {
                 try {
-                    setData("option", option);
+                    setData(
+                        "option",
+                        option as PathValue<D["data"], typeof path>,
+                    );
                 } catch (e) {
                     console.log(e);
                 }
