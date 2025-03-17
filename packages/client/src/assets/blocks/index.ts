@@ -26,6 +26,8 @@ export { default as H6_ACTIVE } from './H6_Active.png';
 export { default as H6_HOVER } from './H6_Hover.png';
 export { default as HTML_ACTIVE } from './HTML_Active.png';
 export { default as HTML_HOVER } from './HTML_Hover.png';
+export { default as ICON_ACTIVE } from './Icon_Active.png';
+export { default as ICON_HOVER } from './Icon_Hover.png';
 export { default as IFRAME_ACTIVE } from './Iframe_Active.png';
 export { default as IFRAME_HOVER } from './Iframe_Hover.png';
 export { default as IMAGE_ACTIVE } from './Image_Active.png';
@@ -60,6 +62,8 @@ export { default as THEME_ACTIVE } from './Theme_Active.png';
 export { default as THEME_HOVER } from './Theme_Hover.png';
 export { default as SIDEBAR_MENU_ACTIVE } from './Sidebar_Menu_Active.png';
 export { default as SIDEBAR_MENU_HOVER } from './Sidebar_Menu_Hover.png';
+export { default as DIVIDER_ACTIVE } from './Divider_Active.png';
+export { default as DIVIDER_HOVER } from './Divider_Hover.png';
 
 // CHARTS
 export { default as AREA_CHART_ACTIVE } from './Area_Chart_Active.png';
