@@ -301,6 +301,8 @@ export const Gantt = observer(({ id, updateChart }: GanttProps) => {
                             d[columnIndexDetails["task"]],
                             endDate,
                         ],
+                        mileStoneOriginalDate:
+                            d[columnIndexDetails["milestone"]],
                         symbol: symbolValue[index],
                         symbolSize: symbolSize[index],
                         itemStyle: {

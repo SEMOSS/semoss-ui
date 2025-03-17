@@ -169,7 +169,7 @@ export const CustomizeSymbol = observer(({ id }: CustomizeSymbolProps) => {
             mileStone =
                 option["series"][mileStoneIndex]?.["data"]?.map(
                     (item, index) => {
-                        return item.value[0];
+                        return item.mileStoneOriginalDate;
                     },
                 ) || [];
             console.log(
@@ -197,7 +197,7 @@ export const CustomizeSymbol = observer(({ id }: CustomizeSymbolProps) => {
         let dateConvertedToTimeZone = new Date(date).toLocaleString("en-US", {
             timeZone: currentTimezone,
         });
-
+        console.log(date, currentTimezone, dateConvertedToTimeZone, "timezone");
         return (
             new Date(dateConvertedToTimeZone).getFullYear() +
             "-" +
@@ -242,7 +242,7 @@ export const CustomizeSymbol = observer(({ id }: CustomizeSymbolProps) => {
     });
     const dimensionInstanceToRender =
         dimensionInstance[dimensionSelected]?.map((item, index) => {
-            return convertTimeZone(item);
+            return item;
         }) || [];
     const dimensionNameSelected =
         dimensionList.find(
