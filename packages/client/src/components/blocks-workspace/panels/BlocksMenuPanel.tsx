@@ -260,9 +260,8 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                                         }
                                     >
                                         <Badge
-                                            badgeContent={
-                                                anyEnabledFilter ? ' ' : 0
-                                            }
+                                            variant="dot"
+                                            invisible={!anyEnabledFilter}
                                             color="primary"
                                         >
                                             <Tune />
