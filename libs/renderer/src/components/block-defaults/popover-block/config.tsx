@@ -1,5 +1,10 @@
+import { useState, useRef, useEffect } from "react";
 import { Schema } from "@mui/icons-material";
-import { useState, useRef } from "react";
+import { Autocomplete } from "@mui/material";
+import { Typography } from "@mui/material";
+
+import { TextField } from "@semoss/ui";
+
 import { BlockConfig, Block, BlockDef } from "../../../store";
 import {
     BaseSettingSection,
@@ -14,16 +19,7 @@ import {
     buildDimensionsSection,
     buildBorderSection,
 } from "../block-defaults.shared";
-
-import { Autocomplete } from "@mui/material";
-import { TextField } from "@semoss/ui";
-
-import { useDesigner } from "@/hooks";
-import { useBlockSettings } from "../../../hooks";
-import { useBlocks } from "@semoss/renderer";
-
-import { Typography } from "@mui/material";
-
+import { useBlocks, useBlockSettings } from "../../../hooks";
 import { Paths, PathValue } from "../../../types";
 
 const TRIGGER_OPTIONS = [
@@ -91,7 +87,6 @@ const SettingAutocomplete = <D extends BlockDef>({
 
 const LayersDropdown = ({ id }) => {
     const { state } = useBlocks();
-    const { designer } = useDesigner();
 
     // If getAllBlocksOfType isn't available, get all blocks from state
     const allBlocks = Object.values(state.blocks || {});
@@ -109,11 +104,6 @@ const LayersDropdown = ({ id }) => {
         };
     });
 
-    const handleSelectChange = (value) => {
-        console.log(value, "VALUE");
-        designer.setSelected(value);
-    };
-
     return (
         <BaseSettingSection label="Select a layer">
             <SettingAutocomplete
@@ -121,7 +111,6 @@ const LayersDropdown = ({ id }) => {
                 path={"targetId"}
                 options={options}
                 label="Select a layer"
-                onValueChange={handleSelectChange}
             />
         </BaseSettingSection>
     );
