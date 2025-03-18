@@ -12,35 +12,6 @@ export const CreateDiabetesTemplate: Template = {
     tags: [],
     state: {
         queries: {
-            'display-diabetes-record': {
-                id: 'display-diabetes-record',
-                cells: [
-                    {
-                        id: 'cell-1',
-                        widget: 'code',
-                        parameters: {
-                            code: 'from gaas_gpt_database import DatabaseEngine',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: 'cell-2',
-                        widget: 'code',
-                        parameters: {
-                            code: 'databaseEngine = DatabaseEngine(engine_id = "950eb187-e352-444d-ad6a-6476ed9390af", insight_id = \'${i}\')',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: 'cell-3',
-                        widget: 'code',
-                        parameters: {
-                            code: 'databaseEngine.execQuery(query = "SELECT DIABETES_UNIQUE_ROW_ID FROM diabetes where DRUG=\'Test_Drug\'")',
-                            type: 'py',
-                        },
-                    },
-                ],
-            },
             'insert-diabetes-record': {
                 id: 'insert-diabetes-record',
                 cells: [
@@ -48,9 +19,9 @@ export const CreateDiabetesTemplate: Template = {
                         id: '33516',
                         widget: 'query-import',
                         parameters: {
-                            databaseId: '950eb187-e352-444d-ad6a-6476ed9390af',
-                            frameType: 'PY',
                             frameVariableName: 'FRAME_33516',
+                            frameType: 'PY',
+                            databaseId: '950eb187-e352-444d-ad6a-6476ed9390af',
                             selectQuery: 'SELECT * FROM diabetes',
                         },
                     },
@@ -58,188 +29,15 @@ export const CreateDiabetesTemplate: Template = {
                         id: '81570',
                         widget: 'code',
                         parameters: {
+                            code: 'from gaas_gpt_database import DatabaseEngine;databaseEngine = DatabaseEngine(engine_id = "950eb187-e352-444d-ad6a-6476ed9390af", insight_id = \'${i}\');a = FRAME_33516.columns.to_list();a.remove("DIABETES_UNIQUE_ROW_ID");col_string = ", ".join(a);inputValues = ["{{DRUG}}","{{LOCATION}}",float({{GLYHB}}),float({{BP_1D}}),float({{BP_2D}}),float({{WAIST}}),float({{RATIO}}),float({{HEIGHT}}),"{{FRAME}}",float({{HIP}}),float({{HDL}}),float({{BP_1S}}),float({{BP_2S}}),float({{STAB_GLU}}),"{{GENDER}}",float({{ID}}),float({{TIME_PPN}}),float({{WEIGHT}}),float({{CHOL}}),float({{AGE}})];filtered_columns = [];filtered_values = [];filtered_columns, filtered_values = zip(*[(col, f"{val}") if isinstance(val, str) and val else (col, val) for col, val in zip(a, inputValues) if isinstance(val,(str,float)) and val]);filtered_columns = ", ".join(filtered_columns);filtered_values = str(filtered_values);QS = f\'INSERT INTO diabetes({filtered_columns}) VALUES {filtered_values}\';',
                             type: 'py',
-                            code: 'from gaas_gpt_database import DatabaseEngine;databaseEngine = DatabaseEngine(engine_id = "950eb187-e352-444d-ad6a-6476ed9390af", insight_id = \'${i}\');a = FRAME_33516.columns.to_list();a.remove("DIABETES_UNIQUE_ROW_ID");col_string = ", ".join(a);inputValues = \', \'.join([repr({{DRUG}}),repr({{LOCATION}}),str({{GLYHB}}),str({{BP_1D}}),str({{BP_2D}}),str({{WAIST}}),str({{RATIO}}),str({{HEIGHT}}),repr({{FRAME}}),str({{HIP}}),str({{HDL}}),str({{BP_1S}}),str({{BP_2S}}),str({{STAB_GLU}}),repr({{GENDER}}),str({{ID}}),str({{TIME_PPN}}),str({{WEIGHT}}),str({{CHOL}}),str({{AGE}})]);QS = f\'INSERT INTO diabetes({col_string}) VALUES ({inputValues})\';databaseEngine.insertData(query =QS )',
                         },
                     },
                     {
                         id: '67219',
                         widget: 'code',
                         parameters: {
-                            type: 'py',
                             code: 'databaseEngine.insertData(query =QS )',
-                        },
-                    },
-                ],
-            },
-            'fields-section': {
-                id: 'fields-section',
-                cells: [
-                    {
-                        id: '40951',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{AGE}});',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '97758',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{BP_1D}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '71076',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{BP_1S}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '94699',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{BP_2D}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '80038',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{BP_2S}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '83731',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{CHOL}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '40151',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{DRUG}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '15753',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{dtype}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '18939',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{FRAME}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '4153',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{GENDER}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '9557',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{GLYHB}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '73933',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{HDL}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '39058',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{HEIGHT}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '73233',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{HIP}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '19503',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{ID}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '18583',
-                        widget: 'code',
-                        parameters: {
-                            code: 'a= {{LOCATION}};print(a);print(type(a));if not a:;    print("empty");else:;    print("true")',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '10176',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{RATIO}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '85800',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{STAB_GLU}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '3983',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{TIME_PPN}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '38835',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{WAIST}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '88882',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{WEIGHT}})',
                             type: 'py',
                         },
                     },
@@ -295,28 +93,71 @@ export const CreateDiabetesTemplate: Template = {
                 listeners: {},
                 id: 'container',
             },
-            question: {
+            'input--6320': {
                 parent: {
-                    id: 'form',
+                    id: 'container',
                     slot: 'children',
                 },
-                slots: {},
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
+                    },
+                },
                 widget: 'input',
                 data: {
+                    route: 'input--6320',
+                    hint: '',
+                    multiline: false,
                     style: {
                         padding: '4px',
                         width: '100%',
                     },
-                    label: 'Question',
-                    rows: 3,
-                    type: 'text',
+                    disabled: false,
+                    label: 'RATIO',
+                    type: 'number',
+                    rows: 1,
+                    loading: false,
                     value: '',
-                    required: true,
+                    required: false,
                 },
                 listeners: {
-                    onClick: [],
+                    onChange: [],
                 },
-                id: 'question',
+                id: 'input--6320',
+            },
+            'input--4121': {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
+                    },
+                },
+                widget: 'input',
+                data: {
+                    route: 'input--4121',
+                    hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'HIP',
+                    type: 'number',
+                    rows: 1,
+                    loading: false,
+                    value: '',
+                    required: false,
+                },
+                listeners: {
+                    onChange: [],
+                },
+                id: 'input--4121',
             },
             submit: {
                 parent: {
@@ -334,14 +175,383 @@ export const CreateDiabetesTemplate: Template = {
                 listeners: {
                     onClick: [
                         {
-                            message: ActionMessages.RUN_QUERY,
                             payload: {
                                 queryId: 'insert-diabetes-record',
                             },
+                            message: ActionMessages.RUN_QUERY,
                         },
                     ],
                 },
                 id: 'submit',
+            },
+            'input--7858': {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
+                    },
+                },
+                widget: 'input',
+                data: {
+                    route: 'input--7858',
+                    hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'HDL',
+                    type: 'number',
+                    rows: 1,
+                    loading: false,
+                    value: '',
+                    required: false,
+                },
+                listeners: {
+                    onChange: [],
+                },
+                id: 'input--7858',
+            },
+            description: {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        fontSize: '24px',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: 'Create Diabetes Record',
+                },
+                listeners: {},
+                id: 'description',
+            },
+            'input--3855': {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
+                    },
+                },
+                widget: 'input',
+                data: {
+                    route: 'input--3855',
+                    hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'FRAME',
+                    type: 'text',
+                    rows: 1,
+                    loading: false,
+                    value: '',
+                    required: false,
+                },
+                listeners: {
+                    onChange: [],
+                },
+                id: 'input--3855',
+            },
+            'input--3118': {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
+                    },
+                },
+                widget: 'input',
+                data: {
+                    route: 'input--3118',
+                    hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'BP_1D',
+                    type: 'number',
+                    rows: 1,
+                    loading: false,
+                    value: '',
+                    required: false,
+                },
+                listeners: {
+                    onChange: [],
+                },
+                id: 'input--3118',
+            },
+            'input--8307': {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
+                    },
+                },
+                widget: 'input',
+                data: {
+                    route: 'input--8307',
+                    hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'BP_1S',
+                    type: 'number',
+                    rows: 1,
+                    loading: false,
+                    value: '',
+                    required: false,
+                },
+                listeners: {
+                    onChange: [],
+                },
+                id: 'input--8307',
+            },
+            'input--6721': {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
+                    },
+                },
+                widget: 'input',
+                data: {
+                    route: 'input--6721',
+                    hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'dtype',
+                    type: 'text',
+                    rows: 1,
+                    loading: false,
+                    value: '',
+                    required: false,
+                },
+                listeners: {
+                    onChange: [],
+                },
+                id: 'input--6721',
+            },
+            'input--9538': {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
+                    },
+                },
+                widget: 'input',
+                data: {
+                    route: 'input--9538',
+                    hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'BP_2D',
+                    type: 'number',
+                    rows: 1,
+                    loading: false,
+                    value: '',
+                    required: false,
+                },
+                listeners: {
+                    onChange: [],
+                },
+                id: 'input--9538',
+            },
+            'input--2187': {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
+                    },
+                },
+                widget: 'input',
+                data: {
+                    route: 'input--2187',
+                    hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'GENDER',
+                    type: 'text',
+                    rows: 1,
+                    loading: false,
+                    value: '',
+                    required: false,
+                },
+                listeners: {
+                    onChange: [],
+                },
+                id: 'input--2187',
+            },
+            'input--1154': {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
+                    },
+                },
+                widget: 'input',
+                data: {
+                    route: 'input--1154',
+                    hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'BP_2S',
+                    type: 'number',
+                    rows: 1,
+                    loading: false,
+                    value: '',
+                    required: false,
+                },
+                listeners: {
+                    onChange: [],
+                },
+                id: 'input--1154',
+            },
+            'input--2903': {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
+                    },
+                },
+                widget: 'input',
+                data: {
+                    route: 'input--2903',
+                    hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'DRUG',
+                    type: 'text',
+                    rows: 1,
+                    loading: false,
+                    value: '',
+                    required: false,
+                },
+                listeners: {
+                    onChange: [],
+                },
+                id: 'input--2903',
+            },
+            'input--5617': {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
+                    },
+                },
+                widget: 'input',
+                data: {
+                    route: 'input--5617',
+                    hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'HEIGHT',
+                    type: 'number',
+                    rows: 1,
+                    loading: false,
+                    value: '',
+                    required: false,
+                },
+                listeners: {
+                    onChange: [],
+                },
+                id: 'input--5617',
+            },
+            'text--4905': {
+                parent: {
+                    id: 'page-1',
+                    slot: 'content',
+                },
+                slots: {},
+                widget: 'text',
+                data: {
+                    route: 'text--4905',
+                    variant: 'p',
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: ' {{db-response.output}} ',
+                },
+                listeners: {},
+                id: 'text--4905',
             },
             'page-1': {
                 parent: {
@@ -370,859 +580,408 @@ export const CreateDiabetesTemplate: Template = {
                 },
                 id: 'page-1',
             },
-            description: {
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                slots: {},
-                widget: 'text',
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        fontSize: '24px',
-                        textOverflow: 'ellipsis',
-                    },
-                    text: 'Create Diabetes Record',
-                },
-                listeners: {},
-                id: 'description',
-            },
-            'input--1200': {
-                id: 'input--1200',
-                widget: 'input',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
-                    },
-                    value: '1',
-                    label: 'AGE',
-                    hint: '',
-                    type: 'number',
-                    rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: 'true',
-                    loading: false,
-                    route: 'input--1200',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
-            'input--2903': {
-                id: 'input--2903',
-                widget: 'input',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
-                    },
-                    value: '"Test_Drug"',
-                    label: 'DRUG',
-                    hint: '',
-                    type: 'text',
-                    rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
-                    loading: false,
-                    route: 'input--2903',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
-            'input--6721': {
-                id: 'input--6721',
-                widget: 'input',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
-                    },
-                    value: '"D_Type"',
-                    label: 'dtype',
-                    hint: '',
-                    type: 'text',
-                    rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
-                    loading: false,
-                    route: 'input--6721',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
             'input--1536': {
-                id: 'input--1536',
-                widget: 'input',
                 parent: {
                     id: 'container',
                     slot: 'children',
                 },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
                     },
-                    value: '""',
-                    label: 'LOCATION',
-                    hint: '',
-                    type: 'text',
-                    rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
-                    loading: false,
+                },
+                widget: 'input',
+                data: {
                     route: 'input--1536',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
-            'input--7685': {
-                id: 'input--7685',
-                widget: 'input',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
-                    },
-                    value: '1',
-                    label: 'GLYHB',
                     hint: '',
-                    type: 'number',
-                    rows: 1,
                     multiline: false,
-                    disabled: false,
-                    required: false,
-                    loading: false,
-                    route: 'input--7685',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
-            'input--3118': {
-                id: 'input--3118',
-                widget: 'input',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
                     style: {
-                        width: '100%',
                         padding: '4px',
+                        width: '100%',
                     },
-                    value: '1',
-                    label: 'BP_1D',
-                    hint: '',
-                    type: 'number',
-                    rows: 1,
-                    multiline: false,
                     disabled: false,
-                    required: false,
-                    loading: false,
-                    route: 'input--3118',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
-            'input--9538': {
-                id: 'input--9538',
-                widget: 'input',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
-                    },
-                    value: '1',
-                    label: 'BP_2D',
-                    hint: '',
-                    type: 'number',
-                    rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
-                    loading: false,
-                    route: 'input--9538',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
-            'input--1422': {
-                id: 'input--1422',
-                widget: 'input',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
-                    },
-                    value: '1',
-                    label: 'WAIST',
-                    hint: '',
-                    type: 'number',
-                    rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
-                    loading: false,
-                    route: 'input--1422',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
-            'input--6320': {
-                id: 'input--6320',
-                widget: 'input',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
-                    },
-                    value: '1',
-                    label: 'RATIO',
-                    hint: '',
-                    type: 'number',
-                    rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
-                    loading: false,
-                    route: 'input--6320',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
-            'input--5617': {
-                id: 'input--5617',
-                widget: 'input',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
-                    },
-                    value: '1',
-                    label: 'HEIGHT',
-                    hint: '',
-                    type: 'number',
-                    rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
-                    loading: false,
-                    route: 'input--5617',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
-            'input--3855': {
-                id: 'input--3855',
-                widget: 'input',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
-                    },
-                    value: '"Test_Frame"',
-                    label: 'FRAME',
-                    hint: '',
+                    label: 'LOCATION',
                     type: 'text',
                     rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
                     loading: false,
-                    route: 'input--3855',
+                    value: '',
+                    required: false,
                 },
                 listeners: {
                     onChange: [],
                 },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
-            'input--4121': {
-                id: 'input--4121',
-                widget: 'input',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
-                    },
-                    value: '1',
-                    label: 'HIP',
-                    hint: '',
-                    type: 'number',
-                    rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
-                    loading: false,
-                    route: 'input--4121',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
-            'input--7858': {
-                id: 'input--7858',
-                widget: 'input',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
-                    },
-                    value: '1',
-                    label: 'HDL',
-                    hint: '',
-                    type: 'number',
-                    rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
-                    loading: false,
-                    route: 'input--7858',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
-            'input--8307': {
-                id: 'input--8307',
-                widget: 'input',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
-                    },
-                    value: '1',
-                    label: 'BP_1S',
-                    hint: '',
-                    type: 'number',
-                    rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
-                    loading: false,
-                    route: 'input--8307',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
-            'input--1154': {
-                id: 'input--1154',
-                widget: 'input',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
-                    },
-                    value: '1.2',
-                    label: 'BP_2S',
-                    hint: '',
-                    type: 'number',
-                    rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
-                    loading: false,
-                    route: 'input--1154',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
+                id: 'input--1536',
             },
             'input--8195': {
-                id: 'input--8195',
-                widget: 'input',
                 parent: {
                     id: 'container',
                     slot: 'children',
                 },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
                     },
-                    value: '1',
-                    label: 'STAB_GLU',
-                    hint: '',
-                    type: 'number',
-                    rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
-                    loading: false,
+                },
+                widget: 'input',
+                data: {
                     route: 'input--8195',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
-            'input--2187': {
-                id: 'input--2187',
-                widget: 'input',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
-                    },
-                    value: '"Test_Gender"',
-                    label: 'GENDER',
                     hint: '',
-                    type: 'text',
-                    rows: 1,
                     multiline: false,
-                    disabled: false,
-                    required: false,
-                    loading: false,
-                    route: 'input--2187',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
-            'input--4018': {
-                id: 'input--4018',
-                widget: 'input',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
                     style: {
-                        width: '100%',
                         padding: '4px',
+                        width: '100%',
                     },
-                    value: '1',
-                    label: 'ID',
-                    hint: '',
+                    disabled: false,
+                    label: 'STAB_GLU',
                     type: 'number',
                     rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
                     loading: false,
-                    route: 'input--4018',
+                    value: '',
+                    required: false,
                 },
                 listeners: {
                     onChange: [],
                 },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
+                id: 'input--8195',
             },
-            'input--437': {
-                id: 'input--437',
-                widget: 'input',
+            'input--7685': {
                 parent: {
                     id: 'container',
                     slot: 'children',
                 },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
                     },
-                    value: '1',
-                    label: 'TIME_PPN',
+                },
+                widget: 'input',
+                data: {
+                    route: 'input--7685',
                     hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'GLYHB',
                     type: 'number',
                     rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
                     loading: false,
-                    route: 'input--437',
+                    value: '',
+                    required: false,
                 },
                 listeners: {
                     onChange: [],
                 },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
+                id: 'input--7685',
             },
             'input--5362': {
-                id: 'input--5362',
-                widget: 'input',
                 parent: {
                     id: 'container',
                     slot: 'children',
                 },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
                     },
-                    value: '1',
-                    label: 'WEIGHT',
+                },
+                widget: 'input',
+                data: {
+                    route: 'input--5362',
                     hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'WEIGHT',
                     type: 'number',
                     rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
                     loading: false,
-                    route: 'input--5362',
+                    value: '',
+                    required: false,
                 },
                 listeners: {
                     onChange: [],
                 },
+                id: 'input--5362',
+            },
+            'input--4018': {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
                 slots: {
                     content: {
-                        name: 'content',
                         children: [],
+                        name: 'content',
                     },
                 },
+                widget: 'input',
+                data: {
+                    route: 'input--4018',
+                    hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'ID',
+                    type: 'number',
+                    rows: 1,
+                    loading: false,
+                    value: '',
+                    required: false,
+                },
+                listeners: {
+                    onChange: [],
+                },
+                id: 'input--4018',
             },
             'input--5206': {
-                id: 'input--5206',
-                widget: 'input',
                 parent: {
                     id: 'container',
                     slot: 'children',
                 },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
                     },
-                    value: '1',
-                    label: 'CHOL',
+                },
+                widget: 'input',
+                data: {
+                    route: 'input--5206',
                     hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'CHOL',
                     type: 'number',
                     rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
                     loading: false,
-                    route: 'input--5206',
+                    value: '',
+                    required: false,
                 },
                 listeners: {
                     onChange: [],
                 },
+                id: 'input--5206',
+            },
+            'input--1422': {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
                 slots: {
                     content: {
-                        name: 'content',
                         children: [],
+                        name: 'content',
                     },
                 },
-            },
-            'text--4905': {
-                id: 'text--4905',
-                widget: 'text',
-                parent: {
-                    id: 'page-1',
-                    slot: 'content',
-                },
+                widget: 'input',
                 data: {
+                    route: 'input--1422',
+                    hint: '',
+                    multiline: false,
                     style: {
                         padding: '4px',
-                        whiteSpace: 'pre-line',
-                        textOverflow: 'ellipsis',
+                        width: '100%',
                     },
-                    text: ' {{db-response.output}} ',
-                    variant: 'p',
-                    route: 'text--4905',
+                    disabled: false,
+                    label: 'WAIST',
+                    type: 'number',
+                    rows: 1,
+                    loading: false,
+                    value: '',
+                    required: false,
                 },
-                listeners: {},
-                slots: {},
+                listeners: {
+                    onChange: [],
+                },
+                id: 'input--1422',
+            },
+            'input--437': {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
+                    },
+                },
+                widget: 'input',
+                data: {
+                    route: 'input--437',
+                    hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'TIME_PPN',
+                    type: 'number',
+                    rows: 1,
+                    loading: false,
+                    value: '',
+                    required: false,
+                },
+                listeners: {
+                    onChange: [],
+                },
+                id: 'input--437',
+            },
+            'input--1200': {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
+                    },
+                },
+                widget: 'input',
+                data: {
+                    route: 'input--1200',
+                    hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'AGE',
+                    type: 'number',
+                    rows: 1,
+                    loading: false,
+                    value: '',
+                    required: 'true',
+                },
+                listeners: {
+                    onChange: [],
+                },
+                id: 'input--1200',
             },
         },
         variables: {
+            LOCATION: {
+                to: 'input--1536',
+                type: 'block',
+            },
+            DRUG: {
+                to: 'input--2903',
+                type: 'block',
+            },
+            'db-response': {
+                to: 'insert-diabetes-record',
+                type: 'query',
+            },
+            GLYHB: {
+                to: 'input--7685',
+                type: 'block',
+            },
+            BP_1D: {
+                to: 'input--3118',
+                type: 'block',
+            },
+            WAIST: {
+                to: 'input--1422',
+                type: 'block',
+            },
+            RATIO: {
+                to: 'input--6320',
+                type: 'block',
+            },
+            FRAME: {
+                to: 'input--3855',
+                type: 'block',
+            },
+            HDL: {
+                to: 'input--7858',
+                type: 'block',
+            },
+            BP_1S: {
+                to: 'input--8307',
+                type: 'block',
+            },
+            STAB_GLU: {
+                to: 'input--8195',
+                type: 'block',
+            },
+            GENDER: {
+                to: 'input--2187',
+                type: 'block',
+            },
             model: {
                 isInput: true,
                 isOutput: false,
                 type: 'model',
                 value: '4acbe913-df40-4ac0-b28a-daa5ad91b172',
             },
-            'display-diabetes-record': {
-                isInput: false,
-                isOutput: true,
-                to: 'display-diabetes-record',
-                type: 'query',
-            },
-            AGE: {
-                type: 'block',
-                to: 'input--1200',
-            },
-            LOCATION: {
-                type: 'block',
-                to: 'input--1536',
-            },
-            GLYHB: {
-                type: 'block',
-                to: 'input--7685',
-            },
-            BP_1D: {
-                type: 'block',
-                to: 'input--3118',
-            },
-            BP_2D: {
-                type: 'block',
-                to: 'input--9538',
-            },
-            WAIST: {
-                type: 'block',
-                to: 'input--1422',
-            },
-            RATIO: {
-                type: 'block',
-                to: 'input--6320',
-            },
-            HEIGHT: {
-                type: 'block',
-                to: 'input--5617',
-            },
-            FRAME: {
-                type: 'block',
-                to: 'input--3855',
-            },
-            HIP: {
-                type: 'block',
-                to: 'input--4121',
-            },
-            HDL: {
-                type: 'block',
-                to: 'input--7858',
-            },
-            BP_1S: {
-                type: 'block',
-                to: 'input--8307',
-            },
-            BP_2S: {
-                type: 'block',
-                to: 'input--1154',
-            },
-            STAB_GLU: {
-                type: 'block',
-                to: 'input--8195',
-            },
-            GENDER: {
-                type: 'block',
-                to: 'input--2187',
-            },
             ID: {
-                type: 'block',
                 to: 'input--4018',
-            },
-            TIME_PPN: {
                 type: 'block',
-                to: 'input--437',
             },
             WEIGHT: {
-                type: 'block',
                 to: 'input--5362',
+                type: 'block',
             },
             CHOL: {
-                type: 'block',
                 to: 'input--5206',
-            },
-            DRUG: {
                 type: 'block',
-                to: 'input--2903',
+            },
+            AGE: {
+                to: 'input--1200',
+                type: 'block',
+            },
+            BP_2D: {
+                to: 'input--9538',
+                type: 'block',
             },
             dtype: {
-                type: 'block',
                 to: 'input--6721',
+                type: 'block',
             },
-            'fields-section': {
-                type: 'query',
-                to: 'fields-section',
-                isInput: true,
-                isOutput: true,
+            HEIGHT: {
+                to: 'input--5617',
+                type: 'block',
+            },
+            HIP: {
+                to: 'input--4121',
+                type: 'block',
+            },
+            BP_2S: {
+                to: 'input--1154',
+                type: 'block',
             },
             response: {
-                type: 'cell',
-                to: 'insert-diabetes-record',
-                cellId: '81570',
                 isInput: false,
                 isOutput: false,
-            },
-            'db-response': {
-                type: 'query',
                 to: 'insert-diabetes-record',
+                type: 'cell',
+                cellId: '81570',
+            },
+            TIME_PPN: {
+                to: 'input--437',
+                type: 'block',
             },
         },
-        executionOrder: [
-            'display-diabetes-record',
-            'insert-diabetes-record',
-            'fields-section',
-        ],
+        executionOrder: ['insert-diabetes-record'],
         version: '1.0.0-alpha.4',
     },
 };

@@ -12,203 +12,32 @@ export const UpdateDiabetesTemplate: Template = {
     tags: [],
     state: {
         queries: {
-            'fields-section': {
-                id: 'fields-section',
+            'update-diabetes-record': {
+                id: 'update-diabetes-record',
                 cells: [
                     {
-                        id: '40951',
+                        id: '59072',
+                        widget: 'query-import',
+                        parameters: {
+                            frameVariableName: 'FRAME_59072',
+                            frameType: 'PY',
+                            databaseId: '950eb187-e352-444d-ad6a-6476ed9390af',
+                            selectQuery: 'SELECT * FROM diabetes',
+                        },
+                    },
+                    {
+                        id: '27239',
                         widget: 'code',
                         parameters: {
-                            code: 'print({{AGE}});',
+                            code: 'from gaas_gpt_database import DatabaseEngine;databaseEngine = DatabaseEngine(engine_id = "950eb187-e352-444d-ad6a-6476ed9390af", insight_id = \'${i}\');a = FRAME_59072.columns.to_list();a.remove("DIABETES_UNIQUE_ROW_ID");selectedID={{selected-id}};col_floating = ", ".join(a);inputValues = ["{{DRUG}}","{{LOCATION}}",float({{GLYHB}}),float({{BP_1D}}),float({{BP_2D}}),float({{WAIST}}),float({{RATIO}}),float({{HEIGHT}}),"{{FRAME}}",float({{HIP}}),float({{HDL}}),float({{BP_1S}}),float({{BP_2S}}),float({{STAB_GLU}}),"{{GENDER}}",float({{ID}}),float({{TIME_PPN}}),float({{WEIGHT}}),float({{CHOL}}),float({{AGE}})];filtered_columns = [];filtered_values = [];filtered_columns, filtered_values = zip(*[(col, f"\'{val}\'") if isinstance(val, str) and val else (col, val) for col, val in zip(a, inputValues) if val]);set_clause = ", ".join([f"{col} = {val}" for col, val in zip(filtered_columns, filtered_values)]);QS = f\'UPDATE diabetes SET {set_clause} WHERE DIABETES_UNIQUE_ROW_ID = {{selected-id}}\';',
                             type: 'py',
                         },
                     },
                     {
-                        id: '97758',
+                        id: '72351',
                         widget: 'code',
                         parameters: {
-                            code: 'print({{BP_1D}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '71076',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{BP_1S}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '94699',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{BP_2D}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '80038',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{BP_2S}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '83731',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{CHOL}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '40151',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{DRUG}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '15753',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{dtype}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '18939',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{FRAME}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '4153',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{GENDER}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '9557',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{GLYHB}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '73933',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{HDL}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '39058',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{HEIGHT}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '73233',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{HIP}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '19503',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{ID}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '18583',
-                        widget: 'code',
-                        parameters: {
-                            code: 'a= {{LOCATION}};print(a);print(type(a));if not a:;    print("empty");else:;    print("true")',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '10176',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{RATIO}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '85800',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{STAB_GLU}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '3983',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{TIME_PPN}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '38835',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{WAIST}})',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: '88882',
-                        widget: 'code',
-                        parameters: {
-                            code: 'print({{WEIGHT}})',
-                            type: 'py',
-                        },
-                    },
-                ],
-            },
-            'display-diabetes-record': {
-                id: 'display-diabetes-record',
-                cells: [
-                    {
-                        id: 'cell-1',
-                        widget: 'code',
-                        parameters: {
-                            code: 'from gaas_gpt_database import DatabaseEngine',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: 'cell-2',
-                        widget: 'code',
-                        parameters: {
-                            code: 'databaseEngine = DatabaseEngine(engine_id = "950eb187-e352-444d-ad6a-6476ed9390af", insight_id = \'${i}\')',
-                            type: 'py',
-                        },
-                    },
-                    {
-                        id: 'cell-3',
-                        widget: 'code',
-                        parameters: {
-                            code: 'databaseEngine.execQuery(query = "SELECT DIABETES_UNIQUE_ROW_ID FROM diabetes where DRUG=\'Test_Drug\'")',
+                            code: 'databaseEngine.updateData(query =QS )',
                             type: 'py',
                         },
                     },
@@ -221,9 +50,9 @@ export const UpdateDiabetesTemplate: Template = {
                         id: '51891',
                         widget: 'query-import',
                         parameters: {
-                            databaseId: '950eb187-e352-444d-ad6a-6476ed9390af',
-                            frameType: 'PY',
                             frameVariableName: 'FRAME_51891',
+                            frameType: 'PY',
+                            databaseId: '950eb187-e352-444d-ad6a-6476ed9390af',
                             selectQuery: 'SELECT * FROM diabetes',
                         },
                     },
@@ -231,47 +60,16 @@ export const UpdateDiabetesTemplate: Template = {
                         id: '90921',
                         widget: 'code',
                         parameters: {
-                            type: 'py',
                             code: "unique_row_id = FRAME_51891['DIABETES_UNIQUE_ROW_ID'].to_list();",
+                            type: 'py',
                         },
                     },
                     {
                         id: '71095',
                         widget: 'code',
                         parameters: {
-                            type: 'py',
                             code: 'unique_row_id',
-                        },
-                    },
-                ],
-            },
-            'update-diabetes-record': {
-                id: 'update-diabetes-record',
-                cells: [
-                    {
-                        id: '59072',
-                        widget: 'query-import',
-                        parameters: {
-                            databaseId: '950eb187-e352-444d-ad6a-6476ed9390af',
-                            frameType: 'PY',
-                            frameVariableName: 'FRAME_59072',
-                            selectQuery: 'SELECT * FROM diabetes',
-                        },
-                    },
-                    {
-                        id: '27239',
-                        widget: 'code',
-                        parameters: {
                             type: 'py',
-                            code: 'from gaas_gpt_database import DatabaseEngine;databaseEngine = DatabaseEngine(engine_id = "950eb187-e352-444d-ad6a-6476ed9390af", insight_id = \'${i}\');a = FRAME_59072.columns.to_list();a.remove("DIABETES_UNIQUE_ROW_ID");selectedID={{selected-id}};col_string = ", ".join(a);inputValues = [repr({{DRUG}}),repr({{LOCATION}}),str({{GLYHB}}),str({{BP_1D}}),str({{BP_2D}}),str({{WAIST}}),str({{RATIO}}),str({{HEIGHT}}),repr({{FRAME}}),str({{HIP}}),str({{HDL}}),str({{BP_1S}}),str({{BP_2S}}),str({{STAB_GLU}}),repr({{GENDER}}),str({{ID}}),str({{TIME_PPN}}),str({{WEIGHT}}),str({{CHOL}}),str({{AGE}})];set_clause = ", ".join([f"{col} = {val}" for col, val in zip(a, inputValues)]);QS = f\'UPDATE diabetes SET {set_clause} WHERE DIABETES_UNIQUE_ROW_ID = {{selected-id}}\';',
-                        },
-                    },
-                    {
-                        id: '72351',
-                        widget: 'code',
-                        parameters: {
-                            type: 'py',
-                            code: 'databaseEngine.updateData(query =QS )',
                         },
                     },
                 ],
@@ -353,7 +151,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'number',
                     rows: 1,
                     loading: false,
-                    value: '1',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -386,7 +184,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'number',
                     rows: 1,
                     loading: false,
-                    value: '1',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -410,10 +208,10 @@ export const UpdateDiabetesTemplate: Template = {
                 listeners: {
                     onClick: [
                         {
-                            message: ActionMessages.RUN_QUERY,
                             payload: {
                                 queryId: 'update-diabetes-record',
                             },
+                            message: ActionMessages.RUN_QUERY,
                         },
                     ],
                 },
@@ -444,7 +242,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'number',
                     rows: 1,
                     loading: false,
-                    value: '1',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -496,7 +294,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'text',
                     rows: 1,
                     loading: false,
-                    value: '"Test_Frame444"',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -529,7 +327,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'number',
                     rows: 1,
                     loading: false,
-                    value: '1',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -562,7 +360,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'number',
                     rows: 1,
                     loading: false,
-                    value: '1',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -595,7 +393,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'text',
                     rows: 1,
                     loading: false,
-                    value: '"D_Type"',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -628,7 +426,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'number',
                     rows: 1,
                     loading: false,
-                    value: '1',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -661,7 +459,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'text',
                     rows: 1,
                     loading: false,
-                    value: '"Test_Gender"',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -694,7 +492,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'number',
                     rows: 1,
                     loading: false,
-                    value: '1.2',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -727,7 +525,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'text',
                     rows: 1,
                     loading: false,
-                    value: '"Test_Drug44"',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -760,7 +558,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'number',
                     rows: 1,
                     loading: false,
-                    value: '1',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -813,10 +611,10 @@ export const UpdateDiabetesTemplate: Template = {
                 listeners: {
                     onPageLoad: [
                         {
-                            message: ActionMessages.RUN_QUERY,
                             payload: {
                                 queryId: 'on-page-load',
                             },
+                            message: ActionMessages.RUN_QUERY,
                         },
                     ],
                 },
@@ -847,7 +645,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'text',
                     rows: 1,
                     loading: false,
-                    value: '""',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -880,7 +678,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'number',
                     rows: 1,
                     loading: false,
-                    value: '1',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -913,7 +711,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'number',
                     rows: 1,
                     loading: false,
-                    value: '1',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -946,7 +744,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'number',
                     rows: 1,
                     loading: false,
-                    value: '1',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -954,29 +752,29 @@ export const UpdateDiabetesTemplate: Template = {
                 },
                 id: 'input--5362',
             },
-            question: {
-                parent: {
-                    id: 'form',
-                    slot: 'children',
-                },
-                slots: {},
-                widget: 'input',
-                data: {
-                    style: {
-                        padding: '4px',
-                        width: '100%',
-                    },
-                    label: 'Question',
-                    rows: 3,
-                    type: 'text',
-                    value: '',
-                    required: true,
-                },
-                listeners: {
-                    onClick: [],
-                },
-                id: 'question',
-            },
+            // "question": {
+            //     "parent": {
+            //         "id": "form",
+            //         "slot": "children"
+            //     },
+            //     "slots": {},
+            //     "widget": "input",
+            //     "data": {
+            //         "style": {
+            //             "padding": "4px",
+            //             "width": "100%"
+            //         },
+            //         "label": "Question",
+            //         "rows": 3,
+            //         "type": "text",
+            //         "value": "",
+            //         "required": true
+            //     },
+            //     "listeners": {
+            //         "onClick": []
+            //     },
+            //     "id": "question"
+            // },
             'input--4018': {
                 parent: {
                     id: 'container',
@@ -1002,7 +800,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'number',
                     rows: 1,
                     loading: false,
-                    value: '1',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -1035,7 +833,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'number',
                     rows: 1,
                     loading: false,
-                    value: '1',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -1068,7 +866,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'number',
                     rows: 1,
                     loading: false,
-                    value: '1',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -1101,7 +899,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'number',
                     rows: 1,
                     loading: false,
-                    value: '1',
+                    value: '',
                     required: false,
                 },
                 listeners: {
@@ -1134,7 +932,7 @@ export const UpdateDiabetesTemplate: Template = {
                     type: 'number',
                     rows: 1,
                     loading: false,
-                    value: '1',
+                    value: '',
                     required: 'true',
                 },
                 listeners: {
@@ -1142,46 +940,15 @@ export const UpdateDiabetesTemplate: Template = {
                 },
                 id: 'input--1200',
             },
-            'select--6891': {
-                id: 'select--6891',
-                widget: 'select',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                    },
-                    value: '444',
-                    label: 'UNIQUE_ROW_ID',
-                    hint: '',
-                    options: '{{load-unique-id.output}}',
-                    required: false,
-                    disabled: false,
-                    loading: '{{load-unique-id.isLoading}}',
-                    route: 'select--6891',
-                    optionLabel: '',
-                    optionSublabel: '',
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
             'text--2516': {
-                id: 'text--2516',
-                widget: 'text',
                 parent: {
                     id: 'container',
                     slot: 'children',
                 },
+                slots: {},
+                widget: 'text',
                 data: {
+                    route: 'text--2516',
                     style: {
                         padding: '4px',
                         whiteSpace: 'pre-line',
@@ -1190,10 +957,41 @@ export const UpdateDiabetesTemplate: Template = {
                         fontWeight: '',
                     },
                     text: 'Select a Unique Id and update the record.',
-                    route: 'text--2516',
                 },
                 listeners: {},
-                slots: {},
+                id: 'text--2516',
+            },
+            'select--6891': {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
+                    },
+                },
+                widget: 'select',
+                data: {
+                    optionLabel: '',
+                    route: 'select--6891',
+                    hint: '',
+                    optionSublabel: '',
+                    options: '{{load-unique-id.output}}',
+                    style: {
+                        padding: '4px',
+                    },
+                    disabled: false,
+                    label: 'UNIQUE_ROW_ID',
+                    loading: '{{load-unique-id.isLoading}}',
+                    value: '',
+                    required: false,
+                },
+                listeners: {
+                    onChange: [],
+                },
+                id: 'select--6891',
             },
         },
         variables: {
@@ -1263,12 +1061,6 @@ export const UpdateDiabetesTemplate: Template = {
                 to: 'input--5206',
                 type: 'block',
             },
-            'display-diabetes-record': {
-                isInput: false,
-                isOutput: true,
-                to: 'display-diabetes-record',
-                type: 'query',
-            },
             AGE: {
                 to: 'input--1200',
                 type: 'block',
@@ -1276,6 +1068,11 @@ export const UpdateDiabetesTemplate: Template = {
             BP_2D: {
                 to: 'input--9538',
                 type: 'block',
+            },
+            'load-unique-id': {
+                to: 'on-page-load',
+                type: 'cell',
+                cellId: '71095',
             },
             dtype: {
                 to: 'input--6721',
@@ -1289,11 +1086,13 @@ export const UpdateDiabetesTemplate: Template = {
                 to: 'input--4121',
                 type: 'block',
             },
-            'fields-section': {
-                isInput: true,
-                isOutput: true,
-                to: 'fields-section',
-                type: 'query',
+            'selected-id': {
+                to: 'select--6891',
+                type: 'block',
+            },
+            UNIQUE_ROW_ID: {
+                to: 'select--6891',
+                type: 'block',
             },
             BP_2S: {
                 to: 'input--1154',
@@ -1310,24 +1109,9 @@ export const UpdateDiabetesTemplate: Template = {
                 to: 'input--437',
                 type: 'block',
             },
-            UNIQUE_ROW_ID: {
-                type: 'block',
-                to: 'select--6891',
-            },
-            'load-unique-id': {
-                type: 'cell',
-                to: 'on-page-load',
-                cellId: '71095',
-            },
-            'selected-id': {
-                type: 'block',
-                to: 'select--6891',
-            },
         },
         executionOrder: [
-            'display-diabetes-record',
             'insert-diabetes-record',
-            'fields-section',
             'on-page-load',
             'update-diabetes-record',
         ],
