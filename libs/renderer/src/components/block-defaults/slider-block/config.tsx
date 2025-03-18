@@ -1,6 +1,11 @@
-import { Select, MenuItem } from "@semoss/ui";
+import { observer } from "mobx-react-lite";
 import { BlurLinear } from "@mui/icons-material";
 
+import { Select, MenuItem } from "@semoss/ui";
+
+import { BlockConfig } from "../../../store";
+import { useBlockSettings } from "../../../hooks";
+import { buildListener } from "../block-defaults.shared";
 import { SliderBlockDef, SliderBlock } from "./SliderBlock";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import {
@@ -9,10 +14,6 @@ import {
     OptionsSettings,
     SizeSettings,
 } from "../../block-settings";
-import { BlockConfig } from "../../../store";
-import { useBlockSettings } from "../../../hooks";
-import { buildListener } from "../block-defaults.shared";
-import { observer } from "mobx-react-lite";
 
 // export the config for the block
 export const config: BlockConfig<SliderBlockDef> = {
