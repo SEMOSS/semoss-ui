@@ -40,3 +40,16 @@ export interface DesignerMenuItem {
      */
     hoverImage?: string;
 }
+
+export interface FilterCategory {
+    id: string;
+    enabled: boolean;
+    type: 'SECTION' | 'MOST_USED_COMPONENTS';
+}
+
+export interface BlockLocalStorageData {
+    widget: string;
+    name: string;
+    use_count: number;
+    last_used: number; // timestamp
+}
