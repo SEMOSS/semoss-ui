@@ -59,6 +59,7 @@ export const Gantt = observer(
             mouseY: number; //y axis position for the click/brush event
             value: unknown; //value can be of object or string or number type
         } | null>(null);
+        let chartRef = useRef(null);
         //table reference variable to align series name with fiscal axis
         const tableRef = useRef(null);
         //selector to fetch data from the frame
@@ -651,6 +652,13 @@ export const Gantt = observer(
             }
         }, [frame.data.values]);
 
+        useEffect(() => {
+            let echartsInstance = chartRef.current?.getEchartsInstance();
+            if (echartsInstance) {
+                echartsInstance.setOption(dataOption, { notMerge: true });
+            }
+        }, [dataOption]);
+
         function chartFormatter(
             params,
             tooltipData,
@@ -789,7 +797,11 @@ export const Gantt = observer(
                         </StyledContainer>
                     )}
 
-                    <ReactECharts option={dataOption} onEvents={onClickChart} />
+                    <ReactECharts
+                        option={dataOption}
+                        onEvents={onClickChart}
+                        ref={(e) => (chartRef.current = e)}
+                    />
                     <VizBlockContextMenu
                         id={id}
                         frame={frame}

@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { Button, Switch, TextField } from "@semoss/ui";
@@ -52,7 +52,7 @@ export const GanttTargetLine = observer(
                 return JSON.stringify(v, null, 2);
             });
         }, [data, "option"]).get();
-
+        const timeoutRef = useRef(null);
         useEffect(() => {
             let option = JSON.parse(computedValue);
             if (option["customSettings"]?.["gantttools"]) {
@@ -131,6 +131,12 @@ export const GanttTargetLine = observer(
                         ["series"]: [...option["series"], optionToUpdate],
                     };
                 }
+            } else {
+                let seriesData = option["series"];
+                seriesData = seriesData.filter(
+                    (item) => item.name !== "targetDateSegment",
+                );
+                option["series"] = seriesData;
             }
             if (targetLineData.targetlabel != "") {
                 option["customSettings"] = {
@@ -169,7 +175,15 @@ export const GanttTargetLine = observer(
                 };
             }
 
-            setTimeout(() => {
+            runUpdateCustom(option);
+        }
+
+        function runUpdateCustom(option) {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+            }
+            timeoutRef.current = setTimeout(() => {
                 try {
                     setData(
                         "option",
