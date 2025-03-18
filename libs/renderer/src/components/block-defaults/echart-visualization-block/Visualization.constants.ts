@@ -54,3 +54,8 @@ export const FontWeights = [
 ];
 export const Title_Alignment = ["left", "right", "center"];
 export const ECHART_BAR_COLOUR = "#5470c6";
+export const GANTT_CHART = {
+    MILESTONE_COLOR: "#80af6c",
+    MILESTONE_SYMBOL: "triangle",
+    MILESTONE_SYMBOL_SIZE: 16,
+};

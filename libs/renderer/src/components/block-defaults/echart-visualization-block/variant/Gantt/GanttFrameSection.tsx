@@ -6,12 +6,12 @@ import {
 import styled from "@emotion/styled";
 import { observer } from "mobx-react-lite";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks/VisualizationBlock";
 import { Autocomplete } from "@mui/material";
 import { Button, Select, TextField } from "@semoss/ui";
 import { Label, Sync } from "@mui/icons-material";
-import { BlockDef } from "@/store";
-import { PathValue } from "@/types";
+import { BlockDef } from "../../../../../store";
+import { PathValue } from "../../../../../types";
 
 interface GanttFrameSectionProps {
     id: string;

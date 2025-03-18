@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useState, useEffect } from "react";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks/VisualizationBlock";
 import { useBlockSettings } from "../../../../../hooks";
 import {
     ListItem,

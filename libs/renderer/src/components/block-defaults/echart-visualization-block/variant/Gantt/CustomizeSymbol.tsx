@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useBlockSettings, useBlock } from "../../../../../hooks";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks/VisualizationBlock";
 import styled from "@emotion/styled";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import {
@@ -17,7 +17,7 @@ import { computed } from "mobx";
 import { getValueByPath } from "@/utility";
 import { DeleteForever } from "@mui/icons-material";
 import { BaseSettingSection } from "../../../../block-settings";
-import { GANTT_CHART } from "../../Visualization.constants";
+import { GANTT_CHART } from "../../../echart-visualization-blocks/Visualization.constants";
 import { BlockDef } from "../../../../../store";
 import { PathValue } from "@/types";
 import { Path } from "@textea/json-viewer";

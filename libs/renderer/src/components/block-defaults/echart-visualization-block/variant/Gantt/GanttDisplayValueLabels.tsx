@@ -1,16 +1,13 @@
 import { observer } from "mobx-react-lite";
 import { useBlockSettings } from "../../../../../hooks";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks/VisualizationBlock";
+import { styled, Switch } from "@semoss/ui";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { getValueByPath } from "@/utility";
-import { styled, Switch } from "@semoss/ui";
-import { BlockDef } from "@/store";
+import { BlockDef } from "../../../../../store";
 import { PathValue } from "@/types";
 
-interface GanttGroupViewProps {
-    id: string;
-}
 const StyledMainContainer = styled("div")(({}) => ({
     padding: "0.5rem",
     borderBottom: "1px solid #E6E6E6",
@@ -18,11 +15,12 @@ const StyledMainContainer = styled("div")(({}) => ({
 const StyledLabel = styled("label")(({}) => ({
     paddingLeft: "10px",
 }));
-export const GanttGroupView = observer(
+export const GanttDisplayValueLabels = observer(
     <D extends BlockDef = BlockDef>({ id, path }) => {
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
-        const [groupViewData, setGroupViewData] = useState(false);
+        const [displayValueLabelsData, setDisplayValueLabelsData] =
+            useState(false);
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
         const computedValue = useMemo(() => {
             return computed(() => {
@@ -41,17 +39,21 @@ export const GanttGroupView = observer(
         useEffect(() => {
             let parsedJson = JSON.parse(computedValue);
             if (
-                parsedJson["customSettings"]?.["gantttools"]?.["showGroupView"]
+                parsedJson["customSettings"]?.["gantttools"]?.[
+                    "showDisplayValueLabels"
+                ]
             ) {
-                setGroupViewData((prevGroupViewData) => {
+                setDisplayValueLabelsData((prevDisplayValueLabelsData) => {
                     return parsedJson["customSettings"]["gantttools"][
-                        "showGroupView"
+                        "showDisplayValueLabels"
                     ];
                 });
             }
         }, []);
         function updateFields(e) {
-            setGroupViewData((prevGroupViewData) => e.target.checked);
+            setDisplayValueLabelsData(
+                (prevDisplayValueLabelsData) => e.target.checked,
+            );
             let option = JSON.parse(computedValue);
             option = {
                 ...option,
@@ -59,7 +61,7 @@ export const GanttGroupView = observer(
                     ...option["customSettings"],
                     ["gantttools"]: {
                         ...option["customSettings"]["gantttools"],
-                        ["showGroupView"]: e.target.checked,
+                        ["showDisplayValueLabels"]: e.target.checked,
                     },
                 },
             };
@@ -85,12 +87,12 @@ export const GanttGroupView = observer(
             <>
                 <StyledMainContainer>
                     <Switch
-                        checked={groupViewData}
+                        checked={displayValueLabelsData}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                             updateFields(e)
                         }
                     />
-                    <StyledLabel>Show Group View</StyledLabel>
+                    <StyledLabel>Show Display Value Labels</StyledLabel>
                 </StyledMainContainer>
             </>
         );

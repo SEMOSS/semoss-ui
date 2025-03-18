@@ -1,45 +1,44 @@
-import ReactECharts from "echarts-for-react";
-import { observer } from "mobx-react-lite";
-import { useBlock, useBlockSettings, useFrame } from "../../../../../hooks";
-import { styled, TableContainer } from "@mui/material";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { computed } from "mobx";
-import { getValueByPath } from "@/utility";
 import { Paper, Table } from "@mui/material";
 import { TableHead } from "@mui/material";
+import { styled, TableContainer } from "@mui/material";
 import { TableRow, TableCell, TableBody } from "@mui/material";
+import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import ReactECharts from "echarts-for-react";
+import { useBlock, useBlockSettings, useFrame } from "../../../../../hooks";
+import { BlockDef } from "../../../../../store";
+import { getValueByPath } from "@/utility";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 import { GANTT_CHART } from "../../Visualization.constants";
-import { BlockDef } from "../../../../../store";
-
+import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+//Main container where gantt chart will render
 const StyledMainContainer = styled("div")(({ theme }) => ({}));
-
-const StyledSubContainer = styled("div")(({ theme }) => ({
-    padding: "0.5rem",
-}));
-
+//sub styled container to manage fiscal axis with chart
 const StyledContainer = styled("div")(() => ({
     display: "flex",
     justifyContent: "flex-start",
 }));
-
+//styled span to render series name
 const StyledDataSpan = styled("span")(({}) => ({}));
-
+//styled table cell to have background color
 const StyledTableCell = styled(TableCell)<{ backgroundColor?: string }>(
     ({ backgroundColor }) => ({
         backgroundColor: backgroundColor ?? "#fff",
         border: "1px solid #e6e6e6",
     }),
 );
-
+//Gantt chart props
 interface GanttProps {
     id: string;
     updateChart: (dataOption, path) => void;
 }
-
+//Gantt chart main component
 export const Gantt = observer(
     <D extends BlockDef = BlockDef>({ id, updateChart }: GanttProps) => {
-        const { data, setData } = useBlockSettings<any>(id);
+        const { data, setData } =
+            useBlockSettings<EchartVisualizationBlockDef>(id); //Data for the current block
+        //computed value to hold the most recent data
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
@@ -54,12 +53,15 @@ export const Gantt = observer(
                 return JSON.stringify(v, null, 2);
             });
         }, [data, "option"]).get();
+        //custom context menu to show when user right clicks
         const [contextMenu, setContextMenu] = useState<{
             mouseX: number; //x axis position for the click/brush event
             mouseY: number; //y axis position for the click/brush event
             value: unknown; //value can be of object or string or number type
         } | null>(null);
+        //table reference variable to align series name with fiscal axis
         const tableRef = useRef(null);
+        //selector to fetch data from the frame
         let selector = "";
         if (data.columns !== undefined) {
             selector = `Select(${data.columns
@@ -72,44 +74,49 @@ export const Gantt = observer(
                 })
                 .join(",")}])`;
         }
-
+        //frame object to get the data from the frame
         const frame = useFrame(data.frame?.name, {
             selector: selector,
         });
-
+        // custom variable to hold the chart data to render
         let dataOption = useMemo(() => {
             let option = JSON.parse(computedValue);
-            // Step 2: Sort and stack overlapping tasks
-            var resourceRows = []; // Stores y-axis labels
-            var seriesData = []; // Stores processed task data
+            var resourceRows = []; // Stores resource related details
+            var seriesData = []; // series data to be used for rendering chart
             let yAxisName = "";
-            let xAxisName = "";
             let toolTipSelected = [];
             let toolTipSelectedIndex = [];
             let mileStoneIndex = "";
             let milestoneData = [];
-            let showTarget = false;
+            //detect task progress column is selected or not
             let taskProgressSelected = Object.keys(
                 option["customSettings"]["columnDetails"],
             ).some((item) => item === "taskprogress");
+            //default properties for milestone display
             let mileStoneProperties = {
                 symbol: GANTT_CHART.MILESTONE_SYMBOL,
                 color: GANTT_CHART.MILESTONE_COLOR,
                 symbolSize: GANTT_CHART.MILESTONE_SYMBOL_SIZE,
             };
+            // symbol value, size, color based on the milestone selected
             let symbolValue = [];
             let symbolSize = [];
             let symbolColor = [];
+            //show legend or not
             let legendShow = false;
+            //show group view or not
             let groupViewShow = false;
+            //column details selected in the data section
             let columnIndexDetails =
                 option["customSettings"]["columnIndexDetails"];
-
+            //frame data values
             if (frame.data.values.length) {
                 frame.data.values.forEach((item, index) => {
+                    let itemIndex = parseInt(columnIndexDetails["milestone"]);
                     let mileStoneDate = new Date(
-                        item[columnIndexDetails["milestone"]],
+                        item[itemIndex] as Date,
                     ).getTime();
+
                     let ganttToolsLength =
                         option["customSettings"]?.["gantttools"]?.[
                             "customizeSymbol"
@@ -178,7 +185,7 @@ export const Gantt = observer(
                                   "taskgroup"
                               ]["name"]
                             : "";
-                    frame.data.values.forEach((d, index) => {
+                    frame.data.values.forEach((d: string[], index) => {
                         if (!groupedData[d[taskGroupIndex]])
                             groupedData[d[taskGroupIndex]] = [];
                         groupedData[d[taskGroupIndex]].push(d);
@@ -230,20 +237,22 @@ export const Gantt = observer(
                             "name"
                         ];
                     // Convert data to proper format
-                    seriesData = frame.data.values.map((d, index) => ({
-                        name: d[columnIndexDetails["task"]],
-                        taskprogress: d[columnIndexDetails["taskprogress"]],
-                        value: [
-                            new Date(
-                                d[columnIndexDetails["startdate"]],
-                            ).getTime(),
-                            index,
-                            new Date(
-                                d[columnIndexDetails["enddate"]],
-                            ).getTime(),
-                            ...toolTipSelectedIndex.map((item) => d[item]),
-                        ],
-                    }));
+                    seriesData = frame.data.values.map(
+                        (d: string[], index) => ({
+                            name: d[columnIndexDetails["task"]],
+                            taskprogress: d[columnIndexDetails["taskprogress"]],
+                            value: [
+                                new Date(
+                                    d[columnIndexDetails["startdate"]],
+                                ).getTime(),
+                                index,
+                                new Date(
+                                    d[columnIndexDetails["enddate"]],
+                                ).getTime(),
+                                ...toolTipSelectedIndex.map((item) => d[item]),
+                            ],
+                        }),
+                    );
                     resourceRows = frame.data.values.map((d, index) => d[0]);
                 }
                 if (
@@ -251,31 +260,33 @@ export const Gantt = observer(
                     columnIndexDetails["milestone"]
                 ) {
                     let gantttools = option["customSettings"]["gantttools"];
-                    milestoneData = frame.data.values.map((d, index) => {
-                        let mileStoneSymbol = mileStoneProperties.symbol;
-                        let symbolSize = mileStoneProperties.symbolSize;
-                        let mileStoneDate = new Date(
-                            d[columnIndexDetails["milestone"]],
-                        ).getTime();
-                        let endDate = new Date(
-                            d[columnIndexDetails["enddate"]],
-                        ).getTime();
-                        return {
-                            name: `MileStone ${index + 1}`,
-                            value: [
-                                mileStoneDate,
-                                d[columnIndexDetails["task"]],
-                                endDate,
-                            ],
-                            mileStoneOriginalDate:
+                    milestoneData = frame.data.values.map(
+                        (d: string[], index) => {
+                            let mileStoneSymbol = mileStoneProperties.symbol;
+                            let symbolSize = mileStoneProperties.symbolSize;
+                            let mileStoneDate = new Date(
                                 d[columnIndexDetails["milestone"]],
-                            symbol: symbolValue[index],
-                            symbolSize: symbolSize[index],
-                            itemStyle: {
-                                color: symbolColor[index],
-                            },
-                        };
-                    });
+                            ).getTime();
+                            let endDate = new Date(
+                                d[columnIndexDetails["enddate"]],
+                            ).getTime();
+                            return {
+                                name: `MileStone ${index + 1}`,
+                                value: [
+                                    mileStoneDate,
+                                    d[columnIndexDetails["task"]],
+                                    endDate,
+                                ],
+                                mileStoneOriginalDate:
+                                    d[columnIndexDetails["milestone"]],
+                                symbol: symbolValue[index],
+                                symbolSize: symbolSize[index],
+                                itemStyle: {
+                                    color: symbolColor[index],
+                                },
+                            };
+                        },
+                    );
                 }
             }
 
@@ -319,37 +330,44 @@ export const Gantt = observer(
                         const yBottom =
                             params.coordSys.y + params.coordSys.height;
                         const yTop = params.coordSys.y;
-                        return {
-                            type: "group",
-                            children: [
-                                {
-                                    type: "line",
-                                    originX: 0,
-                                    originY: 0,
-                                    shape: {
-                                        x1: x,
-                                        y1: yBottom,
-                                        x2: x,
-                                        y2: yTop,
+                        if (
+                            option["customSettings"]?.["gantttools"]?.[
+                                "targetDate"
+                            ] != ""
+                        ) {
+                            return {
+                                type: "group",
+                                children: [
+                                    {
+                                        type: "line",
+                                        originX: 0,
+                                        originY: 0,
+                                        shape: {
+                                            x1: x,
+                                            y1: yBottom,
+                                            x2: x,
+                                            y2: yTop,
+                                        },
+                                        style: {
+                                            stroke: targetColor, // Line color
+                                            lineWidth: 2, // Line thickness
+                                            type: "dashed", // Line style
+                                        },
                                     },
-                                    style: {
-                                        stroke: targetColor, // Line color
-                                        lineWidth: 2, // Line thickness
-                                        type: "dashed", // Line style
+                                    {
+                                        type: "text",
+                                        style: {
+                                            x: x,
+                                            y: yTop - 10,
+                                            text: targetText,
+                                            textAlign: "center",
+                                            textVerticalAlign: "bottom",
+                                        },
                                     },
-                                },
-                                {
-                                    type: "text",
-                                    style: {
-                                        x: x,
-                                        y: yTop - 10,
-                                        text: targetText,
-                                        textAlign: "center",
-                                        textVerticalAlign: "bottom",
-                                    },
-                                },
-                            ],
-                        };
+                                ],
+                            };
+                        }
+                        return {};
                     },
                 };
                 if (

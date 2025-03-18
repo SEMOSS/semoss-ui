@@ -1,13 +1,13 @@
-import { observer } from "mobx-react-lite";
-import { useBlocks, useBlockSettings } from "../../../../../hooks";
-import styled from "@emotion/styled";
-import { Button, Switch, TextField } from "@semoss/ui";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import { Button, Switch, TextField } from "@semoss/ui";
+import styled from "@emotion/styled";
 import { getValueByPath } from "@/utility";
-import { BlockDef } from "@/store";
-import { PathValue } from "@/types";
+import { useBlocks, useBlockSettings } from "../../../../../hooks";
+import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+import { BlockDef } from "../../../../../store";
+import { PathValue } from "../../../../../types";
 
 interface GanttTargetLineProps {
     id: string;

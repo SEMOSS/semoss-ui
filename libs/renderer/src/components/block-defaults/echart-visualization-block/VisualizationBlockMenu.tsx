@@ -9,6 +9,7 @@ import { UpgradedVisualizationTool } from "./variant/bar-chart/UpgradedVisualiza
 import { FrameOperations } from "./variant/bar-chart/FrameOperations";
 import { FrameOperationsPie } from "./variant/pie-chart/FrameOperationsPie";
 import { ScatterPlotBlockSettings } from "./variant/scatter-plot/ScatterPlotBlockSettings";
+import { GanttFrameSection } from "./variant/Gantt/GanttFrameSection";
 
 const StyledContainer = styled("div")(() => ({
     maxHeight: "50vh",
@@ -98,6 +99,9 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                                 id={id}
                                 path={"option"}
                             ></ScatterPlotBlockSettings>
+                        )}
+                        {data.variation === "echart-gantt-chart" && (
+                            <GanttFrameSection id={id} path={"option"} />
                         )}
                     </StyledSubSection>
                 )}

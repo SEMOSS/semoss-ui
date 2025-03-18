@@ -8,7 +8,7 @@ import { styled } from "@mui/material";
 import { useMemo, useRef } from "react";
 import { BAR_CHART_DATA } from "./Visualization.constants";
 import { PathValue } from "@/types";
-import { Gantt } from "./Variants/Gantt/Gantt";
+import { Gantt } from "../echart-visualization-block/variant/Gantt/Gantt";
 // import { ScatterPlotBlock } from './Variants/ScatterPlot/ScatterPlot';
 
 const StyledNoDataContainer = styled("div", {
