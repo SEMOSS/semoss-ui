@@ -131,7 +131,7 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
             return (
                 <StyledNoDataContainer>
                     <EChartsReact
-                        option={data.option}
+                        option={data.option as unknown as EChartsOption}
                         onChartReady={(chart) => {
                             echartsLoaded(chart);
                         }}

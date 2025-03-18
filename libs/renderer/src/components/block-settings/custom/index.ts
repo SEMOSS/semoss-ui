@@ -9,5 +9,6 @@ export { FontSizeSettings } from "./FontSizeSettings";
 export { SelectInputOptionsSettings } from "./SelectInputOptionsSettings";
 export { SelectInputValueSettings } from "./SelectInputValueSettings";
 export { GridSettings } from "./grid";
+export { IconSelectSettings } from "./IconSelectSettings";
 export { QueryInputSettings } from "./QueryInputSettings";
 export { OptionsSettings } from "./OptionsSettings";
