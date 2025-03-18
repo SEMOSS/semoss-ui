@@ -2177,4 +2177,30 @@ columns 1
             },
         },
     },
+    {
+        section: SECTION_INPUT,
+        name: 'Slider',
+        helperText: 'Allows user to select a value from a specified range',
+        activeImage: BLOCK_IMAGES['SLIDER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['SLIDER_HOVER'],
+        json: {
+            widget: 'slider',
+            data: {
+                type: 'continuous',
+                style: {
+                    color: 'primary',
+                },
+                marks: [],
+                steps: 1,
+                value: 0,
+                min: 0,
+                max: 100,
+                size: '300px',
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
 ];

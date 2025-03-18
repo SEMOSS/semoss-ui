@@ -51,6 +51,11 @@ interface SelectInputSettingsProps<D extends BlockDef = BlockDef> {
 
     /** Whether we should dispatch an event to the designer to update the frame around the block */
     resizeOnSet?: boolean;
+
+    /**
+     * Tooltip to display for the setting
+     */
+    tooltip?: string;
 }
 
 const filter = createFilterOptions<string>();
@@ -64,6 +69,7 @@ export const SelectInputSettings = observer(
         allowUnset = false,
         allowCustomInput = false,
         resizeOnSet = false,
+        tooltip = "",
     }: SelectInputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
         const { state } = useBlocks();
@@ -152,7 +158,7 @@ export const SelectInputSettings = observer(
         };
 
         return (
-            <BaseSettingSection label={label}>
+            <BaseSettingSection label={label} description={tooltip}>
                 {allowCustomInput ? (
                     <Autocomplete
                         fullWidth
