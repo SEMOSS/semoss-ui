@@ -11,19 +11,22 @@ import { PathValue } from "../../../../../types";
 interface GanttLegendProps {
     id: string;
 }
+//styled main container with padding and border
 const StyledMainContainer = styled("div")(({}) => ({
     padding: "0.5rem",
     borderBottom: "1px solid #E6E6E6",
 }));
+// styled label with padding left
 const StyledLabel = styled("label")(({}) => ({
     paddingLeft: "10px",
 }));
 export const GanttLegend = observer(
     <D extends BlockDef = BlockDef>({ id, path }) => {
         const { data, setData } =
-            useBlockSettings<EchartVisualizationBlockDef>(id);
-        const [legendData, setLegendData] = useState(false);
-        const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+            useBlockSettings<EchartVisualizationBlockDef>(id); //block data
+        const [legendData, setLegendData] = useState(false); //legend component data
+        const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null); //timeout ref for setting data
+        //get the computed value of the block data
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
@@ -38,6 +41,7 @@ export const GanttLegend = observer(
                 return JSON.stringify(v, null, 2);
             });
         }, [data, "option"]).get();
+        //to retain the values from state
         useEffect(() => {
             let parsedJson = JSON.parse(computedValue);
             if (parsedJson["customSettings"]?.["gantttools"]?.["showLegend"]) {
@@ -48,6 +52,7 @@ export const GanttLegend = observer(
                 });
             }
         }, []);
+        //update the fields and also the state when legend fields are changed
         function updateFields(e) {
             setLegendData((prevLegendData) => e.target.checked);
             let option = JSON.parse(computedValue);
@@ -63,6 +68,7 @@ export const GanttLegend = observer(
             };
             runStateUpdateCustom(option);
         }
+        //run the state update when fields in legend are changed
         function runStateUpdateCustom(option) {
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);

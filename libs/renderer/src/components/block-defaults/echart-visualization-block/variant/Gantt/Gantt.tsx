@@ -331,6 +331,7 @@ export const Gantt = observer(
                         const yBottom =
                             params.coordSys.y + params.coordSys.height;
                         const yTop = params.coordSys.y;
+                        //if targetdate is not empty then show the target date line
                         if (
                             option["customSettings"]?.["gantttools"]?.[
                                 "targetDate"
@@ -371,6 +372,7 @@ export const Gantt = observer(
                         return {};
                     },
                 };
+                //line data setting if target date is not empty
                 if (
                     option["customSettings"]?.["gantttools"]?.["targetDate"] !=
                     ""
@@ -380,6 +382,7 @@ export const Gantt = observer(
                     lineData = [];
                 }
             }
+            //final data option to set to chart
             option = {
                 ...option,
                 tooltip: {
@@ -409,7 +412,6 @@ export const Gantt = observer(
                 },
                 yAxis: {
                     type: "category",
-                    // name: 'Resource',
                     data: resourceRows,
                     inverse: true,
                 },
@@ -541,7 +543,7 @@ export const Gantt = observer(
             };
             return option;
         }, [frame.data.values, data.columns, computedValue]);
-
+        //get quarter and month list with fiscal year details
         function getQuarterAndMonthList(startFiscalMonth) {
             let startMonth = startFiscalMonth;
             let month = [
@@ -561,6 +563,7 @@ export const Gantt = observer(
             let startIndex = month.indexOf(startMonth);
             let startIndexTemp = startIndex;
             let quarterObject = {};
+            //create quarter object
             [1, 2, 3, 4].forEach((item) => {
                 quarterObject["Q" + item] = [];
                 let countsPerQuarter = 3;
@@ -572,6 +575,7 @@ export const Gantt = observer(
                     startIndexTemp++;
                 }
             });
+            //month based on quarter from Jan to Dec based on fiscal year start
             let monthBasedQuarter = [];
             let lastMonthInQuarter = "";
             month.forEach((item, index) => {
@@ -611,6 +615,7 @@ export const Gantt = observer(
                 }
                 lastMonthInQuarter = monthExistsInQuarter;
             });
+            //set initial fiscal year based on current month selection, if month data is not available, then first record of seriesdata is selected
             let FYYear =
                 parseInt(
                     dataOption["customSettings"]?.["gantttools"]?.[
@@ -623,6 +628,7 @@ export const Gantt = observer(
                     ["colSpan"]: item.month.length,
                 };
             });
+            //sorting records based on date
             monthBasedQuarter = monthBasedQuarter.sort(
                 (item, item1) => item.order - item1.order,
             );
@@ -645,20 +651,20 @@ export const Gantt = observer(
             });
             return monthBasedQuarter;
         }
-
+        //update chart data when frame values are changed
         useEffect(() => {
             if (!frame.isLoading && frame.data.values.length > 0) {
                 updateChart(dataOption, "option");
             }
         }, [frame.data.values]);
-
+        //update chart data when data is updated
         useEffect(() => {
             let echartsInstance = chartRef.current?.getEchartsInstance();
             if (echartsInstance) {
                 echartsInstance.setOption(dataOption, { notMerge: true });
             }
         }, [dataOption]);
-
+        //tooltip function to render tooltip based on options provided
         function chartFormatter(
             params,
             tooltipData,
@@ -675,22 +681,27 @@ export const Gantt = observer(
             });
             return chartToolTip;
         }
-
+        //enable or disable fiscal axis
         const enableFiscalAxis =
             dataOption["customSettings"]?.["gantttools"]?.[
                 "enableFiscalAxis"
             ] || false;
+        //fiscal start month
         const fiscalStartMonth =
             dataOption["customSettings"]?.["gantttools"]?.["fiscalYearStart"] ||
             "Jan";
+        //fiscal axis background color
         const fiscalAxisBackgroundColor =
             dataOption["customSettings"]?.["gantttools"]?.[
                 "fiscalAxisBackgroundColor"
             ] || "#0471f0";
+        //getquarter and month list with fiscal year
         const quarterAndMonth = getQuarterAndMonthList(fiscalStartMonth);
+        //get table height for the chart side heading column
         const tableHeight = tableRef.current?.getBoundingClientRect()?.height
             ? tableRef.current?.getBoundingClientRect()?.height
             : 70;
+        //get the series name for chart side heading
         let seriesName =
             dataOption["customSettings"]?.["columnDetails"]?.["task"]?.name ||
             "";

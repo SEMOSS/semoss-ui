@@ -1,27 +1,29 @@
-import { observer } from "mobx-react-lite";
-import { useBlockSettings } from "../../../../../hooks";
-import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks/VisualizationBlock";
-import { styled, Switch } from "@semoss/ui";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import { styled, Switch } from "@semoss/ui";
 import { getValueByPath } from "@/utility";
-import { BlockDef } from "../../../../../store";
 import { PathValue } from "@/types";
-
+import { useBlockSettings } from "../../../../../hooks";
+import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks/VisualizationBlock";
+import { BlockDef } from "../../../../../store";
+//main container with default padding and border
 const StyledMainContainer = styled("div")(({}) => ({
     padding: "0.5rem",
     borderBottom: "1px solid #E6E6E6",
 }));
+//label with default padding towards left
 const StyledLabel = styled("label")(({}) => ({
     paddingLeft: "10px",
 }));
 export const GanttDisplayValueLabels = observer(
     <D extends BlockDef = BlockDef>({ id, path }) => {
         const { data, setData } =
-            useBlockSettings<EchartVisualizationBlockDef>(id);
+            useBlockSettings<EchartVisualizationBlockDef>(id); //block data
         const [displayValueLabelsData, setDisplayValueLabelsData] =
-            useState(false);
-        const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+            useState(false); //display value labels state
+        const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null); //timeout ref for setting data
+        //get the computed value of the block data
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
@@ -36,6 +38,7 @@ export const GanttDisplayValueLabels = observer(
                 return JSON.stringify(v, null, 2);
             });
         }, [data, "option"]).get();
+        // retain the values of the display value labels
         useEffect(() => {
             let parsedJson = JSON.parse(computedValue);
             if (
@@ -50,6 +53,7 @@ export const GanttDisplayValueLabels = observer(
                 });
             }
         }, []);
+        //update fields when display value labels is changed
         function updateFields(e) {
             setDisplayValueLabelsData(
                 (prevDisplayValueLabelsData) => e.target.checked,
@@ -67,6 +71,7 @@ export const GanttDisplayValueLabels = observer(
             };
             runStateUpdateCustom(option);
         }
+        //run state update when display value labels is changed
         function runStateUpdateCustom(option) {
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);

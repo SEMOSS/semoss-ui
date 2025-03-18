@@ -12,20 +12,23 @@ import { PathValue } from "../../../../../types";
 interface GanttTargetLineProps {
     id: string;
 }
-
+//styled main container with padding and border
 const StyledMainContainer = styled("div")(() => ({
     display: "flex",
     flexDirection: "column",
     padding: "0.75rem",
     borderBottom: "1px solid #E6E6E6",
 }));
+//styled sub container with flex direction column
 const StyledSubContainer = styled("div")(() => ({
     display: "flex",
     flexDirection: "column",
 }));
+//styled label with padding left
 const StyledLabel = styled("label")(() => ({
     paddingLeft: "10px",
 }));
+//initial target line data
 const INITIAL_TARGET_LINE = {
     targetdate: "",
     targetlabel: "",
@@ -35,9 +38,10 @@ const INITIAL_TARGET_LINE = {
 export const GanttTargetLine = observer(
     <D extends BlockDef = BlockDef>({ id, path }) => {
         const { data, setData } =
-            useBlockSettings<EchartVisualizationBlockDef>(id);
+            useBlockSettings<EchartVisualizationBlockDef>(id); //block data
         const [targetLineData, setTargetLineData] =
-            useState(INITIAL_TARGET_LINE);
+            useState(INITIAL_TARGET_LINE); //target line data
+        //get the computed value of the block data
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
@@ -52,7 +56,8 @@ export const GanttTargetLine = observer(
                 return JSON.stringify(v, null, 2);
             });
         }, [data, "option"]).get();
-        const timeoutRef = useRef(null);
+        const timeoutRef = useRef(null); //timeout ref for setting data
+        //to retain the values from state
         useEffect(() => {
             let option = JSON.parse(computedValue);
             if (option["customSettings"]?.["gantttools"]) {
@@ -81,7 +86,7 @@ export const GanttTargetLine = observer(
                 });
             }
         }, []);
-
+        //update the fields and also the state when target line fields are changed
         function updateFields(e, field = "", directVal = undefined) {
             if (field != "") {
                 setTargetLineData((prevTargetLineData) => {
@@ -93,11 +98,11 @@ export const GanttTargetLine = observer(
                 });
             }
         }
-
+        //update the chart data when target line data is changed
         useEffect(() => {
             updateChartData();
         }, [targetLineData]);
-
+        //update the chart data to state by making needed changes
         function updateChartData() {
             let option = JSON.parse(computedValue);
             if (targetLineData.targetdate != "") {
@@ -177,7 +182,7 @@ export const GanttTargetLine = observer(
 
             runUpdateCustom(option);
         }
-
+        //run the state updates when needed changes in option is done
         function runUpdateCustom(option) {
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
@@ -192,6 +197,7 @@ export const GanttTargetLine = observer(
                 } catch (e) {}
             }, 300);
         }
+        //reset the target line data to initial state
         function resetToInitialState() {
             setTargetLineData((prevTargetLine) => {
                 return {
@@ -202,6 +208,7 @@ export const GanttTargetLine = observer(
                 };
             });
         }
+        //timezone based changes for date
         function convertTimeZone(date) {
             let currentTimezone =
                 Intl.DateTimeFormat().resolvedOptions().timeZone;

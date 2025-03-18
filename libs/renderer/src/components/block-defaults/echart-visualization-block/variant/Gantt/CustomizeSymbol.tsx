@@ -1,8 +1,6 @@
-import { observer } from "mobx-react-lite";
-import { useBlockSettings, useBlock } from "../../../../../hooks";
-import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks/VisualizationBlock";
-import styled from "@emotion/styled";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
 import {
     Autocomplete,
     Button,
@@ -13,25 +11,27 @@ import {
     Switch,
     TextField,
 } from "@semoss/ui";
-import { computed } from "mobx";
+import styled from "@emotion/styled";
 import { getValueByPath } from "@/utility";
-import { DeleteForever } from "@mui/icons-material";
+import { PathValue } from "@/types";
+import { useBlockSettings, useBlock } from "../../../../../hooks";
+import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks/VisualizationBlock";
 import { BaseSettingSection } from "../../../../block-settings";
 import { GANTT_CHART } from "../../../echart-visualization-blocks/Visualization.constants";
 import { BlockDef } from "../../../../../store";
-import { PathValue } from "@/types";
-import { Path } from "@textea/json-viewer";
-
+//Sub container with column based field setting
 const StyledSubContainer = styled("div")(({}) => ({
     padding: "0.5rem",
     display: "flex",
     flexDirection: "column",
 }));
+//Applied custom style container
 const StyledAppliedContainer = styled("div")(() => ({
     border: "1px solid grey",
     borderRadius: 9,
     padding: "10px",
 }));
+//Styled span with custom background color for mentioning color selected for a custom symbol
 const StyledSpan = styled("span")<{ backgroundColor: string }>((props) => ({
     backgroundColor: props.backgroundColor ?? "",
     padding: "3px",
@@ -40,11 +40,12 @@ const StyledSpan = styled("span")<{ backgroundColor: string }>((props) => ({
     height: "15px",
     display: "flex",
 }));
-
+//Main container for symbol section with padding
 const StyledMainContainer = styled("div")(({}) => ({
     padding: "0.5rem",
     borderBottom: "1px solid #E6E6E6",
 }));
+//Default custom style
 const INITIAL_CUSTOM_STYLE = {
     dimension: "",
     symbol: "",
@@ -56,18 +57,19 @@ const INITIAL_CUSTOM_STYLE = {
 export const CustomizeSymbol = observer(
     <D extends BlockDef = BlockDef>({ id, path }) => {
         const { data, setData } =
-            useBlockSettings<EchartVisualizationBlockDef>(id);
+            useBlockSettings<EchartVisualizationBlockDef>(id); //block data to manage settings
         const [customizeSymbolData, setCustomizeSymbolData] =
-            useState(INITIAL_CUSTOM_STYLE);
-        const [appliedSymbolData, setAppliedSymbolData] = useState([]);
-        const [dimensionList, setDimensionList] = useState([]);
-        const [dimensionSelected, setDimensionSelected] = useState("");
+            useState(INITIAL_CUSTOM_STYLE); //customize symbol component state
+        const [appliedSymbolData, setAppliedSymbolData] = useState([]); //applied symbol data state
+        const [dimensionList, setDimensionList] = useState([]); //dimension list to select for custom symbol
+        const [dimensionSelected, setDimensionSelected] = useState(""); //selected dimention in the dimension list
         const [dimensionInstance, setDimensionInstance] = useState({
             startdate: [],
             enddate: [],
             milestone: [],
-        });
-        const [editingInstanceIndex, setEditingInstanceIndex] = useState(-1);
+        }); // dimension instance data for the available dimensions
+        const [editingInstanceIndex, setEditingInstanceIndex] = useState(-1); //if editing this will be set with some index greater than -1
+        //List of symbols to select for custom symbol
         const symbolList = [
             { label: "Circle", value: "circle" },
             { label: "Empty Circle", value: "emptycircle" },
@@ -78,6 +80,7 @@ export const CustomizeSymbol = observer(
             { label: "Pin", value: "pin" },
             { label: "Arrow", value: "arrow" },
         ];
+        //Computed value from the block data
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
@@ -92,6 +95,7 @@ export const CustomizeSymbol = observer(
                 return JSON.stringify(v, null, 2);
             });
         }, [data, "option"]).get();
+        //useeffect to update initial state if available
         useEffect(() => {
             let option = JSON.parse(computedValue);
             let columnDetails = option["customSettings"]?.["columnDetails"];
@@ -188,6 +192,7 @@ export const CustomizeSymbol = observer(
                     };
                 });
             }
+            //if applied symbol data is available then set the applied symbol data
             let customizeSettings =
                 option["customSettings"]["gantttools"]?.["customizeSymbol"] ||
                 [];
@@ -214,6 +219,7 @@ export const CustomizeSymbol = observer(
                     : new Date(dateConvertedToTimeZone).getDate())
             );
         }
+        //update fields function will be called when a field is changed
         function updateFields(e, field, directValue = undefined) {
             setCustomizeSymbolData((prevSymbolData) => {
                 return {
@@ -221,6 +227,7 @@ export const CustomizeSymbol = observer(
                     [field]: directValue ?? e.target.value,
                 };
             });
+            //if a dimension field is changed, then dimension selected is also updated
             if (field === "dimension") {
                 let value = e.target.value;
                 let dimensionSelected = dimensionList.find(
@@ -233,25 +240,30 @@ export const CustomizeSymbol = observer(
                 }
             }
         }
+        //updated dimension list with label and value
         const dimensionListUpdated =
             dimensionList.map((item, index) => ({
                 label: item.name,
                 value: item.selector,
             })) || [];
+        //symbol color switch
         const showSymbolColor = customizeSymbolData.symbolColorSelected
             ? true
             : false;
+        //based on the selected dimension, the instance values are updated and rendered in instance selection field
         const dimensionInstanceToRender =
             dimensionInstance[dimensionSelected]?.map((item, index) => {
                 return item;
             }) || [];
+        //dimension name selected based on the selected dimension as selected dimension will have selector value
         const dimensionNameSelected =
             dimensionList.find(
                 (item) => item.selector === customizeSymbolData.dimension,
             )?.name || customizeSymbolData.dimension;
-
+        //update chart data when a field is changed
         function updateChartData() {
             let option = JSON.parse(computedValue);
+            //if customize symbol is newly being created
             if (editingInstanceIndex === -1) {
                 option["customSettings"] = {
                     ...option["customSettings"],
@@ -300,6 +312,7 @@ export const CustomizeSymbol = observer(
                     },
                 };
             } else {
+                //if the instance is selected for editing, then respective index in the appliedSymbolData is used to update records
                 if (
                     option["customSettings"]["gantttools"].hasOwnProperty(
                         "customizeSymbol",
@@ -334,6 +347,7 @@ export const CustomizeSymbol = observer(
                         "option",
                         option as PathValue<D["data"], typeof path>,
                     );
+                    //updating the applied symbol data only when the state is updated
                     let appliedSymbolDataList = appliedSymbolData;
                     if (
                         editingInstanceIndex > -1 &&
@@ -376,6 +390,7 @@ export const CustomizeSymbol = observer(
                 } catch (e) {}
             }, 300);
         }
+        //removing the applied data
         function deleteAppliedData(index) {
             let updatedAppliedData = appliedSymbolData;
             let option = JSON.parse(computedValue);
@@ -406,6 +421,7 @@ export const CustomizeSymbol = observer(
                 }, 300);
             }
         }
+        //when the existing instance under applied symbol is clicked, then respective data is loaded into cusomizeSymbolData for editing
         function applyToCurrentCustom(index) {
             if (appliedSymbolData?.[index]) {
                 setCustomizeSymbolData((prevCustSymbol) => {
@@ -420,11 +436,40 @@ export const CustomizeSymbol = observer(
                 });
             }
         }
+        //reset to Initial state will reset customize symbol component to initial state
         function resetToInitialState() {
             setCustomizeSymbolData((prevCustomizeData) => {
-                return INITIAL_CUSTOM_STYLE;
+                return {
+                    dimension: "",
+                    symbol: "",
+                    symbolSize: 5,
+                    symbolColorSelected: false,
+                    symbolColor: "",
+                    dimensionInstance: [],
+                };
             });
+            setEditingInstanceIndex((prevEditingInstanceIndex) => {
+                return -1;
+            });
+            setAppliedSymbolData((prevAppliedSymbol) => {
+                return [];
+            });
+            let option = JSON.parse(computedValue);
+            if (option["customSettings"]["gantttools"]?.["customizeSymbol"]) {
+                option["customSettings"]["gantttools"]["customizeSymbol"] = [];
+                setTimeout(() => {
+                    try {
+                        setData(
+                            "option",
+                            option as PathValue<D["data"], typeof path>,
+                        );
+                    } catch (e) {
+                        console.log(e);
+                    }
+                }, 300);
+            }
         }
+        //updated instances data
         let updatedInstances = appliedSymbolData.map((item, index) => {
             return {
                 label:

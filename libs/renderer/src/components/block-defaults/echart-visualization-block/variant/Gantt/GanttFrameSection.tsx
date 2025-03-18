@@ -1,22 +1,23 @@
+import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { observer } from "mobx-react-lite";
+import { Autocomplete } from "@mui/material";
+import { Button, Select, TextField } from "@semoss/ui";
 import {
     useBlockSettings,
     useBlocksPixel,
     useFrameHeaders,
 } from "../../../../../hooks";
 import styled from "@emotion/styled";
-import { observer } from "mobx-react-lite";
-import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks/VisualizationBlock";
-import { Autocomplete } from "@mui/material";
-import { Button, Select, TextField } from "@semoss/ui";
-import { Label, Sync } from "@mui/icons-material";
+import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { BlockDef } from "../../../../../store";
 import { PathValue } from "../../../../../types";
 
 interface GanttFrameSectionProps {
     id: string;
 }
+//styled main container
 const StyledMainContainer = styled("div")(() => ({}));
+//styled frame section
 const StyledFrameSection = styled("div")(() => ({}));
 //dropdown section with custom styling
 const StyledDataSection = styled("div")(() => ({
@@ -30,8 +31,8 @@ const StyledSelect = styled(Select)(() => ({
 export const GanttFrameSection = observer(
     <D extends BlockDef = BlockDef>({ id, path }) => {
         const { data, setData } =
-            useBlockSettings<EchartVisualizationBlockDef>(id);
-        const [columnsData, setColumnsData] = useState([]);
+            useBlockSettings<EchartVisualizationBlockDef>(id); //block data
+        const [columnsData, setColumnsData] = useState([]); //column data to select for various fields
         const [framesData, setFramesData] = useState({
             task: "",
             startdate: "",
@@ -40,7 +41,7 @@ export const GanttFrameSection = observer(
             taskprogress: "",
             milestone: "",
             tooltip: [],
-        });
+        }); // frame component data
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
@@ -59,7 +60,7 @@ export const GanttFrameSection = observer(
             };
         });
         let columnsSelected = data.columns;
-
+        //retain the frame section component with state data
         useEffect(() => {
             let optionData = data.option;
             if (
@@ -89,7 +90,7 @@ export const GanttFrameSection = observer(
                 });
             }
         }, []);
-
+        //update the state when the frame section fields are changed
         useEffect(() => {
             if (
                 framesData.task != "" &&
@@ -199,7 +200,7 @@ export const GanttFrameSection = observer(
                 }
             }
         }, [framesData]);
-
+        //get the columns index, to use in selector for fetching the records from backend
         function getColumnIndexToSetData(columnsObject, columnsToSet) {
             let colIndex = {};
             Object.keys(columnsObject).forEach((item, index) => {
@@ -226,7 +227,7 @@ export const GanttFrameSection = observer(
             });
             return colIndex;
         }
-
+        //update the fields when the frame section fields are changed
         function updateFields(fieldName, event) {
             setFramesData((prevFrameData) => {
                 return {

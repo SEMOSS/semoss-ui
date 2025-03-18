@@ -68,52 +68,55 @@ export const UpgradedVisualizationTool =
                     Custom section to handle bar chart components for respective menu section 
                     BAR Chart Menu for tools start here
                     */}
-                    <ListItem disablePadding>
-                        <ListItemButton
-                            onClick={(e) =>
-                                setSelectedList((prevList) =>
-                                    prevList === "colourpalette"
-                                        ? ""
-                                        : "colourpalette",
-                                )
-                            }
-                            selected={selectedList === "colourpalette"}
-                        >
-                            <ListItemIcon>
-                                <ImageIcon
-                                    fontSize="large"
-                                    color={
-                                        selectedList === "colourpalette"
-                                            ? "primary"
-                                            : "disabled"
-                                    }
-                                />
-                            </ListItemIcon>
-                            <ListItemText primary="Colour Palette" />
-                            <InfoOutlined />
-                        </ListItemButton>
-                    </ListItem>
-                    {selectedList === "colourpalette" && (
-                        <ColorPalatteSettings
-                            id={id}
-                            path="option.color"
-                            onColorPalatteSelected={(option, color) => {
-                                if (data.variation === "echart-bar-graph") {
-                                    let optionToSend =
-                                        typeof option === "string"
-                                            ? JSON.parse(option)
-                                            : option;
-                                    let colorParent = "itemStyle";
-                                    let updatedOption = updateSeriesColor(
-                                        optionToSend,
-                                        color,
-                                        colorParent,
-                                    );
-                                    setData("option", updatedOption);
+                    {data.variation !== "echart-gantt-chart" && (
+                        <ListItem disablePadding>
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === "colourpalette"
+                                            ? ""
+                                            : "colourpalette",
+                                    )
                                 }
-                            }}
-                        />
+                                selected={selectedList === "colourpalette"}
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList === "colourpalette"
+                                                ? "primary"
+                                                : "disabled"
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary="Colour Palette" />
+                                <InfoOutlined />
+                            </ListItemButton>
+                        </ListItem>
                     )}
+                    {selectedList === "colourpalette" &&
+                        data.variation !== "echart-gantt-chart" && (
+                            <ColorPalatteSettings
+                                id={id}
+                                path="option.color"
+                                onColorPalatteSelected={(option, color) => {
+                                    if (data.variation === "echart-bar-graph") {
+                                        let optionToSend =
+                                            typeof option === "string"
+                                                ? JSON.parse(option)
+                                                : option;
+                                        let colorParent = "itemStyle";
+                                        let updatedOption = updateSeriesColor(
+                                            optionToSend,
+                                            color,
+                                            colorParent,
+                                        );
+                                        setData("option", updatedOption);
+                                    }
+                                }}
+                            />
+                        )}
                     <StyledListItem disablePadding>
                         {data.variation === "echart-bar-graph" && (
                             <ListItemButton

@@ -1,23 +1,24 @@
 import { useState, useEffect, ChangeEvent, useMemo, useRef } from "react";
-import { useBlock, useBlockSettings } from "../../../../../hooks";
-import { observer } from "mobx-react-lite";
-import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks/VisualizationBlock";
-import { Button, Select, styled, Switch, TextField } from "@semoss/ui";
 import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import { Button, Select, styled, Switch, TextField } from "@semoss/ui";
 import { getValueByPath } from "@/utility";
-import { BlockDef } from "../../../../../store";
 import { PathValue } from "@/types";
-
+import { useBlock, useBlockSettings } from "../../../../../hooks";
+import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+import { BlockDef } from "../../../../../store";
+//Main container with padding and border
 const StyledMainContainer = styled("div")(() => ({
     padding: "0.75rem",
     borderBottom: "1px solid #E6E6E6",
 }));
+//sub container with padding and display direction as column
 const StyledSubContainer = styled("div")((props) => ({
     padding: "0.5rem",
     display: "flex",
     flexDirection: "column",
 }));
-
+//Initial fiscal axis state
 const INITIAL_FISCAL_AXIS = {
     enableFiscalAxis: false,
     fiscalYearStart: "",
@@ -27,8 +28,9 @@ const INITIAL_FISCAL_AXIS = {
 export const GanttFiscal = observer(
     <D extends BlockDef = BlockDef>({ id, path }) => {
         const { data, setData } =
-            useBlockSettings<EchartVisualizationBlockDef>(id);
-        const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+            useBlockSettings<EchartVisualizationBlockDef>(id); //block data
+        const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null); //timeout ref to update state
+        //month data to select the fiscal year start month
         const monthData = [
             {
                 label: "January",
@@ -91,7 +93,8 @@ export const GanttFiscal = observer(
                 monthDigit: "11",
             },
         ];
-        const [fiscalData, setFiscalData] = useState(INITIAL_FISCAL_AXIS);
+        const [fiscalData, setFiscalData] = useState(INITIAL_FISCAL_AXIS); //fiscal data state
+        //get the computed value of the block data
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
@@ -106,6 +109,7 @@ export const GanttFiscal = observer(
                 return JSON.stringify(v, null, 2);
             });
         }, [data, "option"]).get();
+        //update the fiscal data when fiscal axis fields are changed
         function updateData(e, field, directVal = undefined) {
             setFiscalData((prevFiscalData) => {
                 return {
@@ -114,6 +118,7 @@ export const GanttFiscal = observer(
                 };
             });
         }
+        //retain the selected values into fiscal component
         useEffect(() => {
             let option = JSON.parse(computedValue);
             let fiscalDataForUpdate = fiscalData;
@@ -144,6 +149,7 @@ export const GanttFiscal = observer(
                 };
             });
         }, []);
+        //update the state when fiscal data is changed
         useEffect(() => {
             let option = JSON.parse(computedValue);
             option = {
@@ -204,7 +210,7 @@ export const GanttFiscal = observer(
             }
             runStateUpdate(option);
         }, [fiscalData]);
-
+        //reset the fiscal data to initial state
         function resetToInitialState() {
             setFiscalData((prevFiscalState) => {
                 return {
@@ -214,7 +220,7 @@ export const GanttFiscal = observer(
                 };
             });
         }
-
+        //run the state update when fiscal data is changed
         function runStateUpdate(option) {
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
