@@ -59,8 +59,8 @@ export const SettingsPanel = () => {
 
         try {
             // export  the app
-            const response = await monolithStore.runQuery<[string]>(
-                `ExportProjectApp(project=["${workspace.appId}"]);`,
+            const response = await monolithStore.runQuery(
+                `ExportApp(project=["${workspace.appId}"]);`,
             );
 
             // throw an error if there is no key
