@@ -1,12 +1,13 @@
-import { observer } from "mobx-react-lite";
-import { useFrame, useBlocks, useBlockSettings } from "../../../../../hooks";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { computed } from "mobx";
 import { styled } from "@mui/material";
-import ReactECharts from "echarts-for-react";
+import { observer } from "mobx-react-lite";
+import ReactECharts, { EChartsOption } from "echarts-for-react";
+
+import { useFrame, useBlocks, useBlockSettings } from "../../../../../hooks";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { CustomContextMenu } from "./CustomContextMenu";
 import { getValueByPath } from "../../../../../utility";
-import { computed } from "mobx";
 
 const StyledChartContainer = styled("div")(() => ({
     height: "100%",
@@ -232,7 +233,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
             return (
                 <StyledChartContainer>
                     <ReactECharts
-                        option={lineOptions}
+                        option={lineOptions as unknown as EChartsOption}
                         onEvents={onClickChart}
                         onChartReady={(chart) => {
                             echartsLoaded(chart);
@@ -257,7 +258,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
         return (
             <StyledChartContainer>
                 <ReactECharts
-                    option={resultData}
+                    option={resultData as EChartsOption}
                     onEvents={onClickChart}
                     onChartReady={(chart) => {
                         echartsLoaded(chart);

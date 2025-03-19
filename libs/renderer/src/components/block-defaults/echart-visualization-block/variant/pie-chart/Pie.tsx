@@ -15,6 +15,7 @@ import {
     useBlocks,
     useBlockSettings,
 } from "../../../../../hooks";
+import { EChartsOption } from "echarts";
 
 const StyledChartContainer = styled("div")(() => ({
     height: "inherit",
@@ -77,12 +78,18 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
             let selectorFields = blockJSON["_state"]["fields"];
 
             //  get the value and tooltip properties
-            let dynamicYAndTooltipSet = [
-                ...new Set([
+            // let dynamicYAndTooltipSet = [
+            //     ...new Set([
+            //         ...selectorFields["Value"],
+            //         ...selectorFields["tooltip"],
+            //     ]),
+            // ];
+            let dynamicYAndTooltipSet = Array.from(
+                new Set([
                     ...selectorFields["Value"],
                     ...selectorFields["tooltip"],
                 ]),
-            ];
+            );
 
             // start forming the selector string
             selector += `${selectorFields["Label"][0]}`;
@@ -229,7 +236,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
         return (
             <StyledChartContainer>
                 <ReactECharts
-                    option={resultData}
+                    option={resultData as EChartsOption}
                     onEvents={onClickChart}
                     style={{
                         height: "inherit",
