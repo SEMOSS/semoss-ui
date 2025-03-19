@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { styled } from "@mui/material";
 import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";
-import EChartsReact from "echarts-for-react";
+import EChartsReact, { EChartsOption } from "echarts-for-react";
 import { CanvasRenderer } from "echarts/renderers";
 import { TooltipComponent } from "echarts/components";
 import { useBlockSettings, useFrame } from "../../../../../hooks";
@@ -672,7 +672,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
             return (
                 <StyledNoDataContainer>
                     <EChartsReact
-                        option={data.option}
+                        option={data.option as unknown as EChartsOption}
                         style={{ height: "inherit", width: "inherit" }}
                     />
                 </StyledNoDataContainer>
@@ -722,7 +722,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
         return (
             <StyledNoDataContainer>
                 <EChartsReact
-                    option={data.option}
+                    option={data.option as EChartsOption}
                     style={{ height: "inherit", width: "inherit" }}
                     onChartReady={(chart) => {
                         echartsLoaded(chart);
