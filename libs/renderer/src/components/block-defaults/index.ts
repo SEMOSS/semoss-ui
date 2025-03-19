@@ -78,6 +78,7 @@ import {
 } from "./vega-visualization-block";
 import { config as SidebarBlockConfig, SidebarBlockDef } from "./sidebar-block";
 import { config as DividerBlockConfig, DividerBlockDef } from "./divider-block";
+import { config as SliderBlockConfig, SliderBlockDef } from "./slider-block";
 
 // import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
 
@@ -113,6 +114,7 @@ export type DefaultBlockDefinitions =
     | ProgressBlockDef
     | SelectBlockDef
     | SidebarBlockDef
+    | SliderBlockDef
     | TextBlockDef
     | ThemeBlockDef
     | ToggleButtonBlockDef
@@ -156,6 +158,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ProgressBlockConfig.widget]: ProgressBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [SidebarBlockConfig.widget]: SidebarBlockConfig,
+    [SliderBlockConfig.widget]: SliderBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [ThemeBlockConfig.widget]: ThemeBlockConfig,
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
@@ -187,6 +190,7 @@ export {
     ProgressBlockConfig,
     SelectBlockConfig,
     SidebarBlockConfig,
+    SliderBlockConfig,
     TextBlockConfig,
     ThemeBlockConfig,
     UploadBlockConfig,
