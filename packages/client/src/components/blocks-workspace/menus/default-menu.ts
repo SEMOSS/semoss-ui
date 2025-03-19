@@ -1103,6 +1103,32 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
+        section: SECTION_ELEMENT,
+        name: 'Icon',
+        helperText: 'Add an icon to your layout',
+        activeImage: BLOCK_IMAGES['ICON_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['ICON_HOVER'],
+        json: {
+            widget: 'icon',
+            data: {
+                style: {
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '50px',
+                    height: '50px',
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center center',
+                },
+                src: '',
+                title: '',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
         section: SECTION_TEXT,
         name: 'Logs',
         helperText: 'Show logs from the notebook',
@@ -2361,6 +2387,32 @@ columns 1
             slots: {
                 content: [],
             },
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Slider',
+        helperText: 'Allows user to select a value from a specified range',
+        activeImage: BLOCK_IMAGES['SLIDER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['SLIDER_HOVER'],
+        json: {
+            widget: 'slider',
+            data: {
+                type: 'continuous',
+                style: {
+                    color: 'primary',
+                },
+                marks: [],
+                steps: 1,
+                value: 0,
+                min: 0,
+                max: 100,
+                size: '300px',
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {} as BlockJSON['slots'],
         },
     },
 ];

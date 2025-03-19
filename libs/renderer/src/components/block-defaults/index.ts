@@ -31,6 +31,7 @@ import { config as GridBlockConfig, GridBlockDef } from "./grid-block";
 
 import { config as HTMLBlockConfig, HTMLBlockDef } from "./html-block";
 
+import { config as IconBlockConfig, IconBlockDef } from "./Icon_block";
 import { config as IframeBlockConfig, IframeBlockDef } from "./iframe-block";
 import { config as ImageBlockConfig, ImageBlockDef } from "./image-block";
 import { config as InputBlockConfig, InputBlockDef } from "./input-block";
@@ -77,6 +78,7 @@ import {
 } from "./vega-visualization-block";
 import { config as SidebarBlockConfig, SidebarBlockDef } from "./sidebar-block";
 import { config as DividerBlockConfig, DividerBlockDef } from "./divider-block";
+import { config as SliderBlockConfig, SliderBlockDef } from "./slider-block";
 
 // import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
 
@@ -97,6 +99,7 @@ export type DefaultBlockDefinitions =
     | ContainerBlockDef
     | GridBlockDef
     | HTMLBlockDef
+    | IconBlockDef
     | IframeBlockDef
     | ImageBlockDef
     | InputBlockDef
@@ -111,6 +114,7 @@ export type DefaultBlockDefinitions =
     | ProgressBlockDef
     | SelectBlockDef
     | SidebarBlockDef
+    | SliderBlockDef
     | TextBlockDef
     | ThemeBlockDef
     | ToggleButtonBlockDef
@@ -138,6 +142,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
     [GridBlockConfig.widget]: GridBlockConfig,
+    [IconBlockConfig.widget]: IconBlockConfig,
     [IframeBlockConfig.widget]: IframeBlockConfig,
     [ImageBlockConfig.widget]: ImageBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
@@ -153,6 +158,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ProgressBlockConfig.widget]: ProgressBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [SidebarBlockConfig.widget]: SidebarBlockConfig,
+    [SliderBlockConfig.widget]: SliderBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [ThemeBlockConfig.widget]: ThemeBlockConfig,
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
@@ -172,6 +178,7 @@ export {
     CheckboxBlockConfig,
     ContainerBlockConfig,
     GridBlockConfig,
+    IconBlockConfig,
     IframeBlockConfig,
     ImageBlockConfig,
     InputBlockConfig,
@@ -183,6 +190,7 @@ export {
     ProgressBlockConfig,
     SelectBlockConfig,
     SidebarBlockConfig,
+    SliderBlockConfig,
     TextBlockConfig,
     ThemeBlockConfig,
     UploadBlockConfig,
