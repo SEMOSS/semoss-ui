@@ -473,7 +473,7 @@ if (process.env.NODE_ENV === 'development') {
     });
     DEV_BLOCKS.push({
         section: SECTION_CHARTS,
-        name: 'Bar Chart - Stacked (e-charts)',
+        name: 'Bar Chart - Stacked',
         helperText:
             'Compare cumulative totals and individual segments across categories',
         activeImage: BLOCK_IMAGES['STACK_CHART_ACTIVE'],
