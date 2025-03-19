@@ -4,6 +4,7 @@
         "lib": ["es6", "dom", "ES2015"],
         "target": "es5",
         "jsx": "react-jsx",
+        "types": ["vitest/globals", "@testing-library/jest-dom/vitest"],
 
         /* Modules */
         "baseUrl": "src",
@@ -34,6 +35,6 @@
             "@semoss/sdk": ["../sdk/src/index.ts"]
         }
     },
-    "include": ["src", "global.d.ts", "example"],
+    "include": ["src", "global.d.ts", "example", "src/testing"],
     "exclude": ["dist", "node_modules", "**/*.spec.ts"]
 }
