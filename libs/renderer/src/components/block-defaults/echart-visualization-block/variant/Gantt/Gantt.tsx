@@ -13,11 +13,18 @@ import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 import { GANTT_CHART } from "../../Visualization.constants";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 //Main container where gantt chart will render
-const StyledMainContainer = styled("div")(({ theme }) => ({}));
+const StyledMainContainer = styled("div")(({ theme }) => ({
+    width: "100%",
+    height: "100%",
+}));
 //sub styled container to manage fiscal axis with chart
 const StyledContainer = styled("div")(() => ({
     display: "flex",
     justifyContent: "flex-start",
+    width: "100%",
+    height: "20%",
+    maxHeight: "25%",
+    overflow: "auto",
 }));
 //styled span to render series name
 const StyledDataSpan = styled("span")(({}) => ({}));
@@ -62,6 +69,7 @@ export const Gantt = observer(
         let chartRef = useRef(null);
         //table reference variable to align series name with fiscal axis
         const tableRef = useRef(null);
+        const [seriesNameCol, setSeriesNameCol] = useState(70);
         //selector to fetch data from the frame
         let selector = "";
         if (data.columns !== undefined) {
@@ -651,6 +659,11 @@ export const Gantt = observer(
             });
             return monthBasedQuarter;
         }
+        //enable or disable fiscal axis
+        const enableFiscalAxis =
+            dataOption["customSettings"]?.["gantttools"]?.[
+                "enableFiscalAxis"
+            ] || false;
         //update chart data when frame values are changed
         useEffect(() => {
             if (!frame.isLoading && frame.data.values.length > 0) {
@@ -664,6 +677,28 @@ export const Gantt = observer(
                 echartsInstance.setOption(dataOption, { notMerge: true });
             }
         }, [dataOption]);
+        //update height series name section based on table height
+        useEffect(() => {
+            const table = tableRef.current;
+
+            if (!table) return;
+
+            // Create a ResizeObserver instance
+            const resizeObserver = new ResizeObserver((entries) => {
+                for (let entry of entries) {
+                    const { height } = entry.contentRect;
+                    setSeriesNameCol(height);
+                }
+            });
+
+            // Observe the table element
+            resizeObserver.observe(table);
+
+            // Clean up the observer on unmount
+            return () => {
+                resizeObserver.disconnect();
+            };
+        }, [enableFiscalAxis]);
         //tooltip function to render tooltip based on options provided
         function chartFormatter(
             params,
@@ -681,11 +716,6 @@ export const Gantt = observer(
             });
             return chartToolTip;
         }
-        //enable or disable fiscal axis
-        const enableFiscalAxis =
-            dataOption["customSettings"]?.["gantttools"]?.[
-                "enableFiscalAxis"
-            ] || false;
         //fiscal start month
         const fiscalStartMonth =
             dataOption["customSettings"]?.["gantttools"]?.["fiscalYearStart"] ||
@@ -697,10 +727,6 @@ export const Gantt = observer(
             ] || "#0471f0";
         //getquarter and month list with fiscal year
         const quarterAndMonth = getQuarterAndMonthList(fiscalStartMonth);
-        //get table height for the chart side heading column
-        const tableHeight = tableRef.current?.getBoundingClientRect()?.height
-            ? tableRef.current?.getBoundingClientRect()?.height
-            : 70;
         //get the series name for chart side heading
         let seriesName =
             dataOption["customSettings"]?.["columnDetails"]?.["task"]?.name ||
@@ -742,7 +768,7 @@ export const Gantt = observer(
                             <StyledDataSpan
                                 style={{
                                     backgroundColor: fiscalAxisBackgroundColor,
-                                    height: tableHeight + "px",
+                                    height: seriesNameCol + "px",
                                     width: "50px",
                                     textAlign: "center",
                                     display: "flex",
@@ -755,7 +781,10 @@ export const Gantt = observer(
                             >
                                 {seriesName}
                             </StyledDataSpan>
-                            <Table aria-label="simple table" ref={tableRef}>
+                            <Table
+                                aria-label="simple table"
+                                ref={(e) => (tableRef.current = e)}
+                            >
                                 <TableHead>
                                     <TableRow>
                                         {quarterAndMonth.length &&
@@ -812,6 +841,11 @@ export const Gantt = observer(
                         option={dataOption}
                         onEvents={onClickChart}
                         ref={(e) => (chartRef.current = e)}
+                        style={{
+                            width: "inherit",
+                            height: enableFiscalAxis ? "75%" : "100%",
+                            maxHeight: enableFiscalAxis ? "75%" : "100%",
+                        }}
                     />
                     <VizBlockContextMenu
                         id={id}
