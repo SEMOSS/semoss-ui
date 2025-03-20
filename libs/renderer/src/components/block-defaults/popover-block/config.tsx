@@ -5,26 +5,25 @@ import { Typography } from "@mui/material";
 
 import { TextField } from "@semoss/ui";
 
+import { Paths, PathValue } from "../../../types";
+import { BaseSettingSection, ColorSettings } from "../../block-settings";
+import { useBlocks, useBlockSettings } from "../../../hooks";
 import { BlockConfig, Block, BlockDef } from "../../../store";
-import {
-    BaseSettingSection,
-    ColorSettings,
-    QueryInputSettings,
-} from "../../block-settings";
-import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
-import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import { PopoverBlock, PopoverBlockDef } from "./PopoverBlock";
+import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
+import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 import {
     buildSpacingSection,
     buildDimensionsSection,
     buildBorderSection,
+    buildColorSection,
+    buildListener,
 } from "../block-defaults.shared";
-import { useBlocks, useBlockSettings } from "../../../hooks";
-import { Paths, PathValue } from "../../../types";
 
 const TRIGGER_OPTIONS = [
     { value: "click", label: "Click" },
-    { value: "hover", label: "Hover" },
+    // TODO: Fix hover Trigger
+    // { value: "hover", label: "Hover" },
 ];
 
 const SettingAutocomplete = <D extends BlockDef>({
@@ -128,10 +127,11 @@ export const config: BlockConfig<PopoverBlockDef> = {
 
         open: "",
         openTrigger: "click",
-
-        contentBgColor: "",
     },
-    listeners: {},
+    listeners: {
+        onOpen: [],
+        onClose: [],
+    },
     slots: {
         header: [],
         content: [],
@@ -172,17 +172,15 @@ export const config: BlockConfig<PopoverBlockDef> = {
                         </BaseSettingSection>
                     ),
                 },
-                {
-                    description: "Open",
-                    render: ({ id }) => (
-                        <QueryInputSettings
-                            id={id}
-                            label="Open Modal"
-                            path="open"
-                        />
-                    ),
-                },
             ],
+        },
+        {
+            name: "on Open",
+            children: [...buildListener("onOpen")],
+        },
+        {
+            name: "on Close",
+            children: [...buildListener("onClose")],
         },
     ],
     styleMenu: [
@@ -192,12 +190,12 @@ export const config: BlockConfig<PopoverBlockDef> = {
             name: "Color",
             children: [
                 {
-                    description: "Content Background Color",
+                    description: "Background Color",
                     render: ({ id }) => (
                         <ColorSettings
                             id={id}
-                            label="Content Background Color"
-                            path="contentBgColor"
+                            label="Background Color"
+                            path="style.backgroundColor"
                         />
                     ),
                 },

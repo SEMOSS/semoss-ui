@@ -1,6 +1,9 @@
 import { CSSProperties, useEffect, useState, useMemo } from "react";
 import { observer } from "mobx-react-lite";
-import { Popover, Box, Stack, styled, Typography } from "@mui/material"; // or your ui library
+
+// TODO: Pull from component library
+import { Popover, Box, Stack, styled, Typography } from "@mui/material";
+
 import { Slot } from "../../blocks";
 import { useBlock, useBlocks } from "../../../hooks";
 import { BlockDef, BlockComponent } from "../../../store";
@@ -13,7 +16,6 @@ export interface PopoverBlockDef extends BlockDef<"popover"> {
         open: string | boolean | number;
         targetId?: string;
         openTrigger: "click" | "hover";
-        contentBgColor: string;
     };
     slots: {
         header: true;
@@ -86,7 +88,6 @@ const PopoverContent: React.FC<{
         <StyledPopoverContainer
             sx={{
                 ...data.style,
-                backgroundColor: data.contentBgColor,
                 overflow: "auto",
             }}
         >
@@ -98,7 +99,8 @@ const PopoverContent: React.FC<{
 });
 
 export const PopoverBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots, setData } = useBlock<PopoverBlockDef>(id);
+    const { attrs, data, slots, setData, listeners } =
+        useBlock<PopoverBlockDef>(id);
     const { state } = useBlocks();
     const isStatic = state.mode === "static";
     const targetId = data.targetId || "";
@@ -121,6 +123,8 @@ export const PopoverBlock: BlockComponent = observer(({ id }) => {
     const handleClose = () => {
         if (!isStatic) {
             setData("open", "false");
+
+            listeners.onClose();
         }
     };
 
@@ -143,11 +147,16 @@ export const PopoverBlock: BlockComponent = observer(({ id }) => {
 
         const handleOpen = () => {
             setData("open", "true");
+
+            listeners.onOpen();
         };
 
         const handleClose = () => {
             setData("open", "false");
+
+            listeners.onClose();
         };
+
         if (data.openTrigger === "click") {
             anchorEl.addEventListener("click", handleOpen);
 
