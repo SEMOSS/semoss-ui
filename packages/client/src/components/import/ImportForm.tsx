@@ -21,6 +21,7 @@ import { ExpandLess, ExpandMore, Help } from '@mui/icons-material';
 import { useStepper, useRootStore } from '@/hooks';
 import { useNavigate } from 'react-router-dom';
 import { useFieldArray, useForm, Form, Controller } from 'react-hook-form';
+import CsvImport from '../ConnectToDatabase/CsvImport';
 
 const StyledFlexEnd = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -90,6 +91,7 @@ export const ImportForm = (props) => {
         useState(false);
 
     const watchedFieldRef = useRef({});
+    const name = fields[0].fieldName;
 
     //** Using onsubmit mode to stop field validation onChange -> limit pixel calls */
     const {
@@ -465,6 +467,7 @@ export const ImportForm = (props) => {
      * Also: type this out
      */
     const onSubmit = async (data) => {
+        console.log('data', data);
         setFormLoading(true);
         // If it's a File Upload
         if (steps[1].id.includes('File Uploads')) {
@@ -493,6 +496,84 @@ export const ImportForm = (props) => {
                 }
 
                 navigate(`/engine/${(steps[0].data as string).toUpperCase()}`);
+                return;
+            } else if (steps[1].title === 'CSV') {
+                const upload = await monolithStore.uploadFile(
+                    [data.CSV],
+                    configStore.store.insightID,
+                );
+
+                const pixelString =
+                    steps[0].data === 'DATABASE'
+                        ? `PredictDataTypes(filePath=["${upload[0].fileLocation}"])`
+                        : `UploadEngine(filePath=["${upload[0].fileLocation}"], engineTypes=["${steps[0].data}"])`;
+
+                const response = await monolithStore.runQuery(pixelString);
+                const output = response.pixelReturn[0].output;
+                const operationType = response.pixelReturn[0].operationType;
+
+                if (operationType.includes('ERROR')) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+                    setFormLoading(false);
+                    return;
+                }
+
+                navigate(`/engine/${steps[0].data.toUpperCase()}`);
+                return;
+            } else if (steps[1].title === 'TSV') {
+                const upload = await monolithStore.uploadFile(
+                    [data.CSV],
+                    configStore.store.insightID,
+                );
+
+                const pixelString =
+                    steps[0].data === 'DATABASE'
+                        ? `PredictDataTypes(filePath=["${upload[0].fileLocation}"])`
+                        : `UploadEngine(filePath=["${upload[0].fileLocation}"], engineTypes=["${steps[0].data}"])`;
+
+                const response = await monolithStore.runQuery(pixelString);
+                const output = response.pixelReturn[0].output;
+                const operationType = response.pixelReturn[0].operationType;
+
+                if (operationType.includes('ERROR')) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+                    setFormLoading(false);
+                    return;
+                }
+
+                navigate(`/engine/${steps[0].data.toUpperCase()}`);
+                return;
+            } else if (steps[1].title === 'Excel') {
+                const upload = await monolithStore.uploadFile(
+                    [data.CSV],
+                    configStore.store.insightID,
+                );
+
+                const pixelString =
+                    steps[0].data === 'DATABASE'
+                        ? `PredictDataTypes(filePath=["${upload[0].fileLocation}"])`
+                        : `UploadEngine(filePath=["${upload[0].fileLocation}"], engineTypes=["${steps[0].data}"])`;
+
+                const response = await monolithStore.runQuery(pixelString);
+                const output = response.pixelReturn[0].output;
+                const operationType = response.pixelReturn[0].operationType;
+
+                if (operationType.includes('ERROR')) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+                    setFormLoading(false);
+                    return;
+                }
+
+                navigate(`/engine/${steps[0].data.toUpperCase()}`);
                 return;
             }
             setFormLoading(false);
@@ -910,6 +991,20 @@ export const ImportForm = (props) => {
                                                     />
                                                 </StyledDropzoneField>
                                             );
+                                        } else if (
+                                            val.options.component ===
+                                            'CSV-file-upload'
+                                        ) {
+                                            return (
+                                                <StyledDropzoneField>
+                                                    <Typography
+                                                        variant={'body1'}
+                                                    >
+                                                        {val.label}
+                                                    </Typography>
+                                                    <CsvImport></CsvImport>
+                                                </StyledDropzoneField>
+                                            );
                                         }
                                     }}
                                 />
@@ -1180,19 +1275,23 @@ export const ImportForm = (props) => {
                             })}
                     </>
                 ) : null}
-                <StyledFlexEnd>
-                    <StyledSubmitButton
-                        disabled={formLoading}
-                        type="submit"
-                        variant="contained"
-                    >
-                        {formLoading ? (
-                            <CircularProgress size="1.5em" />
-                        ) : (
-                            `Create ${steps[0].data.toLowerCase()}`
-                        )}
-                    </StyledSubmitButton>
-                </StyledFlexEnd>
+                {name == 'CSV' ? (
+                    ''
+                ) : (
+                    <StyledFlexEnd>
+                        <StyledSubmitButton
+                            disabled={formLoading}
+                            type="submit"
+                            variant="contained"
+                        >
+                            {formLoading ? (
+                                <CircularProgress size="1.5em" />
+                            ) : (
+                                `Create ${steps[0].data.toLowerCase()}`
+                            )}
+                        </StyledSubmitButton>
+                    </StyledFlexEnd>
+                )}
             </Stack>
         </form>
     );
