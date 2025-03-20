@@ -9,6 +9,8 @@ export const INPUT_BLOCK_TYPES = [
     "toggle-button",
     "radio",
     "slider",
+    "ratings",
+    "switch",
 ];
 
 export const VARIABLE_TYPES = [

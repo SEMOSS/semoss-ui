@@ -65,6 +65,7 @@ import {
 } from "./progress-block";
 
 import { config as RadioBlockConfig, RadioBlockDef } from "./radio-block";
+import { config as RatingsBlockConfig, RatingsBlockDef } from "./ratings-block";
 
 import { config as SelectBlockConfig, SelectBlockDef } from "./select-block";
 import { config as SidebarBlockConfig, SidebarBlockDef } from "./sidebar-block";
@@ -117,6 +118,8 @@ export type DefaultBlockDefinitions =
     | PageBlockDef
     | PDFViewerBlockDef
     | ProgressBlockDef
+    | RadioBlockDef
+    | RatingsBlockDef
     | SelectBlockDef
     | SidebarBlockDef
     | SliderBlockDef
@@ -125,8 +128,6 @@ export type DefaultBlockDefinitions =
     | ToggleButtonBlockDef
     | UploadBlockDef
     | VegaVisualizationBlockDef
-    | RadioBlockDef
-    | ThemeBlockDef
     | EchartVisualizationBlockDef
     | SwitchBlockDef
     | DividerBlockDef;
@@ -165,6 +166,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
     [ProgressBlockConfig.widget]: ProgressBlockConfig,
     [RadioBlockConfig.widget]: RadioBlockConfig,
+    [RatingsBlockConfig.widget]: RatingsBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [SidebarBlockConfig.widget]: SidebarBlockConfig,
     [SliderBlockConfig.widget]: SliderBlockConfig,
@@ -197,6 +199,7 @@ export {
     LLMComparisonBlockConfig,
     LogsBlockConfig,
     ProgressBlockConfig,
+    RatingsBlockConfig,
     SelectBlockConfig,
     SidebarBlockConfig,
     SliderBlockConfig,
