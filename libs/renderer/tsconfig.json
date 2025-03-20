@@ -12,6 +12,7 @@
         "module": "esnext",
         "moduleResolution": "node",
         "allowSyntheticDefaultImports": true,
+        "allowImportingTsExtensions": true,
         "resolveJsonModule": true,
 
         /* Emit */
@@ -35,6 +36,13 @@
             "@semoss/sdk": ["../sdk/src/index.ts"]
         }
     },
-    "include": ["src", "global.d.ts", "example", "src/testing"],
-    "exclude": ["dist", "node_modules", "**/*.spec.ts"]
+    "include": [
+        "src",
+        "global.d.ts",
+        "example",
+        "src/testing",
+        "src/testing/vitest.setup.tsx",
+        "src/**/*"
+    ],
+    "exclude": ["dist", "node_modules"]
 }

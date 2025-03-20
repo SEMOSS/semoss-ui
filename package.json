@@ -18,7 +18,8 @@
 
         "build": "npx nx run-many -t build -p @semoss/client @semoss/legacy",
 
-        "test": "vitest --watch=false --passWithNoTests --changed"
+        "test": "vitest --watch=false --passWithNoTests --changed",
+        "test:ui": "vitest --watch --ui --pool=forks"
     },
     "author": "",
     "license": "Apache-2.0",
