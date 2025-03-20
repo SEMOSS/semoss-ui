@@ -1168,8 +1168,8 @@ importers:
         specifier: ^1.6.0
         version: 1.6.1
       '@semoss/components':
-        specifier: ^1.0.0-alpha.36
-        version: 1.0.0-alpha.41(@types/react-dom@17.0.20)(@types/react@17.0.83)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
+        specifier: ^1.0.0-alpha.42
+        version: 1.0.0-alpha.42(@types/react-dom@17.0.20)(@types/react@17.0.83)(react-dom@17.0.2)(react@17.0.2)
       '@stitches/react':
         specifier: ^1.2.8
         version: 1.2.8(react@17.0.2)
@@ -23270,7 +23270,11 @@ snapshots:
     transitivePeerDependencies:
       - zenObservable
 
-  '@semoss/components@1.0.0-alpha.41(@types/react-dom@17.0.20)(@types/react@17.0.83)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)':
+  /@semoss/components@1.0.0-alpha.42(@types/react-dom@17.0.20)(@types/react@17.0.83)(react-dom@17.0.2)(react@17.0.2):
+    resolution: {integrity: sha512-/QrhVSA07l81WAK4hDNxbjP8wHuOa++/6WZpFKvDYOI/SGNrzTob6AWvHz90sRci2Z8Thbku0iB6Q4WLCqO9mA==}
+    peerDependencies:
+      react: '17'
+      react-dom: '17'
     dependencies:
       '@popperjs/core': 2.11.8
       '@radix-ui/react-accordion': 0.1.6(react@17.0.2)
@@ -31697,9 +31701,17 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
 
-  libphonenumber-js@1.12.6: {}
+  /libphonenumber-js@1.12.5:
+    resolution: {integrity: sha512-DOjiaVjjSmap12ztyb4QgoFmUe/GbgnEXHu+R7iowk0lzDIjScvPAm8cK9RYTEobbRb0OPlwlZUGTTJPJg13Kw==}
+    dev: false
 
-  license-webpack-plugin@4.0.2(webpack@5.98.0):
+  /license-webpack-plugin@4.0.2(webpack@5.98.0):
+    resolution: {integrity: sha512-771TFWFD70G1wLTC4oU2Cw4qvtmNrIw+wRvBtn+okgHl7slJVi7zfNcdmqDL72BojM30VNJ2UHylr1o77U37Jw==}
+    peerDependencies:
+      webpack: '*'
+    peerDependenciesMeta:
+      webpack:
+        optional: true
     dependencies:
       webpack-sources: 3.2.3
     optionalDependencies:

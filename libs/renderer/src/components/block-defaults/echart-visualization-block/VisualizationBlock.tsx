@@ -9,6 +9,7 @@ import { ScatterPlotBlock } from "./variant/scatter-plot/ScatterPlot";
 import { useBlock, useBlocks, useBlockSettings } from "../../../hooks";
 import { BlockComponent, BlockDef } from "../../../store";
 import { PathValue } from "../../../types";
+import { StackChart } from "./variant/stack-chart/StackChart";
 import { Gantt } from "./variant/Gantt/Gantt";
 
 const StyledNoDataContainer = styled("div", {
@@ -142,6 +143,9 @@ export const VisualizationBlock: BlockComponent = observer(
                         {data.variation === "echart-scatter-plots" && (
                             <ScatterPlotBlock id={id} />
                         )}
+                        {data.variation === "echart-stack-chart" && (
+                            <StackChart id={id} />
+                        )}
                         {data.variation === "echart-gantt-chart" && (
                             <Gantt id={id} updateChart={updateChartJson} />
                         )}
@@ -165,6 +169,9 @@ export const VisualizationBlock: BlockComponent = observer(
                 )}
                 {data.variation === "echart-scatter-plots" && (
                     <ScatterPlotBlock id={id} />
+                )}
+                {data.variation === "echart-stack-chart" && (
+                    <StackChart id={id} />
                 )}
                 {data.variation === "echart-gantt-chart" && (
                     <Gantt id={id} updateChart={updateChartJson} />
