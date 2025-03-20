@@ -499,6 +499,141 @@ export const QueryInputSettings = observer(
             });
         };
 
+        /**
+         * Renders the input field with a suggestion feature.
+         * @param {Object} params The props passed to the TextField component.
+         * @returns {ReactElement} The rendered input field.
+         */
+        const renderInputField = (params) => {
+            const wordArray = inputValue
+                .replace("{{", "")
+                .replace("}}", "")
+                .toLowerCase()
+                .split(" ");
+            const filteredOptions = Object.keys(optionMap)
+                .sort((a, b) =>
+                    optionMap[a]["blockType"].localeCompare(
+                        optionMap[b]["blockType"],
+                    ),
+                )
+                .filter((option) =>
+                    option
+                        .toLowerCase()
+                        .includes(
+                            wordArray[wordArray.length - 1].toLowerCase(),
+                        ),
+                );
+
+            const suggestion = filteredOptions.length ? filteredOptions[0] : "";
+
+            const cursorIndex = inputRef?.current?.selectionStart ?? null;
+            const textBeforeCursor = value.substring(0, cursorIndex);
+            const textAfterCursor = value.substring(cursorIndex);
+
+            const calculateTextWidth = () => {
+                if (!measureRef.current) return 0;
+                measureRef.current.textContent = textBeforeCursor;
+                return measureRef.current.offsetWidth;
+            };
+
+            const textWidth = calculateTextWidth();
+            const containerWidth = inputRef.current?.offsetWidth || 0;
+            const suggestionScrollLeft = Math.max(
+                0,
+                textWidth - containerWidth + 20,
+            );
+
+            const incompleteWordArray = textBeforeCursor
+                .replace("{{", "")
+                .replace("}}", "")
+                .split(" ");
+            const suggestionToDisplay = suggestion
+                ? suggestion.replace(
+                      incompleteWordArray[incompleteWordArray.length - 1],
+                      "",
+                  )
+                : "";
+
+            return (
+                <div style={{ position: "relative", overflow: "hidden" }}>
+                    <TextField
+                        {...params}
+                        inputRef={inputRef}
+                        fullWidth
+                        placeholder="Enter text or select query"
+                        onChange={(e) => {
+                            const updatedValue = e.target.value;
+                            setInputValue(updatedValue);
+                            onChange(updatedValue);
+                        }}
+                        onScroll={(e) => {
+                            if (suggestionRef.current)
+                                suggestionRef.current.scrollLeft =
+                                    e.currentTarget.scrollLeft;
+                        }}
+                        inputProps={{
+                            ...params.inputProps,
+                            style: {
+                                whiteSpace: "nowrap",
+                                overflowX: "auto",
+                                scrollBehavior: "smooth",
+                            },
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === "Tab" && suggestionToDisplay) {
+                                e.preventDefault();
+                                const completeValue =
+                                    textBeforeCursor.replace(
+                                        incompleteWordArray[
+                                            incompleteWordArray.length - 1
+                                        ],
+                                        "",
+                                    ) +
+                                    "{{" +
+                                    suggestion +
+                                    "}}" +
+                                    textAfterCursor;
+                                onChange(completeValue);
+                                setInputValue(completeValue);
+                            }
+                        }}
+                    />
+                    {suggestionToDisplay && !textAfterCursor && (
+                        <div
+                            ref={suggestionRef}
+                            style={{
+                                position: "absolute",
+                                left: 0,
+                                top: "37%",
+                                transform: "translateY(-50%)",
+                                pointerEvents: "none",
+                                color: "#999",
+                                padding: "14px",
+                                height: "100%",
+                                width: "100%",
+                                overflow: "hidden",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    position: "relative",
+                                    whiteSpace: "nowrap",
+                                    transform: `translateX(-${suggestionScrollLeft}px)`,
+                                }}
+                            >
+                                <span style={{ visibility: "hidden" }}>
+                                    {textBeforeCursor}
+                                </span>
+                                <span style={{ color: "#999" }}>
+                                    {suggestionToDisplay}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
         return (
             <>
                 <Stack>
@@ -616,19 +751,7 @@ export const QueryInputSettings = observer(
                                 </li>
                             );
                         }}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                inputRef={inputRef}
-                                fullWidth
-                                placeholder="Enter text or select query"
-                                onChange={(e) => {
-                                    const newValue = e.target.value;
-                                    setInputValue(newValue);
-                                    onChange(newValue);
-                                }}
-                            />
-                        )}
+                        renderInput={(params) => renderInputField(params)}
                         groupBy={(option) => optionMap[option]?.groupAlias}
                         renderGroup={(params) => {
                             return (
