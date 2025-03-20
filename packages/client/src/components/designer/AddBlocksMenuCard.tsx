@@ -65,6 +65,48 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         // set as inactive
         setLocal(true);
     };
+    const onIterate = (
+        num: number,
+        siblingWidget3: any,
+        placeholderAction: any,
+    ) => {
+        for (let i = 0; i < num; i++) {
+            console.log(item.json);
+            state.dispatch({
+                message: ActionMessages.ADD_BLOCK,
+                payload: {
+                    json: item.json,
+                    position: {
+                        parent: placeholderAction.id,
+                        slot: placeholderAction.slot,
+                    },
+                },
+            }) as string;
+        }
+        return siblingWidget3.id;
+    };
+    const onIteration = (
+        num: number,
+        siblingWidget: any,
+        placeholderAction: any,
+        parent: any,
+    ) => {
+        for (let i = 0; i < num; i++) {
+            state.dispatch({
+                message: ActionMessages.ADD_BLOCK,
+                payload: {
+                    json: item.json,
+                    position: {
+                        parent: siblingWidget.parent.id,
+                        slot: siblingWidget.parent.slot,
+                        sibling: siblingWidget.id,
+                        type: placeholderAction.type,
+                    },
+                },
+            }) as string;
+        }
+        return parent.id;
+    };
 
     /**
      * Handle the mouseup event on the document
@@ -87,30 +129,47 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 const siblingWidget = state.getBlock(placeholderAction.id);
 
                 if (siblingWidget?.parent) {
+                    const parent = state.getBlock(siblingWidget.parent.id);
+                    const num = Number(parent.data.iterationCount);
+                    if (num > 0) {
+                        id = onIteration(
+                            num,
+                            siblingWidget,
+                            placeholderAction,
+                            parent,
+                        );
+                    } else {
+                        id = state.dispatch({
+                            message: ActionMessages.ADD_BLOCK,
+                            payload: {
+                                json: item.json,
+                                position: {
+                                    parent: siblingWidget.parent.id,
+                                    slot: siblingWidget.parent.slot,
+                                    sibling: siblingWidget.id,
+                                    type: placeholderAction.type,
+                                },
+                            },
+                        }) as string;
+                    }
+                }
+            } else if (placeholderAction.type === 'replace') {
+                const siblingWidget3 = state.getBlock(placeholderAction.id);
+                let num = Number(siblingWidget3.data.iterationCount);
+                if (num > 0) {
+                    id = onIterate(num, siblingWidget3, placeholderAction);
+                } else {
                     id = state.dispatch({
                         message: ActionMessages.ADD_BLOCK,
                         payload: {
                             json: item.json,
                             position: {
-                                parent: siblingWidget.parent.id,
-                                slot: siblingWidget.parent.slot,
-                                sibling: siblingWidget.id,
-                                type: placeholderAction.type,
+                                parent: placeholderAction.id,
+                                slot: placeholderAction.slot,
                             },
                         },
                     }) as string;
                 }
-            } else if (placeholderAction.type === 'replace') {
-                id = state.dispatch({
-                    message: ActionMessages.ADD_BLOCK,
-                    payload: {
-                        json: item.json,
-                        position: {
-                            parent: placeholderAction.id,
-                            slot: placeholderAction.slot,
-                        },
-                    },
-                }) as string;
             }
         }
 

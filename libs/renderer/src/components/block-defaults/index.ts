@@ -21,6 +21,10 @@ import {
     config as ContainerBlockConfig,
     ContainerBlockDef,
 } from "./container-block";
+import {
+    config as IteratorBlockConfig,
+    IteratorBlockDef,
+} from "./iterator-block";
 
 import {
     config as EchartVisualizationBlockConfig,
@@ -94,6 +98,7 @@ export type DefaultBlockDefinitions =
     | ButtonBlockDef
     | CheckboxBlockDef
     | ContainerBlockDef
+    | IteratorBlockDef
     | GridBlockDef
     | HTMLBlockDef
     | IframeBlockDef
@@ -134,6 +139,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
+    [IteratorBlockConfig.widget]: IteratorBlockConfig,
     [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
     [GridBlockConfig.widget]: GridBlockConfig,
     [IframeBlockConfig.widget]: IframeBlockConfig,
@@ -168,6 +174,7 @@ export {
     ButtonBlockConfig,
     CheckboxBlockConfig,
     ContainerBlockConfig,
+    IteratorBlockConfig,
     GridBlockConfig,
     IframeBlockConfig,
     ImageBlockConfig,

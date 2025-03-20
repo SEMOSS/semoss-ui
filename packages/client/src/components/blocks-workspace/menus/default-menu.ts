@@ -780,6 +780,30 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
+        section: SECTION_LAYOUT,
+        name: 'Iterator',
+        helperText: 'Create a layout element for custom design',
+        activeImage: BLOCK_IMAGES['CONTAINER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['CONTAINER_HOVER'],
+        json: {
+            widget: 'iterator',
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '4px',
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                },
+                iterationCount: 0,
+            },
+            listeners: {},
+            slots: {
+                children: [],
+            },
+        },
+    },
+    {
         section: SECTION_PROGRESS,
         name: 'Progress',
         helperText: 'Display progress tracking or status',
