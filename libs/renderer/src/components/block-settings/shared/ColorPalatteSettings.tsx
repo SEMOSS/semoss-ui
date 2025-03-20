@@ -536,7 +536,10 @@ export const ColorPalatteSettings = observer(
                     ? colorPalette[0]
                     : colorPalette.find((item) => item.label === label);
             // Update the state with the new color palette data
-            if (Data.variation == "echart-scatter-plots") {
+            if (
+                Data.variation == "echart-scatter-plots" ||
+                Data.variation == "echart-stack-chart"
+            ) {
                 runStateUpdate(
                     optionComputedValue,
                     optionPathVal,

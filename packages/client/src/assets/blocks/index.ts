@@ -86,3 +86,5 @@ export { default as SCATTER_PLOT_ACTIVE } from './Scatter_Plot_Active.png';
 export { default as SCATTER_PLOT_HOVER } from './Scatter_Plot_Hover.png';
 export { default as RADIAL_PLOT_ACTIVE } from './Radial_Plot_Active.png';
 export { default as RADIAL_PLOT_HOVER } from './Radial_Plot_Hover.png';
+export { default as STACK_CHART_ACTIVE } from './Bar_Chart_Stacked_Active.png';
+export { default as STACK_CHART_HOVER } from './Bar_Chart_Stacked_Hover.png';
