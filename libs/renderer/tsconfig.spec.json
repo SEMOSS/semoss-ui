@@ -16,7 +16,6 @@
     "include": [
         "vite.config.ts",
         "vitest.config.ts",
-        "vitest.setup.ts",
         "rollup.config.js",
         "src/**/*.test.ts",
         "src/**/*.spec.ts",
