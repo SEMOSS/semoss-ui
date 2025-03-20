@@ -1,8 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { TextField, TextFieldProps } from "../TextField";
 import { CloseOutlined, SearchOutlined } from "@mui/icons-material";
 import { IconButton, InputAdornment } from "@mui/material";
-import { useRef } from "react";
 
 export type SearchFieldProps = TextFieldProps & {
     /**
