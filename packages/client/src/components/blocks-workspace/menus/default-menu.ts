@@ -991,6 +991,27 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
+        section: SECTION_ELEMENT,
+        name: 'Ratings ',
+        helperText: 'Rate on a scale',
+        json: {
+            widget: 'ratings',
+            data: {
+                style: {},
+                size: 'small',
+                type: 'star',
+                value: 2,
+                max: 5,
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {
+                children: [],
+            },
+        },
+    },
+    {
         section: SECTION_INPUT,
         name: 'Switch',
         helperText: 'Toggle between two states',
