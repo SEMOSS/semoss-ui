@@ -1,11 +1,14 @@
+import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
+
+import { styled, Switch, Typography } from "@semoss/ui";
+
 import { useBlockSettings } from "../../../../../hooks";
 import { Block, BlockDef } from "../../../../../store";
 import { Paths, PathValue } from "../../../../../types";
 import { getValueByPath } from "../../../../../utility";
-import { styled, Switch, Typography } from "@semoss/ui";
-import { computed } from "mobx";
-import { observer } from "mobx-react-lite";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
@@ -16,15 +19,23 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 const StyledAxisDiv = styled("div")<{
     display?: string;
     justifyContent?: string;
-}>(({ display, justifyContent }) => ({
+    gap?: string;
+}>(({ display, justifyContent, gap }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
+    padding: "8px 16px",
+    alignItems: "center",
+    gap: gap ?? undefined,
 }));
-const StyledTypography = styled(Typography)({
-    paddingLeft: "10px",
-});
+const StyledAxis = styled("div")<{
+    display?: string;
+    justifyContent?: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "row",
+}));
 export const LineLegend = observer(
     <D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
@@ -66,8 +77,12 @@ export const LineLegend = observer(
             setData(path, option as PathValue<D["data"], typeof path>);
         };
         return (
-            <StyledAxisDiv>
-                <StyledAxisDiv display="flex" justifyContent="flex-start">
+            <StyledAxis>
+                <StyledAxisDiv
+                    display="flex"
+                    gap="8px"
+                    style={{ marginTop: "8px" }}
+                >
                     <Switch
                         checked={showLegend}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -76,11 +91,11 @@ export const LineLegend = observer(
                         title="Show Legend"
                         size="small"
                     />
-                    <StyledTypography variant="body1">
+                    <Typography variant="body2" color="secondary">
                         Show Legend
-                    </StyledTypography>
+                    </Typography>
                 </StyledAxisDiv>
-            </StyledAxisDiv>
+            </StyledAxis>
         );
     },
 );

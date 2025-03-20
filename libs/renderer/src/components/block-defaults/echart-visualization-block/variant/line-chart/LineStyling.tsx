@@ -1,11 +1,13 @@
+import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import { useEffect, useMemo, useState } from "react";
+
+import { styled, TextField, Select, Typography } from "@semoss/ui";
+
 import { useBlockSettings } from "../../../../../hooks";
 import { Block, BlockDef } from "../../../../../store";
 import { Paths, PathValue } from "../../../../../types";
 import { getValueByPath } from "../../../../../utility";
-import { styled, TextField, Select } from "@semoss/ui";
-import { computed } from "mobx";
-import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
 import { Line_Curve_Type, Line_Type } from "../../Visualization.constants";
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**
@@ -26,11 +28,13 @@ const StyledAxisDiv = styled("div")<{
 const StyledAxisColDiv = styled("div")<{
     display?: string;
     justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
+    gap?: string;
+}>(({ theme, display, justifyContent, gap }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "column",
-    padding: "0.5rem",
+    padding: "8px 16px",
+    gap: gap ?? undefined,
 }));
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: "100%",
@@ -172,11 +176,17 @@ export const LineStyling = observer(
         }
         return (
             <StyledAxisDiv>
-                <StyledAxisColDiv display="flex" justifyContent="space-around">
-                    <label htmlFor="line-alignment">
+                <StyledAxisColDiv
+                    display="flex"
+                    gap="8px"
+                    style={{ marginTop: "8px" }}
+                    justifyContent="space-around"
+                >
+                    <Typography variant="body2" color="secondary">
                         Select Graph Curve Type
-                    </label>
+                    </Typography>
                     <StyledSelect
+                        size="small"
                         id="alignment"
                         name="alignment"
                         value={lineCurve}
@@ -196,9 +206,18 @@ export const LineStyling = observer(
                         })}
                     </StyledSelect>
                 </StyledAxisColDiv>
-                <StyledAxisColDiv display="flex" justifyContent="space-around">
-                    <label htmlFor="line-alignment">Select Line Type</label>
+
+                <StyledAxisColDiv
+                    display="flex"
+                    gap="8px"
+                    style={{ marginTop: "8px" }}
+                    justifyContent="space-around"
+                >
+                    <Typography variant="body2" color="secondary">
+                        Select Line Type
+                    </Typography>
                     <StyledSelect
+                        size="small"
                         id="alignment"
                         name="alignment"
                         value={lineType}
@@ -218,9 +237,17 @@ export const LineStyling = observer(
                         })}
                     </StyledSelect>
                 </StyledAxisColDiv>
-                <StyledAxisColDiv display="flex" justifyContent="space-around">
-                    <label htmlFor="line-width">Line Width</label>
+                <StyledAxisColDiv
+                    display="flex"
+                    gap="8px"
+                    style={{ marginTop: "8px" }}
+                    justifyContent="space-around"
+                >
+                    <Typography variant="body2" color="secondary">
+                        Line Width
+                    </Typography>
                     <StyledTextField
+                        size="small"
                         id="size"
                         name="size"
                         value={lineWidth}

@@ -1,7 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
+import { Sync } from "@mui/icons-material";
+
 import { Autocomplete, IconButton, styled, TextField } from "@semoss/ui";
+
 import { BaseSettingSection } from "../../../../block-settings/BaseSettingSection";
 import { Fields } from "../line-chart/Fields";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
@@ -13,7 +16,6 @@ import {
 import { Block, BlockDef } from "../../../../../store";
 import { Paths, PathValue } from "../../../../../types";
 import { getValueByPath } from "../../../../../utility";
-import { Sync } from "@mui/icons-material";
 
 interface FieldsSettingsProps<D extends BlockDef = BlockDef> {
     /**

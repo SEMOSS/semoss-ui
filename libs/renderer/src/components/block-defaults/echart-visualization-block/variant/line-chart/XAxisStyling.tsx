@@ -1,11 +1,20 @@
+import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
+
+import {
+    styled,
+    Switch,
+    TextField,
+    Select,
+    Button,
+    Typography,
+} from "@semoss/ui";
+
 import { useBlockSettings } from "../../../../../hooks";
 import { Block, BlockDef } from "../../../../../store";
 import { Paths, PathValue } from "../../../../../types";
 import { getValueByPath } from "../../../../../utility";
-import { styled, Switch, TextField, Select, Button } from "@semoss/ui";
-import { computed } from "mobx";
-import { observer } from "mobx-react-lite";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
@@ -16,14 +25,18 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 const StyledAxisDiv = styled("div")<{
     display?: string;
     justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
+    gap?: string;
+}>(({ theme, display, justifyContent, gap }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
+    padding: "8px 16px",
+    gap: gap ?? undefined,
 }));
-const StyledButton = styled(Button)({
-    left: "80%",
+const StyledButtonWrapper = styled("div")({
+    display: "flex",
+    justifyContent: "flex-end",
+    padding: "8px 16px",
 });
 const StyledAxisColDiv = styled("div")<{
     display?: string;
@@ -32,13 +45,12 @@ const StyledAxisColDiv = styled("div")<{
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "column",
-    padding: "0.5rem",
+    padding: "8px 16px",
+    gap: "8px",
+    marginBottom: "8px",
 }));
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: "100%",
-}));
-const StyledLabel = styled("label")(({ theme }) => ({
-    paddingLeft: "10px",
 }));
 export const XAxisStyling = observer(
     <D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
@@ -185,19 +197,31 @@ export const XAxisStyling = observer(
         }
         return (
             <StyledAxisDiv>
-                <StyledAxisDiv display="flex" justifyContent="flex-start">
+                <StyledAxisDiv
+                    display="flex"
+                    gap="8px"
+                    style={{ marginTop: "8px" }}
+                >
                     <Switch
+                        size="small"
                         checked={showXAxis}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                             handleInputChange("showXAxis", e.target.checked)
                         }
                         title="Show Value Label"
                     />
-                    <StyledLabel>Show X Axis</StyledLabel>
+                    <Typography variant="body2" color="secondary">
+                        Show X Axis
+                    </Typography>
                 </StyledAxisDiv>
                 {showXAxis && (
-                    <StyledAxisDiv display="flex" justifyContent="flex-start">
+                    <StyledAxisDiv
+                        display="flex"
+                        gap="8px"
+                        style={{ marginTop: "8px" }}
+                    >
                         <Switch
+                            size="small"
                             checked={showXAxisTitle}
                             onChange={(e: ChangeEvent<HTMLInputElement>) =>
                                 handleInputChange(
@@ -207,7 +231,9 @@ export const XAxisStyling = observer(
                             }
                             title="Show X Axis Title"
                         />
-                        <StyledLabel>Show X Axis Title</StyledLabel>
+                        <Typography variant="body2" color="secondary">
+                            Show X Axis Title
+                        </Typography>
                     </StyledAxisDiv>
                 )}
                 {showXAxis && showXAxisTitle && (
@@ -215,8 +241,11 @@ export const XAxisStyling = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="x-axis-title">Edit X Axis Title</label>
+                        <Typography variant="body2" color="secondary">
+                            Edit X Axis Title
+                        </Typography>
                         <StyledTextField
+                            size="small"
                             id="xAxisTitle"
                             name="xAxisTitle"
                             value={xAxisTitle}
@@ -227,8 +256,13 @@ export const XAxisStyling = observer(
                     </StyledAxisColDiv>
                 )}
                 {showXAxis && (
-                    <StyledAxisDiv display="flex" justifyContent="flex-start">
+                    <StyledAxisDiv
+                        display="flex"
+                        gap="8px"
+                        style={{ marginTop: "8px" }}
+                    >
                         <Switch
+                            size="small"
                             checked={showXAxisTick}
                             onChange={(e: ChangeEvent<HTMLInputElement>) =>
                                 handleInputChange(
@@ -238,7 +272,9 @@ export const XAxisStyling = observer(
                             }
                             title="Show X Axis Tick"
                         />
-                        <StyledLabel>Show X Axis Tick</StyledLabel>
+                        <Typography variant="body2" color="secondary">
+                            Show X Axis Tick
+                        </Typography>
                     </StyledAxisDiv>
                 )}
                 {showXAxis && (
@@ -246,10 +282,11 @@ export const XAxisStyling = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="label-font">
+                        <Typography variant="body2" color="secondary">
                             XAxis Label Font Size
-                        </label>
+                        </Typography>
                         <StyledTextField
+                            size="small"
                             id="labelfont"
                             name="labelfont"
                             value={xAxisFont}
@@ -260,14 +297,16 @@ export const XAxisStyling = observer(
                     </StyledAxisColDiv>
                 )}
                 {showXAxis && (
-                    <StyledButton
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        onClick={handleReset}
-                    >
-                        Reset
-                    </StyledButton>
+                    <StyledButtonWrapper>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            onClick={handleReset}
+                        >
+                            Reset
+                        </Button>
+                    </StyledButtonWrapper>
                 )}
             </StyledAxisDiv>
         );

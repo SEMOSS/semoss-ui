@@ -1,16 +1,18 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
+import Checkbox from "@mui/material/Checkbox";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
+
 import { Autocomplete, styled, TextField } from "@semoss/ui";
+
 import { BaseSettingSection } from "../../../../block-settings/BaseSettingSection";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { useBlockSettings, useFrameHeaders } from "../../../../../hooks";
 import { Block, BlockDef } from "../../../../../store";
 import { Paths, PathValue } from "../../../../../types";
 import { getValueByPath } from "../../../../../utility";
-import Checkbox from "@mui/material/Checkbox";
-import CheckBoxIcon from "@mui/icons-material/CheckBox";
-import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 
 interface FieldsSettingsProps<D extends BlockDef = BlockDef> {
     /**

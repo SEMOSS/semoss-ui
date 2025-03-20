@@ -1,11 +1,13 @@
+import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
+
+import { styled, Switch, TextField, Button, Typography } from "@semoss/ui";
+
 import { useBlockSettings } from "../../../../../hooks";
 import { Block, BlockDef } from "../../../../../store";
 import { Paths, PathValue } from "../../../../../types";
 import { getValueByPath } from "../../../../../utility";
-import { styled, Switch, TextField, Select, Button } from "@semoss/ui";
-import { computed } from "mobx";
-import { observer } from "mobx-react-lite";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
@@ -17,15 +19,14 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 const StyledAxisDiv = styled("div")<{
     display?: string;
     justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
+    gap?: string;
+}>(({ theme, display, justifyContent, gap }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
+    padding: "8px 16px",
+    gap: gap ?? undefined,
 }));
-const StyledButton = styled(Button)({
-    left: "80%",
-});
 const StyledAxisColDiv = styled("div")<{
     display?: string;
     justifyContent: string;
@@ -33,14 +34,18 @@ const StyledAxisColDiv = styled("div")<{
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "column",
-    padding: "0.5rem",
+    padding: "8px 16px",
+    gap: "8px",
+    marginBottom: "8px",
 }));
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: "100%",
 }));
-const StyledLabel = styled("label")(({ theme }) => ({
-    paddingLeft: "10px",
-}));
+const StyledButtonWrapper = styled("div")({
+    display: "flex",
+    justifyContent: "flex-end",
+    padding: "8px 16px",
+});
 export const YAxisStyling = observer(
     <D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
@@ -144,21 +149,8 @@ export const YAxisStyling = observer(
                     let tilteNames =
                         option["reset"]["yAxis"]["updatedName"].split(",");
                     option["yAxis"]["name"] = tilteNames;
-                    let dataLength = option["series"].length;
-                    if (dataLength > 0) {
-                        for (let i = 0; i < dataLength; i++) {
-                            option["series"][i]["name"] = tilteNames[i];
-                        }
-                    }
-                    // option['reset']['yAxis']['updatedName'] = yAxisTitle;
                 } else {
                     option["yAxis"]["name"] = "";
-                    let dataLength = option["series"].length;
-                    if (dataLength > 0) {
-                        for (let i = 0; i < dataLength; i++) {
-                            option["series"][i]["name"] = "";
-                        }
-                    }
                 }
                 setShowYAxisTitle(inputValue);
             } else if (title === "yAxisTitle") {
@@ -169,12 +161,6 @@ export const YAxisStyling = observer(
                 setYAxisTitle(inputValue);
                 let tilteNames = inputValue.split(",");
                 option["yAxis"]["name"] = tilteNames;
-                let dataLength = option["series"].length;
-                if (dataLength > 0) {
-                    for (let i = 0; i < dataLength; i++) {
-                        option["series"][i]["name"] = tilteNames[i];
-                    }
-                }
                 option["reset"]["yAxis"]["updatedName"] = inputValue;
             } else if (title === "showYAxisTick") {
                 /**
@@ -223,32 +209,36 @@ export const YAxisStyling = observer(
             // Update the Y Axis font size in the option
             option["yAxis"]["nameTextStyle"]["fontSize"] =
                 option["reset"]["yAxis"]["axisLabelFont"];
-            // Split the Y Axis name into individual titles and update the series names accordingly
-            let tilteNames = yaxisName.split(",");
-            let dataLength = option["series"].length;
-            if (dataLength > 0) {
-                for (let i = 0; i < dataLength; i++) {
-                    option["series"][i]["name"] = tilteNames[i];
-                }
-            }
             // Update the data with the new option
             setData(path, option as PathValue<D["data"], typeof path>);
         }
         return (
             <StyledAxisDiv>
-                <StyledAxisDiv display="flex" justifyContent="flex-start">
+                <StyledAxisDiv
+                    display="flex"
+                    gap="8px"
+                    style={{ marginTop: "8px" }}
+                >
                     <Switch
+                        size="small"
                         checked={showYAxis}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                             handleInputChange("showYAxis", e.target.checked)
                         }
                         title="Show Y Axis"
                     />
-                    <StyledLabel>Show Y Axis</StyledLabel>
+                    <Typography variant="body2" color="secondary">
+                        Show Y Axis
+                    </Typography>
                 </StyledAxisDiv>
                 {showYAxis && (
-                    <StyledAxisDiv display="flex" justifyContent="flex-start">
+                    <StyledAxisDiv
+                        display="flex"
+                        gap="8px"
+                        style={{ marginTop: "8px" }}
+                    >
                         <Switch
+                            size="small"
                             checked={showYAxisTitle}
                             onChange={(e: ChangeEvent<HTMLInputElement>) =>
                                 handleInputChange(
@@ -258,7 +248,9 @@ export const YAxisStyling = observer(
                             }
                             title="Show Y Axis Title"
                         />
-                        <StyledLabel>Show Y Axis Title</StyledLabel>
+                        <Typography variant="body2" color="secondary">
+                            Show Y Axis Title
+                        </Typography>
                     </StyledAxisDiv>
                 )}
                 {showYAxis && showYAxisTitle && (
@@ -266,8 +258,11 @@ export const YAxisStyling = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="x-axis-title">Edit Y Axis Title</label>
+                        <Typography variant="body2" color="secondary">
+                            Edit Y Axis Title
+                        </Typography>
                         <StyledTextField
+                            size="small"
                             id="yAxisTitle"
                             name="yAxisTitle"
                             value={yAxisTitle}
@@ -280,6 +275,7 @@ export const YAxisStyling = observer(
                 {showYAxis && (
                     <StyledAxisDiv display="flex" justifyContent="flex-start">
                         <Switch
+                            size="small"
                             checked={showYAxisTick}
                             onChange={(e: ChangeEvent<HTMLInputElement>) =>
                                 handleInputChange(
@@ -289,7 +285,9 @@ export const YAxisStyling = observer(
                             }
                             title="Show Y Axis Tick"
                         />
-                        <StyledLabel>Show Y Axis Tick</StyledLabel>
+                        <Typography variant="body2" color="secondary">
+                            Show Y Axis Tick
+                        </Typography>
                     </StyledAxisDiv>
                 )}
                 {showYAxis && (
@@ -297,10 +295,11 @@ export const YAxisStyling = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="label-font">
+                        <Typography variant="body2" color="secondary">
                             YAxis Label Font Size
-                        </label>
+                        </Typography>
                         <StyledTextField
+                            size="small"
                             id="labelfont"
                             name="labelfont"
                             value={yAxisFont}
@@ -311,14 +310,16 @@ export const YAxisStyling = observer(
                     </StyledAxisColDiv>
                 )}
                 {showYAxis && (
-                    <StyledButton
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        onClick={handleReset}
-                    >
-                        Reset
-                    </StyledButton>
+                    <StyledButtonWrapper>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            onClick={handleReset}
+                        >
+                            Reset
+                        </Button>
+                    </StyledButtonWrapper>
                 )}
             </StyledAxisDiv>
         );

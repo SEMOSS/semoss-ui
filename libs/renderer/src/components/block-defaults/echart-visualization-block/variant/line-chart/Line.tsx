@@ -43,12 +43,18 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
             //get the fields
             let selectorFields = blockJSON["_state"]["fields"];
             //  get the value and tooltip properties
-            let dynamicYAndTooltipSet = [
-                ...new Set([
+            let dynamicYAndTooltipSet = Array.from(
+                new Set([
                     ...selectorFields["yAxis"],
                     ...selectorFields["tooltip"],
                 ]),
-            ];
+            );
+            // let dynamicYAndTooltipSet = [
+            //     ...new Set([
+            //         ...selectorFields["yAxis"],
+            //         ...selectorFields["tooltip"],
+            //     ]),
+            // ];
             // start forming the selector string
             selector += `${selectorFields["xAxis"][0]}`;
             // add dynamic y axis and tooltip fields to the selector string
@@ -105,7 +111,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
                 resultData["xAxis"]["data"] = valuesDataSet.map((x) => x[0]);
                 valuesDataSet.map((x) => x.shift());
                 headersDataSet.shift();
-                const yAxisListLength = resultData["series"]?.length;
+                const yAxisListLength = resultData["yAxis"]["name"].length;
                 for (let index = 0; index < yAxisListLength; index++) {
                     resultData["series"][index]["data"] = valuesDataSet.map(
                         (x) => {
@@ -114,9 +120,8 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
                     );
                     resultData["series"][index]["name"] = headersDataSet[index];
                 }
-                resultData["series"] = resultData["series"].filter((x) =>
-                    resultData["yAxis"]?.["name"]?.includes(x.name),
-                );
+                resultData["series"].length = yAxisListLength;
+                resultData["series"].slice(0, yAxisListLength);
                 valuesDataSet.map((x) => x.splice(0, yAxisListLength));
                 headersDataSet.splice(0, yAxisListLength);
                 let customTooltipData = [];
