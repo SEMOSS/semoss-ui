@@ -20,11 +20,15 @@
         "isolatedModules": true,
         "jsx": "react-jsx",
         "incremental": true,
-        "experimentalDecorators": true
+        "experimentalDecorators": true,
+        "outDir": "./dist",
+        "types": ["vitest/globals", "@testing-library/jest-dom/vitest"]
     },
-    "include": [
-        "./src",
-        "./global.d.ts",
+    "include": ["./src", "./global.d.ts", "./test"],
+    "exclude": [
+        "./plugins/**/*",
+        "./typings/**/*",
+        "./dist/**/*",
         "../../libs/renderer/src/store/state/migration"
     ]
 }

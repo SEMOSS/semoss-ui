@@ -38,7 +38,6 @@ export const GridBlockColumnSettings = observer(
     ({ id }: GridBlockColumnSettingsProps) => {
         const notification = useNotification();
         const { data, setData } = useBlockSettings<GridBlockDef>(id);
-
         // get all of the frames
         const getFrames = useBlocksPixel<string[]>("GetFrames();", {
             data: [],
