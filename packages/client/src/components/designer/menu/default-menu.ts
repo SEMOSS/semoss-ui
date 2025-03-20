@@ -330,7 +330,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_ELEMENT,
-        image: BLOCK_IMAGE,
+        image: '',
         name: 'Chip',
         json: {
             widget: 'chip',

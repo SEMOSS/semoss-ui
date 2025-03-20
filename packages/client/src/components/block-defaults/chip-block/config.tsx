@@ -1,9 +1,5 @@
-/* eslint-disable react/jsx-no-undef */
 import { BlockConfig } from '@/stores';
-import {
-    buildDimensionsSection,
-    buildListener,
-} from '../block-defaults.shared';
+import { buildListener } from '../block-defaults.shared';
 import { CSSProperties } from 'react';
 import { ChipBlockDef, ChipBlock } from './ChipBlock';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
@@ -14,7 +10,8 @@ import {
 } from '../../block-settings';
 
 import { ChipSettings } from '../../block-settings/custom/ChipSettings';
-import { Face } from '@mui/icons-material';
+import { CancelOutlined } from '@mui/icons-material';
+import { Avatar } from '@semoss/ui';
 
 export const DefaultStyles: CSSProperties = {};
 
@@ -25,18 +22,19 @@ export const config: BlockConfig<ChipBlockDef> = {
         style: DefaultStyles,
         color: 'default',
         size: 'small',
-        icon: <Face />,
-        type: 'chip',
-        //variant: 'filled',
+        avatar: <Avatar>A</Avatar>,
+        type: 'Chip',
+        variant: 'filled',
         label: '',
         src: '',
         title: '',
     },
     listeners: {
-        onClick: [],
+        //onClick: [],
     },
     slots: {},
     render: ChipBlock,
+    icon: CancelOutlined,
 
     contentMenu: [
         {
@@ -51,15 +49,19 @@ export const config: BlockConfig<ChipBlockDef> = {
                             path="type"
                             options={[
                                 {
-                                    value: 'Chip', //default
+                                    value: 'Chip',
                                     display: 'Chip',
                                 },
                                 {
-                                    value: 'Delete', //onDelete={}
-                                    display: 'Deleteable Chip',
+                                    value: 'Icon',
+                                    display: 'Icon Chip',
                                 },
                                 {
-                                    value: 'Link', //component = "a" href = " " clickable
+                                    value: 'Avatar',
+                                    display: 'Avatar Chip',
+                                },
+                                {
+                                    value: 'Link',
                                     display: 'Link Chip',
                                 },
                             ]}
@@ -96,13 +98,13 @@ export const config: BlockConfig<ChipBlockDef> = {
                 {
                     description: 'Variant',
                     render: ({ id }) => (
-                        <ChipSettings
+                        <SelectInputSettings
                             id={id}
                             label="Variant"
                             path="variant"
                             options={[
                                 {
-                                    value: 'filled',
+                                    value: 'null',
                                     display: 'filled',
                                 },
                                 {
@@ -122,53 +124,65 @@ export const config: BlockConfig<ChipBlockDef> = {
                             path="color"
                             options={[
                                 {
-                                    value: 'primary',
-                                    display: 'primary',
-                                },
-                                {
                                     value: 'default',
                                     display: 'default',
                                 },
                                 {
-                                    value: 'pink',
-                                    display: 'pink',
+                                    value: 'primary',
+                                    display: 'primary',
                                 },
                                 {
-                                    value: 'green',
-                                    display: 'green',
+                                    value: 'secondary',
+                                    display: 'secondary',
                                 },
                                 {
-                                    value: 'purple',
-                                    display: 'purple',
+                                    value: 'success',
+                                    display: 'success',
                                 },
                                 {
-                                    value: 'indigo',
-                                    display: 'indigo',
+                                    value: 'warning',
+                                    display: 'warning',
                                 },
                                 {
-                                    value: 'turqoise',
-                                    display: 'turqoise',
+                                    value: 'error',
+                                    display: 'error',
                                 },
-                                {
-                                    value: 'lcgreen',
-                                    display: 'lcgreen',
-                                },
-                                {
-                                    value: 'lcpink',
-                                    display: 'lcpink',
-                                },
-                                {
-                                    value: 'lcpurple',
-                                    display: 'lcpurple',
-                                },
-                                {
-                                    value: 'lcindigo',
-                                    display: 'lcindigo',
-                                },
-                                {
-                                    value: 'lcprimary',
-                                    display: 'lcprimary',
-                                },
+                                // {
+                                //     value: 'green',
+                                //     display: 'green',
+                                // },
+                                // {
+                                //     value: 'pink',
+                                //     display: 'pink',
+                                // },
+                                // {
+                                //     value: 'purple',
+                                //     display: 'purple',
+                                // },
+                                // {
+                                //     value: 'indigo',
+                                //     display: 'indigo',
+                                // },
+                                // {
+                                //     value: 'lcgreen',
+                                //     display: 'lcgreen',
+                                // },
+                                // {
+                                //     value: 'lcpink',
+                                //     display: 'lcpink',
+                                // },
+                                // {
+                                //     value: 'lcpurple',
+                                //     display: 'lcpurple',
+                                // },
+                                // {
+                                //     value: 'lcindigo',
+                                //     display: 'lcindigo',
+                                // },
+                                // {
+                                //     value: 'lcprimary',
+                                //     display: 'lcprimary',
+                                // },
                             ]}
                         />
                     ),
@@ -195,7 +209,5 @@ export const config: BlockConfig<ChipBlockDef> = {
                 },
             ],
         },
-        buildDimensionsSection(),
     ],
-    icon: undefined,
 };

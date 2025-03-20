@@ -1,9 +1,10 @@
-/* eslint-disable react/jsx-no-undef */
-/* eslint-disable no-undef */
 import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
-import { Chip, Stack } from '@semoss/ui';
+import { Face } from '@mui/icons-material';
+import { Chip } from '@mui/material';
+import { Avatar } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
+import React from 'react';
 import { CSSProperties } from 'react';
 
 export interface ChipBlockDef extends BlockDef<'chip'> {
@@ -12,38 +13,76 @@ export interface ChipBlockDef extends BlockDef<'chip'> {
         type: string;
         label: string;
         style: CSSProperties;
-        //variant: 'filled' | 'outlined';
+        variant: 'filled' | 'outlined';
         disabled?: boolean;
-        icon?: React.ReactElement;
+        avatar?: React.ReactElement;
         size: 'small' | 'medium';
         color:
-            | 'primary'
             | 'default'
-            | 'pink'
-            | 'green'
-            | 'purple'
-            | 'indigo'
-            | 'turqoise'
-            | 'lcgreen'
-            | 'lcpink'
-            | 'lcpurple'
-            | 'lcindigo'
-            | 'lcprimary';
+            | 'primary'
+            | 'secondary'
+            | 'success'
+            | 'warning'
+            | 'error';
         clickable?: boolean;
+        multiSelect?: boolean;
+        link?: string;
+        icon?: React.JSX.Element;
         src: string;
         title: string;
-    };
-    listeners: {
-        onClick: true;
     };
     slots: never;
 }
 
 export const ChipBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, listeners } = useBlock<ChipBlockDef>(id);
+    const { attrs, data } = useBlock<ChipBlockDef>(id);
+
+    const displayChip = (key): React.ReactNode => {
+        const avatar = data?.avatar || 'A';
+        const link = data?.link || null;
+
+        const chipProps = {
+            label: data.label ?? data.type ?? 'Chip',
+            color: data.color,
+            size: data.size,
+            variant: data.variant,
+            clickable: data.clickable,
+        };
+
+        switch (key) {
+            case 'Chip':
+                return <Chip {...chipProps} />;
+            case 'Avatar':
+                return (
+                    <Chip
+                        {...chipProps}
+                        avatar={
+                            <Avatar
+                                sx={{ '&&': { backgroundColor: data.color } }}
+                            >
+                                {avatar}
+                            </Avatar>
+                        }
+                    />
+                );
+            case 'Icon':
+                return <Chip {...chipProps} icon={<Face />} />;
+            case 'Link':
+                return (
+                    <a href={link}>
+                        <Chip
+                            {...chipProps}
+                            onClick={(e) => e.preventDefault()}
+                        />
+                    </a>
+                );
+            default:
+                return <Chip {...chipProps} />;
+        }
+    };
 
     return (
-        <Stack
+        <div
             {...attrs}
             style={{
                 display: 'flex',
@@ -51,22 +90,9 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
                 alignItems: 'center',
                 height: 'fit-content',
                 width: 'fit-content',
-                paddingInline: '10px',
-            }}
-            onClick={() => {
-                listeners.onClick();
             }}
         >
-            {
-                <Chip
-                    label={data.label || null}
-                    //variant={data.variant || null}
-                    color={data.color}
-                    size={data.size}
-                    icon={data.icon || null}
-                    clickable={data.clickable}
-                />
-            }
-        </Stack>
+            {data.type ? displayChip(data.type) : displayChip('default')}
+        </div>
     );
 });

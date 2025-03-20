@@ -1,5 +1,3 @@
-/* eslint-disable prettier/prettier */
-/* eslint-disable no-unused-vars */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
@@ -9,21 +7,16 @@ import { ActionMessages, Block, BlockDef } from '@/stores';
 import { getValueByPath } from '../../../utility';
 import { BaseSettingSection } from '../BaseSettingSection';
 import { Autocomplete, Chip, Stack, TextField } from '@mui/material';
+import { Avatar } from '@semoss/ui';
+import { Face } from '@mui/icons-material';
 
 interface ChipSettingsProps<D extends BlockDef = BlockDef> {
     id: string;
     path: Paths<Block<D>['data'], 4>;
     label: string;
-    options: Array<{ value: string; display: string }>;
+    options?: Array<{ value: string; display: string }>;
     resizeOnSet?: boolean;
 }
-
-const labelMap: { [key: string]: string } = {};
-
-export const inputOptions = Object.keys(labelMap).map((key) => ({
-    value: key,
-    display: key,
-}));
 
 export const ChipSettings = observer(
     <D extends BlockDef = BlockDef>({
@@ -36,6 +29,7 @@ export const ChipSettings = observer(
         const { data, setData } = useBlockSettings(id);
         const { state } = useBlocks();
 
+        // eslint-disable-next-line no-unused-vars
         const [autocompleteOptions, setAutocompleteOptions] = useState<
             Array<string>
         >([]);
@@ -105,55 +99,96 @@ export const ChipSettings = observer(
             }, 300);
         };
 
-        const [chipVisible, setChipVisible] = useState(true);
+        const [ChipValue, setChipValue] = useState('');
+        const [selectedChipType, setSelectedChipType] = useState('');
 
-        const handleDelete = () => {
-            setChipVisible(false);
+        const handleChipChange = (chip, e) => {
+            setChipValue(e.target.value);
+            setData(chip.toLowerCase(), e.target.value);
         };
 
         return (
-            <BaseSettingSection label={label}>
-                <Autocomplete
-                    fullWidth
-                    size="small"
-                    value={value}
-                    onChange={(_, newValue) => {
-                        onChange(newValue);
-                    }}
-                    options={options.map((option) => option.value)}
-                    renderOption={(props, option) => (
-                        <li {...props}>
-                            <Stack
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                }}
-                            >
-                                {(() => {
-                                    switch (option) {
-                                        case 'Chip':
-                                            return <Chip />;
-                                        case 'Delete':
-                                            return (
-                                                <Chip onDelete={handleDelete} />
-                                            );
-                                        // case 'Link':
-                                        //     return <Chip componet = "a" href=""/>;
-                                        case 'outlined':
-                                            return <Chip variant="outlined" />;
-                                        case 'filled':
-                                            return <Chip />;
+            <Stack width="100%">
+                <BaseSettingSection label={label}>
+                    <Stack flexDirection="column" width="100%">
+                        <Autocomplete
+                            fullWidth
+                            size="small"
+                            value={value}
+                            onChange={(_, newValue) => {
+                                onChange(newValue);
+                                setSelectedChipType(newValue);
+                            }}
+                            options={options.map((option) => option.value)}
+                            renderOption={(props, option) => (
+                                <li {...props}>
+                                    <Stack
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                        }}
+                                    >
+                                        {(() => {
+                                            switch (option) {
+                                                case 'Chip':
+                                                    return (
+                                                        <Chip label={option} />
+                                                    );
+                                                case 'Icon':
+                                                    return (
+                                                        <Chip
+                                                            label={option}
+                                                            icon={<Face />}
+                                                        />
+                                                    );
+                                                case 'Avatar':
+                                                    return (
+                                                        <Chip
+                                                            label={option}
+                                                            avatar={
+                                                                <Avatar>
+                                                                    A
+                                                                </Avatar>
+                                                            }
+                                                        />
+                                                    );
+                                                case 'Link':
+                                                    return (
+                                                        <Chip label={option} />
+                                                    );
+                                                default:
+                                                    return (
+                                                        <Chip label={option} />
+                                                    );
+                                            }
+                                        })()}
+                                    </Stack>
+                                </li>
+                            )}
+                            renderInput={(params) => <TextField {...params} />}
+                            disablePortal
+                            disableClearable
+                        />
+                        {selectedChipType &&
+                            (selectedChipType === 'Avatar' ||
+                                selectedChipType === 'Link') && (
+                                <TextField
+                                    fullWidth
+                                    value={ChipValue}
+                                    onChange={(e) =>
+                                        handleChipChange(selectedChipType, e)
                                     }
-                                })()}
-                            </Stack>
-                        </li>
-                    )}
-                    renderInput={(params) => <TextField {...params} />}
-                    disablePortal
-                    disableClearable
-                />
-            </BaseSettingSection>
+                                    size="small"
+                                    variant="outlined"
+                                    autoComplete="off"
+                                    placeholder={`${selectedChipType} value`}
+                                    sx={{ mt: 1 }}
+                                />
+                            )}
+                    </Stack>
+                </BaseSettingSection>
+            </Stack>
         );
     },
 );
