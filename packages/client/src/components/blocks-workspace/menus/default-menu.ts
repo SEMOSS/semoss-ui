@@ -799,6 +799,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 disabled: false,
                 variant: 'contained',
                 color: 'primary',
+                show: true,
             },
             listeners: {
                 onClick: [],

@@ -35,11 +35,23 @@ export const RendererEngine = observer(
                 `Widget ${block.widget} for block ${id} is not registered`,
             );
         }
-
-        // render the view
-        return createElement(b.render, {
+        const toShowBlock = block.data.hasOwnProperty("show")
+            ? block.data.show === "true"
+                ? true
+                : false
+            : true;
+        if (toShowBlock) {
+            // render the view
+            return createElement(b.render, {
+                key: id,
+                id: id,
+            });
+        }
+        // render the generic view of a block if hidden
+        return createElement("div", {
             key: id,
             id: id,
+            ["data-block"]: id,
         });
     },
 );
