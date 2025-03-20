@@ -140,6 +140,7 @@ const StyledTitle = styled("span")(() => ({
 const StyledCustomPaletteAdd = styled("div")(() => ({
     display: "flex",
     justifyContent: "center",
+    paddingTop: "10px",
 }));
 const StyledCustomPaletteEdit = styled("div")(() => ({
     display: "block",
@@ -536,7 +537,10 @@ export const ColorPalatteSettings = observer(
                     ? colorPalette[0]
                     : colorPalette.find((item) => item.label === label);
             // Update the state with the new color palette data
-            if (Data.variation == "echart-scatter-plots") {
+            if (
+                Data.variation == "echart-scatter-plots" ||
+                Data.variation == "echart-stack-chart"
+            ) {
                 runStateUpdate(
                     optionComputedValue,
                     optionPathVal,

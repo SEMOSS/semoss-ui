@@ -41,6 +41,9 @@ interface InputSettingsProps<D extends BlockDef = BlockDef> {
      * What to be displayed on the tooltip to explain setting
      */
     description?: string;
+
+    limit?: number;
+    min?: number;
 }
 
 export const InputSettings = observer(
@@ -52,6 +55,8 @@ export const InputSettings = observer(
         type = "text",
         valueAsObject = false,
         description,
+        limit,
+        min,
     }: InputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
 
@@ -88,6 +93,15 @@ export const InputSettings = observer(
          * Sync the data on change
          */
         const onChange = (value: string) => {
+            // Set the value
+            if (
+                limit &&
+                ((Number(value) > limit && type === "number") ||
+                    (limit && min && Number(value) < min))
+            ) {
+                return;
+            }
+
             // set the value
             setValue(value);
 
@@ -99,7 +113,8 @@ export const InputSettings = observer(
 
             timeoutRef.current = setTimeout(() => {
                 try {
-                    let valueToSet = value;
+                    let valueToSet: string | number = value;
+
                     if (valueAsObject) {
                         try {
                             valueToSet = !!value
@@ -108,6 +123,8 @@ export const InputSettings = observer(
                         } catch (e) {
                             console.log(e);
                         }
+                    } else if (type === "number") {
+                        valueToSet = Number(value);
                     }
                     // set the value
                     setData(

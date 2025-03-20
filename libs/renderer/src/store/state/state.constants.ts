@@ -8,6 +8,10 @@ export const INPUT_BLOCK_TYPES = [
     "checkbox",
     "toggle-button",
     "radio",
+    "slider",
+    "ratings",
+    "switch",
+    "timepicker",
 ];
 
 export const VARIABLE_TYPES = [

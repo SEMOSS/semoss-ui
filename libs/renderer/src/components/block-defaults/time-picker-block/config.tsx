@@ -1,12 +1,15 @@
 import { CSSProperties } from "react";
+import { AccessTime } from "@mui/icons-material";
+
 import { BlockConfig } from "../../../store";
+import { TimePickerBlockDef, TimePickerBlock } from "./TimePickerBlock";
+import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { InputSettings, SelectInputSettings } from "../../block-settings";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
-import { buildDimensionsSection } from "../block-defaults.shared";
-
-import { TimeBlockDef, TimeBlock } from "./TimeBlock";
-import { AccessTime } from "@mui/icons-material";
-import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
+import {
+    buildDimensionsSection,
+    buildListener,
+} from "../block-defaults.shared";
 
 export const DefaultStyles: CSSProperties = {};
 
@@ -22,8 +25,8 @@ const getViewsOptions = () => {
 };
 
 // export the config for the block
-export const config: BlockConfig<TimeBlockDef> = {
-    widget: "time",
+export const config: BlockConfig<TimePickerBlockDef> = {
+    widget: "timepicker",
     type: BLOCK_TYPE_INPUT,
     data: {
         style: DefaultStyles,
@@ -44,7 +47,7 @@ export const config: BlockConfig<TimeBlockDef> = {
         onChange: [],
     },
     slots: {},
-    render: TimeBlock,
+    render: TimePickerBlock,
     icon: AccessTime,
     contentMenu: [
         {
@@ -57,11 +60,11 @@ export const config: BlockConfig<TimeBlockDef> = {
                     ),
                 },
                 {
-                    description: "Default Value",
+                    description: "Value",
                     render: ({ id }) => (
                         <InputSettings
                             id={id}
-                            label="Default Value"
+                            label="Value"
                             path="value"
                             description="ISO time string or empty for no default"
                         />
@@ -185,6 +188,10 @@ export const config: BlockConfig<TimeBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "on Change",
+            children: [...buildListener("onChange")],
         },
         buildDimensionsSection(),
     ],
