@@ -1,7 +1,5 @@
-import { observer } from "mobx-react-lite";
 import { CSSProperties } from "react";
-import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { observer } from "mobx-react-lite";
 import {
     styled,
     Switch,
@@ -10,6 +8,9 @@ import {
     Typography,
     FormHelperText,
 } from "@mui/material";
+
+import { useBlock } from "../../../hooks";
+import { BlockDef, BlockComponent } from "../../../store";
 
 const StyledContainer = styled("div")(({ theme }) => ({
     padding: "4px",

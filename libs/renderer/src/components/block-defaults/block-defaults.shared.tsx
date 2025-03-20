@@ -17,6 +17,7 @@ import {
     FormatAlignRight,
     FormatBold,
     FormatItalic,
+    RestartAlt,
     FormatUnderlined,
     VerticalAlignBottom,
     VerticalAlignCenter,
@@ -243,6 +244,24 @@ export const buildColorSection = () => ({
                 />
             ),
         },
+        {
+            description: "Reset Background Color",
+            render: ({ id }) => (
+                <ButtonGroupSettings
+                    id={id}
+                    path="style.backgroundColor"
+                    label="Reset Color"
+                    options={[
+                        {
+                            value: "#FFFFFF00",
+                            icon: RestartAlt,
+                            title: "Reset",
+                            isDefault: true,
+                        },
+                    ]}
+                />
+            ),
+        },
     ],
 });
 
@@ -264,6 +283,109 @@ export const buildBorderSection = () => ({
                     id={id}
                     label="Border Radius"
                     path="style.border-radius"
+                />
+            ),
+        },
+    ],
+});
+
+/**
+ * Build the Position Section
+ * @returns a position section
+ */
+export const buildPositionSection = () => ({
+    name: "Position",
+    children: [
+        {
+            description: "Position",
+            render: ({ id }) => (
+                <SelectInputSettings
+                    id={id}
+                    path="style.position"
+                    label="Position"
+                    options={[
+                        { value: "static", display: "Static" },
+                        { value: "relative", display: "Relative" },
+                        { value: "absolute", display: "Absolute" },
+                        { value: "fixed", display: "Fixed" },
+                        { value: "sticky", display: "Sticky" },
+                    ]}
+                />
+            ),
+        },
+        {
+            description: "Top",
+            render: ({ id }) => (
+                <SizeSettings id={id} label="Top" path="style.top" />
+            ),
+        },
+        {
+            description: "Z-Index",
+            render: ({ id }) => (
+                <SizeSettings id={id} label="Z-Index" path="style.zIndex" />
+            ),
+        },
+        {
+            description: "Display",
+            render: ({ id }) => (
+                <SelectInputSettings
+                    id={id}
+                    path="style.display"
+                    label="Display"
+                    options={[
+                        { value: "block", display: "Block" },
+                        { value: "inline", display: "Inline" },
+                        { value: "inline-block", display: "Inline Block" },
+                        { value: "flex", display: "Flex" },
+                        { value: "grid", display: "Grid" },
+                        { value: "none", display: "None" },
+                    ]}
+                />
+            ),
+        },
+        {
+            description: "Align Items",
+            render: ({ id }) => (
+                <ButtonGroupSettings
+                    id={id}
+                    path="style.alignItems"
+                    label="Align Items"
+                    options={[
+                        {
+                            value: "flex-start",
+                            icon: AlignHorizontalLeft,
+                            title: "Start",
+                            isDefault: false,
+                        },
+                        {
+                            value: "center",
+                            icon: AlignHorizontalCenter,
+                            title: "Center",
+                            isDefault: false,
+                        },
+                        {
+                            value: "flex-end",
+                            icon: AlignHorizontalRight,
+                            title: "End",
+                            isDefault: false,
+                        },
+                    ]}
+                />
+            ),
+        },
+        {
+            description: "Overflow",
+            render: ({ id }) => (
+                <SelectInputSettings
+                    id={id}
+                    path="style.overflow"
+                    label="Overflow"
+                    options={[
+                        { value: "visible", display: "Visible" },
+                        { value: "hidden", display: "Hidden" },
+                        { value: "scroll", display: "Scroll" },
+                        { value: "auto", display: "Auto", isDefault: true },
+                    ]}
                 />
             ),
         },

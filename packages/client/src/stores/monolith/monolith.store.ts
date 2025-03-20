@@ -2803,39 +2803,38 @@ export class MonolithStore {
         if (user.id) {
             newUserInfo += 'userId=' + encodeURIComponent(user.id);
         }
+        if (user.type) {
+            newUserInfo += '&type=' + encodeURIComponent(user.type);
+        }
+        if (user.type === 'NATIVE') {
+            newUserInfo += '&username=' + encodeURIComponent(user.id);
+        } else if (user.username) {
+            newUserInfo += '&username=' + encodeURIComponent(user.username);
+        }
+        if (user.password) {
+            newUserInfo += '&password=' + encodeURIComponent(user.password);
+        }
         if (user.admin) {
             newUserInfo += '&admin=' + encodeURIComponent(user.admin);
         }
         if (user.publisher) {
             newUserInfo += '&publisher=' + encodeURIComponent(user.publisher);
         }
-
         if (user.exporter) {
             newUserInfo += '&exporter=' + encodeURIComponent(user.exporter);
         }
-
         if (user.name) {
             newUserInfo += '&name=' + encodeURIComponent(user.name);
         }
-
         if (user.email) {
             newUserInfo += '&email=' + encodeURIComponent(user.email);
         }
-
         if (user.phone) {
             newUserInfo += '&phone=' + encodeURIComponent(user.phone);
         }
-
         if (user.phoneextension) {
             newUserInfo +=
                 '&phoneextension=' + encodeURIComponent(user.phoneextension);
-        }
-
-        if (user.type) {
-            newUserInfo += '&type=' + encodeURIComponent(user.type);
-        }
-        if (user.password) {
-            newUserInfo += '&password=' + encodeURIComponent(user.password);
         }
 
         if (user.model_usage_restriction) {

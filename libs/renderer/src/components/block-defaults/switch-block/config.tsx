@@ -1,12 +1,19 @@
 import { CSSProperties } from "react";
-import { BlockConfig } from "../../../store";
-import { InputSettings, SelectInputSettings } from "../../block-settings";
-import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
-import { buildDimensionsSection } from "../block-defaults.shared";
-
-import { SwitchBlockDef, SwitchBlock } from "./SwitchBlock";
 import { ToggleOn } from "@mui/icons-material";
+
+import { BlockConfig } from "../../../store";
+import { SwitchBlockDef, SwitchBlock } from "./SwitchBlock";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
+import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
+import {
+    buildDimensionsSection,
+    buildListener,
+} from "../block-defaults.shared";
+import {
+    InputSettings,
+    QueryInputSettings,
+    SelectInputSettings,
+} from "../../block-settings";
 
 export const DefaultStyles: CSSProperties = {
     width: "fit-content",
@@ -72,11 +79,10 @@ export const config: BlockConfig<SwitchBlockDef> = {
                 {
                     description: "Value",
                     render: ({ id }) => (
-                        <SwitchSettings
+                        <QueryInputSettings
                             id={id}
                             label="Value"
                             path="value"
-                            description="The state of the switch"
                         />
                     ),
                 },
@@ -136,6 +142,10 @@ export const config: BlockConfig<SwitchBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "on Change",
+            children: [...buildListener("onChange")],
         },
         buildDimensionsSection(),
     ],
