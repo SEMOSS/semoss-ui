@@ -64,8 +64,12 @@ export { default as THEME_ACTIVE } from './Theme_Active.png';
 export { default as THEME_HOVER } from './Theme_Hover.png';
 export { default as SIDEBAR_MENU_ACTIVE } from './Sidebar_Menu_Active.png';
 export { default as SIDEBAR_MENU_HOVER } from './Sidebar_Menu_Hover.png';
+export { default as SWITCH_ACTIVE } from './Switch_Active.png';
+export { default as SWITCH_HOVER } from './Switch_Hover.png';
 export { default as DIVIDER_ACTIVE } from './Divider_Active.png';
 export { default as DIVIDER_HOVER } from './Divider_Hover.png';
+export { default as SLIDER_ACTIVE } from './Slider_Active.png';
+export { default as SLIDER_HOVER } from './Slider_Hover.png';
 
 // CHARTS
 export { default as AREA_CHART_ACTIVE } from './Area_Chart_Active.png';
@@ -86,3 +90,5 @@ export { default as SCATTER_PLOT_ACTIVE } from './Scatter_Plot_Active.png';
 export { default as SCATTER_PLOT_HOVER } from './Scatter_Plot_Hover.png';
 export { default as RADIAL_PLOT_ACTIVE } from './Radial_Plot_Active.png';
 export { default as RADIAL_PLOT_HOVER } from './Radial_Plot_Hover.png';
+export { default as STACK_CHART_ACTIVE } from './Bar_Chart_Stacked_Active.png';
+export { default as STACK_CHART_HOVER } from './Bar_Chart_Stacked_Hover.png';
