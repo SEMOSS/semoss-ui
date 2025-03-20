@@ -9,6 +9,7 @@ import { UpgradedVisualizationTool } from "./variant/bar-chart/UpgradedVisualiza
 import { FrameOperations } from "./variant/bar-chart/FrameOperations";
 import { FrameOperationsPie } from "./variant/pie-chart/FrameOperationsPie";
 import { ScatterPlotBlockSettings } from "./variant/scatter-plot/ScatterPlotBlockSettings";
+import { StackChartBlockSettings } from "./variant/stack-chart/StackChartBlockSettings";
 
 const StyledContainer = styled("div")(() => ({
     maxHeight: "50vh",
@@ -98,6 +99,13 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                                 id={id}
                                 path={"option"}
                             ></ScatterPlotBlockSettings>
+                        )}
+                        {/* Render StackChartBlockSettings component when 'Data' tab is selected */}
+                        {data.variation === "echart-stack-chart" && (
+                            <StackChartBlockSettings
+                                id={id}
+                                path={"option"}
+                            ></StackChartBlockSettings>
                         )}
                     </StyledSubSection>
                 )}
