@@ -212,7 +212,7 @@ deploy (./src/commands/deploy.ts)
                 task: async () => {
                     // Load the insight classes
                     await insight.actions.run(
-                        `ReloadInsightClasses('${Env.APP}');`,
+                        `ReloadInsightClasses(project='${Env.APP}', release=true);`,
                     );
 
                     return true;
@@ -223,7 +223,7 @@ deploy (./src/commands/deploy.ts)
                 task: async (context) => {
                     // Publish the app
                     const { pixelReturn } = await insight.actions.run<[string]>(
-                        `PublishProject('${Env.APP}', release=true);`,
+                        `PublishProject(project='${Env.APP}', release=true);`,
                     );
 
                     // save the url

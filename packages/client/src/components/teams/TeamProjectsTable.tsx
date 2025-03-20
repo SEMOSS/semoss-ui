@@ -197,6 +197,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
+    const AUTOCOMPLETE_LIMIT = 10;
+    const AUTOCOMPLETE_OFFSET = 0;
 
     /** Project Table State */
     const [projectsPage, setProjectsPage] = useState<number>(1);
@@ -224,6 +226,30 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
     const [hasProjects, setHasProject] = useState(false);
 
     const limit = 5;
+    const [searchProjectInput, setSearchProjectInput] = useState<string>('');
+    const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
+    const [isScrollBottom, setIsScrollBottom] = useState(false);
+    const [canCollect, setCanCollect] = useState<boolean>(true);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [searchLoading, setSearchLoading] = useState(false);
+
+    const nearBottom = (
+        target: {
+            scrollHeight?: number;
+            scrollTop?: number;
+            clientHeight?: number;
+        } = {},
+    ) => {
+        const diff = Math.round(target.scrollHeight - target.scrollTop);
+        return diff - 25 <= target.clientHeight;
+    };
+
+    /**
+     * @name getAdditionalProjects
+     */
+    const getAdditionalProjects = () => {
+        setOffset(offset + AUTOCOMPLETE_LIMIT);
+    };
 
     const projectSearchRef = useRef(undefined);
 
@@ -257,6 +283,32 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                 setHasProject(true);
             });
     }, []);
+
+    useEffect(() => {
+        if (isScrollBottom) {
+            if (canCollect) {
+                getAdditionalProjects();
+            }
+        }
+    }, [isScrollBottom]);
+
+    useEffect(() => {
+        if (searchProjectInput) {
+            setSearchLoading(true);
+        }
+        const timer = setTimeout(() => {
+            if (!offset) {
+                getProjects(false);
+            } else {
+                if (canCollect) {
+                    getProjects(false);
+                } else {
+                    getProjects(true);
+                }
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [offset, searchProjectInput]);
 
     /**
      * @name submitNonGroupProjects
@@ -398,7 +450,11 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
      * @name getProjects
      * @desc Gets all projects without credentials
      */
-    const getProjects = async () => {
+    const getProjects = async (reset: boolean) => {
+        if (isLoading) {
+            return;
+        }
+        setIsLoading(true);
         try {
             let response;
             // possibly add more db table columns / keys here to get id type for display under projects
@@ -406,10 +462,14 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
             response = await monolithStore.getUnassignedTeamProjects(
                 groupId,
                 groupType,
+                AUTOCOMPLETE_LIMIT,
+                offset,
+                searchProjectInput,
             );
 
             // ignore if there is no response
             if (response) {
+                let requests = reset ? [] : nonCredentialedProjects;
                 const projects = response.map((val) => {
                     return {
                         ...val,
@@ -419,15 +479,19 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                     };
                 });
 
-                setNonCredentialedProjects(projects);
+                requests = requests.concat(projects);
+                setNonCredentialedProjects(requests);
+                setCanCollect(projects.length === AUTOCOMPLETE_LIMIT);
+                setIsLoading(false);
+                setSearchLoading(false);
             }
         } catch (e) {
             notification.add({
                 color: 'error',
                 message: String(e),
             });
-        } finally {
-            setAddProjectModal(true);
+            setIsLoading(false);
+            setSearchLoading(false);
         }
     };
 
@@ -568,7 +632,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                 <Button
                                     variant={'contained'}
                                     onClick={() => {
-                                        getProjects();
+                                        getProjects(true);
+                                        setAddProjectModal(true);
                                     }}
                                 >
                                     Add Projects{' '}
@@ -791,7 +856,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                             <Button
                                 variant={'contained'}
                                 onClick={() => {
-                                    getProjects();
+                                    getProjects(true);
+                                    setAddProjectModal(true);
                                 }}
                             >
                                 Add Projects
@@ -806,17 +872,22 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                     <StyledModalContentText>
                         <Autocomplete
                             label="Select App"
+                            loading={searchLoading}
                             multiple={true}
+                            freeSolo={false}
+                            filterOptions={(x) => x}
                             options={nonCredentialedProjects}
+                            includeInputInList={true}
                             limitTags={2}
                             getLimitTagsText={() =>
                                 ` +${
                                     selectedNonCredentialedProjects.length - 2
                                 }`
                             }
-                            value={[...selectedNonCredentialedProjects]}
+                            value={selectedNonCredentialedProjects}
+                            inputValue={searchProjectInput}
                             getOptionLabel={(option: any) => {
-                                return `${option.project_name}`;
+                                return `${option.project_name} ID: ${option.project_id}`;
                             }}
                             isOptionEqualToValue={(option, value) => {
                                 return (
@@ -827,6 +898,23 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                 setSelectedNonCredentialedProjects([
                                     ...newValue,
                                 ]);
+                            }}
+                            ListboxProps={{
+                                onScroll: ({ target }) =>
+                                    setIsScrollBottom(
+                                        nearBottom(
+                                            target as {
+                                                scrollHeight?: number;
+                                                scrollTop?: number;
+                                                clientHeight?: number;
+                                            },
+                                        ),
+                                    ),
+                            }}
+                            onInputChange={(event, newValue) => {
+                                setSearchProjectInput(newValue);
+                                setOffset(0);
+                                setNonCredentialedProjects([]);
                             }}
                         />
 
@@ -1133,7 +1221,11 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                 <Modal.Actions>
                     <Button
                         variant="outlined"
-                        onClick={() => setAddProjectModal(false)}
+                        onClick={() => {
+                            setAddProjectModal(false);
+                            setOffset(0);
+                            setNonCredentialedProjects([]);
+                        }}
                     >
                         Cancel
                     </Button>
