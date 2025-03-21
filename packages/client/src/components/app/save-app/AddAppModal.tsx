@@ -43,6 +43,7 @@ export type AddAppFormStep = {
         setAddAppFormSteps?: Dispatch<SetStateAction<AddAppFormStep[]>>;
         appZipFormSteps?: AddAppFormStep[];
         projectZipFormSteps?: AddAppFormStep[];
+        fileFormSteps?: AddAppFormStep[];
     }>;
     requiredFields: string[];
 };
@@ -62,8 +63,30 @@ export const AddAppModal = (props: AddAppProps) => {
             setAddAppFormSteps={setAddAppFormSteps}
             appZipFormSteps={appZipFormSteps}
             projectZipFormSteps={projectZipFormSteps}
+            fileFormSteps={fileFormSteps}
         />
     );
+
+    const fileFormSteps = [
+        {
+            name: 'Upload',
+            icon: <OpenInBrowser />,
+            title: 'Upload file',
+            component: addAppUploadStep,
+            requiredFields: [
+                ADD_APP_FORM_FIELD_UPLOAD,
+                ADD_APP_FORM_FIELD_TYPE,
+            ],
+        },
+
+        {
+            name: 'Access',
+            icon: <Visibility />,
+            title: 'Access',
+            component: AppAccessStep,
+            requiredFields: [],
+        },
+    ];
 
     const appZipFormSteps = [
         {
@@ -138,7 +161,7 @@ export const AddAppModal = (props: AddAppProps) => {
         [ADD_APP_FORM_FIELD_TAGS]: [],
         [ADD_APP_FORM_FIELD_UPLOAD]: null,
         [ADD_APP_FORM_FIELD_IS_GLOBAL]: false,
-        [ADD_APP_FORM_FIELD_TYPE]: 'App Zip',
+        [ADD_APP_FORM_FIELD_TYPE]: 'Import File',
     };
 
     /**
@@ -147,13 +170,37 @@ export const AddAppModal = (props: AddAppProps) => {
     const createApp = async (data: AddAppForm) => {
         // upload the file
 
-        if (data[ADD_APP_FORM_FIELD_TYPE] === 'App Zip') {
+        if (data[ADD_APP_FORM_FIELD_TYPE] === 'Import File') {
             const upload = await monolithStore.uploadFile(
                 [data[ADD_APP_FORM_FIELD_UPLOAD]],
                 configStore.store.insightID,
             );
             const resp = await monolithStore.runQuery(
                 `ImportApp(filePath=["${upload[0].fileLocation}"], global=[${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}]);`,
+            );
+
+            let output = undefined;
+            let type = undefined;
+
+            output = resp.pixelReturn[0].output;
+            type = resp.pixelReturn[0].operationType[0];
+
+            if (type.indexOf('ERROR') > -1) {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+
+                return;
+            }
+            handleClose(output.project_id);
+        } else if (data[ADD_APP_FORM_FIELD_TYPE] === 'App Zip') {
+            const upload = await monolithStore.uploadFile(
+                [data[ADD_APP_FORM_FIELD_UPLOAD]],
+                configStore.store.insightID,
+            );
+            const resp = await monolithStore.runQuery(
+                `UploadProjectApp(filePath=["${upload[0].fileLocation}"], global=[${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}]);`,
             );
 
             let output = undefined;
@@ -267,10 +314,10 @@ export const AddAppModal = (props: AddAppProps) => {
             open={open}
             handleClose={handleClose}
             title="Upload app from my computer"
-            steps={appZipFormSteps}
+            steps={fileFormSteps}
             defaultFormValues={defaultFormValues}
             handleFormSubmit={createApp}
-            errorMessage="There was an error creating your app. Please check your zip file and try again."
+            errorMessage="There was an error creating your app. Please check your file and try again."
         />
     );
 };

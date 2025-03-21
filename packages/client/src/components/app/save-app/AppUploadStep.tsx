@@ -12,6 +12,12 @@ import { valueArray } from 'vega-lite/build/src/channeldef';
 
 const FOLDER_TYPE_OPTIONS = [
     {
+        display: 'Import File',
+        value: 'Import File',
+        description:
+            'Contains full semoss construct. .smss, and other specific folders',
+    },
+    {
         display: 'App Zip',
         value: 'App Zip',
         description:
@@ -29,12 +35,14 @@ export const AppUploadStep = (props: {
     setAddAppFormSteps: Dispatch<SetStateAction<AddAppFormStep[]>>;
     appZipFormSteps: AddAppFormStep[];
     projectZipFormSteps: AddAppFormStep[];
+    fileFormSteps: AddAppFormStep[];
 }) => {
     const {
         control,
         setAddAppFormSteps,
         appZipFormSteps,
         projectZipFormSteps,
+        fileFormSteps,
     } = props;
 
     const [isZip, setIsZip] = useState(true);
@@ -53,7 +61,8 @@ export const AppUploadStep = (props: {
                             onChange={(newValues) => {
                                 field.onChange(newValues);
                             }}
-                            extensions={['.zip']}
+                            // commented due to .smss-app files
+                            // extensions={['.zip']}
                         />
                     );
                 }}
@@ -66,15 +75,16 @@ export const AppUploadStep = (props: {
                         <Select
                             label="Folder Type"
                             value={field.value}
-                            defaultValue={'App Zip'}
+                            defaultValue={'Import File'}
                             onChange={(value) => {
                                 field.onChange(value);
                                 setAddAppFormSteps(
-                                    value.target.value === 'App Zip'
+                                    value.target.value === 'Import File'
+                                        ? fileFormSteps
+                                        : value.target.value === 'App Zip'
                                         ? appZipFormSteps
                                         : projectZipFormSteps,
                                 );
-
                                 if (value.target.value === 'App Zip') {
                                     setIsZip(true);
                                 } else {
