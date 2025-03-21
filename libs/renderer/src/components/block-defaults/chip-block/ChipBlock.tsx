@@ -1,0 +1,116 @@
+import { useBlock } from "@/hooks";
+import { BlockDef, BlockComponent } from "../../../store";
+import { Face } from "@mui/icons-material";
+import { Chip, styled } from "@mui/material";
+import { Avatar } from "@semoss/ui";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import { CSSProperties } from "react";
+
+export interface ChipBlockDef extends BlockDef<"chip"> {
+    widget: "chip";
+    data: {
+        type: string;
+        label: string;
+        style: CSSProperties;
+        variant: "filled" | "outlined";
+        disabled?: boolean;
+        avatar?: React.ReactElement;
+        size: "small" | "medium";
+        color:
+            | "default"
+            | "primary"
+            | "secondary"
+            | "success"
+            | "warning"
+            | "error";
+        clickable?: boolean;
+        multiSelect?: boolean;
+        link?: string;
+        icon?: React.JSX.Element;
+        src: string;
+        title: string;
+    };
+    listeners: {
+        onClick: true;
+    };
+    slots: never;
+}
+
+//const theme = createTheme(); // Use default MUI theme
+
+const StyledAvatar = styled(Avatar, {
+    shouldForwardProp: (prop) => prop !== "chipColor",
+})<{ chipColor: string }>(({ chipColor, theme }) => {
+    const palette = theme.palette;
+
+    return {
+        "&&": {
+            backgroundColor: palette[chipColor]?.main || palette.grey[500],
+        },
+    };
+});
+
+export const ChipBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data, listeners } = useBlock<ChipBlockDef>(id);
+
+    const displayChip = (key): React.ReactNode => {
+        const avatar = data?.avatar || "A";
+        const link = data?.link || null;
+
+        const chipProps = {
+            label: data.label ?? data.type ?? "Chip",
+            color: data.color,
+            size: data.size,
+            variant: data.variant,
+            clickable: data.clickable,
+        };
+
+        switch (key) {
+            case "Chip":
+                return <Chip {...chipProps} />;
+            case "Avatar":
+                return (
+                    <Chip
+                        {...chipProps}
+                        avatar={
+                            <StyledAvatar chipColor={data.color}>
+                                {avatar}
+                            </StyledAvatar>
+                        }
+                    />
+                );
+            case "Icon":
+                return <Chip {...chipProps} icon={<Face />} />;
+            case "Link":
+                return (
+                    <a href={link}>
+                        <Chip
+                            {...chipProps}
+                            onClick={(e) => e.preventDefault()}
+                        />
+                    </a>
+                );
+            default:
+                return <Chip {...chipProps} />;
+        }
+    };
+
+    return (
+        <div
+            {...attrs}
+            style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "fit-content",
+                width: "fit-content",
+            }}
+            onClick={() => {
+                listeners.onClick();
+            }}
+        >
+            {displayChip(data.type)}
+        </div>
+    );
+});

@@ -1,5 +1,6 @@
-import { Typography } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
+
+import { Typography } from '@semoss/ui';
 
 interface WarningOperationProps {
     /** Message returned when there is an error */

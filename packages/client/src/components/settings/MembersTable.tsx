@@ -173,7 +173,7 @@ const permissionMapper = {
     'Read-Only': 'READ_ONLY', // DISPLAY: BE
 };
 
-const formatModelLimitValue = (input: string) => {
+const formatValue = (input: string) => {
     if (input !== undefined) {
         const mappings: Record<string, string> = {
             TOKEN: 'Token',
@@ -181,6 +181,7 @@ const formatModelLimitValue = (input: string) => {
             DAY: 'Daily',
             WEEK: 'Weekly',
             MONTH: 'Monthly',
+            NULL: 'None',
         };
         return mappings[input.toUpperCase()] || input;
     }
@@ -714,9 +715,14 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         {type === 'MODEL' && (
                                                             <>
                                                                 <Table.Cell>
-                                                                    {formatModelLimitValue(
-                                                                        user.usage_restriction,
-                                                                    )}
+                                                                    {user.usage_restriction !==
+                                                                    undefined
+                                                                        ? formatValue(
+                                                                              user.usage_restriction,
+                                                                          )
+                                                                        : formatValue(
+                                                                              'null',
+                                                                          )}
                                                                 </Table.Cell>
                                                                 <Table.Cell>
                                                                     {user?.usage_restriction ===
@@ -728,7 +734,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                         `${user.max_tokens?.toLocaleString()}`}
                                                                 </Table.Cell>
                                                                 <Table.Cell>
-                                                                    {formatModelLimitValue(
+                                                                    {formatValue(
                                                                         user.usage_frequency,
                                                                     )}
                                                                 </Table.Cell>
