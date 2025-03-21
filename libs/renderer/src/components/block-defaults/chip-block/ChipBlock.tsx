@@ -1,4 +1,4 @@
-import { useBlock } from "@/hooks";
+import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent } from "../../../store";
 import { Face } from "@mui/icons-material";
 import { Chip, styled } from "@mui/material";
@@ -32,12 +32,10 @@ export interface ChipBlockDef extends BlockDef<"chip"> {
         title: string;
     };
     listeners: {
-        onClick: true;
+        // onClick: true;
     };
     slots: never;
 }
-
-//const theme = createTheme(); // Use default MUI theme
 
 const StyledAvatar = styled(Avatar, {
     shouldForwardProp: (prop) => prop !== "chipColor",
@@ -47,15 +45,16 @@ const StyledAvatar = styled(Avatar, {
     return {
         "&&": {
             backgroundColor: palette[chipColor]?.main || palette.grey[500],
+            color: palette[chipColor]?.contrastText,
         },
     };
 });
 
 export const ChipBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, listeners } = useBlock<ChipBlockDef>(id);
+    const { attrs, data /*listeners*/ } = useBlock<ChipBlockDef>(id);
 
     const displayChip = (key): React.ReactNode => {
-        const avatar = data?.avatar || "A";
+        const avatar = data?.avatar;
         const link = data?.link || null;
 
         const chipProps = {
@@ -106,9 +105,9 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
                 height: "fit-content",
                 width: "fit-content",
             }}
-            onClick={() => {
-                listeners.onClick();
-            }}
+            // onClick={() => {
+            //     listeners.onClick();
+            // }}
         >
             {displayChip(data.type)}
         </div>

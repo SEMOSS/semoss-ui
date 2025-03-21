@@ -1,2 +1,2 @@
-export * from "../../chipBlock/config";
-export * from "../../chipBlock/ChipBlock";
+export * from "./config";
+export * from "./ChipBlock";

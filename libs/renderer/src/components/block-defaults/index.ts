@@ -12,8 +12,7 @@ import {
 } from "./audio-input-block";
 
 import { config as ButtonBlockConfig, ButtonBlockDef } from "./button-block";
-import { config as ChipBlockConfig } from "./chip-block/config";
-import { ChipBlockDef } from "./chip-block/ChipBlock";
+import { config as ChipBlockConfig, ChipBlockDef } from "./chip-block";
 
 import {
     config as CheckboxBlockConfig,

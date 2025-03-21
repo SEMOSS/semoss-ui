@@ -26,7 +26,7 @@ export const config: BlockConfig<ChipBlockDef> = {
         title: "",
     },
     listeners: {
-        onClick: [],
+        //onClick: [],
     },
     slots: {},
     render: ChipBlock,
