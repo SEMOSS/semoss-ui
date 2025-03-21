@@ -31,16 +31,41 @@ const config = {
         filename: isProduction ? '[name].[contenthash].js' : '[name].js',
         clean: true,
     },
+    cache: {
+        type: 'filesystem',
+        cacheDirectory: path.resolve(__dirname, '.webpack_cache'),
+    },
     optimization: {
         minimize: !isProduction,
-        minimizer: [new TerserPlugin({})],
-        removeAvailableModules: false,
-        removeEmptyChunks: false,
+        minimizer: [
+            new TerserPlugin({
+                parallel: true,
+                terserOptions: {
+                    compress: {
+                        drop_console: true,
+                    },
+                },
+            }),
+        ],
         splitChunks: {
-            chunks: 'async',
+            chunks: 'all',
+            minSize: 20000,
+            maxSize: 700000,
+            maxAsyncRequests: 30,
+            maxInitialRequests: 30,
+            automaticNameDelimiter: '-',
             cacheGroups: {
-                defaultVendors: {
-                    idHint: 'vendors',
+                vendors: {
+                    test: /[\\/]node_modules[\\/]/,
+                    name: 'vendors',
+                    chunks: 'all',
+                },
+                common: {
+                    test: /[\\/]src[\\/]components[\\/]/,
+                    minSize: 30000,
+                    minChunks: 2,
+                    name: 'common',
+                    chunks: 'all',
                 },
             },
         },
@@ -100,9 +125,11 @@ const config = {
                 type: 'asset',
             },
             {
-                test: /\.tsx?$/,
-                use: 'ts-loader',
+                test: /\.(tsx|ts)?$/,
                 exclude: /node_modules/,
+                use: {
+                    loader: 'babel-loader',
+                },
             },
             {
                 test: /\.css$/,
