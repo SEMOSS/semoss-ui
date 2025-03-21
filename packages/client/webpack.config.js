@@ -125,7 +125,7 @@ const config = {
                 type: 'asset',
             },
             {
-                test: /\.(tsx|ts)?$/,
+                test: /\.tsx?$/,
                 exclude: /node_modules/,
                 use: {
                     loader: 'babel-loader',
