@@ -161,7 +161,7 @@ export const AddAppModal = (props: AddAppProps) => {
         [ADD_APP_FORM_FIELD_TAGS]: [],
         [ADD_APP_FORM_FIELD_UPLOAD]: null,
         [ADD_APP_FORM_FIELD_IS_GLOBAL]: false,
-        [ADD_APP_FORM_FIELD_TYPE]: 'Import File',
+        [ADD_APP_FORM_FIELD_TYPE]: 'Smss-App File',
     };
 
     /**
@@ -170,7 +170,7 @@ export const AddAppModal = (props: AddAppProps) => {
     const createApp = async (data: AddAppForm) => {
         // upload the file
 
-        if (data[ADD_APP_FORM_FIELD_TYPE] === 'Import File') {
+        if (data[ADD_APP_FORM_FIELD_TYPE] === 'Smss-App File') {
             const upload = await monolithStore.uploadFile(
                 [data[ADD_APP_FORM_FIELD_UPLOAD]],
                 configStore.store.insightID,

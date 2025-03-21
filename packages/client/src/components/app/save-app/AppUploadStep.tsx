@@ -12,8 +12,8 @@ import { valueArray } from 'vega-lite/build/src/channeldef';
 
 const FOLDER_TYPE_OPTIONS = [
     {
-        display: 'Import File',
-        value: 'Import File',
+        display: 'Smss-App File',
+        value: 'Smss-App File',
         description:
             'Contains full semoss construct. .smss, and other specific folders',
     },
@@ -75,11 +75,11 @@ export const AppUploadStep = (props: {
                         <Select
                             label="Folder Type"
                             value={field.value}
-                            defaultValue={'Import File'}
+                            defaultValue={'Smss-App File'}
                             onChange={(value) => {
                                 field.onChange(value);
                                 setAddAppFormSteps(
-                                    value.target.value === 'Import File'
+                                    value.target.value === 'Smss-App File'
                                         ? fileFormSteps
                                         : value.target.value === 'App Zip'
                                         ? appZipFormSteps
