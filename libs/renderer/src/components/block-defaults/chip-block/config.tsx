@@ -6,7 +6,7 @@ import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
 import { InputSettings, SelectInputSettings } from "../../block-settings";
 import { ChipSettings } from "../../block-settings/custom/ChipSettings";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
-import { CancelOutlined } from "@mui/icons-material";
+import { LabelRounded } from "@mui/icons-material";
 import { Avatar } from "@semoss/ui";
 
 export const DefaultStyles: CSSProperties = {};
@@ -30,7 +30,7 @@ export const config: BlockConfig<ChipBlockDef> = {
     },
     slots: {},
     render: ChipBlock,
-    icon: CancelOutlined,
+    icon: LabelRounded,
 
     contentMenu: [
         {
