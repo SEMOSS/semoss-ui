@@ -635,8 +635,10 @@ export class StateStore {
 
         // add the data
         block.data = json.data;
+
+        // TODO: Why are we adding this to each block
         // Defaulting the route to the block id
-        block.data.route = id;
+        // block.data.route = id;
 
         // add the listeners
         block.listeners = json.listeners;
@@ -644,12 +646,15 @@ export class StateStore {
         // generate the slots
         for (const slot in json.slots) {
             if (json.slots[slot]) {
+                debugger;
                 block.slots[slot] = {
                     name: slot,
                     children: json.slots[slot].map((child) => {
+                        debugger;
                         // build the children, but only store the ids
                         const b = this.generateBlock(child);
 
+                        debugger;
                         return b.id;
                     }),
                 };

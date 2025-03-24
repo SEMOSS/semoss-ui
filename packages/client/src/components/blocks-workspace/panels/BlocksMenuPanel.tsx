@@ -130,61 +130,80 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
         runPixel('1+1').then((res) => {
             const dummyData = [
                 {
-                    section: SECTION_FLOWS,
-                    name: 'Sequence Diagram',
-                    helperText: '',
+                    section: 'Mermaid Variations',
+                    name: 'Mermaid Variation Class Diagram',
+                    helperText:
+                        'Use this for anytime you want to use a grouped component',
                     json: {
                         widget: 'mermaid',
+                        parent: {
+                            id: 'page-1',
+                            slot: 'content',
+                        },
                         data: {
-                            text: `sequenceDiagram
-                    participant Alice
-                    participant Bob
-                    Alice->>Bob: Hi Bob
-                    Bob->>Alice: Hi Alice
-                `,
+                            text: '---\ntitle: Alien example\n---\nclassDiagram\n    note "From Duck till Zebra"\n    Animal <|-- Duck\n    note for Duck "can fly\ncan swim\ncan dive\ncan help in debugging"\n    Animal <|-- Fish\n    Animal <|-- Zebra\n    Animal : +int age\n    Animal : +String gender\n    Animal: +isMammal()\n    Animal: +mate()\n    class Duck{\n        +String beakColor\n        +swim()\n        +quack()\n    }\n    class Fish{\n        -int sizeInFeet\n        -canEat()\n    }\n    class Zebra{\n        +bool is_wild\n        +run()\n    }\n',
                         },
                         listeners: {},
-                        slots: {} as BlockJSON['slots'],
+                        slots: {},
                     },
                 },
-
                 {
-                    section: SECTION_FLOWS,
-                    name: 'Class Diagram',
+                    section: 'Ad Hoc Grouped Components',
+                    name: 'Input within a container',
                     helperText: '',
                     json: {
-                        widget: 'mermaid',
+                        id: 'container--6732',
+                        widget: 'container',
+                        parent: {
+                            id: 'page-1',
+                            slot: 'content',
+                        },
                         data: {
-                            text: `---
-                title: Alien example
-                ---
-                classDiagram
-                    note "From Duck till Zebra"
-                    Animal <|-- Duck
-                    note for Duck "can fly\ncan swim\ncan dive\ncan help in debugging"
-                    Animal <|-- Fish
-                    Animal <|-- Zebra
-                    Animal : +int age
-                    Animal : +String gender
-                    Animal: +isMammal()
-                    Animal: +mate()
-                    class Duck{
-                        +String beakColor
-                        +swim()
-                        +quack()
-                    }
-                    class Fish{
-                        -int sizeInFeet
-                        -canEat()
-                    }
-                    class Zebra{
-                        +bool is_wild
-                        +run()
-                    }
-                `,
+                            style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                padding: '4px',
+                                gap: '8px',
+                                flexWrap: 'wrap',
+                                border: '4px solid ',
+                            },
+                            route: 'container--6732',
                         },
                         listeners: {},
-                        slots: {} as BlockJSON['slots'],
+                        slots: {
+                            children: [
+                                {
+                                    id: 'input--8701',
+                                    widget: 'input',
+                                    parent: {
+                                        id: 'container--6732',
+                                        slot: 'children',
+                                    },
+                                    data: {
+                                        style: {
+                                            width: '100%',
+                                            padding: '4px',
+                                        },
+                                        value: '',
+                                        label: 'Example Input',
+                                        hint: '',
+                                        type: 'text',
+                                        rows: 1,
+                                        multiline: false,
+                                        disabled: false,
+                                        required: false,
+                                        loading: false,
+                                        route: 'input--8701',
+                                    },
+                                    listeners: {
+                                        onChange: [],
+                                    },
+                                    slots: {
+                                        content: [],
+                                    },
+                                },
+                            ],
+                        },
                     },
                 },
             ];
@@ -378,59 +397,71 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                 </Stack>
 
                 {/* TODO: Two Different Menus: Client and System */}
-                {renderedItems.length ? (
-                    <StyledMenu>
-                        {renderedItems.map((sectionItems, index) => (
-                            <Stack
-                                key={sectionItems[0].section ?? defaultSection}
-                                width="100%"
-                            >
-                                {index > 0 && (
-                                    <Stack paddingTop={1}>
-                                        <Divider variant="fullWidth" flexItem />
+
+                {mode === 'SYSTEM' &&
+                    (renderedItems.length ? (
+                        <StyledMenu>
+                            {renderedItems.map((sectionItems, index) => (
+                                <Stack
+                                    key={
+                                        sectionItems[0].section ??
+                                        defaultSection
+                                    }
+                                    width="100%"
+                                >
+                                    {index > 0 && (
+                                        <Stack paddingTop={1}>
+                                            <Divider
+                                                variant="fullWidth"
+                                                flexItem
+                                            />
+                                        </Stack>
+                                    )}
+                                    <Stack padding={2}>
+                                        <StyledTypography
+                                            variant="subtitle2"
+                                            key={index}
+                                        >
+                                            {sectionItems[0].section ??
+                                                defaultSection}
+                                        </StyledTypography>
                                     </Stack>
-                                )}
-                                <Stack padding={2}>
-                                    <StyledTypography
-                                        variant="subtitle2"
-                                        key={index}
-                                    >
-                                        {sectionItems[0].section ??
-                                            defaultSection}
-                                    </StyledTypography>
-                                </Stack>
-                                <StyledGridWrapper>
-                                    <Grid
-                                        container
-                                        spacing={2}
-                                        width="100%"
-                                        paddingLeft={2}
-                                    >
-                                        {sectionItems.map((block) => (
-                                            <Grid item key={block.name}>
-                                                {mode === 'CLIENT' ? (
-                                                    <AddClientBlocksMenuCard
-                                                        item={block}
-                                                    />
-                                                ) : (
+                                    <StyledGridWrapper>
+                                        <Grid
+                                            container
+                                            spacing={2}
+                                            width="100%"
+                                            paddingLeft={2}
+                                        >
+                                            {sectionItems.map((block) => (
+                                                <Grid item key={block.name}>
                                                     <AddBlocksMenuCard
                                                         item={block}
                                                     />
-                                                )}
-                                            </Grid>
-                                        ))}
-                                    </Grid>
-                                </StyledGridWrapper>
+                                                </Grid>
+                                            ))}
+                                        </Grid>
+                                    </StyledGridWrapper>
+                                </Stack>
+                            ))}
+                        </StyledMenu>
+                    ) : (
+                        <Stack padding={2}>
+                            <Typography variant="subtitle2">
+                                No items found
+                            </Typography>
+                        </Stack>
+                    ))}
+
+                {mode === 'CLIENT' &&
+                    clientBlock.map((block, i) => {
+                        return (
+                            <Stack key={i} direction={'column'} gap={2}>
+                                <Typography variant={'body1'}>test</Typography>
+                                <AddClientBlocksMenuCard item={block} />
                             </Stack>
-                        ))}
-                    </StyledMenu>
-                ) : (
-                    <Stack padding={2}>
-                        <Typography variant="subtitle2">
-                            No items found
-                        </Typography>
-                    </Stack>
-                )}
+                        );
+                    })}
             </Stack>
             <BlocksMenuPanelFilterMenu
                 anchorEl={menuAnchorEl}

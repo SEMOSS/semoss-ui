@@ -39,6 +39,10 @@ export const AddClientBlocksMenuCard = observer(
         const { state } = useBlocks();
         const { designer } = useDesigner();
 
+        console.log('Grouped Component Definition:', item);
+        // TODO:
+        // At the end of the day for this grouped component we need to be able to append to state all the neccessary block configs in order to get it to work
+
         // track if it is this one that is dragging
         const [local, setLocal] = useState(false);
 
@@ -80,33 +84,7 @@ export const AddClientBlocksMenuCard = observer(
             // ID of newly added block
             let id = '';
 
-            // Track block in session storage
-            localStorage.setItem(
-                'blocks--frequently-used',
-                (() => {
-                    const map: Record<string, BlockLocalStorageData> =
-                        JSON.parse(
-                            localStorage.getItem('blocks--frequently-used'),
-                        ) ?? {};
-                    map[item.json.widget] = {
-                        widget: item.json.widget,
-                        name: item.name,
-                        use_count: (map[item.json.widget]?.use_count ?? 0) + 1,
-                        last_used: Date.now(),
-                    };
-                    return JSON.stringify(map);
-                })(),
-            );
-
-            const newBlock = {
-                ...item.json,
-            };
-
-            console.log(newBlock, 'newBlock');
-            console.log(item, 'Item');
-
-            console.log('state.blocks', state.blocks);
-
+            debugger;
             // apply the action
             const placeholderAction = designer.drag.placeholderAction;
             console.log(placeholderAction, 'placeholderAction');
@@ -131,12 +109,6 @@ export const AddClientBlocksMenuCard = observer(
                             },
                         }) as string;
                     }
-
-                    console.log(newBlock, 'newBlock');
-                    state.blocks.mermaid = {
-                        ...state.blocks.mermaid,
-                        [id]: newBlock,
-                    };
                 } else if (placeholderAction.type === 'replace') {
                     id = state.dispatch({
                         message: ActionMessages.ADD_BLOCK,
@@ -157,8 +129,8 @@ export const AddClientBlocksMenuCard = observer(
             // clear the hovered
             designer.setHovered('');
 
-            // clear the selected
-            designer.setSelected(id ? id : '');
+            // // clear the selected
+            // designer.setSelected(id ? id : '');
 
             // set as active
             setLocal(false);
