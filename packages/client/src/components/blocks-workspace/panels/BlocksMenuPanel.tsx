@@ -24,6 +24,11 @@ import {
     DesignerMenuItem,
     FilterCategory,
 } from '../menus/menu-types';
+import { runPixel } from '@/api';
+import { BlockJSON } from '@semoss/renderer';
+import { AddClientBlocksMenuCard } from '@/components/designer/AddClientBlockMenuCard';
+
+const SECTION_FLOWS = 'Mermaid Charts';
 
 const StyledTitle = styled('div')(({ theme }) => ({
     paddingTop: theme.spacing(1.5),
@@ -106,6 +111,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
     const { title, items } = props;
 
     const [search, setSearch] = useState('');
+    const [clientBlock, setClientBlock] = useState([]);
     const [mode, setMode] = useState<MODE>('SYSTEM');
 
     const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -120,11 +126,85 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
         [filterCategoryMap],
     );
 
+    const getClientBlocks = async () => {
+        runPixel('1+1').then((res) => {
+            const dummyData = [
+                {
+                    section: SECTION_FLOWS,
+                    name: 'Sequence Diagram',
+                    helperText: '',
+                    json: {
+                        widget: 'mermaid',
+                        data: {
+                            text: `sequenceDiagram
+                    participant Alice
+                    participant Bob
+                    Alice->>Bob: Hi Bob
+                    Bob->>Alice: Hi Alice
+                `,
+                        },
+                        listeners: {},
+                        slots: {} as BlockJSON['slots'],
+                    },
+                },
+
+                {
+                    section: SECTION_FLOWS,
+                    name: 'Class Diagram',
+                    helperText: '',
+                    json: {
+                        widget: 'mermaid',
+                        data: {
+                            text: `---
+                title: Alien example
+                ---
+                classDiagram
+                    note "From Duck till Zebra"
+                    Animal <|-- Duck
+                    note for Duck "can fly\ncan swim\ncan dive\ncan help in debugging"
+                    Animal <|-- Fish
+                    Animal <|-- Zebra
+                    Animal : +int age
+                    Animal : +String gender
+                    Animal: +isMammal()
+                    Animal: +mate()
+                    class Duck{
+                        +String beakColor
+                        +swim()
+                        +quack()
+                    }
+                    class Fish{
+                        -int sizeInFeet
+                        -canEat()
+                    }
+                    class Zebra{
+                        +bool is_wild
+                        +run()
+                    }
+                `,
+                        },
+                        listeners: {},
+                        slots: {} as BlockJSON['slots'],
+                    },
+                },
+            ];
+            setClientBlock(dummyData);
+        });
+    };
+
+    useEffect(() => {
+        if (mode === 'CLIENT') {
+            getClientBlocks();
+        }
+    }, [mode]);
+
     const sortedItems = useMemo(() => {
+        // Use Client Block when mode is CLIENT otherwise use items from the props
+        const dataToProcess = mode === 'CLIENT' ? clientBlock : items;
         const sectionRecord: Record<string, DesignerMenuItem[]> = {};
 
         // Group items by section
-        items.forEach((item) => {
+        dataToProcess.forEach((item) => {
             const currentSection = item.section ?? defaultSection;
             if (!sectionRecord[currentSection])
                 sectionRecord[currentSection] = [];
@@ -138,7 +218,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                 a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
             );
         }).filter((section) => section.length > 0);
-    }, [items, SECTION_ORDER]);
+    }, [items, mode, clientBlock, SECTION_ORDER]);
 
     // get the rendered items
     const renderedItems: DesignerMenuItem[][] = useMemo(() => {
@@ -271,10 +351,13 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                             ),
                         }}
                     />
-                    {/* <StyledToggleTabsGroup
+                    <StyledToggleTabsGroup
                         value={mode}
                         onChange={(e: React.SyntheticEvent, val) => {
                             setMode(val as MODE);
+                            if (val === 'CLIENT') {
+                                getClientBlocks();
+                            }
                         }}
                     >
                         <StyledToggleTabsGroupItem
@@ -284,9 +367,9 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                         <StyledToggleTabsGroupItem
                             label="Client Blocks"
                             value={'CLIENT'}
-                            disabled={true}
-                            />
-                    </StyledToggleTabsGroup> */}
+                            // disabled={true}
+                        />
+                    </StyledToggleTabsGroup>
                     {/* 
                     // TODO: Coming next, asked van buren to
                     // start looking at how to incorporate groupings,
@@ -325,9 +408,15 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                                     >
                                         {sectionItems.map((block) => (
                                             <Grid item key={block.name}>
-                                                <AddBlocksMenuCard
-                                                    item={block}
-                                                />
+                                                {mode === 'CLIENT' ? (
+                                                    <AddClientBlocksMenuCard
+                                                        item={block}
+                                                    />
+                                                ) : (
+                                                    <AddBlocksMenuCard
+                                                        item={block}
+                                                    />
+                                                )}
                                             </Grid>
                                         ))}
                                     </Grid>
