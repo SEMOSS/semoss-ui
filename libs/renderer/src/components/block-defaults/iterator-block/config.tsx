@@ -12,7 +12,7 @@ import {
 import { IteratorBlockDef, IteratorBlock } from "./IteratorBlock";
 import { HighlightAlt } from "@mui/icons-material";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
-import { InputSettings } from "../../block-settings";
+import { InputSettings, QuerySelectionSettings } from "../../block-settings";
 
 // export the config for the block
 export const config: BlockConfig<IteratorBlockDef> = {
@@ -27,8 +27,12 @@ export const config: BlockConfig<IteratorBlockDef> = {
             flexWrap: "wrap",
         },
         iterationCount: 0,
+        value: [],
+        type: "iteration",
     },
-    listeners: {},
+    listeners: {
+        onChange: [],
+    },
     slots: {
         children: [],
     },
@@ -39,12 +43,13 @@ export const config: BlockConfig<IteratorBlockDef> = {
             name: "General",
             children: [
                 {
-                    description: "Iterator Input",
+                    description: "Iteration Value",
                     render: ({ id }) => (
-                        <InputSettings
+                        <QuerySelectionSettings
                             id={id}
-                            label="Iterator"
-                            path="iterationCount"
+                            label="Iteration Array"
+                            path="value"
+                            queryPath="isLoading"
                         />
                     ),
                 },

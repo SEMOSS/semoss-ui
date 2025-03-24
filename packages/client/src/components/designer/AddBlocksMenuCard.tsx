@@ -71,7 +71,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         placeholderAction: any,
     ) => {
         for (let i = 0; i < num; i++) {
-            console.log(item.json);
+            console.log(item.json, 'item.json');
             state.dispatch({
                 message: ActionMessages.ADD_BLOCK,
                 payload: {
@@ -92,6 +92,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         parent: any,
     ) => {
         for (let i = 0; i < num; i++) {
+            console.log(item.json, 'item.json');
             state.dispatch({
                 message: ActionMessages.ADD_BLOCK,
                 payload: {
@@ -118,6 +119,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 
         // ID of newly added block
         let id = '';
+        console.log(designer, designer.drag.placeholderAction, 'designer');
 
         // apply the action
         const placeholderAction = designer.drag.placeholderAction;

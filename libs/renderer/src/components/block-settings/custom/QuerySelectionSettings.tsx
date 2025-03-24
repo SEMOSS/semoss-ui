@@ -81,6 +81,20 @@ export const QuerySelectionSettings = observer(
 
         // available queries for autocomplete
         const queries = useMemo(() => {
+            if (data.type === "iteration") {
+                return Object.keys(state.variables).reduce((acc, queryKey) => {
+                    if (state.variables[queryKey].type === "array") {
+                        return {
+                            ...acc,
+                            [`{{${queryKey}.${queryPath}}}`]: queryKey,
+                        };
+                    } else {
+                        return {
+                            ...acc,
+                        };
+                    }
+                }, {});
+            }
             return Object.keys(state.variables).reduce((acc, queryKey) => {
                 if (
                     state.variables[queryKey].type === "query" ||
@@ -122,6 +136,25 @@ export const QuerySelectionSettings = observer(
                 }
             }, 300);
         };
+        const onChangeIteration = (value: string) => {
+            // set the value
+            setValue(value);
+
+            // clear out the old timeout
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+            }
+
+            timeoutRef.current = setTimeout(() => {
+                try {
+                    setData(path, value as PathValue<D["data"], typeof path>);
+                    __onChange();
+                } catch (e) {
+                    console.log(e);
+                }
+            }, 300);
+        };
 
         return (
             <BaseSettingSection label={label}>
@@ -135,7 +168,11 @@ export const QuerySelectionSettings = observer(
                         return queries[id] ?? "";
                     }}
                     onChange={(_, value) => {
-                        onChange(value);
+                        if (data.type === "iteration") {
+                            onChangeIteration(value);
+                        } else {
+                            onChange(value);
+                        }
                     }}
                     renderInput={(params) => (
                         <TextField

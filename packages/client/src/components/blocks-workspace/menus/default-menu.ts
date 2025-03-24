@@ -796,8 +796,12 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     flexWrap: 'wrap',
                 },
                 iterationCount: 0,
+                value: [],
+                type: 'iteration',
             },
-            listeners: {},
+            listeners: {
+                onChange: [],
+            },
             slots: {
                 children: [],
             },
