@@ -118,6 +118,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
     const [filterCategoryMap, setFilterCategoryMap] = useState<
         Record<string, FilterCategory>
     >({});
+
     const anyEnabledFilter = useMemo(
         () =>
             Object.values(filterCategoryMap).some(
@@ -152,7 +153,6 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                     name: 'Input within a container',
                     helperText: '',
                     json: {
-                        id: 'container--6732',
                         widget: 'container',
                         parent: {
                             id: 'page-1',
@@ -173,12 +173,21 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                         slots: {
                             children: [
                                 {
-                                    id: 'input--8701',
-                                    widget: 'input',
-                                    parent: {
-                                        id: 'container--6732',
-                                        slot: 'children',
+                                    widget: 'text',
+                                    data: {
+                                        style: {
+                                            padding: '4px',
+                                            whiteSpace: 'pre-line',
+                                            textOverflow: 'ellipsis',
+                                        },
+                                        text: 'Grouped Component',
+                                        variant: 'h1',
                                     },
+                                    listeners: {},
+                                    slots: {},
+                                },
+                                {
+                                    widget: 'input',
                                     data: {
                                         style: {
                                             width: '100%',
@@ -193,7 +202,6 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                                         disabled: false,
                                         required: false,
                                         loading: false,
-                                        route: 'input--8701',
                                     },
                                     listeners: {
                                         onChange: [],
@@ -201,6 +209,29 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                                     slots: {
                                         content: [],
                                     },
+                                },
+                                {
+                                    widget: 'audio-input',
+                                    parent: {
+                                        id: 'page-1',
+                                        slot: 'content',
+                                    },
+                                    data: {
+                                        style: {
+                                            width: '50px',
+                                            height: '60px',
+                                        },
+                                        loading: false,
+                                        disabled: false,
+                                        variant: 'contained',
+                                        color: 'primary',
+                                        value: '',
+                                        mode: 'transcribe',
+                                    },
+                                    listeners: {
+                                        onClick: [],
+                                    },
+                                    slots: {},
                                 },
                             ],
                         },
