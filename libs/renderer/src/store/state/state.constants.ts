@@ -11,6 +11,7 @@ export const INPUT_BLOCK_TYPES = [
     "slider",
     "ratings",
     "switch",
+    "timepicker",
 ];
 
 export const VARIABLE_TYPES = [

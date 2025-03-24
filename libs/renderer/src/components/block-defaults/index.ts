@@ -73,6 +73,10 @@ import { config as SliderBlockConfig, SliderBlockDef } from "./slider-block";
 import { config as SwitchBlockConfig, SwitchBlockDef } from "./switch-block";
 
 import { config as TextBlockConfig, TextBlockDef } from "./text-block";
+import {
+    config as TimePickerBlockConfig,
+    TimePickerBlockDef,
+} from "./time-picker-block";
 import { config as ThemeBlockConfig, ThemeBlockDef } from "./theme-block";
 import {
     config as ToggleButtonBlockConfig,
@@ -86,10 +90,8 @@ import {
 } from "./vega-visualization-block";
 
 // import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
-
 // import { config as BodyBlockConfig, BodyBlockDef } from "./body-block";
 // import { config as QueryBlockConfig, QueryBlockDef } from "./query-block";
-// import { config as DividerBlockConfig, DividerBlockDef } from "./divider-block";
 // import { config as FooterBlockConfig, FooterBlockDef } from "./footer-block";
 // import { config as FormBlockConfig, FormBlockDef } from "./form-block";
 // import { config as HeaderBlockConfig, HeaderBlockDef } from "./header-block";
@@ -103,6 +105,8 @@ export type DefaultBlockDefinitions =
     | ButtonBlockDef
     | CheckboxBlockDef
     | ContainerBlockDef
+    | DividerBlockDef
+    | EchartVisualizationBlockDef
     | GridBlockDef
     | HTMLBlockDef
     | IconBlockDef
@@ -123,14 +127,15 @@ export type DefaultBlockDefinitions =
     | SelectBlockDef
     | SidebarBlockDef
     | SliderBlockDef
+    | SwitchBlockDef
     | TextBlockDef
     | ThemeBlockDef
     | ToggleButtonBlockDef
     | UploadBlockDef
     | VegaVisualizationBlockDef
-    | EchartVisualizationBlockDef
-    | SwitchBlockDef
-    | DividerBlockDef;
+    | RadioBlockDef
+    | TimePickerBlockDef
+    | ThemeBlockDef;
 // | BodyBlockDef
 // | DividerBlockDef
 // | FooterBlockDef
@@ -172,6 +177,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [SliderBlockConfig.widget]: SliderBlockConfig,
     [SwitchBlockConfig.widget]: SwitchBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
+    [TimePickerBlockConfig.widget]: TimePickerBlockConfig,
     [ThemeBlockConfig.widget]: ThemeBlockConfig,
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
@@ -188,6 +194,7 @@ export {
     ButtonBlockConfig,
     CheckboxBlockConfig,
     ContainerBlockConfig,
+    DividerBlockConfig,
     GridBlockConfig,
     IconBlockConfig,
     IframeBlockConfig,
@@ -203,6 +210,7 @@ export {
     SelectBlockConfig,
     SidebarBlockConfig,
     SliderBlockConfig,
+    SwitchBlockConfig,
     TextBlockConfig,
     ThemeBlockConfig,
     UploadBlockConfig,
@@ -212,6 +220,5 @@ export {
     ModalBlockConfig,
     RadioBlockConfig,
     PDFViewerBlockConfig,
-    SwitchBlockConfig,
-    DividerBlockConfig,
+    TimePickerBlockConfig,
 };

@@ -1037,6 +1037,36 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_INPUT,
+        name: 'Time Picker',
+        helperText: 'Select a time from a time picker',
+        json: {
+            widget: 'timepicker',
+            data: {
+                style: {
+                    width: '25%',
+                    padding: '4px',
+                },
+                label: 'Select Time',
+                value: '',
+                variant: 'picker',
+                ampm: true,
+                format: 'hh:mm a',
+                disabled: false,
+                required: false,
+                fullWidth: false,
+                placeholder: '',
+                clearable: true,
+                size: 'small',
+                views: ['hours', 'minutes'],
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
         name: 'Button',
         helperText: 'Creates a click event',
         activeImage: BLOCK_IMAGES['BUTTON_ACTIVE'],
