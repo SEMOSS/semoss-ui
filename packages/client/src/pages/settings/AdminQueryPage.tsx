@@ -1,21 +1,19 @@
 import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { Navigate } from 'react-router-dom';
 
 import {
     styled,
     useNotification,
     Alert,
     Button,
-    Table,
     TextField,
     Select,
-    Stack,
+    Table,
     TextArea,
 } from '@semoss/ui';
 
 import { useRootStore, useSettings } from '@/hooks';
-
-import { Controller, useForm } from 'react-hook-form';
-import { Navigate } from 'react-router-dom';
 
 const StyledContainer = styled('div')(() => ({
     display: 'flex',
@@ -26,11 +24,22 @@ const StyledContainer = styled('div')(() => ({
 const StyledLeft = styled('div')(() => ({
     display: 'flex',
     flexDirection: 'column',
-    width: '40%',
+    width: '100%',
 }));
 
 const StyledRight = styled('div')(() => ({
-    flex: '1',
+    overflow: 'scroll',
+    width: '100%',
+    marginTop: '20px',
+}));
+const Styledform = styled('div')(() => ({
+    width: '100%',
+}));
+const StyledStack = styled('div')(() => ({
+    width: '100%',
+    gap: '20px',
+    display: 'flex',
+    marginBottom: '20px',
 }));
 
 const DATABASE_OPTIONS = [
@@ -117,7 +126,6 @@ export const AdminQueryPage = () => {
             // No collect
             pixelString += '| AdminExecQuery();';
         }
-
         monolithStore
             .runQuery(pixelString)
             .then((response) => {
@@ -184,32 +192,32 @@ export const AdminQueryPage = () => {
             return <Alert color={'error'}>{output.value}</Alert>;
         } else if (output.type === 'table') {
             return (
-                <Table>
+                <Table sx={{ padding: '10px' }}>
                     <Table.Head>
                         <Table.Row>
-                            {output.value.headers.map((header, index) => {
-                                return (
-                                    <Table.Cell key={index}>
-                                        {header}
-                                    </Table.Cell>
-                                );
-                            })}
+                            {output.value.headers.map((header, index) => (
+                                <Table.Cell
+                                    key={index}
+                                    sx={{ padding: '10px' }}
+                                >
+                                    {header}
+                                </Table.Cell>
+                            ))}
                         </Table.Row>
                     </Table.Head>
                     <Table.Body>
-                        {output.value.values.map((row, index) => {
-                            return (
-                                <Table.Row key={index}>
-                                    {row.map((column, i) => {
-                                        return (
-                                            <Table.Cell key={i}>
-                                                {column}
-                                            </Table.Cell>
-                                        );
-                                    })}
-                                </Table.Row>
-                            );
-                        })}
+                        {output.value.values.map((row, index) => (
+                            <Table.Row key={index}>
+                                {row.map((column, i) => (
+                                    <Table.Cell
+                                        key={i}
+                                        sx={{ padding: '10px' }}
+                                    >
+                                        {column}
+                                    </Table.Cell>
+                                ))}
+                            </Table.Row>
+                        ))}
                     </Table.Body>
                 </Table>
             );
@@ -219,8 +227,8 @@ export const AdminQueryPage = () => {
     return (
         <StyledContainer>
             <StyledLeft>
-                <form>
-                    <Stack spacing={2}>
+                <Styledform>
+                    <StyledStack>
                         <Controller
                             name={'SELECTED_DATABASE'}
                             control={control}
@@ -228,6 +236,8 @@ export const AdminQueryPage = () => {
                             render={({ field }) => {
                                 return (
                                     <Select
+                                        sx={{ minWidth: '200px' }}
+                                        size="small"
                                         label="Database"
                                         value={field.value ? field.value : ''}
                                         onChange={(e) =>
@@ -248,61 +258,59 @@ export const AdminQueryPage = () => {
                                 );
                             }}
                         />
-
                         <Controller
-                            name={'QUERY'}
+                            name={'ROWS'}
                             control={control}
-                            rules={{ required: true }}
+                            rules={{ min: 1 }}
                             render={({ field }) => {
                                 return (
-                                    <TextArea
-                                        label="Enter query to run on database"
+                                    <TextField
+                                        size="small"
+                                        label="Max # Rows to Collect"
                                         value={field.value ? field.value : ''}
                                         onChange={(e) =>
                                             field.onChange(e.target.value)
                                         }
-                                        minRows={4}
-                                        maxRows={12}
-                                    ></TextArea>
+                                        type={'number'}
+                                    ></TextField>
                                 );
                             }}
                         />
-                        {showRowsField && (
-                            <Controller
-                                name={'ROWS'}
-                                control={control}
-                                rules={{ min: 1 }}
-                                render={({ field }) => {
-                                    return (
-                                        <TextField
-                                            label="Max # Rows to Collect"
-                                            value={
-                                                field.value ? field.value : ''
-                                            }
-                                            onChange={(e) =>
-                                                field.onChange(e.target.value)
-                                            }
-                                            type={'number'}
-                                        ></TextField>
-                                    );
-                                }}
-                            />
-                        )}
                         <Button
+                            size="small"
                             variant={'contained'}
                             onClick={() => submitQuery()}
                             disabled={!disableButton}
                         >
-                            Execute Query
+                            Run
                         </Button>
-                    </Stack>
-                </form>
+                    </StyledStack>
+                    <Controller
+                        name={'QUERY'}
+                        control={control}
+                        rules={{ required: true }}
+                        render={({ field }) => {
+                            return (
+                                <TextArea
+                                    sx={{ width: '100%' }}
+                                    label="Enter query to run on database"
+                                    value={field.value ? field.value : ''}
+                                    onChange={(e) =>
+                                        field.onChange(e.target.value)
+                                    }
+                                    minRows={4}
+                                    maxRows={12}
+                                ></TextArea>
+                            );
+                        }}
+                    />
+                    <StyledRight>
+                        {!output.type
+                            ? 'Execute a query to display the results here.'
+                            : displayQueryOutput()}
+                    </StyledRight>
+                </Styledform>
             </StyledLeft>
-            <StyledRight>
-                {!output.type
-                    ? 'Execute a query to display the results here.'
-                    : displayQueryOutput()}
-            </StyledRight>
         </StyledContainer>
     );
 };

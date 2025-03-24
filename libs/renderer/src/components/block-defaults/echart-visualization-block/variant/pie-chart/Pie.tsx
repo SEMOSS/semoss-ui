@@ -15,6 +15,7 @@ import {
     useBlocks,
     useBlockSettings,
 } from "../../../../../hooks";
+import { EChartsOption } from "echarts";
 
 const StyledChartContainer = styled("div")(() => ({
     height: "inherit",
@@ -229,7 +230,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
         return (
             <StyledChartContainer>
                 <ReactECharts
-                    option={resultData}
+                    option={resultData as EChartsOption}
                     onEvents={onClickChart}
                     style={{
                         height: "inherit",

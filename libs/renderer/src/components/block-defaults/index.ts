@@ -5,6 +5,8 @@ import {
     AccordionBlockDef,
 } from "./accordion-block";
 
+import { config as PopoverBlockConfig, PopoverBlockDef } from "./popover-block";
+
 import { config as AudioBlockConfig, AudioBlockDef } from "./audio-block";
 import {
     config as AudioInputBlockConfig,
@@ -22,6 +24,8 @@ import {
     ContainerBlockDef,
 } from "./container-block";
 
+import { config as DividerBlockConfig, DividerBlockDef } from "./divider-block";
+
 import {
     config as EchartVisualizationBlockConfig,
     EchartVisualizationBlockDef,
@@ -31,6 +35,7 @@ import { config as GridBlockConfig, GridBlockDef } from "./grid-block";
 
 import { config as HTMLBlockConfig, HTMLBlockDef } from "./html-block";
 
+import { config as IconBlockConfig, IconBlockDef } from "./Icon_block";
 import { config as IframeBlockConfig, IframeBlockDef } from "./iframe-block";
 import { config as ImageBlockConfig, ImageBlockDef } from "./image-block";
 import { config as InputBlockConfig, InputBlockDef } from "./input-block";
@@ -60,10 +65,18 @@ import {
 } from "./progress-block";
 
 import { config as RadioBlockConfig, RadioBlockDef } from "./radio-block";
+import { config as RatingsBlockConfig, RatingsBlockDef } from "./ratings-block";
 
 import { config as SelectBlockConfig, SelectBlockDef } from "./select-block";
+import { config as SidebarBlockConfig, SidebarBlockDef } from "./sidebar-block";
+import { config as SliderBlockConfig, SliderBlockDef } from "./slider-block";
+import { config as SwitchBlockConfig, SwitchBlockDef } from "./switch-block";
 
 import { config as TextBlockConfig, TextBlockDef } from "./text-block";
+import {
+    config as TimePickerBlockConfig,
+    TimePickerBlockDef,
+} from "./time-picker-block";
 import { config as ThemeBlockConfig, ThemeBlockDef } from "./theme-block";
 import {
     config as ToggleButtonBlockConfig,
@@ -75,13 +88,10 @@ import {
     config as VegaVisualizationBlockConfig,
     VegaVisualizationBlockDef,
 } from "./vega-visualization-block";
-import { config as SidebarBlockConfig, SidebarBlockDef } from "./sidebar-block";
 
 // import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
-
 // import { config as BodyBlockConfig, BodyBlockDef } from "./body-block";
 // import { config as QueryBlockConfig, QueryBlockDef } from "./query-block";
-// import { config as DividerBlockConfig, DividerBlockDef } from "./divider-block";
 // import { config as FooterBlockConfig, FooterBlockDef } from "./footer-block";
 // import { config as FormBlockConfig, FormBlockDef } from "./form-block";
 // import { config as HeaderBlockConfig, HeaderBlockDef } from "./header-block";
@@ -89,13 +99,17 @@ import { config as SidebarBlockConfig, SidebarBlockDef } from "./sidebar-block";
 
 export type DefaultBlockDefinitions =
     | AccordionBlockDef
+    | PopoverBlockDef
     | AudioBlockDef
     | AudioInputBlockDef
     | ButtonBlockDef
     | CheckboxBlockDef
     | ContainerBlockDef
+    | DividerBlockDef
+    | EchartVisualizationBlockDef
     | GridBlockDef
     | HTMLBlockDef
+    | IconBlockDef
     | IframeBlockDef
     | ImageBlockDef
     | InputBlockDef
@@ -108,16 +122,20 @@ export type DefaultBlockDefinitions =
     | PageBlockDef
     | PDFViewerBlockDef
     | ProgressBlockDef
+    | RadioBlockDef
+    | RatingsBlockDef
     | SelectBlockDef
     | SidebarBlockDef
+    | SliderBlockDef
+    | SwitchBlockDef
     | TextBlockDef
     | ThemeBlockDef
     | ToggleButtonBlockDef
     | UploadBlockDef
     | VegaVisualizationBlockDef
     | RadioBlockDef
-    | ThemeBlockDef
-    | EchartVisualizationBlockDef;
+    | TimePickerBlockDef
+    | ThemeBlockDef;
 // | BodyBlockDef
 // | DividerBlockDef
 // | FooterBlockDef
@@ -129,13 +147,16 @@ export type DefaultBlockDefinitions =
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AccordionBlockConfig.widget]: AccordionBlockConfig,
+    [PopoverBlockConfig.widget]: PopoverBlockConfig,
     [AudioBlockConfig.widget]: AudioBlockConfig,
     [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
+    [DividerBlockConfig.widget]: DividerBlockConfig,
     [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
     [GridBlockConfig.widget]: GridBlockConfig,
+    [IconBlockConfig.widget]: IconBlockConfig,
     [IframeBlockConfig.widget]: IframeBlockConfig,
     [ImageBlockConfig.widget]: ImageBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
@@ -149,26 +170,33 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [PageBlockConfig.widget]: PageBlockConfig,
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
     [ProgressBlockConfig.widget]: ProgressBlockConfig,
+    [RadioBlockConfig.widget]: RadioBlockConfig,
+    [RatingsBlockConfig.widget]: RatingsBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [SidebarBlockConfig.widget]: SidebarBlockConfig,
+    [SliderBlockConfig.widget]: SliderBlockConfig,
+    [SwitchBlockConfig.widget]: SwitchBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
+    [TimePickerBlockConfig.widget]: TimePickerBlockConfig,
     [ThemeBlockConfig.widget]: ThemeBlockConfig,
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
-    [RadioBlockConfig.widget]: RadioBlockConfig,
     // [StepperBlockConfig.widget]: StepperBlockConfig,
     // [QueryBlockConfig.widget]: QueryBlockConfig,
 };
 
 export {
     AccordionBlockConfig,
+    PopoverBlockConfig,
     AudioBlockConfig,
     AudioInputBlockConfig,
     ButtonBlockConfig,
     CheckboxBlockConfig,
     ContainerBlockConfig,
+    DividerBlockConfig,
     GridBlockConfig,
+    IconBlockConfig,
     IframeBlockConfig,
     ImageBlockConfig,
     InputBlockConfig,
@@ -178,8 +206,11 @@ export {
     LLMComparisonBlockConfig,
     LogsBlockConfig,
     ProgressBlockConfig,
+    RatingsBlockConfig,
     SelectBlockConfig,
     SidebarBlockConfig,
+    SliderBlockConfig,
+    SwitchBlockConfig,
     TextBlockConfig,
     ThemeBlockConfig,
     UploadBlockConfig,
@@ -189,4 +220,5 @@ export {
     ModalBlockConfig,
     RadioBlockConfig,
     PDFViewerBlockConfig,
+    TimePickerBlockConfig,
 };

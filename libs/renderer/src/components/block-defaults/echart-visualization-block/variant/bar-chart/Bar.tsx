@@ -9,6 +9,7 @@ import { ChartContextMenu } from "./ChartContextMenu";
 import { getValueByPath } from "../../../../../utility";
 import { useBlockSettings, useFrame } from "../../../../../hooks";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+import { EChartsOption } from "echarts";
 
 //Main Container for displaying Bar chart
 const StyledMainContainer = styled("div")(({ theme }) => ({
@@ -252,7 +253,7 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
         return (
             <StyledMainContainer id={id}>
                 <EChartsReact
-                    option={resultData}
+                    option={resultData as EChartsOption}
                     // onChartReady={echartsLoaded}
                     onEvents={onClickChart}
                     style={{

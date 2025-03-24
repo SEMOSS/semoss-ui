@@ -284,6 +284,7 @@ export const LoginPage = observer(() => {
         string,
         {
             provider: string;
+            label: string;
             name: string;
             isOauth: boolean;
         }
@@ -299,9 +300,9 @@ export const LoginPage = observer(() => {
     );
 
     const isNative = Object.prototype.hasOwnProperty.call(
-        availableProvidersMap,
-        'native',
-    ),
+            availableProvidersMap,
+            'native',
+        ),
         isLdap = Object.prototype.hasOwnProperty.call(
             availableProvidersMap,
             'ldap',
@@ -885,24 +886,24 @@ export const LoginPage = observer(() => {
                                                                     }
                                                                     helperText={
                                                                         error &&
-                                                                            (error.includes(
-                                                                                'Password must be at least 8 characters in length',
+                                                                        (error.includes(
+                                                                            'Password must be at least 8 characters in length',
+                                                                        ) ||
+                                                                            error.includes(
+                                                                                'Password must have atleast one uppercase character',
                                                                             ) ||
-                                                                                error.includes(
-                                                                                    'Password must have atleast one uppercase character',
-                                                                                ) ||
-                                                                                error.includes(
-                                                                                    'Password must have atleast one lowercase character',
-                                                                                ) ||
-                                                                                error.includes(
-                                                                                    'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
-                                                                                ) ||
-                                                                                error.includes(
-                                                                                    'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
-                                                                                ))
+                                                                            error.includes(
+                                                                                'Password must have atleast one lowercase character',
+                                                                            ) ||
+                                                                            error.includes(
+                                                                                'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
+                                                                            ) ||
+                                                                            error.includes(
+                                                                                'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
+                                                                            ))
                                                                             ? error.includes(
-                                                                                'Passwords do no match',
-                                                                            )
+                                                                                  'Passwords do no match',
+                                                                              )
                                                                                 ? 'Passwords do not match'
                                                                                 : 'Passwords must be at least 8 characters in length and contain one lowercase, one uppercase, one special character.'
                                                                             : ''
@@ -1120,21 +1121,21 @@ export const LoginPage = observer(() => {
                                                     </Button>
                                                     {configStore.store.config
                                                         .nativeRegistration && (
-                                                            <StyledRegisterNowBox>
-                                                                Don&apos;t have an
-                                                                account?{' '}
-                                                                <StyledButtonText
-                                                                    variant="text"
-                                                                    onClick={() =>
-                                                                        setRegister(
-                                                                            true,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    Register Now
-                                                                </StyledButtonText>
-                                                            </StyledRegisterNowBox>
-                                                        )}
+                                                        <StyledRegisterNowBox>
+                                                            Don&apos;t have an
+                                                            account?{' '}
+                                                            <StyledButtonText
+                                                                variant="text"
+                                                                onClick={() =>
+                                                                    setRegister(
+                                                                        true,
+                                                                    )
+                                                                }
+                                                            >
+                                                                Register Now
+                                                            </StyledButtonText>
+                                                        </StyledRegisterNowBox>
+                                                    )}
                                                 </>
                                             )}
                                         </>
