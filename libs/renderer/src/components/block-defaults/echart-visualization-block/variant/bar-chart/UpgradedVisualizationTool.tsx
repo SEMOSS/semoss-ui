@@ -7,6 +7,8 @@ import {
     ListItemButton,
     ListItemIcon,
     ListItemText,
+    Autocomplete,
+    TextField,
 } from "@mui/material";
 
 import { List, Stack, styled } from "@semoss/ui";
@@ -51,6 +53,14 @@ import { StackChartBarStyle } from "../stack-chart/StackChartBarStyle";
 import { LegendStackChart } from "../stack-chart/LegendStackChart";
 import { EditXAxisStackChart } from "../stack-chart/EditXAxisStackChart";
 import { EditYAxisStackChart } from "../stack-chart/EditYAxisStackChart";
+import {
+    buildShowField,
+    getShowFieldOptions,
+} from "../../../block-defaults.shared";
+import {
+    SelectInputSettings,
+    BaseSettingSection,
+} from "../../../../block-settings";
 //upgraded visualization tool propsimport { EditXAxisScatterPlot } from '../ScatterPlot/EditXAxisScatterPlot';
 
 interface UpgradedVisualizationToolProps {
@@ -61,11 +71,21 @@ const StyledListItem = styled(ListItem)(({}) => ({
     display: "contents !important",
 }));
 
+const StyledItem = styled("div")(() => ({
+    display: "block",
+    width: "100%",
+    padding: "0.5rem",
+}));
+
 export const UpgradedVisualizationTool =
     observer<UpgradedVisualizationToolProps>(({ id }) => {
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
         const [selectedList, setSelectedList] = useState(""); // maintain the current selected list, for expansion and collapsing
+        const [generalSettings, setGeneralSettings] = useState({
+            showBlock: data.show,
+        });
+        const queriesList = getShowFieldOptions(id);
         function updateChart() {}
         return (
             <>
@@ -74,6 +94,41 @@ export const UpgradedVisualizationTool =
                     Custom section to handle bar chart components for respective menu section 
                     BAR Chart Menu for tools start here
                     */}
+                    <ListItem disablePadding style={{ display: "block" }}>
+                        <ListItemButton
+                            onClick={(e) =>
+                                setSelectedList((prevList) =>
+                                    prevList === "generalchartsettings"
+                                        ? ""
+                                        : "generalchartsettings",
+                                )
+                            }
+                            selected={selectedList === "generalchartsettings"}
+                        >
+                            <ListItemIcon>
+                                <ImageIcon
+                                    fontSize="large"
+                                    color={
+                                        selectedList === "generalchartsettings"
+                                            ? "primary"
+                                            : "disabled"
+                                    }
+                                />
+                            </ListItemIcon>
+                            <ListItemText primary="General" />
+                            <InfoOutlined />
+                        </ListItemButton>
+                        {selectedList === "generalchartsettings" && (
+                            <StyledItem>
+                                <SelectInputSettings
+                                    id={id}
+                                    path={"show"}
+                                    label={"Show Block"}
+                                    options={[...getShowFieldOptions(id)]}
+                                />
+                            </StyledItem>
+                        )}
+                    </ListItem>
                     <ListItem disablePadding>
                         <ListItemButton
                             onClick={(e) =>

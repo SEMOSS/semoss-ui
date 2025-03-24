@@ -11,6 +11,7 @@ export interface TextBlockDef extends BlockDef<"text"> {
         text: string;
         variant?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "span";
         isStreaming: boolean;
+        show: boolean;
     };
     slots: never;
 }

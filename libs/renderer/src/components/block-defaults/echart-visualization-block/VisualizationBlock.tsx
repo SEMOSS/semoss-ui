@@ -58,6 +58,7 @@ export interface EchartVisualizationBlockDef {
             hideFilter: boolean;
             hideExclude: boolean;
         };
+        show: boolean;
     };
     listeners: {};
     slots: never;

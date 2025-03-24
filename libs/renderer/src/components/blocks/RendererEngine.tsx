@@ -8,6 +8,17 @@ export interface RendererEngineProps {
     id: string;
 }
 
+function stringToBoolean(string: string) {
+    if (string === undefined) return false;
+    switch (string.toLowerCase()) {
+        case "true":
+            return true;
+        case "false":
+            return false;
+        default:
+            return false;
+    }
+}
 /**
  * Render a block
  */
@@ -35,23 +46,43 @@ export const RendererEngine = observer(
                 `Widget ${block.widget} for block ${id} is not registered`,
             );
         }
-        const toShowBlock = block.data.hasOwnProperty("show")
-            ? block.data.show === "true"
+        if (
+            block.data.hasOwnProperty("show") &&
+            block.data.show !== undefined
+        ) {
+            let condition: unknown;
+            //if a variable is assigned then parsed result is added to condition
+            if (
+                block.data.show.toString().startsWith("{{") &&
+                block.data.show.toString().endsWith("}}")
+            ) {
+                condition = state.parseVariable(block.data.show?.toString());
+            } else {
+                condition = block.data.show; //direct value is passed if no variable is added
+            }
+
+            const toShowBlock = stringToBoolean(condition.toString())
                 ? true
-                : false
-            : true;
-        if (toShowBlock) {
+                : false;
+            if (toShowBlock) {
+                // render the view if this block can be shown
+                return createElement(b.render, {
+                    key: id,
+                    id: id,
+                });
+            }
+            // render the generic view of a block if hidden
+            return createElement("div", {
+                key: id,
+                id: id,
+                ["data-block"]: id,
+            });
+        } else {
             // render the view
             return createElement(b.render, {
                 key: id,
                 id: id,
             });
         }
-        // render the generic view of a block if hidden
-        return createElement("div", {
-            key: id,
-            id: id,
-            ["data-block"]: id,
-        });
     },
 );

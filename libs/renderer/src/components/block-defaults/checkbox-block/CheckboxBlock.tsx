@@ -16,6 +16,7 @@ export interface CheckboxBlockDef extends BlockDef<"checkbox"> {
         label: string;
         required: boolean;
         disabled: boolean;
+        show: boolean;
     };
     listeners: {
         onChange: true;

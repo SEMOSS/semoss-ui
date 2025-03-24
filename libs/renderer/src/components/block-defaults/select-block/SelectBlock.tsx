@@ -34,6 +34,7 @@ export interface SelectBlockDef extends BlockDef<"select"> {
         optionValue?: string;
         hint?: string;
         loading?: boolean;
+        show: boolean;
     };
 }
 
