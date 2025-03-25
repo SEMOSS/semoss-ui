@@ -69,6 +69,8 @@
     },
     "dependencies": {
         "@storybook/addon-interactions": "8.4.6",
+        "@mui/x-date-pickers": "6.8.0",
+        "dayjs": "^1.11.13",
         "@testing-library/react": "^16.2.0",
         "echarts": "^5.6.0",
         "echarts-for-react": "^3.0.2",
