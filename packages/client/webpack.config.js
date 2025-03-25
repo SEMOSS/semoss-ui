@@ -31,41 +31,16 @@ const config = {
         filename: isProduction ? '[name].[contenthash].js' : '[name].js',
         clean: true,
     },
-    cache: {
-        type: 'filesystem',
-        cacheDirectory: path.resolve(__dirname, '.webpack_cache'),
-    },
     optimization: {
         minimize: !isProduction,
-        minimizer: [
-            new TerserPlugin({
-                parallel: true,
-                terserOptions: {
-                    compress: {
-                        drop_console: true,
-                    },
-                },
-            }),
-        ],
+        minimizer: [new TerserPlugin({})],
+        removeAvailableModules: false,
+        removeEmptyChunks: false,
         splitChunks: {
-            chunks: 'all',
-            minSize: 20000,
-            maxSize: 700000,
-            maxAsyncRequests: 30,
-            maxInitialRequests: 30,
-            automaticNameDelimiter: '-',
+            chunks: 'async',
             cacheGroups: {
-                vendors: {
-                    test: /[\\/]node_modules[\\/]/,
-                    name: 'vendors',
-                    chunks: 'all',
-                },
-                common: {
-                    test: /[\\/]src[\\/]components[\\/]/,
-                    minSize: 30000,
-                    minChunks: 2,
-                    name: 'common',
-                    chunks: 'all',
+                defaultVendors: {
+                    idHint: 'vendors',
                 },
             },
         },
@@ -82,6 +57,7 @@ const config = {
                 process.env['NODE_ENV'] == 'production' ? 'all' : 'none',
             watch: process.env['NODE_ENV'] == 'production' ? false : true,
             memoryLimit: 8192,
+            skipTypeChecking: process.env.NODE_ENV == 'development',
         }),
         new NxReactWebpackPlugin({
             // Uncomment this line if you don't want to use SVGR
@@ -126,10 +102,13 @@ const config = {
             },
             {
                 test: /\.tsx?$/,
-                exclude: /node_modules/,
                 use: {
-                    loader: 'babel-loader',
+                    loader: 'ts-loader',
+                    options: {
+                        transpileOnly: process.env.NODE_ENV == 'development',
+                    },
                 },
+                exclude: /node_modules/,
             },
             {
                 test: /\.css$/,
