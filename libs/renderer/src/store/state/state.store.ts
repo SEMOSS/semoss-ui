@@ -646,15 +646,12 @@ export class StateStore {
         // generate the slots
         for (const slot in json.slots) {
             if (json.slots[slot]) {
-                debugger;
                 block.slots[slot] = {
                     name: slot,
                     children: json.slots[slot].map((child) => {
-                        debugger;
                         // build the children, but only store the ids
                         const b = this.generateBlock(child);
 
-                        debugger;
                         return b.id;
                     }),
                 };
