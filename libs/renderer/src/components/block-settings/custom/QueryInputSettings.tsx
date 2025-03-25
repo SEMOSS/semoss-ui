@@ -1,17 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { Paths, PathValue } from "../../../types";
-import { useBlockSettings, useBlocks } from "../../../hooks";
-import {
-    Block,
-    BlockDef,
-    CellState,
-    QueryState,
-    Variable,
-} from "../../../store";
-import { getValueByPath } from "../../../utility";
-import { BaseSettingSection } from "../BaseSettingSection";
+
 import {
     Stack,
     Typography,
@@ -21,22 +11,40 @@ import {
     IconButton,
     Divider,
     styled,
+    useNotification,
+    Accordion,
+    List,
 } from "@semoss/ui";
-import { Autocomplete } from "@mui/material";
+import { Autocomplete, Popper } from "@mui/material";
 import {
     CalendarMonth,
     Close,
     DataArray,
     DataObject,
+    ExpandMore,
     Gesture,
     Inventory2Outlined,
-    Layers,
     OpenInNew,
     SwitchAccessShortcutOutlined,
     TokenOutlined,
 } from "@mui/icons-material";
+
+import { Paths, PathValue } from "../../../types";
+import { useBlockSettings, useBlocks } from "../../../hooks";
+import {
+    Block,
+    BlockDef,
+    CellState,
+    QueryState,
+    Variable,
+    INPUT_BLOCK_TYPES,
+    VariableType,
+    ActionMessages,
+} from "../../../store";
+import { getValueByPath } from "../../../utility";
 import { ModelBrain } from "../../../assets/ModelBrain";
 import { Database } from "../../../assets/Database";
+import { AddVariable } from "../../../assets/AddVariable";
 
 interface QueryInputSettingsProps<D extends BlockDef = BlockDef> {
     /**
@@ -76,7 +84,21 @@ interface Option {
     /**
      * type of block
      */
-    blockType: "block" | "query" | "cell" | "query-prop" | "cell-prop";
+    blockType: "block" | "query" | "cell" | "query-prop" | "cell-prop" | "cell";
+
+    /**
+     * whether the option is variabilized
+     * @type {boolean}
+     * @default false
+     */
+    variabilized: boolean;
+
+    /**
+     * Group alias for grouping options
+     * @type {string}
+     * @default ""
+     */
+    groupAlias: string;
 }
 
 const StyledModalHeader = styled(Stack)(({ theme }) => ({
@@ -85,6 +107,45 @@ const StyledModalHeader = styled(Stack)(({ theme }) => ({
     justifyContent: "space-between",
     alignItems: "center",
 }));
+
+const StyledMenuSection = styled(Accordion)(({ theme }) => ({
+    boxShadow: "none",
+    borderRadius: "0 !important",
+    border: "0px",
+    borderBottom: `1px solid ${theme.palette.divider}`,
+    "&:before": {
+        display: "none",
+    },
+    "&.Mui-expanded": {
+        margin: "0",
+        "&:last-child": {
+            borderBottom: "0px",
+        },
+    },
+}));
+
+const StyledMenuSectionTitle = styled(Accordion.Trigger)(({ theme }) => ({
+    minHeight: "auto !important",
+    height: theme.spacing(6),
+}));
+
+// Group name mapper function
+const groupAliasMapper = (type: string) => {
+    switch (type) {
+        case "query":
+            return "Notebook";
+        case "cell":
+            return "Cell";
+        case "cell-prop":
+            return "Cell-prop";
+        case "block":
+            return "Block";
+        case "query-prop":
+            return "Notebook-prop";
+        default:
+            return type.charAt(0).toUpperCase() + type.slice(1);
+    }
+};
 
 /**
  * Specifically for selecting a query for to associate with a UI block
@@ -97,6 +158,7 @@ export const QueryInputSettings = observer(
     }: QueryInputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
         const { state, notebook } = useBlocks();
+        const notification = useNotification();
 
         // track the value
         const [value, setValue] = useState("");
@@ -106,6 +168,8 @@ export const QueryInputSettings = observer(
         const [open, setOpen] = useState(false);
         // Track the input ref to grab the cursor position
         const inputRef = useRef(null);
+        const suggestionRef = useRef(null);
+        const measureRef = useRef(null);
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
@@ -158,14 +222,32 @@ export const QueryInputSettings = observer(
 
         const optionMap = useMemo<Record<string, Option>>(() => {
             const pathMap = {};
+            const variabilizedList = [];
 
+            // iterate over the variables
             Object.entries(state.variables).forEach(
                 (keyValue: [string, Variable]) => {
-                    console.log(keyValue[0]);
                     const alias = keyValue[0];
                     const variable = keyValue[1];
 
                     const ref = state.getVariable(variable.to, variable.type);
+
+                    // check if the variable is variabilized
+                    if (
+                        variable.type === "block" &&
+                        !variabilizedList.includes(variable.to)
+                    )
+                        variabilizedList.push(variable.to);
+                    else if (
+                        variable.type === "cell" &&
+                        !variabilizedList.includes(variable.cellId)
+                    )
+                        variabilizedList.push(variable.cellId);
+                    else if (
+                        variable.type === "query" &&
+                        !variabilizedList.includes(variable.to)
+                    )
+                        variabilizedList.push(variable.to);
 
                     pathMap[alias] = {
                         id: alias,
@@ -173,6 +255,8 @@ export const QueryInputSettings = observer(
                         type: typeof ref,
                         display: alias,
                         blockType: variable.type,
+                        variabilized: true,
+                        groupAlias: groupAliasMapper(variable.type),
                     };
 
                     if (variable.type === "query") {
@@ -184,6 +268,8 @@ export const QueryInputSettings = observer(
                                 type: typeof q[f], // TODO: get value
                                 display: `${alias}.${f}`,
                                 blockType: "query-prop",
+                                variabilized: true,
+                                groupAlias: groupAliasMapper("query-prop"),
                             };
                         }
                     }
@@ -199,13 +285,115 @@ export const QueryInputSettings = observer(
                                 type: typeof c[f], // TODO: get value
                                 display: `${alias}.${f}`,
                                 blockType: "cell-prop",
+                                variabilized: true,
+                                groupAlias: groupAliasMapper("cell-prop"),
                             };
                         }
                     }
                 },
             );
+
+            // iterate over the blocks
+            Object.entries(state.blocks).forEach(
+                (keyValue: [string, Block]) => {
+                    const alias = keyValue[0];
+                    const block = keyValue[1];
+                    //filter only valid(variabilizable) blocks
+                    if (
+                        INPUT_BLOCK_TYPES.indexOf(block.widget) > -1 &&
+                        !variabilizedList.includes(alias)
+                    ) {
+                        pathMap[alias] = {
+                            id: alias,
+                            path: alias,
+                            type: typeof block,
+                            display: alias,
+                            blockType: "block",
+                            variabilized: Object.keys(state.variables).includes(
+                                alias,
+                            ),
+                            groupAlias: groupAliasMapper("block"),
+                        };
+                    }
+                },
+            );
+
+            // iterate over the Queries
+            Object.entries(state.queries).forEach(
+                (keyValue: [string, QueryState]) => {
+                    const alias = keyValue[0];
+                    const query = keyValue[1];
+
+                    if (!variabilizedList.includes(alias)) {
+                        pathMap[alias] = {
+                            id: alias,
+                            path: alias,
+                            type: typeof query,
+                            display: alias,
+                            blockType: "query",
+                            variabilized: Object.keys(state.variables).includes(
+                                alias,
+                            ),
+                            groupAlias: groupAliasMapper("query"),
+                        };
+
+                        const q = state.getQuery(alias);
+                        for (const f in q._exposed) {
+                            pathMap[`${alias}.${f}`] = {
+                                id: `${alias}.${f}`,
+                                path: `${alias}.${f}`,
+                                type: typeof q[f], // TODO: get value
+                                display: `${alias}.${f}`,
+                                blockType: "query-prop",
+                                variabilized: true,
+                                groupAlias: groupAliasMapper("query-prop"),
+                            };
+                        }
+                    }
+                    // iterate over the un-variabilized cells
+                    if (query.cellList.length > 0) {
+                        Object.entries(query.cells).forEach(
+                            (keyValue: [string, CellState]) => {
+                                const cellAlias = keyValue[0];
+                                const cell = keyValue[1];
+
+                                if (!variabilizedList.includes(cell.id)) {
+                                    pathMap[`${alias}.${cellAlias}`] = {
+                                        id: `${alias}.${cellAlias}`,
+                                        path: `${alias}.${cellAlias}`,
+                                        type: typeof cell,
+                                        display: `${alias}.${cellAlias}`,
+                                        blockType: "cell",
+                                        variabilized: false,
+                                        groupAlias: groupAliasMapper("cell"),
+                                    };
+
+                                    const q = state.getQuery(alias);
+                                    const c = q.getCell(cellAlias);
+
+                                    for (const f in c._exposed) {
+                                        pathMap[`${alias}.${cellAlias}.${f}`] =
+                                            {
+                                                id: `${alias}.${cellAlias}.${f}`,
+                                                path: `${alias}.${cellAlias}.${f}`,
+                                                type: typeof c[f], // TODO: get value
+                                                display: `${alias}.${cellAlias}.${f}`,
+                                                blockType: "cell-prop",
+                                                variabilized: true,
+                                                groupAlias:
+                                                    groupAliasMapper(
+                                                        "cell-prop",
+                                                    ),
+                                            };
+                                    }
+                                }
+                            },
+                        );
+                    }
+                },
+            );
             return pathMap;
-        }, [state, notebook]);
+        }, [state, notebook, value]);
 
         // handle 'input' changes vs 'selections'
         const handleInputChange = (event, newInputValue, reason) => {
@@ -277,9 +465,196 @@ export const QueryInputSettings = observer(
             }
         };
 
+        /**
+         * @name handleVariablize
+         * Adds a new variable to the state
+         */
+        const handleVariablize = (option: Option) => {
+            // add variable
+            const success = state.dispatch({
+                message: ActionMessages.ADD_VARIABLE,
+                payload: {
+                    id:
+                        option.blockType === "cell"
+                            ? option?.path?.split(".")[1]
+                            : option.id,
+                    to:
+                        option.blockType === "cell"
+                            ? option?.path?.split(".")[0]
+                            : option?.path,
+                    cellId:
+                        option.blockType === "cell"
+                            ? option?.path?.split(".")[1]
+                            : null,
+                    type: option.blockType as VariableType,
+                },
+            });
+
+            // Create notification
+            notification.add({
+                color: success ? "success" : "error",
+                message: success
+                    ? `Successfully added ${option.id} as a variable.`
+                    : `Unable to add ${option.id}, due to syntax or a duplicated alias`,
+            });
+        };
+
+        /**
+         * Renders the input field with a suggestion feature.
+         * @param {Object} params The props passed to the TextField component.
+         * @returns {ReactElement} The rendered input field.
+         */
+        const renderInputField = (params) => {
+            const wordArray = inputValue
+                .replace("{{", "")
+                .replace("}}", "")
+                .toLowerCase()
+                .split(" ");
+            const filteredOptions = Object.keys(optionMap)
+                .sort((a, b) =>
+                    optionMap[a]["blockType"].localeCompare(
+                        optionMap[b]["blockType"],
+                    ),
+                )
+                .filter((option) =>
+                    option
+                        .toLowerCase()
+                        .includes(
+                            wordArray[wordArray.length - 1].toLowerCase(),
+                        ),
+                );
+
+            const suggestion = filteredOptions.length ? filteredOptions[0] : "";
+
+            const cursorIndex = inputRef?.current?.selectionStart ?? null;
+            const textBeforeCursor = value.substring(0, cursorIndex);
+            const textAfterCursor = value.substring(cursorIndex);
+
+            const calculateTextWidth = () => {
+                if (!measureRef.current) return 0;
+                measureRef.current.textContent = textBeforeCursor;
+                return measureRef.current.offsetWidth;
+            };
+
+            const textWidth = calculateTextWidth();
+            const containerWidth = inputRef.current?.offsetWidth || 0;
+            const suggestionScrollLeft = Math.max(
+                0,
+                textWidth - containerWidth + 20,
+            );
+
+            const incompleteWordArray = textBeforeCursor
+                .replace("{{", "")
+                .replace("}}", "")
+                .split(" ");
+            const suggestionToDisplay = suggestion
+                ? suggestion.replace(
+                      incompleteWordArray[incompleteWordArray.length - 1],
+                      "",
+                  )
+                : "";
+
+            return (
+                <div style={{ position: "relative", overflow: "hidden" }}>
+                    <TextField
+                        {...params}
+                        inputRef={inputRef}
+                        fullWidth
+                        placeholder="Enter text or select query"
+                        onChange={(e) => {
+                            const updatedValue = e.target.value;
+                            setInputValue(updatedValue);
+                            onChange(updatedValue);
+                        }}
+                        onScroll={(e) => {
+                            if (suggestionRef.current)
+                                suggestionRef.current.scrollLeft =
+                                    e.currentTarget.scrollLeft;
+                        }}
+                        inputProps={{
+                            ...params.inputProps,
+                            style: {
+                                whiteSpace: "nowrap",
+                                overflowX: "auto",
+                                scrollBehavior: "smooth",
+                            },
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === "Tab" && suggestionToDisplay) {
+                                e.preventDefault();
+                                const completeValue =
+                                    textBeforeCursor.replace(
+                                        incompleteWordArray[
+                                            incompleteWordArray.length - 1
+                                        ],
+                                        "",
+                                    ) +
+                                    "{{" +
+                                    suggestion +
+                                    "}}" +
+                                    textAfterCursor;
+                                onChange(completeValue);
+                                setInputValue(completeValue);
+                            }
+                        }}
+                    />
+                    {suggestionToDisplay && !textAfterCursor && (
+                        <div
+                            ref={suggestionRef}
+                            style={{
+                                position: "absolute",
+                                left: 0,
+                                top: "37%",
+                                transform: "translateY(-50%)",
+                                pointerEvents: "none",
+                                color: "#999",
+                                padding: "14px",
+                                height: "100%",
+                                width: "100%",
+                                overflow: "hidden",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    position: "relative",
+                                    whiteSpace: "nowrap",
+                                    transform: `translateX(-${suggestionScrollLeft}px)`,
+                                }}
+                            >
+                                <span style={{ visibility: "hidden" }}>
+                                    {textBeforeCursor}
+                                </span>
+                                <span style={{ color: "#999" }}>
+                                    {suggestionToDisplay}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
         return (
             <>
-                <BaseSettingSection label={label}>
+                <Stack>
+                    <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                    >
+                        <Typography variant="body2">{label}</Typography>
+                        <Stack direction="row" alignItems="center">
+                            <Typography variant="body1" color="primary">
+                                Open text view
+                            </Typography>
+                            <IconButton
+                                size="small"
+                                onClick={() => setOpen(true)}
+                            >
+                                <OpenInNew color="primary" />
+                            </IconButton>
+                        </Stack>
+                    </Stack>
                     <Autocomplete
                         fullWidth
                         disableClearable={value === ""}
@@ -288,7 +663,7 @@ export const QueryInputSettings = observer(
                         value={value}
                         inputValue={inputValue}
                         onInputChange={handleInputChange}
-                        options={Object.keys(optionMap).sort()}
+                        options={Object.keys(optionMap)}
                         getOptionLabel={(o: string) => {
                             return optionMap?.[o]?.path as string;
                         }}
@@ -309,16 +684,40 @@ export const QueryInputSettings = observer(
                                 //text to right of cursor
                                 const rightText =
                                     value.substring(cursorPosition);
-                                const valf = optionMap?.[val]?.path || "";
+                                const option = optionMap?.[val];
+                                const valf =
+                                    option.blockType === "cell"
+                                        ? option?.path?.split(".")[1] ??
+                                          option?.path
+                                        : option?.path || "";
 
                                 // reform and submit
                                 onChange(
                                     leftText + " {{" + valf + "}} " + rightText,
                                 );
+                                // if variablizable and not already variabilized, variablize the option
+                                if (!optionMap?.[val]?.variabilized) {
+                                    handleVariablize(optionMap?.[val]);
+                                }
                             }
                         }}
-                        filterOptions={(options) => {
-                            return options.sort();
+                        filterOptions={(options, state) => {
+                            const words = state.inputValue
+                                .toLowerCase()
+                                .split(" ");
+                            let res = options
+                                .sort((a, b) => {
+                                    return optionMap[a][
+                                        "blockType"
+                                    ].localeCompare(optionMap[b]["blockType"]);
+                                })
+                                .filter((option) => {
+                                    const lowerCase = option.toLowerCase();
+                                    return words.some((word) =>
+                                        lowerCase.includes(word.toLowerCase()),
+                                    );
+                                });
+                            return res.length ? res : [];
                         }}
                         renderOption={(props, o) => {
                             const option = optionMap[o];
@@ -327,38 +726,65 @@ export const QueryInputSettings = observer(
                                     <Stack
                                         direction="row"
                                         justifyContent="space-between"
+                                        alignItems="center"
                                         sx={{
                                             width: "100%",
-                                            pl: getIndent(option.blockType),
+                                            // pl: getIndent(option.blockType),
                                         }}
                                     >
                                         <Typography variant="body2">
                                             {option.display}
                                         </Typography>
                                         {/* TODO: Icon should actually reflect value data type */}
-                                        <Icon>{getIcon(option.blockType)}</Icon>
+                                        {!option.variabilized && (
+                                            <IconButton
+                                                size="small"
+                                                title="Add as variable"
+                                            >
+                                                <AddVariable />
+                                            </IconButton>
+                                        )}
+                                        {/* <Stack direction="row" alignItems={"center"}>
+                                            <Icon>{getIcon(option.blockType)}</Icon>
+                                        </Stack> */}
                                     </Stack>
                                 </li>
                             );
                         }}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                inputRef={inputRef}
-                                fullWidth
-                                placeholder="Query"
-                                onChange={(e) => {
-                                    const newValue = e.target.value;
-                                    setInputValue(newValue);
-                                    onChange(newValue);
-                                }}
-                            />
-                        )}
+                        renderInput={(params) => renderInputField(params)}
+                        groupBy={(option) => optionMap[option]?.groupAlias}
+                        renderGroup={(params) => {
+                            return (
+                                <li key={params.key}>
+                                    <StyledMenuSection>
+                                        <StyledMenuSectionTitle
+                                            expandIcon={<ExpandMore />}
+                                            aria-controls="panel1a-content"
+                                        >
+                                            <Typography variant="body2">
+                                                {params.group}
+                                            </Typography>
+                                        </StyledMenuSectionTitle>
+                                        <Accordion.Content>
+                                            <List disablePadding>
+                                                {params.children}
+                                            </List>
+                                        </Accordion.Content>
+                                    </StyledMenuSection>
+                                </li>
+                            );
+                        }}
+                        slotProps={{
+                            paper: {
+                                sx: {
+                                    "& .MuiAutocomplete-listbox": {
+                                        padding: 0,
+                                    },
+                                },
+                            },
+                        }}
                     />
-                    <IconButton size="small" onClick={() => setOpen(true)}>
-                        <OpenInNew />
-                    </IconButton>
-                </BaseSettingSection>
+                </Stack>
                 <Modal
                     open={open}
                     fullWidth
