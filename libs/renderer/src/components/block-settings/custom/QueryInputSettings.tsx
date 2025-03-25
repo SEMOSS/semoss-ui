@@ -53,6 +53,10 @@ interface QueryInputSettingsProps<D extends BlockDef = BlockDef> {
      * Settings label
      */
     label: string;
+    /**
+     * Default path map by default {}
+     */
+    defaultPathMap?: any;
 }
 
 interface Option {
@@ -94,6 +98,7 @@ export const QueryInputSettings = observer(
         id,
         path,
         label,
+        defaultPathMap = {},
     }: QueryInputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
         const { state, notebook } = useBlocks();
@@ -204,6 +209,11 @@ export const QueryInputSettings = observer(
                     }
                 },
             );
+            if (Object.keys(defaultPathMap).length > 0) {
+                Object.keys(defaultPathMap).forEach((key) => {
+                    pathMap[key] = defaultPathMap[key];
+                });
+            }
             return pathMap;
         }, [state, notebook]);
 
@@ -310,11 +320,18 @@ export const QueryInputSettings = observer(
                                 const rightText =
                                     value.substring(cursorPosition);
                                 const valf = optionMap?.[val]?.path || "";
-
-                                // reform and submit
-                                onChange(
-                                    leftText + " {{" + valf + "}} " + rightText,
-                                );
+                                if (optionMap?.[val]?.path === undefined) {
+                                    onChange(val);
+                                } else {
+                                    // reform and submit
+                                    onChange(
+                                        leftText +
+                                            " {{" +
+                                            valf +
+                                            "}} " +
+                                            rightText,
+                                    );
+                                }
                             }
                         }}
                         filterOptions={(options) => {

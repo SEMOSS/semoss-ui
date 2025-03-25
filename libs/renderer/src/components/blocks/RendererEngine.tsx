@@ -51,25 +51,31 @@ export const RendererEngine = observer(
             block.data.show !== undefined
         ) {
             let condition: unknown;
+            let trimmedBlockData = block.data.show?.toString()?.trim();
             //if a variable is assigned then parsed result is added to condition
             if (
-                block.data.show.toString().startsWith("{{") &&
-                block.data.show.toString().endsWith("}}")
+                trimmedBlockData.startsWith("{{") &&
+                trimmedBlockData.endsWith("}}")
             ) {
                 condition = state.parseVariable(block.data.show?.toString());
             } else {
                 condition = block.data.show; //direct value is passed if no variable is added
             }
-
-            const toShowBlock = stringToBoolean(condition.toString())
-                ? true
-                : false;
-            if (toShowBlock) {
-                // render the view if this block can be shown
-                return createElement(b.render, {
-                    key: id,
-                    id: id,
-                });
+            if (
+                condition !== undefined &&
+                condition !== null &&
+                condition !== ""
+            ) {
+                const toShowBlock = stringToBoolean(condition.toString())
+                    ? true
+                    : false;
+                if (toShowBlock) {
+                    // render the view if this block can be shown
+                    return createElement(b.render, {
+                        key: id,
+                        id: id,
+                    });
+                }
             }
             // render the generic view of a block if hidden
             return createElement("div", {
