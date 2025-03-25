@@ -57,7 +57,7 @@ const config = {
                 process.env['NODE_ENV'] == 'production' ? 'all' : 'none',
             watch: process.env['NODE_ENV'] == 'production' ? false : true,
             memoryLimit: 8192,
-            skipTypeChecking: process.env.NODE_ENV == 'development',
+            skipTypeChecking: process.env.NODE_ENV !== 'production',
         }),
         new NxReactWebpackPlugin({
             // Uncomment this line if you don't want to use SVGR
@@ -105,7 +105,7 @@ const config = {
                 use: {
                     loader: 'ts-loader',
                     options: {
-                        transpileOnly: process.env.NODE_ENV == 'development',
+                        transpileOnly: process.env.NODE_ENV !== isProduction,
                     },
                 },
                 exclude: /node_modules/,
