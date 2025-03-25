@@ -23,7 +23,6 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
             style={{
                 ...data.style,
                 display: "flex",
-                overflow: "auto", // container that overflows parent
                 overflowWrap: "anywhere", // text that overflows container
             }}
             {...attrs}
