@@ -11,7 +11,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
     alignSelf: 'stretch',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: theme.spacing(3),
+    gap: '5px',
     marginBottom: '50px',
 }));
 

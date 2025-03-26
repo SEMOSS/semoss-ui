@@ -1,12 +1,24 @@
 import { useEngine, usePixel } from '@/hooks';
-import { Table, Typography, styled, Search } from '@semoss/ui';
-import { useState, useRef, useEffect } from 'react';
+import {
+    Table,
+    Typography,
+    styled,
+    Search,
+    IconButton,
+    AvatarGroup,
+    Avatar,
+} from '@semoss/ui';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import SearchIcon from '@mui/icons-material/Search';
+import { FilterAltSharp } from '@mui/icons-material';
 
 export const UsagePerUserTable = () => {
     const [search, setSearch] = useState<string>('');
     const searchRef = useRef<HTMLInputElement | null>(null);
     const [page, setPage] = useState<number>(0);
     const [rowsPerPage, setRowsPerPage] = useState<number>(5);
+    const [isSearch, setIsSearch] = useState<boolean>(false);
+    const [isFilter, setIsFilter] = useState<boolean>(false);
 
     useEffect(() => {
         searchRef.current?.focus();
@@ -26,6 +38,36 @@ export const UsagePerUserTable = () => {
 
     const headers = outputData.length > 0 ? Object.keys(outputData[0]) : [];
     const rows = outputData.length > 0 ? outputData : [];
+    const USER_NAME = headers.find((header) => header === 'USER_NAME');
+    console.log('USER_NAME', USER_NAME, headers);
+
+    const Avatars = useMemo(() => {
+        if (!headers.length) {
+            return [];
+        }
+        let i = 0;
+        const avatarList = [];
+        while (i < 5 && i < headers.length) {
+            avatarList.push(
+                <Avatar key={i}>
+                    {(headers[i] || ' ').charAt(0).toUpperCase()}
+                </Avatar>,
+            );
+
+            i++;
+        }
+
+        return avatarList;
+    }, [headers.length]);
+
+    const getAvatarsForRow = (userName: string) => {
+        return (userName || '')
+            .split(' ')
+            .slice(0, 1)
+            .map((name, i) => (
+                <Avatar key={i}>{name.charAt(0).toUpperCase()}</Avatar>
+            ));
+    };
 
     const filteredRows = rows.filter((row) =>
         Object.values(row).some((value) =>
@@ -38,7 +80,6 @@ export const UsagePerUserTable = () => {
     );
 
     const StyledTableContainer = styled(Table.Container)({
-        borderRadius: '12px',
         background: '#FFF',
         boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
     });
@@ -49,23 +90,69 @@ export const UsagePerUserTable = () => {
         justifyContent: 'space-between',
         width: '100%',
     });
+    const StyledSearchFilter = styled('div')({
+        marginLeft: '10px',
+        display: 'flex',
+    });
+    const StyledFilter = styled('div')({
+        marginLeft: '10px',
+    });
+    const StyledDiv = styled('div')({
+        display: 'flex',
+        justifyContent: 'left',
+        alignItems: 'center',
+        gap: '5px',
+    });
 
     return (
         <>
             <Grid>
-                <Typography variant={'h6'}>Usage Per User</Typography>
-                <Search
-                    inputRef={searchRef}
-                    placeholder="Search"
-                    size="small"
-                    value={search}
-                    onChange={(e) => {
-                        setSearch(e.target.value);
-                        setPage(0);
-                    }}
-                />
+                <div>
+                    <Typography variant={'h6'}>User Access</Typography>
+                    <Typography variant={'body2'}>
+                        Detailed view of user activity, including messages,
+                        tokens, and last utilization date.
+                    </Typography>
+                </div>
+                <StyledSearchFilter>
+                    <StyledFilter>
+                        {isSearch ? (
+                            <Search
+                                inputRef={searchRef}
+                                placeholder="Search"
+                                size="small"
+                                value={search}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setPage(0);
+                                }}
+                            />
+                        ) : (
+                            <IconButton onClick={() => setIsSearch(!isSearch)}>
+                                <SearchIcon />
+                            </IconButton>
+                        )}
+                    </StyledFilter>
+                    <StyledFilter>
+                        {isFilter ? (
+                            <Search
+                                inputRef={searchRef}
+                                placeholder="Search"
+                                size="small"
+                                value={search}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setPage(0);
+                                }}
+                            />
+                        ) : (
+                            <IconButton onClick={() => setIsFilter(!isFilter)}>
+                                <FilterAltSharp />
+                            </IconButton>
+                        )}
+                    </StyledFilter>
+                </StyledSearchFilter>
             </Grid>
-
             <StyledTableContainer>
                 <Table>
                     <Table.Head>
@@ -81,7 +168,24 @@ export const UsagePerUserTable = () => {
                                 <Table.Row key={rowIndex}>
                                     {headers.map((header, colIndex) => (
                                         <Table.Cell key={colIndex}>
-                                            {row[header]}
+                                            {header === 'USER_NAME' ? (
+                                                <StyledDiv>
+                                                    <AvatarGroup
+                                                        spacing="small"
+                                                        variant="circular"
+                                                        max={4}
+                                                    >
+                                                        {getAvatarsForRow(
+                                                            row['USER_NAME'],
+                                                        )}
+                                                    </AvatarGroup>
+                                                    <Typography variant="body2">
+                                                        {row['USER_NAME']}
+                                                    </Typography>
+                                                </StyledDiv>
+                                            ) : (
+                                                row[header]
+                                            )}
                                         </Table.Cell>
                                     ))}
                                 </Table.Row>
@@ -97,6 +201,7 @@ export const UsagePerUserTable = () => {
                             </Table.Row>
                         )}
                     </Table.Body>
+
                     <Table.Footer>
                         <Table.Row>
                             <Table.Pagination

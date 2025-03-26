@@ -128,8 +128,8 @@ export const ENGINE_ROUTES: {
                 restrict: ['OWNER'],
             },
             {
-                name: 'Usage Report',
-                path: 'usageReport',
+                name: 'Reporting',
+                path: 'reporting',
                 component: EngineReportPage,
                 restrict: ['OWNER'],
             },

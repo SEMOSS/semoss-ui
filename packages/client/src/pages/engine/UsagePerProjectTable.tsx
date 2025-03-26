@@ -1,12 +1,15 @@
 import { useEngine, usePixel } from '@/hooks';
-import { Table, Typography, styled, Search } from '@semoss/ui';
+import { Table, Typography, styled, Search, IconButton } from '@semoss/ui';
 import { useState, useRef, useEffect } from 'react';
-
+import SearchIcon from '@mui/icons-material/Search';
+import { FilterAltSharp } from '@mui/icons-material';
 export const UsagePerProjectTable = () => {
     const [search, setSearch] = useState<string>('');
     const UsagePerProjectSearchRef = useRef<HTMLInputElement | null>(null);
     const [page, setPage] = useState<number>(0);
     const [rowsPerPage, setRowsPerPage] = useState<number>(5);
+    const [isSearch, setIsSearch] = useState<boolean>(false);
+    const [isFilter, setIsFilter] = useState<boolean>(false);
 
     useEffect(() => {
         UsagePerProjectSearchRef.current?.focus();
@@ -40,15 +43,8 @@ export const UsagePerProjectTable = () => {
     );
 
     const StyledTableContainer = styled(Table.Container)({
-        borderRadius: '12px',
         background: '#FFF',
         boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    });
-
-    const StyledSearchButtonContainer = styled('div')({
-        display: 'flex',
-        alignItems: 'center',
-        background: 'white',
     });
 
     const Grid = styled('div')({
@@ -57,23 +53,62 @@ export const UsagePerProjectTable = () => {
         justifyContent: 'space-between',
         width: '100%',
     });
+    const StyledSearchFilter = styled('div')({
+        marginLeft: '10px',
+        display: 'flex',
+    });
+    const StyledFilter = styled('div')({
+        marginLeft: '10px',
+    });
 
     return (
         <>
             <Grid>
-                <Typography variant={'h6'}>Usage Per Project</Typography>
-                <StyledSearchButtonContainer>
-                    <Search
-                        inputRef={UsagePerProjectSearchRef}
-                        placeholder="Search"
-                        size="small"
-                        value={search}
-                        onChange={(e) => {
-                            setSearch(e.target.value);
-                            setPage(0); // Reset page to 0 when searching
-                        }}
-                    />
-                </StyledSearchButtonContainer>
+                <div>
+                    <Typography variant={'h6'}>Apps</Typography>
+                    <Typography variant={'body2'}>
+                        Summary of app activity, including messages, tokens, and
+                        last utilization date.
+                    </Typography>
+                </div>
+                <StyledSearchFilter>
+                    <StyledFilter>
+                        {isSearch ? (
+                            <Search
+                                inputRef={UsagePerProjectSearchRef}
+                                placeholder="Search"
+                                size="small"
+                                value={search}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setPage(0);
+                                }}
+                            />
+                        ) : (
+                            <IconButton onClick={() => setIsSearch(!isSearch)}>
+                                <SearchIcon />
+                            </IconButton>
+                        )}
+                    </StyledFilter>
+                    <StyledFilter>
+                        {isFilter ? (
+                            <Search
+                                inputRef={UsagePerProjectSearchRef}
+                                placeholder="Search"
+                                size="small"
+                                value={search}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setPage(0);
+                                }}
+                            />
+                        ) : (
+                            <IconButton onClick={() => setIsFilter(!isFilter)}>
+                                <FilterAltSharp />
+                            </IconButton>
+                        )}
+                    </StyledFilter>
+                </StyledSearchFilter>
             </Grid>
             <StyledTableContainer>
                 <Table>
