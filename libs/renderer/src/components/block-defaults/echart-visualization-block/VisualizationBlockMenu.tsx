@@ -9,6 +9,7 @@ import { UpgradedVisualizationTool } from "./variant/bar-chart/UpgradedVisualiza
 import { FrameOperations } from "./variant/bar-chart/FrameOperations";
 import { FrameOperationsPie } from "./variant/pie-chart/FrameOperationsPie";
 import { ScatterPlotBlockSettings } from "./variant/scatter-plot/ScatterPlotBlockSettings";
+import { FrameOperationsLine } from "./variant/line-chart/FrameOperationsLine";
 import { StackChartBlockSettings } from "./variant/stack-chart/StackChartBlockSettings";
 
 const StyledContainer = styled("div")(() => ({
@@ -88,6 +89,9 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                                 updateFrame={updateFrame}
                                 path="option"
                             />
+                        )}
+                        {data.variation === "echart-line-graph" && (
+                            <FrameOperationsLine id={id} path="option" />
                         )}
                         {data.variation === "echart-pie-chart" && (
                             <FrameOperationsPie id={id} path={"option"} />
