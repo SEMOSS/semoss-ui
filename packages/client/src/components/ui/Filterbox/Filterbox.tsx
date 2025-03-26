@@ -45,17 +45,10 @@ const StyledAvatarCount = styled(Avatar)(({ theme }) => ({
 }));
 
 const StyledShowMore = styled(Typography)(({ theme }) => {
-    // TODO: Fix typing
-    // const palette = theme.palette as CustomPaletteOptions;
-    const palette = theme.palette as unknown as {
-        primary: Record<string, string>;
-        primaryContrast: Record<string, string>;
-    };
-
     return {
-        color: palette.primary.main,
+        color: theme.palette.primary.main,
         '&:hover': {
-            color: palette.primaryContrast['900'],
+            color: theme.palette.primaryContrast['900'],
             cursor: 'pointer',
         },
     };
