@@ -1,5 +1,5 @@
 import { BlockDef } from "../../store";
-import { ListenerSettings } from "../block-settings";
+import { ListenerSettings, QueryInputSettings } from "../block-settings";
 import { FontSizeSettings } from "../block-settings/custom/FontSizeSettings";
 import { SizeSettings } from "../block-settings/shared/SizeSettings";
 import { ColorSettings } from "../block-settings/shared/ColorSettings";
@@ -26,7 +26,13 @@ import {
 import { DistinctPathButtonGroupSettings } from "../block-settings/shared/DistinctPathButtonGroupSettings";
 import { SelectInputSettings } from "../block-settings/shared/SelectInputSettings";
 import { useBlocks } from "../../hooks";
+import {
+    DEFAULT_TRUE_VARIABLE,
+    DEFAULT_FALSE_VARIABLE,
+} from "./block-defaults.constants";
 
+const trueSegment = DEFAULT_TRUE_VARIABLE;
+const falseSegment = DEFAULT_FALSE_VARIABLE;
 /**
  * Build the Layout Section
  */
@@ -535,12 +541,14 @@ export const buildShowField = <D extends BlockDef = BlockDef>() => [
         description: "Show Block",
         render: ({ id }) => (
             <>
-                <SelectInputSettings
+                <QueryInputSettings
                     id={id}
                     label="Show Block"
                     path="show"
-                    options={[...getShowFieldOptions(id)]}
-                    resizeOnSet
+                    defaultPathMap={{
+                        ...trueSegment,
+                        ...falseSegment,
+                    }}
                 />
             </>
         ),

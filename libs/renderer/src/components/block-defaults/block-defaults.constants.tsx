@@ -18,3 +18,26 @@ export const BLOCK_TYPES = [
     BLOCK_TYPE_COMPARE,
     BLOCK_TYPE_THEME,
 ];
+
+export const DEFAULT_TRUE_VARIABLE = {
+    true: {
+        blockType: "query-prop",
+        display: "True",
+        id: "true",
+        path: undefined,
+        type: "true",
+        variabilized: false,
+        groupAlias: "Others",
+    },
+};
+export const DEFAULT_FALSE_VARIABLE = {
+    false: {
+        blockType: "query-prop",
+        display: "False",
+        id: "false",
+        path: undefined,
+        type: "false",
+        variabilized: false,
+        groupAlias: "Others",
+    },
+};

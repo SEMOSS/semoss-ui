@@ -61,6 +61,10 @@ interface QueryInputSettingsProps<D extends BlockDef = BlockDef> {
      * Settings label
      */
     label: string;
+    /**
+     * Default path map by default {}
+     */
+    defaultPathMap?: any;
 }
 
 interface Option {
@@ -155,6 +159,7 @@ export const QueryInputSettings = observer(
         id,
         path,
         label,
+        defaultPathMap = {},
     }: QueryInputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
         const { state, notebook } = useBlocks();
@@ -392,6 +397,12 @@ export const QueryInputSettings = observer(
                     }
                 },
             );
+            //iterate over defaultPathMap if available
+            if (Object.keys(defaultPathMap).length > 0) {
+                Object.keys(defaultPathMap).forEach((key) => {
+                    pathMap[key] = defaultPathMap[key];
+                });
+            }
             return pathMap;
         }, [state, notebook, value]);
 
@@ -690,11 +701,18 @@ export const QueryInputSettings = observer(
                                         ? option?.path?.split(".")[1] ??
                                           option?.path
                                         : option?.path || "";
-
-                                // reform and submit
-                                onChange(
-                                    leftText + " {{" + valf + "}} " + rightText,
-                                );
+                                if (option?.path === undefined) {
+                                    onChange(val);
+                                } else {
+                                    // reform and submit
+                                    onChange(
+                                        leftText +
+                                            " {{" +
+                                            valf +
+                                            "}} " +
+                                            rightText,
+                                    );
+                                }
                                 // if variablizable and not already variabilized, variablize the option
                                 if (!optionMap?.[val]?.variabilized) {
                                     handleVariablize(optionMap?.[val]);
