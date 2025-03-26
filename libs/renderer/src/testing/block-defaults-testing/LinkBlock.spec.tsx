@@ -38,9 +38,8 @@ describe("link block", () => {
         });
 
         const element = container.querySelector("[data-block='link']");
-        console.log({ element });
-        // console.log(screen.getByText("Home"));
-        debugger;
+        // console.log({ element });
+
         expect(element).toBeInTheDocument();
         expect(element.tagName).equal("A", "element is type a");
         expect(element["href"]).equal(
