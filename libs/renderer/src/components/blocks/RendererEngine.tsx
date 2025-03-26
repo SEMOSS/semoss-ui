@@ -51,32 +51,41 @@ export const RendererEngine = observer(
             block.data.show !== undefined
         ) {
             let condition: unknown;
-            //if a variable is assigned then parsed result is added to condition
-            if (
-                block.data.show.toString().startsWith("{{") &&
-                block.data.show.toString().endsWith("}}")
-            ) {
-                condition = state.parseVariable(block.data.show?.toString());
-            } else {
-                condition = block.data.show; //direct value is passed if no variable is added
-            }
+            // if a variable is assigned then parsed result is added to condition
+            try {
+                if (
+                    block.data.show.toString().startsWith("{{") &&
+                    block.data.show.toString().endsWith("}}")
+                ) {
+                    condition = state.parseVariable(
+                        block.data.show?.toString(),
+                    );
+                } else {
+                    condition = block.data.show; //direct value is passed if no variable is added
+                }
 
-            const toShowBlock = stringToBoolean(condition.toString())
-                ? true
-                : false;
-            if (toShowBlock) {
-                // render the view if this block can be shown
+                const toShowBlock = stringToBoolean(condition.toString())
+                    ? true
+                    : false;
+                if (toShowBlock) {
+                    // render the view if this block can be shown
+                    return createElement(b.render, {
+                        key: id,
+                        id: id,
+                    });
+                }
+                // render the generic view of a block if hidden
+                return createElement("div", {
+                    key: id,
+                    id: id,
+                    ["data-block"]: id,
+                });
+            } catch (e) {
                 return createElement(b.render, {
                     key: id,
                     id: id,
                 });
             }
-            // render the generic view of a block if hidden
-            return createElement("div", {
-                key: id,
-                id: id,
-                ["data-block"]: id,
-            });
         } else {
             // render the view
             return createElement(b.render, {
