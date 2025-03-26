@@ -141,14 +141,23 @@ const groupAliasMapper = (type: string) => {
         case "cell":
             return "Cell";
         case "cell-prop":
-            return "Cell-prop";
+            return "Cell Properties";
         case "block":
             return "Block";
         case "query-prop":
-            return "Notebook-prop";
+            return "Notebook Properties";
         default:
             return type.charAt(0).toUpperCase() + type.slice(1);
     }
+};
+
+// Priority map for sorting
+const DISPLAY_PRIORITY_MAP: Record<string, number> = {
+    block: 1,
+    query: 2,
+    cell: 3,
+    "query-prop": 4,
+    "cell-prop": 5,
 };
 
 /**
@@ -171,6 +180,10 @@ export const QueryInputSettings = observer(
         const [inputValue, setInputValue] = useState("");
         // track the modal
         const [open, setOpen] = useState(false);
+        // track the expanded accordion group
+        const [expandedQueryInputGroup, setExpandedQueryInputGroup] = useState<
+            string | null
+        >(null);
         // Track the input ref to grab the cursor position
         const inputRef = useRef(null);
         const suggestionRef = useRef(null);
@@ -519,20 +532,17 @@ export const QueryInputSettings = observer(
             const wordArray = inputValue
                 .replace("{{", "")
                 .replace("}}", "")
-                .toLowerCase()
                 .split(" ");
             const filteredOptions = Object.keys(optionMap)
-                .sort((a, b) =>
-                    optionMap[a]["blockType"].localeCompare(
-                        optionMap[b]["blockType"],
-                    ),
+                .sort(
+                    (a, b) =>
+                        (DISPLAY_PRIORITY_MAP[optionMap[a]["blockType"]] ||
+                            Infinity) -
+                        (DISPLAY_PRIORITY_MAP[optionMap[b]["blockType"]] ||
+                            Infinity),
                 )
                 .filter((option) =>
-                    option
-                        .toLowerCase()
-                        .includes(
-                            wordArray[wordArray.length - 1].toLowerCase(),
-                        ),
+                    option.includes(wordArray[wordArray.length - 1]),
                 );
 
             const suggestion = filteredOptions.length ? filteredOptions[0] : "";
@@ -558,12 +568,13 @@ export const QueryInputSettings = observer(
                 .replace("{{", "")
                 .replace("}}", "")
                 .split(" ");
-            const suggestionToDisplay = suggestion
-                ? suggestion.replace(
-                      incompleteWordArray[incompleteWordArray.length - 1],
-                      "",
-                  )
-                : "";
+            const suggestionToDisplay =
+                suggestion && inputValue.length
+                    ? suggestion.replace(
+                          incompleteWordArray[incompleteWordArray.length - 1],
+                          "",
+                      )
+                    : "";
 
             return (
                 <div style={{ position: "relative", overflow: "hidden" }}>
@@ -724,11 +735,15 @@ export const QueryInputSettings = observer(
                                 .toLowerCase()
                                 .split(" ");
                             let res = options
-                                .sort((a, b) => {
-                                    return optionMap[a][
-                                        "blockType"
-                                    ].localeCompare(optionMap[b]["blockType"]);
-                                })
+                                .sort(
+                                    (a, b) =>
+                                        (DISPLAY_PRIORITY_MAP[
+                                            optionMap[a]["blockType"]
+                                        ] || Infinity) -
+                                        (DISPLAY_PRIORITY_MAP[
+                                            optionMap[b]["blockType"]
+                                        ] || Infinity),
+                                )
                                 .filter((option) => {
                                     const lowerCase = option.toLowerCase();
                                     return words.some((word) =>
@@ -774,7 +789,25 @@ export const QueryInputSettings = observer(
                         renderGroup={(params) => {
                             return (
                                 <li key={params.key}>
-                                    <StyledMenuSection>
+                                    <StyledMenuSection
+                                        onChange={() => {
+                                            if (
+                                                params.group ===
+                                                expandedQueryInputGroup
+                                            )
+                                                setExpandedQueryInputGroup(
+                                                    null,
+                                                );
+                                            else
+                                                setExpandedQueryInputGroup(
+                                                    params.group,
+                                                );
+                                        }}
+                                        expanded={
+                                            expandedQueryInputGroup ===
+                                            params.group
+                                        }
+                                    >
                                         <StyledMenuSectionTitle
                                             expandIcon={<ExpandMore />}
                                             aria-controls="panel1a-content"

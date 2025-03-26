@@ -21,23 +21,23 @@ export const BLOCK_TYPES = [
 
 export const DEFAULT_TRUE_VARIABLE = {
     true: {
-        blockType: "query-prop",
+        blockType: "boolean",
         display: "True",
         id: "true",
         path: undefined,
         type: "true",
-        variabilized: false,
+        variabilized: true,
         groupAlias: "Others",
     },
 };
 export const DEFAULT_FALSE_VARIABLE = {
     false: {
-        blockType: "query-prop",
+        blockType: "boolean",
         display: "False",
         id: "false",
         path: undefined,
         type: "false",
-        variabilized: false,
+        variabilized: true,
         groupAlias: "Others",
     },
 };
