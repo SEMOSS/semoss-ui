@@ -3,8 +3,6 @@ import React from 'react';
 import { SwitchAccessShortcutOutlined } from '@mui/icons-material';
 import { styled, CustomPaletteOptions } from '@semoss/ui';
 
-import { Box } from '@mui/material';
-
 const StyledContainer = styled('div')(({ theme }) => {
     return {
         // width: '50px', height: '50px',
@@ -24,7 +22,6 @@ const StyledIcon = styled(SwitchAccessShortcutOutlined)(({ theme }) => {
 });
 
 export const Function = () => {
-    debugger
     return (
         <StyledContainer>
             <StyledIcon fontSize="large" />
