@@ -9,6 +9,9 @@ export const INPUT_BLOCK_TYPES = [
     "toggle-button",
     "radio",
     "slider",
+    "ratings",
+    "switch",
+    "timepicker",
 ];
 
 export const VARIABLE_TYPES = [

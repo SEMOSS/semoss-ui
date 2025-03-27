@@ -38,6 +38,14 @@ import { ScatterPlotChartTitle } from "../scatter-plot/ScatterPlotChartTitle";
 
 import { ColorPickerSettings } from "../../../../block-settings/shared/ColorPickerSettings";
 import { ColorPalatteSettings } from "../../../../block-settings/shared/ColorPalatteSettings";
+import { LineTitle } from "../line-chart/LineTitle";
+import { LineLegend } from "../line-chart/LineLegend";
+import { LineTooltip } from "../line-chart/LineTooltip";
+import { XAxisStyling } from "../line-chart/XAxisStyling";
+import { YAxisStyling } from "../line-chart/YAxisStyling";
+import { LineValueLabels } from "../line-chart/LineValueLabel";
+import { LineStyling } from "../line-chart/LineStyling";
+//upgraded visualization tool propsimport { EditXAxisScatterPlot } from '../scatter-plot/EditXAxisScatterPlot';
 import { ValueLabelStackChart } from "../stack-chart/ValueLabelStackChart";
 import { StackChartBarStyle } from "../stack-chart/StackChartBarStyle";
 import { LegendStackChart } from "../stack-chart/LegendStackChart";
@@ -780,6 +788,221 @@ export const UpgradedVisualizationTool =
                         )}
                         {selectedList === "valueLabel" && (
                             <PieValueLabel id={id} path={"option"} />
+                        )}
+                    </StyledListItem>
+                    <StyledListItem disablePadding>
+                        {data.variation === "echart-line-graph" && (
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === "lineTitle"
+                                            ? ""
+                                            : "lineTitle",
+                                    )
+                                }
+                                selected={selectedList === "lineTitle"}
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList === "lineTitle"
+                                                ? "primary"
+                                                : "disabled"
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary="Chart Title" />
+                                <InfoOutlined />
+                            </ListItemButton>
+                        )}
+                        {selectedList === "lineTitle" && (
+                            <LineTitle id={id} path="option" />
+                        )}
+                    </StyledListItem>
+                    <StyledListItem disablePadding>
+                        {data.variation === "echart-line-graph" && (
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === "lineLegend"
+                                            ? ""
+                                            : "lineLegend",
+                                    )
+                                }
+                                selected={selectedList === "lineLegend"}
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList === "lineLegend"
+                                                ? "primary"
+                                                : "disabled"
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary="Line Legend" />
+                                <InfoOutlined />
+                            </ListItemButton>
+                        )}
+                        {selectedList === "lineLegend" && (
+                            <LineLegend id={id} path="option" />
+                        )}
+                    </StyledListItem>
+                    <StyledListItem disablePadding>
+                        {data.variation === "echart-line-graph" && (
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === "lineTooltip"
+                                            ? ""
+                                            : "lineTooltip",
+                                    )
+                                }
+                                selected={selectedList === "lineTooltip"}
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList === "lineTooltip"
+                                                ? "primary"
+                                                : "disabled"
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary="Line Tooltip" />
+                                <InfoOutlined />
+                            </ListItemButton>
+                        )}
+                        {selectedList === "lineTooltip" && (
+                            <LineTooltip id={id} path="option" />
+                        )}
+                    </StyledListItem>
+                    <StyledListItem disablePadding>
+                        {data.variation === "echart-line-graph" && (
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === "lineValueLabel"
+                                            ? ""
+                                            : "lineValueLabel",
+                                    )
+                                }
+                                selected={selectedList === "lineValueLabel"}
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList === "lineValueLabel"
+                                                ? "primary"
+                                                : "disabled"
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary="Value Labels" />
+                                <InfoOutlined />
+                            </ListItemButton>
+                        )}
+                        {selectedList === "lineValueLabel" && (
+                            <LineValueLabels
+                                id={id}
+                                option={data.option}
+                                chartType={BAR_CHART_DATA.JSONVALUE[0]}
+                                path="option"
+                            />
+                        )}
+                    </StyledListItem>
+                    <StyledListItem disablePadding>
+                        {data.variation === "echart-line-graph" && (
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === "lineXAixsStyling"
+                                            ? ""
+                                            : "lineXAixsStyling",
+                                    )
+                                }
+                                selected={selectedList === "lineXAixsStyling"}
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList === "lineXAixsStyling"
+                                                ? "primary"
+                                                : "disabled"
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary="X Axis Styling" />
+                                <InfoOutlined />
+                            </ListItemButton>
+                        )}
+                        {selectedList === "lineXAixsStyling" && (
+                            <XAxisStyling id={id} path="option" />
+                        )}
+                    </StyledListItem>
+                    <StyledListItem disablePadding>
+                        {data.variation === "echart-line-graph" && (
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === "lineYAixsStyling"
+                                            ? ""
+                                            : "lineYAixsStyling",
+                                    )
+                                }
+                                selected={selectedList === "lineYAixsStyling"}
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList === "lineYAixsStyling"
+                                                ? "primary"
+                                                : "disabled"
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary="Y Axis Styling" />
+                                <InfoOutlined />
+                            </ListItemButton>
+                        )}
+                        {selectedList === "lineYAixsStyling" && (
+                            <YAxisStyling id={id} path="option" />
+                        )}
+                    </StyledListItem>
+                    <StyledListItem disablePadding>
+                        {data.variation === "echart-line-graph" && (
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === "lineStyling"
+                                            ? ""
+                                            : "lineStyling",
+                                    )
+                                }
+                                selected={selectedList === "lineStyling"}
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList === "lineStyling"
+                                                ? "primary"
+                                                : "disabled"
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary="Line Styling" />
+                                <InfoOutlined />
+                            </ListItemButton>
+                        )}
+                        {selectedList === "lineStyling" && (
+                            <LineStyling id={id} path="option" />
                         )}
                     </StyledListItem>
                 </List>
