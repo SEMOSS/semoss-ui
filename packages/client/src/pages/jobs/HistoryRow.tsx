@@ -51,7 +51,7 @@ export const HistoryRow = (props: {
                         label={row.success ? 'Success' : 'Failed'}
                         avatar={null}
                         variant="filled"
-                        color={row.success ? 'green' : 'error'}
+                        color={row.success ? 'success' : 'error'}
                     />
                 </Table.Cell>
             </Table.Row>
