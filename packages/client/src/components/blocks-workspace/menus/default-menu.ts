@@ -1515,7 +1515,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h1)',
         helperText: 'Display Text in header 1',
         activeImage: BLOCK_IMAGES['H1_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H1_HOVER'],
@@ -1536,7 +1536,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h2)',
         helperText: 'Display Text in header 2',
         activeImage: BLOCK_IMAGES['H2_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H2_HOVER'],
@@ -1557,7 +1557,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h3)',
         helperText: 'Display Text in header 3',
         activeImage: BLOCK_IMAGES['H3_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H3_HOVER'],
@@ -1578,7 +1578,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h4)',
         helperText: 'Display Text in header 4',
         activeImage: BLOCK_IMAGES['H4_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H4_HOVER'],
@@ -1599,7 +1599,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h5)',
         helperText: 'Display Text in header 5',
         activeImage: BLOCK_IMAGES['H5_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H5_HOVER'],
@@ -1620,7 +1620,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h6)',
         helperText: 'Display Text in header 6',
         activeImage: BLOCK_IMAGES['H6_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H6_HOVER'],
