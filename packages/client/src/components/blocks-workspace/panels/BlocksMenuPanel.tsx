@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Badge } from '@mui/material';
 import { Search, Tune } from '@mui/icons-material';
 
 import {
     styled,
+    Badge,
     Grid,
     Stack,
     TextField,
@@ -15,9 +15,9 @@ import {
     IconButton,
 } from '@semoss/ui';
 
-import { AddBlocksMenuCard } from '@/components/designer';
 import { Panel } from '@/components/workspace';
 import { SECTION_ORDER } from '../menus/default-menu';
+import { AddBlocksMenuCard } from '@/components/designer';
 import { BlocksMenuPanelFilterMenu } from './BlocksMenuPanelFilterMenu';
 import {
     BlockLocalStorageData,
