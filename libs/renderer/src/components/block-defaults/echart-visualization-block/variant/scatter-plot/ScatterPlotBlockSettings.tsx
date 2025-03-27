@@ -76,7 +76,7 @@ export const ScatterPlotBlockSettings = observer(
         }, [computedValue]);
         useEffect(() => {
             const json = JSON.parse(computedValue);
-            let state = json["_state"];
+            const state = json["_state"];
             if (state && state.hasOwnProperty("fields")) {
                 reinitializeStates(state["fields"]);
             }
@@ -123,7 +123,7 @@ export const ScatterPlotBlockSettings = observer(
          */
         const handleChangeLabel = (label) => {
             // Parse the current value from JSON
-            let tempValue = JSON.parse(value);
+            const tempValue = JSON.parse(value);
 
             // Find the field associated with the selected label alias
             const filteredArray = frameHeaders.data.list.find(
@@ -165,7 +165,7 @@ export const ScatterPlotBlockSettings = observer(
          */
         const handleChangeXAxis = (xaxis) => {
             // Parse the current value from JSON
-            let tempValue = JSON.parse(value);
+            const tempValue = JSON.parse(value);
 
             // Find the field associated with the selected X Axis alias
             const filteredArray = frameHeaders.data.list.find(
@@ -210,7 +210,7 @@ export const ScatterPlotBlockSettings = observer(
             setYAxisValue(yaxis);
 
             // Parse the current value from JSON
-            let tempValue = JSON.parse(value);
+            const tempValue = JSON.parse(value);
 
             // Find the field associated with the selected Y Axis alias
             const filteredArray = frameHeaders.data.list.find(
@@ -249,7 +249,7 @@ export const ScatterPlotBlockSettings = observer(
          */
         const handleChangeColor = (colors) => {
             // Parse the current value from JSON
-            let tempValue = JSON.parse(value);
+            const tempValue = JSON.parse(value);
 
             // Find the field associated with the selected color alias
             const filteredArray = frameHeaders.data.list.find(
@@ -286,7 +286,7 @@ export const ScatterPlotBlockSettings = observer(
          */
         const handleChangeSize = (size) => {
             // Parse the current value from JSON
-            let tempValue = JSON.parse(value);
+            const tempValue = JSON.parse(value);
 
             // Find the field associated with the selected size alias
             const filteredArray = frameHeaders.data.list.find(
@@ -324,7 +324,7 @@ export const ScatterPlotBlockSettings = observer(
          */
         const handleChangeTooltip = (tooltips) => {
             // Parse the current value from JSON
-            let tempValue = JSON.parse(value);
+            const tempValue = JSON.parse(value);
 
             // Find the field associated with the selected tooltip alias
             const filteredArray = frameHeaders.data.list.find(
@@ -363,7 +363,7 @@ export const ScatterPlotBlockSettings = observer(
          */
         const handleRemoveOption = (segment: string) => {
             // Parse the current value from JSON
-            let tempValue = JSON.parse(value);
+            const tempValue = JSON.parse(value);
 
             // Switch on the segment to remove the correct field from the option object
             switch (segment) {

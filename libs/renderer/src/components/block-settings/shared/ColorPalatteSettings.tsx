@@ -444,7 +444,7 @@ export const ColorPalatteSettings = observer(
             setOptionValue(optionComputedValue);
         }, [optionComputedValue]);
         useEffect(() => {
-            let option =
+            const option =
                 typeof optionComputedValue === "string"
                     ? JSON.parse(optionComputedValue)
                     : optionComputedValue;
@@ -452,10 +452,10 @@ export const ColorPalatteSettings = observer(
                 option.hasOwnProperty("customSettings") &&
                 option["customSettings"].hasOwnProperty("customColorPalette")
             ) {
-                let paletteColors = colorPalette.filter(
+                const paletteColors = colorPalette.filter(
                     (item) => item.isCustom === false,
                 );
-                let colorPaletteData = [
+                const colorPaletteData = [
                     ...paletteColors,
                     ...option["customSettings"]["customColorPalette"],
                 ];
@@ -485,7 +485,7 @@ export const ColorPalatteSettings = observer(
          */
         function handleDelete() {
             // Parse the value if it's a string
-            let option =
+            const option =
                 typeof optionValue === "string"
                     ? JSON.parse(optionValue)
                     : optionValue;
@@ -787,7 +787,7 @@ export const ColorPalatteSettings = observer(
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = null;
             }
-            let options = JSON.parse(option);
+            const options = JSON.parse(option);
             options.color = colors;
 
             // Set a new timeout to update state with a delay

@@ -101,15 +101,15 @@ export const VisualizationBlock: BlockComponent = observer(
          * @description get the updated data style when data.style is changed
          */
         const updatedDataStyle = useMemo(() => {
-            let isEm =
+            const isEm =
                 data.style.height.toString().endsWith("em") &&
                 data.style.width.toString().endsWith("em");
-            let isPx =
+            const isPx =
                 data.style.height.toString().endsWith("px") &&
                 data.style.width.toString().endsWith("px");
             if (isEm || isPx) return { ...data.style }; //if values mentioned in em or px, then return same style
-            let calculatedHeight = data.style.height;
-            let calculatedWidth = data.style.width;
+            const calculatedHeight = data.style.height;
+            const calculatedWidth = data.style.width;
             //return updated style
             return {
                 ...data.style,

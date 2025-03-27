@@ -8,8 +8,14 @@ npx nx lint @semoss/client || {
 }
 
 # Linting @semoss/ui
-# npx nx lint @semoss/ui || {
-#   echo "ERROR: Linting issues were found in the packages/ui. Please address them before proceeding."
+npx nx lint @semoss/ui || {
+  echo "ERROR: Linting issues were found in the libs/ui. Please address them before proceeding."
+  exit 1
+}
+
+# Linting @semoss/renderer
+# npx nx lint @semoss/renderer || {
+#   echo "ERROR: Linting issues were found in the libs/renderer. Please address them before proceeding."
 #   exit 1
 # }
 

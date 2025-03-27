@@ -90,8 +90,8 @@ export const EditXAxis = observer(
         }, [computedValue]);
         //updating the initial local state, based on the existing state store
         useEffect(() => {
-            let axis = "xAxis";
-            let xAxisStateData = {
+            const axis = "xAxis";
+            const xAxisStateData = {
                 showAxis: true,
                 xaxistitle: "",
                 xaxisTitleFontSize: 18,
@@ -162,7 +162,7 @@ export const EditXAxis = observer(
         }
         // updating the chart data, when x axis fields are getting updated
         function updateChartData() {
-            let axisData = {
+            const axisData = {
                 showAxis: xaxisState.showAxis,
                 xaxistitle: xaxisState.xaxistitle,
                 xaxisTitleFontSize: xaxisState.xaxisTitleFontSize,
@@ -244,7 +244,7 @@ export const EditXAxis = observer(
                 }
                 if (axisData.hasOwnProperty("showxAxisZoom")) {
                     if (option["dataZoom"]) {
-                        let xAxisPosition = option["dataZoom"].findIndex(
+                        const xAxisPosition = option["dataZoom"].findIndex(
                             (opt) => opt.hasOwnProperty("xAxisIndex"),
                         );
                         if (xAxisPosition > -1) {

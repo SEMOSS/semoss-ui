@@ -35,15 +35,15 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
     function getVisualizationBlockSelector(id: string) {
         if (id) {
             //get the options JSON of the selected block
-            let blockJSON = data.option;
+            const blockJSON = data.option;
             //initialize the selector string
             let selector = "Select(";
             //if there are no fields, return null
             if (!blockJSON["_state"]) return null;
             //get the fields
-            let selectorFields = blockJSON["_state"]["fields"];
+            const selectorFields = blockJSON["_state"]["fields"];
             //  get the value and tooltip properties
-            let dynamicYAndTooltipSet = Array.from(
+            const dynamicYAndTooltipSet = Array.from(
                 new Set([
                     ...selectorFields["yAxis"],
                     ...selectorFields["tooltip"],
@@ -98,7 +98,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
     const formatDataPoints = useCallback(
         (resultData: unknown) => {
             if (frame.data.values.length > 0) {
-                let valuesDataSet = JSON.parse(
+                const valuesDataSet = JSON.parse(
                     JSON.stringify(frame.data.values),
                 );
                 let headersDataSet: string[] = JSON.parse(
@@ -124,7 +124,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
                 resultData["series"].slice(0, yAxisListLength);
                 valuesDataSet.map((x) => x.splice(0, yAxisListLength));
                 headersDataSet.splice(0, yAxisListLength);
-                let customTooltipData = [];
+                const customTooltipData = [];
                 data.option["_state"]?.["fields"]["tooltip"].map((x, index) => {
                     customTooltipData.push({
                         name: x,
@@ -132,7 +132,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
                     });
                 });
                 if (!resultData["tooltip"].hasOwnProperty("formatter")) {
-                    let customTooltipData = [];
+                    const customTooltipData = [];
                     data.option["_state"]?.["fields"]["tooltip"].map(
                         (x, index) => {
                             customTooltipData.push({
@@ -144,8 +144,8 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
                     resultData["tooltip"] = {
                         ...resultData["tooltip"],
                         formatter: ((customTooltipData) => (params) => {
-                            let formatterStringArr = ["<div>"];
-                            let dataIndex = params[0]?.dataIndex;
+                            const formatterStringArr = ["<div>"];
+                            const dataIndex = params[0]?.dataIndex;
                             formatterStringArr.push(
                                 `<strong>${params[0].name}</strong><br>`,
                             );
@@ -188,9 +188,9 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
     }, 2000);
     const echartsLoaded = debounce((chart) => {
         chart.on("brushSelected", (params) => {
-            let selectedData = params.batch[0].selected[0].dataIndex;
+            const selectedData = params.batch[0].selected[0].dataIndex;
             const currentOption = chart.getOption();
-            let labelData = currentOption.series[0].data;
+            const labelData = currentOption.series[0].data;
             const filteredLabels = selectedData.map(
                 (index) => labelData[index].label.formatter,
             );
@@ -208,7 +208,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
     const onClickChart = {
         contextmenu: (params) => {
             if (params.data) {
-                let labelName = params.seriesName;
+                const labelName = params.seriesName;
                 setContextMenu(
                     contextMenu === null
                         ? {
