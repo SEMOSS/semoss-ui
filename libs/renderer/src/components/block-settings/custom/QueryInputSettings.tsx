@@ -147,7 +147,7 @@ const groupAliasMapper = (type: string) => {
         case "query-prop":
             return "Notebook Properties";
         default:
-            return type.charAt(0).toUpperCase() + type.slice(1);
+            return "Others";
     }
 };
 
@@ -529,21 +529,26 @@ export const QueryInputSettings = observer(
          * @returns {ReactElement} The rendered input field.
          */
         const renderInputField = (params) => {
-            const wordArray = inputValue
-                .replace("{{", "")
-                .replace("}}", "")
-                .split(" ");
-            const filteredOptions = Object.keys(optionMap)
-                .sort(
-                    (a, b) =>
-                        (DISPLAY_PRIORITY_MAP[optionMap[a]["blockType"]] ||
-                            Infinity) -
-                        (DISPLAY_PRIORITY_MAP[optionMap[b]["blockType"]] ||
-                            Infinity),
-                )
-                .filter((option) =>
-                    option.includes(wordArray[wordArray.length - 1]),
-                );
+            const wordArray = inputValue.split(" ");
+            const filteredOptions = !inputValue
+                ? []
+                : Object.keys(optionMap)
+                      .sort(
+                          (a, b) =>
+                              (DISPLAY_PRIORITY_MAP[
+                                  optionMap[a]["blockType"]
+                              ] || Infinity) -
+                              (DISPLAY_PRIORITY_MAP[
+                                  optionMap[b]["blockType"]
+                              ] || Infinity),
+                      )
+                      .filter((option) =>
+                          option.includes(
+                              wordArray[wordArray.length - 1]
+                                  .replace("{{", "")
+                                  .replace("}}", ""),
+                          ),
+                      );
 
             const suggestion = filteredOptions.length ? filteredOptions[0] : "";
 
@@ -565,9 +570,8 @@ export const QueryInputSettings = observer(
             );
 
             const incompleteWordArray = textBeforeCursor
-                .replace("{{", "")
-                .replace("}}", "")
-                .split(" ");
+                .split(" ")
+                .map((word) => word.replace("{{", "").replace("}}", ""));
             const suggestionToDisplay =
                 suggestion && inputValue.length
                     ? suggestion.replace(
@@ -604,17 +608,9 @@ export const QueryInputSettings = observer(
                         onKeyDown={(e) => {
                             if (e.key === "Tab" && suggestionToDisplay) {
                                 e.preventDefault();
-                                const completeValue =
-                                    textBeforeCursor.replace(
-                                        incompleteWordArray[
-                                            incompleteWordArray.length - 1
-                                        ],
-                                        "",
-                                    ) +
-                                    "{{" +
-                                    suggestion +
-                                    "}}" +
-                                    textAfterCursor;
+                                const textArr = textBeforeCursor.split(" ");
+                                textArr.splice(-1, 1, `{{${suggestion}}}`);
+                                const completeValue = textArr.join(" ");
                                 onChange(completeValue);
                                 setInputValue(completeValue);
                             }
@@ -769,17 +765,24 @@ export const QueryInputSettings = observer(
                                             {option.display}
                                         </Typography>
                                         {/* TODO: Icon should actually reflect value data type */}
-                                        {!option.variabilized && (
-                                            <IconButton
-                                                size="small"
-                                                title="Add as variable"
-                                            >
-                                                <AddVariable />
-                                            </IconButton>
-                                        )}
-                                        {/* <Stack direction="row" alignItems={"center"}>
-                                            <Icon>{getIcon(option.blockType)}</Icon>
-                                        </Stack> */}
+                                        <Stack
+                                            direction="row"
+                                            alignItems={"center"}
+                                        >
+                                            {!option.variabilized && (
+                                                <IconButton
+                                                    size="small"
+                                                    title="Add as variable"
+                                                >
+                                                    <AddVariable />
+                                                </IconButton>
+                                            )}
+                                            {option.groupAlias === "Others" && (
+                                                <Icon>
+                                                    {getIcon(option.blockType)}
+                                                </Icon>
+                                            )}
+                                        </Stack>
                                     </Stack>
                                 </li>
                             );
