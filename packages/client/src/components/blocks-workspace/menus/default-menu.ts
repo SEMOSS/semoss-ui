@@ -879,7 +879,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_INPUT,
-        image: '',
+        activeImage: BLOCK_IMAGES['CHIP_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['CHIP_HOVER'],
         name: 'Chip',
         json: {
             widget: 'chip',
