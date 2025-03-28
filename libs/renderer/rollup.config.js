@@ -1,6 +1,6 @@
 import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
-import typescript from "@rollup/plugin-typescript";
+import esbuild from "rollup-plugin-esbuild";
 import image from "@rollup/plugin-image";
 import url from "@rollup/plugin-url";
 
@@ -33,9 +33,10 @@ export default defineConfig({
     ],
     plugins: [
         del({ targets: "dist" }),
-        typescript({
+        esbuild({
+            target: "esnext",
             tsconfig: "./tsconfig.json",
-            outputToFilesystem: true,
+            minify: true,
         }),
         json(),
         resolve(),
