@@ -59,7 +59,7 @@ export const ToggleTrendline = observer(
         //handles initial setting of toggle trendlines data
         useEffect(() => {
             if (BAR_CHART_DATA.JSONVALUE.includes(chartType)) {
-                let seriesIndex = options["series"].findIndex(
+                const seriesIndex = options["series"].findIndex(
                     (op) =>
                         LINE_CHART_DATA.JSONVALUE.includes(op.type) &&
                         op.hasOwnProperty("toggleTrendLineObject"),
@@ -99,9 +99,9 @@ export const ToggleTrendline = observer(
         }
         //getting the indexes for drawing lines over bar chart
         function getFilteredSeriesIndex(): number[] {
-            let index: number[] = [];
-            let seriesAvailable: any[] = data.option["series"].filter((item) =>
-                BAR_CHART_DATA.JSONVALUE.includes(item.type),
+            const index: number[] = [];
+            const seriesAvailable: any[] = data.option["series"].filter(
+                (item) => BAR_CHART_DATA.JSONVALUE.includes(item.type),
             );
             seriesAvailable.forEach((item, seriesIndex) => {
                 index.push(seriesIndex);
@@ -149,7 +149,7 @@ export const ToggleTrendline = observer(
                     }
 
                     if (displayPositionIndex > -1 && lineAlreadyExists == -1) {
-                        let toggleLineData = {
+                        const toggleLineData = {
                             ...trendLinesData,
                             data:
                                 option["series"][displayPositionIndex][
@@ -175,7 +175,7 @@ export const ToggleTrendline = observer(
                 };
                 runStateUpdate(option);
             } else {
-                let displayPositionData = option["series"].filter(
+                const displayPositionData = option["series"].filter(
                     (item) =>
                         item.type === "line" &&
                         item.hasOwnProperty("toggleTrendLineObject"),
@@ -187,13 +187,13 @@ export const ToggleTrendline = observer(
         //setting value of line chart to null when no trendline option is selected
         function runDisplayPositionData(displayPositionData) {
             let option = typeof value === "string" ? JSON.parse(value) : value;
-            let seriesOption = option["series"];
+            const seriesOption = option["series"];
             seriesOption.forEach((seriesItem, seriesIndex) => {
                 if (
                     seriesItem.type === "line" &&
                     seriesItem.hasOwnProperty("toggleTrendLineObject")
                 ) {
-                    let lineData = [];
+                    const lineData = [];
                     seriesItem["data"].forEach((seriesData) => {
                         lineData.push(null);
                     });
@@ -213,9 +213,9 @@ export const ToggleTrendline = observer(
         //removing the line object when the series is updated line type and toggleTrendlineObject
         function removeLineObject() {
             setTimeout(() => {
-                let option =
+                const option =
                     typeof value === "string" ? JSON.parse(value) : value;
-                let displayPositionData = option["series"].filter(
+                const displayPositionData = option["series"].filter(
                     (item) =>
                         !(
                             item.type === "line" &&

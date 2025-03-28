@@ -124,7 +124,7 @@ export const PieValueLabel = observer(
         };
         //Handle the change event for any Value Label input
         function handleInputChange(title, inputValue) {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             if (title === "showValueLabel") {
                 option["series"][0]["label"].show = inputValue;
                 setShowValueLabel(inputValue);
@@ -164,7 +164,7 @@ export const PieValueLabel = observer(
         //Retain the local state of the feature on reset button
         //The default values are set in the reset object in the option
         function handleReset() {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             option["series"][0]["label"].show =
                 option["reset"]["label"]["show"];
             option["series"][0]["label"]["position"] =

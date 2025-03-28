@@ -1,8 +1,7 @@
 import { useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Autocomplete } from '@mui/material';
 
-import { styled, TextField, Divider } from '@semoss/ui';
+import { styled, AutocompleteTwo, TextField, Divider } from '@semoss/ui';
 import { ActionMessages, useBlocks } from '@semoss/renderer';
 
 import { useDesigner } from '@/hooks';
@@ -118,7 +117,7 @@ export const TextSettingsMask = observer(() => {
 
     return (
         <StyledInputContainer>
-            <Autocomplete
+            <AutocompleteTwo
                 disablePortal
                 size="small"
                 options={FontStyleOptions.map((option) => option.value)}

@@ -105,12 +105,12 @@ export const UpgradedVisualizationTool =
                             path="option.color"
                             onColorPalatteSelected={(option, color) => {
                                 if (data.variation === "echart-bar-graph") {
-                                    let optionToSend =
+                                    const optionToSend =
                                         typeof option === "string"
                                             ? JSON.parse(option)
                                             : option;
-                                    let colorParent = "itemStyle";
-                                    let updatedOption = updateSeriesColor(
+                                    const colorParent = "itemStyle";
+                                    const updatedOption = updateSeriesColor(
                                         optionToSend,
                                         color,
                                         colorParent,
