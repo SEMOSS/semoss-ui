@@ -26,8 +26,10 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
     const textContent =
         typeof data.text == "string" ? data.text : JSON.stringify(data.text);
     let displayTxt = useTypeWriter(data.isStreaming ? textContent : "");
+
     if (!data.isStreaming) displayTxt = textContent;
-    console.log(data, "textblock");
+
+    // TODO: Why?
     return showBlock(block, state)
         ? React.createElement(
               data.variant ? data.variant : "p",

@@ -87,7 +87,7 @@ export const TooltipScatterPlot = observer(
          * @param e The switch change event.
          */
         const showTooltip = (e) => {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             setShowTooltip(!showTooltips);
             option["tooltip"]["show"] = e.target.checked;
             setData(path, option as PathValue<D["data"], typeof path>);

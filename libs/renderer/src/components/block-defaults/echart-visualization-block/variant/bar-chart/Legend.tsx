@@ -53,7 +53,8 @@ export const Legend = observer(
         }, [computedValue]);
         //retain the legend value from the current state
         useEffect(() => {
-            let option = typeof value === "string" ? JSON.parse(value) : value;
+            const option =
+                typeof value === "string" ? JSON.parse(value) : value;
             let legendShown = isLegendShown;
             if (option.hasOwnProperty("legend") && option["legend"]) {
                 legendShown = option["legend"].hasOwnProperty("show")

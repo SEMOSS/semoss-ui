@@ -1,8 +1,13 @@
 {
+    // TODO: Will need to add rules, one by one until we get errors all fixed up.
+    // It will always fail precommit hook if we have all these rules commented in
     "extends": [
+        // "eslint:recommended",
+        // "plugin:react/recommended",
+        // "plugin:react/jsx-runtime",
         // "plugin:@nx/react",
-        "plugin:react/recommended",
-        "plugin:react-hooks/recommended",
+        // "plugin:react/recommended",
+        // "plugin:react-hooks/recommended",
         "plugin:@typescript-eslint/recommended",
         "prettier",
         "plugin:prettier/recommended"
@@ -46,11 +51,19 @@
     },
 
     "rules": {
+        // TODO: Fix all errors when this gets commented in
+        // "@typescript-eslint/no-explicit-any": "error"
+        "no-debugger": 2,
         "react/prop-types": "off",
         "react/jsx-uses-react": "off",
         "react/react-in-jsx-scope": "off",
-        "prettier/prettier": ["error", { "endOfLine": "auto" }]
-        // TODO: Fix across component library
-        // "@typescript-eslint/no-explicit-any": "error"
+        "prettier/prettier": ["error", { "endOfLine": "auto" }],
+        "no-restricted-imports": [
+            "error",
+            {
+                "name": "@mui/material",
+                "message": "Please reference mui components directly from @semoss/ui"
+            }
+        ]
     }
 }

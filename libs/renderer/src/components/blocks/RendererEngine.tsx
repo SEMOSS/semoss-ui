@@ -47,6 +47,7 @@ export function showBlock(block, state): boolean {
                     if (condition.toString() === undefined) {
                         trimmedBlockDataObject[item] = false;
                     }
+                    console.log('Condition', condition.toString())
                     switch (condition.toString().toLowerCase()) {
                         case "true":
                         case "1":
@@ -97,11 +98,13 @@ export const RendererEngine = observer(
 
         // get the widget
         const b = registry[block.widget];
+
         if (!b) {
             throw Error(
                 `Widget ${block.widget} for block ${id} is not registered`,
             );
         }
+
         if (showBlock(block, state)) {
             return createElement(b.render, {
                 key: id,

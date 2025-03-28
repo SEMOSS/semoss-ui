@@ -93,7 +93,7 @@ export const ScatterPlotChartTitle = observer(
             // Update the chartTitle state
             setChartTitle(e.target.value);
             // Create a copy of the chart options
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the 'text' property of the title object in the chart options
             option["title"]["text"] = e.target.value;
             // Save the updated chart options to the state

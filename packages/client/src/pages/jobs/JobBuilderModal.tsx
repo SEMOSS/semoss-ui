@@ -1,6 +1,8 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Close } from '@mui/icons-material';
-import { Autocomplete } from '@mui/material';
+
 import {
+    AutocompleteTwo,
     Button,
     IconButton,
     Modal,
@@ -10,14 +12,14 @@ import {
     ToggleButtonGroup,
     useNotification,
 } from '@semoss/ui';
-import { useEffect, useMemo, useState } from 'react';
+
+import { runPixel } from '@/api';
+import { JobBuilder } from './job.types';
+import { getEncodeByJobType } from './job.utils';
+import { JobTypesBuilder } from './JobTypesBuilder';
 import { JobTypeCustomJob, JobTypeSendEmail, timezones } from './job.constants';
 import { JobStandardFrequencyBuilder } from './JobStandardFrequencyBuilder';
 import { JobCustomFrequencyBuilder } from './JobCustomFrequencyBuilder';
-import { JobBuilder } from './job.types';
-import { runPixel } from '@/api';
-import { JobTypesBuilder } from './JobTypesBuilder';
-import { getEncodeByJobType } from './job.utils';
 
 const emptyBuilder: JobBuilder = {
     id: null,
@@ -347,7 +349,7 @@ export const JobBuilderModal = (props: {
                             Custom
                         </ToggleButton>
                     </ToggleButtonGroup>
-                    <Autocomplete
+                    <AutocompleteTwo
                         value={builder.cronTz}
                         options={timezones}
                         onChange={(_, value) =>
