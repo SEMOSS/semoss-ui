@@ -37,7 +37,7 @@ export interface ButtonBlockDef extends BlockDef<"button"> {
         disabled?: boolean;
         variant: "contained" | "outlined" | "text";
         color: "primary" | "secondary" | "success" | "warning" | "error";
-        show: boolean;
+        show: string;
     };
     listeners: {
         onClick: true;

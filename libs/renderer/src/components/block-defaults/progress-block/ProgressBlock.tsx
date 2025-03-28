@@ -50,7 +50,7 @@ export interface ProgressBlockDef extends BlockDef<"progress"> {
         value: number;
         includeLabel: boolean;
         size: string;
-        show: boolean;
+        show: string;
     };
     slots: never;
 }

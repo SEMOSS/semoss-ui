@@ -166,7 +166,7 @@ export const config: BlockConfig<RadioBlockDef> = {
         labelPlacement: "end",
         required: false,
         disabled: false,
-        show: true,
+        show: "true",
     },
     listeners: {
         onChange: [],

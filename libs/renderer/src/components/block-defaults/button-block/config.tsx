@@ -30,7 +30,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
         disabled: false,
         variant: "contained",
         color: "primary",
-        show: true,
+        show: "true",
     },
     listeners: {
         onClick: [],

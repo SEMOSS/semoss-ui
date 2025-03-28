@@ -20,7 +20,7 @@ export const config: BlockConfig<ProgressBlockDef> = {
         value: 50,
         includeLabel: true,
         size: "300px",
-        show: true,
+        show: "true",
     },
     listeners: {},
     slots: {},

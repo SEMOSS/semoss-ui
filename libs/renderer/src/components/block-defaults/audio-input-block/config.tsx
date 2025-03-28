@@ -29,7 +29,7 @@ export const config: BlockConfig<AudioInputBlockDef> = {
         color: "primary",
         value: "",
         mode: "transcribe",
-        show: true,
+        show: "true",
     },
     listeners: {
         onClick: [],

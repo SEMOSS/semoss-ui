@@ -20,7 +20,7 @@ export const config: BlockConfig<IframeBlockDef> = {
         src: "",
         title: "",
         enableFrameInteractions: true,
-        show: true,
+        show: "true",
     },
     listeners: {},
     slots: {},

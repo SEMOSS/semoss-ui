@@ -20,7 +20,7 @@ export const config: BlockConfig<AccordionBlockDef> = {
         triggerBgColor: "",
         contentBgColor: "",
         showExpandIcon: true,
-        show: true,
+        show: "true",
     },
     listeners: {},
     slots: {

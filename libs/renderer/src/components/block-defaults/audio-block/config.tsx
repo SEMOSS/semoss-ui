@@ -19,7 +19,7 @@ export const config: BlockConfig<AudioBlockDef> = {
         controls: true,
         loop: false,
         source: "",
-        show: true,
+        show: "true",
     },
     listeners: {
         onClick: [],

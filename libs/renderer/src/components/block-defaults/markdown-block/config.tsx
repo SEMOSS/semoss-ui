@@ -25,7 +25,7 @@ export const config: BlockConfig<MarkdownBlockDef> = {
         },
         markdown: "**Hello world**",
         isStreaming: false,
-        show: true,
+        show: "true",
     },
     listeners: {},
     slots: {},

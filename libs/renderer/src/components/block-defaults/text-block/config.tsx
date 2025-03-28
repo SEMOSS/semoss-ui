@@ -25,7 +25,7 @@ export const config: BlockConfig<TextBlockDef> = {
         style: DefaultStyles,
         text: "Hello world",
         isStreaming: false,
-        show: true,
+        show: "true",
     },
     listeners: {},
     slots: {},

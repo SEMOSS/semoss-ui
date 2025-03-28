@@ -10,7 +10,7 @@ export interface LogsBlockDef extends BlockDef<"logs"> {
     data: {
         style: CSSProperties;
         queryId: string;
-        show: boolean;
+        show: string;
     };
 }
 

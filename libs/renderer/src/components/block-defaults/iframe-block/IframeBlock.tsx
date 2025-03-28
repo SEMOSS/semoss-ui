@@ -11,7 +11,7 @@ export interface IframeBlockDef extends BlockDef<"iframe"> {
         src: string;
         title: string;
         enableFrameInteractions: boolean;
-        show: boolean;
+        show: string;
     };
     slots: never;
 }

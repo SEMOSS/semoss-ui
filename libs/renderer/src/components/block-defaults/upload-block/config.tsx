@@ -55,7 +55,7 @@ export const config: BlockConfig<UploadBlockDef> = {
         disabled: false,
         required: false,
         multiple: false,
-        show: true,
+        show: "true",
     },
     listeners: {
         onChange: [],

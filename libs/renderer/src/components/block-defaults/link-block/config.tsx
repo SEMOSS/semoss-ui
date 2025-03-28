@@ -23,7 +23,7 @@ export const config: BlockConfig<LinkBlockDef> = {
         },
         href: "",
         text: "Insert text",
-        show: true,
+        show: "true",
     },
     listeners: {},
     slots: {},

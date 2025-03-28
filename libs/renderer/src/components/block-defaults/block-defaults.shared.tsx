@@ -540,17 +540,15 @@ export const buildShowField = <D extends BlockDef = BlockDef>() => [
     {
         description: "Show Block",
         render: ({ id }) => (
-            <>
-                <QueryInputSettings
-                    id={id}
-                    label="Show Block"
-                    path="show"
-                    defaultPathMap={{
-                        ...trueSegment,
-                        ...falseSegment,
-                    }}
-                />
-            </>
+            <QueryInputSettings
+                id={id}
+                label="Show Block"
+                path="show"
+                defaultPathMap={{
+                    ...trueSegment,
+                    ...falseSegment,
+                }}
+            />
         ),
     },
 ];

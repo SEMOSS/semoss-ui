@@ -30,7 +30,7 @@ export const config: BlockConfig<IconBlockDef> = {
 
         src: "",
         title: "",
-        show: true,
+        show: "true",
     },
     listeners: {},
     slots: {},

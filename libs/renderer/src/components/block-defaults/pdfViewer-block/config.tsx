@@ -14,7 +14,7 @@ export const config: BlockConfig<PDFViewerBlockDef> = {
             padding: "8px",
         },
         selectedPdf: null,
-        show: true,
+        show: "true",
     },
     render: PDFViewerBlock,
     icon: PictureAsPdf,

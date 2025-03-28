@@ -32,7 +32,7 @@ export interface RadioBlockDef extends BlockDef<"radio"> {
         labelPlacement: "start" | "end" | "top" | "bottom";
         required: boolean;
         disabled: boolean;
-        show: boolean;
+        show: string;
     };
     listeners: {
         onChange: true;

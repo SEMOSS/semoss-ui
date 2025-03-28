@@ -11,7 +11,7 @@ export interface MarkdownBlockDef extends BlockDef<"markdown"> {
         style: CSSProperties;
         markdown: string;
         isStreaming: boolean;
-        show: boolean;
+        show: string;
     };
     slots: never;
 }

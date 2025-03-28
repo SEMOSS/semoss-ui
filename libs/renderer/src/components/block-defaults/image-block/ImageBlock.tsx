@@ -10,7 +10,7 @@ export interface ImageBlockDef extends BlockDef<"image"> {
         style: CSSProperties;
         src: string;
         title: string;
-        show: boolean;
+        show: string;
     };
     slots: never;
 }

@@ -35,7 +35,7 @@ export const config: BlockConfig<ToggleButtonBlockDef> = {
         value: null,
         mandatory: true,
         multiple: false,
-        show: true,
+        show: "true",
     },
     listeners: {
         onChange: [],

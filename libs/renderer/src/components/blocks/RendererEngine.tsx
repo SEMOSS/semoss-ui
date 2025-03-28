@@ -8,44 +8,69 @@ export interface RendererEngineProps {
     id: string;
 }
 
-function showBlock(block, state): boolean {
+export function showBlock(block, state): boolean {
     if (block.data.hasOwnProperty("show") && block.data.show !== undefined) {
         let condition: unknown;
-        let trimmedBlockData = block.data.show?.toString()?.trim();
-        try {
-            //if a variable is assigned then parsed result is added to condition
-            if (
-                trimmedBlockData.startsWith("{{") &&
-                trimmedBlockData.endsWith("}}")
-            ) {
-                condition = state.parseVariable(block.data.show?.toString());
-            } else {
-                condition = block.data.show; //direct value is passed if no variable is added
-            }
-            if (
-                condition !== undefined &&
-                condition !== null &&
-                condition !== ""
-            ) {
-                if (condition.toString() === undefined) {
-                    return false;
+        let trimmedBlockData = block.data.show
+            ?.toString()
+            ?.trimLeft()
+            ?.trimRight();
+        let trimmedBlockDataArray =
+            trimmedBlockData?.split(" ").filter((item) => item.length > 0) ||
+            [];
+        let trimmedBlockDataObject = {};
+        trimmedBlockDataArray.forEach((item) => {
+            trimmedBlockDataObject = {
+                ...trimmedBlockDataObject,
+                [item]: false,
+            };
+        });
+        trimmedBlockDataArray.forEach((item, index) => {
+            let trimmedBlockDataToVerify = item;
+            try {
+                //if a variable is assigned then parsed result is added to condition
+                if (
+                    trimmedBlockDataToVerify.startsWith("{{") &&
+                    trimmedBlockDataToVerify.endsWith("}}")
+                ) {
+                    condition = state.parseVariable(
+                        trimmedBlockDataToVerify?.toString(),
+                    );
+                } else {
+                    condition = trimmedBlockDataToVerify; //direct value is passed if no variable is added
                 }
-                switch (condition.toString().toLowerCase()) {
-                    case "true":
-                    case "1":
-                        return true;
-                    case "false":
-                    case "0":
-                        return false;
-                    default:
-                        return false;
+                if (
+                    condition !== undefined &&
+                    condition !== null &&
+                    condition !== ""
+                ) {
+                    if (condition.toString() === undefined) {
+                        trimmedBlockDataObject[item] = false;
+                    }
+                    switch (condition.toString().toLowerCase()) {
+                        case "true":
+                        case "1":
+                            trimmedBlockDataObject[item] = true;
+                            break;
+                        case "false":
+                        case "0":
+                            trimmedBlockDataObject[item] = false;
+                            break;
+                        default:
+                            trimmedBlockDataObject[item] = false;
+                    }
+                } else {
+                    // render the generic view of a block if data.show is undefined or false
+                    trimmedBlockDataObject[item] = false;
                 }
+            } catch (e) {
+                trimmedBlockDataObject[item] = true;
             }
-            // render the generic view of a block if data.show is undefined or false
-            return false;
-        } catch (e) {
-            return true;
-        }
+        });
+        let resultValues = Object.values(trimmedBlockDataObject).includes(false)
+            ? false
+            : true;
+        return resultValues;
     }
     //render the block directly if there is no show property for a block
     return true;

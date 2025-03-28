@@ -18,7 +18,7 @@ export const config: BlockConfig<CheckboxBlockDef> = {
         required: false,
         disabled: false,
         value: false,
-        show: true,
+        show: "true",
     },
     listeners: {
         onChange: [],

@@ -171,6 +171,7 @@ export const QueryInputSettings = observer(
         defaultPathMap = {},
     }: QueryInputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
+        console.log(data, "queryInputSettings");
         const { state, notebook } = useBlocks();
         const notification = useNotification();
 
@@ -651,7 +652,7 @@ export const QueryInputSettings = observer(
                 </div>
             );
         };
-
+        console.log("show", value, "inputvalue", inputValue);
         return (
             <>
                 <Stack>
@@ -709,7 +710,21 @@ export const QueryInputSettings = observer(
                                           option?.path
                                         : option?.path || "";
                                 if (option?.path === undefined) {
-                                    onChange(val);
+                                    console.log(
+                                        optionMap?.[val]?.id
+                                            ? optionMap?.[val]?.id
+                                            : valf.toString(),
+                                        typeof optionMap?.[val]?.id,
+                                        optionMap?.[val]?.id,
+                                        valf.toString(),
+                                    );
+                                    onChange(
+                                        leftText +
+                                            (optionMap?.[val]?.id
+                                                ? optionMap?.[val]?.id
+                                                : valf.toString()) +
+                                            rightText,
+                                    );
                                 } else {
                                     // reform and submit
                                     onChange(

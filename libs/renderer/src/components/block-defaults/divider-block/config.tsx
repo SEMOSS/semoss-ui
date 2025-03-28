@@ -26,7 +26,7 @@ export const config: BlockConfig<DividerBlockDef> = {
         light: false,
         text: "",
         showText: false,
-        show: true,
+        show: "true",
     },
     listeners: {
         onClick: [],

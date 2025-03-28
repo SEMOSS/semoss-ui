@@ -11,7 +11,7 @@ export interface IconBlockDef extends BlockDef<"icon"> {
         style: CSSProperties;
         src: string;
         title: string;
-        show: boolean;
+        show: string;
     };
     slots: never;
 }

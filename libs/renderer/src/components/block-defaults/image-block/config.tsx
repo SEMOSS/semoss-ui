@@ -26,7 +26,7 @@ export const config: BlockConfig<ImageBlockDef> = {
         },
         src: "",
         title: "",
-        show: true,
+        show: "true",
     },
     listeners: {},
     slots: {},

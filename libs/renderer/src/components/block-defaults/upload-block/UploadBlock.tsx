@@ -24,7 +24,7 @@ export interface UploadBlockDef extends BlockDef<"upload"> {
         hint?: string;
         extensions?: string[];
         multiple?: boolean;
-        show: boolean;
+        show: string;
     };
 }
 

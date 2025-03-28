@@ -46,7 +46,7 @@ export interface AccordionBlockDef extends BlockDef<"accordion"> {
         triggerBgColor: string;
         contentBgColor: string;
         showExpandIcon: boolean;
-        show: boolean;
+        show: string;
     };
     slots: {
         header: true;

@@ -11,7 +11,7 @@ export const config: BlockConfig<LogsBlockDef> = {
     data: {
         style: {},
         queryId: "",
-        show: true,
+        show: "true",
     },
     listeners: {},
     slots: {},

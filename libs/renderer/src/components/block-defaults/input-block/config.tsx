@@ -29,7 +29,7 @@ export const config: BlockConfig<InputBlockDef> = {
         disabled: false,
         required: false,
         loading: false,
-        show: true,
+        show: "true",
     },
     listeners: {
         onChange: [],
