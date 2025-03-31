@@ -1318,7 +1318,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_PROGRESS,
+        section: SECTION_ELEMENT,
         name: 'Progress',
         helperText: 'Display progress tracking or status',
         activeImage: BLOCK_IMAGES['PROGRESS_ACTIVE'],
@@ -1442,6 +1442,29 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             data: {
                 style: {},
                 queryId: '',
+                show: 'true',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        activeImage: BLOCK_IMAGES['CHIP_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['CHIP_HOVER'],
+        name: 'Chip',
+        json: {
+            widget: 'chip',
+            data: {
+                style: {
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%',
+                    height: '200px',
+                },
+                src: '',
+                title: '',
                 show: 'true',
             },
             listeners: {},
