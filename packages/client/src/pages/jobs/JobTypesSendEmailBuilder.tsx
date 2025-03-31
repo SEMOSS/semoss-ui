@@ -1,6 +1,11 @@
+import {
+    createFilterOptions,
+    AutocompleteTwo,
+    Stack,
+    TextField,
+} from '@semoss/ui';
+
 import { JobBuilder } from './job.types';
-import { Stack, TextField } from '@semoss/ui';
-import { Autocomplete, createFilterOptions } from '@mui/material';
 
 export const JobTypesSendEmailBuilder = (props: {
     builder: JobBuilder;
@@ -10,7 +15,7 @@ export const JobTypesSendEmailBuilder = (props: {
     const filter = createFilterOptions<string>();
     return (
         <Stack spacing={2} width="100%">
-            <Autocomplete
+            <AutocompleteTwo
                 value={(builder.tags as string[]) ?? []}
                 fullWidth
                 multiple
@@ -54,7 +59,7 @@ export const JobTypesSendEmailBuilder = (props: {
                 value={builder.subject}
                 onChange={(e) => setBuilderField('subject', e.target.value)}
             />
-            <Autocomplete
+            <AutocompleteTwo
                 value={(builder.to as string[]) ?? []}
                 fullWidth
                 multiple
@@ -80,7 +85,7 @@ export const JobTypesSendEmailBuilder = (props: {
                 freeSolo
                 renderInput={(params) => <TextField {...params} label="To" />}
             />
-            <Autocomplete
+            <AutocompleteTwo
                 value={(builder.cc as string[]) ?? []}
                 fullWidth
                 multiple
@@ -106,7 +111,7 @@ export const JobTypesSendEmailBuilder = (props: {
                 freeSolo
                 renderInput={(params) => <TextField {...params} label="CC" />}
             />
-            <Autocomplete
+            <AutocompleteTwo
                 value={(builder.bcc as string[]) ?? []}
                 fullWidth
                 multiple

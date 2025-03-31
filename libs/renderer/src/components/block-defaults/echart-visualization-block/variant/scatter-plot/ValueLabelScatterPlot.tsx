@@ -161,7 +161,7 @@ export const ValueLabelScatterPlot = observer(
             // Update the label position state
             setLabelPosition(e.target.value);
             // Parse the value to a JSON object
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the 'position' property of the 'label' object in the series to the new value
             option["series"][0]["label"]["position"] = e.target.value;
             // Save the updated chart options back to the state
@@ -174,7 +174,7 @@ export const ValueLabelScatterPlot = observer(
          */
         const handleChangelabelRotation = (e) => {
             // Parse the value to a JSON object
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the label rotation state
             setLabelRotation(e.target.value);
             // Update the 'rotate' property of the 'label' object in the series to the new value
@@ -191,7 +191,7 @@ export const ValueLabelScatterPlot = observer(
             // Update the label font family state
             setLabelFont(e.target.value);
             // Parse the value to a JSON object
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the 'fontFamily' property of the 'label' object in the series to the new value
             option["series"][0]["label"]["fontFamily"] = e.target.value;
             // Save the updated chart options back to the state
@@ -204,7 +204,7 @@ export const ValueLabelScatterPlot = observer(
          */
         const handleLabelSize = (e) => {
             // Parse the value to a JSON object
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the label font size state
             setLabelFontSize(e.target.value);
             // Update the 'fontSize' property of the 'label' object in the series to the new value
@@ -220,7 +220,7 @@ export const ValueLabelScatterPlot = observer(
          * @returns {void}
          */
         const Reset = () => {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
 
             // Update the state of the label position
             setLabelPosition(option["reset"]["label"]["position"]);

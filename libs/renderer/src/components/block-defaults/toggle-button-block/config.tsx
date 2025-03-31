@@ -8,7 +8,7 @@ import {
 
 import { ToggleButtonBlockDef, ToggleButtonBlock } from "./ToggleButtonBlock";
 import { SmartButton } from "@mui/icons-material";
-import { buildListener } from "../block-defaults.shared";
+import { buildListener, buildShowField } from "../block-defaults.shared";
 import { BLOCK_TYPE_ACTION } from "../block-defaults.constants";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 
@@ -35,6 +35,7 @@ export const config: BlockConfig<ToggleButtonBlockDef> = {
         value: null,
         mandatory: true,
         multiple: false,
+        show: "true",
     },
     listeners: {
         onChange: [],
@@ -46,6 +47,7 @@ export const config: BlockConfig<ToggleButtonBlockDef> = {
         {
             name: "General",
             children: [
+                ...buildShowField(),
                 {
                     description: "Options",
                     render: ({ id }) => (
