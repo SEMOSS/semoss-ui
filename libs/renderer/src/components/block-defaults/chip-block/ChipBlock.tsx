@@ -30,6 +30,7 @@ export interface ChipBlockDef extends BlockDef<"chip"> {
         icon?: React.JSX.Element;
         src: string;
         title: string;
+        show: string;
     };
     listeners: {
         // onClick: true;

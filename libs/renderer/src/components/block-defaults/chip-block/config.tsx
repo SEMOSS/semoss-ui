@@ -1,5 +1,5 @@
 import { BlockConfig } from "../../../store";
-import { buildListener } from "../block-defaults.shared";
+import { buildListener, buildShowField } from "../block-defaults.shared";
 import { CSSProperties } from "react";
 import { ChipBlockDef, ChipBlock } from "./ChipBlock";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
@@ -24,6 +24,7 @@ export const config: BlockConfig<ChipBlockDef> = {
         label: "",
         src: "",
         title: "",
+        show: "true",
     },
     listeners: {
         //onClick: [],
@@ -33,6 +34,12 @@ export const config: BlockConfig<ChipBlockDef> = {
     icon: LabelRounded,
 
     contentMenu: [
+        {
+            name: "General",
+            children: [
+                ...buildShowField()
+            ]
+        },
         {
             name: "Select Chip",
             children: [

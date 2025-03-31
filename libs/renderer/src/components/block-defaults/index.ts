@@ -5,8 +5,6 @@ import {
     AccordionBlockDef,
 } from "./accordion-block";
 
-import { config as PopoverBlockConfig, PopoverBlockDef } from "./popover-block";
-
 import { config as AudioBlockConfig, AudioBlockDef } from "./audio-block";
 import {
     config as AudioInputBlockConfig,
@@ -14,12 +12,12 @@ import {
 } from "./audio-input-block";
 
 import { config as ButtonBlockConfig, ButtonBlockDef } from "./button-block";
-import { config as ChipBlockConfig, ChipBlockDef } from "./chip-block";
 
 import {
     config as CheckboxBlockConfig,
     CheckboxBlockDef,
 } from "./checkbox-block";
+import { config as ChipBlockConfig, ChipBlockDef } from "./chip-block";
 import {
     config as ContainerBlockConfig,
     ContainerBlockDef,
@@ -60,6 +58,7 @@ import {
     config as PDFViewerBlockConfig,
     PDFViewerBlockDef,
 } from "./pdfViewer-block";
+import { config as PopoverBlockConfig, PopoverBlockDef } from "./popover-block";
 import {
     config as ProgressBlockConfig,
     ProgressBlockDef,

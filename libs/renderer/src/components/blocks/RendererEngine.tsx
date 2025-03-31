@@ -105,12 +105,14 @@ export const RendererEngine = observer(
             );
         }
 
+        
         if (showBlock(block, state)) {
             return createElement(b.render, {
                 key: id,
                 id: id,
             });
         }
+
         return createElement("div", {
             key: id,
             id: id,
