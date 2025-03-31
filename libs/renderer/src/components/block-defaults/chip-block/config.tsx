@@ -1,13 +1,18 @@
-import { BlockConfig } from "../../../store";
-import { buildListener, buildShowField } from "../block-defaults.shared";
+//React and Third Party Modules
 import { CSSProperties } from "react";
-import { ChipBlockDef, ChipBlock } from "./ChipBlock";
-import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
-import { InputSettings, SelectInputSettings } from "../../block-settings";
-import { ChipSettings } from "../../block-settings/custom/ChipSettings";
-import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 import { LabelRounded } from "@mui/icons-material";
+
+//Internal Semoss libs
 import { Avatar } from "@semoss/ui";
+
+//Modules internal to current package
+import { BlockConfig } from "../../../store";
+import { InputSettings, SelectInputSettings } from "../../block-settings";
+import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
+import { ChipSettings } from "../../block-settings/custom/ChipSettings";
+import { buildListener, buildShowField } from "../block-defaults.shared";
+import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
+import { ChipBlockDef, ChipBlock } from "./ChipBlock";
 
 export const DefaultStyles: CSSProperties = {};
 
@@ -36,9 +41,7 @@ export const config: BlockConfig<ChipBlockDef> = {
     contentMenu: [
         {
             name: "General",
-            children: [
-                ...buildShowField()
-            ]
+            children: [...buildShowField()],
         },
         {
             name: "Select Chip",

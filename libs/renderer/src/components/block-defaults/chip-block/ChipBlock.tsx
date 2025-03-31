@@ -1,11 +1,16 @@
-import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+//React and Third Party Libraries
+import React from "react";
+import { observer } from "mobx-react-lite";
+import { CSSProperties } from "react";
 import { Face } from "@mui/icons-material";
 import { Chip, styled } from "@mui/material";
+
+//Internal Semoss libs
 import { Avatar } from "@semoss/ui";
-import { observer } from "mobx-react-lite";
-import React from "react";
-import { CSSProperties } from "react";
+
+//Modules internal to current package
+import { useBlock } from "../../../hooks";
+import { BlockDef, BlockComponent } from "../../../store";
 
 export interface ChipBlockDef extends BlockDef<"chip"> {
     widget: "chip";
