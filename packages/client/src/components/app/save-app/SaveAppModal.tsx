@@ -14,7 +14,7 @@ import { KeyboardArrowRight, Close } from '@mui/icons-material';
 import { AppFormStep } from './save-app.types';
 
 const StyledModalContent = styled(Modal.Content)(() => ({
-    height: '300px',
+    height: '280px',
 }));
 
 interface SaveAppProps {
