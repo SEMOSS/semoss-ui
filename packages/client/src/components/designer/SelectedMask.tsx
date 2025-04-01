@@ -7,7 +7,8 @@ import { getRelativeSize, getBlockElement } from '@/stores';
 
 import { DragIndicator } from '@mui/icons-material';
 
-import { ActionMessages, useBlocks } from '@semoss/renderer';
+import { ActionMessages, BlockJSON, useBlocks } from '@semoss/renderer';
+import { toJS } from 'mobx';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'absolute',
@@ -101,10 +102,118 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
         setLocal(true);
     };
 
+    const getJsonForBlock = (id: string, data?: any) => {
+        const block = state.blocks[id];
+        let updatedBlock = block;
+        if (data !== undefined || data !== null) {
+            updatedBlock = {
+                ...block,
+                data: {
+                    ...block.data,
+                    label:
+                        typeof data === 'object'
+                            ? data.label.toString()
+                            : data.toString(),
+                },
+            };
+        }
+
+        const blockJson = {
+            widget: toJS(updatedBlock.widget),
+            data: toJS(updatedBlock.data),
+            listeners: toJS(updatedBlock.listeners),
+            slots: {},
+        };
+
+        // generate the slots
+        for (const slot in block.slots) {
+            if (block.slots[slot]) {
+                blockJson.slots[slot] = block.slots[slot].children.map(
+                    (childId) => {
+                        return getJsonForBlock(childId);
+                    },
+                );
+            }
+        }
+
+        // return it
+        return blockJson;
+    };
+
+    const onIterate = (
+        num: number,
+        siblingWidget3: any,
+        placeholderAction: any,
+    ) => {
+        let data = state.parseVariable(siblingWidget3.data.value) as any[];
+        debugger;
+        let sibilingId = '';
+        for (let i = 0; i < data.length; i++) {
+            // console.log(item.json, 'item.json');
+            let id: string = state.dispatch({
+                message: ActionMessages.ADD_BLOCK,
+                payload: {
+                    json: getJsonForBlock(block.id, data[i]) as BlockJSON,
+                    position: {
+                        parent: placeholderAction.id,
+                        slot: placeholderAction.slot,
+                        // sibling: sibilingId ? sibilingId :"",
+                        // type: "after",
+                    },
+                },
+            }) as string;
+            if (i === 0) {
+                let id1 = id;
+                (siblingWidget3.data.sourceBlockList as string[]).push(
+                    id1 as string,
+                );
+            }
+            if (id) {
+                sibilingId = id;
+            }
+        }
+        return siblingWidget3.id;
+    };
+
+    const onIteration = (
+        num: number,
+        siblingWidget: any,
+        placeholderAction: any,
+        parent: any,
+    ) => {
+        let data = state.parseVariable(parent.data.value) as any[];
+        let sibilingId = '';
+        for (let i = 0; i < data.length; i++) {
+            // console.log(item.json, 'item.json');
+
+            let id: string = state.dispatch({
+                message: ActionMessages.ADD_BLOCK,
+                payload: {
+                    json: getJsonForBlock(block.id, data[i]) as BlockJSON,
+                    position: {
+                        parent: siblingWidget.parent.id,
+                        slot: siblingWidget.parent.slot,
+                        // sibling: sibilingId ? sibilingId :"",
+                        // type: "after",
+                    },
+                },
+            }) as string;
+            if (i === 0) {
+                let id1 = id;
+                (parent.data.sourceBlockList as string[]).push(id1 as string);
+            }
+            if (id) {
+                sibilingId = id;
+            }
+        }
+        return parent.id;
+    };
+
     /**
      * Handle the mouseup event on the document
      */
     const handleDocumentMouseUp = useCallback(() => {
+        debugger;
         if (!designer.drag.active) {
             return;
         }
@@ -119,30 +228,69 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
                 const siblingWidget = state.getBlock(placeholderAction.id);
 
                 if (siblingWidget.parent) {
+                    const parent = state.getBlock(siblingWidget.parent.id);
+                    const num = Number(parent.data.iterationCount);
+                    if (num > 0) {
+                        onIteration(
+                            num,
+                            siblingWidget,
+                            placeholderAction,
+                            parent,
+                        );
+                        state.dispatch({
+                            message: ActionMessages.REMOVE_BLOCK,
+                            payload: {
+                                id: designer.selected,
+                                keep: false,
+                            },
+                        });
+                        // (parent.data.sourceBlockList as string[]).push(block.id as string);
+                        designer.setSelected(parent.id);
+                    } else {
+                        state.dispatch({
+                            message: ActionMessages.MOVE_BLOCK,
+                            payload: {
+                                id: designer.selected,
+                                position: {
+                                    parent: siblingWidget.parent.id,
+                                    slot: siblingWidget.parent.slot,
+                                    sibling: siblingWidget.id,
+                                    type: placeholderAction.type,
+                                },
+                            },
+                        });
+                    }
+                }
+            } else if (placeholderAction.type === 'replace') {
+                console.log(
+                    'placeholderAction',
+                    placeholderAction,
+                    designer.selected,
+                );
+                const siblingWidget3 = state.getBlock(placeholderAction.id);
+                let num = Number(siblingWidget3.data.iterationCount);
+                if (num > 0) {
+                    onIterate(num, siblingWidget3, placeholderAction);
+                    state.dispatch({
+                        message: ActionMessages.REMOVE_BLOCK,
+                        payload: {
+                            id: designer.selected,
+                            keep: false,
+                        },
+                    });
+                    designer.setSelected(placeholderAction.id);
+                } else {
                     state.dispatch({
                         message: ActionMessages.MOVE_BLOCK,
                         payload: {
                             id: designer.selected,
                             position: {
-                                parent: siblingWidget.parent.id,
-                                slot: siblingWidget.parent.slot,
-                                sibling: siblingWidget.id,
-                                type: placeholderAction.type,
+                                parent: placeholderAction.id,
+                                slot: placeholderAction.slot,
                             },
                         },
                     });
                 }
-            } else if (placeholderAction.type === 'replace') {
-                state.dispatch({
-                    message: ActionMessages.MOVE_BLOCK,
-                    payload: {
-                        id: designer.selected,
-                        position: {
-                            parent: placeholderAction.id,
-                            slot: placeholderAction.slot,
-                        },
-                    },
-                });
             }
         }
 

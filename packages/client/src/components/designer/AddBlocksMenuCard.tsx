@@ -38,6 +38,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 
     // track if it is this one that is dragging
     const [local, setLocal] = useState(false);
+    const [array, setArray] = useState([]);
 
     // track if this is being hovered
     const [hovered, setHovered] = useState<boolean>(false);
@@ -70,18 +71,36 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         siblingWidget3: any,
         placeholderAction: any,
     ) => {
-        for (let i = 0; i < num; i++) {
+        console.log(siblingWidget3, item.json, 'siblingWidget3');
+        let data = state.parseVariable(siblingWidget3.data.value) as any[];
+
+        for (let i = 0; i < data.length; i++) {
             console.log(item.json, 'item.json');
-            state.dispatch({
+            let updatedJson = {
+                ...item.json,
+                data: {
+                    ...item.json.data,
+                    label:
+                        typeof data[i] === 'object' ? data[i].label : data[i],
+                },
+            };
+            console.log(updatedJson, 'updatedJon');
+            let id1 = state.dispatch({
                 message: ActionMessages.ADD_BLOCK,
                 payload: {
-                    json: item.json,
+                    json: updatedJson,
                     position: {
                         parent: placeholderAction.id,
                         slot: placeholderAction.slot,
                     },
                 },
             }) as string;
+            if (i === 0) {
+                let id = id1;
+                (siblingWidget3.data.sourceBlockList as string[]).push(
+                    id as string,
+                );
+            }
         }
         return siblingWidget3.id;
     };
@@ -91,20 +110,34 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         placeholderAction: any,
         parent: any,
     ) => {
-        for (let i = 0; i < num; i++) {
+        debugger;
+        let data = state.parseVariable(parent.data.value) as any[];
+        for (let i = 0; i < data.length; i++) {
             console.log(item.json, 'item.json');
-            state.dispatch({
+            let updatedJson = {
+                ...item.json,
+                data: {
+                    ...item.json.data,
+                    label:
+                        typeof data[i] === 'object' ? data[i].label : data[i],
+                },
+            };
+            let id1 = state.dispatch({
                 message: ActionMessages.ADD_BLOCK,
                 payload: {
-                    json: item.json,
+                    json: updatedJson,
                     position: {
                         parent: siblingWidget.parent.id,
                         slot: siblingWidget.parent.slot,
-                        sibling: siblingWidget.id,
-                        type: placeholderAction.type,
+                        // sibling: siblingWidget.id,
+                        // type: placeholderAction.type,
                     },
                 },
             }) as string;
+            if (i === 0) {
+                let id = id1;
+                (parent.data.sourceBlockList as string[]).push(id as string);
+            }
         }
         return parent.id;
     };
@@ -156,11 +189,17 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                     }
                 }
             } else if (placeholderAction.type === 'replace') {
+                let testing = item.json;
+                console.log(testing, 'testing');
                 const siblingWidget3 = state.getBlock(placeholderAction.id);
+                console.log(siblingWidget3, item.json, 'siblingWidget3');
+                // if(siblingWidget3.parent.)
                 let num = Number(siblingWidget3.data.iterationCount);
                 if (num > 0) {
                     id = onIterate(num, siblingWidget3, placeholderAction);
+                    // (siblingWidget3.data.sourceBlockList as string[]).push(item.json.data.route as string);
                 } else {
+                    console.log(item.json, 'item.json837r9837r9');
                     id = state.dispatch({
                         message: ActionMessages.ADD_BLOCK,
                         payload: {

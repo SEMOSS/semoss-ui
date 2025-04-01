@@ -29,6 +29,8 @@ export const config: BlockConfig<IteratorBlockDef> = {
         iterationCount: 0,
         value: [],
         type: "iteration",
+        sourceBlockList: [],
+        test: false,
     },
     listeners: {
         onChange: [],

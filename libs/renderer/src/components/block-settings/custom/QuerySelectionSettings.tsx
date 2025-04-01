@@ -149,6 +149,16 @@ export const QuerySelectionSettings = observer(
             timeoutRef.current = setTimeout(() => {
                 try {
                     setData(path, value as PathValue<D["data"], typeof path>);
+                    if (value === null) {
+                        setData("iterationCount", 0);
+                        setData("test", false);
+                    } else {
+                        setData(
+                            "iterationCount",
+                            (state.parseVariable(value) as Array<any>).length,
+                        );
+                        setData("test", true);
+                    }
                     __onChange();
                 } catch (e) {
                     console.log(e);

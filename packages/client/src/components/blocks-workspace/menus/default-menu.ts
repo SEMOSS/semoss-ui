@@ -798,6 +798,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 iterationCount: 0,
                 value: [],
                 type: 'iteration',
+                sourceBlockList: [],
+                test: false,
             },
             listeners: {
                 onChange: [],
