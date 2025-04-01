@@ -70,7 +70,7 @@ export const ToogleDonut = observer(
         };
         //Handle the change event for the toggle switch
         const handleDonut = (e) => {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             setShowDonut(!showDonut);
             if (e.target.checked) {
                 option["series"][0].radius = ["20%", "50%"];

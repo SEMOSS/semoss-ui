@@ -643,6 +643,10 @@ export class StateStore {
         // add the listeners
         block.listeners = json.listeners;
 
+        console.log("--------------------------")
+        console.log(block);
+        console.log("--------------------------")
+
         // generate the slots
         for (const slot in json.slots) {
             if (json.slots[slot]) {

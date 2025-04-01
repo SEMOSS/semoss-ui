@@ -65,7 +65,7 @@ export const CustomTooltip = observer(
         };
         //Handle the change event for the toggle switch
         const showTooltip = (e) => {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             setShowTooltip(!showTooltips);
             option["tooltip"]["show"] = e.target.checked;
             setData(path, option as PathValue<D["data"], typeof path>);

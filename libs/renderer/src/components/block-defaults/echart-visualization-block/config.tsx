@@ -32,6 +32,7 @@ export const config: BlockConfig<EchartVisualizationBlockDef> = {
             hideUnfilter: false,
             hideExclude: false,
         },
+        show: true,
     },
     listeners: {},
     slots: {},

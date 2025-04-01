@@ -118,7 +118,8 @@ export const ChartStyling = observer(
         //for retaining the previously selected values, this useeffect will help
         useEffect(() => {
             let chartStyleData = INITIAL_CHART_STYLE;
-            let option = typeof value === "string" ? JSON.parse(value) : value;
+            const option =
+                typeof value === "string" ? JSON.parse(value) : value;
             if (option["title"]) {
                 if (option["title"].hasOwnProperty("text")) {
                     chartStyleData = {

@@ -7,6 +7,7 @@ import { IconBlockDef, IconBlock } from "./IconBlock";
 import {
     buildDimensionsSection,
     buildListener,
+    buildShowField,
 } from "../block-defaults.shared";
 import {
     inputOptions,
@@ -29,6 +30,7 @@ export const config: BlockConfig<IconBlockDef> = {
 
         src: "",
         title: "",
+        show: "true",
     },
     listeners: {},
     slots: {},
@@ -38,6 +40,7 @@ export const config: BlockConfig<IconBlockDef> = {
         {
             name: "Select Icon",
             children: [
+                ...buildShowField(),
                 {
                     description: "Icon",
                     render: ({ id }) => (

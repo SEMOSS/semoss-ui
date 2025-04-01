@@ -83,7 +83,7 @@ export const OptionsSettings = observer(
         // update the value whenever the computed one changes
         useEffect(() => {
             // add unique id to the options
-            let modifiedOptions = (computedValue || []).map(
+            const modifiedOptions = (computedValue || []).map(
                 (option, index) => ({
                     ...option,
                     id: `drag-item-${index}`,
