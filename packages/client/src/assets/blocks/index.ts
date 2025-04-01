@@ -10,6 +10,8 @@ export { default as BUTTON_ACTIVE } from './Button_Active.png';
 export { default as BUTTON_HOVER } from './Button_Hover.png';
 export { default as CHECKBOX_ACTIVE } from './Checkbox_Active.png';
 export { default as CHECKBOX_HOVER } from './Checkbox_Hover.png';
+export { default as CHIP_ACTIVE } from './Chip_Active.png';
+export { default as CHIP_HOVER } from './Chip_Hover.png';
 export { default as COMPARE_LLMS_ACTIVE } from './Compare_LLMS_Active.png';
 export { default as COMPARE_LLMS_HOVER } from './Compare_LLMS_Hover.png';
 export { default as CONTAINER_ACTIVE } from './Container_Active.png';

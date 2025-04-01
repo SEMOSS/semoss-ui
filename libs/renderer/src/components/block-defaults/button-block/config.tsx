@@ -1,4 +1,5 @@
 import { CSSProperties } from "react";
+import { useBlocks } from "../../../hooks";
 import { BlockConfig } from "../../../store";
 import {
     QuerySelectionSettings,
@@ -9,6 +10,7 @@ import {
 import {
     buildDimensionsSection,
     buildListener,
+    buildShowField,
 } from "../block-defaults.shared";
 
 import { ButtonBlockDef, ButtonBlock } from "./ButtonBlock";
@@ -28,6 +30,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
         disabled: false,
         variant: "contained",
         color: "primary",
+        show: "true",
     },
     listeners: {
         onClick: [],
@@ -56,6 +59,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
                         />
                     ),
                 },
+                ...buildShowField(),
             ],
         },
         {

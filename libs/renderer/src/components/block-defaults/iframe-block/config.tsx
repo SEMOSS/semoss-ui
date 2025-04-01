@@ -2,6 +2,7 @@ import { BlockConfig } from "../../../store";
 import {
     buildSpacingSection,
     buildDimensionsSection,
+    buildShowField,
 } from "../block-defaults.shared";
 import { IframeBlockDef, IframeBlock } from "./IframeBlock";
 import { AspectRatio } from "@mui/icons-material";
@@ -19,6 +20,7 @@ export const config: BlockConfig<IframeBlockDef> = {
         src: "",
         title: "",
         enableFrameInteractions: true,
+        show: "true",
     },
     listeners: {},
     slots: {},
@@ -28,6 +30,7 @@ export const config: BlockConfig<IframeBlockDef> = {
         {
             name: "General",
             children: [
+                ...buildShowField(),
                 {
                     description: "Source",
                     render: ({ id }) => (

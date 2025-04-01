@@ -6,6 +6,7 @@ import {
     buildTypographySection,
     buildTextAlignSection,
     buildBorderSection,
+    buildShowField,
 } from "../block-defaults.shared";
 
 import { MarkdownBlockDef, MarkdownBlock } from "./MarkdownBlock";
@@ -24,6 +25,7 @@ export const config: BlockConfig<MarkdownBlockDef> = {
         },
         markdown: "**Hello world**",
         isStreaming: false,
+        show: "true",
     },
     listeners: {},
     slots: {},
@@ -33,6 +35,7 @@ export const config: BlockConfig<MarkdownBlockDef> = {
         {
             name: "General",
             children: [
+                ...buildShowField(),
                 {
                     description: "Markdown",
                     render: ({ id }) => (
