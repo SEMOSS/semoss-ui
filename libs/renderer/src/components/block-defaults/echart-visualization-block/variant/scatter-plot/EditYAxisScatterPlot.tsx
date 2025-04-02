@@ -185,7 +185,7 @@ export const EditYAxisScatterPlot = observer(
          */
         const showYAxis = (e) => {
             // Create a copy of the chart options
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Toggle the showYaxis state
             setShowYaxis(!showYaxis);
             // Update the 'show' property of the yAxis object in the chart options
@@ -204,7 +204,7 @@ export const EditYAxisScatterPlot = observer(
          */
         const showYAxisTitle = (e) => {
             // Create a copy of the chart options
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Toggle the showYaxisTitle state
             setShowYaxisTitle(!showYaxisTitle);
             // Update the y-axis title based on the switch state
@@ -226,7 +226,7 @@ export const EditYAxisScatterPlot = observer(
             // Update the yaxisTitle state
             setYaxisTitle(e.target.value);
             // Create a copy of the chart options
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the 'name' property of the yAxis object in the chart options
             option["yAxis"]["name"] = e.target.value;
             // Save the updated chart options to the state
@@ -259,7 +259,7 @@ export const EditYAxisScatterPlot = observer(
          */
         const handleChangeYAxisLabelFontSize = (e) => {
             // Create a copy of the chart options
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the fontSizeYAxisLabel state
             setFontSizeYAxisLabel(e.target.value);
             // Update the 'fontSize' property of the 'axisLabel' object in the yAxis object in the chart options
@@ -275,7 +275,7 @@ export const EditYAxisScatterPlot = observer(
          */
         const rotateYAxis = (e) => {
             // Parse the current chart options from the state value
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the rotateYaxis state with the new rotation value
             setRotateYaxis(e.target.value);
             // Set the 'rotate' property of the 'axisLabel' object in the yAxis to the new value
@@ -291,7 +291,7 @@ export const EditYAxisScatterPlot = observer(
          */
         const showYAxisTick = (e: React.ChangeEvent<HTMLInputElement>) => {
             // Parse the current chart options from the state value
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the showYaxisTick state with the new value
             setShowYaxisTick(!showYaxisTick);
             // Set the 'show' property of the 'axisTick' object in the yAxis to the new value
@@ -307,7 +307,7 @@ export const EditYAxisScatterPlot = observer(
          */
         const showYAxisLabel = (e: React.ChangeEvent<HTMLInputElement>) => {
             // Parse the current chart options from the state value
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the showYAxisLabel state with the new value
             setShowAxisLabel(!showAxisLabel);
             // Set the 'show' property of the 'axisLabel' object in the yAxis to the new value
@@ -323,7 +323,7 @@ export const EditYAxisScatterPlot = observer(
          * @returns {void}
          */
         const Reset = () => {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the state of the Y-axis options
             setShowYaxis(option["reset"]["axis"]["yaxis"]["show"]);
             setShowYaxisTitle(true);

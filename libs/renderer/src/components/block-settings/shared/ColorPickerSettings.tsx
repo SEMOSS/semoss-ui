@@ -132,7 +132,7 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
             }
             optiontimeoutRef.current = setTimeout(() => {
                 try {
-                    let options = JSON.parse(optionComputedValue);
+                    const options = JSON.parse(optionComputedValue);
                     options["lastUpdatedTime"] = Date.now();
                     setData(
                         optionPathVal,

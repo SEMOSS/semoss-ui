@@ -89,7 +89,7 @@ export const FrameOperationsPie = observer(
             // if (data) {
             const json: PathValue<D["data"], typeof path> =
                 JSON.parse(computedValue);
-            let state = json["_state"];
+            const state = json["_state"];
             if (state && state.hasOwnProperty("fields")) {
                 reinitializeStates(state["fields"]);
             } else {
@@ -124,7 +124,7 @@ export const FrameOperationsPie = observer(
             axis: "Label" | "Value",
         ) => {
             // insert the new value
-            let tempValue = JSON.parse(value);
+            const tempValue = JSON.parse(value);
             tempValue[axis] = {
                 ...tempValue[axis],
                 name:
@@ -153,7 +153,7 @@ export const FrameOperationsPie = observer(
         };
 
         const handleRemoveLines = (removedChips, segment) => {
-            let tempValue = JSON.parse(value);
+            const tempValue = JSON.parse(value);
             if (segment === "Label") {
                 setLabel([]);
                 tempValue[segment] = {
@@ -197,13 +197,13 @@ export const FrameOperationsPie = observer(
         const handleTooltipChange = (newValue: string[]) => {
             setTooltip(newValue);
             // insert the new value
-            let tempValue = JSON.parse(value);
+            const tempValue = JSON.parse(value);
             if (!tempValue["tooltip"].hasOwnProperty("formatter")) {
                 tempValue["tooltip"] = {
                     ...tempValue["tooltip"],
                     formatter:
                         ((params) => {
-                            let formatterStringArr = ["<div>"];
+                            const formatterStringArr = ["<div>"];
                             formatterStringArr.push(
                                 `<strong>${params[0].name}</strong><br>`,
                             );

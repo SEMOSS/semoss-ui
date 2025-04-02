@@ -109,7 +109,7 @@ export const VisualizationStyles = observer(
 
         //for retaining the previously selected values, this will help
         useEffect(() => {
-            let barChartData = option["series"].filter((item) =>
+            const barChartData = option["series"].filter((item) =>
                 BAR_CHART_DATA.JSONVALUE.includes(item.type),
             );
             if (barChartData.length) {
@@ -137,8 +137,8 @@ export const VisualizationStyles = observer(
         }, [styleData]);
         //this function will return filtered series index with type 'bar'
         function getFilteredSeriesIndex(): number[] {
-            let index: number[] = [];
-            let seriesAvailable = data.option["series"].filter((item) =>
+            const index: number[] = [];
+            const seriesAvailable = data.option["series"].filter((item) =>
                 BAR_CHART_DATA.JSONVALUE.includes(item.type),
             );
             seriesAvailable.forEach((item, seriesIndex) => {
@@ -151,7 +151,7 @@ export const VisualizationStyles = observer(
         function handleInputChange(event, newValue, seriesIndex = "0") {
             if (stylesUpdated === "initial") setStylesUpdated("updated");
 
-            let currentStyle = styleData;
+            const currentStyle = styleData;
             currentStyle[seriesIndex] = {
                 ...currentStyle[seriesIndex],
                 ["barwidth"]: newValue,
@@ -164,7 +164,7 @@ export const VisualizationStyles = observer(
         function handleBarColourChange(e, seriesIndex = "0") {
             if (stylesUpdated === "initial") setStylesUpdated("updated");
 
-            let currentStyle = styleData;
+            const currentStyle = styleData;
             currentStyle[seriesIndex] = {
                 ...currentStyle[seriesIndex],
                 ["barColour"]: e.target.value,

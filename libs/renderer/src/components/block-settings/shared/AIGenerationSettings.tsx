@@ -88,8 +88,8 @@ export const AIGenerationSettings = observer(
                 return;
             }
 
-            let modelIds: string[] = [];
-            let modelDisplay = {};
+            const modelIds: string[] = [];
+            const modelDisplay = {};
             myModels.data.forEach((model) => {
                 // embeddings models are not set up for response generation
                 if (model.tag !== "embeddings") {

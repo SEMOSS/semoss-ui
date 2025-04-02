@@ -30,6 +30,7 @@ export interface InputBlockDef extends BlockDef<"input"> {
         disabled: boolean;
         hint?: string;
         loading?: boolean;
+        show: string;
     };
 }
 

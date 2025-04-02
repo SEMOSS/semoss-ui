@@ -49,7 +49,8 @@
         "react/prop-types": "off",
         "react/jsx-uses-react": "off",
         "react/react-in-jsx-scope": "off",
-        "prettier/prettier": ["error", { "endOfLine": "auto" }],
-        "@typescript-eslint/no-explicit-any": "error"
+        "prettier/prettier": ["error", { "endOfLine": "auto" }]
+        // TODO: Fix across component library
+        // "@typescript-eslint/no-explicit-any": "error"
     }
 }

@@ -280,15 +280,18 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
             if (response.data.success || response.data) {
                 setDiscoverable(!discoverable);
-
                 notification.add({
                     color: 'success',
-                    message: `Successfully made ${name} discoverable`,
+                    message: `Successfully made ${name} ${
+                        discoverable ? 'undiscoverable' : 'discoverable'
+                    }`,
                 });
             } else {
                 notification.add({
                     color: 'error',
-                    message: `Error making ${name} discoverable`,
+                    message: `Error making ${name} ${
+                        discoverable ? 'undiscoverable' : 'discoverable'
+                    }`,
                 });
             }
         } catch (e) {
@@ -341,12 +344,16 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
                 notification.add({
                     color: 'success',
-                    message: `Successfully made ${name} global`,
+                    message: `Successfully made ${name} ${
+                        global ? 'non-global' : 'global'
+                    }`,
                 });
             } else {
                 notification.add({
                     color: 'error',
-                    message: `Error making ${name} global`,
+                    message: `Error making ${name} ${
+                        global ? 'non-global' : 'global'
+                    }`,
                 });
             }
         } catch (e) {

@@ -76,7 +76,7 @@ export const ColorByValue = observer(
             }));
         };
         const handleSelect = (value) => {
-            let SelectedData = selectedData.selectedData;
+            const SelectedData = selectedData.selectedData;
             if (value[0] === undefined) {
                 SelectedData[0] = Number(value.target.value);
             } else {
@@ -121,8 +121,8 @@ export const ColorByValue = observer(
                     setSelectorQuery(selectorData);
                 }
             } else {
-                let index = e.target.value;
-                let headerName = framHeaders[index]?.name;
+                const index = e.target.value;
+                const headerName = framHeaders[index]?.name;
                 let selectorData = "";
                 setSelectedData((prev) => ({
                     ...prev,
@@ -142,9 +142,9 @@ export const ColorByValue = observer(
             }
         };
         const applyRules = () => {
-            let selectedColumns = selectedData.selectedColumn;
-            let selectedComparator = selectedData.selectedComparator;
-            let selectedDataList = selectedData.selectedData;
+            const selectedColumns = selectedData.selectedColumn;
+            const selectedComparator = selectedData.selectedComparator;
+            const selectedDataList = selectedData.selectedData;
             switch (selectedComparator) {
                 case "is Equal To":
                     const newRules: Rules = {
@@ -197,7 +197,7 @@ export const ColorByValue = observer(
             }
         };
         const handleDeleteRow = (rule, index) => {
-            let existingRules = appliedRules;
+            const existingRules = appliedRules;
             existingRules.splice(index, 1);
             setAppliedRules((prevRules) =>
                 prevRules.filter((_, i) => i !== index),

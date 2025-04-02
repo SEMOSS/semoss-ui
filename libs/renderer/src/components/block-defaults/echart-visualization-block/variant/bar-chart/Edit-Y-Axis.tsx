@@ -94,7 +94,7 @@ export const EditYAxis = observer(
         const [yAxisDataUpdated, setYAxisDataUpdated] = useState<
             "initial" | "updated"
         >("initial");
-        let axisValue = "yAxis";
+        const axisValue = "yAxis";
         const [value, setValue] = useState(data.option);
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
         // get the value of the input (wrapped in usememo because of path prop)
@@ -118,8 +118,8 @@ export const EditYAxis = observer(
         }, [computedValue]);
         //updating initial state of y axis fields, when the component is mounted
         useEffect(() => {
-            let axis: string = "yAxis";
-            let yAxisStateData = {
+            const axis = "yAxis";
+            const yAxisStateData = {
                 showAxis: true,
                 yaxistitle: "",
                 yaxisTitleFontSize: 18,
@@ -155,7 +155,7 @@ export const EditYAxis = observer(
                         : 0;
                 }
                 if (option["dataZoom"]) {
-                    let yAxisPosition = option["dataZoom"].findIndex((opt) =>
+                    const yAxisPosition = option["dataZoom"].findIndex((opt) =>
                         opt.hasOwnProperty("yAxisIndex"),
                     );
                     if (yAxisPosition > -1) {
@@ -194,8 +194,8 @@ export const EditYAxis = observer(
         }
         //updating the chart data to state, when any of the y axis field is updated
         function updateChartData() {
-            let axis: string = "yAxis"; //an axis pointer, either x or y axis
-            let axisData = {
+            const axis = "yAxis"; //an axis pointer, either x or y axis
+            const axisData = {
                 showAxis: yaxisState.showAxis,
                 yaxistitle: yaxisState.yaxistitle,
                 yaxisTitleFontSize: yaxisState.yaxisTitleFontSize,
@@ -276,7 +276,7 @@ export const EditYAxis = observer(
                 }
                 if (axisData.hasOwnProperty("showYAxisZoom")) {
                     if (option["dataZoom"]) {
-                        let xAxisPosition = option["dataZoom"].findIndex(
+                        const xAxisPosition = option["dataZoom"].findIndex(
                             (opt) => opt.hasOwnProperty("yAxisIndex"),
                         );
                         if (xAxisPosition > -1) {

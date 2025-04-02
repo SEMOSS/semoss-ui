@@ -1,5 +1,12 @@
-import { Table, Typography, Link, Chip, Stack } from '@semoss/ui';
-import { tableCellClasses } from '@mui/material';
+import {
+    Table,
+    Typography,
+    Link,
+    Chip,
+    Stack,
+    tableCellClasses,
+} from '@semoss/ui';
+
 import { modelledDependency } from './app-details.utility';
 import { formatPermission } from '@/utility';
 
