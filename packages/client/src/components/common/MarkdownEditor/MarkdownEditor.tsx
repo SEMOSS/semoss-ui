@@ -1,18 +1,22 @@
 import { useState, Suspense, lazy } from 'react';
-import { Container, styled, ToggleTabsGroup } from '@semoss/ui';
+import {
+    Container,
+    Link,
+    styled,
+    ToggleTabsGroup,
+    Typography,
+} from '@semoss/ui';
 import { Markdown } from '../Markdown';
 
 // Reduce Initial Bundle
 const Editor = lazy(() => import('@monaco-editor/react'));
 
-const StyledContainer = styled(Container)(({ theme }) => ({
-    height: theme.spacing(38),
-    marginBottom: theme.spacing(5),
+const StyledContainer = styled(Container)({
     width: '100%',
-}));
+});
 
 const StyledTabPanel = styled('div')(({ theme }) => ({
-    height: '100%',
+    height: theme.spacing(32),
     width: '100%',
     overflow: 'auto',
     borderLeft: `solid ${theme.palette.grey['100']}`,
@@ -21,13 +25,17 @@ const StyledTabPanel = styled('div')(({ theme }) => ({
     borderRadius: theme.shape.borderRadius,
 }));
 
-const StyledEditor = styled(Editor)(({ theme }) => ({
+const StyledEditor = styled(Editor)({
     height: '100%',
     width: '900px',
-}));
+});
 
-const StyledMarkdownContainer = styled('div')(({ theme }) => ({
+const StyledMarkdownContainer = styled('div')({
     width: '900px',
+});
+
+const StyledTitle = styled(Typography)(({ theme }) => ({
+    marginBottom: theme.spacing(1),
 }));
 
 interface MarkdownEditorProps {
@@ -44,6 +52,15 @@ export const MarkdownEditor = (props: MarkdownEditorProps) => {
 
     return (
         <StyledContainer disableGutters={true}>
+            <StyledTitle variant="body2" fontWeight="bold" color="secondary">
+                {'Add details as '}
+                <Link
+                    href="https://handbook.gitlab.com/docs/markdown-guide/"
+                    target="_blank"
+                >
+                    Markdown
+                </Link>
+            </StyledTitle>
             <ToggleTabsGroup
                 boxSx={{
                     borderRadius: '12px 12px 0px 0px',

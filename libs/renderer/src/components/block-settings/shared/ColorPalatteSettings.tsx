@@ -140,6 +140,7 @@ const StyledTitle = styled("span")(() => ({
 const StyledCustomPaletteAdd = styled("div")(() => ({
     display: "flex",
     justifyContent: "center",
+    paddingTop: "10px",
 }));
 const StyledCustomPaletteEdit = styled("div")(() => ({
     display: "block",
@@ -443,7 +444,7 @@ export const ColorPalatteSettings = observer(
             setOptionValue(optionComputedValue);
         }, [optionComputedValue]);
         useEffect(() => {
-            let option =
+            const option =
                 typeof optionComputedValue === "string"
                     ? JSON.parse(optionComputedValue)
                     : optionComputedValue;
@@ -451,10 +452,10 @@ export const ColorPalatteSettings = observer(
                 option.hasOwnProperty("customSettings") &&
                 option["customSettings"].hasOwnProperty("customColorPalette")
             ) {
-                let paletteColors = colorPalette.filter(
+                const paletteColors = colorPalette.filter(
                     (item) => item.isCustom === false,
                 );
-                let colorPaletteData = [
+                const colorPaletteData = [
                     ...paletteColors,
                     ...option["customSettings"]["customColorPalette"],
                 ];
@@ -484,7 +485,7 @@ export const ColorPalatteSettings = observer(
          */
         function handleDelete() {
             // Parse the value if it's a string
-            let option =
+            const option =
                 typeof optionValue === "string"
                     ? JSON.parse(optionValue)
                     : optionValue;
@@ -536,7 +537,10 @@ export const ColorPalatteSettings = observer(
                     ? colorPalette[0]
                     : colorPalette.find((item) => item.label === label);
             // Update the state with the new color palette data
-            if (Data.variation == "echart-scatter-plots") {
+            if (
+                Data.variation == "echart-scatter-plots" ||
+                Data.variation == "echart-stack-chart"
+            ) {
                 runStateUpdate(
                     optionComputedValue,
                     optionPathVal,
@@ -783,7 +787,7 @@ export const ColorPalatteSettings = observer(
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = null;
             }
-            let options = JSON.parse(option);
+            const options = JSON.parse(option);
             options.color = colors;
 
             // Set a new timeout to update state with a delay
