@@ -15,30 +15,25 @@ export const BaseSettingSection = (props: {
     children: ReactNode;
     wide?: boolean;
     description?: string;
-    labelDirection?: "row" | "column";
 }) => {
-    const labelDirection = props.labelDirection || "row";
     return (
-        <Stack
-            direction={labelDirection}
-            alignItems="start"
-            justifyContent="space-between"
-            // spacing={2}
-        >
-            <StyledTypography variant="body2" color="secondary">
-                {props.label}
-            </StyledTypography>
-            {!!props.description?.length && (
-                <Tooltip placement="top" title={props.description} arrow>
-                    <HelpOutlineIcon
-                        color="action"
-                        sx={{
-                            fontSize: 15,
-                            marginLeft: "5px",
-                        }}
-                    />
-                </Tooltip>
-            )}
+        <Stack direction="column" spacing={1} className="base-setting-section">
+            <Stack direction="row" alignItems="center" spacing={1}>
+                <StyledTypography variant="body2">
+                    {props.label}
+                </StyledTypography>
+                {!!props.description?.length && (
+                    <Tooltip placement="top" title={props.description} arrow>
+                        <HelpOutlineIcon
+                            color="action"
+                            sx={{
+                                fontSize: 15,
+                                marginLeft: "5px",
+                            }}
+                        />
+                    </Tooltip>
+                )}
+            </Stack>
             <Stack
                 direction="row"
                 justifyContent="start"

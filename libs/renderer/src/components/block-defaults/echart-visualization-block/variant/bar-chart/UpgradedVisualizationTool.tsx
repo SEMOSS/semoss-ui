@@ -152,7 +152,7 @@ export const UpgradedVisualizationTool =
                                     }
                                 />
                             </ListItemIcon>
-                            <ListItemText primary="Colour Palette" />
+                            <ListItemText primary="Color Palette" />
                             <InfoOutlined />
                         </ListItemButton>
                     </ListItem>
