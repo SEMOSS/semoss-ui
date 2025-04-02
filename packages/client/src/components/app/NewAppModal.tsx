@@ -53,7 +53,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
             APP_NAME: '',
             APP_DESCRIPTION: '',
             APP_TAGS: [],
-            APP_IMG: ''
+            APP_IMG: '',
         },
     });
 
@@ -297,9 +297,9 @@ export const NewAppModal = (props: NewAppModalProps) => {
                                 return (
                                     <TextField
                                         label="Image"
-                                        variant='outlined'
+                                        variant="outlined"
                                         disabled={isLoading}
-                                        type='file'
+                                        type="file"
                                         inputProps={{
                                             accept: 'image/*',
                                         }}
@@ -307,13 +307,17 @@ export const NewAppModal = (props: NewAppModalProps) => {
                                             shrink: true,
                                         }}
                                         onChange={(e) => {
-                                            const value = (e.target as HTMLInputElement).files;
+                                            const value = (
+                                                e.target as HTMLInputElement
+                                            ).files;
                                             if (value && value.length > 0) {
                                                 const reader = new FileReader();
                                                 reader.readAsDataURL(value[0]);
                                                 reader.onload = () => {
-                                                    field.onChange(reader.result);
-                                                }
+                                                    field.onChange(
+                                                        reader.result,
+                                                    );
+                                                };
                                             }
                                         }}
                                     />
