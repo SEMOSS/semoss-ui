@@ -498,7 +498,7 @@ export const ScatterPlotBlockSettings = observer(
 
         return (
             <StyledStack>
-                <BaseSettingSection labelDirection="column" label="Frame">
+                <BaseSettingSection label="Frame">
                     <Autocomplete
                         fullWidth
                         multiple={false}
@@ -531,7 +531,7 @@ export const ScatterPlotBlockSettings = observer(
                 </BaseSettingSection>
 
                 {/* <StyledStack> */}
-                <BaseSettingSection labelDirection="column" label="Label">
+                <BaseSettingSection label="Label">
                     <Autocomplete
                         size="small"
                         fullWidth
@@ -558,7 +558,7 @@ export const ScatterPlotBlockSettings = observer(
                         )}
                     />
                 </BaseSettingSection>
-                <BaseSettingSection labelDirection="column" label="X-Axis">
+                <BaseSettingSection label="X-Axis">
                     <Autocomplete
                         size="small"
                         fullWidth
@@ -585,7 +585,7 @@ export const ScatterPlotBlockSettings = observer(
                         )}
                     />
                 </BaseSettingSection>
-                <BaseSettingSection labelDirection="column" label="Y-Axis">
+                <BaseSettingSection label="Y-Axis">
                     <Autocomplete
                         size="small"
                         fullWidth
@@ -612,7 +612,7 @@ export const ScatterPlotBlockSettings = observer(
                         )}
                     />
                 </BaseSettingSection>
-                <BaseSettingSection labelDirection="column" label="Size">
+                <BaseSettingSection label="Size">
                     <Autocomplete
                         size="small"
                         fullWidth
@@ -639,7 +639,7 @@ export const ScatterPlotBlockSettings = observer(
                         )}
                     />
                 </BaseSettingSection>
-                <BaseSettingSection labelDirection="column" label="Color">
+                <BaseSettingSection label="Color">
                     <Autocomplete
                         size="small"
                         fullWidth
@@ -666,7 +666,7 @@ export const ScatterPlotBlockSettings = observer(
                         )}
                     />
                 </BaseSettingSection>
-                <BaseSettingSection labelDirection="column" label="Tooltip">
+                <BaseSettingSection label="Tooltip">
                     <Autocomplete
                         size="small"
                         fullWidth

@@ -139,7 +139,7 @@ export const ResizeSetting = observer(
 
         return (
             <StyledBase>
-                <BaseSettingSection labelDirection="column" label={label} wide>
+                <BaseSettingSection label={label} wide>
                     <TextField
                         fullWidth
                         value={parsed.amount}

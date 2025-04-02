@@ -270,7 +270,7 @@ export const FrameOperationsPie = observer(
                     gap: "0.5rem",
                 }}
             >
-                <BaseSettingSection labelDirection="column" label="Frame">
+                <BaseSettingSection label="Frame">
                     <Autocomplete
                         fullWidth
                         multiple={false}
@@ -301,7 +301,7 @@ export const FrameOperationsPie = observer(
                         <Sync />
                     </IconButton>
                 </BaseSettingSection>
-                <BaseSettingSection labelDirection="column" label="Label">
+                <BaseSettingSection label="Label">
                     <Autocomplete
                         size="small"
                         fullWidth
@@ -328,7 +328,7 @@ export const FrameOperationsPie = observer(
                         )}
                     />
                 </BaseSettingSection>
-                <BaseSettingSection labelDirection="column" label="Value">
+                <BaseSettingSection label="Value">
                     <Autocomplete
                         size="small"
                         fullWidth
