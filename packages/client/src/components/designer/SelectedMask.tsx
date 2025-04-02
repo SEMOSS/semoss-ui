@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Stack, Typography, styled } from '@semoss/ui';
+import { Stack, Typography, styled, useNotification } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
 import { getRelativeSize, getBlockElement } from '@/stores';
@@ -72,6 +72,7 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
     const isDraggable =
         block && registry[block.widget] && block.widget !== 'page';
 
+    const notification = useNotification();
     /**
      * Handle the mousedown on the block.
      */
@@ -101,21 +102,121 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
         // set as inactive
         setLocal(true);
     };
+    const splited = (
+        data: any,
+        splitedValue: string,
+        notSplitedValue: string,
+    ) => {
+        if (data.hasOwnProperty(splitedValue)) {
+            return data[splitedValue];
+        }
+        return notSplitedValue;
+    };
 
     const getJsonForBlock = (id: string, data?: any) => {
         const block = state.blocks[id];
         let updatedBlock = block;
-        if (data !== undefined || data !== null) {
-            updatedBlock = {
-                ...block,
-                data: {
-                    ...block.data,
-                    label:
-                        typeof data === 'object'
-                            ? data.label.toString()
-                            : data.toString(),
-                },
-            };
+        if (updatedBlock.widget === 'button') {
+            if (data !== undefined || data !== null) {
+                const value =
+                    typeof updatedBlock.data.label === 'string' &&
+                    updatedBlock.data.label.includes('$')
+                        ? updatedBlock.data.label.match(/\{\{\$(.*?)\}\}/)
+                        : updatedBlock.data.label;
+                const splitedValue = value?.[1];
+
+                updatedBlock = {
+                    ...block,
+                    data: {
+                        ...block.data,
+                        label:
+                            typeof data === 'object' &&
+                            typeof updatedBlock.data.label === 'string' &&
+                            updatedBlock.data.label.includes('$')
+                                ? splited(
+                                      data,
+                                      splitedValue,
+                                      updatedBlock.data.label,
+                                  ).toString()
+                                : data.toString(),
+                    },
+                };
+            }
+        }
+        if (updatedBlock.widget === 'markdown') {
+            if (data !== undefined || data !== null) {
+                const value =
+                    typeof updatedBlock.data.markdown === 'string'
+                        ? updatedBlock.data.markdown.match(/\.([^}]+)}}/)
+                        : updatedBlock.data.markdown;
+                const splitedValue = value?.[1];
+
+                updatedBlock = {
+                    ...block,
+                    data: {
+                        ...block.data,
+                        markdown:
+                            typeof data === 'object' &&
+                            typeof updatedBlock.data.markdown === 'string'
+                                ? splited(
+                                      data,
+                                      splitedValue,
+                                      updatedBlock.data.markdown,
+                                  ).toString()
+                                : data.toString(),
+                    },
+                };
+            }
+        }
+        if (updatedBlock.widget === 'text') {
+            if (data !== undefined || data !== null) {
+                const value =
+                    typeof updatedBlock.data.text === 'string'
+                        ? updatedBlock.data.text.match(/\.([^}]+)}}/)
+                        : updatedBlock.data.text;
+                const splitedValue = value?.[1];
+
+                updatedBlock = {
+                    ...block,
+                    data: {
+                        ...block.data,
+                        text:
+                            typeof data === 'object' &&
+                            typeof updatedBlock.data.text === 'string'
+                                ? splited(
+                                      data,
+                                      splitedValue,
+                                      updatedBlock.data.text,
+                                  ).toString()
+                                : data.toString(),
+                    },
+                };
+            }
+        }
+        if (updatedBlock.widget === 'input') {
+            if (data !== undefined || data !== null) {
+                const value =
+                    typeof updatedBlock.data.value === 'string'
+                        ? updatedBlock.data.value.match(/\.([^}]+)}}/)
+                        : updatedBlock.data.value;
+                const splitedValue = value?.[1];
+
+                updatedBlock = {
+                    ...block,
+                    data: {
+                        ...block.data,
+                        value:
+                            typeof data === 'object' &&
+                            typeof updatedBlock.data.value === 'string'
+                                ? splited(
+                                      data,
+                                      splitedValue,
+                                      updatedBlock.data.value,
+                                  ).toString()
+                                : data.toString(),
+                    },
+                };
+            }
         }
 
         const blockJson = {
@@ -130,7 +231,7 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
             if (block.slots[slot]) {
                 blockJson.slots[slot] = block.slots[slot].children.map(
                     (childId) => {
-                        return getJsonForBlock(childId);
+                        return getJsonForBlock(childId, data);
                     },
                 );
             }
@@ -145,25 +246,21 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
         siblingWidget3: any,
         placeholderAction: any,
     ) => {
-        let data = state.parseVariable(siblingWidget3.data.value) as any[];
-        debugger;
+        const data = state.parseVariable(siblingWidget3.data.value) as any[];
         let sibilingId = '';
         for (let i = 0; i < data.length; i++) {
-            // console.log(item.json, 'item.json');
-            let id: string = state.dispatch({
+            const id: string = state.dispatch({
                 message: ActionMessages.ADD_BLOCK,
                 payload: {
                     json: getJsonForBlock(block.id, data[i]) as BlockJSON,
                     position: {
                         parent: placeholderAction.id,
                         slot: placeholderAction.slot,
-                        // sibling: sibilingId ? sibilingId :"",
-                        // type: "after",
                     },
                 },
             }) as string;
             if (i === 0) {
-                let id1 = id;
+                const id1 = id;
                 (siblingWidget3.data.sourceBlockList as string[]).push(
                     id1 as string,
                 );
@@ -181,25 +278,23 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
         placeholderAction: any,
         parent: any,
     ) => {
-        let data = state.parseVariable(parent.data.value) as any[];
+        const data = state.parseVariable(parent.data.value) as any[];
         let sibilingId = '';
         for (let i = 0; i < data.length; i++) {
-            // console.log(item.json, 'item.json');
-
-            let id: string = state.dispatch({
+            const id: string = state.dispatch({
                 message: ActionMessages.ADD_BLOCK,
                 payload: {
                     json: getJsonForBlock(block.id, data[i]) as BlockJSON,
                     position: {
                         parent: siblingWidget.parent.id,
                         slot: siblingWidget.parent.slot,
-                        // sibling: sibilingId ? sibilingId :"",
-                        // type: "after",
+                        sibling: siblingWidget.id,
+                        type: placeholderAction.type,
                     },
                 },
             }) as string;
             if (i === 0) {
-                let id1 = id;
+                const id1 = id;
                 (parent.data.sourceBlockList as string[]).push(id1 as string);
             }
             if (id) {
@@ -213,7 +308,6 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
      * Handle the mouseup event on the document
      */
     const handleDocumentMouseUp = useCallback(() => {
-        debugger;
         if (!designer.drag.active) {
             return;
         }
@@ -229,6 +323,7 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 
                 if (siblingWidget.parent) {
                     const parent = state.getBlock(siblingWidget.parent.id);
+                    const block = state.getBlock(designer.selected);
                     const num = Number(parent.data.iterationCount);
                     if (num > 0) {
                         onIteration(
@@ -244,7 +339,6 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
                                 keep: false,
                             },
                         });
-                        // (parent.data.sourceBlockList as string[]).push(block.id as string);
                         designer.setSelected(parent.id);
                     } else {
                         state.dispatch({
@@ -262,13 +356,8 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
                     }
                 }
             } else if (placeholderAction.type === 'replace') {
-                console.log(
-                    'placeholderAction',
-                    placeholderAction,
-                    designer.selected,
-                );
                 const siblingWidget3 = state.getBlock(placeholderAction.id);
-                let num = Number(siblingWidget3.data.iterationCount);
+                const num = Number(siblingWidget3.data.iterationCount);
                 if (num > 0) {
                     onIterate(num, siblingWidget3, placeholderAction);
                     state.dispatch({

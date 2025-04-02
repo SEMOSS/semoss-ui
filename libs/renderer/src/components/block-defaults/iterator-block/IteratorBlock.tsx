@@ -33,24 +33,52 @@ export const IteratorBlock: BlockComponent = observer(({ id }) => {
 
     const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
     const getJsonForBlock = (id: string, data54?: any) => {
-        console.log(data54, typeof data54, "id");
         const block = state.blocks[id];
-        debugger;
-        console.log(block, "block123");
         let updatedBlock = block;
+        if(updatedBlock.widget === "button" ){
         if (data54 !== undefined || data54 !== null) {
             updatedBlock = {
                 ...block,
                 data: {
                     ...block.data,
-                    label:
-                        typeof data54 === "object"
-                            ? data54.label.toString()
-                            : data54.toString(),
+                    label: data54,
                 },
             };
         }
-        // let updatedBlock = {...block, data: {...block.data, label: typeof data === "object"? data.label.toString(): data.toString()}}
+    }
+    if(updatedBlock.widget === "text" ){
+        if (data54 !== undefined || data54 !== null) {
+            updatedBlock = {
+                ...block,
+                data: {
+                    ...block.data,
+                    text: data54,
+                },
+            };
+        }
+    }
+    if(updatedBlock.widget === "markdown" ){
+        if (data54 !== undefined || data54 !== null) {
+            updatedBlock = {
+                ...block,
+                data: {
+                    ...block.data,
+                    markdown: data54,
+                },
+            };
+        }
+    }
+    if(updatedBlock.widget === "input" ){
+        if (data54 !== undefined || data54 !== null) {
+            updatedBlock = {
+                ...block,
+                data: {
+                    ...block.data,
+                    value: data54,
+                },
+            };
+        }
+    }
 
         const blockJson = {
             widget: toJS(updatedBlock.widget),
@@ -74,20 +102,14 @@ export const IteratorBlock: BlockComponent = observer(({ id }) => {
         return blockJson;
     };
     useEffect(() => {
-        console.log(data.value, "data.value");
         if (data.value && data.value.length > 0 && data.test) {
-            debugger;
             if (slots.children.children.length > 0) {
                 const block = state.getBlock(slots.children.children[0]);
                 const parentBlock = state.getBlock(block.parent.id);
-                console.log(parentBlock, "parentBlock");
-                console.log(block, "block");
                 const children = parentBlock.slots.children.children.map(
                     (childId) => childId,
                 );
                 for (let i = 0; i < children.length; i++) {
-                    debugger;
-                    console.log(parentBlock, children, "parentBlock in loop");
                     if (!data.sourceBlockList.includes(children[i])) {
                         state.dispatch({
                             message: ActionMessages.REMOVE_BLOCK,
@@ -98,20 +120,25 @@ export const IteratorBlock: BlockComponent = observer(({ id }) => {
                         });
                     } else {
                         let block1 = state.getBlock(children[i]);
-                        block1.data.label =
-                            typeof data.value[0] === "object"
-                                ? data.value[0].label
-                                : data.value[0];
+                        if(block1.widget === "button"){
+                        block1.data.label = data.value[0];
                     }
+                    if(block1.widget === "text"){
+                        block1.data.text = data.value[0];
+                    }
+                    if(block1.widget === "markdown"){
+                        block1.data.markdown = data.value[0];
+                    }
+                    if(block1.widget === "input"){
+                        block1.data.value = data.value[0];
+                    }
+                }
                 }
                 for (let j = 0; j < data.sourceBlockList.length; j++) {
                     let blockId = data.sourceBlockList[j];
                     const parentSourceBlock = state.getBlock(blockId);
-                    debugger;
-
                     let sibilingId: string = parentSourceBlock.id;
                     for (let i = 1; i < data.value.length; i++) {
-                        console.log(data.value, data.value[i], "data.value");
                         const id: string = state.dispatch({
                             message: ActionMessages.ADD_BLOCK,
                             payload: {
@@ -133,7 +160,6 @@ export const IteratorBlock: BlockComponent = observer(({ id }) => {
                     }
                 }
             }
-            console.log(data.iterationCount, data, "data.iterationCount");
             setData("test", false, true);
         }
     }, [data.value]);

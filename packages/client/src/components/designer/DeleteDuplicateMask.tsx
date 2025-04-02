@@ -165,6 +165,35 @@ export const DeleteDuplicateMask = observer(
          */
         const onDelete = () => {
             // dispatch the event
+            const block = state.blocks[designer.selected];
+            const parentBlock = state.blocks[block.parent.id];
+
+            if (parentBlock.widget === 'iterator') {
+                const parentSlot = parentBlock.slots[block.parent.slot];
+
+                if (parentSlot.children.length > 0) {
+                    // Remove the selected block from children
+                    parentSlot.children = parentSlot.children.filter(
+                        (childId) => childId !== designer.selected,
+                    );
+
+                    // Filter children to keep only those starting with block.widget (e.g., "button")
+                    const filteredChildren = parentSlot.children.filter(
+                        (childId) => childId.startsWith(block.widget),
+                    );
+                    if (filteredChildren.length > 0) {
+                        // Push the first filtered child to sourceBlockList
+                        (parentBlock.data.sourceBlockList as string[]).push(
+                            filteredChildren[0],
+                        );
+                    }
+
+                    // Remove designer.selected from sourceBlockList if it exists
+                    parentBlock.data.sourceBlockList = (
+                        parentBlock.data.sourceBlockList as string[]
+                    ).filter((blockId) => blockId !== designer.selected);
+                }
+            }
             state.dispatch({
                 message: ActionMessages.REMOVE_BLOCK,
                 payload: {
