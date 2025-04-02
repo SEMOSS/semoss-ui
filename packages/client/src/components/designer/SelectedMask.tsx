@@ -124,15 +124,13 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
                         ? updatedBlock.data.label.match(/\{\{\$(.*?)\}\}/)
                         : updatedBlock.data.label;
                 const splitedValue = value?.[1];
-
                 updatedBlock = {
                     ...block,
                     data: {
                         ...block.data,
                         label:
                             typeof data === 'object' &&
-                            typeof updatedBlock.data.label === 'string' &&
-                            updatedBlock.data.label.includes('$')
+                            typeof updatedBlock.data.label === 'string'
                                 ? splited(
                                       data,
                                       splitedValue,
@@ -150,7 +148,6 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
                         ? updatedBlock.data.markdown.match(/\.([^}]+)}}/)
                         : updatedBlock.data.markdown;
                 const splitedValue = value?.[1];
-
                 updatedBlock = {
                     ...block,
                     data: {
