@@ -276,7 +276,7 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
         parent: any,
     ) => {
         const data = state.parseVariable(parent.data.value) as any[];
-        let sibilingId = '';
+        let sibilingId = siblingWidget.id;
         for (let i = 0; i < data.length; i++) {
             const id: string = state.dispatch({
                 message: ActionMessages.ADD_BLOCK,
@@ -285,7 +285,10 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
                     position: {
                         parent: siblingWidget.parent.id,
                         slot: siblingWidget.parent.slot,
-                        sibling: siblingWidget.id,
+                        sibling:
+                            placeholderAction.type === 'before'
+                                ? siblingWidget.id
+                                : sibilingId,
                         type: placeholderAction.type,
                     },
                 },
