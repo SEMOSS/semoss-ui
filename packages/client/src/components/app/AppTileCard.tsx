@@ -257,7 +257,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
      * @returns image
      */
     const findAppImage = (appType: string) => {
-        let randomInt = Math.floor(Math.random() * 5);
+        let randomInt = 0; //Math.floor(Math.random() * 5);
         if (appType == 'BI' || appType == 'TERMINAL' || appType == '') {
             randomInt = 0;
         }

@@ -103,6 +103,7 @@ export const AppDetailsFormValues: AppDetailsFormTypes = {
     detailsForm: {
         markdown: '',
         tag: [],
+        appImage: '',
     },
 
     dependencies: [],

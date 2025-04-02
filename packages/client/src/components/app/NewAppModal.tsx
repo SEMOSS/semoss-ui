@@ -26,6 +26,7 @@ type NewAppForm = {
     APP_NAME: string;
     APP_DESCRIPTION: string;
     APP_TAGS: string[];
+    APP_IMG: string;
 };
 
 interface NewAppModalProps {
@@ -52,6 +53,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
             APP_NAME: '',
             APP_DESCRIPTION: '',
             APP_TAGS: [],
+            APP_IMG: ''
         },
     });
 
@@ -283,6 +285,37 @@ export const NewAppModal = (props: NewAppModalProps) => {
                                                 placeholder='Press "Enter" to add tag'
                                             />
                                         )}
+                                    />
+                                );
+                            }}
+                        />
+                        <Controller
+                            name={'APP_IMG'}
+                            control={control}
+                            rules={{}}
+                            render={({ field }) => {
+                                return (
+                                    <TextField
+                                        label="Image"
+                                        variant='outlined'
+                                        disabled={isLoading}
+                                        type='file'
+                                        inputProps={{
+                                            accept: 'image/*',
+                                        }}
+                                        InputLabelProps={{
+                                            shrink: true,
+                                        }}
+                                        onChange={(e) => {
+                                            const value = (e.target as HTMLInputElement).files;
+                                            if (value && value.length > 0) {
+                                                const reader = new FileReader();
+                                                reader.readAsDataURL(value[0]);
+                                                reader.onload = () => {
+                                                    field.onChange(reader.result);
+                                                }
+                                            }
+                                        }}
                                     />
                                 );
                             }}
