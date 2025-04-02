@@ -9,6 +9,7 @@ import { ChartContextMenu } from "./ChartContextMenu";
 import { getValueByPath } from "../../../../../utility";
 import { useBlockSettings, useFrame } from "../../../../../hooks";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+import { EChartsOption } from "echarts";
 
 //Main Container for displaying Bar chart
 const StyledMainContainer = styled("div")(({ theme }) => ({
@@ -63,7 +64,7 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
     const frameData = useFrame(data.frame.name, {
         selector: selector,
     });
-    let chartOperationData = useRef({
+    const chartOperationData = useRef({
         brushSelected: [],
         contextMenu: null,
         yAxisColumn: { name: "", selector: "", width: undefined },
@@ -85,14 +86,14 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
         });
     }, [data, "option"]).get();
 
-    let parsedOption = useMemo(() => {
+    const parsedOption = useMemo(() => {
         return typeof computedValue === "string"
             ? JSON.parse(computedValue)
             : computedValue;
     }, [computedValue]);
 
     useEffect(() => {
-        let toolsUpdated =
+        const toolsUpdated =
             parsedOption.hasOwnProperty("customSettings") &&
             parsedOption["customSettings"].hasOwnProperty("toolsUpdated")
                 ? parsedOption["customSettings"]["toolsUpdated"]
@@ -117,7 +118,7 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
                     return { value: item[frameDataIndex] };
                 },
             );
-            let optionSeriesLength = frameData.data.headers.length;
+            const optionSeriesLength = frameData.data.headers.length;
             frameDataIndex++;
             //setting all values to all existing series to null, to restore the chart to initial state so new values will be updated
             for (
@@ -164,8 +165,8 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
         //when contextmenu event is raised, default context menu made hidden, and custom component is shown
         contextmenu: (params) => {
             if (params.data) {
-                let xAxisName = data.option["xAxis"]["pixelvalue"][0];
-                let xAxisValue =
+                const xAxisName = data.option["xAxis"]["pixelvalue"][0];
+                const xAxisValue =
                     typeof data.option["xAxis"]["data"][params.dataIndex] ==
                         "object" &&
                     data.option["xAxis"]["data"][
@@ -197,9 +198,9 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
         },
         //After brushing in bar chart, this event will be triggered to filter the selected data
         brushend: (params) => {
-            let batch = params.batch;
-            let xAxisName = data.option["xAxis"]["pixelvalue"][0];
-            let xAxisValue = chartOperationData.current.brushSelected.map(
+            const batch = params.batch;
+            const xAxisName = data.option["xAxis"]["pixelvalue"][0];
+            const xAxisValue = chartOperationData.current.brushSelected.map(
                 (item) =>
                     typeof item === "object" && item.hasOwnProperty("value")
                         ? item["value"]
@@ -211,12 +212,12 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
         },
         //this event will be triggered when bar data is being selected
         brushselected: (params) => {
-            let batch = params.batch;
+            const batch = params.batch;
             if (batch.length) {
-                let firstBatch = batch[0];
-                let selectedData = firstBatch.selected;
-                let firstSelectedData = selectedData[0] || [];
-                let xAxisData = data.option["xAxis"]["data"].filter(
+                const firstBatch = batch[0];
+                const selectedData = firstBatch.selected;
+                const firstSelectedData = selectedData[0] || [];
+                const xAxisData = data.option["xAxis"]["data"].filter(
                     (item, index) =>
                         firstSelectedData.dataIndex.includes(index),
                 );
@@ -252,7 +253,7 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
         return (
             <StyledMainContainer id={id}>
                 <EChartsReact
-                    option={resultData}
+                    option={resultData as EChartsOption}
                     // onChartReady={echartsLoaded}
                     onEvents={onClickChart}
                     style={{

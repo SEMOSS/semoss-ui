@@ -170,8 +170,6 @@ const formatValue = (input: string) => {
             DAY: 'Daily',
             WEEK: 'Weekly',
             MONTH: 'Monthly',
-            NULL: 'None',
-            NATIVE: 'Native',
         };
         return mappings[input.toUpperCase()] || input;
     }
@@ -212,7 +210,7 @@ export const UserTable = (props: UserTableProps) => {
     const notification = useNotification();
 
     const [page, setPage] = useState<number>(0);
-    const [rowsPerPage, setRowsPerPage] = useState<number>(5);
+    const [rowsPerPage, setRowsPerPage] = useState<number>(25);
     const [isSearch, setIsSearch] = useState<boolean>(false);
     const [search, setSearch] = useState<string>('');
 
@@ -674,9 +672,7 @@ export const UserTable = (props: UserTableProps) => {
                                                             {user.email}
                                                         </Table.Cell>
                                                         <Table.Cell>
-                                                            {formatValue(
-                                                                user.type,
-                                                            )}
+                                                            {user.type}
                                                         </Table.Cell>
                                                         <Table.Cell>
                                                             {formatValue(
@@ -787,7 +783,9 @@ export const UserTable = (props: UserTableProps) => {
                                                 }}
                                                 page={page}
                                                 rowsPerPage={rowsPerPage}
-                                                rowsPerPageOptions={[5, 10, 20]}
+                                                rowsPerPageOptions={[
+                                                    25, 50, 100,
+                                                ]}
                                                 onRowsPerPageChange={(e) => {
                                                     // set the new limit
                                                     setRowsPerPage(

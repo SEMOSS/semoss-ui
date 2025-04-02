@@ -5,7 +5,10 @@ import { ActionMessages, useBlocks } from '@semoss/renderer';
 import { styled, Card, Tooltip, Stack, Typography } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
-import { DesignerMenuItem } from '../blocks-workspace/menus/menu-types';
+import {
+    BlockLocalStorageData,
+    DesignerMenuItem,
+} from '../blocks-workspace/menus/menu-types';
 import { BlockCardContent, blockCardWidth } from './BlockMenuCardContent';
 import * as BLOCK_IMAGES from '@/assets/blocks';
 
@@ -154,6 +157,24 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         let id = '';
         console.log(designer, designer.drag.placeholderAction, 'designer');
 
+        // Track block in session storage
+        localStorage.setItem(
+            'blocks--frequently-used',
+            (() => {
+                const map: Record<string, BlockLocalStorageData> =
+                    JSON.parse(
+                        localStorage.getItem('blocks--frequently-used'),
+                    ) ?? {};
+                map[item.json.widget] = {
+                    widget: item.json.widget,
+                    name: item.name,
+                    use_count: (map[item.json.widget]?.use_count ?? 0) + 1,
+                    last_used: Date.now(),
+                };
+                return JSON.stringify(map);
+            })(),
+        );
+
         // apply the action
         const placeholderAction = designer.drag.placeholderAction;
         if (placeholderAction) {
@@ -226,6 +247,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         // set as active
         setLocal(false);
     }, [
+        item.name,
         item.json,
         designer.drag.active,
         designer.drag.placeholderAction,
@@ -245,8 +267,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
             document.removeEventListener('mouseup', handleDocumentMouseUp);
         };
     }, [designer.drag.active, local, handleDocumentMouseUp]);
-
-    console.log(item);
 
     return (
         <Stack

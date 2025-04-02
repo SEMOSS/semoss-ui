@@ -1,5 +1,8 @@
 import { BlockConfig } from "../../../store";
-import { buildDimensionsSection } from "../block-defaults.shared";
+import {
+    buildDimensionsSection,
+    buildShowField,
+} from "../block-defaults.shared";
 import { ImageBlockDef, ImageBlock } from "./ImageBlock";
 import { PanoramaOutlined } from "@mui/icons-material";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
@@ -23,6 +26,7 @@ export const config: BlockConfig<ImageBlockDef> = {
         },
         src: "",
         title: "",
+        show: "true",
     },
     listeners: {},
     slots: {},
@@ -32,6 +36,7 @@ export const config: BlockConfig<ImageBlockDef> = {
         {
             name: "General",
             children: [
+                ...buildShowField(),
                 {
                     description: "Image Source",
                     render: ({ id }) => (

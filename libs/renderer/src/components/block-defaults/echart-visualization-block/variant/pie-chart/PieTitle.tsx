@@ -116,7 +116,7 @@ export const PieTitle = observer(
         };
         //Handle the change event for any Title input
         function handleInputChange(title, inputValue) {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             if (title === "showTitle") {
                 option["title"].show = inputValue;
                 setShowTitle(inputValue);
@@ -156,7 +156,7 @@ export const PieTitle = observer(
         //Reset the feature to the default values
         //The default values are set in the reset object in the option
         function handleReset() {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             option["title"].show = option["reset"]["title"]["show"];
             option["title"]["text"] = option["reset"]["title"]["text"];
             option["title"]["left"] = option["reset"]["title"]["left"];
