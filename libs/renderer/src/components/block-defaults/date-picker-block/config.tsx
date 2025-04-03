@@ -30,7 +30,6 @@ export const config: BlockConfig<DateBlockDef> = {
         disablePast: false,
         minDate: "",
         maxDate: "",
-        shouldDisableDate: "",
         views: ["year", "month", "day"],
     },
     listeners: {

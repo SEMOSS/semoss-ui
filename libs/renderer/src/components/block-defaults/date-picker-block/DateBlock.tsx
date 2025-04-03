@@ -41,7 +41,6 @@ export interface DateBlockDef extends BlockDef<"date"> {
         disablePast: boolean;
         minDate: string; // ISO string
         maxDate: string; // ISO string
-        shouldDisableDate: string; // Function string (not implemented)
         views: ("year" | "month" | "day")[];
     };
     listeners: {

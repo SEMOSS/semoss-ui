@@ -1207,7 +1207,6 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 disablePast: false,
                 minDate: '',
                 maxDate: '',
-                shouldDisableDate: '',
                 views: ['year', 'month', 'day'],
             },
             listeners: {},
