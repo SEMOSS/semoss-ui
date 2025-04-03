@@ -171,7 +171,7 @@ export const AddAppModal = (props: AddAppProps) => {
             configStore.store.insightID,
         );
         const resp = await monolithStore.runQuery(
-            `ImportApp(filePath=["${upload[0].fileLocation}"], global=[${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}]);`,
+            `UploadProjectApp(filePath=["${upload[0].fileLocation}"], global=[${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}]);`,
         );
 
         let output = undefined;
