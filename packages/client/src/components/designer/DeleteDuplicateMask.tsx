@@ -166,32 +166,103 @@ export const DeleteDuplicateMask = observer(
         const onDelete = () => {
             // dispatch the event
             const block = state.blocks[designer.selected];
-            const parentBlock = state.blocks[block.parent.id];
+            if (block.parent !== null) {
+                const parentBlock = state.blocks[block.parent.id];
 
-            if (parentBlock.widget === 'iterator') {
-                const parentSlot = parentBlock.slots[block.parent.slot];
+                if (
+                    parentBlock.widget === 'iterator' &&
+                    Array.isArray(parentBlock.data.sourceBlockList) &&
+                    parentBlock.data.sourceBlockList.some(
+                        (b: { id: string }) => b.id === designer.selected,
+                    )
+                ) {
+                    const parentSlot = parentBlock.slots[block.parent.slot];
 
-                if (parentSlot.children.length > 0) {
-                    // Remove the selected block from children
-                    parentSlot.children = parentSlot.children.filter(
-                        (childId) => childId !== designer.selected,
-                    );
+                    if (parentSlot.children.length > 0) {
+                        // Remove the selected block from children
+                        parentSlot.children = parentSlot.children.filter(
+                            (childId) => childId !== designer.selected,
+                        );
 
-                    // Filter children to keep only those starting with block.widget (e.g., "button")
-                    const filteredChildren = parentSlot.children.filter(
-                        (childId) => childId.startsWith(block.widget),
-                    );
-                    if (filteredChildren.length > 0) {
-                        // Push the first filtered child to sourceBlockList
-                        (parentBlock.data.sourceBlockList as string[]).push(
-                            filteredChildren[0],
+                        // Filter children to keep only those starting with block.widget (e.g., "button")
+                        const filteredChildren = parentSlot.children.filter(
+                            (childId) => childId.startsWith(block.widget),
+                        );
+                        if (filteredChildren.length > 0) {
+                            // Find the full block object from state.blocks
+                            const firstFilteredBlock =
+                                state.blocks[filteredChildren[0]];
+                            if (
+                                firstFilteredBlock.slots.children.children
+                                    .length > 0
+                            ) {
+                            }
+                            if (firstFilteredBlock) {
+                                const convertSlotsToJson = (slots: any) => {
+                                    const slotJson: Record<string, any[]> = {};
+
+                                    for (const slot in slots) {
+                                        slotJson[slot] = slots[slot].children
+                                            .map((childId: string) => {
+                                                const childBlock =
+                                                    state.blocks[childId];
+                                                if (!childBlock) return null;
+
+                                                return {
+                                                    widget: toJS(
+                                                        childBlock.widget,
+                                                    ),
+                                                    data: toJS(childBlock.data),
+                                                    listeners: toJS(
+                                                        childBlock.listeners,
+                                                    ),
+                                                    slots: convertSlotsToJson(
+                                                        childBlock.slots,
+                                                    ), // Recursively process slots
+                                                };
+                                            })
+                                            .filter(Boolean); // Remove null values if any child block is missing
+                                    }
+
+                                    return slotJson;
+                                };
+
+                                const blockJson = {
+                                    widget: toJS(firstFilteredBlock.widget),
+                                    data: toJS(firstFilteredBlock.data),
+                                    listeners: toJS(
+                                        firstFilteredBlock.listeners,
+                                    ),
+                                    slots: firstFilteredBlock.slots.children
+                                        ? convertSlotsToJson(
+                                              firstFilteredBlock.slots,
+                                          )
+                                        : {}, // Convert slot IDs to full JSON blocks
+                                };
+
+                                const payload = {
+                                    json: blockJson,
+                                };
+
+                                const blockObject = {
+                                    json: payload.json,
+                                    id: firstFilteredBlock.id,
+                                };
+
+                                // Push the entire block object (not just ID) to sourceBlockList
+                                (
+                                    parentBlock.data.sourceBlockList as object[]
+                                ).push(blockObject);
+                            }
+                        }
+
+                        // Remove designer.selected from sourceBlockList
+                        parentBlock.data.sourceBlockList = (
+                            parentBlock.data.sourceBlockList as object[]
+                        ).filter(
+                            (b: { id: string }) => b.id !== designer.selected,
                         );
                     }
-
-                    // Remove designer.selected from sourceBlockList if it exists
-                    parentBlock.data.sourceBlockList = (
-                        parentBlock.data.sourceBlockList as string[]
-                    ).filter((blockId) => blockId !== designer.selected);
                 }
             }
             state.dispatch({

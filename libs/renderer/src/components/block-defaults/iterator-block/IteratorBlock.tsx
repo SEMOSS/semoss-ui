@@ -27,78 +27,48 @@ export interface IteratorBlockDef extends BlockDef<"iterator"> {
     };
 }
 
-export const IteratorBlock: BlockComponent = observer(({ id }) => {
+export const IteratorBlock: BlockComponent = observer(({ id }: { id: string }) => {
     const { attrs, data, setData, slots } = useBlock<IteratorBlockDef>(id);
     const { state } = useBlocks();
 
     const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
-    const getJsonForBlock = (id: string, data54?: any) => {
-        const block = state.blocks[id];
-        let updatedBlock = block;
-        if(updatedBlock.widget === "button" ){
-        if (data54 !== undefined || data54 !== null) {
-            updatedBlock = {
-                ...block,
-                data: {
-                    ...block.data,
-                    label: data54,
-                },
-            };
+    const getJsonForBlock = (blockJsonInput: any, data54?: any) => {
+        let updatedBlock = { ...blockJsonInput }; // Use the object directly
+    
+        if (updatedBlock.widget === "button" && data54 !== undefined) {
+            updatedBlock.data = { ...updatedBlock.data, label: data54 };
         }
-    }
-    if(updatedBlock.widget === "text" ){
-        if (data54 !== undefined || data54 !== null) {
-            updatedBlock = {
-                ...block,
-                data: {
-                    ...block.data,
-                    text: data54,
-                },
-            };
+    
+        if (updatedBlock.widget === "text" && data54 !== undefined) {
+            updatedBlock.data = { ...updatedBlock.data, text: data54 };
         }
-    }
-    if(updatedBlock.widget === "markdown" ){
-        if (data54 !== undefined || data54 !== null) {
-            updatedBlock = {
-                ...block,
-                data: {
-                    ...block.data,
-                    markdown: data54,
-                },
-            };
+    
+        if (updatedBlock.widget === "markdown" && data54 !== undefined) {
+            updatedBlock.data = { ...updatedBlock.data, markdown: data54 };
         }
-    }
-    if(updatedBlock.widget === "input" ){
-        if (data54 !== undefined || data54 !== null) {
-            updatedBlock = {
-                ...block,
-                data: {
-                    ...block.data,
-                    value: data54,
-                },
-            };
+    
+        if (updatedBlock.widget === "input" && data54 !== undefined) {
+            updatedBlock.data = { ...updatedBlock.data, value: data54 };
         }
-    }
-
+    
         const blockJson = {
             widget: toJS(updatedBlock.widget),
             data: toJS(updatedBlock.data),
             listeners: toJS(updatedBlock.listeners),
             slots: {},
         };
-
-        // generate the slots
-        for (const slot in block.slots) {
-            if (block.slots[slot]) {
-                blockJson.slots[slot] = block.slots[slot].children.map(
-                    (childId) => {
-                        return getJsonForBlock(childId);
-                    },
-                );
+    
+        // Generate the slots
+        if (updatedBlock.slots) {
+            for (const slot in updatedBlock.slots) {
+                if (updatedBlock.slots[slot]) {
+                    blockJson.slots[slot] = updatedBlock.slots[slot].map((child) =>
+                        getJsonForBlock(child,data54), // Recursively call for child blocks
+                    );
+                }
             }
         }
-
-        // return it
+    
         return blockJson;
     };
     useEffect(() => {
@@ -106,59 +76,62 @@ export const IteratorBlock: BlockComponent = observer(({ id }) => {
             if (slots.children.children.length > 0) {
                 const block = state.getBlock(slots.children.children[0]);
                 const parentBlock = state.getBlock(block.parent.id);
-                const children = parentBlock.slots.children.children.map(
-                    (childId) => childId,
-                );
-                for (let i = 0; i < children.length; i++) {
-                    if (!data.sourceBlockList.includes(children[i])) {
-                        state.dispatch({
-                            message: ActionMessages.REMOVE_BLOCK,
-                            payload: {
-                                id: children[i],
-                                keep: false,
-                            },
-                        });
-                    } else {
-                        let block1 = state.getBlock(children[i]);
-                        if(block1.widget === "button"){
-                        block1.data.label = data.value[0];
-                    }
-                    if(block1.widget === "text"){
-                        block1.data.text = data.value[0];
-                    }
-                    if(block1.widget === "markdown"){
-                        block1.data.markdown = data.value[0];
-                    }
-                    if(block1.widget === "input"){
-                        block1.data.value = data.value[0];
-                    }
-                }
-                }
+                const children = [...parentBlock.slots.children.children];
+                // Clear sourceBlockList before adding new blocks
+                parentBlock.data.sourceBlockList = [];
+    
+                // Add new blocks and push block objects into sourceBlockList
                 for (let j = 0; j < data.sourceBlockList.length; j++) {
-                    let blockId = data.sourceBlockList[j];
+                    let block = data.sourceBlockList[j];
+                    let blockJson = block.json;
+                    let blockId = block.id;
                     const parentSourceBlock = state.getBlock(blockId);
-                    let sibilingId: string = parentSourceBlock.id;
-                    for (let i = 1; i < data.value.length; i++) {
+                    let siblingId: string = parentSourceBlock.id;
+    
+                    for (let i = 0; i < data.value.length; i++) {
+                        let blockObject = {
+                            json: getJsonForBlock(blockJson, data.value[i]) as BlockJSON,
+                            id: siblingId,
+                        };
+    
                         const id: string = state.dispatch({
                             message: ActionMessages.ADD_BLOCK,
                             payload: {
-                                json: getJsonForBlock(
-                                    blockId,
-                                    data.value[i],
-                                ) as BlockJSON,
+                                json: blockObject.json,
                                 position: {
-                                    parent: parentSourceBlock.parent.id,
-                                    slot: parentSourceBlock.parent.slot,
-                                    sibling: sibilingId,
+                                    parent: parentSourceBlock.parent.id, // Using stored parent ID
+                                    slot: parentSourceBlock.parent.slot, // Using stored slot name
+                                    sibling: siblingId,
                                     type: "after",
                                 },
                             },
                         }) as string;
-                        if (id) {
-                            sibilingId = id;
+                        blockObject.id = id;
+                        // Update the block object with the new ID
+                        
+   
+                        if (i === 0) {
+                            // Push the entire block object instead of just id
+                            (parentBlock.data.sourceBlockList as object[]).push(blockObject);
                         }
+                        if (id) {
+                            siblingId = id;
+                        }
+    
+                        
                     }
                 }
+    
+                // Now remove all previous child blocks after processing
+                children.forEach((childId) => {
+                    state.dispatch({
+                        message: ActionMessages.REMOVE_BLOCK,
+                        payload: {
+                            id: childId,
+                            keep: false,
+                        },
+                    });
+                });
             }
             setData("test", false, true);
         }

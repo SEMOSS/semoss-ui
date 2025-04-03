@@ -246,22 +246,31 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
         const data = state.parseVariable(siblingWidget3.data.value) as any[];
         let sibilingId = '';
         for (let i = 0; i < data.length; i++) {
+            const blockJson = getJsonForBlock(block.id, data[i]) as BlockJSON;
+
+            const payload = {
+                json: blockJson,
+                position: {
+                    parent: placeholderAction.id,
+                    slot: placeholderAction.slot,
+                },
+            };
+
             const id: string = state.dispatch({
                 message: ActionMessages.ADD_BLOCK,
-                payload: {
-                    json: getJsonForBlock(block.id, data[i]) as BlockJSON,
-                    position: {
-                        parent: placeholderAction.id,
-                        slot: placeholderAction.slot,
-                    },
-                },
+                payload,
             }) as string;
+            const blockObject = {
+                id,
+                ...payload,
+            };
+
             if (i === 0) {
-                const id1 = id;
-                (siblingWidget3.data.sourceBlockList as string[]).push(
-                    id1 as string,
+                (siblingWidget3.data.sourceBlockList as object[]).push(
+                    blockObject,
                 );
             }
+
             if (id) {
                 sibilingId = id;
             }
@@ -278,25 +287,34 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
         const data = state.parseVariable(parent.data.value) as any[];
         let sibilingId = siblingWidget.id;
         for (let i = 0; i < data.length; i++) {
+            const blockJson = getJsonForBlock(block.id, data[i]) as BlockJSON;
+
+            const payload = {
+                json: blockJson,
+                position: {
+                    parent: siblingWidget.parent.id,
+                    slot: siblingWidget.parent.slot,
+                    sibling:
+                        placeholderAction.type === 'before'
+                            ? siblingWidget.id
+                            : sibilingId,
+                    type: placeholderAction.type,
+                },
+            };
+
             const id: string = state.dispatch({
                 message: ActionMessages.ADD_BLOCK,
-                payload: {
-                    json: getJsonForBlock(block.id, data[i]) as BlockJSON,
-                    position: {
-                        parent: siblingWidget.parent.id,
-                        slot: siblingWidget.parent.slot,
-                        sibling:
-                            placeholderAction.type === 'before'
-                                ? siblingWidget.id
-                                : sibilingId,
-                        type: placeholderAction.type,
-                    },
-                },
+                payload,
             }) as string;
+            const blockObject = {
+                id,
+                ...payload,
+            };
+
             if (i === 0) {
-                const id1 = id;
-                (parent.data.sourceBlockList as string[]).push(id1 as string);
+                (parent.data.sourceBlockList as object[]).push(blockObject);
             }
+
             if (id) {
                 sibilingId = id;
             }
@@ -325,21 +343,47 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
                     const parent = state.getBlock(siblingWidget.parent.id);
                     const block = state.getBlock(designer.selected);
                     const num = Number(parent.data.iterationCount);
-                    if (num > 0) {
-                        onIteration(
-                            num,
-                            siblingWidget,
-                            placeholderAction,
-                            parent,
-                        );
-                        state.dispatch({
-                            message: ActionMessages.REMOVE_BLOCK,
-                            payload: {
-                                id: designer.selected,
-                                keep: false,
-                            },
-                        });
-                        designer.setSelected(parent.id);
+                    if (parent.widget === 'iterator') {
+                        if (
+                            parent.slots.children.children.some((child: any) =>
+                                child.startsWith(block.widget),
+                            )
+                        ) {
+                            notification.add({
+                                color: 'error',
+                                message: `Already a ${block.widget} block is present in the Iterator block`,
+                            });
+                        } else {
+                            if (num > 0) {
+                                onIteration(
+                                    num,
+                                    siblingWidget,
+                                    placeholderAction,
+                                    parent,
+                                );
+                                state.dispatch({
+                                    message: ActionMessages.REMOVE_BLOCK,
+                                    payload: {
+                                        id: designer.selected,
+                                        keep: false,
+                                    },
+                                });
+                                designer.setSelected(parent.id);
+                            } else {
+                                state.dispatch({
+                                    message: ActionMessages.MOVE_BLOCK,
+                                    payload: {
+                                        id: designer.selected,
+                                        position: {
+                                            parent: siblingWidget.parent.id,
+                                            slot: siblingWidget.parent.slot,
+                                            sibling: siblingWidget.id,
+                                            type: placeholderAction.type,
+                                        },
+                                    },
+                                });
+                            }
+                        }
                     } else {
                         state.dispatch({
                             message: ActionMessages.MOVE_BLOCK,
