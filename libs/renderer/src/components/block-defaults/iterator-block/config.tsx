@@ -30,7 +30,7 @@ export const config: BlockConfig<IteratorBlockDef> = {
         value: [],
         type: "iteration",
         sourceBlockList: [],
-        test: false,
+        iteratorDropDownChange: false,
     },
     listeners: {
         onChange: [],

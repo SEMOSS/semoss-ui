@@ -20,7 +20,7 @@ export interface IteratorBlockDef extends BlockDef<"iterator"> {
         value: any[];
         type: string;
         sourceBlockList: any[];
-        test: boolean;
+        iteratorDropDownChange: boolean;
     };
     slots: {
         children: true;
@@ -72,7 +72,7 @@ export const IteratorBlock: BlockComponent = observer(({ id }: { id: string }) =
         return blockJson;
     };
     useEffect(() => {
-        if (data.value && data.value.length > 0 && data.test) {
+        if (data.value && data.value.length > 0 && data.iteratorDropDownChange) {
             if (slots.children.children.length > 0) {
                 const block = state.getBlock(slots.children.children[0]);
                 const parentBlock = state.getBlock(block.parent.id);
@@ -133,7 +133,7 @@ export const IteratorBlock: BlockComponent = observer(({ id }: { id: string }) =
                     });
                 });
             }
-            setData("test", false, true);
+            setData("iteratorDropDownChange", false, true);
         }
     }, [data.value]);
     return (

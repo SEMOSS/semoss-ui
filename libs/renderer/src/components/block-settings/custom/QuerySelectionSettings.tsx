@@ -151,13 +151,13 @@ export const QuerySelectionSettings = observer(
                     setData(path, value as PathValue<D["data"], typeof path>);
                     if (value === null) {
                         setData("iterationCount", 0);
-                        setData("test", false);
+                        setData("iteratorDropDownChange", false);
                     } else {
                         setData(
                             "iterationCount",
                             (state.parseVariable(value) as Array<any>).length,
                         );
-                        setData("test", true);
+                        setData("iteratorDropDownChange", true);
                     }
                     __onChange();
                 } catch (e) {

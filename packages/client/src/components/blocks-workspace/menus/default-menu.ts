@@ -1337,7 +1337,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 value: [],
                 type: 'iteration',
                 sourceBlockList: [],
-                test: false,
+                iteratorDropDownChange: false,
             },
             listeners: {
                 onChange: [],
