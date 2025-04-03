@@ -635,11 +635,17 @@ export class StateStore {
 
         // add the data
         block.data = json.data;
+
+        // TODO: Why are we adding this to each block
         // Defaulting the route to the block id
-        block.data.route = id;
+        // block.data.route = id;
 
         // add the listeners
         block.listeners = json.listeners;
+
+        console.log("--------------------------")
+        console.log(block);
+        console.log("--------------------------")
 
         // generate the slots
         for (const slot in json.slots) {
