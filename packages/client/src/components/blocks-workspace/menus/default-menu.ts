@@ -979,10 +979,11 @@ if (process.env.NODE_ENV === 'development') {
 
 // TODO: Alphabetical order by name
 export const DEFAULT_MENU: DesignerMenuItem[] = [
-    // -------------------------------------------------------------
-    // BLOCKS START
-    // ----------------------------------------------------------
+    // TODO: You will still be able to drop configs on the UI.  Beta version of blocks
     ...DEV_BLOCKS,
+    // -------------------------------------------------------------
+    // PROD BLOCKS START
+    // ----------------------------------------------------------
     {
         section: SECTION_LAYOUT,
         name: 'Accordion',
