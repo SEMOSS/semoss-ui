@@ -11,6 +11,7 @@ import { BlockComponent, BlockDef } from "../../../store";
 import { PathValue } from "../../../types";
 import { Line } from "./variant/line-chart/Line";
 import { StackChart } from "./variant/stack-chart/StackChart";
+import { Dendrogram } from './variant/dendrogram/Dendrogram';
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -150,6 +151,11 @@ export const VisualizationBlock: BlockComponent = observer(
                         {data.variation === "echart-stack-chart" && (
                             <StackChart id={id} />
                         )}
+                        {
+                            data.variation === 'echart-dendrogram-chart' && (
+                                <Dendrogram id={id} updateJson={updateChartJson} />
+                            )
+                        }
                     </StyledNoDataContainer>
                 );
             } catch (e) {
@@ -177,6 +183,11 @@ export const VisualizationBlock: BlockComponent = observer(
                 {data.variation === "echart-stack-chart" && (
                     <StackChart id={id} />
                 )}
+                {
+                data.variation === 'echart-dendrogram-chart' && (
+                    <Dendrogram id={id} updateJson={updateChartJson} />
+                )
+                }
             </StyledDataContainer>
         );
     },

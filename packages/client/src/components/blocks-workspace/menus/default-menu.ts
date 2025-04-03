@@ -869,6 +869,84 @@ if (process.env.NODE_ENV === 'development') {
             slots: {} as BlockJSON['slots'],
         },
     });
+    DEV_BLOCKS.push({
+        section: SECTION_CHARTS,
+        name: 'Dendrogram Chart',
+        helperText: 'Dendrogram chart',
+        activeImage: BLOCK_IMAGES['BAR_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['BAR_CHART_HOVER'],
+        json: {
+            widget: 'e-chart',
+            data: {
+                variation: 'echart-dendrogram-chart',
+                style: {
+                    height: 500,
+                    width: 400,
+                },
+                option: {
+                    tooltip: {
+                        trigger: 'item',
+                        triggerOn: 'mousemove',
+                    },
+                    series: [
+                        {
+                            type: 'tree',
+                            data: [
+                                {
+                                    name: 'Root',
+                                    children: [
+                                        {
+                                            name: 'Child A',
+                                            children: [
+                                                { name: 'Leaf A1' },
+                                                { name: 'Leaf A2' },
+                                            ],
+                                        },
+                                        {
+                                            name: 'Child B',
+                                            children: [
+                                                { name: 'Leaf B1' },
+                                                { name: 'Leaf B2' },
+                                            ],
+                                        },
+                                    ],
+                                },
+                            ],
+                            top: '5%',
+                            left: '10%',
+                            bottom: '5%',
+                            right: '10%',
+                            symbolSize: 10,
+                            label: {
+                                position: 'left',
+                                verticalAlign: 'middle',
+                                align: 'right',
+                                color: '#000000',
+                                fontSize: '12',
+                                show: true,
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'right',
+                                    verticalAlign: 'middle',
+                                    align: 'left',
+                                },
+                            },
+                            expandAndCollapse: true,
+                            animationDuration: 750,
+                            animationDurationUpdate: 750,
+                        },
+                    ],
+                },
+                frame: {
+                    name: '',
+                },
+                show: 'true',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    });
 }
 
 // TODO: Alphabetical order by name

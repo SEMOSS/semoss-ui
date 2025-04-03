@@ -61,6 +61,10 @@ import {
     SelectInputSettings,
     BaseSettingSection,
 } from "../../../../block-settings";
+import { CustomizeDendrogramSymbol } from '../dendrogram/CustomizeDendrogramSymbol';
+import { ChangeOrientation } from '../dendrogram/ChangeOrientation';
+import { LegendDendrogram } from "../dendrogram/LegendDendrogram";
+import { LabelsDendrogram } from "../dendrogram/LabelsDendrogram";
 //upgraded visualization tool propsimport { EditXAxisScatterPlot } from '../ScatterPlot/EditXAxisScatterPlot';
 
 interface UpgradedVisualizationToolProps {
@@ -76,6 +80,126 @@ const StyledItem = styled("div")(() => ({
     width: "100%",
     padding: "0.5rem",
 }));
+
+const DendrogramToolsList = (({id}) => {
+    const [dendrogramSelection, setDendrogramSelection] = useState('');
+   return (
+       <>
+           <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setDendrogramSelection((prevList) =>
+                            prevList === "customizeDendrogramSymbol"
+                                ? ""
+                                : "customizeDendrogramSymbol",
+                        )
+                    }
+                    selected={dendrogramSelection === "customizeDendrogramSymbol"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                dendrogramSelection === "customizeDendrogramSymbol"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Customize Symbol" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {dendrogramSelection === "customizeDendrogramSymbol" && (
+                    <CustomizeDendrogramSymbol id={id}/>
+                )}
+           </StyledListItem>
+           <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setDendrogramSelection((prevList) =>
+                            prevList === "changeOrientation"
+                                ? ""
+                                : "changeOrientation",
+                        )
+                    }
+                    selected={dendrogramSelection === "changeOrientation"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                dendrogramSelection === "changeOrientation"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Change Orientation" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {dendrogramSelection === "changeOrientation" && (
+                    <ChangeOrientation id={id}/>
+                )}
+           </StyledListItem>
+           <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setDendrogramSelection((prevList) =>
+                            prevList === "legendDendrogram"
+                                ? ""
+                                : "legendDendrogram",
+                        )
+                    }
+                    selected={dendrogramSelection === "legendDendrogram"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                dendrogramSelection === "legendDendrogram"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Legend" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {dendrogramSelection === "legendDendrogram" && (
+                    <LegendDendrogram id={id}/>
+                )}
+           </StyledListItem>
+           <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setDendrogramSelection((prevList) =>
+                            prevList === "showLabelsDendrogram"
+                                ? ""
+                                : "showLabelsDendrogram",
+                        )
+                    }
+                    selected={dendrogramSelection === "showLabelsDendrogram"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                dendrogramSelection === "showLabelsDendrogram"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Labels" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {dendrogramSelection === "showLabelsDendrogram" && (
+                    <LabelsDendrogram id={id} path={'option'} />
+                )}
+           </StyledListItem>
+       </>
+   ) 
+});
 
 export const UpgradedVisualizationTool =
     observer<UpgradedVisualizationToolProps>(({ id }) => {
@@ -1060,6 +1184,11 @@ export const UpgradedVisualizationTool =
                             <LineStyling id={id} path="option" />
                         )}
                     </StyledListItem>
+                    {
+                        data.variation === 'echart-dendrogram-chart' && (
+                            <DendrogramToolsList id={id} />
+                        )
+                    }
                 </List>
             </>
         );

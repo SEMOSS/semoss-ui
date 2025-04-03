@@ -11,6 +11,7 @@ import { FrameOperationsPie } from "./variant/pie-chart/FrameOperationsPie";
 import { ScatterPlotBlockSettings } from "./variant/scatter-plot/ScatterPlotBlockSettings";
 import { FrameOperationsLine } from "./variant/line-chart/FrameOperationsLine";
 import { StackChartBlockSettings } from "./variant/stack-chart/StackChartBlockSettings";
+import { DendrogramFrameOperation } from "./variant/dendrogram/DendrogramFrameOperation";
 
 const StyledContainer = styled("div")(() => ({
     maxHeight: "50vh",
@@ -111,6 +112,11 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                                 path={"option"}
                             ></StackChartBlockSettings>
                         )}
+                        {
+                            data.variation === 'echart-dendrogram-chart' && (
+                                <DendrogramFrameOperation id={id} />
+                            )
+                        }
                     </StyledSubSection>
                 )}
                 {selectedTab === "Tools" && (
