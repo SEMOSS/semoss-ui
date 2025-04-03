@@ -9,12 +9,7 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const dotenv = require('dotenv');
-// const importMetaEnv = require('@import-meta-env/unplugin');
-const BundleAnalyzerPlugin =
-    require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const TerserPlugin = require('terser-webpack-plugin');
-
-const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 dotenv.config({ path: '../../.env.local' });
 dotenv.config({ path: '../../.env' });

@@ -30,17 +30,32 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 
     path: Paths<Block<D>["data"], 4>;
 }
-const StyledAxisDiv = styled("div")<{
+
+const StyledAxis = styled("div")<{
     display?: string;
     justifyContent?: string;
 }>(({ theme, display, justifyContent }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
 }));
-const StyledButton = styled(Button)({
-    left: "80%",
+
+const StyledAxisDiv = styled("div")<{
+    display?: string;
+    justifyContent?: string;
+    gap?: string;
+}>(({ theme, display, justifyContent, gap }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "row",
+    padding: "8px 16px",
+    alignItems: "center",
+    gap: gap ?? undefined,
+}));
+const StyledButtonWrapper = styled("div")({
+    display: "flex",
+    justifyContent: "flex-end",
+    padding: "8px 16px",
 });
 const StyledAxisColDiv = styled("div")<{
     display?: string;
@@ -49,7 +64,9 @@ const StyledAxisColDiv = styled("div")<{
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "column",
-    padding: "0.5rem",
+    padding: "8px 16px",
+    gap: "8px",
+    marginBottom: "8px",
 }));
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: "100%",
@@ -116,7 +133,7 @@ export const PieTitle = observer(
         };
         //Handle the change event for any Title input
         function handleInputChange(title, inputValue) {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             if (title === "showTitle") {
                 option["title"].show = inputValue;
                 setShowTitle(inputValue);
@@ -156,7 +173,7 @@ export const PieTitle = observer(
         //Reset the feature to the default values
         //The default values are set in the reset object in the option
         function handleReset() {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             option["title"].show = option["reset"]["title"]["show"];
             option["title"]["text"] = option["reset"]["title"]["text"];
             option["title"]["left"] = option["reset"]["title"]["left"];
@@ -172,24 +189,34 @@ export const PieTitle = observer(
             retainLocalState(option);
         }
         return (
-            <StyledAxisDiv>
-                <StyledAxisDiv display="flex" justifyContent="space-around">
+            <StyledAxis>
+                <StyledAxisDiv
+                    display="flex"
+                    gap="8px"
+                    style={{ marginTop: "8px" }}
+                >
                     <Switch
+                        size="small"
                         checked={showTitle}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                             handleInputChange("showTitle", e.target.checked)
                         }
                         title="Show Title"
                     />
-                    <label>Show Title</label>
+                    <Typography variant="body2" color="secondary">
+                        Show Title
+                    </Typography>
                 </StyledAxisDiv>
                 {showTitle && (
                     <StyledAxisColDiv
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="title-name">Title Name</label>
+                        <Typography variant="body2" color="secondary">
+                            Title Name
+                        </Typography>
                         <StyledTextField
+                            size="small"
                             id="name"
                             name="name"
                             value={title?.name}
@@ -204,10 +231,11 @@ export const PieTitle = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="title-alignment">
+                        <Typography variant="body2" color="secondary">
                             Select Alignment
-                        </label>
+                        </Typography>
                         <StyledSelect
+                            size="small"
                             id="alignment"
                             name="alignment"
                             value={title?.alignment}
@@ -236,8 +264,11 @@ export const PieTitle = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="title-size">Text Size</label>
+                        <Typography variant="body2" color="secondary">
+                            Text Size
+                        </Typography>
                         <StyledTextField
+                            size="small"
                             id="size"
                             name="size"
                             value={title?.size}
@@ -252,10 +283,11 @@ export const PieTitle = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="title-font-weight">
+                        <Typography variant="body2" color="secondary">
                             Select Font Weight
-                        </label>
+                        </Typography>
                         <StyledSelect
+                            size="small"
                             id="font-weight"
                             name="fontWeight"
                             value={title?.weight}
@@ -281,10 +313,11 @@ export const PieTitle = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="title-font-family">
+                        <Typography variant="body2" color="secondary">
                             Select Font Family
-                        </label>
+                        </Typography>
                         <StyledSelect
+                            size="small"
                             id="font-family"
                             name="fontFamily"
                             value={title?.family}
@@ -306,29 +339,26 @@ export const PieTitle = observer(
                     </StyledAxisColDiv>
                 )}
                 {showTitle && (
-                    <StyledAxisColDiv
-                        display="flex"
-                        justifyContent="space-around"
-                    >
-                        <ColorPickerSettings
-                            id={id}
-                            path="option.title.textStyle.color"
-                            colorValue={title.color}
-                            onChange={(e) => handleInputChange("titleColor", e)}
-                        />
-                    </StyledAxisColDiv>
+                    <ColorPickerSettings
+                        id={id}
+                        path="option.title.textStyle.color"
+                        colorValue={title.color}
+                        onChange={(e) => handleInputChange("titleColor", e)}
+                    />
                 )}
                 {showTitle && (
-                    <StyledButton
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        onClick={handleReset}
-                    >
-                        Reset
-                    </StyledButton>
+                    <StyledButtonWrapper>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            onClick={handleReset}
+                        >
+                            Reset
+                        </Button>
+                    </StyledButtonWrapper>
                 )}
-            </StyledAxisDiv>
+            </StyledAxis>
         );
     },
 );
