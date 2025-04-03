@@ -21,6 +21,7 @@ export interface ToggleButtonBlockDef extends BlockDef<"toggle-button"> {
         value: string | Array<string>;
         mandatory: boolean;
         multiple: boolean;
+        show: string;
     };
 }
 

@@ -102,7 +102,7 @@ export const ScatterPlotSymbol = observer(
             // Update the symbol shape to the selected value
             setSymbolShape(e.target.value);
             // Parse the value of the input to a JSON object
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the symbol shape in the JSON object
             option["series"][0]["symbol"] = e.target.value;
             // Set the JSON object back to the input field
@@ -114,7 +114,7 @@ export const ScatterPlotSymbol = observer(
          */
         const handleChangeSymbolSize = (e) => {
             // Parse the current value to a JSON object
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the symbol size to the selected value
             setSymbolSize(e.target.value);
             // Set the symbol size in the JSON object
