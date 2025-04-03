@@ -7,7 +7,7 @@ export type SearchFieldProps = TextFieldProps & {
     /**
      * Enable clearable functionality
      */
-    onClear?: Function;
+    onClear?: () => void;
 };
 
 export const Search = (props: SearchFieldProps) => {

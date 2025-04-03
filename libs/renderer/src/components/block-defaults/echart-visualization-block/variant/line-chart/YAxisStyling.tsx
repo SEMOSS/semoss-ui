@@ -106,7 +106,7 @@ export const YAxisStyling = observer(
                     //Update the data
                     setData(path, options as PathValue<D["data"], typeof path>);
                 } else {
-                    let yAxisNames = options["_state"]["fields"]["yAxis"];
+                    const yAxisNames = options["_state"]["fields"]["yAxis"];
                     setYAxisTitle(
                         options["_state"]["fields"]["yAxis"].join(","),
                     );
@@ -132,7 +132,7 @@ export const YAxisStyling = observer(
          * @param inputValue the value of the input field
          */
         function handleInputChange(title: string, inputValue) {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             /**
              * Update the showYAxis property of the option
              * @param inputValue boolean value indicating whether to show the y axis
@@ -146,7 +146,7 @@ export const YAxisStyling = observer(
                  * @param inputValue boolean value indicating whether to show the y axis title
                  */
                 if (inputValue) {
-                    let tilteNames =
+                    const tilteNames =
                         option["reset"]["yAxis"]["updatedName"].split(",");
                     option["yAxis"]["name"] = tilteNames;
                 } else {
@@ -159,7 +159,7 @@ export const YAxisStyling = observer(
                  * @param inputValue string value indicating the title of the y axis
                  */
                 setYAxisTitle(inputValue);
-                let tilteNames = inputValue.split(",");
+                const tilteNames = inputValue.split(",");
                 option["yAxis"]["name"] = tilteNames;
                 option["reset"]["yAxis"]["updatedName"] = inputValue;
             } else if (title === "showYAxisTick") {
@@ -185,13 +185,13 @@ export const YAxisStyling = observer(
          */
         function handleReset() {
             // Parse the current option value from the stored JSON string
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Reset Y Axis tick visibility to default
             setShowYAxisTick(option["reset"]["yAxis"]["axisTick"]);
             // Reset Y Axis font size to default
             setYAxisFont(option["reset"]["yAxis"]["axisLabelFont"]);
             // Get the Y Axis name from the local state or set it to an empty string if not available
-            let yaxisName =
+            const yaxisName =
                 option["_state"] === undefined
                     ? ""
                     : option["_state"]["fields"]["yAxis"].join(",");

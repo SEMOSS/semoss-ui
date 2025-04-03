@@ -4,7 +4,7 @@ import { BlockConfig } from "../../../store";
 import { UploadBlockDef, UploadBlock } from "./UploadBlock";
 import { Upload } from "@mui/icons-material";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
-import { buildListener } from "../block-defaults.shared";
+import { buildListener, buildShowField } from "../block-defaults.shared";
 import { InputSettings, QuerySelectionSettings } from "../../block-settings";
 import { UploadSettings } from "../../block-settings/shared/UploadSettings";
 import { SelectSettings } from "../../block-settings/shared/SelectSettings";
@@ -55,6 +55,7 @@ export const config: BlockConfig<UploadBlockDef> = {
         disabled: false,
         required: false,
         multiple: false,
+        show: "true",
     },
     listeners: {
         onChange: [],
@@ -66,6 +67,7 @@ export const config: BlockConfig<UploadBlockDef> = {
         {
             name: "General",
             children: [
+                ...buildShowField(),
                 {
                     description: "Value",
                     render: ({ id }) => (

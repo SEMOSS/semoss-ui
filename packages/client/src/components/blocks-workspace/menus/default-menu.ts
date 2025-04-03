@@ -181,6 +181,7 @@ if (process.env.NODE_ENV === 'development') {
                     null,
                     2,
                 ),
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -289,6 +290,7 @@ if (process.env.NODE_ENV === 'development') {
                         },
                     },
                 },
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -466,6 +468,7 @@ if (process.env.NODE_ENV === 'development') {
                 frame: {
                     name: '',
                 },
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -647,6 +650,7 @@ if (process.env.NODE_ENV === 'development') {
                 frame: {
                     name: '',
                 },
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -859,6 +863,113 @@ if (process.env.NODE_ENV === 'development') {
                 frame: {
                     name: '',
                 },
+                show: 'true',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    });
+    DEV_BLOCKS.push({
+        section: SECTION_CHARTS,
+        name: 'World Map Chart',
+        activeImage: BLOCK_IMAGES['WORLD_MAP_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['WORLD_MAP_HOVER'],
+        helperText: 'Show data on a map',
+        json: {
+            widget: 'e-chart',
+            data: {
+                variation: 'echart-world-map-chart',
+                style: {
+                    height: 500,
+                    width: 400,
+                },
+                option: {
+                    series: [
+                        {
+                            data: [],
+                            name: '',
+                            label: {
+                                show: false,
+                                rotate: 0,
+                                name: '',
+                                position: 'top',
+                                fontFamily: 'sans-serif',
+                                fontSize: 12,
+                                color: '#000000',
+                            },
+                            symbolSize: 15,
+                            symbol: 'circle',
+                        },
+                    ],
+                    symbolSize: 15,
+                    tooltip: {
+                        show: true,
+                        trigger: 'item',
+                        position: 'bottom',
+                    },
+                    color: [
+                        '#5470c6',
+                        '#91cc75',
+                        '#fac858',
+                        '#ee6666',
+                        '#73c0de',
+                        '#3ba272',
+                        '#fc8452',
+                        '#9a60b4',
+                        '#ea7ccc',
+                    ],
+                    legend: {
+                        show: true,
+                        orient: 'horizontal',
+                        bottom: 'bottom',
+                        textStyle: {
+                            fontSize: 10,
+                        },
+                        type: 'scroll',
+                        pageButtonItemGap: 5,
+                        pageTextSize: {
+                            color: '#000000',
+                            fontSize: 10,
+                        },
+                        left: 'center',
+                        top: 'bottom',
+                        itemWidth: 15,
+                        itemHeight: 10,
+                    },
+                    toolbox: {
+                        feature: {
+                            brush: {
+                                type: ['rect'],
+                            },
+                        },
+                    },
+                    brush: {
+                        // Brush configuration
+                        brushType: 'rect', // You can also use 'polygon', 'lineX', or 'lineY'
+                        throttleType: 'debounce', // Throttle brush events
+                        throttleDelay: 300, // Delay for throttle (in ms)
+                        inBrush: {
+                            color: 'rgba(255, 0, 0, 0.3)', // Highlight color for the brushed region
+                        },
+                        outBrush: {
+                            color: 'rgba(0, 0, 0, 0.1)', // Color for points outside the brushed region
+                        },
+                    },
+                    title: {
+                        text: 'Map Graph',
+                        show: true,
+                        left: 'left',
+                        textStyle: {
+                            color: '#000000',
+                            fontWeight: 'bold',
+                            fontFamily: 'Arial Narrow',
+                            fontSize: 12,
+                        },
+                    },
+                },
+                frame: {
+                    name: '',
+                },
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -949,10 +1060,11 @@ if (process.env.NODE_ENV === 'development') {
 
 // TODO: Alphabetical order by name
 export const DEFAULT_MENU: DesignerMenuItem[] = [
-    // -------------------------------------------------------------
-    // BLOCKS START
-    // ----------------------------------------------------------
+    // TODO: You will still be able to drop configs on the UI.  Beta version of blocks
     ...DEV_BLOCKS,
+    // -------------------------------------------------------------
+    // PROD BLOCKS START
+    // ----------------------------------------------------------
     {
         section: SECTION_LAYOUT,
         name: 'Accordion',
@@ -968,6 +1080,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 triggerBgColor: '',
                 contentBgColor: '',
                 showExpandIcon: false,
+                show: 'true',
                 // -------------------------------------------
                 // John B:
                 // We may need to track styles differently.
@@ -1040,6 +1153,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 controls: true,
                 loop: false,
                 source: '',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1065,6 +1179,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 light: false,
                 text: '',
                 showText: false,
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1160,6 +1275,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 disabled: false,
                 variant: 'contained',
                 color: 'primary',
+                show: true,
             },
             listeners: {
                 onClick: [],
@@ -1183,6 +1299,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 required: false,
                 disabled: false,
                 value: false,
+                show: 'true',
             },
             listeners: {
                 onChange: [],
@@ -1212,6 +1329,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 labelPlacement: 'end',
                 required: false,
                 disabled: false,
+                show: 'true',
             },
             listeners: {
                 onChange: [],
@@ -1267,6 +1385,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 disabled: false,
                 required: false,
                 loading: false,
+                show: 'true',
             },
             listeners: {
                 onChange: [],
@@ -1295,6 +1414,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 color: 'primary',
                 value: '',
                 mode: 'transcribe',
+                show: 'true',
             },
             listeners: {
                 onClick: [],
@@ -1321,6 +1441,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 required: false,
                 disabled: false,
                 loading: false,
+                show: 'true',
             },
             listeners: {
                 onChange: [],
@@ -1349,6 +1470,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 loading: false,
                 disabled: false,
                 required: false,
+                show: 'true',
             },
             listeners: {
                 onChange: [],
@@ -1374,6 +1496,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     gap: '8px',
                     flexWrap: 'wrap',
                 },
+                show: 'true',
             },
             listeners: {},
             slots: {
@@ -1382,7 +1505,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_PROGRESS,
+        section: SECTION_ELEMENT,
         name: 'Progress',
         helperText: 'Display progress tracking or status',
         activeImage: BLOCK_IMAGES['PROGRESS_ACTIVE'],
@@ -1394,6 +1517,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 value: 50,
                 includeLabel: true,
                 size: '300px',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1412,6 +1536,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 src: '',
                 title: '',
                 enableFrameInteractions: true,
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1432,6 +1557,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     padding: '8px',
                 },
                 selectedPdf: null,
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1458,6 +1584,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 src: '',
                 title: '',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1481,9 +1608,11 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     backgroundSize: 'contain',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center center',
+                    show: 'true',
                 },
                 src: '',
                 title: '',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1500,6 +1629,30 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             data: {
                 style: {},
                 queryId: '',
+                show: 'true',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        activeImage: BLOCK_IMAGES['CHIP_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['CHIP_HOVER'],
+        name: 'Chip',
+        json: {
+            widget: 'chip',
+            data: {
+                style: {
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%',
+                    height: '200px',
+                },
+                src: '',
+                title: '',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1530,6 +1683,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 value: null,
                 mandatory: true,
                 multiple: false,
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1551,6 +1705,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 href: '',
                 text: 'Insert text',
+                show: 'true',
             },
             listeners: {},
             slots: {},
@@ -1569,6 +1724,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     padding: '4px',
                 },
                 markdown: '**Hello world**',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1588,6 +1744,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 // default html includes place-holder text and basic styling
                 html: '<html>\r\n    <style>\r\n        html {\r\n            font-family: Roboto;\r\n            text-align: center;\r\n            overflow: hidden;\r\n        }\r\n    </style>\r\n    <body>\r\n        <h2>HTML Block</h2>\r\n    </body>\r\n</html>',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1595,7 +1752,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h1)',
         helperText: 'Display Text in header 1',
         activeImage: BLOCK_IMAGES['H1_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H1_HOVER'],
@@ -1609,6 +1766,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 text: 'Hello world',
                 variant: 'h1',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1616,7 +1774,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h2)',
         helperText: 'Display Text in header 2',
         activeImage: BLOCK_IMAGES['H2_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H2_HOVER'],
@@ -1630,6 +1788,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 text: 'Hello world',
                 variant: 'h2',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1637,7 +1796,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h3)',
         helperText: 'Display Text in header 3',
         activeImage: BLOCK_IMAGES['H3_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H3_HOVER'],
@@ -1651,6 +1810,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 text: 'Hello world',
                 variant: 'h3',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1658,7 +1818,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h4)',
         helperText: 'Display Text in header 4',
         activeImage: BLOCK_IMAGES['H4_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H4_HOVER'],
@@ -1672,6 +1832,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 text: 'Hello world',
                 variant: 'h4',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1679,7 +1840,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h5)',
         helperText: 'Display Text in header 5',
         activeImage: BLOCK_IMAGES['H5_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H5_HOVER'],
@@ -1693,6 +1854,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 text: 'Hello world',
                 variant: 'h5',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1700,7 +1862,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h6)',
         helperText: 'Display Text in header 6',
         activeImage: BLOCK_IMAGES['H6_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H6_HOVER'],
@@ -1714,6 +1876,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 text: 'Hello world',
                 variant: 'h6',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1735,6 +1898,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 text: 'Hello world',
                 variant: 'p',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],

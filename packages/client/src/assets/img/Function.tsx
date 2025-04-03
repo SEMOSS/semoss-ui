@@ -14,10 +14,8 @@ const StyledContainer = styled('div')(({ theme }) => {
 });
 
 const StyledIcon = styled(SwitchAccessShortcutOutlined)(({ theme }) => {
-    const palette = theme.palette as unknown as CustomPaletteOptions;
-
     return {
-        color: palette.pink['300'],
+        color: theme.palette.pink['300'],
     };
 });
 
