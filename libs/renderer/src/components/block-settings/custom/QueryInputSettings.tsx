@@ -663,9 +663,10 @@ export const QueryInputSettings = observer(
                     >
                         <Typography variant="body2">{label}</Typography>
                         <Stack direction="row" alignItems="center">
-                            <Typography variant="body1" color="primary">
+                            {/* Neel pointed this out 3/31 */}
+                            {/* <Typography variant="body1" color="primary">
                                 Open text view
-                            </Typography>
+                            </Typography> */}
                             <IconButton
                                 size="small"
                                 onClick={() => setOpen(true)}
