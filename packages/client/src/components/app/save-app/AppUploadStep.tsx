@@ -1,51 +1,18 @@
 import { FileDropzone } from '@semoss/ui';
 import { Control, Controller } from 'react-hook-form';
-import {
-    ADD_APP_FORM_FIELD_UPLOAD,
-    // ADD_APP_FORM_FIELD_APP_TYPE,
-    // ADD_APP_FORM_FIELD_TYPE,
-} from './save-app.constants';
+import { ADD_APP_FORM_FIELD_UPLOAD } from './save-app.constants';
 import { Stack, Select } from '@semoss/ui';
 import { Dispatch, SetStateAction, useState } from 'react';
 import { AddAppFormStep } from './AddAppModal';
 import { valueArray } from 'vega-lite/build/src/channeldef';
 
-// const FOLDER_TYPE_OPTIONS = [
-//     {
-//         display: 'Smss-App File',
-//         value: 'Smss-App File',
-//         description:
-//             'Contains full semoss construct. .smss, and other specific folders',
-//     },
-//     {
-//         display: 'App Zip',
-//         value: 'App Zip',
-//         description:
-//             'Contains full semoss construct. .smss, and other specific folders',
-//     },
-//     {
-//         display: 'Assets Copy',
-//         value: 'Assets Copy',
-//         description: 'Contains project zipped as assets',
-//     },
-// ];
+
 
 export const AppUploadStep = (props: {
     control: Control<any, any>;
-    // setAddAppFormSteps: Dispatch<SetStateAction<AddAppFormStep[]>>;
-    // appZipFormSteps: AddAppFormStep[];
-    // projectZipFormSteps: AddAppFormStep[];
     fileFormSteps: AddAppFormStep[];
 }) => {
-    const {
-        control,
-        // setAddAppFormSteps,
-        // appZipFormSteps,
-        // projectZipFormSteps,
-        fileFormSteps,
-    } = props;
-
-    // const [isZip, setIsZip] = useState(true);
+    const { control, fileFormSteps } = props;
 
     return (
         <Stack direction="column">
@@ -67,40 +34,6 @@ export const AppUploadStep = (props: {
                     );
                 }}
             />
-            {/* <Controller
-                name={ADD_APP_FORM_FIELD_TYPE}
-                control={control}
-                render={({ field }) => {
-                    return (
-                        <Select
-                            label="Folder Type"
-                            value={field.value}
-                            defaultValue={'Smss-App File'}
-                            onChange={(value) => {
-                                field.onChange(value);
-                                setAddAppFormSteps(
-                                    value.target.value === 'Smss-App File'
-                                        ? fileFormSteps
-                                        : value.target.value === 'App Zip'
-                                        ? appZipFormSteps
-                                        : projectZipFormSteps,
-                                );
-                                if (value.target.value === 'App Zip') {
-                                    setIsZip(true);
-                                } else {
-                                    setIsZip(false);
-                                }
-                            }}
-                        >
-                            {FOLDER_TYPE_OPTIONS.map((option, idx) => (
-                                <Select.Item key={idx} value={option.value}>
-                                    {option.display}
-                                </Select.Item>
-                            ))}
-                        </Select>
-                    );
-                }}
-            /> */}
 
             {/* <Controller
                 name={ADD_APP_FORM_FIELD_APP_TYPE}
