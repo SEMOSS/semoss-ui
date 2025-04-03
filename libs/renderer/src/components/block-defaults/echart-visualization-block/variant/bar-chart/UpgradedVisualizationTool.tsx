@@ -30,6 +30,7 @@ import { VisualizationStyles } from "./VisualizationStyles";
 import { CustomizeValueLabels } from "./CustomizeValueLabels";
 import { BAR_CHART_DATA } from "../../Visualization.constants";
 import { SizeSettings } from "../../../../block-settings/shared";
+import { ResizeSetting } from "../../../../block-settings/shared";
 import { ScatterPlotSymbol } from "../scatter-plot/ScatterPlotSymbol";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { TooltipScatterPlot } from "../scatter-plot/TooltipScatterPlot";
@@ -40,6 +41,7 @@ import { ScatterPlotChartTitle } from "../scatter-plot/ScatterPlotChartTitle";
 
 import { ColorPickerSettings } from "../../../../block-settings/shared/ColorPickerSettings";
 import { ColorPalatteSettings } from "../../../../block-settings/shared/ColorPalatteSettings";
+
 import { LineTitle } from "../line-chart/LineTitle";
 import { LineLegend } from "../line-chart/LineLegend";
 import { LineTooltip } from "../line-chart/LineTooltip";
@@ -150,7 +152,7 @@ export const UpgradedVisualizationTool =
                                     }
                                 />
                             </ListItemIcon>
-                            <ListItemText primary="Colour Palette" />
+                            <ListItemText primary="Color Palette" />
                             <InfoOutlined />
                         </ListItemButton>
                     </ListItem>
@@ -421,16 +423,16 @@ export const UpgradedVisualizationTool =
                         </ListItemButton>
                         {selectedList === "resizing" && (
                             <Stack>
-                                <SizeSettings
+                                <ResizeSetting
                                     id={id}
                                     label={"Height"}
                                     path={"style.height"}
-                                ></SizeSettings>
-                                <SizeSettings
+                                ></ResizeSetting>
+                                <ResizeSetting
                                     id={id}
                                     label={"Width"}
                                     path={"style.width"}
-                                ></SizeSettings>
+                                ></ResizeSetting>
                             </Stack>
                         )}
                     </StyledListItem>
