@@ -200,7 +200,6 @@ export const Map: BlockComponent = observer(({ id }) => {
             if (data.option["_state"].hasOwnProperty("fields")) {
                 if (data.option["_state"]["fields"].hasOwnProperty("label")) {
                     const seriesData = data.option["series"][0]["data"];
-                    debugger;
 
                     if (
                         data.option["_state"]["fields"].hasOwnProperty("color")
