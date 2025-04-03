@@ -995,16 +995,7 @@ export const ImportForm = (props) => {
                                             val.options.component ===
                                             'CSV-file-upload'
                                         ) {
-                                            return (
-                                                <StyledDropzoneField>
-                                                    <Typography
-                                                        variant={'body1'}
-                                                    >
-                                                        {val.label}
-                                                    </Typography>
-                                                    <CsvImport></CsvImport>
-                                                </StyledDropzoneField>
-                                            );
+                                            return <CsvImport></CsvImport>;
                                         }
                                     }}
                                 />

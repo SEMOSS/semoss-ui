@@ -7,7 +7,7 @@ import { useRootStore } from '@/hooks';
 import { useStepper } from '@/hooks';
 
 const StyledBox = styled(Box)(({ theme }) => ({
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+    // boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
     width: '100%',
     padding: '16px 16px 16px 16px',
     marginBottom: '32px',
