@@ -20,6 +20,7 @@ import {
     styled,
     TextField,
     Icon,
+    Typography,
 } from "@semoss/ui";
 
 import { Paths, PathValue } from "../../../types";
@@ -44,13 +45,9 @@ const StyledButton = styled(Button)(({}) => ({
     display: "flex",
 }));
 const StyledTextField = styled(TextField)(({}) => ({
-    marginLeft: "20px",
     display: "flex",
-    marginRight: "20px",
 }));
 const StyledOutlinedInput = styled(OutlinedInput)(({}) => ({
-    marginRight: "20px",
-    marginLeft: "20px",
     display: "flex",
 }));
 const StyledEditIcon = styled(Edit)(({}) => ({
@@ -140,9 +137,14 @@ const StyledTitle = styled("span")(() => ({
 const StyledCustomPaletteAdd = styled("div")(() => ({
     display: "flex",
     justifyContent: "center",
+    padding: "16px",
+    // paddingTop: "10px",
 }));
 const StyledCustomPaletteEdit = styled("div")(() => ({
-    display: "block",
+    // display: "block",
+    display: "flex",
+    justifyContent: "center",
+    flexWrap: "wrap",
 }));
 const StyledButtonClose = styled(Button)(() => ({
     background: "transparent",
@@ -156,7 +158,6 @@ const StyledButtonAdd = styled(Button)(() => ({
     background: "#007AFF",
     color: "#fff",
     fontSize: "14px",
-    padding: "6px 16px",
     border: "none",
     borderRadius: "8px",
     cursor: "pointer",
@@ -171,19 +172,20 @@ const StyledCheck = styled(Button)(() => ({
 const StyledButtonContainer = styled("div")(() => ({
     display: "flex",
     justifyContent: "flex-end",
+    padding: "8px 16px",
 }));
 const StyledPaleteLabel = styled("div")(() => ({
     fontSize: "14px",
     fontWeight: "normal",
 }));
-const StyledLabel = styled("label")(() => ({
-    marginLeft: "20px",
-    display: "flex",
-}));
+
 const StyledColorSpan = styled("span")(() => ({ marginLeft: "20px" }));
 const StyledRowSection = styled("div")(() => ({
     display: "flex",
     flexDirection: "column",
+    gap: "8px",
+    padding: "8px 16px",
+    marginBottom: "8px",
 }));
 const StyledContainerToggle = styled("div")(() => ({}));
 const StyledSelectedColorContainer = styled("div")(() => ({
@@ -443,7 +445,7 @@ export const ColorPalatteSettings = observer(
             setOptionValue(optionComputedValue);
         }, [optionComputedValue]);
         useEffect(() => {
-            let option =
+            const option =
                 typeof optionComputedValue === "string"
                     ? JSON.parse(optionComputedValue)
                     : optionComputedValue;
@@ -451,10 +453,10 @@ export const ColorPalatteSettings = observer(
                 option.hasOwnProperty("customSettings") &&
                 option["customSettings"].hasOwnProperty("customColorPalette")
             ) {
-                let paletteColors = colorPalette.filter(
+                const paletteColors = colorPalette.filter(
                     (item) => item.isCustom === false,
                 );
-                let colorPaletteData = [
+                const colorPaletteData = [
                     ...paletteColors,
                     ...option["customSettings"]["customColorPalette"],
                 ];
@@ -484,7 +486,7 @@ export const ColorPalatteSettings = observer(
          */
         function handleDelete() {
             // Parse the value if it's a string
-            let option =
+            const option =
                 typeof optionValue === "string"
                     ? JSON.parse(optionValue)
                     : optionValue;
@@ -536,7 +538,10 @@ export const ColorPalatteSettings = observer(
                     ? colorPalette[0]
                     : colorPalette.find((item) => item.label === label);
             // Update the state with the new color palette data
-            if (Data.variation == "echart-scatter-plots") {
+            if (
+                Data.variation == "echart-scatter-plots" ||
+                Data.variation == "echart-stack-chart"
+            ) {
                 runStateUpdate(
                     optionComputedValue,
                     optionPathVal,
@@ -783,7 +788,7 @@ export const ColorPalatteSettings = observer(
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = null;
             }
-            let options = JSON.parse(option);
+            const options = JSON.parse(option);
             options.color = colors;
 
             // Set a new timeout to update state with a delay
@@ -828,9 +833,9 @@ export const ColorPalatteSettings = observer(
                 </StyledOverlay>
                 {/*popup name section */}
                 <StyledRowSection>
-                    <StyledLabel htmlFor="outlined-adornment-password">
+                    <Typography variant="body2" color="secondary">
                         Name
-                    </StyledLabel>
+                    </Typography>
                     <StyledTextField
                         defaultValue={
                             toggleAddEdit === "edit" ? paletteName : ""
@@ -844,9 +849,9 @@ export const ColorPalatteSettings = observer(
                 {/* colours section */}
                 {toggleAddEdit !== "edit" && (
                     <StyledRowSection>
-                        <StyledLabel htmlFor="outlined-adornment-colours">
+                        <Typography variant="body2" color="secondary">
                             Colours
-                        </StyledLabel>
+                        </Typography>
                         <StyledOutlinedInput
                             id="outlined-adornment-colours"
                             placeholder="Enter Hex code or Pick Color"
@@ -1028,7 +1033,7 @@ export const ColorPalatteSettings = observer(
                     ))}
                 </StyledEmptyContainer>
                 <StyledButtonContainer
-                    style={{ marginTop: "10px", marginBottom: "20px" }}
+                // style={{ marginTop: "10px", marginBottom: "20px" }}
                 >
                     {toggleAddEdit === "edit" && (
                         <>
@@ -1042,10 +1047,16 @@ export const ColorPalatteSettings = observer(
                     )}
                     {toggleAddEdit !== "edit" && (
                         <>
-                            <StyledButtonClose onClick={handleClose}>
+                            <StyledButtonClose
+                                size="small"
+                                onClick={handleClose}
+                            >
                                 Close
                             </StyledButtonClose>
-                            <StyledButtonAdd onClick={handleAddPalette}>
+                            <StyledButtonAdd
+                                size="small"
+                                onClick={handleAddPalette}
+                            >
                                 Add
                             </StyledButtonAdd>
                         </>

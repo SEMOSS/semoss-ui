@@ -73,7 +73,7 @@ export const FrameOperations = observer(
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-        let [frameOperationState, setFrameOperationState] = useState<
+        const [frameOperationState, setFrameOperationState] = useState<
             "initial" | "updated"
         >("initial");
 
@@ -98,13 +98,13 @@ export const FrameOperations = observer(
                 typeof computedValue === "string"
                     ? JSON.parse(computedValue)
                     : computedValue;
-            let xAxisData = option["xAxis"]["pixelvalue"] || []; //fetch data from xaxis
-            let yAxisData = option["yAxis"]["pixelvalue"] || []; //fetch data from yaxis
-            let recentValue = xAxisData.slice(-1) || [];
-            let name = columnsSelector.find(
+            const xAxisData = option["xAxis"]["pixelvalue"] || []; //fetch data from xaxis
+            const yAxisData = option["yAxis"]["pixelvalue"] || []; //fetch data from yaxis
+            const recentValue = xAxisData.slice(-1) || [];
+            const name = columnsSelector.find(
                 (col) => col.selector === recentValue[0],
             );
-            let initialColumns = { ...fieldsData };
+            const initialColumns = { ...fieldsData };
             initialColumns["xaxis"] = [
                 {
                     ["name"]: option["xAxis"]["pixelname"],
@@ -112,10 +112,10 @@ export const FrameOperations = observer(
                     ["width"]: undefined,
                 },
             ];
-            let pixelName = [],
+            const pixelName = [],
                 pixelValue = [];
             yAxisData.forEach((item, index) => {
-                let name = columnsSelector.find(
+                const name = columnsSelector.find(
                     (col: EChartColumns) => col.selector === item,
                 );
                 initialColumns["yaxis"].push({
@@ -131,7 +131,7 @@ export const FrameOperations = observer(
             setFieldsData((prevFields) => {
                 return initialColumns;
             });
-            let selectedValuesData = { ...selectedValues };
+            const selectedValuesData = { ...selectedValues };
             selectedValuesData.xAxis = recentValue;
             selectedValuesData.yAxis = yAxisData;
             setSelectedValues((prevSelectedValues) => {
@@ -173,16 +173,17 @@ export const FrameOperations = observer(
         }, [computedValue]);
         //trying to check for updating the fields, when x and y axis is getting updated
         useEffect(() => {
-            let option = typeof value === "string" ? JSON.parse(value) : value;
+            const option =
+                typeof value === "string" ? JSON.parse(value) : value;
             initialUpdateOfData();
         }, [, id]);
         //update the x and y axis fields when a field change is detected, and update data.columns, at both x and y axis values are set
         function updateFields(axis, event) {
-            let value = event.target.value || [];
-            let columns = { ...fieldsData };
+            const value = event.target.value || [];
+            const columns = { ...fieldsData };
             if (axis === "xaxis") {
-                let recentValue = value.slice(-1) || [];
-                let name = columnsSelector.find(
+                const recentValue = value.slice(-1) || [];
+                const name = columnsSelector.find(
                     (col: EChartColumns) => col.selector === recentValue[0],
                 );
                 columns["xaxis"] = [
@@ -208,7 +209,7 @@ export const FrameOperations = observer(
             if (axis === "yaxis") {
                 columns["yaxis"] = [];
                 value.forEach((item, index) => {
-                    let name = columnsSelector.find(
+                    const name = columnsSelector.find(
                         (col) => col.selector === item,
                     );
                     columns["yaxis"].push({
@@ -236,7 +237,7 @@ export const FrameOperations = observer(
             }
             if (columns["xaxis"] && columns["yaxis"]) {
                 let tempVal = JSON.parse(computedValue) || {};
-                let seriesIndex =
+                const seriesIndex =
                     tempVal["series"].findIndex((item) =>
                         BAR_CHART_DATA.JSONVALUE.includes(item.type),
                     ) || 0;
@@ -256,7 +257,7 @@ export const FrameOperations = observer(
                         selector: columns["xaxis"][0].selector[0] || "",
                     },
                 ];
-                let pixelName = [],
+                const pixelName = [],
                     pixelValue = [];
                 columns["yaxis"].forEach((columItem, columIndex) => {
                     pixelName.push(columItem.name);

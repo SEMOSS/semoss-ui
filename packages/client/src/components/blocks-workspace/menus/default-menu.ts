@@ -181,6 +181,7 @@ if (process.env.NODE_ENV === 'development') {
                     null,
                     2,
                 ),
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -289,6 +290,7 @@ if (process.env.NODE_ENV === 'development') {
                         },
                     },
                 },
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -466,6 +468,402 @@ if (process.env.NODE_ENV === 'development') {
                 frame: {
                     name: '',
                 },
+                show: 'true',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    });
+    DEV_BLOCKS.push({
+        section: SECTION_CHARTS,
+        name: 'Line Chart',
+        helperText: 'Show relationships between two variables',
+        activeImage: BLOCK_IMAGES['LINE_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['LINE_CHART_HOVER'],
+        json: {
+            widget: 'e-chart',
+            data: {
+                variation: 'echart-line-graph',
+                style: {
+                    height: 500,
+                    width: 400,
+                },
+                option: {
+                    title: {
+                        text: 'ECharts Line Chart',
+                        left: 'center',
+                        top: 20,
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'normal',
+                            color: '#000000',
+                        },
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        show: true,
+                    },
+                    legend: {
+                        show: true,
+                    },
+                    xAxis: {
+                        type: 'category',
+                        name: 'a',
+                        nameLocation: 'middle',
+                        nameGap: 30,
+                        axisTick: {
+                            show: true,
+                        },
+                        axisLabel: {
+                            rotate: 0,
+                        },
+                        nameTextStyle: {
+                            fontSize: 10,
+                        },
+                        data: ['A', 'B', 'C', 'D', 'E'],
+                        show: true,
+                    },
+                    axisTick: {
+                        show: true,
+                    },
+                    yAxis: {
+                        type: 'value',
+                        name: 'b',
+                        nameLocation: 'middle',
+                        nameGap: 40,
+                        axisLabel: {
+                            rotate: 0,
+                        },
+                        axisLine: {
+                            show: true,
+                        },
+                        axisTick: {
+                            show: true,
+                        },
+                        legend: {
+                            show: true,
+                        },
+                        tooltip: {
+                            show: true,
+                        },
+                        nameTextStyle: {
+                            fontSize: 10,
+                        },
+                        show: true,
+                    },
+                    color: [
+                        '#ff6f61',
+                        '#6b5b95',
+                        '#88b04b',
+                        '#f7cac9',
+                        '#92a8d1',
+                        '#034f84',
+                        '#f7786b',
+                        '#deeaee',
+                    ],
+                    series: [
+                        {
+                            name: 'a',
+                            type: 'line',
+                            data: [28, 30, 22, 35, 30],
+                            lineStyle: {
+                                type: 'solid',
+                                width: 1,
+                            },
+                            label: {
+                                show: true,
+                                position: 'top',
+                                rotate: 0,
+                                fontSize: 12,
+                                color: '#000000',
+                            },
+                        },
+                    ],
+                    reset: {
+                        title: {
+                            text: '',
+                            left: 'center',
+                            show: true,
+                            textStyle: {
+                                fontSize: 18,
+                                color: '#ff6f61',
+                                fontWeight: 'normal',
+                                fontFamily: '',
+                            },
+                        },
+                        xAxis: {
+                            name: '',
+                            updatedName: null,
+                            axisTick: true,
+                            axisLabelFont: 10,
+                        },
+                        yAxis: {
+                            name: '',
+                            updatedName: null,
+                            axisTick: true,
+                            axisLabelFont: 10,
+                        },
+                        label: {
+                            show: true,
+                            position: 'top',
+                            fontSize: 10,
+                            color: '#000000',
+                            backgroundColor: '',
+                            rotate: 0,
+                            fontFamily: '',
+                        },
+                    },
+                    toolbox: {
+                        feature: {
+                            brush: {
+                                type: [
+                                    'rect',
+                                    'polygon',
+                                    'lineX',
+                                    'lineY',
+                                    'clear',
+                                ],
+                                brushType: 'rect',
+                                xAxisIndex: 'all',
+                                yAxisIndex: 'all',
+                                brushMode: 'single',
+                                brushLink: 'all',
+                            },
+                        },
+                    },
+                    brush: {
+                        // Brush configuration
+                        brushType: 'rect', // You can also use 'polygon', 'lineX', or 'lineY'
+                        throttleType: 'debounce', // Throttle brush events
+                        throttleDelay: 300, // Delay for throttle (in ms)
+                        inBrush: {
+                            color: 'rgba(255, 0, 0, 0.3)', // Highlight color for the brushed region
+                        },
+                        outBrush: {
+                            color: 'rgba(0, 0, 0, 0.1)', // Color for points outside the brushed region
+                        },
+                        xAxisIndex: 'all', // Apply brush on x-axis
+                        brushMode: 'single',
+                        brushLink: 'all',
+                    },
+                },
+                frame: {
+                    name: '',
+                },
+                show: 'true',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    });
+    DEV_BLOCKS.push({
+        section: SECTION_CHARTS,
+        name: 'Bar Chart - Stacked',
+        helperText:
+            'Compare cumulative totals and individual segments across categories',
+        activeImage: BLOCK_IMAGES['STACK_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['STACK_CHART_HOVER'],
+        json: {
+            widget: 'e-chart',
+            data: {
+                variation: 'echart-stack-chart',
+                style: {
+                    height: 500,
+                    width: 400,
+                },
+                option: {
+                    title: {
+                        text: '',
+                        left: 'center',
+                        top: 'top',
+                    },
+                    tooltip: {
+                        show: false,
+                        trigger: 'axis',
+                        position: 'bottom',
+                        axisPointer: {
+                            type: 'line',
+                        },
+                    },
+                    xAxis: {
+                        name: '',
+                        pixelName: '',
+                        flipAxisName: '',
+                        axisName: '',
+                        nameLocation: 'middle',
+                        show: true,
+                        data: [],
+                        type: 'category',
+                        axisLine: {
+                            show: true,
+                        },
+                        axisTick: {
+                            show: true,
+                            alignWithLabel: true,
+                        },
+                        nameTextStyle: {
+                            fontSize: 12,
+                        },
+                        axisLabel: {
+                            show: true,
+                            rotate: 0,
+                            fontSize: 11,
+                            color: '#000000',
+                        },
+                        nameGap: 25,
+                    },
+                    yAxis: {
+                        name: '',
+                        pixelName: '',
+                        axisName: '',
+                        flipAxisName: '',
+                        type: 'value',
+                        data: [],
+                        show: true,
+                        axisLine: {
+                            show: true,
+                        },
+                        axisTick: {
+                            show: true,
+                            alignWithLabel: true,
+                        },
+                        nameTextStyle: {
+                            fontSize: 12,
+                        },
+                        axisLabel: {
+                            show: true,
+                            rotate: 0,
+                            fontSize: 12,
+                            color: '#000000',
+                        },
+                        axisPointer: {
+                            show: false,
+                        },
+                        splitLine: {
+                            show: true,
+                        },
+                    },
+                    legend: {
+                        show: false,
+                        data: [],
+                        selectedMode: 'multiple',
+                        orient: 'horizontal',
+                        bottom: 'bottom',
+                        textStyle: {
+                            fontSize: 10,
+                        },
+                        type: 'scroll',
+                        pageButtonItemGap: 5,
+                        pageTextSize: {
+                            color: '#000000',
+                            fontSize: 10,
+                        },
+                        left: 'center',
+                        top: 'bottom',
+                        itemWidth: 15,
+                        itemHeight: 10,
+                    },
+                    series: [],
+                    label: {
+                        show: true,
+                        rotate: 0,
+                        name: '',
+                        position: 'top',
+                        fontFamily: 'sans-serif',
+                        fontSize: 12,
+                        color: '#000000',
+                    },
+                    barWidth: 10,
+                    flipAxis: false,
+                    color: [
+                        '#5470c6',
+                        '#91cc75',
+                        '#fac858',
+                        '#ee6666',
+                        '#73c0de',
+                        '#3ba272',
+                        '#fc8452',
+                        '#9a60b4',
+                        '#ea7ccc',
+                    ],
+                    toolbox: {
+                        feature: {
+                            brush: {
+                                type: ['rect', 'clear'],
+                            },
+                        },
+                    },
+                    brush: {
+                        // Brush configuration
+                        brushType: 'rect', // You can also use 'polygon', 'lineX', or 'lineY'
+                        throttleType: 'debounce', // Throttle brush events
+                        xAxisIndex: '0', // Apply brushing to all x-axis
+                        throttleDelay: 300, // Delay for throttle (in ms)
+                        brushMode: 'single',
+                        inBrush: {
+                            color: 'rgba(255, 0, 0, 0.3)', // Highlight color for the brushed region
+                        },
+                        outBrush: {
+                            color: 'rgba(0, 0, 0, 0.1)', // Color for points outside the brushed region
+                        },
+                    },
+                    reset: {
+                        axis: {
+                            xaxis: {
+                                show: true,
+                                axisLine: {
+                                    show: true,
+                                },
+                                axisTick: {
+                                    show: true,
+                                    alignWithLabel: true,
+                                },
+                                nameTextStyle: {
+                                    fontSize: 12,
+                                },
+                                axisLabel: {
+                                    show: true,
+                                    rotate: 0,
+                                    fontSize: 11,
+                                    color: '#000000',
+                                },
+                            },
+                            yaxis: {
+                                show: true,
+                                axisLine: {
+                                    show: true,
+                                },
+                                axisTick: {
+                                    show: true,
+                                    alignWithLabel: true,
+                                },
+                                nameTextStyle: {
+                                    fontSize: 12,
+                                },
+                                axisLabel: {
+                                    show: true,
+                                    rotate: 0,
+                                    fontSize: 12,
+                                    color: '#000000',
+                                },
+                            },
+                        },
+                        label: {
+                            show: true,
+                            rotate: 0,
+                            name: '',
+                            position: 'top',
+                            fontFamily: 'sans-serif',
+                            fontSize: 12,
+                            color: '#000000',
+                        },
+                        barWidth: 10,
+                    },
+                },
+                frame: {
+                    name: '',
+                },
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -600,6 +998,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 triggerBgColor: '',
                 contentBgColor: '',
                 showExpandIcon: false,
+                show: 'true',
                 // -------------------------------------------
                 // TODO:
                 // John B:
@@ -611,6 +1010,31 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 // -------------------------------------------
             },
             listeners: {},
+            slots: {
+                header: [],
+                content: [],
+            },
+        },
+    },
+
+    {
+        section: SECTION_LAYOUT,
+        name: 'Popover',
+        activeImage: BLOCK_IMAGES['POPOVER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['POPOVER_HOVER'],
+        helperText: 'Click or Hover to show the popover',
+        json: {
+            widget: 'popover',
+            data: {
+                style: {},
+                open: false,
+                designMode: true,
+                openTrigger: 'click',
+                contentBgColor: '',
+            },
+            listeners: {
+                onClick: [],
+            },
             slots: {
                 header: [],
                 content: [],
@@ -648,6 +1072,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 controls: true,
                 loop: false,
                 source: '',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -673,8 +1098,84 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 light: false,
                 text: '',
                 showText: false,
+                show: 'true',
             },
             listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        name: 'Ratings ',
+        helperText: 'Rate on a scale',
+        json: {
+            widget: 'ratings',
+            data: {
+                style: {},
+                size: 'small',
+                type: 'star',
+                value: 2,
+                max: 5,
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {
+                children: [],
+            },
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Switch',
+        helperText: 'Toggle between two states',
+        json: {
+            widget: 'switch',
+            data: {
+                style: {
+                    width: 'fit-content',
+                    padding: '4px',
+                },
+                label: 'Toggle Switch',
+                value: false,
+                disabled: false,
+                color: 'primary',
+                size: 'medium',
+                helperText: '',
+                required: false,
+                labelPlacement: 'end',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Time Picker',
+        helperText: 'Select a time from a time picker',
+        json: {
+            widget: 'timepicker',
+            data: {
+                style: {
+                    width: '25%',
+                    padding: '4px',
+                },
+                label: 'Select Time',
+                value: '',
+                variant: 'picker',
+                ampm: true,
+                format: 'hh:mm a',
+                disabled: false,
+                required: false,
+                fullWidth: false,
+                placeholder: '',
+                clearable: true,
+                size: 'small',
+                views: ['hours', 'minutes'],
+            },
+            listeners: {
+                onChange: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -693,6 +1194,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 disabled: false,
                 variant: 'contained',
                 color: 'primary',
+                show: true,
             },
             listeners: {
                 onClick: [],
@@ -716,6 +1218,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 required: false,
                 disabled: false,
                 value: false,
+                show: 'true',
             },
             listeners: {
                 onChange: [],
@@ -745,6 +1248,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 labelPlacement: 'end',
                 required: false,
                 disabled: false,
+                show: 'true',
             },
             listeners: {
                 onChange: [],
@@ -800,6 +1304,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 disabled: false,
                 required: false,
                 loading: false,
+                show: 'true',
             },
             listeners: {
                 onChange: [],
@@ -828,6 +1333,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 color: 'primary',
                 value: '',
                 mode: 'transcribe',
+                show: 'true',
             },
             listeners: {
                 onClick: [],
@@ -854,6 +1360,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 required: false,
                 disabled: false,
                 loading: false,
+                show: 'true',
             },
             listeners: {
                 onChange: [],
@@ -882,6 +1389,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 loading: false,
                 disabled: false,
                 required: false,
+                show: 'true',
             },
             listeners: {
                 onChange: [],
@@ -907,6 +1415,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     gap: '8px',
                     flexWrap: 'wrap',
                 },
+                show: 'true',
             },
             listeners: {},
             slots: {
@@ -915,7 +1424,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_PROGRESS,
+        section: SECTION_ELEMENT,
         name: 'Progress',
         helperText: 'Display progress tracking or status',
         activeImage: BLOCK_IMAGES['PROGRESS_ACTIVE'],
@@ -927,6 +1436,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 value: 50,
                 includeLabel: true,
                 size: '300px',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -945,6 +1455,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 src: '',
                 title: '',
                 enableFrameInteractions: true,
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -965,6 +1476,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     padding: '8px',
                 },
                 selectedPdf: null,
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -991,6 +1503,35 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 src: '',
                 title: '',
+                show: 'true',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        name: 'Icon',
+        helperText: 'Add an icon to your layout',
+        activeImage: BLOCK_IMAGES['ICON_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['ICON_HOVER'],
+        json: {
+            widget: 'icon',
+            data: {
+                style: {
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '50px',
+                    height: '50px',
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center center',
+                    show: 'true',
+                },
+                src: '',
+                title: '',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1007,6 +1548,30 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             data: {
                 style: {},
                 queryId: '',
+                show: 'true',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        activeImage: BLOCK_IMAGES['CHIP_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['CHIP_HOVER'],
+        name: 'Chip',
+        json: {
+            widget: 'chip',
+            data: {
+                style: {
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%',
+                    height: '200px',
+                },
+                src: '',
+                title: '',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1037,6 +1602,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 value: null,
                 mandatory: true,
                 multiple: false,
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1058,6 +1624,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 href: '',
                 text: 'Insert text',
+                show: 'true',
             },
             listeners: {},
             slots: {},
@@ -1076,6 +1643,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     padding: '4px',
                 },
                 markdown: '**Hello world**',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1095,6 +1663,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 // default html includes place-holder text and basic styling
                 html: '<html>\r\n    <style>\r\n        html {\r\n            font-family: Roboto;\r\n            text-align: center;\r\n            overflow: hidden;\r\n        }\r\n    </style>\r\n    <body>\r\n        <h2>HTML Block</h2>\r\n    </body>\r\n</html>',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1102,7 +1671,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h1)',
         helperText: 'Display Text in header 1',
         activeImage: BLOCK_IMAGES['H1_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H1_HOVER'],
@@ -1116,6 +1685,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 text: 'Hello world',
                 variant: 'h1',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1123,7 +1693,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h2)',
         helperText: 'Display Text in header 2',
         activeImage: BLOCK_IMAGES['H2_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H2_HOVER'],
@@ -1137,6 +1707,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 text: 'Hello world',
                 variant: 'h2',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1144,7 +1715,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h3)',
         helperText: 'Display Text in header 3',
         activeImage: BLOCK_IMAGES['H3_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H3_HOVER'],
@@ -1158,6 +1729,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 text: 'Hello world',
                 variant: 'h3',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1165,7 +1737,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h4)',
         helperText: 'Display Text in header 4',
         activeImage: BLOCK_IMAGES['H4_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H4_HOVER'],
@@ -1179,6 +1751,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 text: 'Hello world',
                 variant: 'h4',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1186,7 +1759,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h5)',
         helperText: 'Display Text in header 5',
         activeImage: BLOCK_IMAGES['H5_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H5_HOVER'],
@@ -1200,6 +1773,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 text: 'Hello world',
                 variant: 'h5',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1207,7 +1781,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        name: 'Text',
+        name: 'Text (h6)',
         helperText: 'Display Text in header 6',
         activeImage: BLOCK_IMAGES['H6_ACTIVE'],
         hoverImage: BLOCK_IMAGES['H6_HOVER'],
@@ -1221,6 +1795,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 text: 'Hello world',
                 variant: 'h6',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1242,6 +1817,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 text: 'Hello world',
                 variant: 'p',
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1415,49 +1991,6 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                 type: 'nominal',
                                 legend: null,
                             },
-                        },
-                    },
-                    null,
-                    2,
-                ),
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Line Chart',
-        helperText: 'Display trends over time with continuous data',
-        activeImage: BLOCK_IMAGES['LINE_CHART_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['LINE_CHART_HOVER'],
-        json: {
-            widget: 'vega',
-            data: {
-                variation: 'line-chart',
-                specJson: JSON.stringify(
-                    {
-                        $schema:
-                            'https://vega.github.io/schema/vega-lite/v5.json',
-                        title: 'Line Chart',
-                        width: 300,
-                        height: 300,
-                        data: {
-                            values: [
-                                { a: 'A', b: 28 },
-                                { a: 'B', b: 55, predicted: false },
-                                { a: 'D', b: 91, predicted: false },
-                                { a: 'E', b: 81, predicted: false },
-                                { a: 'E', b: 81, predicted: true },
-                                { a: 'G', b: 19, predicted: true },
-                                { a: 'H', b: 87, predicted: true },
-                            ],
-                        },
-                        mark: 'line',
-                        encoding: {
-                            x: { field: 'a', type: 'ordinal' },
-                            y: { field: 'b', type: 'quantitative' },
-                            strokeDash: { field: 'predicted', type: 'nominal' },
                         },
                     },
                     null,
@@ -2255,6 +2788,32 @@ columns 1
             slots: {
                 content: [],
             },
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Slider',
+        helperText: 'Allows user to select a value from a specified range',
+        activeImage: BLOCK_IMAGES['SLIDER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['SLIDER_HOVER'],
+        json: {
+            widget: 'slider',
+            data: {
+                type: 'continuous',
+                style: {
+                    color: 'primary',
+                },
+                marks: [],
+                steps: 1,
+                value: 0,
+                min: 0,
+                max: 100,
+                size: '300px',
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {} as BlockJSON['slots'],
         },
     },
 ];
