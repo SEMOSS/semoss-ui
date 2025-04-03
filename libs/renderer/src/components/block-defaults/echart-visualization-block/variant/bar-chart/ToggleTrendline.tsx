@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { computed } from "mobx";
 
-import { Button, Select, styled } from "@semoss/ui";
+import { Button, Select, styled, Typography } from "@semoss/ui";
 
 import { BlockDef } from "../../../../../store";
 import { PathValue } from "../../../../../types";
@@ -14,6 +14,39 @@ import { BAR_CHART_DATA, LINE_CHART_DATA } from "../../Visualization.constants";
 //styled select field with width to 100%
 const StyledSelect = styled(Select)(() => ({
     width: "100%",
+}));
+
+const StyledAxisDiv = styled("div")<{
+    display?: string;
+    justifyContent?: string;
+    gap?: string;
+}>(({ theme, display, justifyContent, gap }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "row",
+    padding: "8px 16px",
+    alignItems: "center",
+    gap: gap ?? undefined,
+}));
+
+const StyledAxisColDiv = styled("div")<{
+    display?: string;
+    justifyContent: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "column",
+    padding: "8px 16px",
+    gap: "8px",
+}));
+
+const StyledAxis = styled("div")<{
+    display?: string;
+    justifyContent?: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "row",
 }));
 
 export const ToggleTrendline = observer(
@@ -244,14 +277,13 @@ export const ToggleTrendline = observer(
             }, 300);
         }
         const trendlineData = (
-            <div style={{ width: "100%", display: "block" }}>
-                <div
-                    style={{
-                        width: "100%",
-                    }}
-                >
-                    <label htmlFor="showTrendLine">Trendlines Toggle</label>
+            <StyledAxis>
+                <StyledAxisColDiv display="flex" justifyContent="flex-start">
+                    <Typography variant="body2" color="secondary">
+                        Trendlines Toggle
+                    </Typography>
                     <StyledSelect
+                        size="small"
                         onChange={handleToggleTrendLine}
                         id="showTrendLine"
                         label="Trendline Toggle"
@@ -271,15 +303,8 @@ export const ToggleTrendline = observer(
                             );
                         })}
                     </StyledSelect>
-                </div>
-                <div
-                    style={{
-                        width: "100%",
-                        paddingTop: "0.5rem",
-                        display: "flex",
-                        justifyContent: "space-around",
-                    }}
-                >
+                </StyledAxisColDiv>
+                <StyledAxisDiv justifyContent="center" display="flex">
                     <Button
                         type="button"
                         color="primary"
@@ -287,8 +312,8 @@ export const ToggleTrendline = observer(
                     >
                         Update TrendLine
                     </Button>
-                </div>
-            </div>
+                </StyledAxisDiv>
+            </StyledAxis>
         );
         return <>{trendlineData}</>;
     },
