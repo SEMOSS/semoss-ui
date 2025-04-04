@@ -1,9 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { Sync } from "@mui/icons-material";
-import { Stack } from "@mui/material";
-import { computed } from "mobx";
-
 import {
     Autocomplete,
     IconButton,
@@ -11,27 +6,24 @@ import {
     TextField,
     useNotification,
 } from "@semoss/ui";
-
 import {
     useBlockSettings,
     useBlocksPixel,
     useFrameHeaders,
 } from "../../../../../hooks";
-import { Paths } from "../../../../../types";
-import { Block, BlockDef } from "../../../../../store";
-import { getValueByPath } from "../../../../../utility";
 import { BaseSettingSection } from "../../../../block-settings";
+import { Sync } from "@mui/icons-material";
+
+import { Stack } from "@mui/material";
 import { GridBlockColumn } from "../../../grid-block/grid-block.types";
+import { useEffect, useMemo, useState } from "react";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+import { computed } from "mobx";
+import { getValueByPath } from "@/utility";
+import { Paths } from "@/types";
+import { Block, BlockDef } from "../../../../../store";
 
-const StyledStack = styled(Stack)(() => ({
-    width: "100%",
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-}));
-
-interface ScatterPlotBlockSettingsProps<D extends BlockDef = BlockDef> {
+interface MapChartBlockSettingsProps<D extends BlockDef = BlockDef> {
     /** Id of the block */
     id: string;
     /**
@@ -40,14 +32,18 @@ interface ScatterPlotBlockSettingsProps<D extends BlockDef = BlockDef> {
     path: Paths<Block<D>["data"], 4>;
 }
 
-export const ScatterPlotBlockSettings = observer(
-    ({ id, path }: ScatterPlotBlockSettingsProps) => {
+const StyledStack = styled(Stack)(() => ({
+    width: "100%",
+}));
+
+export const MapChartBlockSettings = observer(
+    ({ id, path }: MapChartBlockSettingsProps) => {
         const notification = useNotification();
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
         const [label, setLabel] = useState<any>([]);
-        const [xAxisValue, setXAxisValue] = useState<any>();
-        const [yAxisValue, setYAxisValue] = useState<any>();
+        const [latitudeValue, setLatitudeValue] = useState<any>();
+        const [longitudeValue, setLongitudeValue] = useState<any>();
         const [dataLabel, setDataLabel] = useState<any>();
         const [color, setColor] = useState<any>();
         const [size, setSize] = useState<any>();
@@ -79,7 +75,7 @@ export const ScatterPlotBlockSettings = observer(
         }, [computedValue]);
         useEffect(() => {
             const json = JSON.parse(computedValue);
-            const state = json["_state"];
+            let state = json["_state"];
             if (state && state.hasOwnProperty("fields")) {
                 reinitializeStates(state["fields"]);
             }
@@ -89,13 +85,13 @@ export const ScatterPlotBlockSettings = observer(
          * @param {Object} state - The state to reinitialize with.
          */
         const reinitializeStates = (state) => {
-            // XAxis
-            if (state.XAxis) {
-                setXAxisValue(state.XAxis);
+            // Latitude
+            if (state.Latitude) {
+                setLatitudeValue(state.Latitude);
             }
-            // YAxis
-            if (state.YAxis) {
-                setYAxisValue(state.YAxis);
+            // Longitude
+            if (state.Longitude) {
+                setLongitudeValue(state.Longitude);
             }
             // tooltip
             if (state.tooltip) {
@@ -125,8 +121,9 @@ export const ScatterPlotBlockSettings = observer(
          * @param {string} label - The selected label alias.
          */
         const handleChangeLabel = (label) => {
+            debugger;
             // Parse the current value from JSON
-            const tempValue = JSON.parse(value);
+            let tempValue = JSON.parse(value);
 
             // Find the field associated with the selected label alias
             const filteredArray = frameHeaders.data.list.find(
@@ -149,7 +146,7 @@ export const ScatterPlotBlockSettings = observer(
             };
 
             // Update the series label name
-            tempValue["series"][0]["label"]["name"] = label;
+            // tempValue['series'][0]['label']['name'] = label;
 
             // Update the label in the state
             setDataLabel(label);
@@ -162,23 +159,23 @@ export const ScatterPlotBlockSettings = observer(
         };
 
         /**
-         * Updates the X Axis settings based on the selected alias.
+         * Updates the latitude settings based on the selected alias.
          *
-         * @param {string} xaxis - The selected X Axis alias.
+         * @param {string} latitude - The selected latitude alias.
          */
-        const handleChangeXAxis = (xaxis) => {
+        const handleChangeLatitude = (latitude) => {
             // Parse the current value from JSON
-            const tempValue = JSON.parse(value);
+            let tempValue = JSON.parse(value);
 
-            // Find the field associated with the selected X Axis alias
+            // Find the field associated with the selected latitude alias
             const filteredArray = frameHeaders.data.list.find(
-                (item) => item.alias == xaxis,
+                (item) => item.alias == latitude,
             );
 
-            // Get the data type of the selected X Axis
-            const XAxisDataType = filteredArray.dataType;
+            // Get the data type of the selected latitude
+            const LatitudeDataType = filteredArray.dataType;
 
-            // Initialize or update the '_state' property with the selected X Axis and its data type
+            // Initialize or update the '_state' property with the selected latitude and its data type
             tempValue["_state"] =
                 tempValue["_state"] &&
                 Object.keys(tempValue["_state"]).length > 0
@@ -186,16 +183,16 @@ export const ScatterPlotBlockSettings = observer(
                     : {};
             tempValue["_state"]["fields"] = {
                 ...tempValue["_state"]["fields"],
-                XAxis: xaxis,
-                XAxisDataType: XAxisDataType,
+                Latitude: latitude,
+                LatitudeDataType: LatitudeDataType,
             };
 
-            // Update the X Axis value in the state
-            setXAxisValue(xaxis);
+            // Update the latitude value in the state
+            setLatitudeValue(latitude);
 
-            // Update the X Axis name and pixel name in the chart options
-            tempValue["xAxis"]["name"] = xaxis;
-            tempValue["xAxis"]["pixelName"] = xaxis;
+            // Update the latitude name and pixel name in the chart options
+            // tempValue['Latitude']['name'] = latitude;
+            // tempValue['Latitude']['pixelName'] = latitude;
 
             // Convert the updated value back to a JSON string
             setValue(JSON.stringify(tempValue));
@@ -204,26 +201,26 @@ export const ScatterPlotBlockSettings = observer(
             setData("option", tempValue);
         };
         /**
-         * Updates the Y Axis settings based on the selected alias.
+         * Updates the longitude settings based on the selected alias.
          *
-         * @param {string} yaxis - The selected Y Axis alias.
+         * @param {string} longitude - The selected longitude alias.
          */
-        const handleChangeYAxis = (yaxis) => {
-            // Update the Y Axis value in the state
-            setYAxisValue(yaxis);
+        const handleChangeLongitude = (longitude) => {
+            // Update the longitude value in the state
+            setLongitudeValue(longitude);
 
             // Parse the current value from JSON
-            const tempValue = JSON.parse(value);
+            let tempValue = JSON.parse(value);
 
-            // Find the field associated with the selected Y Axis alias
+            // Find the field associated with the selected longitude alias
             const filteredArray = frameHeaders.data.list.find(
-                (item) => item.alias == yaxis,
+                (item) => item.alias == longitude,
             );
 
-            // Get the data type of the selected Y Axis
-            const YAxisDataType = filteredArray.dataType;
+            // Get the data type of the selected longitude
+            const LongitudeDataType = filteredArray.dataType;
 
-            // Initialize or update the '_state' property with the selected Y Axis and its data type
+            // Initialize or update the '_state' property with the selected longitude and its data type
             tempValue["_state"] =
                 tempValue["_state"] &&
                 Object.keys(tempValue["_state"]).length > 0
@@ -231,13 +228,13 @@ export const ScatterPlotBlockSettings = observer(
                     : {};
             tempValue["_state"]["fields"] = {
                 ...tempValue["_state"]["fields"],
-                YAxis: yaxis,
-                YAxisDataType: YAxisDataType,
+                Longitude: longitude,
+                LongitudeDataType: LongitudeDataType,
             };
 
-            // Update the Y Axis name and pixel name in the chart options
-            tempValue["yAxis"]["name"] = yaxis;
-            tempValue["yAxis"]["pixelName"] = yaxis;
+            // Update the longitude name and pixel name in the chart options
+            // tempValue['Longitude']['name'] = longitude;
+            // tempValue['Longitude']['pixelName'] = longitude;
 
             // Convert the updated value back to a JSON string
             setValue(JSON.stringify(tempValue));
@@ -252,7 +249,7 @@ export const ScatterPlotBlockSettings = observer(
          */
         const handleChangeColor = (colors) => {
             // Parse the current value from JSON
-            const tempValue = JSON.parse(value);
+            let tempValue = JSON.parse(value);
 
             // Find the field associated with the selected color alias
             const filteredArray = frameHeaders.data.list.find(
@@ -273,6 +270,7 @@ export const ScatterPlotBlockSettings = observer(
                 color: colors,
                 colorDataType: colorDataType,
             };
+
             // Update the color value in the state
             setColor(colors);
 
@@ -289,7 +287,7 @@ export const ScatterPlotBlockSettings = observer(
          */
         const handleChangeSize = (size) => {
             // Parse the current value from JSON
-            const tempValue = JSON.parse(value);
+            let tempValue = JSON.parse(value);
 
             // Find the field associated with the selected size alias
             const filteredArray = frameHeaders.data.list.find(
@@ -327,7 +325,7 @@ export const ScatterPlotBlockSettings = observer(
          */
         const handleChangeTooltip = (tooltips) => {
             // Parse the current value from JSON
-            const tempValue = JSON.parse(value);
+            let tempValue = JSON.parse(value);
 
             // Find the field associated with the selected tooltip alias
             const filteredArray = frameHeaders.data.list.find(
@@ -362,11 +360,11 @@ export const ScatterPlotBlockSettings = observer(
         /**
          * Remove the specified segment from the option object.
          *
-         * @param {string} segment - The segment to remove, can be 'label', 'xAxis', 'yAxis', 'size', 'color', or 'tooltip'.
+         * @param {string} segment - The segment to remove, can be 'label', 'latitude', 'longitude', 'size', 'color', or 'tooltip'.
          */
         const handleRemoveOption = (segment: string) => {
             // Parse the current value from JSON
-            const tempValue = JSON.parse(value);
+            let tempValue = JSON.parse(value);
 
             // Switch on the segment to remove the correct field from the option object
             switch (segment) {
@@ -375,7 +373,6 @@ export const ScatterPlotBlockSettings = observer(
                     setDataLabel("");
                     // Remove the label field from the option object
                     const newFields = { ...tempValue };
-                    newFields["series"][0]["data"] = [];
                     delete newFields["_state"]["fields"].label;
                     delete newFields["_state"]["fields"].labelDataType;
                     // Convert the updated value back to a JSON string
@@ -383,35 +380,35 @@ export const ScatterPlotBlockSettings = observer(
                     // Update the data with the new option
                     setData("option", newFields);
                     break;
-                case "xAxis":
-                    // Reset the X-axis value in the state
-                    setXAxisValue("");
-                    // Remove the X-axis field from the option object
-                    const newXAxisFields = { ...tempValue };
-                    newXAxisFields["series"][0]["data"] = [];
-                    delete newXAxisFields["_state"]["fields"].XAxis;
-                    delete newXAxisFields["_state"]["fields"].XAxisDataType;
-                    newXAxisFields["xAxis"]["pixelName"] = ""; // Reset the X-axis pixel name
-                    newXAxisFields["xAxis"]["name"] = ""; // Reset the X-axis name
+                case "Latitude":
+                    // Reset the Latitude value in the state
+                    setLatitudeValue("");
+                    // Remove the Latitude field from the option object
+                    const newLatitudeFields = { ...tempValue };
+                    delete newLatitudeFields["_state"]["fields"].Latitude;
+                    delete newLatitudeFields["_state"]["fields"]
+                        .LatitudeDataType;
+                    newLatitudeFields["Latitude"]["pixelName"] = ""; // Reset the Latitude pixel name
+                    newLatitudeFields["Latitude"]["name"] = ""; // Reset the Latitude name
                     // Convert the updated value back to a JSON string
-                    setValue(JSON.stringify(newXAxisFields));
+                    setValue(JSON.stringify(newLatitudeFields));
                     // Update the data with the new option
-                    setData("option", newXAxisFields);
+                    setData("option", newLatitudeFields);
                     break;
-                case "yAxis":
-                    // Reset the Y-axis value in the state
-                    setYAxisValue("");
-                    // Remove the Y-axis field from the option object
-                    const newYAxisFields = { ...tempValue };
-                    newYAxisFields["series"][0]["data"] = [];
-                    delete newYAxisFields["_state"]["fields"].YAxis;
-                    delete newYAxisFields["_state"]["fields"].YAxisDataType;
-                    newYAxisFields["yAxis"]["pixelName"] = ""; // Reset the Y-axis pixel name
-                    newYAxisFields["yAxis"]["name"] = ""; // Reset the Y-axis name
+                case "Longitude":
+                    // Reset the Longitude value in the state
+                    setLongitudeValue("");
+                    // Remove the Longitude field from the option object
+                    const newLongitudeFields = { ...tempValue };
+                    delete newLongitudeFields["_state"]["fields"].Longitude;
+                    delete newLongitudeFields["_state"]["fields"]
+                        .LongitudeDataType;
+                    newLongitudeFields["Longitude"]["pixelName"] = ""; // Reset the Longitude pixel name
+                    newLongitudeFields["Longitude"]["name"] = ""; // Reset the Longitude name
                     // Convert the updated value back to a JSON string
-                    setValue(JSON.stringify(newYAxisFields));
+                    setValue(JSON.stringify(newLongitudeFields));
                     // Update the data with the new option
-                    setData("option", newYAxisFields);
+                    setData("option", newLongitudeFields);
                     break;
                 case "size":
                     // Reset the size value in the state
@@ -530,171 +527,176 @@ export const ScatterPlotBlockSettings = observer(
                     </IconButton>
                 </BaseSettingSection>
 
-                {/* <StyledStack> */}
-                <BaseSettingSection label="Label">
-                    <Autocomplete
-                        size="small"
-                        fullWidth
-                        multiple={false}
-                        disabled={data.frame.name === ""}
-                        value={dataLabel ? dataLabel : ""}
-                        options={fields}
-                        getOptionLabel={(option) => {
-                            return option;
-                        }}
-                        onChange={(_, value, reason) => {
-                            // update the frame
-                            if (reason === "clear") handleRemoveOption("label");
-                            else handleChangeLabel(value);
-                        }}
-                        freeSolo={false}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                placeholder="Select label"
-                                size="small"
-                                variant="outlined"
-                            />
-                        )}
-                    />
-                </BaseSettingSection>
-                <BaseSettingSection label="X-Axis">
-                    <Autocomplete
-                        size="small"
-                        fullWidth
-                        multiple={false}
-                        disabled={data.frame.name === ""}
-                        value={xAxisValue ? xAxisValue : ""}
-                        options={fields}
-                        getOptionLabel={(option) => {
-                            return option;
-                        }}
-                        onChange={(_, value, reason) => {
-                            // update the frame
-                            if (reason === "clear") handleRemoveOption("xAxis");
-                            else handleChangeXAxis(value);
-                        }}
-                        freeSolo={false}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                placeholder="Select X-Axis"
-                                size="small"
-                                variant="outlined"
-                            />
-                        )}
-                    />
-                </BaseSettingSection>
-                <BaseSettingSection label="Y-Axis">
-                    <Autocomplete
-                        size="small"
-                        fullWidth
-                        multiple={false}
-                        disabled={data.frame.name === ""}
-                        value={yAxisValue ? yAxisValue : ""}
-                        options={fields}
-                        getOptionLabel={(option) => {
-                            return option;
-                        }}
-                        onChange={(_, value, reason) => {
-                            // update the frame
-                            if (reason === "clear") handleRemoveOption("yAxis");
-                            else handleChangeYAxis(value);
-                        }}
-                        freeSolo={false}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                placeholder="Select Y-Axis"
-                                size="small"
-                                variant="outlined"
-                            />
-                        )}
-                    />
-                </BaseSettingSection>
-                <BaseSettingSection label="Size">
-                    <Autocomplete
-                        size="small"
-                        fullWidth
-                        multiple={false}
-                        disabled={data.frame.name === ""}
-                        value={size ? size : ""}
-                        options={fields}
-                        getOptionLabel={(option) => {
-                            return option;
-                        }}
-                        onChange={(_, value, reason) => {
-                            // update the frame
-                            if (reason == "clear") handleRemoveOption("size");
-                            else handleChangeSize(value);
-                        }}
-                        freeSolo={false}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                placeholder="Select size"
-                                size="small"
-                                variant="outlined"
-                            />
-                        )}
-                    />
-                </BaseSettingSection>
-                <BaseSettingSection label="Color">
-                    <Autocomplete
-                        size="small"
-                        fullWidth
-                        multiple={false}
-                        disabled={data.frame.name === ""}
-                        value={color ? color : ""}
-                        options={fields}
-                        getOptionLabel={(option) => {
-                            return option;
-                        }}
-                        onChange={(_, value, reason) => {
-                            // update the frame
-                            if (reason === "clear") handleRemoveOption("color");
-                            else handleChangeColor(value);
-                        }}
-                        freeSolo={false}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                placeholder="Select color"
-                                size="small"
-                                variant="outlined"
-                            />
-                        )}
-                    />
-                </BaseSettingSection>
-                <BaseSettingSection label="Tooltip">
-                    <Autocomplete
-                        size="small"
-                        fullWidth
-                        multiple={false}
-                        disabled={data.frame.name === ""}
-                        value={tooltip ? tooltip : ""}
-                        options={fields}
-                        getOptionLabel={(option) => {
-                            return option;
-                        }}
-                        onChange={(_, value, reason) => {
-                            // update the frame
-                            if (reason === "clear")
-                                handleRemoveOption("tooltip");
-                            else handleChangeTooltip(value);
-                        }}
-                        freeSolo={false}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                placeholder="Select tooltip"
-                                size="small"
-                                variant="outlined"
-                            />
-                        )}
-                    />
-                </BaseSettingSection>
-                {/* </StyledStack> */}
+                <StyledStack>
+                    <BaseSettingSection label="Label">
+                        <Autocomplete
+                            size="small"
+                            fullWidth
+                            multiple={false}
+                            disabled={data?.frame?.name === ""}
+                            value={dataLabel ? dataLabel : ""}
+                            options={fields}
+                            getOptionLabel={(option) => {
+                                return option;
+                            }}
+                            onChange={(_, value, reason) => {
+                                // update the frame
+                                if (reason === "clear")
+                                    handleRemoveOption("label");
+                                else handleChangeLabel(value);
+                            }}
+                            freeSolo={false}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    placeholder="Select label"
+                                    size="small"
+                                    variant="outlined"
+                                />
+                            )}
+                        />
+                    </BaseSettingSection>
+                    <BaseSettingSection label="Latitude">
+                        <Autocomplete
+                            size="small"
+                            fullWidth
+                            multiple={false}
+                            disabled={data?.frame?.name === ""}
+                            value={latitudeValue ? latitudeValue : ""}
+                            options={fields}
+                            getOptionLabel={(option) => {
+                                return option;
+                            }}
+                            onChange={(_, value, reason) => {
+                                // update the frame
+                                if (reason === "clear")
+                                    handleRemoveOption("Latitude");
+                                else handleChangeLatitude(value);
+                            }}
+                            freeSolo={false}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    placeholder="Select Latitude"
+                                    size="small"
+                                    variant="outlined"
+                                />
+                            )}
+                        />
+                    </BaseSettingSection>
+                    <BaseSettingSection label="Longitude">
+                        <Autocomplete
+                            size="small"
+                            fullWidth
+                            multiple={false}
+                            disabled={data?.frame?.name === ""}
+                            value={longitudeValue ? longitudeValue : ""}
+                            options={fields}
+                            getOptionLabel={(option) => {
+                                return option;
+                            }}
+                            onChange={(_, value, reason) => {
+                                // update the frame
+                                if (reason === "clear")
+                                    handleRemoveOption("Longitude");
+                                else handleChangeLongitude(value);
+                            }}
+                            freeSolo={false}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    placeholder="Select Longitude"
+                                    size="small"
+                                    variant="outlined"
+                                />
+                            )}
+                        />
+                    </BaseSettingSection>
+                    <BaseSettingSection label="Size">
+                        <Autocomplete
+                            size="small"
+                            fullWidth
+                            multiple={false}
+                            disabled={data?.frame?.name === ""}
+                            value={size ? size : ""}
+                            options={fields}
+                            getOptionLabel={(option) => {
+                                return option;
+                            }}
+                            onChange={(_, value, reason) => {
+                                // update the frame
+                                if (reason == "clear")
+                                    handleRemoveOption("size");
+                                else handleChangeSize(value);
+                            }}
+                            freeSolo={false}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    placeholder="Select size"
+                                    size="small"
+                                    variant="outlined"
+                                />
+                            )}
+                        />
+                    </BaseSettingSection>
+                    <BaseSettingSection label="Color">
+                        <Autocomplete
+                            size="small"
+                            fullWidth
+                            multiple={false}
+                            disabled={data?.frame?.name === ""}
+                            value={color ? color : ""}
+                            options={fields}
+                            getOptionLabel={(option) => {
+                                return option;
+                            }}
+                            onChange={(_, value, reason) => {
+                                // update the frame
+                                if (reason === "clear")
+                                    handleRemoveOption("color");
+                                else handleChangeColor(value);
+                            }}
+                            freeSolo={false}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    placeholder="Select color"
+                                    size="small"
+                                    variant="outlined"
+                                />
+                            )}
+                        />
+                    </BaseSettingSection>
+                    <BaseSettingSection label="Tooltip">
+                        <Autocomplete
+                            size="small"
+                            fullWidth
+                            multiple={false}
+                            disabled={data?.frame?.name === ""}
+                            value={tooltip ? tooltip : ""}
+                            options={fields}
+                            getOptionLabel={(option) => {
+                                return option;
+                            }}
+                            onChange={(_, value, reason) => {
+                                // update the frame
+                                if (reason === "clear")
+                                    handleRemoveOption("tooltip");
+                                else handleChangeTooltip(value);
+                            }}
+                            freeSolo={false}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    placeholder="Select tooltip"
+                                    size="small"
+                                    variant="outlined"
+                                />
+                            )}
+                        />
+                    </BaseSettingSection>
+                </StyledStack>
             </StyledStack>
         );
     },

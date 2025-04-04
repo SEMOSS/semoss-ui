@@ -1,14 +1,18 @@
-import { computed } from "mobx";
-import { observer } from "mobx-react-lite";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
-
-import { styled, Switch, Typography } from "@semoss/ui";
-
 import { useBlockSettings } from "../../../../../hooks";
 import { Block, BlockDef } from "../../../../../store";
 import { Paths, PathValue } from "../../../../../types";
 import { getValueByPath } from "../../../../../utility";
-
+import {
+    MenuItem,
+    Select,
+    styled,
+    Switch,
+    TextField,
+    Typography,
+} from "@semoss/ui";
+import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import { useEffect, useMemo, useState } from "react";
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
@@ -20,39 +24,33 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 const StyledAxisDiv = styled("div")<{
     display?: string;
     justifyContent?: string;
-    gap?: string;
-}>(({ theme, display, justifyContent, gap }) => ({
-    display: display ?? undefined,
-    justifyContent: justifyContent ?? undefined,
-    flexDirection: "row",
-    padding: "8px 16px",
-    alignItems: "center",
-    gap: gap ?? undefined,
-}));
-const StyledAxis = styled("div")<{
-    display?: string;
-    justifyContent?: string;
 }>(({ theme, display, justifyContent }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
+    padding: "0.5rem",
 }));
 
-const StyledTypography = styled(Typography)(({ theme }) => ({
-    color: theme.palette.text.primary,
+const StyledAxisColDiv = styled("div")<{
+    display?: string;
+    justifyContent: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "column",
+    padding: "0.5rem",
 }));
 
-export const TooltipScatterPlot = observer(
+export const MapMarkerSize = observer(
     <D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
         const [value, setValue] = useState("");
-        const [showTooltips, setShowTooltip] = useState<boolean>(true);
+        const [markerSize, setMarkerSize] = useState(5);
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
                     return "";
                 }
-
                 const v = getValueByPath(data, path);
                 if (typeof v === "undefined") {
                     return "";
@@ -74,45 +72,45 @@ export const TooltipScatterPlot = observer(
         }, [id]);
 
         /**
-         * Reinitializes the features of the tooltip based on the provided options.
+         * Reinitializes the features of the scatter plot based on the provided options.
          * @param options The options to reinitialize the features with.
          */
-        const reinitializeFeatures = (options: any) => {
-            if (options.hasOwnProperty("tooltip")) {
-                // Set the showTooltips state to the value of the show property of the tooltip object
-                setShowTooltip(options["tooltip"]["show"]);
+        const reinitializeFeatures = (options) => {
+            if (options.hasOwnProperty("series")) {
+                // Check if the symbol size exists
+                if (options.series[0].hasOwnProperty("symbolSize")) {
+                    // Update the symbol size
+                    setMarkerSize(options["series"][0]["symbolSize"]);
+                }
             }
         };
         /**
-         * Handles the switch change event for the tooltip by toggling the showTooltips state and updating the tooltip options in the data.
-         * @param e The switch change event.
+         * Handles the change event for the symbol size input.
+         * @param e The event that triggered this function.
          */
-        const showTooltip = (e) => {
-            const option = JSON.parse(value);
-            setShowTooltip(!showTooltips);
-            option["tooltip"]["show"] = e.target.checked;
+        const handleChangeSymbolSize = (e) => {
+            // Parse the current value to a JSON object
+            let option = JSON.parse(value);
+            // Update the symbol size to the selected value
+            setMarkerSize(e.target.value);
+            // Set the symbol size in the JSON object
+            option["series"][0]["symbolSize"] = e.target.value;
+            option["symbolSize"] = e.target.value;
+            // Update the data with the new symbol size option
             setData(path, option as PathValue<D["data"], typeof path>);
         };
         return (
-            <StyledAxis>
-                <StyledAxisDiv
-                    display="flex"
-                    justifyContent="flex-start"
-                    gap="8px"
-                >
-                    <Switch
-                        checked={showTooltips}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            showTooltip(e)
-                        }
-                        title="Show Tooltip"
+            <StyledAxisDiv>
+                <StyledAxisColDiv display="flex" justifyContent="space-around">
+                    <Typography variant="body2">Marker Size</Typography>
+                    <TextField
+                        id="Symbol Size"
                         size="small"
+                        value={markerSize}
+                        onChange={handleChangeSymbolSize}
                     />
-                    <StyledTypography variant="body1">
-                        Show Tooltip
-                    </StyledTypography>
-                </StyledAxisDiv>
-            </StyledAxis>
+                </StyledAxisColDiv>
+            </StyledAxisDiv>
         );
     },
 );

@@ -1,6 +1,6 @@
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
-import { observer } from "mobx-react-lite";
 import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
 
 import { styled, Switch, Typography } from "@semoss/ui";
 
@@ -20,25 +20,32 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 const StyledAxisDiv = styled("div")<{
     display?: string;
     justifyContent?: string;
-    gap?: string;
-}>(({ theme, display, justifyContent, gap }) => ({
+}>(({ theme, display, justifyContent }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "8px 16px",
-    alignItems: "center",
-    gap: gap ?? undefined,
+    padding: "0.5rem",
+    marginLeft: "4px",
+}));
+const StyledAxis = styled("div")<{
+    display?: string;
+    justifyContent?: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "row",
+    padding: "0.5rem",
 }));
 
-const StyledTypography = styled(Typography)(({ theme }) => ({
-    color: theme.palette.text.primary,
-}));
+const StyledTypography = styled(Typography)({
+    paddingLeft: "10px",
+});
 
-export const ToogleDonut = observer(
+export const TooltipMapChart = observer(
     <D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
         const [value, setValue] = useState("");
-        const [showDonut, setShowDonut] = useState(false);
+        const [showTooltips, setShowTooltip] = useState<boolean>(true);
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
@@ -58,47 +65,49 @@ export const ToogleDonut = observer(
         useEffect(() => {
             setValue(computedValue);
         }, [computedValue, data]);
+
         useEffect(() => {
             if (data.hasOwnProperty("option")) {
                 reinitializeFeatures(data.option);
             }
         }, [id]);
-        //Reinitialize the feature when the chart is loaded
-        const reinitializeFeatures = (options) => {
-            if (typeof options["series"][0].radius === "string") {
-                setShowDonut(false);
-            } else {
-                setShowDonut(true);
+
+        /**
+         * Reinitializes the features of the tooltip based on the provided options.
+         * @param options The options to reinitialize the features with.
+         */
+        const reinitializeFeatures = (options: any) => {
+            if (options.hasOwnProperty("tooltip")) {
+                // Set the showTooltips state to the value of the show property of the tooltip object
+                setShowTooltip(options["tooltip"]["show"]);
             }
         };
-        //Handle the change event for the toggle switch
-        const handleDonut = (e) => {
-            const option = JSON.parse(value);
-            setShowDonut(!showDonut);
-            if (e.target.checked) {
-                option["series"][0].radius = ["20%", "50%"];
-            } else {
-                option["series"][0].radius = "50%";
-            }
+        /**
+         * Handles the switch change event for the tooltip by toggling the showTooltips state and updating the tooltip options in the data.
+         * @param e The switch change event.
+         */
+        const showTooltip = (e) => {
+            let option = JSON.parse(value);
+            setShowTooltip(!showTooltips);
             option["tooltip"]["show"] = e.target.checked;
             setData(path, option as PathValue<D["data"], typeof path>);
         };
         return (
-            <StyledAxisDiv>
-                <StyledAxisDiv display="flex" gap="8px">
+            <StyledAxis>
+                <StyledAxisDiv display="flex" justifyContent="flex-start">
                     <Switch
-                        checked={showDonut}
+                        checked={showTooltips}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            handleDonut(e)
+                            showTooltip(e)
                         }
-                        title="Toggle Donut"
+                        title="Show Tooltip"
                         size="small"
                     />
-                    <StyledTypography variant="body2">
-                        Donut Toggle ON / OFF
+                    <StyledTypography variant="body1">
+                        Show Tooltip
                     </StyledTypography>
                 </StyledAxisDiv>
-            </StyledAxisDiv>
+            </StyledAxis>
         );
     },
 );

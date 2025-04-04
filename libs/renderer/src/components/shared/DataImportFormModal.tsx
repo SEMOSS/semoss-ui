@@ -405,7 +405,6 @@ export const DataImportFormModal = observer(
             if (getDatabases.status !== "SUCCESS") {
                 return;
             }
-            debugger;
             setUserDatabases(getDatabases.data);
         }, [getDatabases.status, getDatabases.data]);
 
@@ -470,7 +469,6 @@ export const DataImportFormModal = observer(
             try {
                 const newCellId = `${Math.floor(Math.random() * 100000)}`;
 
-                debugger;
                 const config: NewCellAction["payload"]["config"] = {
                     widget: DefaultCells[widget].widget,
                     parameters: DefaultCells[widget].parameters,
@@ -641,7 +639,6 @@ export const DataImportFormModal = observer(
 
             runPixel(pixelString).then((pixelResponse) => {
                 // TODO: FIX TYPES
-                debugger;
                 const responseTableStructure = pixelResponse.pixelReturn[0]
                     .output as string[][];
                 const isResponseTableStructureGood =
