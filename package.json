@@ -6,6 +6,7 @@
         "preinstall": "npx only-allow pnpm",
         "prepare": "husky install",
         "fix": "pnpm run --filter=@semoss/legacy --filter=@semoss/ui --filter=@semoss/client fix",
+        
         "dev": "npx nx run-many -t dev -p @semoss/ui @semoss/sdk @semoss/renderer @semoss/client @semoss/legacy",
         "dev:client": "nx run @semoss/client:dev",
         "dev:legacy": "nx run @semoss/legacy:dev",
@@ -78,8 +79,6 @@
         "@mui/x-date-pickers": "6.8.0",
         "dayjs": "^1.11.13",
         "@testing-library/react": "^16.2.0",
-        "echarts": "^5.6.0",
-        "echarts-for-react": "^3.0.2",
         "mermaid": "^10.9.1",
         "react": "18.3.1",
         "react-color": "^2.19.3",
