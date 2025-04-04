@@ -382,6 +382,57 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
                                         },
                                     },
                                 });
+                                const block = state.blocks[designer.selected];
+
+                                const blockJson = {
+                                    widget: toJS(block.widget),
+                                    data: toJS(block.data),
+                                    listeners: toJS(block.listeners),
+                                    slots: {},
+                                };
+
+                                // Recursively get all slots as JSONs
+                                if (block.slots) {
+                                    for (const [
+                                        slotName,
+                                        slotValue,
+                                    ] of Object.entries(block.slots)) {
+                                        blockJson.slots[slotName] = {
+                                            children: slotValue.children.map(
+                                                (childId) => {
+                                                    const childBlock =
+                                                        state.blocks[childId];
+                                                    return {
+                                                        id: childId,
+                                                        widget: toJS(
+                                                            childBlock.widget,
+                                                        ),
+                                                        data: toJS(
+                                                            childBlock.data,
+                                                        ),
+                                                        listeners: toJS(
+                                                            childBlock.listeners,
+                                                        ),
+                                                        slots: {}, // you can make this recursive if needed
+                                                    };
+                                                },
+                                            ),
+                                        };
+                                    }
+                                }
+
+                                const sourceBlockPayload = {
+                                    id: designer.selected,
+                                    position: {
+                                        parent: placeholderAction.id,
+                                        slot: siblingWidget.parent.slot,
+                                    },
+                                    json: blockJson,
+                                };
+
+                                (parent.data.sourceBlockList as object[]).push(
+                                    sourceBlockPayload,
+                                );
                             }
                         }
                     } else {
@@ -423,6 +474,54 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
                             },
                         },
                     });
+                    if (siblingWidget3.widget === 'iterator') {
+                        const block = state.blocks[designer.selected];
+
+                        const blockJson = {
+                            widget: toJS(block.widget),
+                            data: toJS(block.data),
+                            listeners: toJS(block.listeners),
+                            slots: {},
+                        };
+
+                        // Recursively get all slots as JSONs
+                        if (block.slots) {
+                            for (const [slotName, slotValue] of Object.entries(
+                                block.slots,
+                            )) {
+                                blockJson.slots[slotName] = {
+                                    children: slotValue.children.map(
+                                        (childId) => {
+                                            const childBlock =
+                                                state.blocks[childId];
+                                            return {
+                                                id: childId,
+                                                widget: toJS(childBlock.widget),
+                                                data: toJS(childBlock.data),
+                                                listeners: toJS(
+                                                    childBlock.listeners,
+                                                ),
+                                                slots: {}, // you can make this recursive if needed
+                                            };
+                                        },
+                                    ),
+                                };
+                            }
+                        }
+
+                        const sourceBlockPayload = {
+                            id: designer.selected,
+                            position: {
+                                parent: placeholderAction.id,
+                                slot: placeholderAction.slot,
+                            },
+                            json: blockJson,
+                        };
+
+                        (siblingWidget3.data.sourceBlockList as object[]).push(
+                            sourceBlockPayload,
+                        );
+                    }
                 }
             }
         }
