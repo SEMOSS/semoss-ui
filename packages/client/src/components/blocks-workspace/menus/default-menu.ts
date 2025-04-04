@@ -11,8 +11,8 @@ const SECTION_PROGRESS = 'Progress';
 const SECTION_TEXT = 'Text';
 
 const SECTION_CHARTS = 'Data Charts';
-const SECTION_FLOWS = 'Mermaid Charts';
 const SECTION_MISC = 'Miscellaneous';
+const SECTION_GROUPED = 'Grouped Blocks';
 
 export const SECTION_ORDER = [
     SECTION_LAYOUT,
@@ -22,7 +22,7 @@ export const SECTION_ORDER = [
     SECTION_ELEMENT,
     SECTION_MISC,
     SECTION_CHARTS,
-    SECTION_FLOWS,
+    SECTION_GROUPED,
 ];
 
 // Development Environment Blocks
@@ -869,14 +869,121 @@ if (process.env.NODE_ENV === 'development') {
             slots: {} as BlockJSON['slots'],
         },
     });
+    DEV_BLOCKS.push({
+        section: SECTION_CHARTS,
+        name: 'World Map Chart',
+        activeImage: BLOCK_IMAGES['WORLD_MAP_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['WORLD_MAP_HOVER'],
+        helperText: 'Show data on a map',
+        json: {
+            widget: 'e-chart',
+            data: {
+                variation: 'echart-world-map-chart',
+                style: {
+                    height: 500,
+                    width: 400,
+                },
+                option: {
+                    series: [
+                        {
+                            data: [],
+                            name: '',
+                            label: {
+                                show: false,
+                                rotate: 0,
+                                name: '',
+                                position: 'top',
+                                fontFamily: 'sans-serif',
+                                fontSize: 12,
+                                color: '#000000',
+                            },
+                            symbolSize: 15,
+                            symbol: 'circle',
+                        },
+                    ],
+                    symbolSize: 15,
+                    tooltip: {
+                        show: true,
+                        trigger: 'item',
+                        position: 'bottom',
+                    },
+                    color: [
+                        '#5470c6',
+                        '#91cc75',
+                        '#fac858',
+                        '#ee6666',
+                        '#73c0de',
+                        '#3ba272',
+                        '#fc8452',
+                        '#9a60b4',
+                        '#ea7ccc',
+                    ],
+                    legend: {
+                        show: true,
+                        orient: 'horizontal',
+                        bottom: 'bottom',
+                        textStyle: {
+                            fontSize: 10,
+                        },
+                        type: 'scroll',
+                        pageButtonItemGap: 5,
+                        pageTextSize: {
+                            color: '#000000',
+                            fontSize: 10,
+                        },
+                        left: 'center',
+                        top: 'bottom',
+                        itemWidth: 15,
+                        itemHeight: 10,
+                    },
+                    toolbox: {
+                        feature: {
+                            brush: {
+                                type: ['rect'],
+                            },
+                        },
+                    },
+                    brush: {
+                        // Brush configuration
+                        brushType: 'rect', // You can also use 'polygon', 'lineX', or 'lineY'
+                        throttleType: 'debounce', // Throttle brush events
+                        throttleDelay: 300, // Delay for throttle (in ms)
+                        inBrush: {
+                            color: 'rgba(255, 0, 0, 0.3)', // Highlight color for the brushed region
+                        },
+                        outBrush: {
+                            color: 'rgba(0, 0, 0, 0.1)', // Color for points outside the brushed region
+                        },
+                    },
+                    title: {
+                        text: 'Map Graph',
+                        show: true,
+                        left: 'left',
+                        textStyle: {
+                            color: '#000000',
+                            fontWeight: 'bold',
+                            fontFamily: 'Arial Narrow',
+                            fontSize: 12,
+                        },
+                    },
+                },
+                frame: {
+                    name: '',
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    });
 }
 
 // TODO: Alphabetical order by name
 export const DEFAULT_MENU: DesignerMenuItem[] = [
-    // -------------------------------------------------------------
-    // BLOCKS START
-    // ----------------------------------------------------------
+    // TODO: You will still be able to drop configs on the UI.  Beta version of blocks
     ...DEV_BLOCKS,
+    // -------------------------------------------------------------
+    // PROD BLOCKS START
+    // ----------------------------------------------------------
     {
         section: SECTION_LAYOUT,
         name: 'Accordion',
@@ -2015,145 +2122,12 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
-    // {
-    //     section: SECTION_CHARTS,
-    //     name: 'Scatter Plot',
-    //     helperText: 'Show relationships between two variables',
-    //     activeImage: BLOCK_IMAGES['SCATTER_PLOT_ACTIVE'],
-    //     hoverImage: BLOCK_IMAGES['SCATTER_PLOT_HOVER'],
-    //     json: {
-    //         widget: 'vega',
-    //         data: {
-    //             variation: 'scatter-plot',
-    //             specJson: JSON.stringify(
-    //                 {
-    //                     $schema:
-    //                         'https://vega.github.io/schema/vega-lite/v5.json',
-    //                     title: 'Scatter Plot',
-    //                     width: 300,
-    //                     height: 300,
-    //                     description: 'A scatterplot.',
-    //                     data: {
-    //                         values: [
-    //                             { a: 10, b: 28 },
-    //                             { a: 20, b: 55 },
-    //                             { a: 30, b: 91 },
-    //                             { a: 40, b: 81 },
-    //                             { a: 50, b: 81 },
-    //                             { a: 60, b: 19 },
-    //                             { a: 70, b: 87 },
-    //                         ],
-    //                     },
-    //                     mark: 'point',
-    //                     encoding: {
-    //                         x: { field: 'a', type: 'quantitative' },
-    //                         y: { field: 'b', type: 'quantitative' },
-    //                     },
-    //                 },
-    //                 null,
-    //                 2,
-    //             ),
-    //         },
-    //         listeners: {},
-    //         slots: {} as BlockJSON['slots'],
-    //     },
-    // },
-    // {
-    //     section: SECTION_CHARTS,
-    //     name: 'Bar Chart',
-    //     helperText:
-    //         'Compare cumulative totals and individual segments across categories',
-    //     activeImage: BLOCK_IMAGES['BAR_CHART_ACTIVE'],
-    //     hoverImage: BLOCK_IMAGES['BAR_CHART_HOVER'],
-    //     json: {
-    //         widget: 'vega',
-    //         data: {
-    //             variation: 'bar-chart',
-    //             specJson: JSON.stringify(
-    //                 {
-    //                     $schema:
-    //                         'https://vega.github.io/schema/vega-lite/v5.json',
-    //                     title: 'Bar Chart',
-    //                     width: 300,
-    //                     height: 300,
-    //                     data: {
-    //                         values: [
-    //                             { a: 'A', b: 28 },
-    //                             { a: 'B', b: 55 },
-    //                             { a: 'C', b: 43 },
-    //                             { a: 'D', b: 91 },
-    //                             { a: 'E', b: 81 },
-    //                             { a: 'F', b: 53 },
-    //                             { a: 'G', b: 19 },
-    //                             { a: 'H', b: 87 },
-    //                             { a: 'I', b: 52 },
-    //                         ],
-    //                     },
-    //                     mark: 'bar',
-    //                     encoding: {
-    //                         x: { field: 'a', type: 'ordinal' },
-    //                         y: { field: 'b', type: 'quantitative' },
-    //                     },
-    //                 },
-    //                 null,
-    //                 2,
-    //             ),
-    //         },
-    //         listeners: {},
-    //         slots: {} as BlockJSON['slots'],
-    //     },
-    // },
-    // {
-    //     section: SECTION_CHARTS,
-    //     name: 'Pie Chart',
-    //     helperText: 'Show proportions of a whole',
-    //     activeImage: BLOCK_IMAGES['PIE_CHART_ACTIVE'],
-    //     hoverImage: BLOCK_IMAGES['PIE_CHART_HOVER'],
-    //     json: {
-    //         widget: 'vega',
-    //         data: {
-    //             variation: 'pie-chart',
-    //             specJson: JSON.stringify(
-    //                 {
-    //                     $schema:
-    //                         'https://vega.github.io/schema/vega-lite/v5.json',
-    //                     title: 'Pie Chart',
-    //                     width: 300,
-    //                     height: 300,
-    //                     description: 'A simple pie chart with embedded data.',
-    //                     data: {
-    //                         values: [
-    //                             { category: 1, value: 4 },
-    //                             { category: 2, value: 6 },
-    //                             { category: 3, value: 10 },
-    //                             { category: 4, value: 3 },
-    //                             { category: 5, value: 7 },
-    //                             { category: 6, value: 8 },
-    //                         ],
-    //                     },
-    //                     mark: 'arc',
-    //                     encoding: {
-    //                         theta: { field: 'value', type: 'quantitative' },
-    //                         color: { field: 'category', type: 'nominal' },
-    //                     },
-    //                 },
-    //                 null,
-    //                 2,
-    //             ),
-    //         },
-    //         listeners: {},
-    //         slots: {} as BlockJSON['slots'],
-    //     },
-    // },
-    // -------------------------------------------------------------
-    // CHARTS END
-    // ----------------------------------------------------------
     // -------------------------------------------------------------
     // MERMAID START
     // ----------------------------------------------------------
     {
-        section: SECTION_FLOWS,
-        name: 'General Mermaid',
+        section: SECTION_CHARTS,
+        name: 'Mermaid Chart',
         activeImage: BLOCK_IMAGES['MERMAIDJS_ACTIVE'],
         hoverImage: BLOCK_IMAGES['MERMAIDJS_HOVER'],
         helperText: 'Customize and display MermaidJS diagrams',
@@ -2166,495 +2140,6 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                         B-->D;
                         C-->D;
                     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_FLOWS,
-        name: 'Class Diagram',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `---
-title: Alien example
----
-classDiagram
-    note "From Duck till Zebra"
-    Animal <|-- Duck
-    note for Duck "can fly\ncan swim\ncan dive\ncan help in debugging"
-    Animal <|-- Fish
-    Animal <|-- Zebra
-    Animal : +int age
-    Animal : +String gender
-    Animal: +isMammal()
-    Animal: +mate()
-    class Duck{
-        +String beakColor
-        +swim()
-        +quack()
-    }
-    class Fish{
-        -int sizeInFeet
-        -canEat()
-    }
-    class Zebra{
-        +bool is_wild
-        +run()
-    }
-`,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_FLOWS,
-        name: 'Sequence Diagram',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `sequenceDiagram
-    participant Alice
-    participant Bob
-    Alice->>Bob: Hi Bob
-    Bob->>Alice: Hi Alice
-`,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_FLOWS,
-        name: 'State Diagram',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `---
-title: Simple sample
----
-stateDiagram-v2
-    [*] --> Still
-    Still --> [*]
-
-    Still --> Moving
-    Moving --> Still
-    Moving --> Crash
-    Crash --> [*]
-
-`,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_FLOWS,
-        name: 'Entity Relationship Diagram',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `---
-title: Order example
----
-erDiagram
-    CUSTOMER ||--o{ ORDER : places
-    ORDER ||--|{ LINE-ITEM : contains
-    CUSTOMER }|..|{ DELIVERY-ADDRESS : uses
-`,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_FLOWS,
-        name: 'User Journey',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `journey
-    title My working day
-    section Go to work
-      Make tea: 5: Me
-      Go upstairs: 3: Me
-      Do work: 1: Me, Cat
-    section Go home
-      Go downstairs: 5: Me
-      Sit down: 5: Me
-
-`,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_FLOWS,
-        name: 'Gantt',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `gantt
-    title A Gantt Diagram
-    dateFormat YYYY-MM-DD
-    section Section
-        A task          :a1, 2014-01-01, 30d
-        Another task    :after a1, 20d
-    section Another
-        Task in Another :2014-01-12, 12d
-        another task    :24d
-`,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_FLOWS,
-        name: 'Pie Chart',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `pie title Pets adopted by volunteers
-    "Dogs" : 386
-    "Cats" : 85
-    "Rats" : 15
-`,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_FLOWS,
-        name: 'Quadrant Chart',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `quadrantChart
-    title Reach and engagement of campaigns
-    x-axis Low Reach --> High Reach
-    y-axis Low Engagement --> High Engagement
-    quadrant-1 We should expand
-    quadrant-2 Need to promote
-    quadrant-3 Re-evaluate
-    quadrant-4 May be improved
-    Campaign A: [0.3, 0.6]
-    Campaign B: [0.45, 0.23]
-    Campaign C: [0.57, 0.69]
-    Campaign D: [0.78, 0.34]
-    Campaign E: [0.40, 0.34]
-    Campaign F: [0.35, 0.78]
-
-`,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_FLOWS,
-        name: 'Requirement Diagram',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `requirementDiagram
-
-requirement test_req {
-id: 1
-text: the test text.
-risk: high
-verifymethod: test
-}
-
-element test_entity {
-type: simulation
-}
-
-test_entity - satisfies -> test_req
-
-`,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_FLOWS,
-        name: 'Git Diagram',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `---
-title: Example Git diagram
----
-gitGraph
-   commit
-   commit
-   branch develop
-   checkout develop
-   commit
-   commit
-   checkout main
-   merge develop
-   commit
-   commit
-`,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_FLOWS,
-        name: SECTION_FLOWS,
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `C4Context
-  title System Context diagram for Internet Banking System
-  Enterprise_Boundary(b0, "BankBoundary0") {
-    Person(customerA, "Banking Customer A", "A customer of the bank, with personal bank accounts.")
-    Person(customerB, "Banking Customer B")
-    Person_Ext(customerC, "Banking Customer C", "desc")
-
-    Person(customerD, "Banking Customer D", "A customer of the bank, <br/> with personal bank accounts.")
-
-    System(SystemAA, "Internet Banking System", "Allows customers to view information about their bank accounts, and make payments.")
-
-    Enterprise_Boundary(b1, "BankBoundary") {
-
-        SystemDb_Ext(SystemE, "Mainframe Banking System", "Stores all of the core banking information about customers, accounts, transactions, etc.")
-
-        System_Boundary(b2, "BankBoundary2") {
-          System(SystemA, "Banking System A")
-          System(SystemB, "Banking System B", "A system of the bank, with personal bank accounts. next line.")
-        }
-
-        System_Ext(SystemC, "E-mail system", "The internal Microsoft Exchange e-mail system.")
-        SystemDb(SystemD, "Banking System D Database", "A system of the bank, with personal bank accounts.")
-
-        Boundary(b3, "BankBoundary3", "boundary") {
-          SystemQueue(SystemF, "Banking System F Queue", "A system of the bank.")
-          SystemQueue_Ext(SystemG, "Banking System G Queue", "A system of the bank, with personal bank accounts.")
-        }
-    }
-}
-
-      BiRel(customerA, SystemAA, "Uses")
-      BiRel(SystemAA, SystemE, "Uses")
-      Rel(SystemAA, SystemC, "Sends e-mails", "SMTP")
-      Rel(SystemC, customerA, "Sends e-mails to")
-
-      UpdateElementStyle(customerA, $fontColor="red", $bgColor="grey", $borderColor="red")
-      UpdateRelStyle(customerA, SystemAA, $textColor="blue", $lineColor="blue", $offsetX="5")
-      UpdateRelStyle(SystemAA, SystemE, $textColor="blue", $lineColor="blue", $offsetY="-10")
-      UpdateRelStyle(SystemAA, SystemC, $textColor="blue", $lineColor="blue", $offsetY="-40", $offsetX="-50")
-      UpdateRelStyle(SystemC, customerA, $textColor="red", $lineColor="red", $offsetX="-50", $offsetY="20")
-
-      UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
-
-
-
-`,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_FLOWS,
-        name: 'Mindmap',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `mindmap
-  root((mindmap))
-    Origins
-      Long history
-      ::icon(fa fa-book)
-      Popularisation
-        British popular psychology author Tony Buzan
-    Research
-      On effectiveness<br/>and features
-      On Automatic creation
-        Uses
-            Creative techniques
-            Strategic planning
-            Argument mapping
-    Tools
-      Pen and paper
-      Mermaid
-`,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_FLOWS,
-        name: 'Timeline',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `timeline
-    title History of Social Media Platform
-    2002 : LinkedIn
-    2004 : Facebook
-         : Google
-    2005 : Youtube
-    2006 : Twitter
-`,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_FLOWS,
-        name: 'Sankey',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `---
-config:
-  sankey:
-    showValues: false
----
-sankey-beta
-
-Agricultural 'waste',Bio-conversion,124.729
-Bio-conversion,Liquid,0.597
-Bio-conversion,Losses,26.862
-Bio-conversion,Solid,280.322
-Bio-conversion,Gas,81.144
-Biofuel imports,Liquid,35
-Biomass imports,Solid,35
-Coal imports,Coal,11.606
-Coal reserves,Coal,63.965
-Coal,Solid,75.571
-District heating,Industry,10.639
-District heating,Heating and cooling - commercial,22.505
-District heating,Heating and cooling - homes,46.184
-Electricity grid,Over generation / exports,104.453
-Electricity grid,Heating and cooling - homes,113.726
-Electricity grid,H2 conversion,27.14
-Electricity grid,Industry,342.165
-Electricity grid,Road transport,37.797
-Electricity grid,Agriculture,4.412
-Electricity grid,Heating and cooling - commercial,40.858
-Electricity grid,Losses,56.691
-Electricity grid,Rail transport,7.863
-Electricity grid,Lighting & appliances - commercial,90.008
-Electricity grid,Lighting & appliances - homes,93.494
-Gas imports,Ngas,40.719
-Gas reserves,Ngas,82.233
-Gas,Heating and cooling - commercial,0.129
-Gas,Losses,1.401
-Gas,Thermal generation,151.891
-Gas,Agriculture,2.096
-Gas,Industry,48.58
-Geothermal,Electricity grid,7.013
-H2 conversion,H2,20.897
-H2 conversion,Losses,6.242
-H2,Road transport,20.897
-Hydro,Electricity grid,6.995
-Liquid,Industry,121.066
-Liquid,International shipping,128.69
-Liquid,Road transport,135.835
-Liquid,Domestic aviation,14.458
-Liquid,International aviation,206.267
-Liquid,Agriculture,3.64
-Liquid,National navigation,33.218
-Liquid,Rail transport,4.413
-Marine algae,Bio-conversion,4.375
-Ngas,Gas,122.952
-Nuclear,Thermal generation,839.978
-Oil imports,Oil,504.287
-Oil reserves,Oil,107.703
-Oil,Liquid,611.99
-Other waste,Solid,56.587
-Other waste,Bio-conversion,77.81
-Pumped heat,Heating and cooling - homes,193.026
-Pumped heat,Heating and cooling - commercial,70.672
-Solar PV,Electricity grid,59.901
-Solar Thermal,Heating and cooling - homes,19.263
-Solar,Solar Thermal,19.263
-Solar,Solar PV,59.901
-Solid,Agriculture,0.882
-Solid,Thermal generation,400.12
-Solid,Industry,46.477
-Thermal generation,Electricity grid,525.531
-Thermal generation,Losses,787.129
-Thermal generation,District heating,79.329
-Tidal,Electricity grid,9.452
-UK land based bioenergy,Bio-conversion,182.01
-Wave,Electricity grid,19.013
-Wind,Electricity grid,289.366
-`,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_FLOWS,
-        name: 'XY Chart',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `xychart-beta
-    title "Sales Revenue"
-    x-axis [jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec]
-    y-axis "Revenue (in $)" 4000 --> 11000
-    bar [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
-    line [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
-`,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_FLOWS,
-        name: 'Block Diagram',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `block-beta
-columns 1
-  db(("DB"))
-  blockArrowId6<["&nbsp;&nbsp;&nbsp;"]>(down)
-  block:ID
-    A
-    B["A wide one in the middle"]
-    C
-  end
-  space
-  D
-  ID --> D
-  C --> D
-  style B fill:#969,stroke:#333,stroke-width:4px
-`,
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -2708,6 +2193,1105 @@ columns 1
                 onChange: [],
             },
             slots: {} as BlockJSON['slots'],
+        },
+    },
+];
+
+// TODO: Move to the backend
+export const CLIENT_BLOCKS_MENU = [
+    {
+        section: SECTION_GROUPED,
+        name: 'Contact Info Fields',
+        helperText: 'Starting point for a contact in form',
+        json: {
+            widget: 'container',
+            parent: {
+                id: 'page-1',
+                slot: 'content',
+            },
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: 'px',
+                    gap: 'px',
+                    flexWrap: 'wrap',
+                },
+            },
+            listeners: {},
+            slots: {
+                children: [
+                    {
+                        widget: 'text',
+                        data: {
+                            style: {
+                                whiteSpace: 'pre-line',
+                                textOverflow: 'ellipsis',
+                                fontWeight: 'bold',
+                            },
+                            text: 'Contact Information',
+                            variant: 'p',
+                        },
+                        listeners: {},
+                        slots: {},
+                    },
+                    {
+                        widget: 'container',
+                        data: {
+                            style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                padding: '16px',
+                                gap: '8px',
+                                flexWrap: 'wrap',
+                                border: '2px dotted #4a4a4a',
+                            },
+                        },
+                        listeners: {},
+                        slots: {
+                            children: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            padding: '4px',
+                                            gap: '8px',
+                                            flexWrap: 'wrap',
+                                            border: '0px  ',
+                                            width: '100%',
+                                            justifyContent: 'center',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        padding: '0px',
+                                                        gap: '8px',
+                                                        flexWrap: 'wrap',
+                                                        maxWidth: '50%',
+                                                        width: '49%',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [
+                                                        {
+                                                            widget: 'input',
+                                                            data: {
+                                                                style: {
+                                                                    width: '100%',
+                                                                    padding:
+                                                                        '4px',
+                                                                },
+                                                                value: '',
+                                                                label: 'First Name',
+                                                                hint: '',
+                                                                type: 'text',
+                                                                rows: 1,
+                                                                multiline:
+                                                                    false,
+                                                                disabled: false,
+                                                                required: false,
+                                                                loading: false,
+                                                            },
+                                                            listeners: {
+                                                                onChange: [],
+                                                            },
+                                                            slots: {
+                                                                content: [],
+                                                            },
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        padding: '0px',
+                                                        gap: '8px',
+                                                        flexWrap: 'wrap',
+                                                        maxWidth: '50%',
+                                                        width: '49%',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [
+                                                        {
+                                                            widget: 'input',
+                                                            data: {
+                                                                style: {
+                                                                    width: '100%',
+                                                                    padding:
+                                                                        '4px',
+                                                                },
+                                                                value: '',
+                                                                label: 'Last Name',
+                                                                hint: '',
+                                                                type: 'text',
+                                                                rows: 1,
+                                                                multiline:
+                                                                    false,
+                                                                disabled: false,
+                                                                required: false,
+                                                                loading: false,
+                                                            },
+                                                            listeners: {
+                                                                onChange: [],
+                                                            },
+                                                            slots: {
+                                                                content: [],
+                                                            },
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            padding: '4px',
+                                            gap: '8px',
+                                            flexWrap: 'wrap',
+                                            border: '0px  ',
+                                            width: '100%',
+                                            justifyContent: 'center',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        padding: '0px',
+                                                        gap: '8px',
+                                                        flexWrap: 'wrap',
+                                                        maxWidth: '50%',
+                                                        width: '49%',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [
+                                                        {
+                                                            widget: 'input',
+                                                            data: {
+                                                                style: {
+                                                                    width: '100%',
+                                                                    padding:
+                                                                        '4px',
+                                                                },
+                                                                value: '',
+                                                                label: 'Phone Number',
+                                                                hint: '',
+                                                                type: 'text',
+                                                                rows: 1,
+                                                                multiline:
+                                                                    false,
+                                                                disabled: false,
+                                                                required: false,
+                                                                loading: false,
+                                                            },
+                                                            listeners: {
+                                                                onChange: [],
+                                                            },
+                                                            slots: {
+                                                                content: [],
+                                                            },
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        padding: '0px',
+                                                        gap: '8px',
+                                                        flexWrap: 'wrap',
+                                                        maxWidth: '50%',
+                                                        width: '49%',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [
+                                                        {
+                                                            widget: 'input',
+                                                            data: {
+                                                                style: {
+                                                                    width: '100%',
+                                                                    padding:
+                                                                        '4px',
+                                                                },
+                                                                value: '',
+                                                                label: 'Email',
+                                                                hint: '',
+                                                                type: 'text',
+                                                                rows: 1,
+                                                                multiline:
+                                                                    false,
+                                                                disabled: false,
+                                                                required: false,
+                                                                loading: false,
+                                                            },
+                                                            listeners: {
+                                                                onChange: [],
+                                                            },
+                                                            slots: {
+                                                                content: [],
+                                                            },
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            padding: '4px',
+                                            gap: '8px',
+                                            flexWrap: 'wrap',
+                                            border: '0px  ',
+                                            width: '100%',
+                                            justifyContent: 'center',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        padding: '0px',
+                                                        gap: '8px',
+                                                        flexWrap: 'wrap',
+                                                        maxWidth: '50%',
+                                                        width: '49%',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [
+                                                        {
+                                                            widget: 'input',
+                                                            data: {
+                                                                style: {
+                                                                    width: '100%',
+                                                                    padding:
+                                                                        '4px',
+                                                                },
+                                                                value: '',
+                                                                label: 'Address',
+                                                                hint: '',
+                                                                type: 'text',
+                                                                rows: 1,
+                                                                multiline:
+                                                                    false,
+                                                                disabled: false,
+                                                                required: false,
+                                                                loading: false,
+                                                            },
+                                                            listeners: {
+                                                                onChange: [],
+                                                            },
+                                                            slots: {
+                                                                content: [],
+                                                            },
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                            {
+                                                widget: 'container',
+                                                parent: null,
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        padding: '0px',
+                                                        gap: '8px',
+                                                        flexWrap: 'wrap',
+                                                        maxWidth: '50%',
+                                                        width: '49%',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [
+                                                        {
+                                                            widget: 'input',
+                                                            data: {
+                                                                style: {
+                                                                    width: '100%',
+                                                                    padding:
+                                                                        '4px',
+                                                                },
+                                                                value: '',
+                                                                label: 'Apartment, Suite, Etc.',
+                                                                hint: '',
+                                                                type: 'text',
+                                                                rows: 1,
+                                                                multiline:
+                                                                    false,
+                                                                disabled: false,
+                                                                required: false,
+                                                                loading: false,
+                                                            },
+                                                            listeners: {
+                                                                onChange: [],
+                                                            },
+                                                            slots: {
+                                                                content: [],
+                                                            },
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            padding: '4px',
+                                            gap: '8px',
+                                            flexWrap: 'wrap',
+                                            border: '0px  ',
+                                            width: '100%',
+                                            justifyContent: 'left',
+                                            alignItems: 'center',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        padding: 'px',
+                                                        gap: '8px',
+                                                        flexWrap: 'wrap',
+                                                        width: '32%',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [
+                                                        {
+                                                            widget: 'input',
+                                                            data: {
+                                                                style: {
+                                                                    width: '100%',
+                                                                    padding:
+                                                                        '4px',
+                                                                },
+                                                                value: '',
+                                                                label: 'City',
+                                                                hint: '',
+                                                                type: 'text',
+                                                                rows: 1,
+                                                                multiline:
+                                                                    false,
+                                                                disabled: false,
+                                                                required: false,
+                                                                loading: false,
+                                                            },
+                                                            listeners: {
+                                                                onChange: [],
+                                                            },
+                                                            slots: {
+                                                                content: [],
+                                                            },
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        padding: 'px',
+                                                        gap: '8px',
+                                                        flexWrap: 'wrap',
+                                                        width: '32%',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [
+                                                        {
+                                                            widget: 'input',
+                                                            parent: null,
+                                                            data: {
+                                                                style: {
+                                                                    width: '100%',
+                                                                    padding:
+                                                                        '4px',
+                                                                },
+                                                                value: '',
+                                                                label: 'State',
+                                                                hint: '',
+                                                                type: 'text',
+                                                                rows: 1,
+                                                                multiline:
+                                                                    false,
+                                                                disabled: false,
+                                                                required: false,
+                                                                loading: false,
+                                                            },
+                                                            listeners: {
+                                                                onChange: [],
+                                                            },
+                                                            slots: {
+                                                                content: [],
+                                                            },
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        padding: 'px',
+                                                        gap: '8px',
+                                                        flexWrap: 'wrap',
+                                                        width: '33%',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [
+                                                        {
+                                                            widget: 'input',
+                                                            data: {
+                                                                style: {
+                                                                    width: '100%',
+                                                                    padding:
+                                                                        '4px',
+                                                                },
+                                                                value: '',
+                                                                label: 'Zip-Code',
+                                                                hint: '',
+                                                                type: 'text',
+                                                                rows: 1,
+                                                                multiline:
+                                                                    false,
+                                                                disabled: false,
+                                                                required: false,
+                                                                loading: false,
+                                                            },
+                                                            listeners: {
+                                                                onChange: [],
+                                                            },
+                                                            slots: {
+                                                                content: [],
+                                                            },
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Class Diagram',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: '---\ntitle: Alien example\n---\nclassDiagram\n    note "From Duck till Zebra"\n    Animal <|-- Duck\n    note for Duck "can fly\ncan swim\ncan dive\ncan help in debugging"\n    Animal <|-- Fish\n    Animal <|-- Zebra\n    Animal : +int age\n    Animal : +String gender\n    Animal: +isMammal()\n    Animal: +mate()\n    class Duck{\n        +String beakColor\n        +swim()\n        +quack()\n    }\n    class Fish{\n        -int sizeInFeet\n        -canEat()\n    }\n    class Zebra{\n        +bool is_wild\n        +run()\n    }\n',
+            },
+            listeners: {},
+            slots: {},
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Sequence Diagram',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `sequenceDiagram
+        participant Alice
+        participant Bob
+        Alice->>Bob: Hi Bob
+        Bob->>Alice: Hi Alice
+    `,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'State Diagram',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `---
+    title: Simple sample
+    ---
+    stateDiagram-v2
+        [*] --> Still
+        Still --> [*]
+    
+        Still --> Moving
+        Moving --> Still
+        Moving --> Crash
+        Crash --> [*]
+    
+    `,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Entity Relationship Diagram',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `---
+    title: Order example
+    ---
+    erDiagram
+        CUSTOMER ||--o{ ORDER : places
+        ORDER ||--|{ LINE-ITEM : contains
+        CUSTOMER }|..|{ DELIVERY-ADDRESS : uses
+    `,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'User Journey',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `journey
+        title My working day
+        section Go to work
+          Make tea: 5: Me
+          Go upstairs: 3: Me
+          Do work: 1: Me, Cat
+        section Go home
+          Go downstairs: 5: Me
+          Sit down: 5: Me
+    
+    `,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Gantt',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `gantt
+        title A Gantt Diagram
+        dateFormat YYYY-MM-DD
+        section Section
+            A task          :a1, 2014-01-01, 30d
+            Another task    :after a1, 20d
+        section Another
+            Task in Another :2014-01-12, 12d
+            another task    :24d
+    `,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Pie Chart',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `pie title Pets adopted by volunteers
+        "Dogs" : 386
+        "Cats" : 85
+        "Rats" : 15
+    `,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Quadrant Chart',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `quadrantChart
+        title Reach and engagement of campaigns
+        x-axis Low Reach --> High Reach
+        y-axis Low Engagement --> High Engagement
+        quadrant-1 We should expand
+        quadrant-2 Need to promote
+        quadrant-3 Re-evaluate
+        quadrant-4 May be improved
+        Campaign A: [0.3, 0.6]
+        Campaign B: [0.45, 0.23]
+        Campaign C: [0.57, 0.69]
+        Campaign D: [0.78, 0.34]
+        Campaign E: [0.40, 0.34]
+        Campaign F: [0.35, 0.78]
+    
+    `,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Requirement Diagram',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `requirementDiagram
+    
+    requirement test_req {
+    id: 1
+    text: the test text.
+    risk: high
+    verifymethod: test
+    }
+    
+    element test_entity {
+    type: simulation
+    }
+    
+    test_entity - satisfies -> test_req
+    
+    `,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Git Diagram',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `---
+    title: Example Git diagram
+    ---
+    gitGraph
+       commit
+       commit
+       branch develop
+       checkout develop
+       commit
+       commit
+       checkout main
+       merge develop
+       commit
+       commit
+    `,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: SECTION_CHARTS,
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `C4Context
+      title System Context diagram for Internet Banking System
+      Enterprise_Boundary(b0, "BankBoundary0") {
+        Person(customerA, "Banking Customer A", "A customer of the bank, with personal bank accounts.")
+        Person(customerB, "Banking Customer B")
+        Person_Ext(customerC, "Banking Customer C", "desc")
+    
+        Person(customerD, "Banking Customer D", "A customer of the bank, <br/> with personal bank accounts.")
+    
+        System(SystemAA, "Internet Banking System", "Allows customers to view information about their bank accounts, and make payments.")
+    
+        Enterprise_Boundary(b1, "BankBoundary") {
+    
+            SystemDb_Ext(SystemE, "Mainframe Banking System", "Stores all of the core banking information about customers, accounts, transactions, etc.")
+    
+            System_Boundary(b2, "BankBoundary2") {
+              System(SystemA, "Banking System A")
+              System(SystemB, "Banking System B", "A system of the bank, with personal bank accounts. next line.")
+            }
+    
+            System_Ext(SystemC, "E-mail system", "The internal Microsoft Exchange e-mail system.")
+            SystemDb(SystemD, "Banking System D Database", "A system of the bank, with personal bank accounts.")
+    
+            Boundary(b3, "BankBoundary3", "boundary") {
+              SystemQueue(SystemF, "Banking System F Queue", "A system of the bank.")
+              SystemQueue_Ext(SystemG, "Banking System G Queue", "A system of the bank, with personal bank accounts.")
+            }
+        }
+    }
+    
+          BiRel(customerA, SystemAA, "Uses")
+          BiRel(SystemAA, SystemE, "Uses")
+          Rel(SystemAA, SystemC, "Sends e-mails", "SMTP")
+          Rel(SystemC, customerA, "Sends e-mails to")
+    
+          UpdateElementStyle(customerA, $fontColor="red", $bgColor="grey", $borderColor="red")
+          UpdateRelStyle(customerA, SystemAA, $textColor="blue", $lineColor="blue", $offsetX="5")
+          UpdateRelStyle(SystemAA, SystemE, $textColor="blue", $lineColor="blue", $offsetY="-10")
+          UpdateRelStyle(SystemAA, SystemC, $textColor="blue", $lineColor="blue", $offsetY="-40", $offsetX="-50")
+          UpdateRelStyle(SystemC, customerA, $textColor="red", $lineColor="red", $offsetX="-50", $offsetY="20")
+    
+          UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+    
+    
+    
+    `,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Mindmap',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `mindmap
+      root((mindmap))
+        Origins
+          Long history
+          ::icon(fa fa-book)
+          Popularisation
+            British popular psychology author Tony Buzan
+        Research
+          On effectiveness<br/>and features
+          On Automatic creation
+            Uses
+                Creative techniques
+                Strategic planning
+                Argument mapping
+        Tools
+          Pen and paper
+          Mermaid
+    `,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Timeline',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `timeline
+        title History of Social Media Platform
+        2002 : LinkedIn
+        2004 : Facebook
+             : Google
+        2005 : Youtube
+        2006 : Twitter
+    `,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Sankey',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `---
+    config:
+      sankey:
+        showValues: false
+    ---
+    sankey-beta
+    
+    Agricultural 'waste',Bio-conversion,124.729
+    Bio-conversion,Liquid,0.597
+    Bio-conversion,Losses,26.862
+    Bio-conversion,Solid,280.322
+    Bio-conversion,Gas,81.144
+    Biofuel imports,Liquid,35
+    Biomass imports,Solid,35
+    Coal imports,Coal,11.606
+    Coal reserves,Coal,63.965
+    Coal,Solid,75.571
+    District heating,Industry,10.639
+    District heating,Heating and cooling - commercial,22.505
+    District heating,Heating and cooling - homes,46.184
+    Electricity grid,Over generation / exports,104.453
+    Electricity grid,Heating and cooling - homes,113.726
+    Electricity grid,H2 conversion,27.14
+    Electricity grid,Industry,342.165
+    Electricity grid,Road transport,37.797
+    Electricity grid,Agriculture,4.412
+    Electricity grid,Heating and cooling - commercial,40.858
+    Electricity grid,Losses,56.691
+    Electricity grid,Rail transport,7.863
+    Electricity grid,Lighting & appliances - commercial,90.008
+    Electricity grid,Lighting & appliances - homes,93.494
+    Gas imports,Ngas,40.719
+    Gas reserves,Ngas,82.233
+    Gas,Heating and cooling - commercial,0.129
+    Gas,Losses,1.401
+    Gas,Thermal generation,151.891
+    Gas,Agriculture,2.096
+    Gas,Industry,48.58
+    Geothermal,Electricity grid,7.013
+    H2 conversion,H2,20.897
+    H2 conversion,Losses,6.242
+    H2,Road transport,20.897
+    Hydro,Electricity grid,6.995
+    Liquid,Industry,121.066
+    Liquid,International shipping,128.69
+    Liquid,Road transport,135.835
+    Liquid,Domestic aviation,14.458
+    Liquid,International aviation,206.267
+    Liquid,Agriculture,3.64
+    Liquid,National navigation,33.218
+    Liquid,Rail transport,4.413
+    Marine algae,Bio-conversion,4.375
+    Ngas,Gas,122.952
+    Nuclear,Thermal generation,839.978
+    Oil imports,Oil,504.287
+    Oil reserves,Oil,107.703
+    Oil,Liquid,611.99
+    Other waste,Solid,56.587
+    Other waste,Bio-conversion,77.81
+    Pumped heat,Heating and cooling - homes,193.026
+    Pumped heat,Heating and cooling - commercial,70.672
+    Solar PV,Electricity grid,59.901
+    Solar Thermal,Heating and cooling - homes,19.263
+    Solar,Solar Thermal,19.263
+    Solar,Solar PV,59.901
+    Solid,Agriculture,0.882
+    Solid,Thermal generation,400.12
+    Solid,Industry,46.477
+    Thermal generation,Electricity grid,525.531
+    Thermal generation,Losses,787.129
+    Thermal generation,District heating,79.329
+    Tidal,Electricity grid,9.452
+    UK land based bioenergy,Bio-conversion,182.01
+    Wave,Electricity grid,19.013
+    Wind,Electricity grid,289.366
+    `,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'XY Chart',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `xychart-beta
+        title "Sales Revenue"
+        x-axis [jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec]
+        y-axis "Revenue (in $)" 4000 --> 11000
+        bar [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
+        line [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
+    `,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
+        name: 'Block Diagram',
+        helperText: '',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: `block-beta
+    columns 1
+      db(("DB"))
+      blockArrowId6<["&nbsp;&nbsp;&nbsp;"]>(down)
+      block:ID
+        A
+        B["A wide one in the middle"]
+        C
+      end
+      space
+      D
+      ID --> D
+      C --> D
+      style B fill:#969,stroke:#333,stroke-width:4px
+    `,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: 'Grouped Items',
+        name: 'Input within a container',
+        helperText: '',
+        json: {
+            widget: 'container',
+            parent: {
+                id: 'page-1',
+                slot: 'content',
+            },
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '4px',
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                    border: '4px solid ',
+                },
+                route: 'container--6732',
+            },
+            listeners: {},
+            slots: {
+                children: [
+                    {
+                        widget: 'text',
+                        data: {
+                            style: {
+                                padding: '4px',
+                                whiteSpace: 'pre-line',
+                                textOverflow: 'ellipsis',
+                            },
+                            text: 'Grouped Component',
+                            variant: 'h1',
+                        },
+                        listeners: {},
+                        slots: {},
+                    },
+                    {
+                        widget: 'input',
+                        data: {
+                            style: {
+                                width: '100%',
+                                padding: '4px',
+                            },
+                            value: '',
+                            label: 'Example Input',
+                            hint: '',
+                            type: 'text',
+                            rows: 1,
+                            multiline: false,
+                            disabled: false,
+                            required: false,
+                            loading: false,
+                        },
+                        listeners: {
+                            onChange: [],
+                        },
+                        slots: {
+                            content: [],
+                        },
+                    },
+                    {
+                        widget: 'audio-input',
+                        parent: {
+                            id: 'page-1',
+                            slot: 'content',
+                        },
+                        data: {
+                            style: {
+                                width: '50px',
+                                height: '60px',
+                            },
+                            loading: false,
+                            disabled: false,
+                            variant: 'contained',
+                            color: 'primary',
+                            value: '',
+                            mode: 'transcribe',
+                        },
+                        listeners: {
+                            onClick: [],
+                        },
+                        slots: {},
+                    },
+                ],
+            },
         },
     },
 ];

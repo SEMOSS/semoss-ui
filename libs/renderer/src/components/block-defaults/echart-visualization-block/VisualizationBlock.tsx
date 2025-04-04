@@ -9,6 +9,7 @@ import { ScatterPlotBlock } from "./variant/scatter-plot/ScatterPlot";
 import { useBlock, useBlocks, useBlockSettings } from "../../../hooks";
 import { BlockComponent, BlockDef } from "../../../store";
 import { PathValue } from "../../../types";
+import { Map } from "./variant/map-chart/Map";
 import { Line } from "./variant/line-chart/Line";
 import { StackChart } from "./variant/stack-chart/StackChart";
 
@@ -144,6 +145,9 @@ export const VisualizationBlock: BlockComponent = observer(
                         {data.variation === "echart-scatter-plots" && (
                             <ScatterPlotBlock id={id} />
                         )}
+                        {data.variation === "echart-world-map-chart" && (
+                            <Map id={id}></Map>
+                        )}
                         {data.variation === "echart-line-graph" && (
                             <Line id={id} updateJson={updateChartJson} />
                         )}
@@ -170,6 +174,9 @@ export const VisualizationBlock: BlockComponent = observer(
                 )}
                 {data.variation === "echart-scatter-plots" && (
                     <ScatterPlotBlock id={id} />
+                )}
+                {data.variation === "echart-world-map-chart" && (
+                    <Map id={id}></Map>
                 )}
                 {data.variation === "echart-line-graph" && (
                     <Line id={id} updateJson={updateChartJson} />
