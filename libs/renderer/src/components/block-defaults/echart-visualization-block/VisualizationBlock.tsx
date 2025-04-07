@@ -12,6 +12,7 @@ import { PathValue } from "../../../types";
 import { Map } from "./variant/map-chart/Map";
 import { Line } from "./variant/line-chart/Line";
 import { StackChart } from "./variant/stack-chart/StackChart";
+import { Gantt } from "./variant/Gantt/Gantt";
 import { Dendrogram } from './variant/dendrogram/Dendrogram';
 
 const StyledNoDataContainer = styled("div", {
@@ -155,6 +156,9 @@ export const VisualizationBlock: BlockComponent = observer(
                         {data.variation === "echart-stack-chart" && (
                             <StackChart id={id} />
                         )}
+                        {data.variation === "echart-gantt-chart" && (
+                            <Gantt id={id} updateChart={updateChartJson} />
+                        )}
                         {
                             data.variation === 'echart-dendrogram-chart' && (
                                 <Dendrogram id={id} updateJson={updateChartJson} />
@@ -189,6 +193,9 @@ export const VisualizationBlock: BlockComponent = observer(
                 )}
                 {data.variation === "echart-stack-chart" && (
                     <StackChart id={id} />
+                )}
+                {data.variation === "echart-gantt-chart" && (
+                    <Gantt id={id} updateChart={updateChartJson} />
                 )}
                 {
                 data.variation === 'echart-dendrogram-chart' && (

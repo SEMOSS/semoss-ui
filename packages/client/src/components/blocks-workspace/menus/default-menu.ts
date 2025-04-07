@@ -977,6 +977,87 @@ if (process.env.NODE_ENV === 'development') {
     });
     DEV_BLOCKS.push({
         section: SECTION_CHARTS,
+        name: 'Gantt Chart',
+        helperText: 'Gannt chart for task management',
+        activeImage: BLOCK_IMAGES['GANTT_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['GANTT_CHART_HOVER'],
+        json: {
+            widget: 'e-chart',
+            data: {
+                style: {
+                    width: '450px',
+                    height: '350px',
+                },
+                variation: 'echart-gantt-chart',
+                option: {
+                    tooltip: {
+                        show: true,
+                    },
+                    xAxis: {
+                        type: 'time',
+                        splitLine: {
+                            show: false,
+                        },
+                    },
+                    yAxis: {
+                        type: 'category',
+                        data: ['Task A', 'Task B', 'Task C'],
+                    },
+                    series: [
+                        {
+                            type: 'custom',
+
+                            data: [
+                                {
+                                    task: 'Task A',
+                                    start: '2024-02-01',
+                                    end: '2024-02-05',
+                                    resource: 'A',
+                                },
+                                {
+                                    task: 'Task B',
+                                    start: '2024-02-03',
+                                    end: '2024-02-08',
+                                    resource: 'B',
+                                },
+                                {
+                                    task: 'Task C',
+                                    start: '2024-02-06',
+                                    end: '2024-02-12',
+                                    resource: 'C',
+                                },
+                                {
+                                    task: 'Task D',
+                                    start: '2024-02-02',
+                                    end: '2024-02-11',
+                                    resource: 'B',
+                                },
+                                {
+                                    task: 'Task E',
+                                    start: '2024-02-03',
+                                    end: '2024-02-10',
+                                    resource: 'A',
+                                },
+                                {
+                                    task: 'Task F',
+                                    start: '2024-02-07',
+                                    end: '2024-02-11',
+                                    resource: 'C',
+                                },
+                            ],
+                        },
+                    ],
+                    customSettings: {
+                        columnDetails: {},
+                    },
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    });
+    DEV_BLOCKS.push({
+        section: SECTION_CHARTS,
         name: 'Dendrogram Chart',
         helperText: 'Dendrogram chart',
         activeImage: BLOCK_IMAGES['BAR_CHART_ACTIVE'],
@@ -1079,7 +1160,6 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 showExpandIcon: false,
                 show: 'true',
                 // -------------------------------------------
-                // TODO:
                 // John B:
                 // We may need to track styles differently.
                 // Can handle this in a migration function
