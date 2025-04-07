@@ -25,7 +25,8 @@
         "lint:all": "echo \"TODO: fix lint script to lint all packages/libs .\"",
 
         "test": "vitest --watch=false --passWithNoTests --changed",
-        "test:ui": "vitest --watch --ui --pool=forks"
+        "test:ui": "vitest --watch --ui --pool=forks",
+        "test:renderer": "cd libs/renderer && pnpm run test"
     },
     "author": "",
     "license": "Apache-2.0",
