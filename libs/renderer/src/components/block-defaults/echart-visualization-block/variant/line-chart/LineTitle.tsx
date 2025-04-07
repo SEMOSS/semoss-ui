@@ -141,7 +141,7 @@ export const LineTitle = observer(
          * @param inputValue - value of the input field
          */
         function handleInputChange(title: string, inputValue) {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             if (title === "showTitle") {
                 // Update the showTitle property of the option
                 option["title"].show = inputValue;
@@ -197,7 +197,7 @@ export const LineTitle = observer(
          */
         function handleReset() {
             // Parse the current option value
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Reset show property of the title
             option["title"].show = option["reset"]["title"]["show"];
             // Reset text property of the title

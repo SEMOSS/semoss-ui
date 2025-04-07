@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { computed } from "mobx";
 
-import { Button, Select, styled, TextField } from "@semoss/ui";
+import { Button, Select, styled, TextField, Typography } from "@semoss/ui";
 
 import { getValueByPath } from "../../../../../utility";
 import { useBlockSettings } from "../../../../../hooks";
@@ -19,23 +19,37 @@ const StyledSelect = styled(Select)(() => ({
 const StyledChartMainSection = styled("div")(() => ({
     display: "block",
     width: "100%",
-    padding: "0.75em",
+    // padding: "0.75em",
 }));
 //styled textfield with width 100%
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: "100%",
 }));
 //Styled chart sub section with custom styling
-const StyledChartSubSection = styled("div", {
-    shouldForwardProp: (prop) => prop != "display" && prop != "justifyContent",
-})<{ display?: string; justifyContent?: string }>(
-    ({ theme, display, justifyContent }) => ({
-        width: "100%",
-        paddingTop: "0.5rem",
-        display: display ?? undefined,
-        justifyContent: justifyContent ?? undefined,
-    }),
-);
+const StyledAxisDiv = styled("div")<{
+    display?: string;
+    justifyContent?: string;
+    gap?: string;
+}>(({ theme, display, justifyContent, gap }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "row",
+    padding: "8px 16px",
+    alignItems: "center",
+    gap: gap ?? undefined,
+}));
+
+const StyledAxisColDiv = styled("div")<{
+    display?: string;
+    justifyContent: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "column",
+    padding: "8px 16px",
+    gap: "8px",
+}));
+
 //initial chart style for chart styling component
 const INITIAL_CHART_STYLE = {
     title: "",
@@ -118,7 +132,8 @@ export const ChartStyling = observer(
         //for retaining the previously selected values, this useeffect will help
         useEffect(() => {
             let chartStyleData = INITIAL_CHART_STYLE;
-            let option = typeof value === "string" ? JSON.parse(value) : value;
+            const option =
+                typeof value === "string" ? JSON.parse(value) : value;
             if (option["title"]) {
                 if (option["title"].hasOwnProperty("text")) {
                     chartStyleData = {
@@ -262,17 +277,23 @@ export const ChartStyling = observer(
         //define component to a variable and assign the value to accordion
         const accordionDetails = (
             <StyledChartMainSection>
-                <StyledChartSubSection>
-                    <label htmlFor="change-chart-title">Set Chart Title</label>
+                <StyledAxisColDiv display="flex" justifyContent="start">
+                    <Typography variant="body2" color="secondary">
+                        Set Chart Title
+                    </Typography>
                     <StyledTextField
+                        size="small"
                         value={chartStyle.title}
                         id="change-chart-title"
                         onChange={(e) => handleInputChange(e, "title")}
                     />
-                </StyledChartSubSection>
-                <StyledChartSubSection>
-                    <label htmlFor="change-alignment">Select Alignment</label>
+                </StyledAxisColDiv>
+                <StyledAxisColDiv display="flex" justifyContent="flex-start">
+                    <Typography variant="body2" color="secondary">
+                        Select Alignment
+                    </Typography>
                     <StyledSelect
+                        size="small"
                         id="change-alignment"
                         value={chartStyle.alignment}
                         onChange={(e) => handleInputChange(e, "alignment")}
@@ -288,34 +309,38 @@ export const ChartStyling = observer(
                             );
                         })}
                     </StyledSelect>
-                </StyledChartSubSection>
-                <StyledChartSubSection>
-                    <label htmlFor="change-text-size">
+                </StyledAxisColDiv>
+                <StyledAxisColDiv display="flex" justifyContent="flex-start">
+                    <Typography variant="body2" color="secondary">
                         Choose Text Size(px)
-                    </label>
+                    </Typography>
                     <StyledTextField
+                        size="small"
                         value={chartStyle.textSize}
                         type="number"
                         id="change-text-size"
                         onChange={(e) => handleInputChange(e, "textSize")}
                     />
-                </StyledChartSubSection>
-                <StyledChartSubSection>
-                    <ColorPickerSettings
-                        id={id}
-                        path={`option.title.textStyle.color`}
-                        colorValue={chartStyle.fontColour}
-                        onChange={(e) =>
-                            handleInputChange(
-                                { target: { value: e } },
-                                "fontColour",
-                            )
-                        }
-                    />
-                </StyledChartSubSection>
-                <StyledChartSubSection>
-                    <label htmlFor="change-font-weight">Font Weight</label>
+                </StyledAxisColDiv>
+
+                <ColorPickerSettings
+                    id={id}
+                    path={`option.title.textStyle.color`}
+                    colorValue={chartStyle.fontColour}
+                    onChange={(e) =>
+                        handleInputChange(
+                            { target: { value: e } },
+                            "fontColour",
+                        )
+                    }
+                />
+
+                <StyledAxisColDiv display="flex" justifyContent="flex-start">
+                    <Typography variant="body2" color="secondary">
+                        Font Weight
+                    </Typography>
                     <StyledSelect
+                        size="small"
                         id="change-font-weight"
                         value={chartStyle.fontWeight}
                         onChange={(e) => handleInputChange(e, "fontWeight")}
@@ -331,10 +356,13 @@ export const ChartStyling = observer(
                             );
                         })}
                     </StyledSelect>
-                </StyledChartSubSection>
-                <StyledChartSubSection>
-                    <label htmlFor="change-font-family">Font Family</label>
+                </StyledAxisColDiv>
+                <StyledAxisColDiv display="flex" justifyContent="flex-start">
+                    <Typography variant="body2" color="secondary">
+                        Font Family
+                    </Typography>
                     <StyledSelect
+                        size="small"
                         id="change-font-family"
                         value={chartStyle.fontFamily}
                         onChange={(e) => handleInputChange(e, "fontFamily")}
@@ -350,16 +378,17 @@ export const ChartStyling = observer(
                             );
                         })}
                     </StyledSelect>
-                </StyledChartSubSection>
-                <StyledChartSubSection display="flex" justifyContent="end">
+                </StyledAxisColDiv>
+                <StyledAxisDiv display="flex" justifyContent="end">
                     <Button
+                        size="small"
                         color="primary"
                         variant="contained"
                         onClick={resetToInitialState}
                     >
                         Reset
                     </Button>
-                </StyledChartSubSection>
+                </StyledAxisDiv>
             </StyledChartMainSection>
         );
         return <>{accordionDetails}</>;
