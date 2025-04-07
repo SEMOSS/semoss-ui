@@ -17,6 +17,7 @@ import {
 
 import { GridBlockColumn } from "./grid-block.types";
 import { GridBlockContextMenu } from "./GridBlockContextMenu";
+import { VisualizationColumns } from "../echart-visualization-block";
 
 const DEFAULT_HEIGHT = "300px";
 const DEFAULT_WIDTH = "500px";
@@ -59,6 +60,13 @@ const StyledTablePagination = styled(TablePagination)(({ theme }) => ({
     background: theme.palette.background.paper,
 }));
 
+export interface HeaderBackgroundSettings {
+    backgroundColor: string;
+    fontSize: string;
+    fontColor: string;
+    selectedColumn: string[];
+}
+
 export interface GridBlockDef extends BlockDef<"grid"> {
     widget: "grid";
 
@@ -73,7 +81,21 @@ export interface GridBlockDef extends BlockDef<"grid"> {
         columns: GridBlockColumn[];
 
         /** */
-        style: Pick<React.CSSProperties, "height" | "width">;
+        style: {
+            height: number;
+            width: number;
+            display: string | undefined;
+            // flexDirection: string | undefined;
+            padding: string | undefined;
+            gap: string | undefined;
+            // flexWrap: string | undefined;
+        };
+        option: {
+            // backgroundColor: string;
+            headerBackgroundSettings?: HeaderBackgroundSettings;
+        };
+        variation: undefined | string;
+        show: boolean;
 
         /** Context Menu */
         contextMenu?: {
@@ -144,6 +166,8 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
         return acc + parseInt(DEFAULT_COLUMN_WIDTH);
     }, 0);
 
+    console.log(data, "DATA");
+
     /**
      * Handle the callback for the context menu
      * @param event - triggered event
@@ -174,6 +198,14 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
         );
     };
 
+    const headerSettings = data.option?.headerBackgroundSettings || {
+        // columns: [],
+        fontSize: "16",
+        fontColor: "#000000",
+        selectedColumn: [],
+        backgroundColor: "white",
+    };
+
     return (
         <StyledBlock sx={data.style} {...attrs}>
             <StyledTableContainer>
@@ -192,6 +224,23 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
                                         align="left"
                                         title={c.name}
                                         sx={{
+                                            fontSize:
+                                                headerSettings.selectedColumn.includes(
+                                                    c.name,
+                                                )
+                                                    ? `${headerSettings.fontSize}px`
+                                                    : undefined,
+                                            color: headerSettings.selectedColumn.includes(
+                                                c.name,
+                                            )
+                                                ? headerSettings.fontColor
+                                                : undefined,
+                                            backgroundColor:
+                                                headerSettings.selectedColumn.includes(
+                                                    c.name,
+                                                )
+                                                    ? headerSettings.backgroundColor
+                                                    : undefined,
                                             //This component is weird because it is a table / has a special layout, you have to either use minWidth or maxWidth
                                             maxWidth: !isNaN(Number(c.width))
                                                 ? c.width

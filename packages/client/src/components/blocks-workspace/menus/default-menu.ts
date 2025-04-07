@@ -1767,9 +1767,20 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         json: {
             widget: 'grid',
             data: {
+                variation: 'grid-block',
                 frame: {
                     name: '',
                 },
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '4px',
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                    width: '450px',
+                    height: '350px',
+                },
+                option: {},
                 columns: [],
                 view: {
                     pagination: true,

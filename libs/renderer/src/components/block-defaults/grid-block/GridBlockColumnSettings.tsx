@@ -46,6 +46,7 @@ export const GridBlockColumnSettings = observer(
         // get headers associated with the selected frames
         const frameHeaders = useFrameHeaders(data.frame.name);
 
+        console.log(getFrames, "getFrames", frameHeaders, "frameHeaders");
         /**
          * Sync the columns with the frame headers
          */
@@ -76,6 +77,8 @@ export const GridBlockColumnSettings = observer(
 
                 // update the data
                 setData("columns", columns);
+
+                console.log(columns, "columns");
 
                 notification.add({
                     color: "success",
