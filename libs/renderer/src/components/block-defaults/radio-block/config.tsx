@@ -4,7 +4,7 @@ import { Block, BlockDef, BlockConfig } from "../../../store";
 import { InputSettings } from "../../block-settings";
 import { RadioBlock, RadioBlockDef } from "./RadioBlock";
 import RadioButtonCheckedOutlinedIcon from "@mui/icons-material/RadioButtonCheckedOutlined";
-import { buildListener } from "../block-defaults.shared";
+import { buildListener, buildShowField } from "../block-defaults.shared";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 import {
@@ -166,6 +166,7 @@ export const config: BlockConfig<RadioBlockDef> = {
         labelPlacement: "end",
         required: false,
         disabled: false,
+        show: "true",
     },
     listeners: {
         onChange: [],
@@ -179,6 +180,7 @@ export const config: BlockConfig<RadioBlockDef> = {
         {
             name: "General",
             children: [
+                ...buildShowField(),
                 {
                     description: "Options Management",
                     render: ({ id }) => {
