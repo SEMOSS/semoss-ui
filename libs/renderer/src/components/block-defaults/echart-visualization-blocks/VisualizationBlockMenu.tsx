@@ -1,29 +1,19 @@
-import { useState } from "react";
-
-import { Stack, styled, ToggleTabsGroup } from "@semoss/ui";
-
-import { useBlock } from "../../../hooks";
 import { BlockComponent } from "../../../store";
+import { Stack, styled, ToggleTabsGroup } from "@semoss/ui";
 import { AIGenerationSettings, JsonSettings } from "../../block-settings";
-import { UpgradedVisualizationTool } from "./variant/bar-chart/UpgradedVisualizationTool";
-import { FrameOperations } from "./variant/bar-chart/FrameOperations";
-import { FrameOperationsPie } from "./variant/pie-chart/FrameOperationsPie";
-import { ScatterPlotBlockSettings } from "./variant/scatter-plot/ScatterPlotBlockSettings";
-import { MapChartBlockSettings } from "./variant/map-chart/MapChartBlockSettings";
-import { FrameOperationsLine } from "./variant/line-chart/FrameOperationsLine";
-import { StackChartBlockSettings } from "./variant/stack-chart/StackChartBlockSettings";
-import { GanttFrameSection } from "./variant/Gantt/GanttFrameSection";
+import { useBlock } from "../../../hooks";
+import { useState } from "react";
+import { GanttFrameSection } from "../echart-visualization-block/variant/Gantt/GanttFrameSection";
+import { GanttToolsSection } from "../echart-visualization-block/variant/Gantt/GanttToolsSection";
+// import { UpgradedVisualizationTool } from './Variants/bar-chart/UpgradedVisualizationTool';
+// import { FrameOperations } from './Variants/bar-chart/FrameOperations';
+// import { FrameOperationsPie } from './Variants/PieChart/FrameOperationsPie';
+// import { ScatterPlotBlockSettings } from './Variants/ScatterPlot/ScatterPlotBlockSettings';
 
 const StyledContainer = styled("div")(() => ({
     maxHeight: "50vh",
 }));
 const StyledSubSection = styled("div")(() => ({
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    padding: "8px 16px",
-}));
-const StyledJsonSection = styled("div")(() => ({
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
@@ -35,32 +25,28 @@ const StyledToolsSection = styled("div")(() => ({
 }));
 const StyledStack = styled(Stack)(() => ({
     ">.MuiBox-root": {
-        width: "90%",
-        margin: "auto",
+        width: "100%",
     },
 }));
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
+    border: "1px",
     minHeight: "42px",
     color: theme.palette.secondary.light,
     borderRadius: theme.shape.borderRadius,
     alignItems: "center",
     padding: "0px 3px",
     width: "100%",
-    margin: "0 auto",
     display: "flex",
     justifyContent: "space-between",
     ">.MuiTabs-scroller": {
         display: "flex",
         justifyContent: "space-around",
-        ".MuiTabs-flexContainer": {
-            flex: 1,
-        },
     },
 }));
 const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
     height: "38px",
-    padding: "8px 16px",
-
+    // width:'33%',
+    padding: "8px 11px",
     "&.MuiTab-root": {
         borderRadius: theme.shape.borderRadius,
     },
@@ -80,7 +66,6 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
             {/* <JsonSettings id={id} path="option" /> */}
             {/* <CodeEditorSettings id={id} path="specJson" /> */}
             <StyledToggleTabsGroup
-                variant="fullWidth"
                 value={selectedTab}
                 style={{
                     width: "100% !important",
@@ -96,52 +81,22 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
             <StyledContainer>
                 {selectedTab === "Data" && (
                     <StyledSubSection>
-                        {data.variation === "echart-bar-graph" && (
-                            <FrameOperations
-                                id={id}
-                                updateFrame={updateFrame}
-                                path="option"
-                            />
-                        )}
-                        {data.variation === "echart-line-graph" && (
-                            <FrameOperationsLine id={id} path="option" />
-                        )}
-                        {data.variation === "echart-pie-chart" && (
-                            <FrameOperationsPie id={id} path={"option"} />
-                        )}
-
-                        {/* Render ScatterPlotBlockSettings component when 'Data' tab is selected */}
-                        {data.variation === "echart-scatter-plots" && (
-                            <ScatterPlotBlockSettings
-                                id={id}
-                                path={"option"}
-                            ></ScatterPlotBlockSettings>
-                        )}
-                        {data.variation === "echart-world-map-chart" && (
-                            <MapChartBlockSettings id={id} path={"option"} />
-                        )}
-                        {/* Render StackChartBlockSettings component when 'Data' tab is selected */}
-                        {data.variation === "echart-stack-chart" && (
-                            <StackChartBlockSettings
-                                id={id}
-                                path={"option"}
-                            ></StackChartBlockSettings>
-                        )}
                         {data.variation === "echart-gantt-chart" && (
-                            <GanttFrameSection id={id} path={"option"} />
+                            <GanttFrameSection id={id} />
                         )}
                     </StyledSubSection>
                 )}
                 {selectedTab === "Tools" && (
                     <StyledToolsSection>
                         {/* Render UpgradedVisualizationTool component when 'Tools' tab is selected */}
-                        <UpgradedVisualizationTool id={id} />
+                        {/* <UpgradedVisualizationTool id={id} /> */}
+                        <GanttToolsSection id={id} />
                     </StyledToolsSection>
                 )}
                 {selectedTab === "JSON" && (
-                    <StyledJsonSection>
+                    <StyledSubSection>
                         <JsonSettings id={id} path="option" height="100vh" />
-                    </StyledJsonSection>
+                    </StyledSubSection>
                 )}
             </StyledContainer>
             {!data.variation && (
