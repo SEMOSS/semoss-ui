@@ -232,7 +232,7 @@ export const UserTable = (props: UserTableProps) => {
         adminMode,
         debouncedSearch ? debouncedSearch : '',
         (page + 1) * rowsPerPage - rowsPerPage, // offset
-        rowsPerPage, // limit
+        count, // limit
     ]);
 
     // track if the page is loading

@@ -12,6 +12,7 @@ import { PathValue } from "../../../types";
 import { Map } from "./variant/map-chart/Map";
 import { Line } from "./variant/line-chart/Line";
 import { StackChart } from "./variant/stack-chart/StackChart";
+import { Gantt } from "./variant/Gantt/Gantt";
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -154,6 +155,9 @@ export const VisualizationBlock: BlockComponent = observer(
                         {data.variation === "echart-stack-chart" && (
                             <StackChart id={id} />
                         )}
+                        {data.variation === "echart-gantt-chart" && (
+                            <Gantt id={id} updateChart={updateChartJson} />
+                        )}
                     </StyledNoDataContainer>
                 );
             } catch (e) {
@@ -183,6 +187,9 @@ export const VisualizationBlock: BlockComponent = observer(
                 )}
                 {data.variation === "echart-stack-chart" && (
                     <StackChart id={id} />
+                )}
+                {data.variation === "echart-gantt-chart" && (
+                    <Gantt id={id} updateChart={updateChartJson} />
                 )}
             </StyledDataContainer>
         );
