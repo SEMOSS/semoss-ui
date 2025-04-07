@@ -16,7 +16,7 @@ import {
 } from '@semoss/ui';
 
 import { Panel } from '@/components/workspace';
-import { SECTION_ORDER } from '../menus/default-menu';
+import { CLIENT_BLOCKS_MENU, SECTION_ORDER } from '../menus/default-menu';
 import { AddBlocksMenuCard } from '@/components/designer';
 import { BlocksMenuPanelFilterMenu } from './BlocksMenuPanelFilterMenu';
 import {
@@ -24,6 +24,7 @@ import {
     DesignerMenuItem,
     FilterCategory,
 } from '../menus/menu-types';
+import { runPixel } from '@/api';
 
 const StyledTitle = styled('div')(({ theme }) => ({
     paddingTop: theme.spacing(1.5),
@@ -84,10 +85,6 @@ const StyledTypography = styled(Typography)({
     userSelect: 'none',
 });
 
-const StyledSection = styled('div')(({ theme }) => ({
-    ...theme.typography.caption,
-}));
-
 type MODE = 'CLIENT' | 'SYSTEM';
 export interface AddBlocksMenuProps {
     /** Title to render in the menu */
@@ -106,12 +103,14 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
     const { title, items } = props;
 
     const [search, setSearch] = useState('');
+    const [clientBlock, setClientBlock] = useState([]);
     const [mode, setMode] = useState<MODE>('SYSTEM');
 
     const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
     const [filterCategoryMap, setFilterCategoryMap] = useState<
         Record<string, FilterCategory>
     >({});
+
     const anyEnabledFilter = useMemo(
         () =>
             Object.values(filterCategoryMap).some(
@@ -120,11 +119,28 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
         [filterCategoryMap],
     );
 
+    /**
+     * TODO: REPLACE WITH A CALL TO THE BACKEND
+     */
+    const getClientBlocks = async () => {
+        runPixel('1+1').then((res) => {
+            setClientBlock(CLIENT_BLOCKS_MENU);
+        });
+    };
+
+    useEffect(() => {
+        if (mode === 'CLIENT') {
+            getClientBlocks();
+        }
+    }, [mode]);
+
     const sortedItems = useMemo(() => {
+        // Use Client Block when mode is CLIENT otherwise use items from the props
+        const dataToProcess = mode === 'CLIENT' ? clientBlock : items;
         const sectionRecord: Record<string, DesignerMenuItem[]> = {};
 
         // Group items by section
-        items.forEach((item) => {
+        dataToProcess.forEach((item) => {
             const currentSection = item.section ?? defaultSection;
             if (!sectionRecord[currentSection])
                 sectionRecord[currentSection] = [];
@@ -138,7 +154,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                 a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
             );
         }).filter((section) => section.length > 0);
-    }, [items, SECTION_ORDER]);
+    }, [items, mode, clientBlock, SECTION_ORDER]);
 
     // get the rendered items
     const renderedItems: DesignerMenuItem[][] = useMemo(() => {
@@ -271,10 +287,13 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                             ),
                         }}
                     />
-                    {/* <StyledToggleTabsGroup
+                    <StyledToggleTabsGroup
                         value={mode}
                         onChange={(e: React.SyntheticEvent, val) => {
                             setMode(val as MODE);
+                            if (val === 'CLIENT') {
+                                getClientBlocks();
+                            }
                         }}
                     >
                         <StyledToggleTabsGroupItem
@@ -284,17 +303,10 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                         <StyledToggleTabsGroupItem
                             label="Client Blocks"
                             value={'CLIENT'}
-                            disabled={true}
-                            />
-                    </StyledToggleTabsGroup> */}
-                    {/* 
-                    // TODO: Coming next, asked van buren to
-                    // start looking at how to incorporate groupings,
-                    // if not done by 2/19/25, will take it over 
-                    */}
+                        />
+                    </StyledToggleTabsGroup>
                 </Stack>
 
-                {/* TODO: Two Different Menus: Client and System */}
                 {renderedItems.length ? (
                     <StyledMenu>
                         {renderedItems.map((sectionItems, index) => (
