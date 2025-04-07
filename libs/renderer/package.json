@@ -19,7 +19,8 @@
         "format": "prettier . --check --plugin-search-dir=.",
         "format:fix": "prettier . --write --plugin-search-dir=.",
         "fix": "run-s format:fix lint:fix",
-        "test": "vitest --watch=false --passWithNoTests --changed"
+        "test": "vitest --watch=false --passWithNoTests --changed",
+        "test:browser": "vitest --watch --ui --pool=forks"
     },
     "keywords": [],
     "author": "",

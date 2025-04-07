@@ -46,5 +46,6 @@ export default defineConfig({
         cache: {
             dir: "../../node_modules/.vitest",
         },
+        setupFiles: ["./vitest.setup.ts"],
     },
 });
