@@ -1060,8 +1060,8 @@ if (process.env.NODE_ENV === 'development') {
         section: SECTION_CHARTS,
         name: 'Dendrogram Chart',
         helperText: 'Dendrogram chart',
-        activeImage: BLOCK_IMAGES['BAR_CHART_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['BAR_CHART_HOVER'],
+        activeImage: BLOCK_IMAGES['DENDROGRAM_CHART_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['DENDROGRAM_CHART_HOVER'],
         json: {
             widget: 'e-chart',
             data: {
@@ -1074,6 +1074,17 @@ if (process.env.NODE_ENV === 'development') {
                     tooltip: {
                         trigger: 'item',
                         triggerOn: 'mousemove',
+                    },
+                    toolbox: {
+                        show: true,
+                        feature: {
+                            dataZoom: {
+                                show: true,
+                            },
+                        },
+                        brush: {
+                            toolbox: ['rect', 'polygon'],
+                        },
                     },
                     series: [
                         {
