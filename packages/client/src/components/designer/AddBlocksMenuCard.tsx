@@ -100,6 +100,8 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 
         // apply the action
         const placeholderAction = designer.drag.placeholderAction;
+
+        //TODO: Preventative action to not allow multiple blocks to be dropped into Iterator
         if (placeholderAction) {
             if (
                 placeholderAction.type === 'before' ||
@@ -122,6 +124,13 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                     }) as string;
                 }
             } else if (placeholderAction.type === 'replace') {
+                const parentBlock = state.getBlock(placeholderAction.id);
+
+                if (parentBlock.widget === 'iterator') {
+                    // TODO: prevent multiple children to
+                    // Have a data property on the iterator block itself that stores the config of the block to be iterated
+                    // If there is already a
+                }
                 id = state.dispatch({
                     message: ActionMessages.ADD_BLOCK,
                     payload: {

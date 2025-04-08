@@ -24,10 +24,6 @@ import {
 } from "./container-block";
 
 import { config as DividerBlockConfig, DividerBlockDef } from "./divider-block";
-import {
-    config as IteratorBlockConfig,
-    IteratorBlockDef,
-} from "./iterator-block";
 
 import {
     config as EchartVisualizationBlockConfig,
@@ -42,6 +38,12 @@ import { config as IconBlockConfig, IconBlockDef } from "./Icon_block";
 import { config as IframeBlockConfig, IframeBlockDef } from "./iframe-block";
 import { config as ImageBlockConfig, ImageBlockDef } from "./image-block";
 import { config as InputBlockConfig, InputBlockDef } from "./input-block";
+// PROTOTYPE
+import {
+    config as IteratorBlockConfig,
+    IteratorBlockDef,
+} from "./iterator-block";
+import { config as IterBlockConfig, IterBlockDef } from './iter-block'
 
 import { config as LinkBlockConfig, LinkBlockDef } from "./link-block";
 import { config as LogsBlockConfig, LogsBlockDef } from "./logs-block";
@@ -113,6 +115,7 @@ export type DefaultBlockDefinitions =
     | DividerBlockDef
     | EchartVisualizationBlockDef
     | IteratorBlockDef
+    | IterBlockDef
     | GridBlockDef
     | HTMLBlockDef
     | IconBlockDef
@@ -162,6 +165,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [DividerBlockConfig.widget]: DividerBlockConfig,
     [IteratorBlockConfig.widget]: IteratorBlockConfig,
+    [IterBlockConfig.widget]: IterBlockConfig,
     [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
     [GridBlockConfig.widget]: GridBlockConfig,
     [IconBlockConfig.widget]: IconBlockConfig,
@@ -205,6 +209,7 @@ export {
     ContainerBlockConfig,
     DividerBlockConfig,
     IteratorBlockConfig,
+    IterBlockConfig,
     GridBlockConfig,
     IconBlockConfig,
     IframeBlockConfig,

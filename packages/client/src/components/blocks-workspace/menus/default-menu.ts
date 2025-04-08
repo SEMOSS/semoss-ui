@@ -1455,6 +1455,34 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
+        section: SECTION_LAYOUT,
+        name: 'Iterator v2',
+        helperText: 'Iterate UI elements that are bound to list',
+        json: {
+            widget: 'iter',
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '4px',
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                },
+                iterationCount: 0,
+                value: [],
+                type: 'iteration',
+                sourceBlockList: [],
+                iteratorDropDownChange: false,
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {
+                children: [],
+            },
+        },
+    },
+    {
         section: SECTION_ELEMENT,
         name: 'Progress',
         helperText: 'Display progress tracking or status',
