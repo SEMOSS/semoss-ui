@@ -1,15 +1,12 @@
-//React and Third Party Libraries
 import React from "react";
 import { observer } from "mobx-react-lite";
 import { CSSProperties } from "react";
-import { Face } from "@mui/icons-material";
 import { Chip, styled } from "@mui/material";
 
 import { Avatar } from "@semoss/ui";
 
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent } from "../../../store";
-
 import { iconMap } from "../../../constants";
 
 export interface ChipBlockDef extends BlockDef<"chip"> {
