@@ -9,7 +9,7 @@
         "fix": "run-s format:fix lint:fix",
         "type-check": "tsc --pretty --noEmit",
         "test": "vitest --watch=false --passWithNoTests --changed",
-        "test:browser": "vitest --watch --ui --pool=forks"
+        "test:browser": "vitest --watch --ui --pool=forks --project @semoss/client"
     },
     "nx": {
         "targets": {
@@ -103,12 +103,15 @@
         "@mui/icons-material": "^5.11.16",
         "@mui/material": "^5.13.5",
         "@mui/x-data-grid": "^7.1.0",
-        "@semoss/ui": "workspace:*",
-        "@textea/json-viewer": "^4.0.0",
         "@semoss/renderer": "workspace:*",
         "@semoss/sdk": "workspace:*",
+        "@semoss/ui": "workspace:*",
+        "@testing-library/user-event": "^14.6.1",
+        "@textea/json-viewer": "^4.0.0",
+        "@vitest/ui": "^1.3.1",
         "@xyflow/react": "^12.0.4",
         "axios": "^1.5.0",
+        "canvas": "^3.1.0",
         "dayjs": "^1.11.4",
         "dompurify": "^2.3.10",
         "echarts": "^5.5.1",
@@ -126,8 +129,8 @@
         "react-hook-form": "^7.34.2",
         "react-markdown": "9.0.1",
         "react-router-dom": "^6.3.0",
-        "remark-gfm": "^4.0.0",
         "react-vega": "^7.6.0",
+        "remark-gfm": "^4.0.0",
         "vega": "^5.27.0",
         "vega-lite": "^5.16.3"
     },
@@ -170,7 +173,7 @@
         "typescript": "^4.7.4",
         "vite": "^6.1.1",
         "vite-tsconfig-paths": "^5.1.4",
-        "vitest": "^3.0.6",
+        "vitest": "^3.0.9",
         "vitest-canvas-mock": "^0.3.3",
         "webpack": "^5.74.0",
         "webpack-bundle-analyzer": "^4.10.2",
