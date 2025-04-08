@@ -11,7 +11,7 @@ import {
     Autocomplete,
 } from '@semoss/ui';
 import { Controller, useForm } from 'react-hook-form';
-import { SerializedState } from '@/stores';
+import { SerializedState } from '@semoss/renderer';
 import { useRootStore } from '@/hooks';
 import { AppMetadata } from './app.types';
 

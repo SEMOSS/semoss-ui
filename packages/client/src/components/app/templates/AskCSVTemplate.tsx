@@ -1,4 +1,4 @@
-import { ActionMessages } from '@/stores';
+import { ActionMessages } from '@semoss/renderer';
 import QUERY from '@/assets/img/query.jpeg';
 import {
     ButtonBlockConfig,

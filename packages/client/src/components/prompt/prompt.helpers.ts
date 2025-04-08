@@ -8,12 +8,12 @@ import {
     INPUT_TYPE_DATABASE,
 } from './prompt.constants';
 import {
-    ActionMessages,
-    Block,
-    MonolithStore,
     QueryStateConfig,
+    Block,
+    ActionMessages,
     SerializedState,
-} from '@/stores';
+} from '@semoss/renderer';
+import { MonolithStore } from '@/stores';
 import { AppMetadata } from '../app';
 
 export const DESCRIPTION_CONTAINER = 'description-container';

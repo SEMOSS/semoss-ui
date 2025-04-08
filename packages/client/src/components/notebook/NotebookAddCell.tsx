@@ -23,7 +23,7 @@ import {
     DataImportFormModal,
 } from '@semoss/renderer';
 
-import { NewCellAction } from '@/stores';
+import { NewCellAction } from '@semoss/renderer';
 import {
     ChangeCircleOutlined,
     Code,
