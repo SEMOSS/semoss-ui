@@ -69,10 +69,6 @@ const StyledBox = styled(Box)(({ theme }) => ({
     padding: '0px 12px 12px 12px',
 }));
 
-const StyledSearchIcon = styled(SearchOutlined)(({ theme }) => ({
-    color: '#5c5c5c',
-}));
-
 const StyledAccordionContent = styled(Accordion.Content)(({ theme }) => ({
     fontSize: '14px',
     margin: 0,
