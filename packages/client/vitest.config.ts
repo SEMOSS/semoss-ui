@@ -24,6 +24,7 @@ export default defineConfig({
     // },
 
     test: {
+        name: "client",
         watch: false,
         globals: true,
         environment: 'jsdom',
