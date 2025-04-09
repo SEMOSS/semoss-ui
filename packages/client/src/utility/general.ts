@@ -77,9 +77,11 @@ export const formatPermission = (permission: Role | ''): string => {
     switch (permission) {
         case 'OWNER':
             return 'Author';
-        case 'EDIT' || 'EDITOR':
+        case 'EDIT':
+        case 'EDITOR':
             return 'Editor';
-        case 'READ_ONLY' || 'VIEWER':
+        case 'READ_ONLY':
+        case 'VIEWER':
             return 'Read-Only';
         case 'DISCOVERABLE':
             return 'Discoverable';
@@ -96,7 +98,7 @@ export const formatPermission = (permission: Role | ''): string => {
 export const getEngineImage = (
     appType: string,
     appSubType: string,
-    ignoreNotFound: boolean = false,
+    ignoreNotFound = false,
 ) => {
     const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name == appSubType);
 
@@ -183,7 +185,9 @@ const debounce = (func, wait) => {
  * @desc useDebounce utility function returns a debounced function
  */
 export const debounced = (callback, delay) => {
-    const ref = useRef(() => {});
+    const ref = useRef(() => {
+        console.log('ref');
+    });
 
     useEffect(() => {
         ref.current = callback;

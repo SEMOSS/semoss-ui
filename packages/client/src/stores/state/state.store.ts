@@ -229,7 +229,6 @@ export class StateStore {
 
         return null;
     }
-
     /**
      * Gets the variable by it's pointer
      * @param pointer

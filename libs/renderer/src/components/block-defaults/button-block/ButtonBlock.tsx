@@ -37,6 +37,7 @@ export interface ButtonBlockDef extends BlockDef<"button"> {
         disabled?: boolean;
         variant: "contained" | "outlined" | "text";
         color: "primary" | "secondary" | "success" | "warning" | "error";
+        show: string;
     };
     listeners: {
         onClick: true;
@@ -49,7 +50,6 @@ const StyledContainer = styled("div")(({ theme }) => ({
 
 export const ButtonBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, listeners } = useBlock<ButtonBlockDef>(id);
-
     return (
         <StyledContainer {...attrs}>
             <StyledButton

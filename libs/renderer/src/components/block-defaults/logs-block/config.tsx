@@ -3,6 +3,7 @@ import { LogsBlockDef, LogsBlock } from "./LogsBlock";
 import { HighlightAlt } from "@mui/icons-material";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import { QueryNameDropdownSettings } from "../../block-settings/custom/QueryNameDropdownSettings";
+import { buildShowField } from "../block-defaults.shared";
 
 export const config: BlockConfig<LogsBlockDef> = {
     widget: "logs",
@@ -10,6 +11,7 @@ export const config: BlockConfig<LogsBlockDef> = {
     data: {
         style: {},
         queryId: "",
+        show: "true",
     },
     listeners: {},
     slots: {},
@@ -19,6 +21,7 @@ export const config: BlockConfig<LogsBlockDef> = {
         {
             name: "General",
             children: [
+                ...buildShowField(),
                 {
                     description: "Sheet",
                     render: ({ id }) => (

@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { MenuList, MenuItem } from '@mui/material';
 import { MoreVert, DeleteRounded } from '@mui/icons-material';
 
 import {
@@ -13,6 +12,8 @@ import {
     useNotification,
     Button,
     Popover,
+    MenuList,
+    MenuItemTwo,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
@@ -260,7 +261,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                         // transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                     >
                         <MenuList>
-                            <MenuItem
+                            <MenuItemTwo
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setDeleteModal(true);
@@ -285,7 +286,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                                         Delete
                                     </div>
                                 </Stack>
-                            </MenuItem>
+                            </MenuItemTwo>
                         </MenuList>
                     </Popover>
                 </StyledActionContainer>

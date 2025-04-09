@@ -53,6 +53,7 @@ import OPEN_AI from '@/assets/img/OPEN_AI.png';
 import AZURE_OPEN_AI from '@/assets/img/OPEN_AI.png';
 import CLAUDE from '@/assets/img/CLAUDE_AI.png';
 import VERTEX from '@/assets/img/VERTEX_AI.png';
+import Amazon_Titan from '@/assets/img/Amazon_Titan.png';
 //Local Models
 import BRAIN from '@/assets/img/BRAIN.png';
 import META from '@/assets/img/META.png';
@@ -72,6 +73,11 @@ import REPLIT from '@/assets/img/REPLIT_CODE.png';
 // Functions
 import RESTAPI from '@/assets/img/rest-api.svg';
 import AWS_COMPREHEND from '@/assets/img/AWS_COMPREHEND.png';
+import AWS_POLLY from '@/assets/img/AWS_POLLY.png';
+import GOOGLE_SPEECH_TO_TEXT from '@/assets/img/GOOGLE_SPEECH_TO_TEXT.png';
+import GOOGLE_OCR from '@/assets/img/GOOGLE_OCR.png';
+import AWS_TEXTRACT from '@/assets/img/AWS_TEXTRACT.png';
+import AWS_TRANSCRIBE from '@/assets/img/AWS_TRANSCRIBE.png';
 //Vector
 import CHROMADB from '@/assets/img/CHROMADB.png';
 import PINECONE from '@/assets/img/PINECONE.png';
@@ -5245,7 +5251,7 @@ export const CONNECTION_OPTIONS = {
             {
                 name: 'AWS TITAN TEXT EMBEDDINGS',
                 disable: true,
-                icon: AMAZON_S3, //need to change the icon
+                icon: Amazon_Titan,
                 fields: [
                     {
                         fieldName: 'NAME',
@@ -5689,300 +5695,9 @@ export const CONNECTION_OPTIONS = {
     FUNCTION: {
         Function: [
             {
-                name: 'REST',
+                name: 'AWS Image Text Extraction',
                 disable: false,
-                icon: RESTAPI,
-                fields: [
-                    {
-                        fieldName: 'FUNCTION_TYPE',
-                        label: 'Function Type',
-                        defaultValue: 'REST',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'NAME',
-                        label: 'Catalog Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: {
-                            required: true,
-                            pattern: {
-                                value: /^[\w\-\s]+$/,
-                                message:
-                                    'Catalog names can only contain alphanumeric characters and dashes.',
-                            },
-                            custom: {
-                                value: 'CheckEngineName ( "[VALUE]") ;',
-                                message:
-                                    'This Catalog name has already been used, please try another.',
-                            },
-                        },
-                    },
-                    {
-                        fieldName: 'URL',
-                        label: 'URL',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'HTTP_METHOD',
-                        label: 'Http Method',
-                        defaultValue: 'POST',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'GET',
-                                    value: 'GET',
-                                },
-                                {
-                                    display: 'HEAD',
-                                    value: 'HEAD',
-                                },
-                                {
-                                    display: 'POST',
-                                    value: 'POST',
-                                },
-                                {
-                                    display: 'PUT',
-                                    value: 'PUT',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'CONTENT_TYPE',
-                        label: 'POST Message Body Type',
-                        defaultValue: 'json',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'json',
-                                    value: 'json',
-                                },
-                                {
-                                    display: 'x-www-form-urlencoded',
-                                    value: 'x-www-form-urlencoded',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'HEADERS',
-                        label: 'Http Headers',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: false },
-                    },
-                    {
-                        fieldName: 'FUNCTION_PARAMETERS',
-                        label: 'Function Parameters',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
-                        label: 'Function Required Parameters',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'FUNCTION_NAME',
-                        label: 'Function Name (metadata)',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'FUNCTION_DESCRIPTION',
-                        label: 'Function Description (metadata)',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                ],
-            },
-            {
-                name: 'Azure OCR',
-                disable: false,
-                icon: RESTAPI,
-                fields: [
-                    {
-                        fieldName: 'FUNCTION_TYPE',
-                        label: 'Function Type',
-                        defaultValue: 'AZUREOCR',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'NAME',
-                        label: 'Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'URL',
-                        label: 'URL',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'API_KEY',
-                        label: 'API Key',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'FUNCTION_NAME',
-                        label: 'Function Name (metadata)',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'FUNCTION_DESCRIPTION',
-                        label: 'Function Description (metadata)',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                ],
-            },
-            {
-                name: 'Azure speech to text',
-                disable: false,
-                icon: AZURE_SPEECH_TO_TEXT,
-                fields: [
-                    {
-                        fieldName: 'FUNCTION_TYPE',
-                        label: 'Function Type',
-                        defaultValue: 'AZURE SPEECH TO TEXT',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'NAME',
-                        label: 'Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'SPEECH_KEY',
-                        label: 'Speech Key',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'SPEECH_REGION',
-                        label: 'Speech region',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
-                        label: 'Function Required Parameters',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'FUNCTION_NAME',
-                        label: 'Function Name (metadata)',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'FUNCTION_DESCRIPTION',
-                        label: 'Function Description (metadata)',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                ],
-            },
-            {
-                name: 'AWS - Image Text Extraction',
-                disable: false,
-                icon: AMAZON_S3,
+                icon: AWS_TEXTRACT,
                 fields: [
                     {
                         fieldName: 'FUNCTION_TYPE',
@@ -6088,9 +5803,9 @@ export const CONNECTION_OPTIONS = {
                 ],
             },
             {
-                name: 'AWS POLLY',
+                name: 'AWS Polly',
                 disable: false,
-                icon: AMAZON_S3, //need to change the icon
+                icon: AWS_POLLY,
                 fields: [
                     {
                         fieldName: 'FUNCTION_TYPE',
@@ -6178,7 +5893,7 @@ export const CONNECTION_OPTIONS = {
             {
                 name: 'AWS Transcribe',
                 disable: false,
-                icon: AMAZON_S3,
+                icon: AWS_TRANSCRIBE,
                 fields: [
                     {
                         fieldName: 'FUNCTION_TYPE',
@@ -6361,9 +6076,134 @@ export const CONNECTION_OPTIONS = {
                 ],
             },
             {
+                name: 'Azure Document Intelligence',
+                disable: false,
+                icon: RESTAPI,
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue:
+                            'AZURE_DOCUMENT_INTELLIGENCE_CUSTOM_EMBEDDINGS',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'URL',
+                        label: 'URL',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'API_KEY',
+                        label: 'API Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
+                name: 'Azure Speech To Text',
+                disable: false,
+                icon: AZURE_SPEECH_TO_TEXT,
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'AZURE SPEECH TO TEXT',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'SPEECH_KEY',
+                        label: 'Speech Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'SPEECH_REGION',
+                        label: 'Speech region',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        label: 'Function Required Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
                 name: 'Google Speech To Text',
                 disable: false,
-                icon: GOOGLE_CLOUD, //need to change the icon
+                icon: GOOGLE_SPEECH_TO_TEXT,
                 fields: [
                     {
                         fieldName: 'FUNCTION_TYPE',
@@ -6442,7 +6282,7 @@ export const CONNECTION_OPTIONS = {
             {
                 name: 'Google OCR',
                 disable: false,
-                icon: GOOGLE_CLOUD, //need to change the icon
+                icon: GOOGLE_OCR,
                 fields: [
                     {
                         fieldName: 'FUNCTION_TYPE',
@@ -6540,6 +6380,153 @@ export const CONNECTION_OPTIONS = {
                         fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
                         label: 'Function Required Parameters',
                         defaultValue: '["isFilePresentInBucket","filePath"]',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
+                name: 'REST',
+                disable: false,
+                icon: RESTAPI,
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'REST',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
+                    },
+                    {
+                        fieldName: 'URL',
+                        label: 'URL',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'HTTP_METHOD',
+                        label: 'Http Method',
+                        defaultValue: 'POST',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'GET',
+                                    value: 'GET',
+                                },
+                                {
+                                    display: 'HEAD',
+                                    value: 'HEAD',
+                                },
+                                {
+                                    display: 'POST',
+                                    value: 'POST',
+                                },
+                                {
+                                    display: 'PUT',
+                                    value: 'PUT',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CONTENT_TYPE',
+                        label: 'POST Message Body Type',
+                        defaultValue: 'json',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'json',
+                                    value: 'json',
+                                },
+                                {
+                                    display: 'x-www-form-urlencoded',
+                                    value: 'x-www-form-urlencoded',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'HEADERS',
+                        label: 'Http Headers',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'FUNCTION_PARAMETERS',
+                        label: 'Function Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        label: 'Function Required Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
                         options: {
                             component: 'text-field',
                         },
@@ -6804,6 +6791,307 @@ export const CONNECTION_OPTIONS = {
                 ],
             },
             {
+                name: 'Elastic Search',
+                disable: false,
+                icon: ELASTIC_SEARCH,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
+                    },
+                    {
+                        fieldName: 'VECTOR_TYPE',
+                        label: 'Type',
+                        defaultValue: 'ELASTIC_SEARCH',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        hidden: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDER_ENGINE_ID',
+                        label: 'Embedder',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [],
+                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+                            optionDisplay: 'database_name',
+                            optionValue: 'database_id',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
+                    },
+                    {
+                        fieldName: 'INDEX_CLASSES',
+                        label: 'Index Classes',
+                        defaultValue: 'default',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        hidden: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHUNKING_STRATEGY',
+                        label: 'Chunking Strategy',
+                        defaultValue: 'ALL',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Token',
+                                    value: 'ALL',
+                                },
+                                {
+                                    display: 'Page by page',
+                                    value: 'PAGE_BY_PAGE',
+                                },
+                                {
+                                    display: 'Markdown',
+                                    value: 'MARKDOWN',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        hidden: false,
+                        rules: { required: true },
+                        displayRules: {
+                            hideOtherFields: [
+                                {
+                                    fieldName: 'CONTENT_LENGTH',
+                                    value: ['PAGE_BY_PAGE', 'MARKDOWN'],
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        fieldName: 'CONTENT_LENGTH',
+                        label: 'Content Length',
+                        defaultValue: '512',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                        helperText:
+                            "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
+                    },
+                    {
+                        fieldName: 'CONTENT_OVERLAP',
+                        label: 'Content Overlap',
+                        defaultValue: '20',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                        helperText:
+                            'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+                    },
+                    {
+                        fieldName: 'HOSTNAME',
+                        label: 'Host Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'USERNAME',
+                        label: 'Username',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'PASSWORD',
+                        label: 'Password',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'API_KEY',
+                        label: 'API Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'API_KEY_ID',
+                        label: 'API Key ID',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'INDEX_NAME',
+                        label: 'Index Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'DIMENSION_SIZE',
+                        label: 'Embedding Dimension Size',
+                        defaultValue: '1024',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                    },
+                    {
+                        fieldName: 'METHOD_NAME',
+                        label: 'Method Name',
+                        defaultValue: 'hnsw',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'SPACE_TYPE',
+                        label: 'Space Type',
+                        defaultValue: 'l2',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'INDEX_ENGINE',
+                        label: 'Index Engine',
+                        defaultValue: 'lucene',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'EF_CONSTRUCTION',
+                        label: 'EF Construction',
+                        defaultValue: '128',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'M_VALUE',
+                        label: 'M Value',
+                        defaultValue: '24',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDINGS',
+                        label: 'Embeddings',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: {},
+                    },
+                    {
+                        fieldName: 'RETAIN_EXTRACTED_TEXT',
+                        label: 'Retain Extracted Text',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'False',
+                                    value: 'false',
+                                },
+                                {
+                                    display: 'True',
+                                    value: 'true',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                    },
+                ],
+            },
+            {
                 name: 'FAISS',
                 disable: false,
                 icon: META,
@@ -6957,6 +7245,287 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false },
                         advanced: true,
                         helperText: '',
+                    },
+                    {
+                        fieldName: 'RETAIN_EXTRACTED_TEXT',
+                        label: 'Retain Extracted Text',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'False',
+                                    value: 'false',
+                                },
+                                {
+                                    display: 'True',
+                                    value: 'true',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                    },
+                ],
+            },
+            {
+                name: 'Open Search',
+                disable: false,
+                icon: OPEN_SEARCH,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
+                    },
+                    {
+                        fieldName: 'VECTOR_TYPE',
+                        label: 'Type',
+                        defaultValue: 'OPEN_SEARCH',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        hidden: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDER_ENGINE_ID',
+                        label: 'Embedder',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [],
+                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+                            optionDisplay: 'database_name',
+                            optionValue: 'database_id',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
+                    },
+                    {
+                        fieldName: 'INDEX_CLASSES',
+                        label: 'Index Classes',
+                        defaultValue: 'default',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        hidden: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHUNKING_STRATEGY',
+                        label: 'Chunking Strategy',
+                        defaultValue: 'ALL',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Token',
+                                    value: 'ALL',
+                                },
+                                {
+                                    display: 'Page by page',
+                                    value: 'PAGE_BY_PAGE',
+                                },
+                                {
+                                    display: 'Markdown',
+                                    value: 'MARKDOWN',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        hidden: false,
+                        rules: { required: true },
+                        displayRules: {
+                            hideOtherFields: [
+                                {
+                                    fieldName: 'CONTENT_LENGTH',
+                                    value: ['PAGE_BY_PAGE', 'MARKDOWN'],
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        fieldName: 'CONTENT_LENGTH',
+                        label: 'Content Length',
+                        defaultValue: '512',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                        helperText:
+                            "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
+                    },
+                    {
+                        fieldName: 'CONTENT_OVERLAP',
+                        label: 'Content Overlap',
+                        defaultValue: '20',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                        helperText:
+                            'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+                    },
+                    {
+                        fieldName: 'HOSTNAME',
+                        label: 'Host Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'USERNAME',
+                        label: 'Username',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'PASSWORD',
+                        label: 'Password',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'INDEX_NAME',
+                        label: 'Index Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'DIMENSION_SIZE',
+                        label: 'Embedding Dimension Size',
+                        defaultValue: '1024',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                    },
+                    {
+                        fieldName: 'METHOD_NAME',
+                        label: 'Method Name',
+                        defaultValue: 'hnsw',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'SPACE_TYPE',
+                        label: 'Space Type',
+                        defaultValue: 'l2',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'INDEX_ENGINE',
+                        label: 'Index Engine',
+                        defaultValue: 'lucene',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'EF_CONSTRUCTION',
+                        label: 'EF Construction',
+                        defaultValue: '128',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'M_VALUE',
+                        label: 'M Value',
+                        defaultValue: '24',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDINGS',
+                        label: 'Embeddings',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: {},
                     },
                     {
                         fieldName: 'RETAIN_EXTRACTED_TEXT',
@@ -7538,287 +8107,6 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false },
                         advanced: true,
                         helperText: '',
-                    },
-                    {
-                        fieldName: 'RETAIN_EXTRACTED_TEXT',
-                        label: 'Retain Extracted Text',
-                        defaultValue: 'false',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'False',
-                                    value: 'false',
-                                },
-                                {
-                                    display: 'True',
-                                    value: 'true',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: false },
-                        advanced: true,
-                    },
-                ],
-            },
-            {
-                name: 'Open Search',
-                disable: false,
-                icon: OPEN_SEARCH,
-                fields: [
-                    {
-                        fieldName: 'NAME',
-                        label: 'Catalog Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: {
-                            required: true,
-                            pattern: {
-                                value: /^[\w\-\s]+$/,
-                                message:
-                                    'Catalog names can only contain alphanumeric characters and dashes.',
-                            },
-                            custom: {
-                                value: 'CheckEngineName ( "[VALUE]") ;',
-                                message:
-                                    'This Catalog name has already been used, please try another.',
-                            },
-                        },
-                    },
-                    {
-                        fieldName: 'VECTOR_TYPE',
-                        label: 'Type',
-                        defaultValue: 'OPEN_SEARCH',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        hidden: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'EMBEDDER_ENGINE_ID',
-                        label: 'Embedder',
-                        defaultValue: '',
-                        options: {
-                            component: 'select',
-                            options: [],
-                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-                            optionDisplay: 'database_name',
-                            optionValue: 'database_id',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                        helperText:
-                            'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
-                    },
-                    {
-                        fieldName: 'INDEX_CLASSES',
-                        label: 'Index Classes',
-                        defaultValue: 'default',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        hidden: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'CHUNKING_STRATEGY',
-                        label: 'Chunking Strategy',
-                        defaultValue: 'ALL',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'Token',
-                                    value: 'ALL',
-                                },
-                                {
-                                    display: 'Page by page',
-                                    value: 'PAGE_BY_PAGE',
-                                },
-                                {
-                                    display: 'Markdown',
-                                    value: 'MARKDOWN',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        hidden: false,
-                        rules: { required: true },
-                        displayRules: {
-                            hideOtherFields: [
-                                {
-                                    fieldName: 'CONTENT_LENGTH',
-                                    value: ['PAGE_BY_PAGE', 'MARKDOWN'],
-                                },
-                            ],
-                        },
-                    },
-                    {
-                        fieldName: 'CONTENT_LENGTH',
-                        label: 'Content Length',
-                        defaultValue: '512',
-                        options: {
-                            component: 'number',
-                        },
-                        disabled: false,
-                        rules: { required: true, min: 0 },
-                        helperText:
-                            "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
-                    },
-                    {
-                        fieldName: 'CONTENT_OVERLAP',
-                        label: 'Content Overlap',
-                        defaultValue: '20',
-                        options: {
-                            component: 'number',
-                        },
-                        disabled: false,
-                        rules: { required: true, min: 0 },
-                        helperText:
-                            'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
-                    },
-                    {
-                        fieldName: 'HOSTNAME',
-                        label: 'Host Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'USERNAME',
-                        label: 'Username',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'PASSWORD',
-                        label: 'Password',
-                        defaultValue: '',
-                        options: {
-                            component: 'password',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'INDEX_NAME',
-                        label: 'Index Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'DIMENSION_SIZE',
-                        label: 'Embedding Dimension Size',
-                        defaultValue: '1024',
-                        options: {
-                            component: 'number',
-                        },
-                        disabled: false,
-                        rules: { required: true, min: 0 },
-                    },
-                    {
-                        fieldName: 'METHOD_NAME',
-                        label: 'Method Name',
-                        defaultValue: 'hnsw',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                        advanced: true,
-                    },
-                    {
-                        fieldName: 'SPACE_TYPE',
-                        label: 'Space Type',
-                        defaultValue: 'l2',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                        advanced: true,
-                    },
-                    {
-                        fieldName: 'INDEX_ENGINE',
-                        label: 'Index Engine',
-                        defaultValue: 'lucene',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                        advanced: true,
-                    },
-                    {
-                        fieldName: 'EF_CONSTRUCTION',
-                        label: 'EF Construction',
-                        defaultValue: '128',
-                        options: {
-                            component: 'number',
-                        },
-                        disabled: false,
-                        rules: { required: true, min: 0 },
-                        advanced: true,
-                    },
-                    {
-                        fieldName: 'M_VALUE',
-                        label: 'M Value',
-                        defaultValue: '24',
-                        options: {
-                            component: 'number',
-                        },
-                        disabled: false,
-                        rules: { required: true, min: 0 },
-                        advanced: true,
-                    },
-                    {
-                        fieldName: 'KEEP_INPUT_OUTPUT',
-                        label: 'Record Questions and Responses',
-                        defaultValue: 'false',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'true',
-                                    value: 'true',
-                                },
-                                {
-                                    display: 'false',
-                                    value: 'false',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'EMBEDDINGS',
-                        label: 'Embeddings',
-                        defaultValue: null,
-                        options: {
-                            component: 'file-upload',
-                        },
-                        disabled: true,
-                        secondary: true,
-                        rules: {},
                     },
                     {
                         fieldName: 'RETAIN_EXTRACTED_TEXT',
@@ -14305,7 +14593,7 @@ export const ENGINE_IMAGES = {
         },
         {
             name: 'AWS_TITAN_TEXT_EMBEDDINGS',
-            icon: AMAZON_S3, //need to change the icon
+            icon: Amazon_Titan,
         },
         {
             name: 'Stablity AI',
@@ -14339,23 +14627,23 @@ export const ENGINE_IMAGES = {
         },
         {
             name: 'AWS - Image Text Extraction',
-            icon: AMAZON_S3, //need to change the icon
+            icon: AWS_TEXTRACT,
         },
         {
             name: 'AWS POLLY',
-            icon: AMAZON_S3, //need to change the icon
+            icon: AWS_POLLY,
         },
         {
             name: 'AWS Transcribe',
-            icon: AMAZON_S3, //need to change the icon
+            icon: AWS_TRANSCRIBE,
         },
         {
             name: 'Google Speech To Text',
-            icon: GOOGLE_CLOUD, //need to change the icon
+            icon: GOOGLE_SPEECH_TO_TEXT,
         },
         {
             name: 'Google OCR',
-            icon: GOOGLE_CLOUD, //need to change the icon
+            icon: GOOGLE_OCR,
         },
     ],
     VECTOR: [

@@ -1,12 +1,11 @@
-import { useState } from 'react';
+import { AutocompleteTwo, Stack, TextField } from '@semoss/ui';
+
 import {
     JobTypeCustomJob,
     JobTypeOptions,
     JobTypeSendEmail,
 } from './job.constants';
-import { JobBuilder, JobTypes } from './job.types';
-import { Stack, TextField } from '@semoss/ui';
-import { Autocomplete } from '@mui/material';
+import { JobBuilder } from './job.types';
 import { JobTypesSendEmailBuilder } from './JobTypesSendEmailBuilder';
 import { JobTypesCustomJobBuilder } from './JobTypesCustomJobBuilder';
 
@@ -17,7 +16,7 @@ export const JobTypesBuilder = (props: {
     const { builder, setBuilderField } = props;
     return (
         <Stack spacing={2} width="100%">
-            <Autocomplete
+            <AutocompleteTwo
                 size="small"
                 options={JobTypeOptions}
                 value={builder.jobType}

@@ -330,7 +330,7 @@ export const SelectedBlockPanel = observer(() => {
                         )}
                     </Stack>
                 </StyledMenuHeader>
-                <Divider />
+                {/* <Divider /> */}
                 <StyledMenuScroll>
                     {!!menu &&
                         createElement(menu, {

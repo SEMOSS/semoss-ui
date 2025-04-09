@@ -1,4 +1,8 @@
 import { useEffect, useMemo, useState, useRef, useLayoutEffect } from 'react';
+import { Add, Delete, Edit } from '@mui/icons-material';
+import SearchIcon from '@mui/icons-material/Search';
+import { AxiosResponse } from 'axios';
+
 import {
     styled,
     Button,
@@ -13,17 +17,13 @@ import {
     useNotification,
     Box,
 } from '@semoss/ui';
-import { Add, Delete, Edit } from '@mui/icons-material';
-import { AxiosResponse } from 'axios';
 
 import { ALL_TYPES } from '@/types';
-import { useRootStore, useAPI, useSettings, useDebounceValue } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
+import { useRootStore, useAPI, useSettings, useDebounceValue } from '@/hooks';
 import { SETTINGS_PROVISIONED_USER } from './settings.types';
-
 import { MembersDeleteOverlay } from './MembersDeleteOverlay';
 import { MembersAddOverlay } from './MembersAddOverlay';
-import SearchIcon from '@mui/icons-material/Search';
 
 const AvatarWrapper = styled('div')({
     display: 'inline-block',
@@ -173,7 +173,7 @@ const permissionMapper = {
     'Read-Only': 'READ_ONLY', // DISPLAY: BE
 };
 
-const formatModelLimitValue = (input: string) => {
+const formatValue = (input: string) => {
     if (input !== undefined) {
         const mappings: Record<string, string> = {
             TOKEN: 'Token',
@@ -181,6 +181,7 @@ const formatModelLimitValue = (input: string) => {
             DAY: 'Daily',
             WEEK: 'Weekly',
             MONTH: 'Monthly',
+            NULL: 'None',
         };
         return mappings[input.toUpperCase()] || input;
     }
@@ -493,6 +494,7 @@ export const MembersTable = (props: MembersTableProps) => {
                         <StyledSearchButtonContainer>
                             {isSearch ? (
                                 <Search
+                                    autoFocus={true}
                                     inputRef={memberSearchRef}
                                     placeholder="Search Members"
                                     size="small"
@@ -503,7 +505,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                 />
                             ) : (
                                 <IconButton
-                                    onClick={() => setIsSearch(!isSearch)}
+                                    onClick={() => {
+                                        setIsSearch(!isSearch);
+                                    }}
                                 >
                                     <SearchIcon />
                                 </IconButton>
@@ -714,9 +718,14 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         {type === 'MODEL' && (
                                                             <>
                                                                 <Table.Cell>
-                                                                    {formatModelLimitValue(
-                                                                        user.usage_restriction,
-                                                                    )}
+                                                                    {user.usage_restriction !==
+                                                                    undefined
+                                                                        ? formatValue(
+                                                                              user.usage_restriction,
+                                                                          )
+                                                                        : formatValue(
+                                                                              'null',
+                                                                          )}
                                                                 </Table.Cell>
                                                                 <Table.Cell>
                                                                     {user?.usage_restriction ===
@@ -728,7 +737,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                         `${user.max_tokens?.toLocaleString()}`}
                                                                 </Table.Cell>
                                                                 <Table.Cell>
-                                                                    {formatModelLimitValue(
+                                                                    {formatValue(
                                                                         user.usage_frequency,
                                                                     )}
                                                                 </Table.Cell>

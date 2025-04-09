@@ -9,6 +9,7 @@ import {
     SizeSettings,
 } from "../../block-settings";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
+import { buildShowField } from "../block-defaults.shared";
 
 // export the config for the block
 export const config: BlockConfig<ProgressBlockDef> = {
@@ -19,6 +20,7 @@ export const config: BlockConfig<ProgressBlockDef> = {
         value: 50,
         includeLabel: true,
         size: "300px",
+        show: "true",
     },
     listeners: {},
     slots: {},
@@ -28,6 +30,7 @@ export const config: BlockConfig<ProgressBlockDef> = {
         {
             name: "General",
             children: [
+                ...buildShowField(),
                 {
                     description: "Type",
                     render: ({ id }) => {

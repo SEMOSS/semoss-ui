@@ -9,6 +9,7 @@ export interface ContainerBlockDef extends BlockDef<"container"> {
     widget: "container";
     data: {
         style: CSSProperties;
+        show: string;
     };
     slots: {
         children: true;
