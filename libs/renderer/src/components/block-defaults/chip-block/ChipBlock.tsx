@@ -1,14 +1,12 @@
-//React and Third Party Libraries
 import React from "react";
 import { observer } from "mobx-react-lite";
 import { CSSProperties } from "react";
 import { Face } from "@mui/icons-material";
-import { Chip, styled } from "@mui/material";
+import { Chip } from "@mui/material";
+import { darken } from "@mui/material/styles";
 
-//Internal Semoss libs
 import { Avatar } from "@semoss/ui";
 
-//Modules internal to current package
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent } from "../../../store";
 
@@ -22,13 +20,6 @@ export interface ChipBlockDef extends BlockDef<"chip"> {
         disabled?: boolean;
         avatar?: React.ReactElement;
         size: "small" | "medium";
-        color:
-            | "default"
-            | "primary"
-            | "secondary"
-            | "success"
-            | "warning"
-            | "error";
         clickable?: boolean;
         multiSelect?: boolean;
         link?: string;
@@ -43,32 +34,39 @@ export interface ChipBlockDef extends BlockDef<"chip"> {
     slots: never;
 }
 
-const StyledAvatar = styled(Avatar, {
-    shouldForwardProp: (prop) => prop !== "chipColor",
-})<{ chipColor: string }>(({ chipColor, theme }) => {
-    const palette = theme.palette;
-
-    return {
-        "&&": {
-            backgroundColor: palette[chipColor]?.main || palette.grey[500],
-            color: palette[chipColor]?.contrastText,
-        },
-    };
-});
-
 export const ChipBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data /*listeners*/ } = useBlock<ChipBlockDef>(id);
+
+    const getContrastColor = (hexColor: string) => {
+        hexColor = hexColor.replace("#", "");
+
+        // Parse hex values to RGB
+        const r = parseInt(hexColor.substring(0, 2), 16);
+        const g = parseInt(hexColor.substring(2, 4), 16);
+        const b = parseInt(hexColor.substring(4, 6), 16);
+
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+
+        return brightness >= 128 ? "#000000" : "#FFFFFF";
+    };
 
     const displayChip = (key): React.ReactNode => {
         const avatar = data?.avatar;
         const link = data?.link || null;
+        const color = data.style.color || "Default";
+        const avatarColor = data.style.color || "rgb(156, 153, 153)";
 
         const chipProps = {
             label: data.label ?? data.type ?? "Chip",
-            color: data.color,
             size: data.size,
             variant: data.variant,
             clickable: data.clickable,
+            sx: {
+                backgroundColor: color,
+                color: data.style.color
+                    ? getContrastColor(data.style.color)
+                    : "black",
+            },
         };
 
         switch (key) {
@@ -79,14 +77,39 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
                     <Chip
                         {...chipProps}
                         avatar={
-                            <StyledAvatar chipColor={data.color}>
+                            <Avatar
+                                sx={{
+                                    "&&": {
+                                        backgroundColor: data.style.color
+                                            ? darken(avatarColor, 0.4)
+                                            : "Default",
+                                        color: getContrastColor(color),
+                                    },
+                                }}
+                            >
                                 {avatar}
-                            </StyledAvatar>
+                            </Avatar>
                         }
                     />
                 );
             case "Icon":
-                return <Chip {...chipProps} icon={<Face />} />;
+                return (
+                    <Chip
+                        {...chipProps}
+                        icon={
+                            <Face
+                                sx={{
+                                    "&&": {
+                                        backgroundColor: color,
+                                        color: data.style.color
+                                            ? getContrastColor(color)
+                                            : "Default",
+                                    },
+                                }}
+                            />
+                        }
+                    />
+                );
             case "Link":
                 return (
                     <a href={link}>
