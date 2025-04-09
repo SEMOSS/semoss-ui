@@ -92,6 +92,7 @@ export const EngineUsagePage = () => {
                                     <ContentCopyOutlined color={'inherit'} />
                                 }
                                 onClick={() => copy(code)}
+                                data-testid={label + '-copy'}
                             >
                                 Copy
                             </Button>
