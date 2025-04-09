@@ -239,6 +239,9 @@ export const NewAppModal = (props: NewAppModalProps) => {
                                             field.onChange(value)
                                         }
                                         fullWidth={true}
+                                        inputProps={{
+                                            'data-testid': 'new-app-name',
+                                        }}
                                     />
                                 );
                             }}
