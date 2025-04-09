@@ -494,11 +494,23 @@ export class StateStore {
     /**
      * Parse a variables and return the value if it exists (otherwise return the expression)
      */
-    parseVariable = (expression: string): unknown => {
+    parseVariable = (expression: string, id?: string): unknown => {
         // trim the whitespace
         let cleaned = expression.trim();
-        if (!cleaned.startsWith("{{") && !cleaned.endsWith("}}")) {
+
+        // TODO: add parsing logic for iterator logic $array or $array.name
+        if (!cleaned.startsWith("{{") && !cleaned.endsWith("}}") && !cleaned.startsWith("$")) {
             return expression;
+        }
+
+        if(cleaned.startsWith("$")) {
+            // TODO: Build the fn to do special parsing
+
+            // This fn will need to see if there is a parent iterator block
+            // If there isn't ignore it
+            // If there is go parse it, you will need the index which will need to pass the id of the block itself to get that parent iterator of that index
+            console.log('special parsing logic to go find the array', id)
+            return expression
         }
 
         // remove the brackets
@@ -619,7 +631,7 @@ export class StateStore {
      * @param json - json of the block that we are generating
      * @returns block
      */
-    private generateBlock = (json: BlockJSON, parent?: Block['parent']) => {
+    private generateBlock = (json: BlockJSON, parent?: Block["parent"]) => {
         // generate a new id
         const id = `${json.widget}--${Math.floor(Math.random() * 10000)}`;
 
@@ -639,7 +651,7 @@ export class StateStore {
         // add the listeners
         block.listeners = json.listeners;
 
-        if(!json['parent'] && parent) {
+        if (!json["parent"] && parent) {
             block.parent = parent;
         }
 
@@ -649,9 +661,8 @@ export class StateStore {
                 block.slots[slot] = {
                     name: slot,
                     children: json.slots[slot].map((child) => {
-
                         // form the parent object
-                        const parent = {'id' : id, 'slot': slot};
+                        const parent = { id: id, slot: slot };
 
                         // build the children, but only store the ids
                         const b = this.generateBlock(child, parent);

@@ -746,7 +746,7 @@ export const QueryInputSettings = observer(
                             const words = state.inputValue
                                 .toLowerCase()
                                 .split(" ");
-                            let res = options
+                            const res = options
                                 .sort(
                                     (a, b) =>
                                         (DISPLAY_PRIORITY_MAP[
