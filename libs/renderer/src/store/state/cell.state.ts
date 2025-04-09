@@ -302,9 +302,8 @@ export class CellState<D extends CellDef = CellDef> {
                             this._store.messages.push(mess);
                         });
                     });
-
                     // Currently console does not get pass STREAMING
-                    if (status === "Complete") {
+                    if (status === "ProgressComplete" || status === "Streaming" || status === "Complete") {
                         isPolling = false;
                     } else if (status === "Streaming") {
                         isPolling = false;
