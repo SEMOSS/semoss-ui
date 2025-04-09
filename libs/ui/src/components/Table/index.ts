@@ -7,6 +7,8 @@ import { TableHead, TableHeadProps } from "./TableHead";
 import { TablePagination, TablePaginationProps } from "./TablePagination";
 import { TableRow, TableRowProps } from "./TableRow";
 
+import { tableCellClasses } from "@mui/material";
+
 const TableNameSpace = Object.assign(BaseTable, {
     Body: TableBody,
     Cell: TableCell,
@@ -27,5 +29,7 @@ export type {
     TablePaginationProps,
     TableRowProps,
 };
+
+export { tableCellClasses };
 
 export { TableNameSpace as Table };

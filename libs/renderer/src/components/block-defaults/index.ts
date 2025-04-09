@@ -5,8 +5,6 @@ import {
     AccordionBlockDef,
 } from "./accordion-block";
 
-import { config as PopoverBlockConfig, PopoverBlockDef } from "./popover-block";
-
 import { config as AudioBlockConfig, AudioBlockDef } from "./audio-block";
 import {
     config as AudioInputBlockConfig,
@@ -19,6 +17,7 @@ import {
     config as CheckboxBlockConfig,
     CheckboxBlockDef,
 } from "./checkbox-block";
+import { config as ChipBlockConfig, ChipBlockDef } from "./chip-block";
 import {
     config as ContainerBlockConfig,
     ContainerBlockDef,
@@ -59,6 +58,7 @@ import {
     config as PDFViewerBlockConfig,
     PDFViewerBlockDef,
 } from "./pdfViewer-block";
+import { config as PopoverBlockConfig, PopoverBlockDef } from "./popover-block";
 import {
     config as ProgressBlockConfig,
     ProgressBlockDef,
@@ -104,6 +104,7 @@ export type DefaultBlockDefinitions =
     | AudioInputBlockDef
     | ButtonBlockDef
     | CheckboxBlockDef
+    | ChipBlockDef
     | ContainerBlockDef
     | DividerBlockDef
     | EchartVisualizationBlockDef
@@ -152,6 +153,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
+    [ChipBlockConfig.widget]: ChipBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [DividerBlockConfig.widget]: DividerBlockConfig,
     [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
@@ -193,6 +195,7 @@ export {
     AudioInputBlockConfig,
     ButtonBlockConfig,
     CheckboxBlockConfig,
+    ChipBlockConfig,
     ContainerBlockConfig,
     DividerBlockConfig,
     GridBlockConfig,

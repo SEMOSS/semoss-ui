@@ -619,7 +619,7 @@ export class StateStore {
      * @param json - json of the block that we are generating
      * @returns block
      */
-    private generateBlock = (json: BlockJSON) => {
+    private generateBlock = (json: BlockJSON, parent?: Block['parent']) => {
         // generate a new id
         const id = `${json.widget}--${Math.floor(Math.random() * 10000)}`;
 
@@ -635,11 +635,13 @@ export class StateStore {
 
         // add the data
         block.data = json.data;
-        // Defaulting the route to the block id
-        block.data.route = id;
 
         // add the listeners
         block.listeners = json.listeners;
+
+        if(!json['parent'] && parent) {
+            block.parent = parent;
+        }
 
         // generate the slots
         for (const slot in json.slots) {
@@ -647,8 +649,12 @@ export class StateStore {
                 block.slots[slot] = {
                     name: slot,
                     children: json.slots[slot].map((child) => {
+
+                        // form the parent object
+                        const parent = {'id' : id, 'slot': slot};
+
                         // build the children, but only store the ids
-                        const b = this.generateBlock(child);
+                        const b = this.generateBlock(child, parent);
 
                         return b.id;
                     }),

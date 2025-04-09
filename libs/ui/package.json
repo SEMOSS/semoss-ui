@@ -16,7 +16,7 @@
         "build": "rollup -c",
         "build:dev": "rollup -w -c",
         "storybook": "storybook dev -p 6006",
-        "lint": "eslint .",
+        "lint": "eslint --quiet .",
         "lint:fix": "eslint . --fix",
         "format": "prettier . --check --plugin-search-dir=.",
         "format:fix": "prettier . --write --plugin-search-dir=.",

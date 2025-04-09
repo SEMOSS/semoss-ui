@@ -67,9 +67,9 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
     }
     const echartsLoaded = debounce((chart) => {
         chart.on("brushSelected", (params) => {
-            let selectedData = params.batch[0].selected[0].dataIndex;
+            const selectedData = params.batch[0].selected[0].dataIndex;
             const currentOption = chart.getOption();
-            let labelData = currentOption.series[0].data;
+            const labelData = currentOption.series[0].data;
             const filteredLabels = selectedData.map(
                 (index) => labelData[index].label.formatter,
             );
@@ -89,7 +89,7 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
     const onClickChart = {
         contextmenu: (params) => {
             if (params.data) {
-                let labelName = data.option["series"][0]["label"]["name"];
+                const labelName = data.option["series"][0]["label"]["name"];
                 setContextMenu(
                     contextMenu === null
                         ? {
@@ -118,7 +118,7 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
     }
     if (typeof data.option === "string") {
         try {
-            let processedFrameData = processData(frame.data, data);
+            const processedFrameData = processData(frame.data, data);
             if (processedFrameData && processedFrameData.length > 0) {
                 data.option["series"][0]["data"] = processedFrameData;
             }
@@ -161,7 +161,7 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                     data.option["_state"]["fields"].hasOwnProperty("XAxis") &&
                     data.option["_state"]["fields"].hasOwnProperty("YAxis")
                 ) {
-                    let processedFrameData = processData(frame.data, data);
+                    const processedFrameData = processData(frame.data, data);
                     if (processedFrameData && processedFrameData.length > 0) {
                         data.option["series"][0]["data"] = processedFrameData;
                     }

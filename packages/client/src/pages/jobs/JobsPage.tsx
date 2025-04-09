@@ -432,7 +432,7 @@ export function JobsPage() {
     };
 
     const getFailedJobCount = () => {
-        let pixel =
+        const pixel =
             'META|SchedulerHistory(filters=[Filter(SMSS_AUDIT_TRAIL__SUCCESS == "false")])';
         monolithStore
             .runQuery<

@@ -2,7 +2,14 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 
-import { Select, styled, Switch, TextField, ToggleTabsGroup } from "@semoss/ui";
+import {
+    Select,
+    styled,
+    Switch,
+    TextField,
+    ToggleTabsGroup,
+    Typography,
+} from "@semoss/ui";
 
 import { PathValue } from "../../../../../types";
 import { BlockDef } from "../../../../../store";
@@ -20,23 +27,38 @@ const StyledSelect = styled(Select)(() => ({
 //a main section field with custom styling
 const StyledMainSection = styled("div")(() => ({
     display: "block",
-    padding: "0.5rem",
     width: "100%",
 }));
 //a sub section field with custom styling
 const StyledSubSection = styled("div", {
     shouldForwardProp: (prop) => prop != "display" && prop != "justifyContent",
-})<{ display?: string; justifyContent?: string }>(
-    ({ theme, display, justifyContent }) => ({
+})<{ display?: string; justifyContent?: string; gap?: string }>(
+    ({ theme, display, justifyContent, gap }) => ({
         width: "100%",
-        paddingTop: "0.5rem",
+        padding: "8px 16px",
         display: display ?? undefined,
         justifyContent: justifyContent ?? undefined,
+        gap: gap ?? undefined,
     }),
 );
+
+const StyledAxisColDiv = styled("div")<{
+    display?: string;
+    justifyContent: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "column",
+    padding: "8px 16px",
+    gap: "8px",
+}));
 //a text field with custom styling for full width
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: "100%",
+}));
+
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    color: theme.palette.text.primary,
 }));
 //Initial state of custom value labels as default values for managing and restoring
 const DEFAULT_VALUE_LABELS = {
@@ -116,11 +138,12 @@ export const CustomizeValueLabels = observer(
         ];
         //for retaining the previously selected values, this useeffect will help
         useEffect(() => {
-            let option = typeof value === "string" ? JSON.parse(value) : value;
+            const option =
+                typeof value === "string" ? JSON.parse(value) : value;
             if (option["series"]) {
-                let seriesData = getFilteredSeriesIndex();
-                let fieldsData = fieldData;
-                let fieldsDataToUpdate = seriesData.map((seriesChartData) => {
+                const seriesData = getFilteredSeriesIndex();
+                const fieldsData = fieldData;
+                const fieldsDataToUpdate = seriesData.map((seriesChartData) => {
                     if (
                         option["series"][seriesChartData]["label"] === undefined
                     ) {
@@ -199,7 +222,7 @@ export const CustomizeValueLabels = observer(
             if (valueLabelsUpdated === "initial") {
                 setValueLabelsUpdated("updated");
             }
-            let fieldsData = fieldData;
+            const fieldsData = fieldData;
             fieldsData[seriesIndex] = {
                 ...fieldsData[seriesIndex],
                 [fieldName]:
@@ -215,7 +238,7 @@ export const CustomizeValueLabels = observer(
         function updateChartData(values: CustomizeValueLabelsKeys[]) {
             let option = typeof value === "string" ? JSON.parse(value) : value;
             let optionUpdated = option;
-            let customizeLabelOptionsData = {};
+            const customizeLabelOptionsData = {};
             values.forEach((item) => {
                 customizeLabelOptionsData[item.seriesIndex] = {
                     show: item.show,
@@ -234,7 +257,7 @@ export const CustomizeValueLabels = observer(
             //update the series with new styles for every matching series index
             filteredSeries.forEach((item) => {
                 const displayPositionIndex: number = item;
-                let showValueLabel: boolean =
+                const showValueLabel: boolean =
                     customizeLabelOptionsValue[displayPositionIndex]["show"] ??
                     false;
                 if (customizeLabelOptionsValue[displayPositionIndex]["show"]) {
@@ -404,9 +427,10 @@ export const CustomizeValueLabels = observer(
         }
         //function to check and retrieve the indexes for bar chart type
         function getFilteredSeriesIndex() {
-            let index = [];
-            let option = typeof value === "string" ? JSON.parse(value) : value;
-            let seriesAvailable = option["series"].filter((item) =>
+            const index = [];
+            const option =
+                typeof value === "string" ? JSON.parse(value) : value;
+            const seriesAvailable = option["series"].filter((item) =>
                 BAR_CHART_DATA.JSONVALUE.includes(item.type),
             );
             seriesAvailable.forEach((item, seriesIndex) => {
@@ -462,9 +486,11 @@ export const CustomizeValueLabels = observer(
                 {parseInt(selectedSeries) >= 0 && (
                     <StyledSubSection
                         display="flex"
-                        justifyContent="space-between"
+                        justifyContent="flex-start"
+                        gap="8px"
                     >
                         <Switch
+                            size="small"
                             checked={fieldSelectedSeries?.show ?? undefined}
                             onChange={(e: ChangeEvent<HTMLInputElement>) =>
                                 updateFields(
@@ -476,16 +502,22 @@ export const CustomizeValueLabels = observer(
                             }
                             title="Show Value Labels"
                         />
-                        <label htmlFor="show-value-labels">
+                        <StyledTypography variant="body2">
                             Show Value Labels
-                        </label>
+                        </StyledTypography>
                     </StyledSubSection>
                 )}
                 {fieldSelectedSeries?.show && (
                     <>
-                        <StyledSubSection>
-                            <label htmlFor="label-position">Position</label>
+                        <StyledAxisColDiv
+                            display="flex"
+                            justifyContent="flex-start"
+                        >
+                            <Typography variant="body2" color="secondary">
+                                Position
+                            </Typography>
                             <StyledSelect
+                                size="small"
                                 id="label-position"
                                 value={fieldSelectedSeries.position ?? ""}
                                 onChange={(e) =>
@@ -508,12 +540,16 @@ export const CustomizeValueLabels = observer(
                                     );
                                 })}
                             </StyledSelect>
-                        </StyledSubSection>
-                        <StyledSubSection>
-                            <label htmlFor="rotate-label">
+                        </StyledAxisColDiv>
+                        <StyledAxisColDiv
+                            display="flex"
+                            justifyContent="flex-start"
+                        >
+                            <Typography variant="body2" color="secondary">
                                 Rotate Label(In Degrees)
-                            </label>
+                            </Typography>
                             <StyledTextField
+                                size="small"
                                 variant={"outlined"}
                                 type="number"
                                 id="rotate-label"
@@ -527,12 +563,16 @@ export const CustomizeValueLabels = observer(
                                     )
                                 }
                             ></StyledTextField>
-                        </StyledSubSection>
-                        <StyledSubSection>
-                            <label htmlFor="alignment-label">
+                        </StyledAxisColDiv>
+                        <StyledAxisColDiv
+                            display="flex"
+                            justifyContent="flex-start"
+                        >
+                            <Typography variant="body2" color="secondary">
                                 Select Alignment
-                            </label>
+                            </Typography>
                             <StyledSelect
+                                size="small"
                                 id="alignment-label"
                                 value={fieldSelectedSeries.alignment ?? ""}
                                 onChange={(e) =>
@@ -555,10 +595,16 @@ export const CustomizeValueLabels = observer(
                                     );
                                 })}
                             </StyledSelect>
-                        </StyledSubSection>
-                        <StyledSubSection>
-                            <label htmlFor="font">Select Font</label>
+                        </StyledAxisColDiv>
+                        <StyledAxisColDiv
+                            display="flex"
+                            justifyContent="flex-start"
+                        >
+                            <Typography variant="body2" color="secondary">
+                                Select Font
+                            </Typography>
                             <StyledSelect
+                                size="small"
                                 id="font"
                                 value={fieldSelectedSeries.font ?? ""}
                                 onChange={(e) =>
@@ -581,12 +627,16 @@ export const CustomizeValueLabels = observer(
                                     );
                                 })}
                             </StyledSelect>
-                        </StyledSubSection>
-                        <StyledSubSection>
-                            <label htmlFor="font-size">
+                        </StyledAxisColDiv>
+                        <StyledAxisColDiv
+                            display="flex"
+                            justifyContent="flex-start"
+                        >
+                            <Typography variant="body2" color="secondary">
                                 Select Font Size (Default: 12)
-                            </label>
+                            </Typography>
                             <StyledTextField
+                                size="small"
                                 variant={"outlined"}
                                 type="number"
                                 id="font-size"
@@ -601,12 +651,16 @@ export const CustomizeValueLabels = observer(
                                     )
                                 }
                             ></StyledTextField>
-                        </StyledSubSection>
-                        <StyledSubSection>
-                            <label htmlFor="font-weight">
+                        </StyledAxisColDiv>
+                        <StyledAxisColDiv
+                            display="flex"
+                            justifyContent="flex-start"
+                        >
+                            <Typography variant="body2" color="secondary">
                                 Select Font Weight
-                            </label>
+                            </Typography>
                             <StyledSelect
+                                size="small"
                                 id="font-weight"
                                 value={fieldSelectedSeries.fontweight}
                                 onChange={(e) =>
@@ -629,22 +683,21 @@ export const CustomizeValueLabels = observer(
                                     );
                                 })}
                             </StyledSelect>
-                        </StyledSubSection>
-                        <StyledSubSection>
-                            <ColorPickerSettings
-                                id={id}
-                                path={`option.series.${selectedSeries}.label.color`}
-                                colorValue={fieldSelectedSeries.fontcolour}
-                                onChange={(e) =>
-                                    updateFields(
-                                        "fontcolour",
-                                        { target: { value: e } },
-                                        "text",
-                                        selectedSeries,
-                                    )
-                                }
-                            />
-                        </StyledSubSection>
+                        </StyledAxisColDiv>
+
+                        <ColorPickerSettings
+                            id={id}
+                            path={`option.series.${selectedSeries}.label.color`}
+                            colorValue={fieldSelectedSeries.fontcolour}
+                            onChange={(e) =>
+                                updateFields(
+                                    "fontcolour",
+                                    { target: { value: e } },
+                                    "text",
+                                    selectedSeries,
+                                )
+                            }
+                        />
                     </>
                 )}
                 <br />
