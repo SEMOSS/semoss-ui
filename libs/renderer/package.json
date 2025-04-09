@@ -20,7 +20,7 @@
         "format:fix": "prettier . --write --plugin-search-dir=.",
         "fix": "run-s format:fix lint:fix",
         "test": "vitest --watch=false --passWithNoTests --changed",
-        "test:browser": "vitest --watch --ui --pool=forks"
+        "test:browser": "vitest --watch --ui --pool=forks --project renderer"
     },
     "keywords": [],
     "author": "",
