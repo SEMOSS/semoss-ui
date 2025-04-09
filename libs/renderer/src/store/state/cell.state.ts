@@ -285,9 +285,7 @@ export class CellState<D extends CellDef = CellDef> {
                     });
                 });
                 // Currently console does not get pass STREAMING
-                if (status === "Complete") {
-                    isPolling = false;
-                } else if (status === "Streaming") {
+                if (status === "ProgressComplete" || status === "Streaming" || status === "Complete") {
                     isPolling = false;
                 } else {
                     // poll
