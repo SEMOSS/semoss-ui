@@ -111,17 +111,9 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 
         // apply the action
         const placeholderAction = designer.drag.placeholderAction;
-
-        // debugger;
-
         const sw = state.getBlock(placeholderAction.id);
 
-        console.log('Parent?', sw.parent.id);
-        console.log('Parent?', placeholderAction.id);
-
-        if (sw.widget === 'iter' || sw.widget === 'iteration') {
-            // lets do the logic below
-            console.log('there you go boi');
+        if (sw.widget === 'iteration') {
             state.dispatch({
                 message: ActionMessages.SET_BLOCK_DATA,
                 payload: {
@@ -131,16 +123,6 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
                 },
             });
         }
-
-        // TODO: Add Logic to only allow one block to be dropped into iterator
-        // If you decide to drop an element in the iterator and there is already something there
-        // We will replace the element that is there.
-
-        // Also have special logic to handle dropping the element as a data property of the iterator
-        // The reason for this is we will the iterator add the blocks to the UI at runtime.
-
-        // On top of this special logic we will likely need to add as a child of the Iterator as well, due to the fact that
-        // you will want to be able to design as well as drag the the child element  out while it is in the iterator block
 
         if (placeholderAction) {
             if (

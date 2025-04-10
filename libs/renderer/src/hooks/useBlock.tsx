@@ -210,11 +210,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
             if (typeof instance === "string") {
                 // try to extract the variable
 
-                if(instance === "$array.position") {
-                    console.log(block.id, instance)
-                }
-
-                return state.parseVariable(instance, id);
+                return state.parseVariable(instance, block.id);
             }
 
             return instance;

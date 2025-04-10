@@ -171,7 +171,6 @@ export const QueryInputSettings = observer(
         defaultPathMap = {},
     }: QueryInputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
-        console.log(data, "queryInputSettings");
         const { state, notebook } = useBlocks();
         const notification = useNotification();
 
@@ -652,7 +651,7 @@ export const QueryInputSettings = observer(
                 </div>
             );
         };
-        console.log("show", value, "inputvalue", inputValue);
+
         return (
             <>
                 <Stack>
