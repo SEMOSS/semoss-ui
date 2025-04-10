@@ -17,7 +17,7 @@ const StyledSubSection = styled("div")(() => ({
 export const DendrogramFrameOperation = observer(
     <D extends BlockDef = BlockDef>({id}) => {
             const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
-            const [frameField, setFrameField] = useState({dimensions:[], facet: []});
+            const [frameField, setFrameField] = useState({dimensions:[], facet: ""});
             const [fieldsUpdated, setFieldsUpdated] = useState(false);
             // get all of the frames
             const getFrames = useBlocksPixel<string[]>("GetFrames();", {
@@ -64,11 +64,42 @@ export const DendrogramFrameOperation = observer(
                     });
                     setData('columns',columnsSelectorToUpdate);
                 }
+                else{
+                    setData('columns', []);
+                }
+                if(frameField['facet']!=""){
+                    let name = columnsSelector.find((column) => column.selector === frameField['facet']);
+                    setData('facet.facetSelected', [{
+                        name: name.name,
+                        selector: frameField['facet'],
+                        value: 0,
+                    }]);
+                    let columnsSelectorToUpdate = [];
+                    frameField['dimensions'].forEach((item)=>{
+                        let name = columnsSelector.find((column) => column.selector === item);
+                        if(name){
+                           columnsSelectorToUpdate.push({
+                               name: name.name,
+                               selector: item,
+                           }); 
+                        }
+                    });
+                    columnsSelectorToUpdate = [...columnsSelectorToUpdate, {
+                        name: name.name,
+                        selector: frameField['facet'],
+                        width: 0,
+                    }];
+                    setData('columns',columnsSelectorToUpdate);
+                }
+                else{
+                    setData('facet.facetSelected', []);
+                }
             },[frameField]);
 
             useEffect(()=>{
                 let dataColumns = data.columns;
                 if(dataColumns?.length){
+                    dataColumns = dataColumns.filter((item)=>item.selector !== data.facet['facetSelected']?.[0]?.selector);
                     let dimensions = dataColumns.map((item)=>{
                         return item.selector;
                     });
@@ -76,6 +107,14 @@ export const DendrogramFrameOperation = observer(
                         return {
                             ...prevFrameField,
                             ['dimensions']: dimensions
+                        }
+                    });
+                }
+                if(data['facet']?.['facetSelected']?.length){
+                    setFrameField((prevFrameField)=>{
+                        return {
+                            ...prevFrameField,
+                            ['facet']: data.facet['facetSelected']?.[0]?.selector
                         }
                     });
                 }
@@ -113,9 +152,6 @@ export const DendrogramFrameOperation = observer(
                                         />
                                     )}
                                 />
-                                {/* <Button onClick={syncHeaders}>
-                                    <Sync />
-                                </Button> */}
                             </StyledSubSection>
                             <StyledSubSection>
                                 <Autocomplete
@@ -130,13 +166,39 @@ export const DendrogramFrameOperation = observer(
                                     }}
                                     onChange={(_, value) => {
                                         // update the fields in component
-                                        updateFields('dimensions', value);
+                                        updateFields('dimensions', value.length ? value : []);
                                     }}
                                     freeSolo={false}
                                     renderInput={(params) => (
                                         <TextField
                                             {...params}
                                             placeholder="Select Dimensions"
+                                            size="small"
+                                            variant="outlined"
+                                        />
+                                    )}
+                                />
+                            </StyledSubSection>
+                            <StyledSubSection>
+                                <Autocomplete
+                                    fullWidth
+                                    id="Echart-Facet"
+                                    multiple={false}
+                                    disabled={getFrames.status !== "SUCCESS"}
+                                    value={frameField.facet}
+                                    options={columnsOption}
+                                    getOptionLabel={(option) => {
+                                        return option;
+                                    }}
+                                    onChange={(_, value) => {
+                                        // update the fields in component
+                                        updateFields('facet', value ? value : '');
+                                    }}
+                                    freeSolo={false}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            placeholder="Select facet"
                                             size="small"
                                             variant="outlined"
                                         />

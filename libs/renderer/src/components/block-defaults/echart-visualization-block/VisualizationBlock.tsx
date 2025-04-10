@@ -38,6 +38,11 @@ export interface VisualizationColumns {
     width: string;
 }
 
+export interface FacetColumns{
+    name: string;
+    selector: string;
+    value: string | number;
+}
 export interface EchartVisualizationBlockDef {
     widget: "e-chart";
     data: {
@@ -62,6 +67,10 @@ export interface EchartVisualizationBlockDef {
             hideExclude: boolean;
         };
         show: boolean;
+        facet: {
+            facetList: string[] | number[];
+            facetSelected:FacetColumns[];
+        }
     };
     listeners: {};
     slots: never;

@@ -10,6 +10,7 @@ import { useBlockSettings, useFrame } from "../../../../../hooks";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { color, EChartsOption } from "echarts";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
+import { DendrogramChartField } from "./DendrogramChartField";
 
 //Main Container for displaying Bar chart
 const StyledMainContainer = styled("div")(({ theme }) => ({
@@ -29,7 +30,15 @@ const StyledNoDataContainer = styled("div", {
     alignContent: "flex-start",
     color: error ? theme.palette.error.main : "unset",
 }));
-
+//sub styled container to manage facet field with chart
+const StyledContainer = styled("div")(() => ({
+    display: "flex",
+    justifyContent: "flex-start",
+    width: "100%",
+    height: "12%",
+    maxHeight: "12%",
+    overflow: "auto",
+}));
 //bar component properties
 interface DendrogramProps {
     id: string;
@@ -37,7 +46,7 @@ interface DendrogramProps {
 }
 
 export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
-    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
     const [contextMenu, setContextMenu] = useState<{
             mouseX: number; //x axis position for the click/brush event
             mouseY: number; //y axis position for the click/brush event
@@ -57,6 +66,20 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
                 return JSON.stringify(v, null, 2);
             });
         }, [data, "option"]).get();
+        const facetcomputedValue = useMemo(() => {
+            return computed(() => {
+                if (!data) {
+                    return "";
+                }
+                const v = getValueByPath(data, "facet.facetList");
+                if (typeof v === "undefined") {
+                    return "";
+                } else if (typeof v === "string") {
+                    return v;
+                }
+                return JSON.stringify(v, null, 2);
+            });
+        }, [data, "facet.facetList"]).get();
 
     const parsedJson = useMemo(() => {
         try {
@@ -65,9 +88,33 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
             return null;
         }
     },[computedValue]);
+//Select (bp_1d) | Sort(columns=["bp_1d"], sort=["asc"]) | Collect(-1)
+    const facetSelector = useMemo(() => {
+        return `Select (${data.facet?.facetSelected?.map((c, index) => {
+            return c.selector;
+        })}).as([${data.facet?.facetSelected?.map((c, index) => {return c.name;})}]) | Sort(columns=["${data.facet?.facetSelected?.map((c)=>c.name)}"], sort=["asc"]) `;
+    },[data.facet.facetSelected]);
 
+    const facetFrame = useFrame(data.frame.name,{
+        selector: facetSelector
+    });
+    const facetAndDimensionSelector = useMemo(()=>{
+        return `Select(${data.columns
+                ?.map((c, index) => {
+                    //Converting Y axis columns to Average by default
+                    return c.selector;
+                })
+                .join(", ")}).as([${data.columns
+                ?.map((c, index) => {
+                    return c.name;
+                })
+                .join(", ")}]) | Filter(${data.facet?.facetSelected?.[0]?.name} == ${data.facet?.facetSelected?.[0]?.value == undefined ? facetFrame.data.values[0]?.[0] : data.facet?.facetSelected?.[0]?.value})`;
+    },[data.facet.facetSelected, facetFrame.data.values]);
 
     const selector = useMemo(() => {
+        if(data.facet?.facetSelected?.length && data.facet?.facetSelected?.[0]?.selector != ''){
+            return facetAndDimensionSelector;
+        }
         return `Select(${data.columns
                 ?.map((c, index) => {
                     //Converting Y axis columns to Average by default
@@ -78,7 +125,14 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
                     return c.name;
                 })
                 .join(", ")}])`;
-    }, [data.columns]);
+    }, [data.columns, data.facet.facetSelected, facetFrame.data.values]);
+
+    useEffect(()=>{
+        if(facetFrame.isLoading === false && facetFrame.data.values.length > 0){
+            setData('facet.facetList', facetFrame.data.values.map((item : string[]|number[])=>item[0].toString()));
+            setData('facet.facetSelected',[{name: data.facet.facetSelected[0].name, selector: data.facet.facetSelected[0].selector, value: facetFrame.data.values?.[0]?.[0]?.toString() }]);
+        }
+    },[facetFrame.data.values]);
 
     const frame = useFrame(data.frame.name, {
         selector: selector,
@@ -92,94 +146,6 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
         return colorList[currentIndex%colorList.length] || '#b0c4de';
 
     }
-    /*function getDataValuesUpdate(currentIndex, framesLength = 0, data, childrenIndexData = -1){
-        let i=0;
-        while(i < data.length){
-            // console.log(i, data[i], 'data[i]');
-            if(data[i].childrenIndex == currentIndex){
-                for(let j=0;j<frame.data.values.length;j++){
-                    if(frame.data.headers[currentIndex] !== undefined && frame.data.values[j][currentIndex] !== undefined){
-                        if(currentIndex == 0 || (childrenIndexData > -1 && childrenIndexData == j && data.length == 1)){
-                            if(currentIndex == 4){
-                                console.log(data, childrenIndexData, 'childrenIndexData');
-                            }
-                            if(currentIndex == 0){
-                                data[i].children[j] = {
-                                    ...data[i].children[j],
-                                    name: frame.data.headers[currentIndex],
-                                    value: frame.data.values[j][currentIndex],
-                                    category: frame.data.headers[currentIndex],
-                                    selector: getSelectorData(frame.data.headers[currentIndex]),
-                                    children: [],
-                                    childrenIndex: currentIndex + 1,
-                                    itemStyle:{
-                                        color: getColorData(currentIndex+1),
-                                    }
-                                };
-                            }
-                            if((childrenIndexData > -1 && childrenIndexData == j) && data.length == 1){
-                                if(!data[i].children.length){
-                                    data[i].children.push({
-                                        name: frame.data.headers[currentIndex],
-                                        value: frame.data.values[j][currentIndex],
-                                        category: frame.data.headers[currentIndex],
-                                        selector: getSelectorData(frame.data.headers[currentIndex]),
-                                        children: [],
-                                        childrenIndex: currentIndex + 1,
-                                        itemStyle:{
-                                            color: getColorData(currentIndex+1),
-                                        }
-                                    });
-                                }else{
-                                    data[i].children[0] = {
-                                        ...data[i].children[0],
-                                        name: frame.data.headers[currentIndex],
-                                        value: frame.data.values[j][currentIndex],
-                                        category: frame.data.headers[currentIndex],
-                                        selector: getSelectorData(frame.data.headers[currentIndex]),
-                                        children: [],
-                                        childrenIndex: currentIndex + 1,
-                                        itemStyle:{
-                                            color: getColorData(currentIndex+1),
-                                        },
-                                    };
-                                }
-                            }
-                        }else{
-                            // console.log(i, j, childrenIndexData, data, data[i].children, data[i].children[j], frame.data.values[j], currentIndex, frame.data.values[j][currentIndex], 'frameData');
-                            if(i==j && data.length > 1){
-                                    data[i].children = [{
-                                        name: frame.data.headers[currentIndex],
-                                        value: frame.data.values[j][currentIndex],
-                                        category: frame.data.headers[currentIndex],
-                                        selector: getSelectorData(frame.data.headers[currentIndex]),
-                                        children: [],
-                                        childrenIndex: currentIndex + 1,
-                                        itemStyle:{
-                                            color: getColorData(currentIndex+1),
-                                        }
-                                    }];
-                                // break;
-                            }
-                        }
-                    }
-                }
-                i++;
-            }
-            else{
-                console.log(currentIndex, framesLength, data[i].children, 'data[i].children');
-                data[i].children = getDataValuesUpdate(currentIndex, framesLength, data[i].children, i);
-                // console.log(currentIndex, framesLength, data[i].children, 'data[i].children');
-                if(data[i].children.length > 0){i++;}
-            }
-        }
-        if((currentIndex+1) < framesLength){
-            currentIndex++;
-            // console.log(currentIndex, data, framesLength, 'getDataValuesUpdate');
-            return getDataValuesUpdate(currentIndex, framesLength, data);
-        }
-        return data;
-    }*/
     const dataOption = useMemo(()=>{
         let option = JSON.parse(computedValue);
 
@@ -212,6 +178,18 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
                 }
             }
             option['series'][seriesIndex]['data'] = updatedDataListresLoop;
+            option['series'][seriesIndex] = {
+                ...option['series'][seriesIndex],
+                label: {
+                    ...option['series'][seriesIndex].label,
+                    formatter: (params) => {
+                        if(params.data.name === 'Root' && params.data.seriesIndex === 0){
+                            return params.data.name;
+                        }
+                        return params.data.value;
+                    },
+                }
+            }
         }
         let legendData = ['Root', ...frame.data.headers];
         if(option['legend']?.['show']){
@@ -250,7 +228,6 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
             //when contextmenu event is raised, default context menu made hidden, and custom component is shown
             contextmenu: (params) => {
                 if (params.data) {
-                    console.log(params, 'params');
                     const selector = params.data.selector;
                     const value = params.data.value;
                     setContextMenu(
@@ -274,18 +251,22 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
                 }
             },
     };
-
+    const showDendrogramChartField = data.facet.facetSelected.length ? true : false;
     return (
         <StyledMainContainer id={id}>
             <EChartsReact
                 option={dataOption as EChartsOption}
                 // onChartReady={echartsLoaded}
                 onEvents={onClickChart}
+                showLoading={frame.isLoading || facetFrame.isLoading}
                 style={{
-                    height: "inherit",
-                    width: "inherit",
+                    height: showDendrogramChartField ? '87%' : '100%',
+                    width: '100%',
                 }}
             />
+            <StyledContainer>
+                {showDendrogramChartField && <DendrogramChartField id={id} facetListData={facetFrame.data.values} />}
+            </StyledContainer>
             <VizBlockContextMenu id={id} frame={frame} contextMenu={contextMenu} onClose={() => {
                         setContextMenu(null);
                     }} />

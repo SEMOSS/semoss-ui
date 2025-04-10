@@ -1122,6 +1122,7 @@ if (process.env.NODE_ENV === 'development') {
                                 color: '#000000',
                                 fontSize: '12',
                                 show: true,
+                                formatter: '{c}',
                             },
                             leaves: {
                                 label: {
@@ -1135,11 +1136,19 @@ if (process.env.NODE_ENV === 'development') {
                             animationDurationUpdate: 750,
                         },
                     ],
+                    ['_state']:{
+                        dimensions: [],
+                        facet: [],
+                    }
                 },
                 frame: {
                     name: '',
                 },
                 show: 'true',
+                facet:{
+                    facetSelected:[],
+                    facetList:[],
+                },
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
