@@ -1136,18 +1136,18 @@ if (process.env.NODE_ENV === 'development') {
                             animationDurationUpdate: 750,
                         },
                     ],
-                    ['_state']:{
+                    ['_state']: {
                         dimensions: [],
                         facet: [],
-                    }
+                    },
                 },
                 frame: {
                     name: '',
                 },
                 show: 'true',
-                facet:{
-                    facetSelected:[],
-                    facetList:[],
+                facet: {
+                    facetSelected: [],
+                    facetList: [],
                 },
             },
             listeners: {},
