@@ -47,6 +47,7 @@ export const DendrogramChartField = observer(
     }, [data, "facet.facetSelected"]).get();
     useEffect(()=>{
             setFacetList((prevList: string[])=>facetListData.map((item)=> item instanceof Array ? item[0] : item));
+            setDendrogramFacetUpdated(false);
     },[facetListData]);
     useEffect(()=>{
         if(dendrogramFacetUpdated) return;
