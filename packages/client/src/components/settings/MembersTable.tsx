@@ -473,10 +473,7 @@ export const MembersTable = (props: MembersTableProps) => {
             return permissionOrder[permissionMapper[permission]] || 0;
         };
         return [...renderedMembers].sort((a, b) => {
-                // sort by name
-                const nameComparison = nameOrder === 'asc'
-                    ? a.name.localeCompare(b.name)
-                    : b.name.localeCompare(a.name);
+                
                 // sort by permission
                 const permissionA = getPermissionOrder(a.permission);
                 const permissionB = getPermissionOrder(b.permission);
@@ -484,8 +481,13 @@ export const MembersTable = (props: MembersTableProps) => {
                 const permissionComparison = permissionOrder === 'asc'
                     ? permissionA - permissionB
                     : permissionB - permissionA;
-                // Apply both sorts independently
-                return nameComparison || permissionComparison;
+                
+                if(permissionComparison === 0) {
+                    return nameOrder === 'asc'
+                        ? a.name.localeCompare(b.name)
+                        : b.name.localeCompare(a.name);
+                }
+                return permissionComparison;
             });
     }, [renderedMembers, nameOrder, permissionOrder]);
     /**
