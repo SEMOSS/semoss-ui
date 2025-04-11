@@ -260,30 +260,30 @@ export const MembersTable = (props: MembersTableProps) => {
     // get the api
     const getMembersApi: Parameters<typeof useAPI>[0] =
         type === 'DATABASE' ||
-        type === 'STORAGE' ||
-        type === 'MODEL' ||
-        type === 'VECTOR' ||
-        type === 'FUNCTION'
+            type === 'STORAGE' ||
+            type === 'MODEL' ||
+            type === 'VECTOR' ||
+            type === 'FUNCTION'
             ? [
-                  'getEngineUsers',
-                  adminMode,
-                  id,
-                  debouncedSearch ? debouncedSearch : undefined,
-                  permissionMapper[permissionFilter],
-                  (page + 1) * rowsPerPage - rowsPerPage, // offset
-                  rowsPerPage, // limit
-              ]
+                'getEngineUsers',
+                adminMode,
+                id,
+                debouncedSearch ? debouncedSearch : undefined,
+                permissionMapper[permissionFilter],
+                (page + 1) * rowsPerPage - rowsPerPage, // offset
+                rowsPerPage, // limit
+            ]
             : type === 'APP'
-            ? [
-                  'getProjectUsers',
-                  adminMode,
-                  id,
-                  debouncedSearch ? debouncedSearch : undefined,
-                  permissionMapper[permissionFilter],
-                  (page + 1) * rowsPerPage - rowsPerPage, // offset
-                  rowsPerPage, // limit
-              ]
-            : null;
+                ? [
+                    'getProjectUsers',
+                    adminMode,
+                    id,
+                    debouncedSearch ? debouncedSearch : undefined,
+                    permissionMapper[permissionFilter],
+                    (page + 1) * rowsPerPage - rowsPerPage, // offset
+                    rowsPerPage, // limit
+                ]
+                : null;
 
     const getMembers = useAPI(getMembersApi);
 
@@ -477,8 +477,8 @@ export const MembersTable = (props: MembersTableProps) => {
                 return order === 'asc'
                     ? a.name.localeCompare(b.name)
                     : b.name.localeCompare(a.name);
-            } else if (orderBy === 'permission') { 
-                const permissionA = getPermissionOrder(a.permission); 
+            } else if (orderBy === 'permission') {
+                const permissionA = getPermissionOrder(a.permission);
                 const permissionB = getPermissionOrder(b.permission);
                 return order === 'asc' ? permissionA - permissionB : permissionB - permissionA; // Because Three Permissions, get first two , returns the difference. (if A is alphabetically smaller, it should be earlier because asc)
             }
@@ -610,9 +610,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 <Checkbox
                                                     checked={
                                                         selectedMembers.length ===
-                                                            renderedMembers.length &&
+                                                        renderedMembers.length &&
                                                         renderedMembers.length >
-                                                            0
+                                                        0
                                                     }
                                                     onChange={() => {
                                                         if (
@@ -634,7 +634,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 <TableSortLabel
                                                     active={orderBy === 'name'}
                                                     direction={order}
-                                                    onClick={() => handleRequestSort('name')}            
+                                                    onClick={() => handleRequestSort('name')}
                                                 >
                                                     Name
                                                 </TableSortLabel>
@@ -743,8 +743,8 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                 row
                                                                 defaultValue={
                                                                     permissionMapper[
-                                                                        user
-                                                                            .permission
+                                                                    user
+                                                                        .permission
                                                                     ]
                                                                 }
                                                                 onChange={(
@@ -753,9 +753,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     updateSelectedUsers(
                                                                         [user],
                                                                         permissionMapper[
-                                                                            e
-                                                                                .target
-                                                                                .value
+                                                                        e
+                                                                            .target
+                                                                            .value
                                                                         ],
                                                                     );
                                                                 }}
@@ -778,13 +778,13 @@ export const MembersTable = (props: MembersTableProps) => {
                                                             <>
                                                                 <Table.Cell>
                                                                     {user.usage_restriction !==
-                                                                    undefined
+                                                                        undefined
                                                                         ? formatValue(
-                                                                              user.usage_restriction,
-                                                                          )
+                                                                            user.usage_restriction,
+                                                                        )
                                                                         : formatValue(
-                                                                              'null',
-                                                                          )}
+                                                                            'null',
+                                                                        )}
                                                                 </Table.Cell>
                                                                 <Table.Cell>
                                                                     {user?.usage_restriction ===
