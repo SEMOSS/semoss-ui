@@ -131,6 +131,18 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 const siblingWidget = state.getBlock(placeholderAction.id);
 
                 if (siblingWidget?.parent) {
+                    const parent = state.getBlock(sw.parent.id);
+                    if (parent.widget === 'iteration') {
+                        if (parent.slots.children.children.length) {
+                            notification.add({
+                                color: 'error',
+                                message:
+                                    'Please delete block within iterator before adding another child',
+                            });
+                            designer.deactivateDrag();
+                            return;
+                        }
+                    }
                     id = state.dispatch({
                         message: ActionMessages.ADD_BLOCK,
                         payload: {
@@ -155,17 +167,17 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                         },
                     },
                 }) as string;
-            }
 
-            if (sw.widget === 'iteration') {
-                state.dispatch({
-                    message: ActionMessages.SET_BLOCK_DATA,
-                    payload: {
-                        id: placeholderAction.id,
-                        path: 'child',
-                        value: state.getBlock(id),
-                    },
-                });
+                if (sw.widget === 'iteration') {
+                    state.dispatch({
+                        message: ActionMessages.SET_BLOCK_DATA,
+                        payload: {
+                            id: placeholderAction.id,
+                            path: 'child',
+                            value: state.getBlock(id),
+                        },
+                    });
+                }
             }
         }
 

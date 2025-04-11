@@ -114,26 +114,6 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
         const placeholderAction = designer.drag.placeholderAction;
         const sw = state.getBlock(placeholderAction.id);
 
-        // TODO: Add logic to prevent adding block it iter block if one is already present
-        if (sw.widget === 'iteration') {
-            if (sw.slots.children.children.length) {
-                notification.add({
-                    color: 'error',
-                    message:
-                        'Please delete block within iterator before adding another child',
-                });
-                return;
-            }
-            state.dispatch({
-                message: ActionMessages.SET_BLOCK_DATA,
-                payload: {
-                    id: placeholderAction.id,
-                    path: 'child',
-                    value: state.getBlock(designer.selected),
-                },
-            });
-        }
-
         if (placeholderAction) {
             if (
                 placeholderAction.type === 'before' ||
@@ -142,6 +122,18 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
                 const siblingWidget = state.getBlock(placeholderAction.id);
 
                 if (siblingWidget.parent) {
+                    const parent = state.getBlock(sw.parent.id);
+                    if (parent.widget === 'iteration') {
+                        if (parent.slots.children.children.length) {
+                            notification.add({
+                                color: 'error',
+                                message:
+                                    'Please delete block within iterator before adding another child',
+                            });
+                            designer.deactivateDrag();
+                            return;
+                        }
+                    }
                     state.dispatch({
                         message: ActionMessages.MOVE_BLOCK,
                         payload: {
@@ -156,6 +148,17 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
                     });
                 }
             } else if (placeholderAction.type === 'replace') {
+                if (sw.widget === 'iteration') {
+                    state.dispatch({
+                        message: ActionMessages.SET_BLOCK_DATA,
+                        payload: {
+                            id: placeholderAction.id,
+                            path: 'child',
+                            value: state.getBlock(designer.selected),
+                        },
+                    });
+                }
+
                 state.dispatch({
                     message: ActionMessages.MOVE_BLOCK,
                     payload: {
