@@ -2,7 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { ActionMessages, useBlocks } from '@semoss/renderer';
-import { styled, Card, Tooltip, Stack, Typography } from '@semoss/ui';
+import {
+    styled,
+    Card,
+    Tooltip,
+    Stack,
+    Typography,
+    useNotification,
+} from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
 import {
@@ -38,6 +45,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
     const { item } = props;
     const { state } = useBlocks();
     const { designer } = useDesigner();
+    const notification = useNotification();
 
     // track if it is this one that is dragging
     const [local, setLocal] = useState(false);
@@ -100,6 +108,21 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 
         // apply the action
         const placeholderAction = designer.drag.placeholderAction;
+        const sw = state.getBlock(placeholderAction.id);
+
+        // TODO: Add logic to prevent adding block it iter block if one is already present
+
+        if (sw.widget === 'iteration') {
+            if (sw.slots.children.children.length) {
+                notification.add({
+                    color: 'error',
+                    message:
+                        'Please delete block within iterator before adding another child',
+                });
+                return;
+            }
+        }
+
         if (placeholderAction) {
             if (
                 placeholderAction.type === 'before' ||
@@ -108,6 +131,18 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 const siblingWidget = state.getBlock(placeholderAction.id);
 
                 if (siblingWidget?.parent) {
+                    const parent = state.getBlock(sw.parent.id);
+                    if (parent.widget === 'iteration') {
+                        if (parent.slots.children.children.length) {
+                            notification.add({
+                                color: 'error',
+                                message:
+                                    'Please delete block within iterator before adding another child',
+                            });
+                            designer.deactivateDrag();
+                            return;
+                        }
+                    }
                     id = state.dispatch({
                         message: ActionMessages.ADD_BLOCK,
                         payload: {
@@ -132,6 +167,17 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                         },
                     },
                 }) as string;
+
+                if (sw.widget === 'iteration') {
+                    state.dispatch({
+                        message: ActionMessages.SET_BLOCK_DATA,
+                        payload: {
+                            id: placeholderAction.id,
+                            path: 'child',
+                            value: state.getBlock(id),
+                        },
+                    });
+                }
             }
         }
 

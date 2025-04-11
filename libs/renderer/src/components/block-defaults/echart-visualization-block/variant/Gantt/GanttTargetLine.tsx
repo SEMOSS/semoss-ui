@@ -59,10 +59,10 @@ export const GanttTargetLine = observer(
         const timeoutRef = useRef(null); //timeout ref for setting data
         //to retain the values from state
         useEffect(() => {
-            let option = JSON.parse(computedValue);
+            const option = JSON.parse(computedValue);
             if (option["customSettings"]?.["gantttools"]) {
-                let gantttool = option["customSettings"]?.["gantttools"];
-                let targetLineDataTemp = targetLineData;
+                const gantttool = option["customSettings"]?.["gantttools"];
+                const targetLineDataTemp = targetLineData;
                 if (gantttool?.["targetLineColor"]) {
                     targetLineDataTemp["targetcolor"] =
                         gantttool["targetLineColor"];
@@ -106,8 +106,8 @@ export const GanttTargetLine = observer(
         function updateChartData() {
             let option = JSON.parse(computedValue);
             if (targetLineData.targetdate != "") {
-                let date = targetLineData.targetdate;
-                let seriesIndex = option["series"].findIndex(
+                const date = targetLineData.targetdate;
+                const seriesIndex = option["series"].findIndex(
                     (optItem) => optItem.name === "targetDateSegment",
                 );
                 if (seriesIndex > -1) {
@@ -121,7 +121,7 @@ export const GanttTargetLine = observer(
                         ],
                     };
                 } else {
-                    let optionToUpdate = {
+                    const optionToUpdate = {
                         type: "custom",
                         name: "targetDateSegment",
                         data: [
@@ -210,9 +210,9 @@ export const GanttTargetLine = observer(
         }
         //timezone based changes for date
         function convertTimeZone(date) {
-            let currentTimezone =
+            const currentTimezone =
                 Intl.DateTimeFormat().resolvedOptions().timeZone;
-            let dateConvertedToTimeZone = new Date(date)
+            const dateConvertedToTimeZone = new Date(date)
                 .toISOString()
                 .split("T")[0];
 

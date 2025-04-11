@@ -1,10 +1,10 @@
 export const newColor = (data, color) => {
     if (data.option["_state"]["fields"]["colorDataType"] == "NUMBER") {
-        let colour = color != "NaN" ? valueToHSL(color) : "#000000";
+        const colour = color != "NaN" ? valueToHSL(color) : "#000000";
         return colour;
     }
     if (data.option["_state"]["fields"]["colorDataType"] == "STRING") {
-        let colour = color != "NaN" ? stringToColor(color) : "000000";
+        const colour = color != "NaN" ? stringToColor(color) : "000000";
         return colour;
     }
 

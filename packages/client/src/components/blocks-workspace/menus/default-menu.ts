@@ -1636,6 +1636,24 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
+        section: SECTION_LAYOUT,
+        name: 'Iterator',
+        helperText: 'Render a template for each item in a list/array',
+        json: {
+            widget: 'iteration',
+            data: {
+                style: {},
+                source: '',
+                child: null,
+                show: 'true',
+            },
+            listeners: {},
+            slots: {
+                children: [],
+            },
+        },
+    },
+    {
         section: SECTION_ELEMENT,
         activeImage: BLOCK_IMAGES['CHIP_ACTIVE'],
         hoverImage: BLOCK_IMAGES['CHIP_HOVER'],
