@@ -107,7 +107,11 @@ export const CustomizeDendrogramSymbol = observer(
             customizeSymbolList['symbolShape'] = jsonData['series'][seriesIndex]['symbol'];
             customizeSymbolList['symbolSize'] = jsonData['series'][seriesIndex]['symbolSize'];
             customizeSymbolList['symbolUrl'] = jsonData['series'][seriesIndex]['symbol'];
-            setCustomizeSymbol((prevCustomizeList)=>customizeSymbolList);
+            setCustomizeSymbol((prevCustomizeList)=>{
+                return {
+                ...customizeSymbolList,
+                };
+            });
         },[]);
 
         useEffect(()=>{
@@ -151,6 +155,7 @@ export const CustomizeDendrogramSymbol = observer(
                                     <Select
                                         name="Symbol Shape"
                                         value={customizeSymbol.symbolShape}
+                                        key={customizeSymbol.symbolShape}
                                         onChange={(e, value)=>{
                                             console.log(e, value, 'symbolshape');
                                             updateFields('symbolShape', e.target.value);
@@ -158,7 +163,7 @@ export const CustomizeDendrogramSymbol = observer(
                                         size="small"
                                     >
                                         {
-                                            symbolData.map((item, index)=>{
+                                           symbolData.length > 0 && symbolData.map((item, index)=>{
                                                 return <MenuItem value={item.value} key={index}>{item.label}</MenuItem>
                                             })
                                         }

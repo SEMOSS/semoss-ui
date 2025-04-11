@@ -102,6 +102,7 @@ export const DendrogramChartField = observer(
             console.log(e);
         }
     }
+    console.log(facetList, 'facetList');
     return (
         <StyledMainContainer>
             <StyledSection justifyContent='start'>

@@ -5,6 +5,7 @@ import { Autocomplete, TextField, Button } from "@mui/material";
 import { useBlockSettings, useBlocksPixel, useFrameHeaders } from "../../../../../hooks";
 import { BlockDef } from "../../../../../store";
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
+import { useNotification } from "@semoss/ui";
 
 // a styled section to maintain the basic styles for every element in the component
 const StyledSubSection = styled("div")(() => ({
@@ -17,12 +18,14 @@ const StyledSubSection = styled("div")(() => ({
 export const DendrogramFrameOperation = observer(
     <D extends BlockDef = BlockDef>({id}) => {
             const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+            const notification = useNotification();
             const [frameField, setFrameField] = useState({dimensions:[], facet: ""});
             const [fieldsUpdated, setFieldsUpdated] = useState(false);
             // get all of the frames
             const getFrames = useBlocksPixel<string[]>("GetFrames();", {
                 data: [],
             });
+            const facetRef = useRef<HTMLDivElement>(null);
             // track the ref to debounce the input
             const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
             // options for the autocomplete
@@ -41,12 +44,38 @@ export const DendrogramFrameOperation = observer(
             }, [frameHeaders]);
 
             function updateFields(fieldName, fieldValue){
-                setFrameField((prevField)=>{
-                    return {
-                    ...prevField,
-                    [fieldName]: fieldValue
-                    };
-                });
+                if(fieldName === 'facet'){
+                    let dimensionsList = frameField['dimensions'];
+                    let facetExistsInDimensions = dimensionsList.some((item)=>item === fieldValue);
+                    if(facetExistsInDimensions){
+                        notification.add({
+                            message: "Facet cannot be a dimension",
+                            color:'error',
+                        });
+                        fieldValue = "";
+                            setFrameField((prevField)=>{
+                                return {
+                                ...prevField,
+                                [fieldName]: prevField[fieldName]
+                                };
+                            });
+                    }
+                    else{
+                        setFrameField((prevField)=>{
+                            return {
+                            ...prevField,
+                            [fieldName]: fieldValue
+                            };
+                        });
+                    }
+                }else{
+                    setFrameField((prevField)=>{
+                        return {
+                        ...prevField,
+                        [fieldName]: fieldValue
+                        };
+                    });
+                }
                 setFieldsUpdated(true);
             }
             useEffect(()=>{
@@ -87,7 +116,7 @@ export const DendrogramFrameOperation = observer(
                     columnsSelectorToUpdate = [...columnsSelectorToUpdate, {
                         name: name.name,
                         selector: frameField['facet'],
-                        width: 0,
+                        value: 0,
                     }];
                     setData('columns',columnsSelectorToUpdate);
                 }
@@ -183,10 +212,13 @@ export const DendrogramFrameOperation = observer(
                                 <Autocomplete
                                     fullWidth
                                     id="Echart-Facet"
+                                    ref={facetRef}
                                     multiple={false}
                                     disabled={getFrames.status !== "SUCCESS"}
                                     value={frameField.facet}
                                     options={columnsOption}
+                                    key={frameField.facet || "None"}
+                                    blurOnSelect={true}
                                     getOptionLabel={(option) => {
                                         return option;
                                     }}

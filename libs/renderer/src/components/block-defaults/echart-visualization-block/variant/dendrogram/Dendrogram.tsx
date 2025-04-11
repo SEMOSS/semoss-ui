@@ -99,6 +99,8 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
         selector: facetSelector
     });
     const facetAndDimensionSelector = useMemo(()=>{
+        let valueToCheck = (data.facet?.facetSelected?.[0]?.value == 0 ? facetFrame.data.values[0]?.[0] : data.facet?.facetSelected?.[0]?.value);
+        valueToCheck = isNaN(parseInt(valueToCheck?.toString())) ? `"${valueToCheck}"` : valueToCheck;
         return `Select(${data.columns
                 ?.map((c, index) => {
                     //Converting Y axis columns to Average by default
@@ -108,7 +110,7 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
                 ?.map((c, index) => {
                     return c.name;
                 })
-                .join(", ")}]) | Filter(${data.facet?.facetSelected?.[0]?.name} == ${data.facet?.facetSelected?.[0]?.value == undefined ? facetFrame.data.values[0]?.[0] : data.facet?.facetSelected?.[0]?.value})`;
+                .join(", ")}]) | Filter(${data.facet?.facetSelected?.[0]?.name} == ${valueToCheck})`;
     },[data.facet.facetSelected, facetFrame.data.values]);
 
     const selector = useMemo(() => {
@@ -184,7 +186,7 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
                     ...option['series'][seriesIndex].label,
                     formatter: (params) => {
                         if(params.data.name === 'Root' && params.data.seriesIndex === 0){
-                            return params.data.name;
+                            return "";
                         }
                         return params.data.value;
                     },
@@ -193,11 +195,12 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
         }
         let legendData = ['Root', ...frame.data.headers];
         if(option['legend']?.['show']){
-        let legendSeries = legendData.map((item)=>{
+        let legendSeries = legendData.map((item, index)=>{
                 return {
                     name: item,
                     type: 'tree',
                     data: [],
+
                 };
             });
             option['series'] = [
@@ -209,9 +212,17 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
             ...option,
             ['legend']:{
                 ...option['legend'],
-                ['orient']: 'vertical',
-                ['left']: 'right',
-                ['data']: ['Root', ...frame.data.headers],
+                ['orient']: 'horizontal',
+                ['left']: 'center',
+                ['data']: ['Root', ...frame.data.headers].map((item, index)=>{
+                    return {
+                        name: item,
+                        icon: option['series'][seriesIndex].hasOwnProperty('symbol') ? option['series'][seriesIndex]['symbol'] : 'circle',
+                        itemStyle: {
+                            color: getColorData(index),
+                        },
+                    }
+                }),
             }
         };
         return option;
