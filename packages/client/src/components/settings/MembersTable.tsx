@@ -459,13 +459,30 @@ export const MembersTable = (props: MembersTableProps) => {
      * @returns sorted members
      */
     const sortedMembers = useMemo(() => {
+        /**
+         * 
+         * @param permission 
+         * @returns order of the permission
+         */
+        const getPermissionOrder = (permission: string): number => {
+            const permissionOrder = {
+                'Author': 1,
+                'Editor': 2,
+                'Read-Only': 3,
+            };
+            return permissionOrder[permissionMapper[permission]] || 0;
+        };
         return [...renderedMembers].sort((a, b) => {
             if (orderBy === 'name') {
                 return order === 'asc'
                     ? a.name.localeCompare(b.name)
                     : b.name.localeCompare(a.name);
+            } else if (orderBy === 'permission') { 
+                const permissionA = getPermissionOrder(a.permission); 
+                const permissionB = getPermissionOrder(b.permission);
+                return order === 'asc' ? permissionA - permissionB : permissionB - permissionA; // Because Three Permissions, get first two , returns the difference. (if A is alphabetically smaller, it should be earlier because asc)
             }
-            return 0; // Add more sorting logic for other columns if needed
+            return 0;
         });
     }, [renderedMembers, order, orderBy]);
     // Avatars rendered
@@ -623,7 +640,13 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 </TableSortLabel>
                                             </Table.Cell>
                                             <Table.Cell size="small">
-                                                <TableSortLabel>Permission</TableSortLabel>
+                                                <TableSortLabel
+                                                    active={orderBy === 'permission'}
+                                                    direction={order}
+                                                    onClick={() => handleRequestSort('permission')}
+                                                >
+                                                    Permission
+                                                </TableSortLabel>
                                             </Table.Cell>
                                             {type === 'MODEL' && (
                                                 <>
