@@ -238,8 +238,8 @@ export const MembersTable = (props: MembersTableProps) => {
         SETTINGS_PROVISIONED_USER[]
     >([]);
     /* Table Sorting */
-    const [order, setOrder] = useState<'asc' | 'desc'>('asc');
-    const [orderBy, setOrderBy] = useState<string>('name');
+    const [nameOrder, setNameOrder] = useState<'asc' | 'desc'>('asc');
+    const [permissionOrder, setPermissionOrder] = useState<'asc' | 'desc'>('asc');
 
     // debounce the input
     const debouncedSearch = useDebounceValue(search);
@@ -442,16 +442,16 @@ export const MembersTable = (props: MembersTableProps) => {
     const hasMembers =
         getMembers.status === 'SUCCESS' && getMembers.data['totalMembers'] > 0;
 
-    /**  
-    * Handle Table Sorting Logic
-    * 
-    * @param sortingMethod
-    */
-    const handleRequestSort = (sortingMethod: string) => {
-        const isAsc = orderBy === sortingMethod && order === 'asc';
-        setOrder(isAsc ? 'desc' : 'asc');
-        setOrderBy(sortingMethod);
-    };
+    // /**  
+    // * Handle Table Sorting Logic
+    // * 
+    // * @param sortingMethod
+    // */
+    // const handleRequestSort = (sortingMethod: string) => {
+    //     const isAsc = orderBy === sortingMethod && order === 'asc';
+    //     setOrder(isAsc ? 'desc' : 'asc');
+    //     setOrderBy(sortingMethod);
+    // };
 
     /**
      * Sort Members
@@ -473,18 +473,36 @@ export const MembersTable = (props: MembersTableProps) => {
             return permissionOrder[permissionMapper[permission]] || 0;
         };
         return [...renderedMembers].sort((a, b) => {
-            if (orderBy === 'name') {
-                return order === 'asc'
+                // sort by name
+                const nameComparison = nameOrder === 'asc'
                     ? a.name.localeCompare(b.name)
                     : b.name.localeCompare(a.name);
-            } else if (orderBy === 'permission') {
+                // sort by permission
                 const permissionA = getPermissionOrder(a.permission);
                 const permissionB = getPermissionOrder(b.permission);
-                return order === 'asc' ? permissionA - permissionB : permissionB - permissionA; // Because Three Permissions, get first two , returns the difference. (if A is alphabetically smaller, it should be earlier because asc)
-            }
-            return 0;
-        });
-    }, [renderedMembers, order, orderBy]);
+                //A - B means A is before B
+                const permissionComparison = permissionOrder === 'asc'
+                    ? permissionA - permissionB
+                    : permissionB - permissionA;
+                // Apply both sorts independently
+                return nameComparison || permissionComparison;
+            });
+    }, [renderedMembers, nameOrder, permissionOrder]);
+    /**
+     * Handle Table Sorting Logic for Names
+     * 
+     */
+    const handleNameSort = () => {
+        setNameOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    };
+     /**
+     * Handle Table Sorting Logic for Pames
+     * 
+     */
+    const handlePermissionSort = () => {
+        setPermissionOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    };
+
     // Avatars rendered
     const Avatars = useMemo(() => {
         if (!renderedMembers.length) {
@@ -632,18 +650,18 @@ export const MembersTable = (props: MembersTableProps) => {
                                             </Table.Cell>
                                             <Table.Cell size="small">
                                                 <TableSortLabel
-                                                    active={orderBy === 'name'}
-                                                    direction={order}
-                                                    onClick={() => handleRequestSort('name')}
+                                                    active={true} // sort icon is always visible
+                                                    direction={nameOrder} // direction of the icon, up is asc
+                                                    onClick={() => handleNameSort()}
                                                 >
                                                     Name
                                                 </TableSortLabel>
                                             </Table.Cell>
                                             <Table.Cell size="small">
                                                 <TableSortLabel
-                                                    active={orderBy === 'permission'}
-                                                    direction={order}
-                                                    onClick={() => handleRequestSort('permission')}
+                                                    active={true}
+                                                    direction={permissionOrder}
+                                                    onClick={() => handlePermissionSort()}
                                                 >
                                                     Permission
                                                 </TableSortLabel>
