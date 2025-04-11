@@ -24,6 +24,7 @@ import { useRootStore, useAPI, useSettings, useDebounceValue } from '@/hooks';
 import { SETTINGS_PROVISIONED_USER } from './settings.types';
 import { MembersDeleteOverlay } from './MembersDeleteOverlay';
 import { MembersAddOverlay } from './MembersAddOverlay';
+import { TableSortLabel } from '@mui/material';
 
 const AvatarWrapper = styled('div')({
     display: 'inline-block',
@@ -236,6 +237,9 @@ export const MembersTable = (props: MembersTableProps) => {
     const [selectedMembers, setSelectedMembers] = useState<
         SETTINGS_PROVISIONED_USER[]
     >([]);
+    /* Table Sorting */
+    const [order, setOrder] = useState<'asc' | 'desc'>('asc');
+    const [orderBy, setOrderBy] = useState<string>('name');
 
     // debounce the input
     const debouncedSearch = useDebounceValue(search);
@@ -438,6 +442,32 @@ export const MembersTable = (props: MembersTableProps) => {
     const hasMembers =
         getMembers.status === 'SUCCESS' && getMembers.data['totalMembers'] > 0;
 
+    /**  
+    * Handle Table Sorting Logic
+    * 
+    * @param sortingMethod
+    */
+    const handleRequestSort = (sortingMethod: string) => {
+        const isAsc = orderBy === sortingMethod && order === 'asc';
+        setOrder(isAsc ? 'desc' : 'asc');
+        setOrderBy(sortingMethod);
+    };
+
+    /**
+     * Sort Members
+     * 
+     * @returns sorted members
+     */
+    const sortedMembers = useMemo(() => {
+        return [...renderedMembers].sort((a, b) => {
+            if (orderBy === 'name') {
+                return order === 'asc'
+                    ? a.name.localeCompare(b.name)
+                    : b.name.localeCompare(a.name);
+            }
+            return 0; // Add more sorting logic for other columns if needed
+        });
+    }, [renderedMembers, order, orderBy]);
     // Avatars rendered
     const Avatars = useMemo(() => {
         if (!renderedMembers.length) {
@@ -584,10 +614,16 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 />
                                             </Table.Cell>
                                             <Table.Cell size="small">
-                                                Name
+                                                <TableSortLabel
+                                                    active={orderBy === 'name'}
+                                                    direction={order}
+                                                    onClick={() => handleRequestSort('name')}            
+                                                >
+                                                    Name
+                                                </TableSortLabel>
                                             </Table.Cell>
                                             <Table.Cell size="small">
-                                                Permission
+                                                <TableSortLabel>Permission</TableSortLabel>
                                             </Table.Cell>
                                             {type === 'MODEL' && (
                                                 <>
@@ -608,8 +644,8 @@ export const MembersTable = (props: MembersTableProps) => {
                                         </Table.Row>
                                     </Table.Head>
                                     <Table.Body>
-                                        {renderedMembers.map((x, i) => {
-                                            const user = renderedMembers[i];
+                                        {sortedMembers.map((x, i) => {
+                                            const user = sortedMembers[i];
 
                                             let isSelected = false;
 
