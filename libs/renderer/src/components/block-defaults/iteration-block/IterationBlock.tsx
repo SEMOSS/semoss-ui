@@ -5,6 +5,7 @@ import { toJS } from "mobx";
 import { useBlock, useBlocks } from "../../../hooks";
 import {
     ActionMessages,
+    Block,
     BlockComponent,
     BlockDef,
     BlockJSON,
@@ -15,6 +16,11 @@ export interface IterationBlockDef extends BlockDef<"iteration"> {
     widget: "iteration";
     data: {
         /**
+         * CSS Properties
+         */
+        style: CSSProperties;
+
+        /**
          * Data source
          */
         source: string | [];
@@ -22,12 +28,7 @@ export interface IterationBlockDef extends BlockDef<"iteration"> {
         /**
          * Block that will be iterated
          */
-        child: BlockJSON;
-
-        /**
-         * how we will reference the index in the children
-         */
-        indexVariable: string;
+        child: Block;
 
         /**
          * Conditionally show the block
@@ -39,29 +40,20 @@ export interface IterationBlockDef extends BlockDef<"iteration"> {
     };
 }
 
-const fixStruct = (data, lookupMap) => {
-    if (typeof data === "object" && data !== null) {
-        if (data.hasOwnProperty("slots") && typeof data.slots === "object") {
-            Object.keys(data.slots).forEach((d) => {
-                console.log("Trying to fix struct", data.slots);
-
-                data.slots[d] = data.slots[d].children.map((id) => {
-                    return fixStruct(lookupMap[id], lookupMap);
-                });
-            });
-        }
-    }
-
-    return data;
-};
-
 export const IterationBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, slots } = useBlock<IterationBlockDef>(id);
     const { state } = useBlocks();
 
     const [blocksToRemove, setBlocksToRemove] = useState([]);
 
-    const list = data.source;
+    let list 
+    if (typeof data.source === "string") {
+        try {
+            list = JSON.parse(data.source);
+        } catch {
+            list = data.source
+        }
+    }
 
     /**
      * Add Blocks at runtime
@@ -82,6 +74,7 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
                         }
                     })
                 })
+
                 list.forEach(async (j, i) => {
                     // Skip the first
                     if (i === 0) return;
@@ -137,6 +130,7 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
     return (
         <div
             style={{
+                ...data.style,
                 display: "flex",
                 overflowWrap: "anywhere",
             }}

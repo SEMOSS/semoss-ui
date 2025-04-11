@@ -3,7 +3,7 @@ import { BlockConfig } from "../../../store";
 import { ChildBlockSettings, InputSettings, QueryInputSettings, QuerySelectionSettings } from "../../block-settings";
 
 import { IterationBlockDef, IterationBlock } from "./IterationBlock";
-import { buildListener, buildShowField } from "../block-defaults.shared";
+import { buildLayoutSection, buildListener, buildShowField } from "../block-defaults.shared";
 import { FormatShapes } from "@mui/icons-material";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { SelectInputSettings } from "../../block-settings/shared/SelectInputSettings";
@@ -14,7 +14,12 @@ import { useBlock } from "@/hooks";
 export const config: BlockConfig<IterationBlockDef> = {
     widget: "iteration",
     type: BLOCK_TYPE_INPUT,
-    data: {},
+    data: {
+        style: {},
+        source: "",
+        child: null,
+        show: "true"
+    },
     listeners: {},
     slots: {
         children: [],
@@ -39,18 +44,19 @@ export const config: BlockConfig<IterationBlockDef> = {
                 },
             ],
         },
-        {
-            name: "Child Block",
-            children: [
-                {
-                    description: "Child",
-                    render: ({ id }) => (
-                        <ChildBlockSettings id={id} />
-                    ),
-                },
-            ],
-        },
-
+        // {
+        //     name: "Child Block",
+        //     children: [
+        //         {
+        //             description: "Child",
+        //             render: ({ id }) => (
+        //                 <ChildBlockSettings id={id} />
+        //             ),
+        //         },
+        //     ],
+        // },
     ],
-    styleMenu: [],
+    styleMenu: [
+        buildLayoutSection(),
+    ],
 };

@@ -210,7 +210,8 @@ export const useBlock = <D extends BlockDef = BlockDef>(
             if (typeof instance === "string") {
                 // try to extract the variable
 
-                return state.parseVariable(instance, block.id);
+                // debugger
+                return state.parseVariable(instance, block.widget !== 'iteration' ? block.id : null);
             }
 
             return instance;

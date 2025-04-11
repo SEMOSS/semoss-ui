@@ -510,12 +510,19 @@ export class StateStore {
             const iteratorBlock = this.isDescendantOfIterator(id)
 
             if (iteratorBlock) {
-                console.log('iteratorBlock')
                 try {
                     // Go see what index the iterator block children this id is a descendant of
                     const index = this.findIteratorChildIndex(iteratorBlock, id)
                     const iteratorList = iteratorBlock.data.source as string
-                    const list = this.parseVariable(iteratorList)
+                    let list = this.parseVariable(iteratorList)
+
+                    if(typeof list === 'string') {
+                        try {
+                            list = JSON.parse(list)
+                        } catch {
+                            return expression
+                        }
+                    }
                     
                     const variable = expression.match(/\$(.*?)\./)[1];
                     const stripped = iteratorList.slice(2, -2);
@@ -527,9 +534,8 @@ export class StateStore {
                         const test = path.join(".")
                         const val = getValueByPath(list[index], test)
 
-                        console.log('val', val)
-
-                        return val ? val : expression
+                        // SHOW "" or expression
+                        return val ? val : ''
                     } else {
                         return expression
                     }
@@ -711,8 +717,8 @@ export class StateStore {
     };
 
     private isDescendantOfIterator = (blockId: string) => {
+        console.warn(`Is ${blockId} a descendant of an iterator` )
 
-        console.log(blockId)
         let currentBlock = this._store.blocks[blockId];
 
         while (currentBlock) {
@@ -732,21 +738,20 @@ export class StateStore {
 
     private isDescendant = (containerId, blockId) => {
         const container = this._store.blocks[containerId];
-        console.log(container)
+        
+        // TODO: may need to fix
         if (!container || !container.slots || !container.slots.children) {
-            console.log('nooooooooo')
             return false;
         }
-    
+        
+        // TODO: will it always be .children? --> Accordion .content and .header
         const children = container.slots.children.children;
         if (children.includes(blockId)) {
-            console.log('badabing')
             return true;
         }
     
         for (const childId of children) {
             if (this.isDescendant(childId, blockId)) {
-                console.log('badaboom')
                 return true;
             }
         }
@@ -759,6 +764,9 @@ export class StateStore {
     
         for (let i = 0; i < children.length; i++) {
             const iteratorChildId = children[i];
+
+            // No need to search tree
+            if(iteratorChildId === blockId) return i
 
             if (this.isDescendant(iteratorChildId, blockId)) {
                 return i;
@@ -1517,9 +1525,6 @@ export class StateStore {
      */
     private editVariable = (id: string, oldVar: VariableWithId, newVar) => {
         if (oldVar.id !== id) {
-            console.log("----------------------------");
-            console.log("remove old variable due to name change");
-            console.log("----------------------------");
             delete this._store.variables[oldVar.id];
         }
 

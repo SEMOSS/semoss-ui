@@ -51,15 +51,15 @@ export const ChildBlockSettings = (props: ChildBlockSettingsProps) => {
         )
             .then(async ({ pixelReturn, errors, insightId }) => {
                 // create a new state store
-                const s = new StateStore({
-                    mode: 'static',
-                    insightId: insightId,
-                    state: STATE,
-                    cellRegistry: DefaultCells,
-                });
+                // const s = new StateStore({
+                //     mode: 'static',
+                //     insightId: insightId,
+                //     state: STATE,
+                //     cellRegistry: DefaultCells,
+                // });
 
                 // set it
-                setState(s);
+                // setState(s);
 
             })
     }, [])
@@ -110,18 +110,19 @@ export const ChildBlockSettings = (props: ChildBlockSettingsProps) => {
             <Modal fullScreen open={openDesignerModal}>
                 <Modal.Title>Edit Child Component</Modal.Title>
                 <Modal.Content>
-                    <InsightProvider>
-                        <Blocks
+                    <>Show Preview of Block</>
+                    {/* <InsightProvider> */}
+                        {/* <Blocks
                             state={state}
                             registry={DefaultBlocks}
                         >
-                        </Blocks>
+                        </Blocks> */}
                         {/* <Blocks>
                             <DesignerContext.Provider>
                                 <Workspace />
                             </DesignerContext.Provider>
                         </Blocks> */}
-                    </InsightProvider>
+                    {/* </InsightProvider> */}
                 </Modal.Content>
                 <Modal.Actions>
                     <Button

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Stack, Typography, styled } from '@semoss/ui';
+import { Stack, Typography, styled, useNotification } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
 import { getRelativeSize, getBlockElement } from '@/stores';
@@ -49,6 +49,7 @@ interface SelectedMaskProps {
  */
 export const SelectedMask = observer((props: SelectedMaskProps) => {
     const { screenEle } = props;
+    const notification = useNotification();
 
     // create the state
     const [size, setSize] = useState<{
@@ -113,7 +114,16 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
         const placeholderAction = designer.drag.placeholderAction;
         const sw = state.getBlock(placeholderAction.id);
 
+        // TODO: Add logic to prevent adding block it iter block if one is already present
         if (sw.widget === 'iteration') {
+            if (sw.slots.children.children.length) {
+                notification.add({
+                    color: 'error',
+                    message:
+                        'Please delete block within iterator before adding another child',
+                });
+                return;
+            }
             state.dispatch({
                 message: ActionMessages.SET_BLOCK_DATA,
                 payload: {

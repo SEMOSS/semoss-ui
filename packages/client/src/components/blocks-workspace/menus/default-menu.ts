@@ -1642,6 +1642,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         json: {
             widget: 'iteration',
             data: {
+                style: {},
+                source: '',
+                child: null,
                 show: 'true',
             },
             listeners: {},
