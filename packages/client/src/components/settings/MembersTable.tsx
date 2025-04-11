@@ -24,7 +24,6 @@ import { useRootStore, useAPI, useSettings, useDebounceValue } from '@/hooks';
 import { SETTINGS_PROVISIONED_USER } from './settings.types';
 import { MembersDeleteOverlay } from './MembersDeleteOverlay';
 import { MembersAddOverlay } from './MembersAddOverlay';
-import { TableSortLabel } from '@mui/material';
 
 const AvatarWrapper = styled('div')({
     display: 'inline-block',
@@ -239,7 +238,9 @@ export const MembersTable = (props: MembersTableProps) => {
     >([]);
     /* Table Sorting */
     const [nameOrder, setNameOrder] = useState<'asc' | 'desc'>('asc');
-    const [permissionOrder, setPermissionOrder] = useState<'asc' | 'desc'>('asc');
+    const [permissionOrder, setPermissionOrder] = useState<'asc' | 'desc'>(
+        'asc',
+    );
 
     // debounce the input
     const debouncedSearch = useDebounceValue(search);
@@ -260,30 +261,30 @@ export const MembersTable = (props: MembersTableProps) => {
     // get the api
     const getMembersApi: Parameters<typeof useAPI>[0] =
         type === 'DATABASE' ||
-            type === 'STORAGE' ||
-            type === 'MODEL' ||
-            type === 'VECTOR' ||
-            type === 'FUNCTION'
+        type === 'STORAGE' ||
+        type === 'MODEL' ||
+        type === 'VECTOR' ||
+        type === 'FUNCTION'
             ? [
-                'getEngineUsers',
-                adminMode,
-                id,
-                debouncedSearch ? debouncedSearch : undefined,
-                permissionMapper[permissionFilter],
-                (page + 1) * rowsPerPage - rowsPerPage, // offset
-                rowsPerPage, // limit
-            ]
+                  'getEngineUsers',
+                  adminMode,
+                  id,
+                  debouncedSearch ? debouncedSearch : undefined,
+                  permissionMapper[permissionFilter],
+                  (page + 1) * rowsPerPage - rowsPerPage, // offset
+                  rowsPerPage, // limit
+              ]
             : type === 'APP'
-                ? [
-                    'getProjectUsers',
-                    adminMode,
-                    id,
-                    debouncedSearch ? debouncedSearch : undefined,
-                    permissionMapper[permissionFilter],
-                    (page + 1) * rowsPerPage - rowsPerPage, // offset
-                    rowsPerPage, // limit
-                ]
-                : null;
+            ? [
+                  'getProjectUsers',
+                  adminMode,
+                  id,
+                  debouncedSearch ? debouncedSearch : undefined,
+                  permissionMapper[permissionFilter],
+                  (page + 1) * rowsPerPage - rowsPerPage, // offset
+                  rowsPerPage, // limit
+              ]
+            : null;
 
     const getMembers = useAPI(getMembersApi);
 
@@ -442,9 +443,9 @@ export const MembersTable = (props: MembersTableProps) => {
     const hasMembers =
         getMembers.status === 'SUCCESS' && getMembers.data['totalMembers'] > 0;
 
-    // /**  
+    // /**
     // * Handle Table Sorting Logic
-    // * 
+    // *
     // * @param sortingMethod
     // */
     // const handleRequestSort = (sortingMethod: string) => {
@@ -455,51 +456,51 @@ export const MembersTable = (props: MembersTableProps) => {
 
     /**
      * Sort Members
-     * 
+     *
      * @returns sorted members
      */
     const sortedMembers = useMemo(() => {
         /**
-         * 
-         * @param permission 
+         *
+         * @param permission
          * @returns order of the permission
          */
         const getPermissionOrder = (permission: string): number => {
             const permissionOrder = {
-                'Author': 1,
-                'Editor': 2,
+                Author: 1,
+                Editor: 2,
                 'Read-Only': 3,
             };
             return permissionOrder[permissionMapper[permission]] || 0;
         };
         return [...renderedMembers].sort((a, b) => {
-                
-                // sort by permission
-                const permissionA = getPermissionOrder(a.permission);
-                const permissionB = getPermissionOrder(b.permission);
-                //A - B means A is before B
-                const permissionComparison = permissionOrder === 'asc'
+            // sort by permission
+            const permissionA = getPermissionOrder(a.permission);
+            const permissionB = getPermissionOrder(b.permission);
+            //A - B means A is before B
+            const permissionComparison =
+                permissionOrder === 'asc'
                     ? permissionA - permissionB
                     : permissionB - permissionA;
-                
-                if(permissionComparison === 0) {
-                    return nameOrder === 'asc'
-                        ? a.name.localeCompare(b.name)
-                        : b.name.localeCompare(a.name);
-                }
-                return permissionComparison;
-            });
+
+            if (permissionComparison === 0) {
+                return nameOrder === 'asc'
+                    ? a.name.localeCompare(b.name)
+                    : b.name.localeCompare(a.name);
+            }
+            return permissionComparison;
+        });
     }, [renderedMembers, nameOrder, permissionOrder]);
     /**
      * Handle Table Sorting Logic for Names
-     * 
+     *
      */
     const handleNameSort = () => {
         setNameOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     };
-     /**
+    /**
      * Handle Table Sorting Logic for Pames
-     * 
+     *
      */
     const handlePermissionSort = () => {
         setPermissionOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
@@ -630,9 +631,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 <Checkbox
                                                     checked={
                                                         selectedMembers.length ===
-                                                        renderedMembers.length &&
+                                                            renderedMembers.length &&
                                                         renderedMembers.length >
-                                                        0
+                                                            0
                                                     }
                                                     onChange={() => {
                                                         if (
@@ -651,22 +652,26 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 />
                                             </Table.Cell>
                                             <Table.Cell size="small">
-                                                <TableSortLabel
+                                                <Table.Sort
                                                     active={true} // sort icon is always visible
                                                     direction={nameOrder} // direction of the icon, up is asc
-                                                    onClick={() => handleNameSort()}
+                                                    onClick={() =>
+                                                        handleNameSort()
+                                                    }
                                                 >
                                                     Name
-                                                </TableSortLabel>
+                                                </Table.Sort>
                                             </Table.Cell>
                                             <Table.Cell size="small">
-                                                <TableSortLabel
+                                                <Table.Sort
                                                     active={true}
                                                     direction={permissionOrder}
-                                                    onClick={() => handlePermissionSort()}
+                                                    onClick={() =>
+                                                        handlePermissionSort()
+                                                    }
                                                 >
                                                     Permission
-                                                </TableSortLabel>
+                                                </Table.Sort>
                                             </Table.Cell>
                                             {type === 'MODEL' && (
                                                 <>
@@ -763,8 +768,8 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                 row
                                                                 defaultValue={
                                                                     permissionMapper[
-                                                                    user
-                                                                        .permission
+                                                                        user
+                                                                            .permission
                                                                     ]
                                                                 }
                                                                 onChange={(
@@ -773,9 +778,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     updateSelectedUsers(
                                                                         [user],
                                                                         permissionMapper[
-                                                                        e
-                                                                            .target
-                                                                            .value
+                                                                            e
+                                                                                .target
+                                                                                .value
                                                                         ],
                                                                     );
                                                                 }}
@@ -798,13 +803,13 @@ export const MembersTable = (props: MembersTableProps) => {
                                                             <>
                                                                 <Table.Cell>
                                                                     {user.usage_restriction !==
-                                                                        undefined
+                                                                    undefined
                                                                         ? formatValue(
-                                                                            user.usage_restriction,
-                                                                        )
+                                                                              user.usage_restriction,
+                                                                          )
                                                                         : formatValue(
-                                                                            'null',
-                                                                        )}
+                                                                              'null',
+                                                                          )}
                                                                 </Table.Cell>
                                                                 <Table.Cell>
                                                                     {user?.usage_restriction ===
