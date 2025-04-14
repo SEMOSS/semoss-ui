@@ -20,6 +20,17 @@ const AvatarWrapper = styled('div')({
     display: 'inline-block',
     width: '50px',
 });
+const StyledGridContainer = styled(Grid)({
+    padding: 16,
+    spacing: 1,
+});
+const StyledInnerGridContainer = styled(Grid)({
+    spacing: 1,
+    alignItems: 'center',
+});
+const StyledIconButton = styled(IconButton)({
+    size: 'small',
+});
 export const UserTablePopover = (props: UserTablePopoverProps) => {
     const { hoveredUser, isPopoverOpen, anchorEl, handlePopoverClose } = props;
     const notification = useNotification();
@@ -45,7 +56,7 @@ export const UserTablePopover = (props: UserTablePopoverProps) => {
                 horizontal: 'left',
             }}
         >
-            <Grid container direction="row" spacing={1} padding={2}>
+            <StyledGridContainer container direction="row" >
                 {/* avatar icon */}
                 <Grid item>
                     <AvatarWrapper>
@@ -60,38 +71,38 @@ export const UserTablePopover = (props: UserTablePopoverProps) => {
                             <Typography variant="body2">
                                 {hoveredUser?.name}
                             </Typography>
-                            <Grid container direction="row" spacing={1} alignItems="center">
+                            <StyledInnerGridContainer container direction="row">
                                 <Grid item>
                                     <Typography variant="caption" color="secondary">
                                         ID: {hoveredUser?.id}
                                     </Typography>
                                 </Grid>
                                 <Grid item>
-                                    <IconButton size="small"
+                                    <StyledIconButton size="small"
                                         onClick={() => { handleCopy(hoveredUser?.id) }}
                                     >
                                         <CopyAllIcon fontSize="inherit" />
-                                    </IconButton>
+                                    </StyledIconButton>
                                 </Grid>
-                            </Grid>
-                            <Grid container direction="row" spacing={1} alignItems="center">
+                            </StyledInnerGridContainer>
+                            <StyledInnerGridContainer container direction="row">
                                 <Grid item>
                                     <Typography variant="caption" color="secondary">
                                         Email: {hoveredUser?.email}
                                     </Typography>
                                 </Grid>
                                 <Grid item>
-                                    <IconButton size="small"
+                                    <StyledIconButton 
                                         onClick={() => { handleCopy(hoveredUser?.email) }}
                                     >
                                         <CopyAllIcon fontSize="inherit" />
-                                    </IconButton>
+                                    </StyledIconButton>
                                 </Grid>
-                            </Grid>
+                            </StyledInnerGridContainer>
                         </>
                     )}
                 </Grid>
-            </Grid>
+            </StyledGridContainer>
         </Popover>
     );
 };
