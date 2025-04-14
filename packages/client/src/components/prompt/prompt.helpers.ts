@@ -7,6 +7,7 @@ import {
     INPUT_TYPE_CUSTOM_QUERY,
     INPUT_TYPE_DATABASE,
 } from './prompt.constants';
+
 import {
     ActionMessages,
     Block,
@@ -14,6 +15,7 @@ import {
     QueryStateConfig,
     SerializedState,
 } from '@/stores';
+
 import { AppMetadata } from '../app';
 
 export const DESCRIPTION_CONTAINER = 'description-container';
