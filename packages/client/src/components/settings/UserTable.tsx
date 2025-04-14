@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Add, Delete, Edit } from '@mui/icons-material';
+import { Add, Delete, Edit, } from '@mui/icons-material';
 import {
     styled,
     useNotification,
@@ -21,6 +21,7 @@ import { LoadingScreen } from '@/components/ui';
 import { UserAddOverlay } from './UserAddOverlay';
 import SearchIcon from '@mui/icons-material/Search';
 import CopyAllIcon from '@mui/icons-material/CopyAll';
+import { UserTablePopover } from './UserTablePopover';
 
 const AvatarWrapper = styled('div')({
     display: 'inline-block',
@@ -789,68 +790,20 @@ export const UserTable = (props: UserTableProps) => {
                                             />
                                         </Table.Row>
                                     </Table.Footer>
-                                    <Popover
-                                        id={hoveredUser?.id}
-                                        open={isPopoverOpen}
+                                   <UserTablePopover
+                                        hoveredUser={
+                                            hoveredUser
+                                                ? {
+                                                      id: hoveredUser.id,
+                                                      name: hoveredUser.name || 'Unknown',
+                                                      email: hoveredUser.email || '',
+                                                  }
+                                                : null
+                                        }
+                                        isPopoverOpen={isPopoverOpen}
                                         anchorEl={anchorEl}
-                                        onClose={handlePopoverClose}
-                                        anchorOrigin={{
-                                            vertical: 'bottom',
-                                            horizontal: 'left',
-                                        }}
-                                        transformOrigin={{
-                                            vertical: 'top',
-                                            horizontal: 'left',
-                                        }}
-                                        >
-                                        <Grid container direction ="row" spacing={1} padding={2}>
-                                            {/* avatar icon */}
-                                            <Grid item>
-                                                <AvatarWrapper>
-                                                    <Avatar>
-                                                        {hoveredUser?.name[0].toUpperCase()}
-                                                    </Avatar>
-                                                </AvatarWrapper>
-                                            </Grid>
-                                            <Grid item>
-                                            {hoveredUser && (
-                                                <>
-                                                    <Typography variant="body2">
-                                                        {hoveredUser?.name}
-                                                    </Typography>
-                                                    <Grid container direction="row" spacing={1} alignItems="center">
-                                                        <Grid item>
-                                                            <Typography variant="caption" color='textSecondary'>
-                                                                ID: {hoveredUser?.id}
-                                                            </Typography>
-                                                        </Grid>
-                                                        <Grid item>
-                                                            <IconButton size="small"
-                                                                onClick={() => {handleCopy(hoveredUser?.id)}}
-                                                            >
-                                                                <CopyAllIcon fontSize="inherit" />
-                                                            </IconButton>
-                                                        </Grid>
-                                                    </Grid>
-                                                    <Grid container direction="row" spacing={1} alignItems="center">
-                                                        <Grid item>
-                                                            <Typography variant="caption" color='textSecondary'>
-                                                                Email: {hoveredUser?.email}
-                                                            </Typography>
-                                                        </Grid>
-                                                        <Grid item>
-                                                            <IconButton size="small"
-                                                                onClick={() => {handleCopy(hoveredUser?.email)}}
-                                                            >
-                                                                <CopyAllIcon fontSize="inherit" />
-                                                            </IconButton>
-                                                        </Grid>
-                                                    </Grid>
-                                                </>
-                                            )}
-                                            </Grid>
-                                        </Grid>
-                                        </Popover>
+                                        handlePopoverClose={handlePopoverClose}
+                                    />
                                 </StyledMemberTable>
                             ) : (
                                 <StyledNoUsersDiv>
