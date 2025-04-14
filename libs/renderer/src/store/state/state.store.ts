@@ -500,52 +500,58 @@ export class StateStore {
         let cleaned = expression.trim();
 
         // Checks if it falls inline with special syntax
-        if (!cleaned.startsWith("{{") && !cleaned.endsWith("}}") && !cleaned.startsWith("$")) {
+        if (
+            !cleaned.startsWith("{{") &&
+            !cleaned.endsWith("}}") &&
+            !cleaned.startsWith("$")
+        ) {
             return expression;
         }
 
         // Special Parsing for Iterators
-        if(cleaned.startsWith("$")) {
+        if (cleaned.startsWith("$")) {
             // See if id is a descendant of an iterator block
-            const iteratorBlock = this.isDescendantOfIterator(id)
+            const iteratorBlock = this.isDescendantOfIterator(id);
 
             if (iteratorBlock) {
                 try {
                     // Go see what index the iterator block children this id is a descendant of
-                    const index = this.findIteratorChildIndex(iteratorBlock, id)
-                    const iteratorList = iteratorBlock.data.source as string
-                    let list = this.parseVariable(iteratorList)
+                    const index = this.findIteratorChildIndex(
+                        iteratorBlock,
+                        id,
+                    );
+                    const iteratorList = iteratorBlock.data.source as string;
+                    let list = this.parseVariable(iteratorList);
 
-                    if(typeof list === 'string') {
+                    if (typeof list === "string") {
                         try {
-                            list = JSON.parse(list)
+                            list = JSON.parse(list);
                         } catch {
-                            return expression
+                            return expression;
                         }
                     }
-                    
+
                     const variable = expression.match(/\$(.*?)\./)[1];
                     const stripped = iteratorList.slice(2, -2);
-                    
+
                     // TODO: how do we handle nested loops $array.warehouse.warehouseSections
                     // Do we just call this recursively
                     if (variable === stripped) {
-                        const path = expression.split(".").splice(1)
-                        const test = path.join(".")
-                        const val = getValueByPath(list[index], test)
+                        const path = expression.split(".").splice(1);
+                        const test = path.join(".");
+                        const val = getValueByPath(list[index], test);
 
                         // SHOW "" or expression
-                        return val ? val : ''
+                        return val ? val : "";
                     } else {
-                        return expression
+                        return expression;
                     }
-
                 } catch {
-                    return expression
+                    return expression;
                 }
             } else {
-                console.warn(`Unable to find iterator descendant - ${id}: `)
-                return expression
+                console.warn(`Unable to find iterator descendant - ${id}: `);
+                return expression;
             }
         }
 
@@ -717,12 +723,12 @@ export class StateStore {
     };
 
     private isDescendantOfIterator = (blockId: string) => {
-        console.warn(`Is ${blockId} a descendant of an iterator` )
+        console.warn(`Is ${blockId} a descendant of an iterator`);
 
         let currentBlock = this._store.blocks[blockId];
 
         while (currentBlock) {
-            if (currentBlock.widget === 'iteration') {
+            if (currentBlock.widget === "iteration") {
                 return currentBlock;
             }
             if (currentBlock.parent && currentBlock.parent.id) {
@@ -731,50 +737,49 @@ export class StateStore {
                 break;
             }
         }
-    
-        return false;
 
-    }
+        return false;
+    };
 
     private isDescendant = (containerId, blockId) => {
         const container = this._store.blocks[containerId];
-        
+
         // TODO: may need to fix
         if (!container || !container.slots || !container.slots.children) {
             return false;
         }
-        
+
         // TODO: will it always be .children? --> Accordion .content and .header
         const children = container.slots.children.children;
         if (children.includes(blockId)) {
             return true;
         }
-    
+
         for (const childId of children) {
             if (this.isDescendant(childId, blockId)) {
                 return true;
             }
         }
-    
+
         return false;
-    }
+    };
 
     private findIteratorChildIndex = (iteratorBlock, blockId) => {
         const children = iteratorBlock.slots.children.children;
-    
+
         for (let i = 0; i < children.length; i++) {
             const iteratorChildId = children[i];
 
             // No need to search tree
-            if(iteratorChildId === blockId) return i
+            if (iteratorChildId === blockId) return i;
 
             if (this.isDescendant(iteratorChildId, blockId)) {
                 return i;
             }
         }
-    
+
         return -1; // Return -1 if not found
-    }
+    };
 
     /**
      * Check if a parent contains the child block

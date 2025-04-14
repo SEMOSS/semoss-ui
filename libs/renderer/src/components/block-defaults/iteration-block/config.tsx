@@ -1,9 +1,18 @@
 import { CSSProperties } from "react";
 import { BlockConfig } from "../../../store";
-import { ChildBlockSettings, InputSettings, QueryInputSettings, QuerySelectionSettings } from "../../block-settings";
+import {
+    ChildBlockSettings,
+    InputSettings,
+    QueryInputSettings,
+    QuerySelectionSettings,
+} from "../../block-settings";
 
 import { IterationBlockDef, IterationBlock } from "./IterationBlock";
-import { buildLayoutSection, buildListener, buildShowField } from "../block-defaults.shared";
+import {
+    buildLayoutSection,
+    buildListener,
+    buildShowField,
+} from "../block-defaults.shared";
 import { FormatShapes } from "@mui/icons-material";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { SelectInputSettings } from "../../block-settings/shared/SelectInputSettings";
@@ -18,7 +27,7 @@ export const config: BlockConfig<IterationBlockDef> = {
         style: {},
         source: "",
         child: null,
-        show: "true"
+        show: "true",
     },
     listeners: {},
     slots: {
@@ -29,9 +38,7 @@ export const config: BlockConfig<IterationBlockDef> = {
     contentMenu: [
         {
             name: "Conditional",
-            children: [
-                ...buildShowField(),     
-            ],
+            children: [...buildShowField()],
         },
         {
             name: "Data Source",
@@ -39,7 +46,11 @@ export const config: BlockConfig<IterationBlockDef> = {
                 {
                     description: "Data Source",
                     render: ({ id }) => (
-                        <QueryInputSettings id={id} label="Source" path="source" />
+                        <QueryInputSettings
+                            id={id}
+                            label="Source"
+                            path="source"
+                        />
                     ),
                 },
             ],
@@ -56,7 +67,5 @@ export const config: BlockConfig<IterationBlockDef> = {
         //     ],
         // },
     ],
-    styleMenu: [
-        buildLayoutSection(),
-    ],
+    styleMenu: [buildLayoutSection()],
 };

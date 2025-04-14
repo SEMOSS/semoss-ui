@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { Add, Edit } from "@mui/icons-material";
 
-import { Button, IconButton, LoadingScreen, Modal, Stack, Typography } from "@semoss/ui";
+import {
+    Button,
+    IconButton,
+    LoadingScreen,
+    Modal,
+    Stack,
+    Typography,
+} from "@semoss/ui";
 import { Env, InsightProvider, runPixel } from "@semoss/sdk";
 
-import { BlockDef, SerializedState, STATE_VERSION, StateStore } from "../../../store";
+import {
+    BlockDef,
+    SerializedState,
+    STATE_VERSION,
+    StateStore,
+} from "../../../store";
 import { useBlock } from "../../../hooks";
 import { DefaultCells } from "../../cell-defaults";
 import { DefaultBlocks } from "../../block-defaults";
@@ -17,26 +29,26 @@ interface ChildBlockSettingsProps<D extends BlockDef = BlockDef> {
 const STATE = {
     blocks: {
         "container-5656": {
-            id: 'container-5656',
+            id: "container-5656",
             widget: "container",
             parent: null,
             data: {
                 style: {
-                    border: 'solid red'
+                    border: "solid red",
                 },
                 show: "true",
             },
             listeners: {},
             slots: {
-                children: []
+                children: [],
             },
-        }
-    }, 
+        },
+    },
     variables: {},
     queries: {},
     executionOrder: [],
     version: STATE_VERSION,
-}
+};
 
 export const ChildBlockSettings = (props: ChildBlockSettingsProps) => {
     const { id } = props;
@@ -45,11 +57,8 @@ export const ChildBlockSettings = (props: ChildBlockSettingsProps) => {
     const [state, setState] = useState<StateStore>();
 
     useEffect(() => {
-        runPixel<[SerializedState]>(
-            `1+1`,
-            'new',
-        )
-            .then(async ({ pixelReturn, errors, insightId }) => {
+        runPixel<[SerializedState]>(`1+1`, "new").then(
+            async ({ pixelReturn, errors, insightId }) => {
                 // create a new state store
                 // const s = new StateStore({
                 //     mode: 'static',
@@ -57,22 +66,21 @@ export const ChildBlockSettings = (props: ChildBlockSettingsProps) => {
                 //     state: STATE,
                 //     cellRegistry: DefaultCells,
                 // });
-
                 // set it
                 // setState(s);
-
-            })
-    }, [])
+            },
+        );
+    }, []);
 
     if (!state) {
-        return <>Loading...</>
+        return <>Loading...</>;
     }
 
     /**
      * Initialize insight for app building
      */
     Env.update({
-        MODULE: process.env.MODULE || '',
+        MODULE: process.env.MODULE || "",
     });
 
     return (
@@ -112,12 +120,12 @@ export const ChildBlockSettings = (props: ChildBlockSettingsProps) => {
                 <Modal.Content>
                     <>Show Preview of Block</>
                     {/* <InsightProvider> */}
-                        {/* <Blocks
+                    {/* <Blocks
                             state={state}
                             registry={DefaultBlocks}
                         >
                         </Blocks> */}
-                        {/* <Blocks>
+                    {/* <Blocks>
                             <DesignerContext.Provider>
                                 <Workspace />
                             </DesignerContext.Provider>
