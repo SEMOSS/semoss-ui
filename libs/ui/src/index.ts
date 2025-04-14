@@ -62,3 +62,31 @@ export * from "./components/ThemeProvider";
 export * from "./components/TextArea";
 export * from "./components/TextField";
 export * from "./components/TreeView";
+
+// TODO: fix miscellaneous mui components/functions
+import {
+    Autocomplete,
+    Chip,
+    Fade,
+    ListItemIcon,
+    ListItemText,
+    MenuList,
+    MenuItem,
+    Popper,
+    Tooltip,
+    TooltipProps,
+} from "@mui/material";
+
+export {
+    Fade,
+    ListItemIcon,
+    ListItemText,
+    MenuList,
+    Popper,
+    MenuItem as MenuItemTwo,
+    Tooltip as TooltipTwo,
+    Chip as ChipTwo,
+    Autocomplete as AutocompleteTwo,
+};
+
+export type { TooltipProps as TooltipPropsTwo };

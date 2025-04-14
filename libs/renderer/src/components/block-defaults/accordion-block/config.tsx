@@ -9,6 +9,7 @@ import {
     buildSpacingSection,
     buildDimensionsSection,
     buildBorderSection,
+    buildShowField,
 } from "../block-defaults.shared";
 
 export const config: BlockConfig<AccordionBlockDef> = {
@@ -19,6 +20,7 @@ export const config: BlockConfig<AccordionBlockDef> = {
         triggerBgColor: "",
         contentBgColor: "",
         showExpandIcon: true,
+        show: "true",
     },
     listeners: {},
     slots: {
@@ -31,6 +33,7 @@ export const config: BlockConfig<AccordionBlockDef> = {
         {
             name: "Accessories",
             children: [
+                ...buildShowField(),
                 {
                     description: "Show expand icon",
                     render: ({ id }) => (

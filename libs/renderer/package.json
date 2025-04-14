@@ -14,7 +14,7 @@
         "start:example": "rollup -c example/rollup.config.js -w",
         "build": "rollup -c",
         "build:dev": "rollup -w -c",
-        "lint": "eslint .",
+        "lint": "eslint --quiet .",
         "lint:fix": "eslint . --fix",
         "format": "prettier . --check --plugin-search-dir=.",
         "format:fix": "prettier . --write --plugin-search-dir=.",

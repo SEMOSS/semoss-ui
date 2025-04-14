@@ -22,6 +22,7 @@ export interface AudioBlockDef extends BlockDef<"audio-player"> {
         controls: boolean;
         loop: boolean;
         source: string;
+        show: string;
     };
     listeners: {
         onClick: true;

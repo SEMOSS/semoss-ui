@@ -4,7 +4,10 @@ import {
     SelectInputSettings,
     QuerySelectionSettings,
 } from "../../block-settings";
-import { buildDimensionsSection } from "../block-defaults.shared";
+import {
+    buildDimensionsSection,
+    buildShowField,
+} from "../block-defaults.shared";
 
 import { AudioInputBlockDef, AudioInputBlock } from "./AudioInputBlock";
 import { KeyboardVoice } from "@mui/icons-material";
@@ -26,6 +29,7 @@ export const config: BlockConfig<AudioInputBlockDef> = {
         color: "primary",
         value: "",
         mode: "transcribe",
+        show: "true",
     },
     listeners: {
         onClick: [],
@@ -37,6 +41,7 @@ export const config: BlockConfig<AudioInputBlockDef> = {
         {
             name: "General",
             children: [
+                ...buildShowField(),
                 {
                     description: "Mode",
                     render: ({ id }) => (

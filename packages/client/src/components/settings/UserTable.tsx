@@ -219,7 +219,6 @@ export const UserTable = (props: UserTableProps) => {
 
     /** Member Table State */
     const [selectedMembers, setSelectedMembers] = useState([]);
-    const [count, setCount] = useState(0);
 
     /** Add User State */
     const [addModalOpen, setAddModalOpen] = useState<boolean>(false);
@@ -232,7 +231,7 @@ export const UserTable = (props: UserTableProps) => {
         adminMode,
         debouncedSearch ? debouncedSearch : '',
         (page + 1) * rowsPerPage - rowsPerPage, // offset
-        rowsPerPage, // limit
+        0, // limit
     ]);
 
     // track if the page is loading
@@ -376,7 +375,6 @@ export const UserTable = (props: UserTableProps) => {
                 }
             }
         } finally {
-            setCount(count + 1);
             setSelectedMembers([]);
         }
     };

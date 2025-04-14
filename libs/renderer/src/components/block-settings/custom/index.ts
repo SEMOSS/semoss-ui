@@ -12,3 +12,5 @@ export { GridSettings } from "./grid";
 export { IconSelectSettings } from "./IconSelectSettings";
 export { QueryInputSettings } from "./QueryInputSettings";
 export { OptionsSettings } from "./OptionsSettings";
+export { ChipSettings } from "./ChipSettings";
+export { ChildBlockSettings } from "./ChildBlockSettings"

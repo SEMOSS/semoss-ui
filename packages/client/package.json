@@ -2,11 +2,11 @@
     "name": "@semoss/client",
     "scripts": {
         "dev-old": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --watch --mode=development --node-env=development",
-        "lint": "nx eslint:lint",
+        "lint": "eslint --quiet .",
         "lint:fix": "nx eslint:lint --fix",
         "format": "prettier . --check --plugin-search-dir=.",
         "format:fix": "prettier . --write --plugin-search-dir=.",
-        "fix": "run-s format:fix lint:fix",
+        "fix": "run-s format:fix lint:fix --supress",
         "type-check": "tsc --pretty --noEmit",
         "test": "vitest --watch=false --passWithNoTests --changed"
     },

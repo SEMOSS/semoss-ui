@@ -24,6 +24,13 @@ module.exports = {
     rules: {
         'react/prop-types': 0,
         'no-debugger': 2,
+        'no-restricted-imports': [
+            'error',
+            {
+                name: '@mui/material',
+                message: 'Import MUI Components from @semoss/ui',
+            },
+        ],
     },
     settings: {
         react: {

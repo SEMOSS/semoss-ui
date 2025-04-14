@@ -492,13 +492,61 @@ export class StateStore {
 
     /** Variable Methods */
     /**
+     * TODO: Clean this fn up (split out iterator parsing?)
      * Parse a variables and return the value if it exists (otherwise return the expression)
      */
-    parseVariable = (expression: string): unknown => {
+    parseVariable = (expression: string, id?: string): unknown => {
         // trim the whitespace
         let cleaned = expression.trim();
-        if (!cleaned.startsWith("{{") && !cleaned.endsWith("}}")) {
+
+        // Checks if it falls inline with special syntax
+        if (!cleaned.startsWith("{{") && !cleaned.endsWith("}}") && !cleaned.startsWith("$")) {
             return expression;
+        }
+
+        // Special Parsing for Iterators
+        if(cleaned.startsWith("$")) {
+            // See if id is a descendant of an iterator block
+            const iteratorBlock = this.isDescendantOfIterator(id)
+
+            if (iteratorBlock) {
+                try {
+                    // Go see what index the iterator block children this id is a descendant of
+                    const index = this.findIteratorChildIndex(iteratorBlock, id)
+                    const iteratorList = iteratorBlock.data.source as string
+                    let list = this.parseVariable(iteratorList)
+
+                    if(typeof list === 'string') {
+                        try {
+                            list = JSON.parse(list)
+                        } catch {
+                            return expression
+                        }
+                    }
+                    
+                    const variable = expression.match(/\$(.*?)\./)[1];
+                    const stripped = iteratorList.slice(2, -2);
+                    
+                    // TODO: how do we handle nested loops $array.warehouse.warehouseSections
+                    // Do we just call this recursively
+                    if (variable === stripped) {
+                        const path = expression.split(".").splice(1)
+                        const test = path.join(".")
+                        const val = getValueByPath(list[index], test)
+
+                        // SHOW "" or expression
+                        return val ? val : ''
+                    } else {
+                        return expression
+                    }
+
+                } catch {
+                    return expression
+                }
+            } else {
+                console.warn(`Unable to find iterator descendant - ${id}: `)
+                return expression
+            }
         }
 
         // remove the brackets
@@ -619,7 +667,7 @@ export class StateStore {
      * @param json - json of the block that we are generating
      * @returns block
      */
-    private generateBlock = (json: BlockJSON) => {
+    private generateBlock = (json: BlockJSON, parent?: Block["parent"]) => {
         // generate a new id
         const id = `${json.widget}--${Math.floor(Math.random() * 10000)}`;
 
@@ -635,11 +683,13 @@ export class StateStore {
 
         // add the data
         block.data = json.data;
-        // Defaulting the route to the block id
-        block.data.route = id;
 
         // add the listeners
         block.listeners = json.listeners;
+
+        if (!json["parent"] && parent) {
+            block.parent = parent;
+        }
 
         // generate the slots
         for (const slot in json.slots) {
@@ -647,8 +697,11 @@ export class StateStore {
                 block.slots[slot] = {
                     name: slot,
                     children: json.slots[slot].map((child) => {
+                        // form the parent object
+                        const parent = { id: id, slot: slot };
+
                         // build the children, but only store the ids
-                        const b = this.generateBlock(child);
+                        const b = this.generateBlock(child, parent);
 
                         return b.id;
                     }),
@@ -662,6 +715,66 @@ export class StateStore {
         // return it
         return block;
     };
+
+    private isDescendantOfIterator = (blockId: string) => {
+        console.warn(`Is ${blockId} a descendant of an iterator` )
+
+        let currentBlock = this._store.blocks[blockId];
+
+        while (currentBlock) {
+            if (currentBlock.widget === 'iteration') {
+                return currentBlock;
+            }
+            if (currentBlock.parent && currentBlock.parent.id) {
+                currentBlock = this._store.blocks[currentBlock.parent.id];
+            } else {
+                break;
+            }
+        }
+    
+        return false;
+
+    }
+
+    private isDescendant = (containerId, blockId) => {
+        const container = this._store.blocks[containerId];
+        
+        // TODO: may need to fix
+        if (!container || !container.slots || !container.slots.children) {
+            return false;
+        }
+        
+        // TODO: will it always be .children? --> Accordion .content and .header
+        const children = container.slots.children.children;
+        if (children.includes(blockId)) {
+            return true;
+        }
+    
+        for (const childId of children) {
+            if (this.isDescendant(childId, blockId)) {
+                return true;
+            }
+        }
+    
+        return false;
+    }
+
+    private findIteratorChildIndex = (iteratorBlock, blockId) => {
+        const children = iteratorBlock.slots.children.children;
+    
+        for (let i = 0; i < children.length; i++) {
+            const iteratorChildId = children[i];
+
+            // No need to search tree
+            if(iteratorChildId === blockId) return i
+
+            if (this.isDescendant(iteratorChildId, blockId)) {
+                return i;
+            }
+        }
+    
+        return -1; // Return -1 if not found
+    }
 
     /**
      * Check if a parent contains the child block
@@ -1412,9 +1525,6 @@ export class StateStore {
      */
     private editVariable = (id: string, oldVar: VariableWithId, newVar) => {
         if (oldVar.id !== id) {
-            console.log("----------------------------");
-            console.log("remove old variable due to name change");
-            console.log("----------------------------");
             delete this._store.variables[oldVar.id];
         }
 

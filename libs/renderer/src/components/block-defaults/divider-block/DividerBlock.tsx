@@ -22,6 +22,7 @@ export interface DividerBlockDef extends BlockDef<"divider"> {
         light: boolean;
         text: string;
         showText: boolean;
+        show: string;
     };
     slots: never;
     listeners: {
