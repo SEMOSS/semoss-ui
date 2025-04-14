@@ -124,9 +124,39 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 
     const loginTypes = [
         {
-            provider: 'Custom',
+            provider: 'custom',
             name: 'Custom',
             description: 'Directly manage users in the team',
+            isOauth: false,
+        },
+        {
+            provider: 'adfs',
+            name: 'ADFS',
+            description: '',
+            isOauth: false,
+        },
+        {
+            provider: 'dropbox',
+            name: 'Dropbox',
+            description: '',
+            isOauth: false,
+        },
+        {
+            provider: 'Generic',
+            name: 'Generic',
+            description: 'Specific implementation of OAuth',
+            isOauth: false,
+        },
+        {
+            provider: 'github',
+            name: 'Github',
+            description: '',
+            isOauth: false,
+        },
+        {
+            provider: 'gitlab',
+            name: 'Gitlab',
+            description: '',
             isOauth: false,
         },
         ...configStore.store.config.availableProviders,
@@ -335,7 +365,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                         direction="row"
                         spacing={1}
                         paddingX={2}
-                        paddingBottom={2}
+                        paddingBottom={3}
                     >
                         <Button
                             type="button"

@@ -85,6 +85,13 @@ const StyledAddButton = styled(Button)({
     borderRadius: '12px',
 });
 
+const StyledGrid = styled('div')({
+        display: 'grid',
+        width: '100%,', /* Set a fixed width for the container */
+        gridTemplateColumns: 'repeat(4, 1fr)', 
+        gap: '24px' /* 24px spacing between rows and columns */
+});
+
 const reducer = (state, action) => {
     switch (action.type) {
         case 'field': {
@@ -142,7 +149,7 @@ export const TeamsSettingsPage = observer(() => {
             setFilteredTeams(
                 teams.filter((d) =>
                     d.id.toLowerCase().includes(search.toLowerCase()),
-                ),
+                ).sort((a,b)=>a.id.localeCompare(b.id)),
             );
         },
         [teams, search],
@@ -186,18 +193,19 @@ export const TeamsSettingsPage = observer(() => {
                         </StyledAddButton>
                     </StyledSearchbarDiv>
                 </StyledSearchbarContainer>
-                <Grid container spacing={3}>
+                {/* <Grid container spacing={3}>  */}
+                <StyledGrid> 
                     {filteredTeams.length
                         ? filteredTeams.map((team, i) => {
                               return (
-                                  <Grid
+                                <div>
+                                   {/* <Grid
                                       item
                                       key={i}
-                                      sm={12}
-                                      md={6}
-                                      lg={4}
-                                      xl={3}
-                                  >
+                                       sm={12}
+                                       md={6}
+                                       lg={4}
+                                       xl={3}> */}
                                       <TeamTileCard
                                           id={team.id}
                                           type={team.type}
@@ -229,11 +237,13 @@ export const TeamsSettingsPage = observer(() => {
                                               //   );
                                           }}
                                       />
-                                  </Grid>
+                                      </div>
+                                //   </Grid>
                               );
                           })
                         : null}
-                </Grid>
+                {/* </Grid> */}
+                </StyledGrid>
 
                 <AddTeamModal
                     open={addModal}
