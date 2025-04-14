@@ -13,11 +13,14 @@ import {
     Search,
     Box,
     Stack,
+    Popover,
+    Grid,
 } from '@semoss/ui';
 import { useRootStore, useAPI, useSettings, useDebounceValue } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { UserAddOverlay } from './UserAddOverlay';
 import SearchIcon from '@mui/icons-material/Search';
+import CopyAllIcon from '@mui/icons-material/CopyAll';
 
 const AvatarWrapper = styled('div')({
     display: 'inline-block',
@@ -220,6 +223,10 @@ export const UserTable = (props: UserTableProps) => {
     /** Member Table State */
     const [selectedMembers, setSelectedMembers] = useState([]);
 
+    /** Utility for Popover */
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+    const [hoveredUser, setHoveredUser] = useState<User | null>(null);
+    const isPopoverOpen = Boolean(anchorEl);
     /** Add User State */
     const [addModalOpen, setAddModalOpen] = useState<boolean>(false);
     const [addModalUser, setAddModalUser] = useState<User | null>(null);
@@ -378,7 +385,33 @@ export const UserTable = (props: UserTableProps) => {
             setSelectedMembers([]);
         }
     };
-
+    /**
+     * Handle user popover open
+     * @param event 
+     * @param user 
+     */
+    const handlePopoverOpen = (event: React.MouseEvent<HTMLElement>, user: User) => {
+        if (anchorEl === event.currentTarget) {
+            // Close the popover if the same element is clicked again
+            setAnchorEl(null);
+            setHoveredUser(null);
+        } else {
+            setAnchorEl(event.currentTarget);
+            setHoveredUser(user);
+        }
+    };
+    const handlePopoverClose = () => {
+        setAnchorEl(null);
+        setHoveredUser(null);
+        console.log("CLOSE")
+    }
+    const handleCopy = (text: string) => {
+        navigator.clipboard.writeText(text);
+        notification.add({
+            color: 'success',
+            message: 'Copied to clipboard',
+        });
+    };
     // Avatars rendered
     const Avatars = useMemo(() => {
         if (!renderedMembers.length) {
@@ -610,13 +643,14 @@ export const UserTable = (props: UserTableProps) => {
                                                                     }
                                                                     spacing={0}
                                                                     flex={1}
+                                                                    onClick={(event) => handlePopoverOpen(event, user)}
                                                                 >
                                                                     <StyledPrimaryText
                                                                         variant="body1"
                                                                         noWrap={
                                                                             true
                                                                         }
-                                                                        title={`Name: ${user.name}`}
+                                                                        title={`Name: ${user.name}`}                                                                 
                                                                     >
                                                                         {user.name || (
                                                                             <>
@@ -624,44 +658,8 @@ export const UserTable = (props: UserTableProps) => {
                                                                             </>
                                                                         )}
                                                                     </StyledPrimaryText>
-                                                                    <Stack
-                                                                        direction={
-                                                                            'row'
-                                                                        }
-                                                                        alignItems={
-                                                                            'center'
-                                                                        }
-                                                                        spacing={
-                                                                            1
-                                                                        }
-                                                                        width={
-                                                                            '150px'
-                                                                        }
-                                                                        title={`Id: ${user.id}`}
-                                                                    >
-                                                                        <StyledSecondaryText
-                                                                            variant="body2"
-                                                                            noWrap={
-                                                                                true
-                                                                            }
-                                                                        >
-                                                                            ID:
-                                                                        </StyledSecondaryText>
-                                                                        <StyledPrimaryText
-                                                                            variant="body2"
-                                                                            noWrap={
-                                                                                true
-                                                                            }
-                                                                        >
-                                                                            {user.id || (
-                                                                                <>
-                                                                                    &nbsp;
-                                                                                </>
-                                                                            )}
-                                                                        </StyledPrimaryText>
-                                                                    </Stack>
                                                                 </Stack>
-                                                            </StyledCenteredBox>
+                                                            </StyledCenteredBox>    
                                                         </Table.Cell>
                                                         <Table.Cell>
                                                             {user.type}
@@ -791,6 +789,68 @@ export const UserTable = (props: UserTableProps) => {
                                             />
                                         </Table.Row>
                                     </Table.Footer>
+                                    <Popover
+                                        id={hoveredUser?.id}
+                                        open={isPopoverOpen}
+                                        anchorEl={anchorEl}
+                                        onClose={handlePopoverClose}
+                                        anchorOrigin={{
+                                            vertical: 'bottom',
+                                            horizontal: 'left',
+                                        }}
+                                        transformOrigin={{
+                                            vertical: 'top',
+                                            horizontal: 'left',
+                                        }}
+                                        >
+                                        <Grid container direction ="row" spacing={1} padding={2}>
+                                            {/* avatar icon */}
+                                            <Grid item>
+                                                <AvatarWrapper>
+                                                    <Avatar>
+                                                        {hoveredUser?.name[0].toUpperCase()}
+                                                    </Avatar>
+                                                </AvatarWrapper>
+                                            </Grid>
+                                            <Grid item>
+                                            {hoveredUser && (
+                                                <>
+                                                    <Typography variant="body2">
+                                                        {hoveredUser?.name}
+                                                    </Typography>
+                                                    <Grid container direction="row" spacing={1} alignItems="center">
+                                                        <Grid item>
+                                                            <Typography variant="caption" color='textSecondary'>
+                                                                ID: {hoveredUser?.id}
+                                                            </Typography>
+                                                        </Grid>
+                                                        <Grid item>
+                                                            <IconButton size="small"
+                                                                onClick={() => {handleCopy(hoveredUser?.id)}}
+                                                            >
+                                                                <CopyAllIcon fontSize="inherit" />
+                                                            </IconButton>
+                                                        </Grid>
+                                                    </Grid>
+                                                    <Grid container direction="row" spacing={1} alignItems="center">
+                                                        <Grid item>
+                                                            <Typography variant="caption" color='textSecondary'>
+                                                                Email: {hoveredUser?.email}
+                                                            </Typography>
+                                                        </Grid>
+                                                        <Grid item>
+                                                            <IconButton size="small"
+                                                                onClick={() => {handleCopy(hoveredUser?.email)}}
+                                                            >
+                                                                <CopyAllIcon fontSize="inherit" />
+                                                            </IconButton>
+                                                        </Grid>
+                                                    </Grid>
+                                                </>
+                                            )}
+                                            </Grid>
+                                        </Grid>
+                                        </Popover>
                                 </StyledMemberTable>
                             ) : (
                                 <StyledNoUsersDiv>
