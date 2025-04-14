@@ -451,11 +451,15 @@ export class MonolithStore {
 
         postData += 'modifications=' + JSON.stringify(properties);
 
-        const response = await axios.post<boolean>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
+        const response = await axios
+            .post<boolean>(url, postData, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
 
         return response.data;
     }

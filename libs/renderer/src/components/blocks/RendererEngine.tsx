@@ -11,11 +11,11 @@ export interface RendererEngineProps {
 export function showBlock(block, state): boolean {
     if (block.data.hasOwnProperty("show") && block.data.show !== undefined) {
         let condition: unknown;
-        let trimmedBlockData = block.data.show
+        const trimmedBlockData = block.data.show
             ?.toString()
             ?.trimLeft()
             ?.trimRight();
-        let trimmedBlockDataArray =
+        const trimmedBlockDataArray =
             trimmedBlockData?.split(" ").filter((item) => item.length > 0) ||
             [];
         let trimmedBlockDataObject = {};
@@ -26,7 +26,7 @@ export function showBlock(block, state): boolean {
             };
         });
         trimmedBlockDataArray.forEach((item, index) => {
-            let trimmedBlockDataToVerify = item;
+            const trimmedBlockDataToVerify = item;
             try {
                 //if a variable is assigned then parsed result is added to condition
                 if (
@@ -47,7 +47,7 @@ export function showBlock(block, state): boolean {
                     if (condition.toString() === undefined) {
                         trimmedBlockDataObject[item] = false;
                     }
-                    console.log('Condition', condition.toString())
+                    // console.log("Condition", condition.toString());
                     switch (condition.toString().toLowerCase()) {
                         case "true":
                         case "1":
@@ -68,7 +68,9 @@ export function showBlock(block, state): boolean {
                 trimmedBlockDataObject[item] = true;
             }
         });
-        let resultValues = Object.values(trimmedBlockDataObject).includes(false)
+        const resultValues = Object.values(trimmedBlockDataObject).includes(
+            false,
+        )
             ? false
             : true;
         return resultValues;
@@ -105,7 +107,6 @@ export const RendererEngine = observer(
             );
         }
 
-        
         if (showBlock(block, state)) {
             return createElement(b.render, {
                 key: id,

@@ -379,7 +379,8 @@ export const UpgradedVisualizationTool =
                             )}
                     </StyledListItem>
                     {(data.variation === "echart-scatter-plots" ||
-                        data.variation === "echart-world-map-chart" || data.variation === "echart-stack-chart") &&  (
+                        data.variation === "echart-world-map-chart" ||
+                        data.variation === "echart-stack-chart") && (
                         <StyledListItem disablePadding>
                             <ListItemButton
                                 onClick={(e) =>
@@ -883,12 +884,12 @@ export const UpgradedVisualizationTool =
                                 <ListItemIcon>
                                     <ImageIcon
                                         fontSize="large"
-                                        color={selectedList === "symbol" ? "primary"
-                                            : "disabled"}
-                                        >
-                                        
-                                        </ImageIcon>
-                                
+                                        color={
+                                            selectedList === "symbol"
+                                                ? "primary"
+                                                : "disabled"
+                                        }
+                                    ></ImageIcon>
                                 </ListItemIcon>
 
                                 <ListItemText primary="Map Marker Size" />
@@ -901,7 +902,7 @@ export const UpgradedVisualizationTool =
                                 ></MapMarkerSize>
                             )}
                         </StyledListItem>
-                                        )}
+                    )}
                     <StyledListItem disablePadding>
                         {data.variation === "echart-line-graph" && (
                             <ListItemButton
