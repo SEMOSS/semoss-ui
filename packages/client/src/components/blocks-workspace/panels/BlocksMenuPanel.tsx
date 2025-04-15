@@ -248,6 +248,8 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
         });
     }, [items]);
 
+    console.log(renderedItems, 'renderedItems');
+
     return (
         <Panel>
             <Stack height="100%">

@@ -101,9 +101,9 @@ export const GanttFrameSection = observer(
                 let columnsToSet = [];
                 let columnsObject = {};
 
-                let columnsTask = columns.find(
-                    (item) => item.selector === framesData.task,
-                );
+                    let columnsTask = columns.find(
+                        (item) => item.selector === framesData.task,
+                    );
                 if (columnsTask.hasOwnProperty("name")) {
                     columnsToSet.push(columnsTask);
                     columnsObject["task"] = columnsTask;

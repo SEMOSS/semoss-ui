@@ -24,6 +24,7 @@ import { useDesigner } from '@/hooks';
 import { BlockAvatar, SelectedMenuSection } from '@/components/designer';
 import { AddVariableModal } from '@/components/notebook';
 import { Panel } from '@/components/workspace';
+import VariationIcon from '../../../assets/img/VariationLogo.svg';
 
 const StyledTitle = styled(Typography)(() => ({
     textTransform: 'capitalize',
@@ -55,6 +56,10 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
     width: '100%',
     paddingBottom: theme.spacing(1),
     overflowY: 'auto',
+
+    // ">.MuiStack-root": {
+    //         height: '100%',
+    //     },
 }));
 
 const StyledMessage = styled('div')(({ theme }) => ({
@@ -64,6 +69,11 @@ const StyledMessage = styled('div')(({ theme }) => ({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+}));
+
+const StyledVariationIcon = styled('img')(({ theme }) => ({
+    width: theme.spacing(4),
+    height: theme.spacing(4),
 }));
 
 export const SelectedBlockPanel = observer(() => {
@@ -255,7 +265,7 @@ export const SelectedBlockPanel = observer(() => {
                         direction="row"
                         alignItems="center"
                     >
-                        <BlockAvatar icon={icon} />
+                        <StyledVariationIcon src={VariationIcon} />
                         <Stack
                             direction={'row'}
                             spacing={0.5}
