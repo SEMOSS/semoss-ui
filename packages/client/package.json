@@ -6,7 +6,7 @@
         "lint:fix": "nx eslint:lint --fix",
         "format": "prettier . --check --plugin-search-dir=.",
         "format:fix": "prettier . --write --plugin-search-dir=.",
-        "fix": "run-s format:fix lint:fix",
+        "fix": "run-s format:fix lint:fix --supress",
         "type-check": "tsc --pretty --noEmit",
         "test": "vitest --watch=false --passWithNoTests --changed"
     },

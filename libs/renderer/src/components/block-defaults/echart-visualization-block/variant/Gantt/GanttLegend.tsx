@@ -43,7 +43,7 @@ export const GanttLegend = observer(
         }, [data, "option"]).get();
         //to retain the values from state
         useEffect(() => {
-            let parsedJson = JSON.parse(computedValue);
+            const parsedJson = JSON.parse(computedValue);
             if (parsedJson["customSettings"]?.["gantttools"]?.["showLegend"]) {
                 setLegendData((prevLegendData) => {
                     return parsedJson["customSettings"]["gantttools"][
