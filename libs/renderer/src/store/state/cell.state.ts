@@ -382,8 +382,6 @@ export class CellState<D extends CellDef = CellDef> {
                 });
             }
 
-            // log it
-            console.log(JSON.stringify(this.operation), this.output);
 
             // process side effects from running a pixel
             this._state.processSideEffects(this.operation, this.output);
