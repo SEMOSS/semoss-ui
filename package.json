@@ -24,7 +24,7 @@
         "lint:renderer": "npx nx lint @semoss/renderer",
         "lint:all": "echo \"TODO: fix lint script to lint all packages/libs .\"",
 
-        "test": "vitest --watch=false --passWithNoTests --changed",
+        "test": "npx vitest --watch=false --passWithNoTests --changed",
         "test:browser": "vitest --watch --ui --pool=forks"
     },
     "author": "",
