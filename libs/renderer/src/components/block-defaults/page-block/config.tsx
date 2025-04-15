@@ -51,7 +51,7 @@ export const config: BlockConfig<PageBlockDef> = {
                     render: ({ id }) => (
                         <InputSettings id={id} label="Route" path="route" />
                     ),
-                },,
+                },
                 {
                     description: "Loading",
                     render: ({ id }) => (
