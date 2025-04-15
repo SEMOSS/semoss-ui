@@ -14,6 +14,7 @@ import { EngineIndexPage } from './EngineIndexPage';
 import { EngineMetadataPage } from './EngineMetadataPage';
 import { EngineSettingsPage } from './EngineSettingsPage';
 import { EngineFilePage } from './EngineFilePage';
+import { EngineReportingPage } from './EngineReportingPage';
 import { EngineQAPage } from './EngineQAPage';
 // import { EngineQueryDataPage } from './EngineQueryDataPage';
 // import { EngineReplaceDataPage } from './EngineReplaceDataPage';
@@ -81,6 +82,12 @@ export const ENGINE_ROUTES: {
                 restrict: ['EDIT', 'OWNER'],
             },
             {
+                name: 'Reporting',
+                path: 'reporting',
+                component: EngineReportingPage,
+                restrict: ['EDIT', 'OWNER'],
+            },
+            {
                 name: 'SMSS',
                 path: 'smss',
                 component: EngineSmssPage,
@@ -112,6 +119,12 @@ export const ENGINE_ROUTES: {
                 name: 'Access Control',
                 path: 'access-control',
                 component: EngineSettingsPage,
+                restrict: ['EDIT', 'OWNER'],
+            },
+            {
+                name: 'Reporting',
+                path: 'reporting',
+                component: EngineReportingPage,
                 restrict: ['EDIT', 'OWNER'],
             },
             {
@@ -167,6 +180,12 @@ export const ENGINE_ROUTES: {
                 restrict: ['EDIT', 'OWNER'],
             },
             {
+                name: 'Reporting',
+                path: 'reporting',
+                component: EngineReportingPage,
+                restrict: ['EDIT', 'OWNER'],
+            },
+            {
                 name: 'SMSS',
                 path: 'smss',
                 component: EngineSmssPage,
@@ -210,6 +229,12 @@ export const ENGINE_ROUTES: {
                 name: 'Access Control',
                 path: 'access-control',
                 component: EngineSettingsPage,
+                restrict: ['EDIT', 'OWNER'],
+            },
+            {
+                name: 'Reporting',
+                path: 'reporting',
+                component: EngineReportingPage,
                 restrict: ['EDIT', 'OWNER'],
             },
             {
