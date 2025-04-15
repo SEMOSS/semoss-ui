@@ -690,6 +690,11 @@ export class StateStore {
         // add the data
         block.data = json.data;
 
+        if(json.widget === "page") {
+            // Defaulting the route to the block id
+            block.data.route = id;
+        }
+
         // add the listeners
         block.listeners = json.listeners;
 
@@ -1000,6 +1005,7 @@ export class StateStore {
 
         // try to place it if position
         if (!position) {
+            if (block.widget === "page") return block.id;
             return;
         }
 
