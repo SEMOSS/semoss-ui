@@ -62,7 +62,7 @@ export const LegendToggleMapChart = observer(
         };
         //Handle the change event for the toggle switch
         const handleLegend = (e) => {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             setShowLegend(!showLegend);
             option["legend"]["show"] = e.target.checked;
             setData(path, option as PathValue<D["data"], typeof path>);

@@ -55,7 +55,7 @@ export interface EchartVisualizationBlockDef {
 
 export const Map: BlockComponent = observer(({ id }) => {
     const { data } = useBlock<EchartVisualizationBlockDef>(id);
-    let mapRef: any = useRef({});
+    const mapRef: any = useRef({});
     echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
@@ -86,7 +86,7 @@ export const Map: BlockComponent = observer(({ id }) => {
 
     const echartsLoaded = debounce((chart) => {
         mapRef.current = chart;
-        let option = data.option;
+        const option = data.option;
         data.option = option;
 
         chart.setOption(option);
@@ -95,9 +95,9 @@ export const Map: BlockComponent = observer(({ id }) => {
             onClickChart(chart, params);
         });
         chart.on("brushselected", (params) => {
-            let selectedData = params.batch[0]?.selected[0]?.dataIndex;
+            const selectedData = params.batch[0]?.selected[0]?.dataIndex;
             const currentOption = chart.getOption();
-            let labelData = currentOption.series[0]?.data;
+            const labelData = currentOption.series[0]?.data;
             const filteredLabels = selectedData?.map(
                 (index) => labelData[index]?.label?.formatter,
             );
@@ -150,7 +150,7 @@ export const Map: BlockComponent = observer(({ id }) => {
         // mapRef.current?.setOption(option);
     }, []);
 
-    let processedFrameData = processData(frame.data, data);
+    const processedFrameData = processData(frame.data, data);
     if (processedFrameData && processedFrameData.length > 0) {
         data.option["series"][0]["data"] = processedFrameData;
     }
@@ -254,7 +254,7 @@ export const Map: BlockComponent = observer(({ id }) => {
     const onClickChart = (chart, params) => {
         if (params.data) {
             const currentOption = chart.getOption();
-            let labelName = currentOption["_state"]["fields"]["label"];
+            const labelName = currentOption["_state"]["fields"]["label"];
             setContextMenu(
                 contextMenu === null
                     ? {
