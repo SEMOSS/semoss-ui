@@ -7,6 +7,7 @@ import { GridBlockColumnSettings } from "./GridBlockColumnSettings";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 import { VisualizationBlockMenu } from "../echart-visualization-block/VisualizationBlockMenu";
 import { GridBlockMenu } from "./GridBlockMenu";
+import { GridBlockDuplicate } from "./GridBlockDuplicate";
 
 // export the config for the block
 export const config: BlockConfig<GridBlockDef> = {
@@ -21,12 +22,13 @@ export const config: BlockConfig<GridBlockDef> = {
         variation: "grid-block",
         style: {
             display: "flex",
-            // flexDirection: 'column',
+            flexDirection: "col",
             padding: "4px",
             gap: "8px",
-            // flexWrap: 'wrap',
+            flexWrap: "wrap",
             width: 450,
             height: 350,
+            border: "2px solid red",
         },
         view: {
             pagination: true,
@@ -41,7 +43,8 @@ export const config: BlockConfig<GridBlockDef> = {
 
     listeners: {},
     slots: {},
-    render: GridBlock,
+    render: GridBlockDuplicate,
+    // render: GridBlock,
     icon: TableChart,
     menu: GridBlockMenu,
     // contentMenu: [

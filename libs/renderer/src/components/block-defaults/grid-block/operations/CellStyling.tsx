@@ -1,25 +1,11 @@
 import { observer } from "mobx-react-lite";
-import {
-    useBlock,
-    useBlockSettings,
-    useBlocksPixel,
-    useFrame,
-    useFrameHeaders,
-} from "../../../../hooks";
-import { GridBlockDef, HeaderBackgroundSettings } from "../GridBlock";
+import { useBlockSettings } from "../../../../hooks";
+import { CellBackgroundSettings, GridBlockDef } from "../GridBlock";
 import { GridBlockColumn } from "../grid-block.types";
-import {
-    // Autocomplete,
-    Button,
-    styled,
-    TextField,
-    Typography,
-    // Checkbox,
-} from "@semoss/ui";
+import { Button, styled, TextField, Typography } from "@semoss/ui";
 import { ColorPickerSettingsNew } from "../../../block-settings/shared/ColorPickerSettingsNew";
 import { useEffect, useMemo, useState } from "react";
-import { computed, when } from "mobx";
-import { getValueByPath } from "@/utility";
+
 import { Paths, PathValue } from "@/types";
 import { Block, BlockDef } from "../../../../store";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
@@ -27,7 +13,7 @@ import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import Checkbox from "@mui/material/Checkbox";
 import { Autocomplete } from "@mui/material";
 
-export interface HeaderStylingProps<D extends BlockDef = GridBlockDef> {
+export interface CellStylingProps<D extends BlockDef = GridBlockDef> {
     id: string;
     path: Paths<Block<D>["data"], 4>;
 }
@@ -62,17 +48,10 @@ const StyledAxisDiv = styled("div")<{
     gap: gap ?? undefined,
 }));
 
-export const HeaderStyling = observer(
-    // ({ id,path }: HeaderStylingProps<D>) => {
-    <D extends BlockDef = GridBlockDef>({
-        id,
-        path,
-    }: HeaderStylingProps<D>) => {
+export const CellStyling = observer(
+    <D extends BlockDef = GridBlockDef>({ id, path }: CellStylingProps<D>) => {
         const { data, setData } = useBlockSettings<GridBlockDef>(id);
-        const [value, setValue] = useState("");
-        const [showValueLabel, setShowValueLabel] = useState(true);
-
-        const [gridStyle, setGridStyle] = useState<HeaderBackgroundSettings>({
+        const [gridStyle, setGridStyle] = useState<CellBackgroundSettings>({
             backgroundColor: "#ffffff",
             fontSize: "16",
             fontColor: "#000000",
@@ -80,16 +59,8 @@ export const HeaderStyling = observer(
         });
 
         useEffect(() => {
-            // const headerSettings = data.option?.headerBackgroundSettings;
-            // if (headerSettings) {
-            //     setGridStyle({
-            //         backgroundColor: headerSettings.backgroundColor,
-            //         selectedColumn: headerSettings.columns,
-            //     });
-            // }
-
-            if (data.option?.headerBackgroundSettings) {
-                setGridStyle(data.option.headerBackgroundSettings);
+            if (data.option?.cellBackgroundSettings) {
+                setGridStyle(data.option.cellBackgroundSettings);
             }
         }, [data.option]);
 
@@ -97,9 +68,7 @@ export const HeaderStyling = observer(
             const newSelected = selected.map((col) => col.name);
             const newOption = {
                 ...data.option,
-                headerBackgroundSettings: {
-                    // backgroundColor: gridStyle.backgroundColor,
-                    // columns: newSelected,
+                cellBackgroundSettings: {
                     ...gridStyle,
                     selectedColumn: newSelected,
                 },
@@ -117,9 +86,7 @@ export const HeaderStyling = observer(
         const handleColorChange = (newColor: string) => {
             const newOption = {
                 ...data.option,
-                headerBackgroundSettings: {
-                    // backgroundColor: newColor,
-                    // columns: gridStyle.selectedColumn,
+                cellBackgroundSettings: {
                     ...gridStyle,
                     backgroundColor: newColor,
                 },
@@ -128,7 +95,6 @@ export const HeaderStyling = observer(
                 ...prev,
                 backgroundColor: newColor,
             }));
-            // setData(path, newOption as PathValue<D["data"], typeof path>);
 
             setData(
                 "option",
@@ -139,7 +105,7 @@ export const HeaderStyling = observer(
         const handleFontColorChange = (newColor: string) => {
             const newOption = {
                 ...data.option,
-                headerBackgroundSettings: {
+                cellBackgroundSettings: {
                     ...gridStyle,
                     fontColor: newColor,
                 },
@@ -148,7 +114,7 @@ export const HeaderStyling = observer(
                 ...prev,
                 fontColor: newColor,
             }));
-            // setData(path, newOption as PathValue<D["data"], typeof path>);
+
             setData(
                 "option",
                 newOption as PathValue<GridBlockDef["data"], "option">,
@@ -161,7 +127,7 @@ export const HeaderStyling = observer(
             const newFontSize = e.target.value;
             const newOption = {
                 ...data.option,
-                headerBackgroundSettings: {
+                cellBackgroundSettings: {
                     ...gridStyle,
                     fontSize: newFontSize,
                 },
@@ -170,7 +136,7 @@ export const HeaderStyling = observer(
                 ...prev,
                 fontSize: newFontSize,
             }));
-            // setData(path, newOption as PathValue<D["data"], typeof path>);
+
             setData(
                 "option",
                 newOption as PathValue<GridBlockDef["data"], "option">,
@@ -187,57 +153,13 @@ export const HeaderStyling = observer(
             setGridStyle(defaultState);
             const newOption = {
                 ...data.option,
-                headerBackgroundSettings: defaultState,
+                cellBackgroundSettings: defaultState,
             };
             setData(
                 "option",
                 newOption as PathValue<GridBlockDef["data"], "option">,
             );
         };
-
-        // const computedValue = useMemo(() => {
-        //     return computed(() => {
-        //         if (!data) {
-        //             return "";
-        //         }
-        //         const v = getValueByPath(data, path);
-        //         if (typeof v === "undefined") {
-        //             return "";
-        //         } else if (typeof v === "string") {
-        //             return v;
-        //         }
-        //         return JSON.stringify(v, null, 2);
-        //     });
-        // }, [data, path]).get();
-
-        // useEffect(() => {
-        //     setValue(computedValue);
-        // }, [computedValue, data]);
-
-        // useEffect(() => {
-        //     if (data.hasOwnProperty("option")) {
-        //         reInitializeFeatures(data.option);
-        //     }
-        // }, [id]);
-
-        // useEffect(() => {
-        //     if (data.hasOwnProperty("option")) {
-        //         retainLocalState(data.option);
-        //     }
-        // }, [showValueLabel]);
-
-        //Retain the local state of the feature on toggle switch and on reset button
-        //With the local state we will be displaying the values in the fields
-        // const retainLocalState = (options) => {
-        //     setGridStyle((prev) => ({
-        //         ...prev,
-        //         backgroundColor: options?.backgroundColor || "white",
-        //     }));
-        // };
-
-        // const reInitializeFeatures = (options) => {
-        //     // setShowTitle(options["title"].show ?? true);
-        // };
 
         const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
         const checkedIcon = <CheckBoxIcon fontSize="small" />;
@@ -292,7 +214,7 @@ export const HeaderStyling = observer(
                 <StyledFieldWrapper>
                     <label>
                         <Typography variant="body2" color="secondary">
-                            Header Font Size
+                            Font Size
                         </Typography>{" "}
                     </label>
                     <StyledTextField
@@ -301,43 +223,34 @@ export const HeaderStyling = observer(
                         name="length"
                         value={gridStyle?.fontSize}
                         onChange={handleFontSizeChange}
-                        // onChange={
-                        //     (e) =>
-                        //     handleInputChange("labelLength", e.target.value)
-                        // }
                     />
                 </StyledFieldWrapper>
 
                 <StyledFieldWrapper>
                     <label>
                         <Typography variant="body2" color="secondary">
-                            Header Font Color
+                            Font Color
                         </Typography>{" "}
                     </label>
                     <ColorPickerSettingsNew
                         id={id}
-                        path="option.headerBackgroundSettings.fontColor"
+                        path="option.cellBackgroundSettings.fontColor"
                         colorValue={gridStyle.fontColor}
                         onChange={handleFontColorChange}
-                        // colorValue={valueLabel.fontColor}
-                        // onChange={(e) => handleInputChange("color", e)}
                     />
                 </StyledFieldWrapper>
 
                 <StyledFieldWrapper>
                     <label>
                         <Typography variant="body2" color="secondary">
-                            Header Background Color
+                            Background Color
                         </Typography>{" "}
                     </label>
                     <ColorPickerSettingsNew
                         id={id}
-                        path="option.headerBackgroundSettings.backgroundColor"
+                        path="option.cellBackgroundSettings.backgroundColor"
                         colorValue={gridStyle.backgroundColor}
                         onChange={handleColorChange}
-                        // onChange={(e) =>
-                        //     handleInputChange("backgroundColor", e)
-                        // }
                     />
                 </StyledFieldWrapper>
 
