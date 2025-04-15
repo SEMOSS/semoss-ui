@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
+import { ReportRounded } from '@mui/icons-material';
 
 import { ActionMessages, useBlocks } from '@semoss/renderer';
 import {
@@ -9,15 +10,15 @@ import {
     Stack,
     Typography,
     useNotification,
+    Icon,
 } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
+import { BlockCardContent, blockCardWidth } from './BlockMenuCardContent';
 import {
     BlockLocalStorageData,
     DesignerMenuItem,
 } from '../blocks-workspace/menus/menu-types';
-import { BlockCardContent, blockCardWidth } from './BlockMenuCardContent';
-import * as BLOCK_IMAGES from '@/assets/blocks';
 
 const StyledCard = styled(Card)({
     cursor: 'grab',
@@ -226,7 +227,24 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 fontWeight="medium"
                 align="center"
             >
-                {item.name}
+                <Stack
+                    direction={'row'}
+                    gap={1}
+                    alignContent={'center'}
+                    justifyContent={'center'}
+                >
+                    {item.name}
+                    {item.isBeta && (
+                        <Tooltip
+                            title={'This block is currently in beta'}
+                            children={
+                                <Icon color={'warning'} fontSize="small">
+                                    <ReportRounded />
+                                </Icon>
+                            }
+                        />
+                    )}
+                </Stack>
             </StyledTypography>
             <StyledCard onMouseDown={handleMouseDown}>
                 <Tooltip

@@ -1639,10 +1639,14 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_LAYOUT,
         name: 'Iterator',
         helperText: 'Render a template for each item in a list/array',
+        isBeta: true,
         json: {
             widget: 'iteration',
             data: {
-                style: {},
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                },
                 source: '',
                 child: null,
                 show: 'true',
