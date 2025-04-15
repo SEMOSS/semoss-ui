@@ -152,6 +152,7 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
         let option = JSON.parse(computedValue);
 
         let seriesIndex = option['series'].findIndex((item)=>item.type === 'tree' && item.data.length);
+        let dataColumns = data.columns?.find((item)=>item.hasOwnProperty('isFacet')) || [];
         if(seriesIndex > -1){
             let data = option['series'][seriesIndex]['data'];
             // let updatedDataListres = getDataValuesUpdate(0,frame.data.headers.length, [{name: 'Root', children: [], childrenIndex: 0, itemStyle: {color: getColorData(0)}}], -1);
@@ -164,6 +165,7 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
             for (let i = 0; i < frame.data.values.length; i++) {
                 let currentParent = updatedDataListresLoop[0]; // Start from Root for each row
                 for (let j = 0; j < frame.data.values[i].length; j++) {
+                    if(j+1 == frame.data.values[i].length) continue;
                     const childNode = {
                         name: frame.data.headers[j],
                         value: frame.data.values[i][j],
@@ -175,8 +177,10 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
                             color: getColorData(j + 1),
                         }
                     };
-                    currentParent.children.push(childNode);
-                    currentParent = childNode; // Move deeper for the next child
+                    if(getSelectorData(frame.data.headers[j]) !== dataColumns?.[0]?.selector){
+                        currentParent.children.push(childNode);
+                        currentParent = childNode; // Move deeper for the next child
+                    }
                 }
             }
             option['series'][seriesIndex]['data'] = updatedDataListresLoop;
@@ -185,7 +189,7 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
                 label: {
                     ...option['series'][seriesIndex].label,
                     formatter: (params) => {
-                        if(params.data.name === 'Root' && params.data.seriesIndex === 0){
+                        if(params.data.name === 'Root' && params.seriesIndex === 0){
                             return "";
                         }
                         return params.data.value;
