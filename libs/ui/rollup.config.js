@@ -14,13 +14,15 @@ export default defineConfig({
     input: "src/index.ts",
     output: [
         {
-            file: packageJson.main,
+            dir: "./dist",
+            // file: packageJson.main,
             format: "cjs",
             sourcemap: true,
             plugins: [terser()],
         },
         {
-            file: packageJson.module,
+            dir: "./dist",
+            // file: packageJson.module,
             format: "esm",
             sourcemap: true,
             plugins: [terser()],
@@ -33,6 +35,7 @@ export default defineConfig({
         typescript({
             tsconfig: "./tsconfig.json",
             outputToFilesystem: true,
+            declarationDir: "./dist/types",
         }),
         postcss(),
         bundleSize(),
