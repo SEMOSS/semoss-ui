@@ -1,4 +1,3 @@
-import { BlocksContext } from './Blocks.context';
 import { DesignerContextType, DesignerContext } from './DesignerContext';
 import { EngineContextType, EngineContext } from './EngineContext';
 import { LLMContext, LLMContextType } from './LLMContext';
@@ -7,10 +6,6 @@ import { SettingsContextType, SettingsContext } from './SettingsContext';
 import { RootStoreContextType, RootStoreContext } from './RootStoreContext';
 import { StepperContext, StepperContextType } from './StepperContext';
 import { WorkspaceContextProps, WorkspaceContext } from './WorkspaceContext';
-import {
-    LLMComparisonContextType,
-    LLMComparisonContext,
-} from './LLMComparisonContext';
 
 export type {
     DesignerContextType,
@@ -21,11 +16,9 @@ export type {
     SettingsContextType,
     StepperContextType,
     WorkspaceContextProps,
-    LLMComparisonContextType,
 };
 
 export {
-    BlocksContext,
     DesignerContext,
     EngineContext,
     LLMContext,
@@ -34,5 +27,4 @@ export {
     SettingsContext,
     StepperContext,
     WorkspaceContext,
-    LLMComparisonContext,
 };

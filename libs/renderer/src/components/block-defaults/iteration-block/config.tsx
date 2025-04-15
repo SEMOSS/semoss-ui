@@ -1,23 +1,16 @@
-import { CSSProperties } from "react";
-import { BlockConfig } from "../../../store";
-import {
-    ChildBlockSettings,
-    InputSettings,
-    QueryInputSettings,
-    QuerySelectionSettings,
-} from "../../block-settings";
+
+import { FormatShapes } from "@mui/icons-material";
 
 import { IterationBlockDef, IterationBlock } from "./IterationBlock";
+import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
+import { BlockConfig } from "../../../store";
 import {
     buildLayoutSection,
-    buildListener,
     buildShowField,
 } from "../block-defaults.shared";
-import { FormatShapes } from "@mui/icons-material";
-import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
-import { SelectInputSettings } from "../../block-settings/shared/SelectInputSettings";
-import { InputModalSettings } from "../../block-settings/shared/InputModalSettings";
-import { useBlock } from "@/hooks";
+import {
+    QueryInputSettings,
+} from "../../block-settings";
 
 // export the config for the block
 export const config: BlockConfig<IterationBlockDef> = {
