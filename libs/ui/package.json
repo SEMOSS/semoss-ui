@@ -39,6 +39,7 @@
         "deepmerge": "4.3.1",
         "mui-phone-number": "3.0.3",
         "react-markdown": "9.0.1",
+        "rehype-raw": "^7.0.0",
         "remark-gfm": "^4.0.0",
         "typescript": "5.1.3"
     },

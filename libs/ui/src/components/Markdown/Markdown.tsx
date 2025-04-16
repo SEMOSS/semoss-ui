@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { default as ReactMarkdown, Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 import { Link } from "../Link";
 import { Typography } from "../Typography";
@@ -109,6 +110,7 @@ const defaultComponents: Components = {
 
 // plugins
 const remarkPlugins = [remarkGfm];
+const rehypePlugins = [rehypeRaw];
 
 export interface MarkdownProps {
     /** Markdown to render as HTML */
@@ -121,14 +123,15 @@ export interface MarkdownProps {
 export const Markdown: React.FC<MarkdownProps> = ({ children, components }) => {
     const mergedComponents = useMemo(() => {
         return {
-            ...(components || {}),
             ...defaultComponents,
+            ...(components || {}),
         };
     }, [components]);
 
     return (
         <ReactMarkdown
             remarkPlugins={remarkPlugins}
+            rehypePlugins={rehypePlugins}
             components={mergedComponents}
         >
             {children}

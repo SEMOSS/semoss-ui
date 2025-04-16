@@ -69,9 +69,7 @@ export const EngineUsagePage = () => {
                             components={{
                                 pre: ({ children }) => {
                                     return (
-                                        <Code.Container
-                                            sx={{ background: '#FFFFFF' }}
-                                        >
+                                        <Code.Container>
                                             {children}
                                         </Code.Container>
                                     );
