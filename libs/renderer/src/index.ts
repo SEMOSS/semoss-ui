@@ -41,6 +41,8 @@ export type {
     VariableWithId,
     CellState,
     NewCellAction,
+    Block,
+    QueryStateConfig
 } from "./store";
 
 // REGISTRY AND MENUS

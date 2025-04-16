@@ -1,4 +1,5 @@
-import { ActionMessages } from '@/stores';
+import { ActionMessages } from '@semoss/renderer';
+
 import { Template } from './templates.types';
 import LANDINGPAGE from '@/assets/img/query.jpeg';
 

@@ -171,7 +171,6 @@ export const QueryInputSettings = observer(
         defaultPathMap = {},
     }: QueryInputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
-        console.log(data, "queryInputSettings");
         const { state, notebook } = useBlocks();
         const notification = useNotification();
 
@@ -652,7 +651,7 @@ export const QueryInputSettings = observer(
                 </div>
             );
         };
-        console.log("show", value, "inputvalue", inputValue);
+
         return (
             <>
                 <Stack>
@@ -746,7 +745,7 @@ export const QueryInputSettings = observer(
                             const words = state.inputValue
                                 .toLowerCase()
                                 .split(" ");
-                            let res = options
+                            const res = options
                                 .sort(
                                     (a, b) =>
                                         (DISPLAY_PRIORITY_MAP[
