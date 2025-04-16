@@ -970,6 +970,7 @@ if (process.env.NODE_ENV === 'development') {
                 frame: {
                     name: '',
                 },
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1051,6 +1052,7 @@ if (process.env.NODE_ENV === 'development') {
                         columnDetails: {},
                     },
                 },
+                show: 'true',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
