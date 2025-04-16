@@ -1,18 +1,20 @@
-import { styled } from "@mui/material";
+import { styled, SxProps } from "@mui/material";
 import { useEffect, useState } from "react";
 import { getSingletonHighlighterCore } from "@shikijs/core";
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
 
-const StyledPre = styled("pre")(({ theme }) => ({
-    whiteSpace: "pre-wrap",
-    borderRadius: theme.shape.borderRadius,
-    padding: theme.spacing(1),
-    background: theme.palette.background.default,
+//TODO: Dynamic import
+import shikijsTheme from "@shikijs/themes/github-light";
 
-    "& > code": {
-        background: "transparent",
-    },
-}));
+import shikiLangJSX from "@shikijs/langs/jsx";
+import shikiLangTSX from "@shikijs/langs/tsx";
+import shikiLangTypescript from "@shikijs/langs/typescript";
+import shikiLangJavascript from "@shikijs/langs/javascript";
+import shikiLangHTML from "@shikijs/langs/html";
+import shikiLangCSS from "@shikijs/langs/css";
+import shikiLangPython from "@shikijs/langs/python";
+import shikiLangJSON from "@shikijs/langs/json";
+import shikiLangJava from "@shikijs/langs/java";
 
 const StyledCode = styled("code")(({ theme }) => ({
     ...theme.typography.body2,
@@ -24,23 +26,30 @@ export interface CodeProps {
     code: string;
 
     /** Content to render as code */
-    inline?: boolean;
-
-    /** Content to render as code */
     language?:
+        | "jsx"
+        | "tsx"
         | "javascript"
+        | "js"
         | "typescript"
+        | "ts"
         | "html"
         | "css"
         | "python"
+        | "py"
         | "json"
-        | "txt";
+        | "java"
+        | "txt"
+        | null;
+
+    /** custom style object */
+    sx?: SxProps;
 }
 
 export const Code: React.FC<CodeProps> = ({
     code = "",
-    inline = false,
-    language = "",
+    language = null,
+    sx,
 }) => {
     // store the highlighted coe
     const [highlightedHtml, setHighlightedHTML] = useState<string>("");
@@ -56,24 +65,25 @@ export const Code: React.FC<CodeProps> = ({
 
             // get the highlighter
             const highlighter = await getSingletonHighlighterCore({
-                themes: [import("@shikijs/themes/material-theme-lighter")],
+                themes: [shikijsTheme],
                 langs: [
-                    import("@shikijs/langs/typescript"),
-                    import("@shikijs/langs/typescript"),
-                    import("@shikijs/langs/javascript"),
-                    import("@shikijs/langs/javascript"),
-                    import("@shikijs/langs/html"),
-                    import("@shikijs/langs/css"),
-                    import("@shikijs/langs/python"),
-                    import("@shikijs/langs/python"),
-                    import("@shikijs/langs/json"),
+                    shikiLangTypescript,
+                    shikiLangJavascript,
+                    shikiLangHTML,
+                    shikiLangCSS,
+                    shikiLangPython,
+                    shikiLangJSON,
+                    shikiLangJava,
+                    shikiLangJSX,
+                    shikiLangTSX,
                 ],
                 engine: createJavaScriptRegexEngine(),
             });
 
             const html = highlighter.codeToHtml(code, {
-                theme: "material-theme-lighter",
+                theme: "github-light",
                 lang: language,
+                structure: "inline",
             });
 
             if (isMounted) {
@@ -88,28 +98,14 @@ export const Code: React.FC<CodeProps> = ({
         };
     }, [code, language]);
 
-    console.log(highlightedHtml, code);
     if (!highlightedHtml) {
-        if (inline) {
-            return <StyledCode>{code}</StyledCode>;
-        }
-
-        return (
-            <StyledPre>
-                <StyledCode>{code}</StyledCode>
-            </StyledPre>
-        );
-    }
-
-    if (inline) {
-        return (
-            <StyledCode dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
-        );
+        return <StyledCode sx={sx}>{code}</StyledCode>;
     }
 
     return (
-        <StyledPre>
-            <StyledCode dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
-        </StyledPre>
+        <StyledCode
+            sx={sx}
+            dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+        />
     );
 };

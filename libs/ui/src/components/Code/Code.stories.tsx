@@ -1,4 +1,5 @@
 import React from "react";
+
 import { Code } from ".";
 
 export default {
@@ -6,43 +7,56 @@ export default {
     component: Code,
 };
 
-const Template = (args) => {
+const BaseTemplate = (args) => {
     return <Code {...args} />;
 };
 
-export const Default = Template.bind({});
-
-Default.args = {
-    code: `
-    const name = "world";
-
-    function log(name){
-        console.log(name)
-    }
-
-    log(name)
-    `,
-    language: "javascript",
+const WrappedTemplate = (args) => {
+    return (
+        <Code.Container>
+            <Code {...args} />
+        </Code.Container>
+    );
 };
 
-// export const Inline = Template.bind({});
+export const Default = BaseTemplate.bind({});
 
-// Inline.args = {
-//     code: `1+1`,
-//     inline: true,
-// };
+Default.args = {
+    code: `1+1`,
+    language: null,
+};
+export const Wrapped = WrappedTemplate.bind({});
 
-// export const Highlight = Template.bind({});
+Wrapped.args = {
+    code: `
+import React from 'react';
 
-// Highlight.args = {
-//     code: `1+1`,
-//     language: "javascript",
-//     inline: true,
-// };
+import { SwitchAccessShortcutOutlined } from '@mui/icons-material';
+import { styled, CustomPaletteOptions } from '@semoss/ui';
 
-// export const Highlight2 = Template.bind({});
+const StyledContainer = styled('div')(({ theme }) => {
+    return {
+        // width: '50px', height: '50px',
+        '.MuiIcon-fontSizeLarge': {
+            width: '2em',
+            height: '2em',
+        },
+    };
+});
 
-// Highlight2.args = {
-//     language: "javascript",
-//     inline: false,
-// };
+const StyledIcon = styled(SwitchAccessShortcutOutlined)(({ theme }) => {
+    return {
+        color: theme.palette.pink['300'],
+    };
+});
+
+export const Function = () => {
+    return (
+        <StyledContainer>
+            <StyledIcon fontSize="large" />
+        </StyledContainer>
+    );
+};
+    `,
+    language: null,
+};

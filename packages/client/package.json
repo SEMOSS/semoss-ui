@@ -113,7 +113,6 @@
         "echarts": "^5.5.1",
         "echarts-for-react": "^3.0.2",
         "flexlayout-react": "^0.8.1",
-        "marked": "^4.0.18",
         "mobx": "6.3.7",
         "mobx-react-lite": "^3.4.0",
         "monaco-editor": "^0.45.0",
