@@ -294,27 +294,29 @@ export class CellState<D extends CellDef = CellDef> {
             while (isPolling) {
                 try {
                     // get the reponse from the job id
-                    const { message, status } = await getPixelConsole(jobId);
+                    const data = await getPixelConsole(jobId);
 
-                    // add the new message
-                    runInAction(() => {
-                        message.forEach((mess) => {
-                            this._store.messages.push(mess);
-                        });
+                const { message: messages, status } = data;
+
+                // add the new messages
+                runInAction(() => {
+                    messages.forEach((mess) => {
+                        this._store.messages.push(mess);
                     });
-                    // Currently console does not get pass STREAMING
-                    if (status === "ProgressComplete" || status === "Streaming" || status === "Complete") {
-                        isPolling = false;
-                    } else if (status === "Streaming") {
-                        isPolling = false;
-                    } else {
-                        // poll
-                        await new Promise((resolve) =>
-                            setTimeout(resolve, 2000),
-                        );
-                    }
-                } catch (error) {
-                    console.error("Error during polling:", error.message);
+                });
+                // Currently console does not get pass STREAMING
+                if (
+                    status === "ProgressComplete" ||
+                    status === "Streaming" ||
+                    status === "Complete"
+                ) {
+                    isPolling = false;
+                } else {
+                    // poll
+                    await new Promise((resolve) => setTimeout(resolve, 2000));
+                }
+            } catch (error) {
+                console.error("Error during polling:", error.message);
 
                     // turn it off
                     isPolling = false;
@@ -406,9 +408,6 @@ export class CellState<D extends CellDef = CellDef> {
                     this._store.output = outputs;
                 });
             }
-
-            // log it
-            console.log(JSON.stringify(this.operation), this.output);
 
             // process side effects from running a pixel
             this._state.processSideEffects(this.operation, this.output);

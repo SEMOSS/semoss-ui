@@ -90,7 +90,7 @@ export const MapMarkerSize = observer(
          */
         const handleChangeSymbolSize = (e) => {
             // Parse the current value to a JSON object
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the symbol size to the selected value
             setMarkerSize(e.target.value);
             // Set the symbol size in the JSON object

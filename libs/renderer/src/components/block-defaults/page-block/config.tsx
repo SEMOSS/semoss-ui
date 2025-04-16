@@ -13,6 +13,7 @@ import { PageBlockDef, PageBlock } from "./PageBlock";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import {
     BorderSettings,
+    InputSettings,
     QuerySelectionSettings,
     SizeSettings,
 } from "../../block-settings";
@@ -45,6 +46,12 @@ export const config: BlockConfig<PageBlockDef> = {
         {
             name: "General",
             children: [
+                {
+                    description: 'Route',
+                    render: ({ id }) => (
+                        <InputSettings id={id} label="Route" path="route" />
+                    ),
+                },
                 {
                     description: "Loading",
                     render: ({ id }) => (
