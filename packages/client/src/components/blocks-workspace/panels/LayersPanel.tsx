@@ -928,13 +928,21 @@ export const LayersPanel = observer((): JSX.Element => {
     /**
      * handle the add page
      */
-    const handlePageAdd = () => {
-        state.dispatch({
+    const handlePageAdd = async () => {
+        const newPageId = await state.dispatch({
             message: ActionMessages.ADD_BLOCK,
             payload: {
                 json: PAGE_BLOCK,
             },
         });
+
+        if (typeof newPageId === 'string') {
+            console.log('newPageId', newPageId);
+            const block = state.blocks[newPageId];
+            handlePageSelection(block);
+        } else {
+            console.error('Invalid newPageId:', newPageId);
+        }
     };
 
     return (
