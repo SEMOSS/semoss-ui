@@ -38,7 +38,10 @@ import { config as IconBlockConfig, IconBlockDef } from "./Icon_block";
 import { config as IframeBlockConfig, IframeBlockDef } from "./iframe-block";
 import { config as ImageBlockConfig, ImageBlockDef } from "./image-block";
 import { config as InputBlockConfig, InputBlockDef } from "./input-block";
-import { config as IterationBlockConfig, IterationBlockDef } from './iteration-block';
+import {
+    config as IterationBlockConfig,
+    IterationBlockDef,
+} from "./iteration-block";
 
 import { config as LinkBlockConfig, LinkBlockDef } from "./link-block";
 import { config as LogsBlockConfig, LogsBlockDef } from "./logs-block";

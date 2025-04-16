@@ -8,7 +8,8 @@
         "format:fix": "prettier . --write --plugin-search-dir=.",
         "fix": "run-s format:fix lint:fix --supress",
         "type-check": "tsc --pretty --noEmit",
-        "test": "vitest --watch=false --passWithNoTests --changed"
+        "test": "vitest --watch=false --passWithNoTests --changed",
+        "test:browser": "vitest --watch --ui --pool=forks --project client"
     },
     "nx": {
         "targets": {
@@ -102,10 +103,11 @@
         "@mui/icons-material": "^5.11.16",
         "@mui/material": "^5.13.5",
         "@mui/x-data-grid": "^7.1.0",
-        "@semoss/ui": "workspace:*",
         "@textea/json-viewer": "^4.0.0",
+        "@semoss/ui": "workspace:*",
         "@semoss/renderer": "workspace:*",
         "@semoss/sdk": "workspace:*",
+        "@vitest/ui": "^1.3.1",
         "@xyflow/react": "^12.0.4",
         "axios": "^1.5.0",
         "dayjs": "^1.11.4",
@@ -169,7 +171,7 @@
         "typescript": "^4.7.4",
         "vite": "^6.1.1",
         "vite-tsconfig-paths": "^5.1.4",
-        "vitest": "^3.0.6",
+        "vitest": "^3.0.9",
         "vitest-canvas-mock": "^0.3.3",
         "webpack": "^5.74.0",
         "webpack-bundle-analyzer": "^4.10.2",
