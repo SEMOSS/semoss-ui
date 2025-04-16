@@ -107,8 +107,8 @@ export interface GridBlockDef extends BlockDef<"grid"> {
 
         /** */
         style: {
-            height: number;
-            width: number;
+            height: string | undefined;
+            width: string | undefined;
             display: string | undefined;
             flexDirection: string | undefined;
             padding: string | undefined;

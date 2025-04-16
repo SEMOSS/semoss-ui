@@ -345,7 +345,7 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
             <div
                 style={{
                     flex: 1,
-                    width: "440px",
+                    width: "100%",
                     height: "100%",
                     minHeight: "400px",
                 }}
@@ -360,13 +360,12 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
                     paginationModel={paginationModel}
                     onPaginationModelChange={handlePaginationModalChange}
                     pageSizeOptions={[10, 50, 100, 500]}
-                    // getRowHeight={() => "auto"}
                     getRowHeight={getRowHeight}
                     columnHeaderHeight={38}
                     disableColumnMenu
                     disableColumnSorting
                     showCellVerticalBorder
-                    // showColumnVerticalBorder
+                    showColumnVerticalBorder
                     unstable_rowSpanning={data.option?.rowSpanning}
                     sx={{
                         "& .MuiDataGrid-columnHeader": {

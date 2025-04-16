@@ -12,17 +12,23 @@ import {
     Box,
 } from "@mui/material";
 
-import { List, Stack, styled } from "@semoss/ui";
+import { Button, List, Stack, styled } from "@semoss/ui";
 
 import { useBlockSettings } from "../../../hooks";
 
-import { SelectInputSettings, BaseSettingSection } from "../../block-settings";
+import {
+    SelectInputSettings,
+    BaseSettingSection,
+    ResizeSetting,
+} from "../../block-settings";
 import { GridBlockDef } from "./GridBlock";
 import { HeaderStyling } from "./operations/HeaderStyling";
 import { CellStyling } from "./operations/CellStyling";
 import { ChartTitle } from "./operations/ChartTitle";
 import { ColumnTextWrap } from "./operations/WrapTextSettings";
 import { RowSpanning } from "./operations/RowSpanning";
+import { GridResizeSettings } from "./operations/GridResizeSettings";
+import { PathValue } from "@/types";
 
 interface GridBlockToolProps {
     id: string;
@@ -44,6 +50,19 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
     const [generalSettings, setGeneralSettings] = useState({
         showBlock: data.show,
     });
+
+    const resetToInitialState = () => {
+        const defaultState = {
+            width: "450px",
+            height: "350px",
+        };
+
+        const newOption = {
+            ...data.style,
+            ...defaultState,
+        };
+        setData("style", newOption as PathValue<GridBlockDef["data"], "style">);
+    };
 
     function updateChart() {}
     return (
@@ -226,6 +245,63 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
                         <StyledItem>
                             {/* <ColumnTextWrap id={id} path={"option"} /> */}
                             <RowSpanning id={id} path={"option"} />
+                        </StyledItem>
+                    )}
+                </ListItem>
+
+                {/* Resizing  */}
+                <ListItem disablePadding style={{ display: "block" }}>
+                    <ListItemButton
+                        onClick={(e) =>
+                            setSelectedList((prevList) =>
+                                prevList === "resizing" ? "" : "resizing",
+                            )
+                        }
+                        selected={selectedList === "resizing"}
+                    >
+                        <ListItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
+                            <ImageIcon
+                                fontSize="large"
+                                color={
+                                    selectedList === "resizing"
+                                        ? "primary"
+                                        : "disabled"
+                                }
+                            />
+                        </ListItemIcon>
+                        <Box display="flex" alignItems="center" gap={1}>
+                            <ListItemText primary="Resizing" />
+                            <InfoOutlined color="disabled" />
+                        </Box>
+                    </ListItemButton>
+                    {selectedList === "resizing" && (
+                        <StyledItem>
+                            <Stack
+                                display="flex"
+                                flexDirection="column"
+                                gap={1}
+                            >
+                                <GridResizeSettings
+                                    path={"style.height"}
+                                    id={id}
+                                    label={"Height"}
+                                ></GridResizeSettings>
+                                <GridResizeSettings
+                                    path={"style.width"}
+                                    id={id}
+                                    label={"Width"}
+                                ></GridResizeSettings>
+                                <Stack display="flex" alignItems="end">
+                                    <Button
+                                        size="small"
+                                        color="primary"
+                                        variant="contained"
+                                        onClick={resetToInitialState}
+                                    >
+                                        Reset
+                                    </Button>
+                                </Stack>
+                            </Stack>
                         </StyledItem>
                     )}
                 </ListItem>
