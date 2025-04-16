@@ -177,10 +177,8 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
                             color: getColorData(j + 1),
                         }
                     };
-                    if(getSelectorData(frame.data.headers[j]) !== dataColumns?.[0]?.selector){
                         currentParent.children.push(childNode);
                         currentParent = childNode; // Move deeper for the next child
-                    }
                 }
             }
             option['series'][seriesIndex]['data'] = updatedDataListresLoop;
