@@ -111,6 +111,7 @@ describe("Checkbox block", () => {
             blocks: blocks,
         });
 
+        const element = container.querySelector("[data-block='checkbox3']");
 
         expect(element).toBeInTheDocument();
         expect(element.querySelector(".Mui-checked")).toBeInTheDocument();
