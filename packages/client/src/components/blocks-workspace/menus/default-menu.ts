@@ -1507,7 +1507,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_LAYOUT,
         name: 'Flip Card',
-        helperText: 'Create a card layout with flip action',
+        helperText: 'Flip content on hover or click to reveal more information',
         activeImage: BLOCK_IMAGES['FLIP_CARD_ACTIVE'],
         hoverImage: BLOCK_IMAGES['FLIP_CARD_HOVER'],
         json: {
