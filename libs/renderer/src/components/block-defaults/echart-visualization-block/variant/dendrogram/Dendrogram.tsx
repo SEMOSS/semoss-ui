@@ -152,7 +152,7 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
         let option = JSON.parse(computedValue);
 
         let seriesIndex = option['series'].findIndex((item)=>item.type === 'tree' && item.data.length);
-        let dataColumns = data.columns?.find((item)=>item.hasOwnProperty('isFacet')) || [];
+        let dataColumns = data.columns?.find((item)=>item.hasOwnProperty('isFacet')) || {};
         if(seriesIndex > -1){
             let data = option['series'][seriesIndex]['data'];
             // let updatedDataListres = getDataValuesUpdate(0,frame.data.headers.length, [{name: 'Root', children: [], childrenIndex: 0, itemStyle: {color: getColorData(0)}}], -1);
@@ -165,7 +165,7 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
             for (let i = 0; i < frame.data.values.length; i++) {
                 let currentParent = updatedDataListresLoop[0]; // Start from Root for each row
                 for (let j = 0; j < frame.data.values[i].length; j++) {
-                    if(j+1 == frame.data.values[i].length) continue;
+                    if(dataColumns.hasOwnProperty('name') && (j+1 == frame.data.values[i].length)) continue;
                     const childNode = {
                         name: frame.data.headers[j],
                         value: frame.data.values[i][j],
@@ -265,6 +265,7 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
             },
     };
     const showDendrogramChartField = data.facet.facetSelected.length ? true : false;
+    console.log(dataOption, 'dendrogram option');
     return (
         <StyledMainContainer id={id}>
             <EChartsReact
