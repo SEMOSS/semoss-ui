@@ -1134,6 +1134,7 @@ if (process.env.NODE_ENV === 'development') {
                             expandAndCollapse: true,
                             animationDuration: 750,
                             animationDurationUpdate: 750,
+                            initialTreeDepth: -1,
                         },
                     ],
                     ['_state']: {
