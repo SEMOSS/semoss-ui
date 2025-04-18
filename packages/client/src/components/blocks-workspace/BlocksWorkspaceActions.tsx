@@ -60,15 +60,16 @@ export const BlocksWorkspaceActions = observer(() => {
         // remove the visual from the json
         Object.keys(json?.blocks).forEach((key) => {
             if (key.startsWith('e-chart')) {
-                if (json?.blocks[key]?.data?.option?.["visual"]) {
-                    json.blocks[key].data.option["visual"] = false;
+                if (json?.blocks[key]?.data?.option?.['visual']) {
+                    json.blocks[key].data.option['visual'] = false;
                 }
             }
         });
         try {
             // save the json
             const { errors } = await monolithStore.runQuery<[true]>(
-                `SaveAppBlocksJson(project=["${workspace.appId
+                `SaveAppBlocksJson(project=["${
+                    workspace.appId
                 }"], json=["<encode>${JSON.stringify(json)}</encode>"]);`,
             );
 
