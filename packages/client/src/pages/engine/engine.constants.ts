@@ -19,7 +19,7 @@ import { EngineQAPage } from './EngineQAPage';
 // import { EngineReplaceDataPage } from './EngineReplaceDataPage';
 import { EngineUsagePage } from './EngineUsagePage';
 import { EngineSmssPage } from './EngineSmssPage';
-import { EngineReportPage } from './engineReportPage';
+import { EngineReportPage } from './EngineReportPage';
 
 export const ENGINE_ROUTES: {
     /** Name of the route */
@@ -131,7 +131,7 @@ export const ENGINE_ROUTES: {
                 name: 'Reporting',
                 path: 'reporting',
                 component: EngineReportPage,
-                restrict: ['OWNER'],
+                restrict: ['EDIT', 'OWNER'],
             },
         ],
     },

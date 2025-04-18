@@ -6,9 +6,8 @@ import { UsagePerUserTable } from './UsagePerUserTable';
 import { UsagePerProjectTable } from './UsagePerProjectTable';
 
 const StyledContainer = styled('div')(({ theme }) => ({
-    width: '100%',
     display: 'flex',
-    alignSelf: 'stretch',
+    // alignSelf: 'stretch',
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: '5px',

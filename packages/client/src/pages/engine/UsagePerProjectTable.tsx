@@ -3,6 +3,31 @@ import { Table, Typography, styled, Search, IconButton } from '@semoss/ui';
 import { useState, useRef, useEffect } from 'react';
 import SearchIcon from '@mui/icons-material/Search';
 import { FilterAltSharp } from '@mui/icons-material';
+
+const StyledTableContainer = styled(Table.Container)({
+    background: '#FFF',
+    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+});
+
+const Grid = styled('div')({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+});
+const StyledSearchFilter = styled('div')({
+    marginLeft: '10px',
+    display: 'flex',
+});
+const StyledFilter = styled('div')({
+    marginLeft: '10px',
+});
+
+const MAPPINGS = {
+    TOTAL_NUMBER_OF_REQUEST: 'Requests',
+    TOTAL_NUMBER_OF_TOKENS: 'Tokens',
+};
+
 export const UsagePerProjectTable = () => {
     const [search, setSearch] = useState<string>('');
     const UsagePerProjectSearchRef = useRef<HTMLInputElement | null>(null);
@@ -41,25 +66,6 @@ export const UsagePerProjectTable = () => {
         page * rowsPerPage,
         page * rowsPerPage + rowsPerPage,
     );
-
-    const StyledTableContainer = styled(Table.Container)({
-        background: '#FFF',
-        boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    });
-
-    const Grid = styled('div')({
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-    });
-    const StyledSearchFilter = styled('div')({
-        marginLeft: '10px',
-        display: 'flex',
-    });
-    const StyledFilter = styled('div')({
-        marginLeft: '10px',
-    });
 
     return (
         <>
@@ -115,7 +121,9 @@ export const UsagePerProjectTable = () => {
                     <Table.Head>
                         <Table.Row>
                             {headers.map((header, index) => (
-                                <Table.Cell key={index}>{header}</Table.Cell>
+                                <Table.Cell key={index}>
+                                    {MAPPINGS[header]}
+                                </Table.Cell>
                             ))}
                         </Table.Row>
                     </Table.Head>

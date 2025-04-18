@@ -12,6 +12,37 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import SearchIcon from '@mui/icons-material/Search';
 import { FilterAltSharp } from '@mui/icons-material';
 
+const StyledTableContainer = styled(Table.Container)({
+    background: '#FFF',
+    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+});
+
+const Grid = styled('div')({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+});
+const StyledSearchFilter = styled('div')({
+    marginLeft: '10px',
+    display: 'flex',
+});
+const StyledFilter = styled('div')({
+    marginLeft: '10px',
+});
+const StyledDiv = styled('div')({
+    display: 'flex',
+    justifyContent: 'left',
+    alignItems: 'center',
+    gap: '5px',
+});
+
+const MAPPINGS = {
+    USER_NAME: 'User',
+    USER_ID: 'UserId',
+    TOTAL_NUMBER_OF_TOKENS: 'Tokens',
+};
+
 export const UsagePerUserTable = () => {
     const [search, setSearch] = useState<string>('');
     const searchRef = useRef<HTMLInputElement | null>(null);
@@ -29,7 +60,8 @@ export const UsagePerUserTable = () => {
         ? `GetEngineUsagePerUser(engine='${id}');`
         : '';
     const usagePerUsers = usePixel(usagePerUserPixel);
-    console.log(usagePerUsers, 'usagePerUser');
+
+    console.log(usagePerUsers);
 
     const outputData: Record<string, any>[] =
         usagePerUsers.status === 'SUCCESS' && Array.isArray(usagePerUsers.data)
@@ -38,27 +70,6 @@ export const UsagePerUserTable = () => {
 
     const headers = outputData.length > 0 ? Object.keys(outputData[0]) : [];
     const rows = outputData.length > 0 ? outputData : [];
-    const USER_NAME = headers.find((header) => header === 'USER_NAME');
-    console.log('USER_NAME', USER_NAME, headers);
-
-    const Avatars = useMemo(() => {
-        if (!headers.length) {
-            return [];
-        }
-        let i = 0;
-        const avatarList = [];
-        while (i < 5 && i < headers.length) {
-            avatarList.push(
-                <Avatar key={i}>
-                    {(headers[i] || ' ').charAt(0).toUpperCase()}
-                </Avatar>,
-            );
-
-            i++;
-        }
-
-        return avatarList;
-    }, [headers.length]);
 
     const getAvatarsForRow = (userName: string) => {
         return (userName || '')
@@ -78,31 +89,6 @@ export const UsagePerUserTable = () => {
         page * rowsPerPage,
         page * rowsPerPage + rowsPerPage,
     );
-
-    const StyledTableContainer = styled(Table.Container)({
-        background: '#FFF',
-        boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    });
-
-    const Grid = styled('div')({
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-    });
-    const StyledSearchFilter = styled('div')({
-        marginLeft: '10px',
-        display: 'flex',
-    });
-    const StyledFilter = styled('div')({
-        marginLeft: '10px',
-    });
-    const StyledDiv = styled('div')({
-        display: 'flex',
-        justifyContent: 'left',
-        alignItems: 'center',
-        gap: '5px',
-    });
 
     return (
         <>
@@ -158,7 +144,9 @@ export const UsagePerUserTable = () => {
                     <Table.Head>
                         <Table.Row>
                             {headers.map((header, index) => (
-                                <Table.Cell key={index}>{header}</Table.Cell>
+                                <Table.Cell key={index}>
+                                    {MAPPINGS[header]}
+                                </Table.Cell>
                             ))}
                         </Table.Row>
                     </Table.Head>
