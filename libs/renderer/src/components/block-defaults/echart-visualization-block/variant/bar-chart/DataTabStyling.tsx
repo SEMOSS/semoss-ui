@@ -1,5 +1,5 @@
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Autocomplete, TextField, styled } from "@semoss/ui";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { TextField, styled } from "@semoss/ui";
 import { observer } from "mobx-react-lite";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { useBlockSettings, useBlocksPixel, useFrameHeaders } from "../../../../../hooks";
@@ -8,7 +8,10 @@ import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import Switch from '@mui/material/Switch';
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { DragDropContext, Droppable } from "react-beautiful-dnd";
+import { Autocomplete, Popover } from "@mui/material";
+import { VisualMapConstant } from "../../VisualMapConstant";
+import { VisualMap } from "../../VisualMap";
 
 const StyledMain = styled("div")(() => ({
     width: "100%",
@@ -59,9 +62,14 @@ const DropContainer = styled("div")(() => ({
     display: "flex",
     alignItems: "center",
 }));
+const StyledPopoverSection = styled("div")(() => ({
+    // top: "1%",
+    // position: "relative",
+    // left: "8%",
+}));
 
 export const DataTabStyling = observer(
-    <D extends BlockDef = BlockDef>({ id, updateFrame, path, dragdropColumns, deleteColumns, formmattedColumns,isAdd , syncHeader, chart, storedColumns}) => {
+    <D extends BlockDef = BlockDef>({ id, updateFrame, path, dragdropColumns, deleteColumns, formmattedColumns, isAdd, syncHeader, chart, storedColumns, visual, selectedItem }) => {
         const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
         const [columnsData, setColumnsData] = useState([]);
         const [droppedColumns, setDroppedColumns] = useState<string[]>([]);
@@ -70,9 +78,11 @@ export const DataTabStyling = observer(
         });
         const [checkedInstruction, setCheckedInstruction] = useState(false);
         const [checkedVisual, setCheckedVisual] = useState(false);
-        const [isAddIcon, setIsAddIcon] =useState(false);
+        const [isAddIcon, setIsAddIcon] = useState(false);
         const getFrames = useBlocksPixel<string[]>("GetFrames();", { data: [] });
         const options = getFrames.status === "SUCCESS" ? getFrames.data : [];
+        const [initialVisual, setInitialVisual] = useState(false);
+        const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
 
         const frameHeaders = useFrameHeaders(data.frame?.name);
         // fetch custom details about headers like alias, header, etc and assign to the variable for using it whenever required
@@ -86,6 +96,35 @@ export const DataTabStyling = observer(
                 };
             });
         }, [frameHeaders]);
+
+        const matchedVisualMap = getMatchingVisualMapRow(data);
+
+        function getMatchingVisualMapRow(data: any) {
+            const matchingRow: any = {};
+
+            // Iterate over each category in VisualMapConstant
+            Object.keys(VisualMapConstant).forEach((category) => {
+                const items = VisualMapConstant[category];
+
+                // Find the row where the name matches data.option["title"]["text"]
+                const foundItem = items.find((item: any) => {
+                    return String(item.title) === String(data.variation);
+                });
+
+                if (foundItem) {
+                    matchingRow[category] = foundItem;
+                }
+            });
+
+            return matchingRow;
+        }
+
+        const handleSelectedItem = (item: any) => {
+            selectedItem(item);
+            setSelectedColumns({});
+            storedColumns.length = 0; // Clear the storedColumns array
+            Object.keys(dragdropColumns).forEach((key) => delete dragdropColumns[key]);
+        };
 
         useEffect(() => {
             const updatedColumns = { ...selectedColumns };
@@ -101,7 +140,7 @@ export const DataTabStyling = observer(
         }, [JSON.stringify(storedColumns)]);
 
         useEffect(() => {
-            const updatedColumns = { ...dragdropColumns , ...selectedColumns };
+            const updatedColumns = { ...dragdropColumns, ...selectedColumns };
 
             chart.forEach((item, index) => {
                 const key = `data-tab-drop-area-${index}`;
@@ -129,8 +168,18 @@ export const DataTabStyling = observer(
                 };
             });
 
-            formmattedColumns(formattedArray,data.variation);
+            formmattedColumns(formattedArray, data.variation);
         }, [selectedColumns]);
+
+        const handleChangeVisual = (value: boolean, e: React.MouseEvent<HTMLElement>) => {
+            visual(!value);
+            setInitialVisual(!value);
+            setMenuAnchorEl(e.currentTarget);
+        };
+        const handleCloseVisual = () => {
+            setInitialVisual(false);
+            setMenuAnchorEl(null);
+        }
 
         return (
             <StyledMain>
@@ -155,17 +204,52 @@ export const DataTabStyling = observer(
                     />
                 </StyledSubSection>
                 <StyledSpanFrame>Selected Visual</StyledSpanFrame>
-                <StyledSubSection>
+                <StyledSubSection onClick={(e: any) => handleChangeVisual(initialVisual, e)}>
                     <Autocomplete
                         fullWidth
                         id="Echart-Visuals"
                         multiple={false}
                         disabled={getFrames.status !== "SUCCESS"}
-                        options={options}
+                        options={[]} // No options to display in the dropdown
+                        disablePortal
+                        PopperComponent={() => null}
                         freeSolo={false}
-                        renderInput={(params) => (
-                            <TextField {...params} size="small" variant="outlined" />
-                        )}
+                        renderInput={(params) => {
+                            // Extract the first matching item from matchedVisualMap
+                            const matchedItem = Object.values(matchedVisualMap)[0] as { icon: React.ReactNode; label: string } | undefined; // Assuming only one match exists
+
+                            return (
+                                <TextField
+                                    {...params}
+                                    size="small"
+                                    variant="outlined"
+                                    InputProps={{
+                                        ...params.InputProps,
+                                        startAdornment: matchedItem ? (
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <div style={{ display: "flex", alignItems: "center" }}>
+                                                    {matchedItem.icon}
+                                                </div>
+                                                <span
+                                                    style={{
+                                                        marginLeft: "10px",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                    }}
+                                                >
+                                                    {matchedItem.label}
+                                                </span>
+                                            </div>
+                                        ) : null,
+                                    }}
+                                />
+                            );
+                        }}
                     />
                 </StyledSubSection>
 
@@ -290,6 +374,23 @@ export const DataTabStyling = observer(
                     />
                     <StyledSpanSwitch>Auto Visualize</StyledSpanSwitch>
                 </StyledSwitchSection>
+                <StyledPopoverSection>
+                    <Popover
+                        id={'visual-popover'}
+                        open={initialVisual}
+                        onClose={() => {
+                            setInitialVisual(false);
+                        }}
+                        anchorEl={menuAnchorEl}
+                        anchorReference="anchorPosition" // <-- THIS is the key
+                        anchorPosition={{ top: window.innerHeight * 0.14, left: window.innerWidth * 0.51 }}
+                    >
+                        <VisualMap
+                            selectedItem={handleSelectedItem}
+                            handleClose={handleCloseVisual}
+                        />
+                    </Popover>
+                </StyledPopoverSection>
             </StyledMain>
         );
     }

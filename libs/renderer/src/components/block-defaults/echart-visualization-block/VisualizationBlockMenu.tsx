@@ -2,7 +2,8 @@ import { useState } from "react";
 
 import { Stack, styled, ToggleTabsGroup } from "@semoss/ui";
 
-import { useBlock } from "../../../hooks";
+import { useBlock, useBlockSettings } from "../../../hooks";
+import { EchartVisualizationBlockDef } from "./VisualizationBlock";
 import { BlockComponent } from "../../../store";
 import { AIGenerationSettings, JsonSettings } from "../../block-settings";
 import { UpgradedVisualizationTool } from "./variant/bar-chart/UpgradedVisualizationTool";
@@ -80,9 +81,11 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
 }));
 
 export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
-    const { data } = useBlock(id);
+    const { data, setData } =
+        useBlockSettings<EchartVisualizationBlockDef>(id);
     const [selectedTab, setSelectedTab] = useState("Tools");
     const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
+    const [forceRender, setForceRender] = useState(false);
     function updateFrame() { }
 
     function handleStoreData(storeData: any[]) {
@@ -91,6 +94,13 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
             setSelectedColumn(storeData);
         }
     }
+    const handleSelectedItem = (item: any) => {
+        if (item.title && item.option) {
+            data.variation = item.title;
+            data.option = item.option;
+            setForceRender(prev => !prev); // Force re-render to update the chart with the new data
+        }
+    };
     return (
         <StyledStack>
             {/* CodeEditorSettings is a dup of JsonSettings with LLM prompting and wordwrap added to the editor and ability to work with HTML as well as JSON */}
@@ -122,6 +132,7 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                                 chart={Bar}
                                 storedColumns={selectedColumn}
                                 handleStoreData={handleStoreData}
+                                selectedItem={handleSelectedItem}
                             />
                         )}
                         {data.variation === "echart-line-graph" && (
@@ -132,6 +143,7 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                                 chart={Line}
                                 storedColumns={selectedColumn}
                                 handleStoreData={handleStoreData}
+                                selectedItem={handleSelectedItem}
                             />
                         )}
                         {data.variation === "echart-pie-chart" && (
@@ -142,6 +154,7 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                                 chart={Pie}
                                 storedColumns={selectedColumn}
                                 handleStoreData={handleStoreData}
+                                selectedItem={handleSelectedItem}
                             />
                         )}
                         {data.variation === "echart-scatter-plots" && (
@@ -152,6 +165,7 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                                 chart={ScatterPlot}
                                 storedColumns={selectedColumn}
                                 handleStoreData={handleStoreData}
+                                selectedItem={handleSelectedItem}
                             />
                         )}
                         {data.variation === "echart-world-map-chart" && (
@@ -162,6 +176,7 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                                 chart={WorldMap}
                                 storedColumns={selectedColumn}
                                 handleStoreData={handleStoreData}
+                                selectedItem={handleSelectedItem}
                             />
                         )}
                         {/* Render StackChartBlockSettings component when 'Data' tab is selected */}
@@ -173,6 +188,7 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                                 chart={StackChart}
                                 storedColumns={selectedColumn}
                                 handleStoreData={handleStoreData}
+                                selectedItem={handleSelectedItem}
                             />
                         )}
                         {data.variation === "echart-gantt-chart" && (
@@ -183,6 +199,7 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                                 chart={Gantt}
                                 storedColumns={selectedColumn}
                                 handleStoreData={handleStoreData}
+                                selectedItem={handleSelectedItem}
                             />
                         )}
                     </StyledSubSection>

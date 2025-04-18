@@ -71,7 +71,7 @@ const COLOUR_PALATTE_DATA = [
 ];
 
 export const FrameOperations = observer(
-    <D extends BlockDef = BlockDef>({ id, updateFrame, path, chart, storedColumns, handleStoreData }) => {
+    <D extends BlockDef = BlockDef>({ id, updateFrame, path, chart, storedColumns, handleStoreData, selectedItem }) => {
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
         const [columnsData, setColumnsData] = useState([]);
@@ -89,13 +89,6 @@ export const FrameOperations = observer(
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
         const [filteredColumns, setFilteredColumns] = useState([]);
         const [temp, setTemp] = useState(true);
-
-        const [frameOperationState, setFrameOperationState] = useState<
-            "initial" | "updated"
-        >("initial");
-
-        // options for the autocomplete
-        const options = getFrames.status === "SUCCESS" ? getFrames.data : [];
         // using frameheaders hook to get the header details for the selected frame
         const frameHeaders = useFrameHeaders(data.frame?.name);
         // fetch custom details about headers like alias, header, etc and assign to the variable for using it whenever required
@@ -874,6 +867,23 @@ export const FrameOperations = observer(
             setIsAdd(value);
             setAddedColumnName(id);
         }
+        const handleChangeVisual = (value: boolean) => {
+            const tempValue = JSON.parse(computedValue);
+
+            tempValue["visual"] =
+                tempValue["visual"] &&
+                    Object.keys(tempValue["visual"]).length > 0
+                    ? tempValue["visual"]
+                    : {};
+            tempValue["visual"] = value;
+
+            setValue(JSON.stringify(tempValue));
+            setData("option", tempValue);
+        }
+        const handleSelectedItem = (item: any) => {
+            selectedItem(item);
+            setSelectedColumn([]);
+        };
         return (
             <>
                 <DragDropContext onDragEnd={handleDragEnd}>
@@ -940,9 +950,9 @@ export const FrameOperations = observer(
                                                     >
                                                         <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center" }}>
                                                             {col.dataType === "STRING" ? (
-                                                                <StyledLabelIcon src={StringIcon} />
+                                                                <StyledLabelIcon src={String(StringIcon)} />
                                                             ) : (
-                                                                <StyledLabelIcon src={NumberIcon} />
+                                                                <StyledLabelIcon src={String(NumberIcon)} />
                                                             )}
                                                         </div>
                                                         <div style={{ flex: "1 1 auto", display: "flex", alignItems: "center" }}>
@@ -1006,6 +1016,8 @@ export const FrameOperations = observer(
                                 isAdd={onClickAdd}
                                 chart={chart}
                                 storedColumns={selectedColumn}
+                                visual={handleChangeVisual}
+                                selectedItem={handleSelectedItem}
                             >
                             </DataTabStyling>
                         </StyledSubSection>

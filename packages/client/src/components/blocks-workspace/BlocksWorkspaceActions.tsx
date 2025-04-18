@@ -57,11 +57,18 @@ export const BlocksWorkspaceActions = observer(() => {
         // convert the state to json
         const json = state.toJSON();
 
+        // remove the visual from the json
+        Object.keys(json?.blocks).forEach((key) => {
+            if (key.startsWith('e-chart')) {
+                if (json?.blocks[key]?.data?.option?.["visual"]) {
+                    json.blocks[key].data.option["visual"] = false;
+                }
+            }
+        });
         try {
             // save the json
             const { errors } = await monolithStore.runQuery<[true]>(
-                `SaveAppBlocksJson(project=["${
-                    workspace.appId
+                `SaveAppBlocksJson(project=["${workspace.appId
                 }"], json=["<encode>${JSON.stringify(json)}</encode>"]);`,
             );
 
