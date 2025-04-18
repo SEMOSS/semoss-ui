@@ -392,19 +392,14 @@ export const UserTable = (props: UserTableProps) => {
      * @param user 
      */
     const handlePopoverOpen = (event: React.MouseEvent<HTMLElement>, user: User) => {
-        if (anchorEl === event.currentTarget) {
-            // Close the popover if the same element is clicked again
-            setAnchorEl(null);
-            setHoveredUser(null);
-        } else {
             setAnchorEl(event.currentTarget);
             setHoveredUser(user);
-        }
     };
     const handlePopoverClose = () => {
         setAnchorEl(null);
-        setHoveredUser(null);
-        console.log("CLOSE")
+      
+            setHoveredUser(null);
+        
     }
     const handleCopy = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -632,7 +627,7 @@ export const UserTable = (props: UserTableProps) => {
                                                             />
                                                         </StyledTableCell>
                                                         <Table.Cell>
-                                                            <StyledCenteredBox>
+                                                            <StyledCenteredBox >
                                                                 <AvatarWrapper>
                                                                     <Avatar>
                                                                         {user.name[0].toUpperCase()}
@@ -644,8 +639,16 @@ export const UserTable = (props: UserTableProps) => {
                                                                     }
                                                                     spacing={0}
                                                                     flex={1}
-                                                                    onClick={(event) => handlePopoverOpen(event, user)}
-                                                                >
+                                                                    onMouseEnter={(event) =>
+                                                                        handlePopoverOpen(
+                                                                            event,
+                                                                            user,
+                                                                        )
+                                                                    }
+                                                                    onMouseLeave={() =>
+                                                                        handlePopoverClose()
+                                                                    }
+                                                               >
                                                                     <StyledPrimaryText
                                                                         variant="body1"
                                                                         noWrap={

@@ -55,6 +55,8 @@ export const UserTablePopover = (props: UserTablePopoverProps) => {
                 vertical: 'top',
                 horizontal: 'left',
             }}
+            sx={{ pointerEvents: 'none' }}
+            
         >
             <StyledGridContainer container direction="row" >
                 {/* avatar icon */}
@@ -92,7 +94,7 @@ export const UserTablePopover = (props: UserTablePopoverProps) => {
                                     </Typography>
                                 </Grid>
                                 <Grid item>
-                                    <StyledIconButton 
+                                    <StyledIconButton size="small"
                                         onClick={() => { handleCopy(hoveredUser?.email) }}
                                     >
                                         <CopyAllIcon fontSize="inherit" />
