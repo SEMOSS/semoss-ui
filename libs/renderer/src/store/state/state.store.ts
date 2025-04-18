@@ -442,6 +442,9 @@ export class StateStore {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
+            } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
+
+                this.dispatchOutputsEvent()
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { id, alias } = action.payload;
 
@@ -1464,9 +1467,30 @@ export class StateStore {
         const event = new CustomEvent(name, {
             detail: detail,
         });
-
+        
         // dispatch the event to the window
         window.dispatchEvent(event);
+    };
+
+    /**
+     * Dispatch an event
+     * @param detail - payload associated with event
+     */
+    private dispatchOutputsEvent = (): void => {
+
+        let outputMap = {};
+
+        Object.keys(this._store.variables).forEach((k) => {
+            if(this._store.variables[k].isOutput) {
+                outputMap[k] = this.parseVariable(`{{${k}}}`)
+            }
+        })
+
+        // Communication with Iframe
+        window.parent.postMessage({
+            type: "DISPATCH_APP_OUTPUTS",
+            data: outputMap
+        }, '*') // --> Cross Origin Communications
     };
 
     // -----------------------------------
