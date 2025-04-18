@@ -18,6 +18,7 @@ export interface PDFViewerBlockDef extends BlockDef<"pdfViewer"> {
             padding: string;
         };
         selectedPdf: string | null;
+        show: string;
     };
 }
 

@@ -98,7 +98,7 @@ export const formatPermission = (permission: Role | ''): string => {
 export const getEngineImage = (
     appType: string,
     appSubType: string,
-    ignoreNotFound: boolean = false,
+    ignoreNotFound = false,
 ) => {
     const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name == appSubType);
 
@@ -133,12 +133,32 @@ export const copyTextToClipboard = (text: string, notificationService) => {
     }
 };
 
+const getCorrectPath = () => {
+    //create an object with every portion of the path
+    const splitPath = Env.PATH.split('/').filter((entry) => entry !== '');
+    const pathDict = {};
+    splitPath.map((value) => (pathDict[value] = 1));
+    //this is the correct link
+    let finalString = Env.PATH;
+
+    //split the module along the /
+    const splitModule = Env.MODULE.split('/').filter((entry) => entry !== '');
+
+    //create a new array with only the unique members of Env.MODULE
+    const uniqueModule = splitModule.filter((value) => pathDict[value] !== 1);
+
+    //add those to the new string with a /
+    uniqueModule.map((value) => (finalString += `/${value}`));
+    return finalString;
+};
+
 export const getSDKSnippet = (
     type: 'py' | 'js',
     accessKey?: string,
     secretKey?: string,
 ) => {
     if (type === 'py') {
+        const correctLink = getCorrectPath();
         return `
 # import the ai platform package
 import ai_server
@@ -151,7 +171,7 @@ server_connection=ai_server.ServerClient(
     secret_key="${
         secretKey ? secretKey : '<your access key>'
     }",             # example: "c2b3fae8-20d1-458c-8565-30ae935c4dfb"
-    base="${Env.ORIGIN}${Env.PATH}${Env.MODULE}/api"
+    base="${Env.ORIGIN}${correctLink}/api"
 )
 `;
     } else {
@@ -185,7 +205,9 @@ const debounce = (func, wait) => {
  * @desc useDebounce utility function returns a debounced function
  */
 export const debounced = (callback, delay) => {
-    const ref = useRef(() => {});
+    const ref = useRef(() => {
+        console.log('ref');
+    });
 
     useEffect(() => {
         ref.current = callback;

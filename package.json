@@ -11,6 +11,7 @@
         "dev:client": "nx run @semoss/client:dev",
         "dev:legacy": "nx run @semoss/legacy:dev",
         "dev:example": "nx run @semoss/example:dev",
+        "dev:ui": "echo \"TODO: start script to run component library, so we don't have to cd to ./libs/ui\"",
 
         "nx:dep-graph": "nx dep-graph",
         "nx:reset": "nx reset",
@@ -18,7 +19,11 @@
 
         "build": "npx nx run-many -t build -p @semoss/client @semoss/legacy",
 
-        "test": "vitest --watch=false --passWithNoTests --changed"
+        "test": "vitest --watch=false --passWithNoTests --changed",
+        "lint:client": "npx nx lint @semoss/client",
+        "lint:ui": "npx nx lint @semoss/ui",
+        "lint:renderer": "npx nx lint @semoss/renderer",
+        "lint:all": "echo \"TODO: fix lint script to lint all packages/libs .\""
     },
     "author": "",
     "license": "Apache-2.0",

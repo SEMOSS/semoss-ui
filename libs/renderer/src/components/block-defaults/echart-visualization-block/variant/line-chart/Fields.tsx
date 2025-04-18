@@ -78,7 +78,7 @@ export const Fields = observer(
             // if (data) {
             const json: PathValue<D["data"], typeof path> =
                 JSON.parse(computedValue);
-            let state = json["_state"];
+            const state = json["_state"];
             if (state && state.hasOwnProperty("fields")) {
                 reinitializeStates(state["fields"]);
             } else {
@@ -114,7 +114,7 @@ export const Fields = observer(
             addedChips?: string,
         ) => {
             // insert the new value
-            let tempValue = JSON.parse(value);
+            const tempValue = JSON.parse(value);
             tempValue[axis] = {
                 ...tempValue[axis],
                 name: axis == "xAxis" ? [newValue[0]] : newValue,
@@ -156,7 +156,7 @@ export const Fields = observer(
         };
 
         const handleRemoveLines = (removedChips, segment) => {
-            let tempValue = JSON.parse(value);
+            const tempValue = JSON.parse(value);
             if (segment === "xAxis") {
                 setXAxis([]);
                 tempValue[segment] = {
@@ -198,7 +198,7 @@ export const Fields = observer(
         };
 
         const handleTooltipChange = (newValue: string[], addedChips) => {
-            let tempValue = JSON.parse(value);
+            const tempValue = JSON.parse(value);
             if (!yAxis.includes(addedChips)) {
                 setTooltip(newValue);
                 if (

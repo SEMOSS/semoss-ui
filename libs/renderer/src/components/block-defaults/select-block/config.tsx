@@ -8,7 +8,7 @@ import {
 import { SelectBlockDef, SelectBlock } from "./SelectBlock";
 import { ViewList } from "@mui/icons-material";
 
-import { buildListener } from "../block-defaults.shared";
+import { buildListener, buildShowField } from "../block-defaults.shared";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { SelectInputValueSettings } from "../../block-settings/custom/SelectInputValueSettings";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
@@ -32,6 +32,7 @@ export const config: BlockConfig<SelectBlockDef> = {
         optionSublabel: "",
         optionValue: "",
         multiple: false,
+        show: true,
     },
     listeners: {
         onChange: [],
@@ -45,6 +46,7 @@ export const config: BlockConfig<SelectBlockDef> = {
         {
             name: "General",
             children: [
+                ...buildShowField(),
                 {
                     description: "Multi Select",
                     render: ({ id }) => (

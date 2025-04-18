@@ -1,14 +1,10 @@
 import { useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Autocomplete } from '@mui/material';
 
-import { styled, TextField, Divider } from '@semoss/ui';
+import { styled, AutocompleteTwo, TextField, Divider } from '@semoss/ui';
 import { ActionMessages, useBlocks } from '@semoss/renderer';
 
 import { useDesigner } from '@/hooks';
-
-const STYLED_FONT_STYLE_INPUT_WIDTH = 232;
-const STYLED_FONT_SIZE_INPUT_WIDTH = 168;
 
 const StyledInputContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -19,10 +15,6 @@ const StyledInputContainer = styled('div')(({ theme }) => ({
     backgroundColor: 'white',
     padding: theme.spacing(1),
     borderRadius: theme.shape.borderRadius,
-    maxWidth: `${
-        STYLED_FONT_STYLE_INPUT_WIDTH + STYLED_FONT_SIZE_INPUT_WIDTH
-    }px`,
-    minWidth: 'fit-content',
 }));
 
 const FontStyleOptions = [
@@ -118,7 +110,7 @@ export const TextSettingsMask = observer(() => {
 
     return (
         <StyledInputContainer>
-            <Autocomplete
+            <AutocompleteTwo
                 disablePortal
                 size="small"
                 options={FontStyleOptions.map((option) => option.value)}

@@ -21,7 +21,7 @@ export interface ChartContextMenuProps {
 export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
     ({ id, frame, contextMenu, chartInstance, onClose }) => {
         const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
-        let currentOperation = useRef({
+        const currentOperation = useRef({
             unfilterActive: false,
             filterActive: false,
             excludeActive: false,
@@ -32,7 +32,7 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                 //in contextmenu, when the unfilter is made active
                 if (currentOperation.current.unfilterActive) {
                     try {
-                        let optionDataProcessed = processReceivedData(
+                        const optionDataProcessed = processReceivedData(
                             frame.data,
                         );
                         data.option["xAxis"]["data"] =
@@ -49,7 +49,7 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                 //in contextmenu, when the filter is made active
                 if (currentOperation.current.filterActive) {
                     try {
-                        let optionDataProcessed = processReceivedData(
+                        const optionDataProcessed = processReceivedData(
                             frame.data,
                         );
                         data.option["xAxis"]["data"] =
@@ -71,7 +71,7 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                 //in contextmenu, when the exclude is made active
                 if (currentOperation.current.excludeActive) {
                     try {
-                        let optionDataProcessed = processReceivedData(
+                        const optionDataProcessed = processReceivedData(
                             frame.data,
                         );
                         data.option["xAxis"]["data"] =
