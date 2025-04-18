@@ -15,14 +15,8 @@
             "@testing-library/jest-dom/jest-globals"
         ]
     },
-    "exclude": ["jest.config.ts", "dist"],
-    "include": [
-        "src/**/*.js",
-        "src/**/*.jsx",
-        "src/**/*.ts",
-        "src/**/*.tsx",
-        "src/testing/**/*.ts",
-        "src/testing/**/*.tsx"
+    "exclude": [
+        "jest.config.ts", "dist"
     ],
     "typeRoots": ["./node_modules/@types", "./node_modules"]
 }

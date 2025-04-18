@@ -1,6 +1,5 @@
-import { ActionMessages } from '@/stores';
-import QUERY from '@/assets/img/query.jpeg';
 import {
+    ActionMessages,
     ButtonBlockConfig,
     ContainerBlockConfig,
     UploadBlockConfig,
@@ -10,6 +9,7 @@ import {
 } from '@semoss/renderer';
 
 import { Template } from './templates.types';
+import QUERY from '@/assets/img/query.jpeg';
 
 export const AskCSVTemplate: Template = {
     name: 'Ask CSV',
