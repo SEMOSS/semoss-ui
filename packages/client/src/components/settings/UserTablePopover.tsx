@@ -61,11 +61,13 @@ export const UserTablePopover = (props: UserTablePopoverProps) => {
             <StyledGridContainer container direction="row" >
                 {/* avatar icon */}
                 <Grid item>
-                    <AvatarWrapper>
-                        <Avatar>
-                            {hoveredUser?.name[0].toUpperCase()}
-                        </Avatar>
-                    </AvatarWrapper>
+                    {hoveredUser?.name && ( // prevents seeing default icon
+                        <AvatarWrapper>
+                            <Avatar>
+                                {hoveredUser.name[0].toUpperCase()}
+                            </Avatar>
+                        </AvatarWrapper>
+                    )}
                 </Grid>
                 <Grid item>
                     {hoveredUser && (
