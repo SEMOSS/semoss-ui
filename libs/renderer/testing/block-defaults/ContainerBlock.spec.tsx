@@ -1,7 +1,6 @@
+import { render, screen } from "../utils";
+
 import { ContainerBlock } from "@/components/block-defaults/container-block/ContainerBlock";
-import { config } from "@/components/block-defaults/container-block/config";
-import { cleanup, render, screen } from "../utils";
-import { useBlock } from "@/hooks";
 
 const blocks = {
     "test-container": {
@@ -156,7 +155,7 @@ describe("Container Block", () => {
     });
 
     it("Should render a P tag with hello world as its content", async () => {
-        const { container } = render(<ContainerBlock id="test-container" />, {
+        render(<ContainerBlock id="test-container" />, {
             blocks: {
                 "test-container": {
                     ...blocks["test-container"],

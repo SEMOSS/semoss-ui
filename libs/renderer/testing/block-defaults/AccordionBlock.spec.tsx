@@ -1,9 +1,9 @@
-import { render } from "../utils/index";
-import { expect, test } from "vitest";
+import { expect, it } from "vitest";
 import { fireEvent, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
 
-import { AccordionBlock } from "../../components/block-defaults/accordion-block/AccordionBlock";
+import { render } from "../utils";
+
+import { AccordionBlock } from "@/components/block-defaults/accordion-block/AccordionBlock";
 
 const blocks = {
     accordion: {
@@ -35,7 +35,7 @@ const blocks = {
 };
 
 describe("accordion block", () => {
-    test("renders correctly with mocked provider", async () => {
+    it("should render correctly with mocked provider", async () => {
         const { container } = render(<AccordionBlock id="accordion" />, {
             blocks: blocks,
         });
@@ -44,7 +44,7 @@ describe("accordion block", () => {
         expect(accordion).toBeInTheDocument();
     });
 
-    test("renders header properly", async () => {
+    it("should render the header properly", async () => {
         const { container } = render(<AccordionBlock id="accordion" />, {
             blocks: blocks,
         });
@@ -58,7 +58,7 @@ describe("accordion block", () => {
         expect(content).not.toBeInTheDocument();
     });
 
-    test("toggles content on click", async () => {
+    it("should toggle content on click", async () => {
         const { container } = render(<AccordionBlock id="accordion" />, {
             blocks: blocks,
         });
