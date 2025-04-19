@@ -11,10 +11,6 @@ import {
     Modal,
     Typography,
     Autocomplete,
-    Card,
-    Box,
-    Chip,
-    Link,
     Search,
     Stack,
     useNotification,
@@ -181,6 +177,50 @@ const StyledModalContentText = styled(Modal.ContentText)({
     marginTop: '12px',
 });
 
+const StyledDropdownRowWrapper = styled('div')(({ theme }) => ({
+    display: 'flex',
+    gap: '2em',
+    color: theme.palette.text.primary,
+    marginBottom: '5px',
+}));
+
+const StyledDropDownRowInnerDiv = styled('div')(({ theme }) => ({
+    display: 'flex',
+    padding: '0px 16px',
+    gap: '18px',
+    alignItems: 'center',
+    color: theme.palette.text.primary,
+}));
+
+const StyledDropDownRowAvatar = styled(Avatar)({
+    display: 'flex',
+    width: '32px',
+    height: '32px',
+    fontSize: '16px',
+});
+
+const StyledDropDownRowInfo = styled('div')({
+    display: 'flex',
+    flexDirection: 'column',
+});
+
+const StyledDropDownRowUser = styled('div')({
+    display: 'flex',
+    gap: '16px',
+    alignSelf: 'end',
+});
+
+const StyledDropDownRowIconDiv = styled('div')({
+    display: 'flex',
+    justifyContent: 'end',
+    flexGrow: 1,
+    alignItems: 'end',
+});
+
+const StyledSecondarySpan = styled('span')(({ theme }) => ({
+    color: theme.palette.text.secondary,
+}));
+
 interface MembersTableProps {
     /**
      * Id of the setting
@@ -189,6 +229,21 @@ interface MembersTableProps {
 
     name: string;
 }
+
+type MemberObj = {
+    admin?: boolean;
+    dateadded?: string;
+    email?: string;
+    groupid?: string;
+    id?: string;
+    name?: string;
+    permissiongrantedby?: string;
+    permissiongrantedbytype?: string;
+    type?: string;
+    userid?: string;
+    username?: string;
+    color?: string;
+};
 
 export const TeamMembersTable = (props: MembersTableProps) => {
     const { groupId } = props;
@@ -200,7 +255,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
     /** Member Table State */
     const [membersPage, setMembersPage] = useState<number>(1);
-    const [selectedMembers, setSelectedMembers] = useState([]);
+    const [selectedMembers, setSelectedMembers] = useState<MemberObj[]>([]);
     const [count, setCount] = useState(0);
 
     /** Delete Member */
@@ -211,21 +266,23 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
     /** Add Member State */
     const [addMembersModal, setAddMembersModal] = useState<boolean>(false);
-    const [nonCredentialedUsers, setNonCredentialedUsers] = useState([]);
+    const [nonCredentialedUsers, setNonCredentialedUsers] = useState<
+        MemberObj[]
+    >([]);
     const [selectedNonCredentialedUsers, setSelectedNonCredentialedUsers] =
-        useState([]);
+        useState<MemberObj[]>([]);
 
     const [teamMembers, setTeamMembers] = useState(null);
     const [memberCount, setMemberCount] = useState(null);
-    const [hasMembers, setHasMembers] = useState(false);
+    const [hasMembers, setHasMembers] = useState<boolean>(false);
 
     const limit = 5;
     const [searchMemberInput, setSearchMemberInput] = useState<string>('');
     const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
-    const [isScrollBottom, setIsScrollBottom] = useState(false);
+    const [isScrollBottom, setIsScrollBottom] = useState<boolean>(false);
     const [canCollect, setCanCollect] = useState<boolean>(true);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [searchLoading, setSearchLoading] = useState(false);
+    const [searchLoading, setSearchLoading] = useState<boolean>(false);
 
     const nearBottom = (
         target: {
@@ -290,7 +347,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
         }
         const timer = setTimeout(() => {
             if (!offset) {
-                getUsersNonGroup(false);
+                getUsersNonGroup(true);
             } else {
                 if (canCollect) {
                     getUsersNonGroup(false);
@@ -827,13 +884,54 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                             }
                             value={selectedNonCredentialedUsers}
                             inputValue={searchMemberInput}
-                            getOptionLabel={(option: any) => {
+                            renderOption={(props, option: MemberObj) => (
+                                <li {...props}>
+                                    <StyledDropDownRowInnerDiv>
+                                        <StyledDropDownRowAvatar
+                                            aria-label="avatar"
+                                            sx={{
+                                                backgroundColor: option.color,
+                                            }}
+                                        >
+                                            {option.name
+                                                ? option.name.indexOf(' ') > -1
+                                                    ? `${option.name[0].toUpperCase()}${option.name[
+                                                          option.name.indexOf(
+                                                              ' ',
+                                                          ) + 1
+                                                      ].toUpperCase()}`
+                                                    : option.name[0].toUpperCase()
+                                                : option.id[0].toUpperCase()}
+                                        </StyledDropDownRowAvatar>
+                                        <StyledDropDownRowInfo>
+                                            <Typography
+                                                variant="body1"
+                                                sx={{ fontWeight: '600' }}
+                                            >
+                                                {option.name}
+                                            </Typography>
+                                            <div style={{ display: 'flex' }}>
+                                                <Typography variant="body2">
+                                                    <StyledSecondarySpan>
+                                                        {`User ID: `}
+                                                    </StyledSecondarySpan>
+                                                    {option.id}
+                                                </Typography>
+                                            </div>
+                                        </StyledDropDownRowInfo>
+                                    </StyledDropDownRowInnerDiv>
+                                </li>
+                            )}
+                            getOptionLabel={(option: MemberObj) => {
                                 return `${option.name}`;
                             }}
-                            isOptionEqualToValue={(option, value) => {
+                            isOptionEqualToValue={(
+                                option: MemberObj,
+                                value: MemberObj,
+                            ) => {
                                 return option.name === value.name;
                             }}
-                            onChange={(event, newValue: any) => {
+                            onChange={(event, newValue: MemberObj[]) => {
                                 setSelectedNonCredentialedUsers([...newValue]);
                             }}
                             ListboxProps={{
@@ -851,12 +949,11 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                             onInputChange={(event, newValue) => {
                                 setSearchMemberInput(newValue);
                                 setOffset(0);
-                                setNonCredentialedUsers([]);
                             }}
                         />
 
                         {selectedNonCredentialedUsers &&
-                            selectedNonCredentialedUsers.map((user, idx) => {
+                            selectedNonCredentialedUsers.map((user) => {
                                 const space = user.name.indexOf(' ');
                                 const initial = user.name
                                     ? space > -1
@@ -866,119 +963,75 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                                         : user.name[0].toUpperCase()
                                     : user.id[0].toUpperCase();
                                 return (
-                                    <Box
-                                        key={idx}
-                                        sx={{
-                                            display: 'flex',
-                                            justifyContent: 'left',
-                                            align: 'center',
-                                            backgroundColor:
-                                                idx % 2 !== 0
-                                                    ? 'rgba(0, 0, 0, .03)'
-                                                    : '',
-                                        }}
-                                    >
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                justifyContent: 'center',
-                                                marginTop: '6px',
-                                                marginLeft: '8px',
-                                                marginRight: '8px',
-                                            }}
-                                        >
-                                            <Box
+                                    <StyledDropdownRowWrapper key={user.id}>
+                                        <StyledDropDownRowInnerDiv>
+                                            <StyledDropDownRowAvatar
+                                                aria-label="avatar"
                                                 sx={{
-                                                    display: 'flex',
-                                                    height: '80px',
-                                                    width: '80px',
-                                                    justifyContent: 'center',
-                                                    alignItems: 'center',
-                                                    border: '0.5px solid rgba(0, 0, 0, .05)',
-                                                    borderRadius: '50%',
+                                                    backgroundColor: user.color,
                                                 }}
                                             >
-                                                <Avatar
-                                                    aria-label="avatar"
-                                                    sx={{
-                                                        display: 'flex',
-                                                        width: '60px',
-                                                        height: '60px',
-                                                        fontSize: '24px',
-                                                        backgroundColor:
-                                                            user.color,
-                                                    }}
+                                                {initial}
+                                            </StyledDropDownRowAvatar>
+                                            <StyledDropDownRowInfo>
+                                                <Typography
+                                                    variant="body1"
+                                                    sx={{ fontWeight: '600' }}
                                                 >
-                                                    {initial}
-                                                </Avatar>
-                                            </Box>
-                                        </Box>
-                                        <Card.Header
-                                            title={
-                                                <Typography variant="h5">
                                                     {user.name}
                                                 </Typography>
-                                            }
-                                            sx={{
-                                                color: '#000',
-                                                width: '100%',
-                                            }}
-                                            subheader={
-                                                <Box
-                                                    sx={{
-                                                        display: 'flex',
-                                                        gap: 2,
-                                                        marginTop: '4px',
-                                                    }}
+                                                <div
+                                                    style={{ display: 'flex' }}
                                                 >
-                                                    <span
-                                                        style={{
-                                                            opacity: 0.9,
-                                                            fontSize: '14px',
-                                                        }}
-                                                    >
-                                                        {`User ID: `}
-                                                        <Chip
-                                                            label={user.id}
-                                                            size="small"
-                                                        />
-                                                    </span>
-                                                    {`• `}
-                                                    <span>
-                                                        {`Email: `}
-                                                        <Link
-                                                            href={`mailto:${user.email}`}
-                                                            underline="none"
-                                                        >
-                                                            {user.email}
-                                                        </Link>
-                                                    </span>
-                                                </Box>
-                                            }
-                                            action={
-                                                <IconButton
-                                                    sx={{
-                                                        mt: '16px',
-                                                        color: 'rgba( 0, 0, 0, .7)',
-                                                        mr: '24px',
-                                                    }}
-                                                    onClick={() => {
-                                                        const filtered =
-                                                            selectedNonCredentialedUsers.filter(
-                                                                (val) =>
-                                                                    val.id !==
-                                                                    user.id,
-                                                            );
-                                                        setSelectedNonCredentialedUsers(
-                                                            filtered,
+                                                    <Typography variant="body2">
+                                                        <StyledSecondarySpan>
+                                                            {`User ID: `}
+                                                        </StyledSecondarySpan>
+                                                        {user.id}
+                                                    </Typography>
+                                                </div>
+                                            </StyledDropDownRowInfo>
+                                        </StyledDropDownRowInnerDiv>
+                                        <StyledDropDownRowUser>
+                                            <div>
+                                                <Typography variant="body2">
+                                                    <StyledSecondarySpan>
+                                                        {`email: `}
+                                                    </StyledSecondarySpan>
+                                                    {user.email}
+                                                </Typography>
+                                            </div>
+                                            <div>
+                                                <Typography variant="body2">
+                                                    <StyledSecondarySpan>
+                                                        {`type: `}
+                                                    </StyledSecondarySpan>
+                                                    {user.type}
+                                                </Typography>
+                                            </div>
+                                        </StyledDropDownRowUser>
+                                        <StyledDropDownRowIconDiv>
+                                            <IconButton
+                                                onClick={() => {
+                                                    const filtered =
+                                                        selectedNonCredentialedUsers.filter(
+                                                            (val) =>
+                                                                val.id !==
+                                                                user.id,
                                                         );
+                                                    setSelectedNonCredentialedUsers(
+                                                        filtered,
+                                                    );
+                                                }}
+                                            >
+                                                <ClearRounded
+                                                    sx={{
+                                                        fontSize: '24px',
                                                     }}
-                                                >
-                                                    <ClearRounded />
-                                                </IconButton>
-                                            }
-                                        />
-                                    </Box>
+                                                />
+                                            </IconButton>
+                                        </StyledDropDownRowIconDiv>
+                                    </StyledDropdownRowWrapper>
                                 );
                             })}
                     </StyledModalContentText>
