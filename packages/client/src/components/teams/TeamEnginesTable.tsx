@@ -11,7 +11,6 @@ import {
     Autocomplete,
     Card,
     Box,
-    Chip,
     Avatar,
     Search,
     Stack,
@@ -96,22 +95,6 @@ const StyledTableTitleEngineContainer = styled('div')({
     flex: '1 0 0',
 });
 
-const StyledTableTitleEngineCountContainer = styled('div')({
-    display: 'flex',
-    height: '56px',
-    padding: '6px 16px 6px 8px',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '10px',
-});
-
-const StyledTableTitleEngineCount = styled('div')({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-});
-
 const StyledSearchButtonContainer = styled('div')({
     display: 'flex',
     alignItems: 'center',
@@ -169,6 +152,33 @@ const StyledModalContentText = styled(Modal.ContentText)({
 
 const StyledCard = styled(Card)({
     borderRadius: '12px',
+});
+
+const StyledDropDownRowWrapper = styled('div')({
+    display: 'flex',
+    padding: '0px 16px',
+    gap: '18px',
+    alignItems: 'center',
+    color: '#000000',
+});
+
+const StyledDropDownRowAvatar = styled(Avatar)({
+    display: 'flex',
+    width: '32px',
+    height: '32px',
+    fontSize: '16px',
+});
+
+const StyledDropDownRowInfo = styled('div')({
+    display: 'flex',
+    flexDirection: 'column',
+});
+
+const StyledDropDownRowIconDiv = styled('div')({
+    display: 'flex',
+    justifyContent: 'end',
+    flexGrow: 1,
+    alignContent: 'center',
 });
 
 // maps for permissions,
@@ -294,7 +304,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
         }
         const timer = setTimeout(() => {
             if (!offset) {
-                getEngines(false);
+                getEngines(true);
             } else {
                 if (canCollect) {
                     getEngines(false);
@@ -873,8 +883,45 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                             }
                             value={selectedNonCredentialedEngines}
                             inputValue={searchEngineInput}
-                            getOptionLabel={(option: any) => {
-                                return `${option.engine_name} ID: ${option.engine_id}`;
+                            renderOption={(props, option) => (
+                                <li {...props}>
+                                    <StyledDropDownRowWrapper>
+                                        <StyledDropDownRowAvatar
+                                            aria-label="avatar"
+                                            sx={{
+                                                backgroundColor: option.color,
+                                            }}
+                                        >
+                                            {option.engine_name
+                                                ? option.engine_name.indexOf(
+                                                      ' ',
+                                                  ) > -1
+                                                    ? `${option.engine_name[0].toUpperCase()}${option.engine_name[
+                                                          option.engine_name.indexOf(
+                                                              ' ',
+                                                          ) + 1
+                                                      ].toUpperCase()}`
+                                                    : option.engine_name[0].toUpperCase()
+                                                : option.engine_id[0].toUpperCase()}
+                                        </StyledDropDownRowAvatar>
+                                        <StyledDropDownRowInfo>
+                                            <Typography
+                                                variant="body1"
+                                                sx={{ fontWeight: '600' }}
+                                            >
+                                                {option.engine_name}
+                                            </Typography>
+                                            <div style={{ display: 'flex' }}>
+                                                <Typography variant="body2">
+                                                    {`${option.engine_type} | Engine ID: ${option.engine_id}`}
+                                                </Typography>
+                                            </div>
+                                        </StyledDropDownRowInfo>
+                                    </StyledDropDownRowWrapper>
+                                </li>
+                            )}
+                            getOptionLabel={(option) => {
+                                return `${option.engine_name}`;
                             }}
                             isOptionEqualToValue={(option, value) => {
                                 return option.engine_name === value.engine_name;
@@ -899,134 +946,68 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                             onInputChange={(event, newValue) => {
                                 setSearchEngineInput(newValue);
                                 setOffset(0);
-                                setNonCredentialedEngines([]);
                             }}
                         />
 
                         {selectedNonCredentialedEngines &&
-                            selectedNonCredentialedEngines.map(
-                                (engine, idx) => {
-                                    const space =
-                                        engine.engine_name.indexOf(' ');
-                                    const initial = engine.engine_name
-                                        ? space > -1
-                                            ? `${engine.engine_name[0].toUpperCase()}${engine.engine_name[
-                                                  space + 1
-                                              ].toUpperCase()}`
-                                            : engine.engine_name[0].toUpperCase()
-                                        : engine.engine_id[0].toUpperCase();
-                                    return (
-                                        <Box
-                                            key={idx}
+                            selectedNonCredentialedEngines.map((engine) => {
+                                const space = engine.engine_name.indexOf(' ');
+                                const initial = engine.engine_name
+                                    ? space > -1
+                                        ? `${engine.engine_name[0].toUpperCase()}${engine.engine_name[
+                                              space + 1
+                                          ].toUpperCase()}`
+                                        : engine.engine_name[0].toUpperCase()
+                                    : engine.engine_id[0].toUpperCase();
+                                return (
+                                    <StyledDropDownRowWrapper
+                                        key={engine.engine_id}
+                                    >
+                                        <StyledDropDownRowAvatar
+                                            aria-label="avatar"
                                             sx={{
-                                                display: 'flex',
-                                                justifyContent: 'left',
-                                                align: 'center',
-                                                backgroundColor:
-                                                    idx % 2 !== 0
-                                                        ? 'rgba(0, 0, 0, .03)'
-                                                        : '',
+                                                backgroundColor: engine.color,
                                             }}
                                         >
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    justifyContent: 'center',
-                                                    marginTop: '6px',
-                                                    marginLeft: '8px',
-                                                    marginRight: '8px',
+                                            {initial}
+                                        </StyledDropDownRowAvatar>
+                                        <StyledDropDownRowInfo>
+                                            <Typography
+                                                variant="body1"
+                                                sx={{ fontWeight: '600' }}
+                                            >
+                                                {engine.engine_name}
+                                            </Typography>
+                                            <div style={{ display: 'flex' }}>
+                                                <Typography variant="body2">
+                                                    {`${engine.engine_type} | Engine ID: ${engine.engine_id}`}
+                                                </Typography>
+                                            </div>
+                                        </StyledDropDownRowInfo>
+                                        <StyledDropDownRowIconDiv>
+                                            <IconButton
+                                                onClick={() => {
+                                                    const filtered =
+                                                        selectedNonCredentialedEngines.filter(
+                                                            (val) =>
+                                                                val.engine_id !==
+                                                                engine.engine_id,
+                                                        );
+                                                    setSelectedNonCredentialedEngines(
+                                                        filtered,
+                                                    );
                                                 }}
                                             >
-                                                <Box
+                                                <ClearRounded
                                                     sx={{
-                                                        display: 'flex',
-                                                        height: '80px',
-                                                        width: '80px',
-                                                        justifyContent:
-                                                            'center',
-                                                        alignItems: 'center',
-                                                        border: '0.5px solid rgba(0, 0, 0, .05)',
-                                                        borderRadius: '50%',
+                                                        fontSize: '24px',
                                                     }}
-                                                >
-                                                    <Avatar
-                                                        aria-label="avatar"
-                                                        sx={{
-                                                            display: 'flex',
-                                                            width: '60px',
-                                                            height: '60px',
-                                                            fontSize: '24px',
-                                                            backgroundColor:
-                                                                engine.color,
-                                                        }}
-                                                    >
-                                                        {initial}
-                                                    </Avatar>
-                                                </Box>
-                                            </Box>
-                                            <Card.Header
-                                                title={
-                                                    <Typography variant="h5">
-                                                        {engine.engine_name}
-                                                    </Typography>
-                                                }
-                                                sx={{
-                                                    color: '#000',
-                                                    width: '100%',
-                                                }}
-                                                subheader={
-                                                    <Box
-                                                        sx={{
-                                                            display: 'flex',
-                                                            gap: 2,
-                                                            marginTop: '4px',
-                                                        }}
-                                                    >
-                                                        <span
-                                                            style={{
-                                                                opacity: 0.9,
-                                                                fontSize:
-                                                                    '14px',
-                                                            }}
-                                                        >
-                                                            {`Engine ID: `}
-                                                            <Chip
-                                                                label={
-                                                                    engine.engine_id
-                                                                }
-                                                                size="small"
-                                                            />
-                                                        </span>
-                                                        {`• `}
-                                                    </Box>
-                                                }
-                                                action={
-                                                    <IconButton
-                                                        sx={{
-                                                            mt: '16px',
-                                                            color: 'rgba( 0, 0, 0, .7)',
-                                                            mr: '24px',
-                                                        }}
-                                                        onClick={() => {
-                                                            const filtered =
-                                                                selectedNonCredentialedEngines.filter(
-                                                                    (val) =>
-                                                                        val.engine_id !==
-                                                                        engine.engine_id,
-                                                                );
-                                                            setSelectedNonCredentialedEngines(
-                                                                filtered,
-                                                            );
-                                                        }}
-                                                    >
-                                                        <ClearRounded />
-                                                    </IconButton>
-                                                }
-                                            />
-                                        </Box>
-                                    );
-                                },
-                            )}
+                                                />
+                                            </IconButton>
+                                        </StyledDropDownRowIconDiv>
+                                    </StyledDropDownRowWrapper>
+                                );
+                            })}
 
                         <Typography
                             variant="subtitle1"
