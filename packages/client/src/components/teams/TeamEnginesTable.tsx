@@ -154,13 +154,18 @@ const StyledCard = styled(Card)({
     borderRadius: '12px',
 });
 
-const StyledDropDownRowWrapper = styled('div')({
+const StyledDropDownRowWrapper = styled('div')(({ theme }) => ({
+    color: theme.palette.text.primary,
+    marginBottom: '5px',
+}));
+
+const StyledDropDownRowInnerDiv = styled('div')(({ theme }) => ({
     display: 'flex',
     padding: '0px 16px',
     gap: '18px',
     alignItems: 'center',
-    color: '#000000',
-});
+    color: theme.palette.text.primary,
+}));
 
 const StyledDropDownRowAvatar = styled(Avatar)({
     display: 'flex',
@@ -202,6 +207,23 @@ interface EnginesTableProps {
     name: string;
 }
 
+type EngineObj = {
+    engine_cost?: string;
+    engine_created_by?: string;
+    engine_created_by_type?: string;
+    engine_date_created?: string;
+    engine_discoverable?: boolean;
+    engine_global?: boolean;
+    engine_id?: string;
+    engine_name?: string;
+    engine_subtype?: string;
+    engine_type?: string;
+    low_engine_name?: string;
+    permission?: number;
+    id?: string;
+    color?: string;
+};
+
 export const TeamEnginesTable = (props: EnginesTableProps) => {
     const { groupId, groupType } = props;
 
@@ -212,7 +234,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 
     /** Engine Table State */
     const [enginesPage, setEnginesPage] = useState<number>(1);
-    const [selectedEngines, setSelectedEngines] = useState([]);
+    const [selectedEngines, setSelectedEngines] = useState<EngineObj[]>([]);
     const [count, setCount] = useState(0);
 
     /** Delete Engine */
@@ -223,22 +245,24 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 
     /** Add Engine State */
     const [addEngineModal, setAddEngineModal] = useState<boolean>(false);
-    const [nonCredentialedEngines, setNonCredentialedEngines] = useState([]);
+    const [nonCredentialedEngines, setNonCredentialedEngines] = useState<
+        EngineObj[]
+    >([]);
     const [selectedNonCredentialedEngines, setSelectedNonCredentialedEngines] =
-        useState([]);
+        useState<EngineObj[]>([]);
     const [addEngineRole, setAddEngineRole] = useState<SETTINGS_ROLE>();
 
-    const [engines, setEngines] = useState(null);
+    const [engines, setEngines] = useState<EngineObj[]>([]);
     const [enginesCount, setEngineCount] = useState(null);
-    const [hasEngines, setHasEngines] = useState(false);
+    const [hasEngines, setHasEngines] = useState<boolean>(false);
 
     const limit = 5;
     const [searchEngineInput, setSearchEngineInput] = useState<string>('');
     const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
-    const [isScrollBottom, setIsScrollBottom] = useState(false);
+    const [isScrollBottom, setIsScrollBottom] = useState<boolean>(false);
     const [canCollect, setCanCollect] = useState<boolean>(true);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [searchLoading, setSearchLoading] = useState(false);
+    const [searchLoading, setSearchLoading] = useState<boolean>(false);
 
     const nearBottom = (
         target: {
@@ -354,6 +378,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                 // ignore if there is no response
                 if (response) {
                     setAddEngineModal(false);
+                    setOffset(0);
                     setSelectedNonCredentialedEngines([]);
 
                     notification.add({
@@ -369,6 +394,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
             }
         } catch (e) {
             setAddEngineModal(false);
+            setOffset(0);
             setSelectedNonCredentialedEngines([]);
 
             notification.add({
@@ -385,7 +411,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
      * @name deleteEngine
      * @param engine
      */
-    const deleteEngine = async (engine) => {
+    const deleteEngine = async (engine: EngineObj) => {
         try {
             let response: AxiosResponse<{ success: boolean }> | null = null;
             response = await monolithStore.deleteEnginePermission(
@@ -504,7 +530,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
     /** ENGINES TABLE FUNCTIONS */
     const updateSelectedEngines = async (engine) => {
         try {
-            if (!engine.engineid) {
+            if (!engine.engine_id) {
                 notification.add({
                     color: 'warning',
                     message: `No permissions to change`,
@@ -550,8 +576,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
         enginesPageCounts: [5],
     };
 
-    engines > 9 && paginationOptions.enginesPageCounts.push(10);
-    engines > 19 && paginationOptions.enginesPageCounts.push(20);
+    engines.length > 9 && paginationOptions.enginesPageCounts.push(10);
+    engines.length > 19 && paginationOptions.enginesPageCounts.push(20);
 
     function useDebounce(effect, dependencies, delay) {
         const callback = useCallback(effect, dependencies);
@@ -590,6 +616,10 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
         [count, enginesPage, searchFilter],
         200,
     );
+
+    function capitalizeFirstLetter(string: string): string {
+        return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+    }
 
     return (
         <StyledEngineContent>
@@ -675,15 +705,14 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                                 {engines &&
                                     engines.map((x, i) => {
                                         const engine = engines[i];
-
                                         let isSelected = false;
 
                                         if (engine) {
                                             isSelected = selectedEngines.some(
                                                 (value) => {
                                                     return (
-                                                        value.engineid ===
-                                                        engine.engineid
+                                                        value.engine_id ===
+                                                        engine.engine_id
                                                     );
                                                 },
                                             );
@@ -691,7 +720,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                                         if (engine) {
                                             return (
                                                 <Table.Row
-                                                    key={engine.engineid + i}
+                                                    key={engine.engine_id + i}
                                                 >
                                                     <StyledTableCell
                                                         size="medium"
@@ -708,8 +737,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                                                                     selectedEngines.forEach(
                                                                         (p) => {
                                                                             if (
-                                                                                p.engineid !==
-                                                                                engine.engineid
+                                                                                p.engine_id !==
+                                                                                engine.engine_id
                                                                             )
                                                                                 selEngines.push(
                                                                                     p,
@@ -742,25 +771,26 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                                                                 }
                                                             </Stack>
                                                             <Stack>
-                                                                {`Engine ID: ${engine.engineid}`}
+                                                                {`Engine ID: ${engine.engine_id}`}
                                                             </Stack>
                                                         </NameIDWrapper>
                                                     </UserInfoTableCell>
                                                     <Table.Cell size="medium">
                                                         <RadioGroup
                                                             row
-                                                            defaultValue={
-                                                                engine.permission
-                                                            }
+                                                            defaultValue={String(
+                                                                engine.permission,
+                                                            )}
                                                             onChange={(e) => {
                                                                 console.log(
                                                                     'Hit Update Permission fn and fix in state',
                                                                 );
                                                                 updateSelectedEngines(
                                                                     {
-                                                                        engineid:
-                                                                            engine.engineid,
-                                                                        type: engine.type,
+                                                                        engine_id:
+                                                                            engine.engine_id,
+                                                                        engine_type:
+                                                                            engine.engine_type,
                                                                         permission:
                                                                             e
                                                                                 .target
@@ -883,9 +913,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                             }
                             value={selectedNonCredentialedEngines}
                             inputValue={searchEngineInput}
-                            renderOption={(props, option) => (
+                            renderOption={(props, option: EngineObj) => (
                                 <li {...props}>
-                                    <StyledDropDownRowWrapper>
+                                    <StyledDropDownRowInnerDiv>
                                         <StyledDropDownRowAvatar
                                             aria-label="avatar"
                                             sx={{
@@ -913,17 +943,26 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                                             </Typography>
                                             <div style={{ display: 'flex' }}>
                                                 <Typography variant="body2">
-                                                    {`${option.engine_type} | Engine ID: ${option.engine_id}`}
+                                                    {option.engine_type
+                                                        ? `${capitalizeFirstLetter(
+                                                              option.engine_type,
+                                                          )} | Engine ID: ${
+                                                              option.engine_id
+                                                          }`
+                                                        : `Engine ID: ${option.engine_id}`}
                                                 </Typography>
                                             </div>
                                         </StyledDropDownRowInfo>
-                                    </StyledDropDownRowWrapper>
+                                    </StyledDropDownRowInnerDiv>
                                 </li>
                             )}
-                            getOptionLabel={(option) => {
+                            getOptionLabel={(option: EngineObj) => {
                                 return `${option.engine_name}`;
                             }}
-                            isOptionEqualToValue={(option, value) => {
+                            isOptionEqualToValue={(
+                                option: EngineObj,
+                                value: EngineObj,
+                            ) => {
                                 return option.engine_name === value.engine_name;
                             }}
                             onChange={(event, newValue: any) => {
@@ -950,64 +989,81 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                         />
 
                         {selectedNonCredentialedEngines &&
-                            selectedNonCredentialedEngines.map((engine) => {
-                                const space = engine.engine_name.indexOf(' ');
-                                const initial = engine.engine_name
-                                    ? space > -1
-                                        ? `${engine.engine_name[0].toUpperCase()}${engine.engine_name[
-                                              space + 1
-                                          ].toUpperCase()}`
-                                        : engine.engine_name[0].toUpperCase()
-                                    : engine.engine_id[0].toUpperCase();
-                                return (
-                                    <StyledDropDownRowWrapper
-                                        key={engine.engine_id}
-                                    >
-                                        <StyledDropDownRowAvatar
-                                            aria-label="avatar"
-                                            sx={{
-                                                backgroundColor: engine.color,
-                                            }}
-                                        >
-                                            {initial}
-                                        </StyledDropDownRowAvatar>
-                                        <StyledDropDownRowInfo>
-                                            <Typography
-                                                variant="body1"
-                                                sx={{ fontWeight: '600' }}
-                                            >
-                                                {engine.engine_name}
-                                            </Typography>
-                                            <div style={{ display: 'flex' }}>
-                                                <Typography variant="body2">
-                                                    {`${engine.engine_type} | Engine ID: ${engine.engine_id}`}
-                                                </Typography>
-                                            </div>
-                                        </StyledDropDownRowInfo>
-                                        <StyledDropDownRowIconDiv>
-                                            <IconButton
-                                                onClick={() => {
-                                                    const filtered =
-                                                        selectedNonCredentialedEngines.filter(
-                                                            (val) =>
-                                                                val.engine_id !==
-                                                                engine.engine_id,
-                                                        );
-                                                    setSelectedNonCredentialedEngines(
-                                                        filtered,
-                                                    );
-                                                }}
-                                            >
-                                                <ClearRounded
+                            selectedNonCredentialedEngines.map(
+                                (engine, idx) => {
+                                    const space =
+                                        engine.engine_name.indexOf(' ');
+                                    const initial = engine.engine_name
+                                        ? space > -1
+                                            ? `${engine.engine_name[0].toUpperCase()}${engine.engine_name[
+                                                  space + 1
+                                              ].toUpperCase()}`
+                                            : engine.engine_name[0].toUpperCase()
+                                        : engine.engine_id[0].toUpperCase();
+                                    return (
+                                        <StyledDropDownRowWrapper key={idx}>
+                                            <StyledDropDownRowInnerDiv>
+                                                <StyledDropDownRowAvatar
+                                                    aria-label="avatar"
                                                     sx={{
-                                                        fontSize: '24px',
+                                                        backgroundColor:
+                                                            engine.color,
                                                     }}
-                                                />
-                                            </IconButton>
-                                        </StyledDropDownRowIconDiv>
-                                    </StyledDropDownRowWrapper>
-                                );
-                            })}
+                                                >
+                                                    {initial}
+                                                </StyledDropDownRowAvatar>
+                                                <StyledDropDownRowInfo>
+                                                    <Typography
+                                                        variant="body1"
+                                                        sx={{
+                                                            fontWeight: '600',
+                                                        }}
+                                                    >
+                                                        {engine.engine_name}
+                                                    </Typography>
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                        }}
+                                                    >
+                                                        <Typography variant="body2">
+                                                            {engine.engine_type
+                                                                ? `${capitalizeFirstLetter(
+                                                                      engine.engine_type,
+                                                                  )} | Engine ID: ${
+                                                                      engine.engine_id
+                                                                  }`
+                                                                : `Engine ID: ${engine.engine_id}`}
+                                                        </Typography>
+                                                    </div>
+                                                </StyledDropDownRowInfo>
+                                                <StyledDropDownRowIconDiv>
+                                                    <IconButton
+                                                        onClick={() => {
+                                                            const filtered =
+                                                                selectedNonCredentialedEngines.filter(
+                                                                    (val) =>
+                                                                        val.engine_id !==
+                                                                        engine.engine_id,
+                                                                );
+                                                            setSelectedNonCredentialedEngines(
+                                                                filtered,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <ClearRounded
+                                                            sx={{
+                                                                fontSize:
+                                                                    '24px',
+                                                            }}
+                                                        />
+                                                    </IconButton>
+                                                </StyledDropDownRowIconDiv>
+                                            </StyledDropDownRowInnerDiv>
+                                        </StyledDropDownRowWrapper>
+                                    );
+                                },
+                            )}
 
                         <Typography
                             variant="subtitle1"

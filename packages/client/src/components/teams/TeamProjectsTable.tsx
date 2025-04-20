@@ -11,7 +11,6 @@ import {
     Autocomplete,
     Card,
     Box,
-    Chip,
     Avatar,
     Search,
     Stack,
@@ -96,22 +95,6 @@ const StyledTableTitleProjectContainer = styled('div')({
     flex: '1 0 0',
 });
 
-const StyledTableTitleProjectCountContainer = styled('div')({
-    display: 'flex',
-    height: '56px',
-    padding: '6px 16px 6px 8px',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '10px',
-});
-
-const StyledTableTitleProjectCount = styled('div')({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-});
-
 const StyledSearchButtonContainer = styled('div')({
     display: 'flex',
     alignItems: 'center',
@@ -171,6 +154,42 @@ const StyledCard = styled(Card)({
     borderRadius: '12px',
 });
 
+const StyledDropDownRowWrapper = styled('div')(({ theme }) => ({
+    color: theme.palette.text.primary,
+    marginBottom: '5px',
+}));
+
+const StyledDropDownRowInnerDiv = styled('div')(({ theme }) => ({
+    display: 'flex',
+    padding: '0px 16px',
+    gap: '18px',
+    alignItems: 'center',
+    color: theme.palette.text.primary,
+}));
+
+const StyledDropDownRowAvatar = styled(Avatar)({
+    display: 'flex',
+    width: '32px',
+    height: '32px',
+    fontSize: '16px',
+});
+
+const StyledDropDownRowInfo = styled('div')({
+    display: 'flex',
+    flexDirection: 'column',
+});
+
+const StyledDropDownRowIconDiv = styled('div')({
+    display: 'flex',
+    justifyContent: 'end',
+    flexGrow: 1,
+    alignItems: 'end',
+});
+
+const StyledSecondarySpan = styled('span')(({ theme }) => ({
+    color: theme.palette.text.secondary,
+}));
+
 // maps for permissions,
 const permissionMapper = {
     Author: 1, // BE: 'DISPLAY'
@@ -192,6 +211,29 @@ interface ProjectsTableProps {
     name: string;
 }
 
+type ProjectObj = {
+    low_project_name?: string;
+    permission?: number;
+    project_cost?: string;
+    project_created_by?: string;
+    project_created_by_type?: string;
+    project_date_created?: string;
+    project_discoverable?: boolean;
+    project_global?: boolean;
+    project_has_portal?: boolean;
+    project_id?: string;
+    project_name?: string;
+    project_portal_name?: string;
+    project_portal_published_date?: string;
+    project_published_user?: string;
+    project_published_user_type?: string;
+    project_reactors_compiled_date?: string;
+    project_reactors_compiled_user?: string;
+    project_reactors_compiled_user_type?: string;
+    project_type?: string;
+    color?: string;
+};
+
 export const TeamProjectsTable = (props: ProjectsTableProps) => {
     const { groupId, groupType } = props;
 
@@ -202,7 +244,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 
     /** Project Table State */
     const [projectsPage, setProjectsPage] = useState<number>(1);
-    const [selectedProjects, setSelectedProojects] = useState([]);
+    const [selectedProjects, setSelectedProjects] = useState<ProjectObj[]>([]);
     const [count, setCount] = useState(0);
 
     /** Delete Project */
@@ -214,24 +256,26 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 
     /** Add Project State */
     const [addProjectModal, setAddProjectModal] = useState<boolean>(false);
-    const [nonCredentialedProjects, setNonCredentialedProjects] = useState([]);
+    const [nonCredentialedProjects, setNonCredentialedProjects] = useState<
+        ProjectObj[]
+    >([]);
     const [
         selectedNonCredentialedProjects,
         setSelectedNonCredentialedProjects,
-    ] = useState([]);
+    ] = useState<ProjectObj[]>([]);
     const [addProjectRole, setAddProjectRole] = useState<SETTINGS_ROLE>();
 
-    const [projects, setProjects] = useState(null);
+    const [projects, setProjects] = useState<ProjectObj[]>([]);
     const [projectCount, setProjectCount] = useState(null);
-    const [hasProjects, setHasProject] = useState(false);
+    const [hasProjects, setHasProject] = useState<boolean>(false);
 
     const limit = 5;
     const [searchProjectInput, setSearchProjectInput] = useState<string>('');
     const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
-    const [isScrollBottom, setIsScrollBottom] = useState(false);
+    const [isScrollBottom, setIsScrollBottom] = useState<boolean>(false);
     const [canCollect, setCanCollect] = useState<boolean>(true);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [searchLoading, setSearchLoading] = useState(false);
+    const [searchLoading, setSearchLoading] = useState<boolean>(false);
 
     const nearBottom = (
         target: {
@@ -298,7 +342,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
         }
         const timer = setTimeout(() => {
             if (!offset) {
-                getProjects(false);
+                getProjects(true);
             } else {
                 if (canCollect) {
                     getProjects(false);
@@ -348,6 +392,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                 // ignore if there is no response
                 if (response) {
                     setAddProjectModal(false);
+                    setOffset(0);
                     setSelectedNonCredentialedProjects([]);
 
                     notification.add({
@@ -363,6 +408,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
             }
         } catch (e) {
             setAddProjectModal(false);
+            setOffset(0);
             setSelectedNonCredentialedProjects([]);
 
             notification.add({
@@ -379,7 +425,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
      * @name deleteProject
      * @param project
      */
-    const deleteProject = async (project) => {
+    const deleteProject = async (project: ProjectObj) => {
         try {
             let response: AxiosResponse<{ success: boolean }> | null = null;
             response = await monolithStore.deleteProjectPermission(
@@ -442,7 +488,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
             });
             setCount(count + 1);
             setDeleteProjectsModal(false);
-            setSelectedProojects([]);
+            setSelectedProjects([]);
         }
     };
 
@@ -498,7 +544,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
     /** MEMBER TABLE FUNCTIONS */
     const updateSelectedProjects = async (project) => {
         try {
-            if (!project.projectid) {
+            if (!project.project_id) {
                 notification.add({
                     color: 'warning',
                     message: `No permissions to change`,
@@ -546,8 +592,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
         projectsPageCounts: [5],
     };
 
-    projects > 9 && paginationOptions.projectsPageCounts.push(10);
-    projects > 19 && paginationOptions.projectsPageCounts.push(20);
+    projects.length > 9 && paginationOptions.projectsPageCounts.push(10);
+    projects.length > 19 && paginationOptions.projectsPageCounts.push(20);
 
     function useDebounce(effect, dependencies, delay) {
         const callback = useCallback(effect, dependencies);
@@ -655,11 +701,11 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                     selectedProjects.length !==
                                                     projects.length
                                                 ) {
-                                                    setSelectedProojects(
+                                                    setSelectedProjects(
                                                         projects,
                                                     );
                                                 } else {
-                                                    setSelectedProojects([]);
+                                                    setSelectedProjects([]);
                                                 }
                                             }}
                                         />
@@ -683,8 +729,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                             isSelected = selectedProjects.some(
                                                 (value) => {
                                                     return (
-                                                        value.projectid ===
-                                                        project.projectid
+                                                        value.project_id ===
+                                                        project.project_id
                                                     );
                                                 },
                                             );
@@ -692,7 +738,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                         if (project) {
                                             return (
                                                 <Table.Row
-                                                    key={project.projectid + i}
+                                                    key={project.project_id + i}
                                                 >
                                                     <StyledTableCell
                                                         size="medium"
@@ -709,19 +755,19 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                                     selectedProjects.forEach(
                                                                         (p) => {
                                                                             if (
-                                                                                p.projectid !==
-                                                                                project.projectid
+                                                                                p.project_id !==
+                                                                                project.project_id
                                                                             )
                                                                                 selProjects.push(
                                                                                     p,
                                                                                 );
                                                                         },
                                                                     );
-                                                                    setSelectedProojects(
+                                                                    setSelectedProjects(
                                                                         selProjects,
                                                                     );
                                                                 } else {
-                                                                    setSelectedProojects(
+                                                                    setSelectedProjects(
                                                                         [
                                                                             ...selectedProjects,
                                                                             project,
@@ -743,25 +789,26 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                                 }
                                                             </Stack>
                                                             <Stack>
-                                                                {`Project ID: ${project.projectid}`}
+                                                                {`Project ID: ${project.project_id}`}
                                                             </Stack>
                                                         </NameIDWrapper>
                                                     </UserInfoTableCell>
                                                     <Table.Cell size="medium">
                                                         <RadioGroup
                                                             row
-                                                            defaultValue={
-                                                                project.permission
-                                                            }
+                                                            defaultValue={String(
+                                                                project.permission,
+                                                            )}
                                                             onChange={(e) => {
                                                                 console.log(
                                                                     'Hit Update Permission fn and fix in state',
                                                                 );
                                                                 updateSelectedProjects(
                                                                     {
-                                                                        projectid:
-                                                                            project.projectid,
-                                                                        type: project.type,
+                                                                        project_id:
+                                                                            project.project_id,
+                                                                        project_type:
+                                                                            project.project_type,
                                                                         permission:
                                                                             e
                                                                                 .target
@@ -832,7 +879,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                         }
                                         onPageChange={(e, v) => {
                                             setProjectsPage(v + 1);
-                                            setSelectedProojects([]);
+                                            setSelectedProjects([]);
                                         }}
                                         page={projectsPage - 1}
                                         rowsPerPage={5}
@@ -886,15 +933,58 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                             }
                             value={selectedNonCredentialedProjects}
                             inputValue={searchProjectInput}
-                            getOptionLabel={(option: any) => {
-                                return `${option.project_name} ID: ${option.project_id}`;
+                            renderOption={(props, option: ProjectObj) => (
+                                <li {...props}>
+                                    <StyledDropDownRowInnerDiv>
+                                        <StyledDropDownRowAvatar
+                                            aria-label="avatar"
+                                            sx={{
+                                                backgroundColor: option.color,
+                                            }}
+                                        >
+                                            {option.project_name
+                                                ? option.project_name.indexOf(
+                                                      ' ',
+                                                  ) > -1
+                                                    ? `${option.project_name[0].toUpperCase()}${option.project_name[
+                                                          option.project_name.indexOf(
+                                                              ' ',
+                                                          ) + 1
+                                                      ].toUpperCase()}`
+                                                    : option.project_name[0].toUpperCase()
+                                                : option.project_id[0].toUpperCase()}
+                                        </StyledDropDownRowAvatar>
+                                        <StyledDropDownRowInfo>
+                                            <Typography
+                                                variant="body1"
+                                                sx={{ fontWeight: '600' }}
+                                            >
+                                                {option.project_name}
+                                            </Typography>
+                                            <div style={{ display: 'flex' }}>
+                                                <Typography variant="body2">
+                                                    <StyledSecondarySpan>
+                                                        {`Project ID: `}
+                                                    </StyledSecondarySpan>
+                                                    {option.project_id}
+                                                </Typography>
+                                            </div>
+                                        </StyledDropDownRowInfo>
+                                    </StyledDropDownRowInnerDiv>
+                                </li>
+                            )}
+                            getOptionLabel={(option: ProjectObj) => {
+                                return `${option.project_name}`;
                             }}
-                            isOptionEqualToValue={(option, value) => {
+                            isOptionEqualToValue={(
+                                option: ProjectObj,
+                                value: ProjectObj,
+                            ) => {
                                 return (
                                     option.project_name === value.project_name
                                 );
                             }}
-                            onChange={(event, newValue: any) => {
+                            onChange={(event, newValue: ProjectObj[]) => {
                                 setSelectedNonCredentialedProjects([
                                     ...newValue,
                                 ]);
@@ -914,7 +1004,6 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                             onInputChange={(event, newValue) => {
                                 setSearchProjectInput(newValue);
                                 setOffset(0);
-                                setNonCredentialedProjects([]);
                             }}
                         />
 
@@ -931,97 +1020,41 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                             : project.project_name[0].toUpperCase()
                                         : project.project_id[0].toUpperCase();
                                     return (
-                                        <Box
-                                            key={idx}
-                                            sx={{
-                                                display: 'flex',
-                                                justifyContent: 'left',
-                                                align: 'center',
-                                                backgroundColor:
-                                                    idx % 2 !== 0
-                                                        ? 'rgba(0, 0, 0, .03)'
-                                                        : '',
-                                            }}
-                                        >
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    justifyContent: 'center',
-                                                    marginTop: '6px',
-                                                    marginLeft: '8px',
-                                                    marginRight: '8px',
-                                                }}
-                                            >
-                                                <Box
+                                        <StyledDropDownRowWrapper key={idx}>
+                                            <StyledDropDownRowInnerDiv>
+                                                <StyledDropDownRowAvatar
+                                                    aria-label="avatar"
                                                     sx={{
-                                                        display: 'flex',
-                                                        height: '80px',
-                                                        width: '80px',
-                                                        justifyContent:
-                                                            'center',
-                                                        alignItems: 'center',
-                                                        border: '0.5px solid rgba(0, 0, 0, .05)',
-                                                        borderRadius: '50%',
+                                                        backgroundColor:
+                                                            project.color,
                                                     }}
                                                 >
-                                                    <Avatar
-                                                        aria-label="avatar"
+                                                    {initial}
+                                                </StyledDropDownRowAvatar>
+                                                <StyledDropDownRowInfo>
+                                                    <Typography
+                                                        variant="body1"
                                                         sx={{
-                                                            display: 'flex',
-                                                            width: '60px',
-                                                            height: '60px',
-                                                            fontSize: '24px',
-                                                            backgroundColor:
-                                                                project.color,
+                                                            fontWeight: '600',
                                                         }}
                                                     >
-                                                        {initial}
-                                                    </Avatar>
-                                                </Box>
-                                            </Box>
-                                            <Card.Header
-                                                title={
-                                                    <Typography variant="h5">
                                                         {project.project_name}
                                                     </Typography>
-                                                }
-                                                sx={{
-                                                    color: '#000',
-                                                    width: '100%',
-                                                }}
-                                                subheader={
-                                                    <Box
-                                                        sx={{
+                                                    <div
+                                                        style={{
                                                             display: 'flex',
-                                                            gap: 2,
-                                                            marginTop: '4px',
                                                         }}
                                                     >
-                                                        <span
-                                                            style={{
-                                                                opacity: 0.9,
-                                                                fontSize:
-                                                                    '14px',
-                                                            }}
-                                                        >
-                                                            {`Project ID: `}
-                                                            <Chip
-                                                                label={
-                                                                    project.project_id
-                                                                }
-                                                                size="small"
-                                                            />
-                                                        </span>
-                                                        {`• `}
-                                                    </Box>
-                                                }
-                                                action={
+                                                        <Typography variant="body2">
+                                                            <StyledSecondarySpan>
+                                                                {`Project ID: `}
+                                                            </StyledSecondarySpan>
+                                                            {project.project_id}
+                                                        </Typography>
+                                                    </div>
+                                                </StyledDropDownRowInfo>
+                                                <StyledDropDownRowIconDiv>
                                                     <IconButton
-                                                        sx={{
-                                                            mt: '16px',
-                                                            color: 'rgba( 0, 0, 0, .7)',
-                                                            mr: '24px',
-                                                        }}
                                                         onClick={() => {
                                                             const filtered =
                                                                 selectedNonCredentialedProjects.filter(
@@ -1034,11 +1067,16 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                             );
                                                         }}
                                                     >
-                                                        <ClearRounded />
+                                                        <ClearRounded
+                                                            sx={{
+                                                                fontSize:
+                                                                    '24px',
+                                                            }}
+                                                        />
                                                     </IconButton>
-                                                }
-                                            />
-                                        </Box>
+                                                </StyledDropDownRowIconDiv>
+                                            </StyledDropDownRowInnerDiv>
+                                        </StyledDropDownRowWrapper>
                                     );
                                 },
                             )}

@@ -272,7 +272,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
     const [selectedNonCredentialedUsers, setSelectedNonCredentialedUsers] =
         useState<MemberObj[]>([]);
 
-    const [teamMembers, setTeamMembers] = useState(null);
+    const [teamMembers, setTeamMembers] = useState<MemberObj[]>([]);
     const [memberCount, setMemberCount] = useState(null);
     const [hasMembers, setHasMembers] = useState<boolean>(false);
 
@@ -397,6 +397,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                 // ignore if there is no response
                 if (response) {
                     setAddMembersModal(false);
+                    setOffset(0);
                     setSelectedNonCredentialedUsers([]);
 
                     notification.add({
@@ -412,6 +413,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
             }
         } catch (e) {
             setAddMembersModal(false);
+            setOffset(0);
             setSelectedNonCredentialedUsers([]);
 
             notification.add({
@@ -428,7 +430,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
      * @name deleteUser
      * @param user
      */
-    const deleteUser = async (user) => {
+    const deleteUser = async (user: MemberObj) => {
         try {
             let response: AxiosResponse<{ success: boolean }> | null = null;
             response = await monolithStore.deleteTeamUser(user);
@@ -561,8 +563,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
         membersPageCounts: [5],
     };
 
-    teamMembers > 9 && paginationOptions.membersPageCounts.push(10);
-    teamMembers > 19 && paginationOptions.membersPageCounts.push(20);
+    teamMembers.length > 9 && paginationOptions.membersPageCounts.push(10);
+    teamMembers.length > 19 && paginationOptions.membersPageCounts.push(20);
 
     function useDebounce(effect, dependencies, delay) {
         const callback = useCallback(effect, dependencies);
@@ -630,7 +632,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                                 <StyledTableTitleMemberCountContainer>
                                     <StyledTableTitleMemberCount>
                                         <Typography variant={'body1'}>
-                                            {teamMembers.length} Members
+                                            {teamMembers &&
+                                                `${teamMembers.length} Members`}
                                         </Typography>
                                     </StyledTableTitleMemberCount>
                                 </StyledTableTitleMemberCountContainer>
@@ -949,11 +952,12 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                             onInputChange={(event, newValue) => {
                                 setSearchMemberInput(newValue);
                                 setOffset(0);
+                                setNonCredentialedUsers([]);
                             }}
                         />
 
                         {selectedNonCredentialedUsers &&
-                            selectedNonCredentialedUsers.map((user) => {
+                            selectedNonCredentialedUsers.map((user, idx) => {
                                 const space = user.name.indexOf(' ');
                                 const initial = user.name
                                     ? space > -1
@@ -963,7 +967,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                                         : user.name[0].toUpperCase()
                                     : user.id[0].toUpperCase();
                                 return (
-                                    <StyledDropdownRowWrapper key={user.id}>
+                                    <StyledDropdownRowWrapper key={idx}>
                                         <StyledDropDownRowInnerDiv>
                                             <StyledDropDownRowAvatar
                                                 aria-label="avatar"

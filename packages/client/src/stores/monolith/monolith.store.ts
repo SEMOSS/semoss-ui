@@ -1348,7 +1348,7 @@ export class MonolithStore {
         groupId: string,
         groupType: string,
         project: {
-            projectid: string;
+            project_id: string;
             permission: number;
             project_type?: string;
             endDate?: string;
@@ -1360,7 +1360,7 @@ export class MonolithStore {
         url += 'group/editGroupProjectPermission';
 
         postData += 'groupId=' + encodeURIComponent(groupId);
-        postData += '&projectId=' + encodeURIComponent(project.projectid);
+        postData += '&projectId=' + encodeURIComponent(project.project_id);
         postData += '&permission=' + encodeURIComponent(project.permission);
 
         if (groupType) {
@@ -1386,21 +1386,14 @@ export class MonolithStore {
      * @param projectId
      * @returns
      */
-    async deleteProjectPermission(
-        groupId,
-        groupType: string,
-        project: {
-            projectid: string;
-            group_type?: string;
-        },
-    ) {
+    async deleteProjectPermission(groupId, groupType: string, project) {
         let url = `${Env.MODULE}/api/auth/admin/`,
             postData = '';
 
         url += 'group/removeGroupProjectPermission';
 
         postData += 'groupId=' + encodeURIComponent(groupId);
-        postData += '&projectId=' + encodeURIComponent(project.projectid);
+        postData += '&projectId=' + encodeURIComponent(project.project_id);
         if (groupType) {
             postData += '&type=' + encodeURIComponent(groupType);
         }
@@ -1557,26 +1550,18 @@ export class MonolithStore {
      * @param endDate
      * @returns
      */
-    async editEnginePermission(
-        groupId: string,
-        engine: {
-            engineid: string;
-            permission: string;
-            type?: string;
-            endDate?: string;
-        },
-    ) {
+    async editEnginePermission(groupId: string, engine) {
         let url = `${Env.MODULE}/api/auth/admin/`,
             postData = '';
 
         url += 'group/editGroupEnginePermission';
 
         postData += 'groupId=' + encodeURIComponent(groupId);
-        postData += '&engineId=' + encodeURIComponent(engine.engineid);
+        postData += '&engineId=' + encodeURIComponent(engine.engine_id);
         postData += '&permission=' + encodeURIComponent(engine.permission);
 
-        if (engine.type) {
-            postData += '&type=' + encodeURIComponent(engine.type);
+        if (engine.engine_type) {
+            postData += '&type=' + encodeURIComponent(engine.engine_type);
         }
 
         if (engine.endDate) {
@@ -1599,21 +1584,14 @@ export class MonolithStore {
      * @param projectId
      * @returns
      */
-    async deleteEnginePermission(
-        groupId: string,
-        groupType: string,
-        engine: {
-            engineid: string;
-            type?: string;
-        },
-    ) {
+    async deleteEnginePermission(groupId: string, groupType: string, engine) {
         let url = `${Env.MODULE}/api/auth/admin/`,
             postData = '';
 
         url += 'group/removeGroupEnginePermission';
 
         postData += 'groupId=' + encodeURIComponent(groupId);
-        postData += '&engineId=' + encodeURIComponent(engine.engineid);
+        postData += '&engineId=' + encodeURIComponent(engine.engine_id);
 
         if (groupType) {
             postData += '&type=' + encodeURIComponent(groupType);
