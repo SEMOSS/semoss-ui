@@ -82,9 +82,9 @@ export const ListenerSettings = observer(
         const [isSyncOn, setIsSyncOn] = useState<boolean>(false);
 
         useEffect(() => {
-            if (blockListeners.length && blockListeners[0]?.payload?.detail) {
+            if (blockListeners.length && blockListeners[0]?.payload && 'detail' in blockListeners[0].payload) {
                 let ele = blockListeners[0];
-                setIsSyncOn(ele.payload?.detail["isSync"] as boolean);
+                setIsSyncOn(blockListeners[0].payload?.detail?.["isSync"] as boolean);
             } else {
                 setIsSyncOn(false);
             }
