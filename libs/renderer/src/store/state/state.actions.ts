@@ -26,6 +26,7 @@ export enum ActionMessages {
     UPDATE_CELL = "UPDATE_CELL",
     RUN_CELL = "RUN_CELL",
     DISPATCH_EVENT = "DISPATCH_EVENT",
+    DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
     ADD_VARIABLE = "ADD_VARIABLE",
     RENAME_VARIABLE = "RENAME_VARIABLE",
     EDIT_VARIABLE = "EDIT_VARIABLE",
@@ -50,6 +51,7 @@ export type Actions =
     | UpdateCellAction
     | RunCellAction
     | DispatchEventAction
+    | DispatchOutputsEventAction
     | AddVariableAction
     | RenameVariableAction
     | EditVariableAction
@@ -66,6 +68,11 @@ export interface SetStateAction extends Action {
     payload: {
         state?: SerializedState;
     };
+}
+
+export interface DispatchOutputsEventAction extends Action {
+    message: ActionMessages.DISPATCH_OUTPUTS_EVENT;
+    payload: {};
 }
 
 export interface AddBlockAction extends Action {
