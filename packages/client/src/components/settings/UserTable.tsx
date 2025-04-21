@@ -522,9 +522,6 @@ export const UserTable = (props: UserTableProps) => {
                                                 Name
                                             </Table.Cell>
                                             <Table.Cell size="small">
-                                                Email
-                                            </Table.Cell>
-                                            <Table.Cell size="small">
                                                 Type
                                             </Table.Cell>
                                             <Table.Cell size="small">
@@ -665,9 +662,6 @@ export const UserTable = (props: UserTableProps) => {
                                                                     </Stack>
                                                                 </Stack>
                                                             </StyledCenteredBox>
-                                                        </Table.Cell>
-                                                        <Table.Cell>
-                                                            {user.email}
                                                         </Table.Cell>
                                                         <Table.Cell>
                                                             {user.type}
