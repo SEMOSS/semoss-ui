@@ -154,6 +154,9 @@ export const DataTabStyling = observer(
         }, [dragdropColumns]);
 
         useEffect(() => {
+            if (!columnsSelector || columnsSelector.length === 0) {
+                return;
+            }
             const formattedArray = chart.map((item, index) => {
                 const key = `data-tab-drop-area-${index}`;
                 const matchedColumns = columnsSelector.filter((column) =>
@@ -167,9 +170,8 @@ export const DataTabStyling = observer(
                     dataType: matchedColumns.map((column) => column.dataType),
                 };
             });
-
             formmattedColumns(formattedArray, data.variation);
-        }, [selectedColumns]);
+        }, [selectedColumns, columnsSelector.length]);
 
         const handleChangeVisual = (value: boolean, e: React.MouseEvent<HTMLElement>) => {
             visual(!value);

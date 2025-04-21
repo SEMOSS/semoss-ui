@@ -112,6 +112,16 @@ export const FrameOperations = observer(
 
         useEffect(() => {
             setSelectedColumn(storedColumns);
+            const updatedColumns = { ...droppedColumns };
+            storedColumns.forEach((item, index) => {
+                const key = `data-tab-drop-area-${index}`;
+                if (item.values && item.values.length > 0) {
+                    updatedColumns[key] = item.values;
+                }
+            });
+            if (JSON.stringify(updatedColumns) !== JSON.stringify(droppedColumns)) {
+                setDroppedColumns(updatedColumns);
+            }
         }, [storedColumns]);
 
         const handleSearch = (searchValue: string) => {
