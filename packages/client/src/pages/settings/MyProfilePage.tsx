@@ -202,7 +202,7 @@ export const MyProfilePage = () => {
         defaultValues: {
             NAME: name,
             USERNAME: id,
-            USERID: nativeLogin,
+            USERID: id,
             EMAIL: email,
         },
     });
