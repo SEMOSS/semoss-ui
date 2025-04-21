@@ -179,7 +179,7 @@ export const FrameOperations = observer(
 
             const columnsDrop = [];
             for (let i = 0; i < columnsValue.length; i++) {
-                columnsDrop[i] = columnsValue[i].values.length > 0 ? columnsValue[i] : null;
+                columnsDrop[i] = columnsValue[i]?.values?.length > 0 ? columnsValue[i] : null;
             }
 
             const firstColumn = columnsDrop[0];

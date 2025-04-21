@@ -158,6 +158,35 @@ export const DataTabStyling = observer(
                 return;
             }
             const formattedArray = chart.map((item, index) => {
+                let value ;
+                if (data.variation === "echart-bar-graph") {
+                    value = data.option[chart[index].label]?.name;
+                }
+                else if(data.variation === "echart-gantt-chart") {
+                    value = data.option["customSettings"]?.["columnDetails"]?.[chart[index].label]?.name;
+                }
+                else {
+                    value = data.option["_state"]?.["fields"]?.[chart[index].label];
+                }
+                const matchedColumns = columnsSelector.filter((column) =>
+                    value?.includes(column.name)
+                );
+                return {
+                    name: item.name,
+                    label: item.label,
+                    values: value ? (Array.isArray(value) ? value : [value]) : [],
+                    selectors: matchedColumns.map((column) => column.selector),
+                    dataType: matchedColumns.map((column) => column.dataType),
+                };
+            });
+            formmattedColumns(formattedArray, data.variation);
+        }, [columnsSelector.length]);
+
+        useEffect(() => {
+            if (!columnsSelector || columnsSelector.length === 0) {
+                return;
+            }
+            const formattedArray = chart.map((item, index) => {
                 const key = `data-tab-drop-area-${index}`;
                 const matchedColumns = columnsSelector.filter((column) =>
                     selectedColumns[key]?.includes(column.name)

@@ -15,12 +15,12 @@ export const Pie = [
     {
         name: "Value",
         multiLabel: false,
-        label: "value",
+        label: "Value",
     },
     {
         name: "Label",
         multiLabel: false,
-        label: "label",
+        label: "Label",
     },
 ]
 
@@ -33,12 +33,12 @@ export const ScatterPlot = [
     {
         name: "X Axis",
         multiLabel: false,
-        label: "xAxis",
+        label: "XAxis",
     },
     {
         name: "Y Axis",
         multiLabel: false,
-        label: "yAxis",
+        label: "YAxis",
     },
     {
         name: "Size",
@@ -61,12 +61,12 @@ export const StackChart = [
     {
         name: "X Axis",
         multiLabel: false,
-        label: "xAxis",
+        label: "XAxis",
     },
     {
         name: "Y Axis",
         multiLabel: false,
-        label: "yAxis",
+        label: "YAxis",
     },
     {
         name: "Category",
@@ -107,12 +107,12 @@ export const WorldMap = [
     {
         name : "Latitude",
         multiLabel : false, 
-        label : "latitude",
+        label : "Latitude",
     },
     {
         name : "Longitude",
         multiLabel : false, 
-        label : "longitude",
+        label : "Longitude",
     },
     {
         name : "Size",
