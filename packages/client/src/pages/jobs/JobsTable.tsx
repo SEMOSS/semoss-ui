@@ -190,6 +190,7 @@ export const JobsTable = (props: {
                                     name: job.name,
                                     pixel: job.pixel,
                                     tags: job.tags,
+                                    notebook: job.notebook,
                                     cronExpression:
                                         job.cronExpression.replaceAll('?', '*'),
                                     cronTz: job.timeZone,

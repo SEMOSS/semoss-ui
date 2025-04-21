@@ -2,6 +2,7 @@ export interface JobBuilder {
     id: string | null;
     name: string;
     pixel: string;
+    notebook: string;
     tags: string[];
     cronExpression: string;
     cronTz: string;
@@ -31,6 +32,7 @@ export interface PixelReturnJob {
     recipeParameters: string;
     jobTags: string;
     cronTz: string;
+    notebook: string;
     smtpHost: string;
     smtpPort: string;
     subject: string;
@@ -105,6 +107,7 @@ export interface Job {
     isActive: boolean;
     group: string;
     pixel: string;
+    notebook: string;
     smtpHost: string;
     smtpPort: string;
     subject: string;

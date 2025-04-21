@@ -3,9 +3,12 @@ import {
     AutocompleteTwo,
     Stack,
     TextField,
+    MenuItem,
 } from '@semoss/ui';
 
 import { JobBuilder } from './job.types';
+import { useRootStore } from '@/hooks';
+import { useEffect, useState } from 'react';
 
 export const JobTypesRunNotebookBuilder = (props: {
     builder: JobBuilder;
@@ -13,17 +16,43 @@ export const JobTypesRunNotebookBuilder = (props: {
 }) => {
     const { builder, setBuilderField } = props;
     const filter = createFilterOptions<string>();
+
+    const { configStore, monolithStore } = useRootStore();
+
+    const [userNotebooks, setUserNotebooks] = useState<string[]>([]);
+
+    const getNotebooks = async () => {
+        try {
+            const response = await monolithStore.runQuery(
+                `GetProjectList();`,
+            );
+            console.log(response);
+            const notebooks = response.pixelReturn[0].output.map((notebook: any) => `${notebook.low_project_name}: ${notebook.project_name} (${notebook.project_id})`);
+            setUserNotebooks(notebooks);
+            console.log('User Notebooksa:', notebooks);
+        } catch (error) {
+            console.error('Error fetching notebooks:', error);
+        }
+    };
+    useEffect(() => {
+        getNotebooks();
+    }, []);
     return (
+
         <Stack spacing={2} width="100%">
             <TextField
-                label="Pixel"
-                size="small"
-                value={builder.pixel}
-                onChange={(e) => setBuilderField('pixel', e.target.value)}
-                multiline
-                rows={3}
-            />
-            {/* <AutocompleteTwo
+                select
+                label="Select Notebook"
+                value={builder.notebook || ''}
+                onChange={(e) => setBuilderField('notebook', e.target.value)}
+            >
+                {userNotebooks.map((notebook) => (
+                    <MenuItem key={notebook} value={notebook}>
+                        {notebook}
+                    </MenuItem>
+                ))}
+            </TextField>
+            <AutocompleteTwo
                 value={(builder.tags as string[]) ?? []}
                 fullWidth
                 multiple
@@ -48,7 +77,7 @@ export const JobTypesRunNotebookBuilder = (props: {
                 renderOption={(props, option) => <li {...props}>{option}</li>}
                 freeSolo
                 renderInput={(params) => <TextField {...params} label="Tags" />}
-            />  */}
+            /> 
         </Stack>
     );
 };

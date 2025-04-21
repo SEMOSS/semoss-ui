@@ -17,7 +17,7 @@ import { runPixel } from '@/api';
 import { JobBuilder } from './job.types';
 import { getEncodeByJobType } from './job.utils';
 import { JobTypesBuilder } from './JobTypesBuilder';
-import { JobTypeCustomJob, JobTypeSendEmail, timezones } from './job.constants';
+import { JobTypeCustomJob, JobTypeRunNotebook, JobTypeSendEmail, timezones } from './job.constants';
 import { JobStandardFrequencyBuilder } from './JobStandardFrequencyBuilder';
 import { JobCustomFrequencyBuilder } from './JobCustomFrequencyBuilder';
 
@@ -25,6 +25,7 @@ const emptyBuilder: JobBuilder = {
     id: null,
     name: '',
     pixel: '',
+    notebook: '',
     tags: [],
     cronExpression: '0 0 12 * * ?',
     cronTz: 'US/Eastern',
@@ -179,10 +180,13 @@ export const JobBuilderModal = (props: {
                 );
             case JobTypeCustomJob:
                 return !!builder.name && !!builder.pixel && !!builder.cronTz;
+            case JobTypeRunNotebook:
+                return !!builder.name && !!builder.notebook && !!builder.cronTz;
         }
     }, [
         builder.name,
         builder.pixel,
+        builder.notebook,
         builder.cronTz,
         builder.smtpHost,
         builder.smtpPort,
