@@ -749,5 +749,6 @@ export const FrequencyOptions: Frequencies[] = [
 
 export const JobTypeCustomJob = 'Custom Job';
 export const JobTypeSendEmail = 'Send Email';
+export const JobTypeRunNotebook = 'Run Notebook';
 
-export const JobTypeOptions: JobTypes[] = [JobTypeCustomJob, JobTypeSendEmail];
+export const JobTypeOptions: JobTypes[] = [JobTypeCustomJob, JobTypeSendEmail, JobTypeRunNotebook];

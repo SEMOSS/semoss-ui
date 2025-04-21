@@ -177,4 +177,4 @@ export type Month =
     | 'November'
     | 'December';
 
-export type JobTypes = 'Custom Job' | 'Send Email';
+export type JobTypes = 'Custom Job' | 'Send Email' | 'Run Notebook';

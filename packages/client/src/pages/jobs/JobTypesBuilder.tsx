@@ -3,11 +3,13 @@ import { AutocompleteTwo, Stack, TextField } from '@semoss/ui';
 import {
     JobTypeCustomJob,
     JobTypeOptions,
+    JobTypeRunNotebook,
     JobTypeSendEmail,
 } from './job.constants';
 import { JobBuilder } from './job.types';
 import { JobTypesSendEmailBuilder } from './JobTypesSendEmailBuilder';
 import { JobTypesCustomJobBuilder } from './JobTypesCustomJobBuilder';
+import { JobTypesRunNotebookBuilder } from './JobTypesRunNotebookBuilder';
 
 export const JobTypesBuilder = (props: {
     builder: JobBuilder;
@@ -38,6 +40,13 @@ export const JobTypesBuilder = (props: {
                     setBuilderField={setBuilderField}
                 />
             )}
+            {builder.jobType === JobTypeRunNotebook && (
+                <JobTypesRunNotebookBuilder
+                    builder={builder}
+                    setBuilderField={setBuilderField}
+                />
+            )}
+            
         </Stack>
     );
 };
