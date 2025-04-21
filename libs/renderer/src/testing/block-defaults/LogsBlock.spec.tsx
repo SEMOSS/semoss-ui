@@ -2,7 +2,7 @@ import { render, screen } from "../utils";
 import { expect } from "vitest";
 import "@testing-library/jest-dom";
 
-import { LogsBlock } from "../../components/block-defaults/logs-block/LogsBlock";
+import { LogsBlock } from "@/components/block-defaults/logs-block/LogsBlock";
 import { QueryStateConfig } from "@/store";
 
 const blocks = {

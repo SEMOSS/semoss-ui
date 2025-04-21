@@ -1,5 +1,4 @@
 import "@testing-library/jest-dom";
-import { cleanup } from "@testing-library/react";
 import { DefaultBlocks } from "@/components/block-defaults";
 import { Blocks } from "@/components/blocks";
 import { type Block, QueryStateConfig, StateStore } from "@/store";
