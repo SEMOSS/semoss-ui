@@ -9,7 +9,6 @@ import {
     useBlocksPixel,
     useFrameHeaders,
 } from "../../../../../hooks";
-import { EChartColumns } from "./Bar";
 import { BlockDef } from "../../../../../store";
 import { PathValue } from "../../../../../types";
 import { getValueByPath } from "../../../../../utility";

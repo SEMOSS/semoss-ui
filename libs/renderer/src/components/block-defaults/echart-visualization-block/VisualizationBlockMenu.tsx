@@ -1,20 +1,13 @@
 import { useState } from "react";
 
 import { Stack, styled, ToggleTabsGroup } from "@semoss/ui";
-
 import { useBlock, useBlockSettings } from "../../../hooks";
 import { EchartVisualizationBlockDef } from "./VisualizationBlock";
 import { BlockComponent } from "../../../store";
 import { AIGenerationSettings, JsonSettings } from "../../block-settings";
 import { UpgradedVisualizationTool } from "./variant/bar-chart/UpgradedVisualizationTool";
 import { FrameOperations } from "./variant/bar-chart/FrameOperations";
-import { FrameOperationsPie } from "./variant/pie-chart/FrameOperationsPie";
-import { ScatterPlotBlockSettings } from "./variant/scatter-plot/ScatterPlotBlockSettings";
-import { MapChartBlockSettings } from "./variant/map-chart/MapChartBlockSettings";
-import { FrameOperationsLine } from "./variant/line-chart/FrameOperationsLine";
-import { StackChartBlockSettings } from "./variant/stack-chart/StackChartBlockSettings";
 import { Bar, Pie, ScatterPlot, StackChart, Line, WorldMap, Gantt } from "./variant/Constant";
-import { GanttFrameSection } from "./variant/Gantt/GanttFrameSection";
 
 const StyledContainer = styled("div")(() => ({
     height: "100%",

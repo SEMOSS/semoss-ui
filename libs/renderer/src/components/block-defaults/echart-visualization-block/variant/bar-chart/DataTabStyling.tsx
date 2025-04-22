@@ -62,17 +62,10 @@ const DropContainer = styled("div")(() => ({
     display: "flex",
     alignItems: "center",
 }));
-const StyledPopoverSection = styled("div")(() => ({
-    // top: "1%",
-    // position: "relative",
-    // left: "8%",
-}));
 
 export const DataTabStyling = observer(
     <D extends BlockDef = BlockDef>({ id, updateFrame, path, dragdropColumns, deleteColumns, formmattedColumns, isAdd, syncHeader, chart, storedColumns, visual, selectedItem }) => {
         const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
-        const [columnsData, setColumnsData] = useState([]);
-        const [droppedColumns, setDroppedColumns] = useState<string[]>([]);
         const [selectedColumns, setSelectedColumns] = useState<Record<string, string[]>>(() => {
             return storedColumns || {}; // Initialize with storedColumns if available
         });
@@ -405,7 +398,7 @@ export const DataTabStyling = observer(
                     />
                     <StyledSpanSwitch>Auto Visualize</StyledSpanSwitch>
                 </StyledSwitchSection>
-                <StyledPopoverSection>
+                <div>
                     <Popover
                         id={'visual-popover'}
                         open={initialVisual}
@@ -421,7 +414,7 @@ export const DataTabStyling = observer(
                             handleClose={handleCloseVisual}
                         />
                     </Popover>
-                </StyledPopoverSection>
+                </div>
             </StyledMain>
         );
     }
