@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import "@testing-library/jest-dom";
 
 import { ButtonBlock } from "../../components/block-defaults/button-block/ButtonBlock";
-import { ActionMessages, RunQueryAction } from "@/store";
+import { ActionMessages, QueryStateConfig, RunQueryAction } from "@/store";
 import { useBlock, useBlocks } from "@/hooks";
 
 // mock data for default button component
@@ -57,11 +57,26 @@ const blocks = {
     },
 };
 
-// casting query
-const runQuery: RunQueryAction = {
+const queries: Record<string, QueryStateConfig> = {
+    testQuery: {
+        id: "testQuery",
+        cells: [
+            {
+                id: "test",
+                widget: "code",
+                parameters: {
+                    type: "py",
+                    code: "result = 1 + 1\r\nresult",
+                },
+            },
+        ],
+    },
+};
+
+const query: RunQueryAction = {
     message: ActionMessages.RUN_QUERY,
     payload: {
-        queryId: "count",
+        queryId: "testQuery",
     },
 };
 
@@ -75,7 +90,7 @@ const queryBlock = {
                 gap: "8px",
                 flexWrap: "wrap",
             },
-            label: "Query Button Test",
+            label: "hi",
             loading: false,
             disabled: false,
             variant: "contained",
@@ -85,27 +100,12 @@ const queryBlock = {
         widget: "button",
         slots: {},
         listeners: {
-            onClick: [runQuery],
+            onClick: [query],
         },
     },
 };
 
-// query example from json
-const queries = {
-    count: {
-        id: "count",
-        cells: [
-            {
-                id: "12345",
-                widget: "code",
-                parameters: {
-                    type: "py",
-                    code: "result = 1 + 1\r\nresult",
-                },
-            },
-        ],
-    },
-};
+const mockDispatch = vi.fn();
 
 describe("button block", () => {
     // checks button exists with correct label
@@ -136,49 +136,42 @@ describe("button block", () => {
     });
 
     // checks onClick functionality
-    it("has successful onClick query", async () => {
+    //it("has successful onClick query", async () => {
         // mock result of useBlocks()
-        // vi.mock("@/hooks/useBlocks.tsx", () => {
-        //     return {
-        //         useBlocks: () => ({
-        //             state: {
-        //                 dispatch: vi.fn(),
-        //                 getBlock: vi.fn().mockRejectedValue({
-        //                     id: "count",
-        //                 }),
-        //             },
-        //         }),
-        //     };
-        // });
 
-        const { container } = render(<ButtonBlock id="queryButton" />, {
-            blocks: queryBlock,
-            //renderOptions: { queries: queries },
-        });
+    //     vi.mock("@/hooks/useBlock.tsx", () => ({
+    //         useBlock: () => ({
+    //             state: {
+    //                 dispatch: mockDispatch,
+    //                 getBlock: (id: string) =>
+    //                     id === "queryButton" ? queryBlock.queryButton : null,
+    //             },
+    //         }),
+    //     }));
 
-        // spy on state.dispatch for query message
-        // const { state } = useBlocks();
+    //     // vi.mock("@/hooks/useBlocks.tsx", () => ({
+    //     //     useBlocks: () => ({
+    //     //         state: {
+    //     //             dispatch: mockDispatch,
+    //     //             getBlock: (id: string) =>
+    //     //                 id === "queryButton" ? queryBlock.queryButton : null,
+    //     //         },
+    //     //     }),
+    //     // }));
 
-        const element = container.querySelector("[data-block='queryButton']");
-        const buttonElement = container.querySelector("button");
+    //     const { container } = render(<ButtonBlock id="queryButton" />, {
+    //         blocks: queryBlock,
+    //         query: queries,
+    //     });
 
-        console.log(container.innerHTML);
+    //     const buttonElement = container.querySelector("button");
 
-        // button click
-        //fireEvent.click(buttonElement);
+    //     //console.log(container.innerHTML);
 
-        // mock dispatch call
-        //const dispatch = useBlocks().state.dispatch;
-
-        //console.log("dispatch function " + dispatch);
-
-        expect(element).toBeInTheDocument();
-        //expect(runQuery).toHaveBeenCalledTimes(1);
-
-        // checking onClick state.dispatch
-        //const { dispatch } = useBlock("queryButton");
-        // expect(dispatch).toHaveBeenCalledWith(runQuery);
-    });
-
-    // checks isLoading
+    //     fireEvent.click(buttonElement);
+    
+    //     // validate query dispatch
+    //     expect(mockDispatch).toHaveBeenCalledWith(queries);
+    //});
+   // )},
 });

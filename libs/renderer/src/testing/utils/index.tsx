@@ -1,20 +1,25 @@
 import "@testing-library/jest-dom";
 import { DefaultBlocks } from "@/components/block-defaults";
 import { Blocks } from "@/components/blocks";
-import { type Block, StateStore } from "@/store";
+import { type Block, QueryStateConfig, StateStore } from "@/store";
 import { render, type RenderOptions } from "@testing-library/react";
 import type React from "react";
 
 interface MockProviderProps {
     children: React.ReactNode;
     blocks: Record<string, Block>;
+    query?: Record<string, QueryStateConfig>;
 }
 
-const MockProvider: React.FC<MockProviderProps> = ({ children, blocks }) => {
+const MockProvider: React.FC<MockProviderProps> = ({
+    children,
+    blocks,
+    query,
+}) => {
     const store = new StateStore({
         state: {
             executionOrder: [],
-            queries: {},
+            queries: query || {},
             variables: {},
             version: "",
             blocks: blocks,
@@ -31,6 +36,7 @@ const MockProvider: React.FC<MockProviderProps> = ({ children, blocks }) => {
 // Define the type for the custom render function
 type CustomRenderOptions = {
     blocks: Record<string, Block>;
+    query?: Record<string, QueryStateConfig>;
     renderOptions?: RenderOptions<unknown>;
 } & Omit<RenderOptions, "wrapper">;
 
@@ -39,9 +45,11 @@ const customRender = (
     ui: React.ReactElement,
     options?: CustomRenderOptions,
 ): ReturnType<typeof render> => {
-    const { blocks } = options || {}; // Destructure parameters from options
+    const { blocks, query } = options || {}; // Destructure parameters from options
     return render(ui, {
-        wrapper: (props) => <MockProvider {...props} blocks={blocks} />,
+        wrapper: (props) => (
+            <MockProvider {...props} blocks={blocks} query={query} />
+        ),
         ...options,
     });
 };
