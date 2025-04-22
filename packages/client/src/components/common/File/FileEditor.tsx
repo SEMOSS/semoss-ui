@@ -42,6 +42,9 @@ interface FileEditorProps {
     /** Path to the file file */
     path: string;
 
+    /** insight id */
+    insightId?: string | null;
+
     /**
      * Optional Model Engine to use
      */
@@ -75,6 +78,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
             type = 'app',
             space = '',
             path = '',
+            insightId = null,
             agentModelEngine = '',
             onChange = () => null,
         } = props;
@@ -199,7 +203,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                     throw new Error('Error missing pixel to get file');
                 }
 
-                const response = await runPixel<[string]>(pixel);
+                const response = await runPixel<[string]>(pixel, insightId);
 
                 // set the content
                 const content = response.pixelReturn[0].output;
@@ -299,7 +303,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                     throw new Error('Error missing pixel to get file');
                 }
 
-                const { errors } = await runPixel(pixel);
+                const { errors } = await runPixel(pixel, insightId);
 
                 // bubble up the errors
                 for (const e of errors) {
@@ -338,6 +342,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 
                 const response = await runPixel(
                     `LLM(engine = "${agentModelEngine}", command = "${prompt}", paramValues = [ {} ] );`,
+                    insightId,
                 );
 
                 const LLMResponse = response.pixelReturn[0].output['response'];

@@ -22,7 +22,7 @@ import { Env } from '@/env';
 import { THEME } from '@/constants';
 import { WorkspaceContext } from '@/contexts';
 import { WorkspaceStore, WorkspaceOptions } from '@/stores';
-import { usePixel, useRootStore } from '@/hooks';
+import { useRootStore } from '@/hooks';
 import { LoginPopover } from '@/components/ui';
 
 import { WorkspaceOverlay } from './WorkspaceOverlay';
@@ -137,10 +137,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
     // build the model from the layout
     const model = workspace.selectedLayout?.model;
 
-    const validateDependencies = usePixel(
-        'ValidateUserProjectDependencies(project="' + workspace.appId + '");',
-    );
-
     useEffect(() => {
         // default options if not loaded from cache
         const defaultOptions = JSON.parse(JSON.stringify(options));
@@ -151,29 +147,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
             workspace.load(defaultOptions);
         }
     }, [options]);
-
-    useEffect(() => {
-        if (validateDependencies.status !== 'SUCCESS') {
-            return;
-        } else if (validateDependencies.data !== null) {
-            const needsAccess = [];
-            Object.entries(validateDependencies.data).forEach((kv) => {
-                const hasAccess = kv[1];
-
-                if (!hasAccess) {
-                    needsAccess.push(kv[0]);
-                }
-            });
-            if (needsAccess.length) {
-                notification.add({
-                    color: 'warning',
-                    message:
-                        needsAccess.join(', ') +
-                        '- are dependencies you do not have access to',
-                });
-            }
-        }
-    }, [validateDependencies.status, validateDependencies.data]);
 
     const themeMap = useMemo(() => {
         const theme = configStore.store.config['theme'];

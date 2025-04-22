@@ -1,7 +1,9 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
-import { RootStore, WorkspaceStore, WorkspaceConfigInterface } from '@/stores';
+// Shouldnt this come from sdk
 import { runPixel } from '@/api';
+
+import { RootStore, WorkspaceStore, WorkspaceConfigInterface } from '@/stores';
 import { AppMetadata } from '@/components/app';
 
 interface ConfigStoreInterface {
@@ -547,8 +549,11 @@ export class ConfigStore {
             ...getAppInfo.pixelReturn[0].output,
         };
 
+        const { insightId } = await runPixel(`SetContext("${appId}")`, 'new');
+
         const workspace: WorkspaceConfigInterface = {
             appId: appId,
+            insightId: insightId,
             type: 'CODE',
             role: role,
             metadata: metadata,
