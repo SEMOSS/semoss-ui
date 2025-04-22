@@ -1,5 +1,17 @@
-import React, { useMemo } from 'react';
-import { MoreVert, DeleteRounded } from '@mui/icons-material';
+import React, { useMemo, useState, useEffect } from 'react';
+import {
+    MoreVert,
+    DeleteRounded,
+    ClearRounded,
+    Close,
+} from '@mui/icons-material';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import EditIcon from '@mui/icons-material/Edit';
+import { AddTeamModal } from '@/components/teams/AddTeamModal';
+import { useAPI, useDebounceValue, useRootStore, useSettings } from '@/hooks';
+import { MembersAddOverlayUser } from '../settings/MembersAddOverlayUser';
+import { AxiosResponse } from 'axios';
+import { SETTINGS_ROLE } from '../settings/settings.types';
 
 import {
     Card,
@@ -14,9 +26,9 @@ import {
     Popover,
     MenuList,
     MenuItemTwo,
+    Autocomplete,
+    TextField,
 } from '@semoss/ui';
-
-import { useRootStore } from '@/hooks';
 
 const colors = [
     'rgba(111, 212, 203, 1)',
@@ -100,6 +112,22 @@ const StyledMoreVert = styled(MoreVert, {
     color: hover ? theme.palette.divider : theme.palette.text.secondary,
 }));
 
+const StyledModal = styled(Modal.Content)(({ theme }) => ({
+    maxWidth: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(1),
+}));
+
+const StyledOuterBox = styled('div')(({ theme }) => ({
+    flexShrink: '0',
+    display: 'flex',
+    flexDirection: 'column',
+    maxHeight: '200px',
+    overflow: 'auto',
+    gap: theme.spacing(1),
+}));
+
 interface TeamCardProps {
     /** ID of team */
     id: string;
@@ -121,6 +149,27 @@ interface TeamCardProps {
 
     onClick?: (value: string) => void;
 }
+const AUTOCOMPLETE_OFFSET = 0;
+const AUTOCOMPLETE_LIMIT = 10;
+
+const permissionMapper = {
+    1: 'Author', // BE: 'DISPLAY'
+    OWNER: 'Author', // BE: 'DISPLAY'
+    Author: 'OWNER', // DISPLAY: BE
+    2: 'Editor', // BE: 'DISPLAY'
+    EDIT: 'Editor', // BE: 'DISPLAY'
+    Editor: 'EDIT', // DISPLAY: BE
+    3: 'Read-Only', // BE: 'DISPLAY'
+    READ_ONLY: 'Read-Only', // BE: 'DISPLAY'
+    'Read-Only': 'READ_ONLY', // DISPLAY: BE
+};
+
+const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginTop: theme.spacing(2),
+}));
 
 export const TeamTileCard = (props: TeamCardProps) => {
     const { id, description, type, tag, dispatch, teams, onClick } = props;
@@ -137,6 +186,57 @@ export const TeamTileCard = (props: TeamCardProps) => {
     const randomColor = useMemo(() => {
         return colors[Math.floor(Math.random() * colors.length)];
     }, []);
+    const [editModal, setEditModal] = useState(false);
+
+    //modal member logic
+    const [isScrollBottom, setIsScrollBottom] = useState(false);
+    const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
+    const [renderedMembers, setRenderedMembers] = useState([]);
+    const [infiniteOn, setInfiniteOn] = useState(true);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [addMember, setAddMember] = useState(false);
+    const [selectedMembers, setSelectedMembers] = useState([]);
+    const [search, setSearch] = useState<string>('');
+    const [selectedRole, setSelectedRole] = useState<SETTINGS_ROLE>(null);
+    const [restriction, setRestriction] = useState<string>('null');
+    const [frequency, setFrequency] = useState<string>('');
+    const [maxTokens, setMaxTokens] = useState<string>('');
+    const [maxTime, setMaxTime] = useState<string>('');
+
+    const debouncedSearch = useDebounceValue(search);
+
+    const { adminMode } = useSettings();
+
+    const getMembersApi: Parameters<typeof useAPI>[0] = [
+        'getProjectUsersNoCredentials',
+        adminMode,
+        id,
+        AUTOCOMPLETE_LIMIT, // limit
+        offset, // offset
+        debouncedSearch ? debouncedSearch : undefined,
+    ];
+
+    const getMembers = useAPI(addMember ? getMembersApi : null);
+
+    const isLoading =
+        getMembers.status === 'INITIAL' || getMembers.status === 'LOADING';
+
+    useEffect(() => {
+        if (getMembers.status === 'SUCCESS') {
+            if (getMembers.data.data.length < AUTOCOMPLETE_LIMIT) {
+                setInfiniteOn(false);
+            }
+            if (renderedMembers.length >= AUTOCOMPLETE_LIMIT && offset > 0) {
+                setRenderedMembers((prev) => {
+                    return [...prev, ...getMembers.data.data];
+                });
+                setSearchLoading(false);
+            } else {
+                setRenderedMembers(getMembers.data.data);
+                setSearchLoading(false);
+            }
+        }
+    }, [getMembers.status]);
 
     const deleteGroup = () => {
         try {
@@ -171,8 +271,80 @@ export const TeamTileCard = (props: TeamCardProps) => {
         setAnchorEl(null);
     };
 
+    const nearBottom = (
+        target: {
+            scrollHeight?: number;
+            scrollTop?: number;
+            clientHeight?: number;
+        } = {},
+    ) => {
+        const diff = Math.round(target.scrollHeight - target.scrollTop);
+        return diff - 25 <= target.clientHeight;
+    };
+
     const open = Boolean(anchorEl);
     const popoverId = open ? 'simple-popover' : undefined;
+
+    const addMembers = async () => {
+        console.log('function call test');
+        let success = false;
+
+        try {
+            let requests: any = null;
+            requests = selectedMembers.map((m) => {
+                return {
+                    userid: m.id,
+                    permission: permissionMapper[selectedRole],
+                    email: m.email,
+                    name: m.name,
+                    type: m.type,
+                    username: m.username,
+                };
+            });
+            // }
+
+            if (requests.length === 0) {
+                notification.add({
+                    color: 'warning',
+                    message: `No permissions to change`,
+                });
+
+                return;
+            }
+
+            let response: AxiosResponse<{ success: boolean }> | null = null;
+            response = await monolithStore.addProjectUserPermissions(
+                adminMode,
+                id,
+                requests,
+            );
+
+            if (!response) {
+                return;
+            }
+
+            if (response.data.success) {
+                notification.add({
+                    color: 'success',
+                    message: 'Successfully added member permissions',
+                });
+
+                success = true;
+            } else {
+                notification.add({
+                    color: 'error',
+                    message: `Error changing user permissions`,
+                });
+            }
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: String(e),
+            });
+        } finally {
+            setAddMember(false);
+        }
+    };
 
     return (
         <React.Fragment>
@@ -264,6 +436,30 @@ export const TeamTileCard = (props: TeamCardProps) => {
                             <MenuItemTwo
                                 onClick={(e) => {
                                     e.stopPropagation();
+                                    setAddMember(true);
+                                    handleClose(e);
+                                }}
+                            >
+                                <Stack direction="row" gap={2}>
+                                    <PersonAddIcon />
+                                    <div>Add member to team</div>
+                                </Stack>
+                            </MenuItemTwo>
+                            <MenuItemTwo
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditModal(true);
+                                    handleClose(e);
+                                }}
+                            >
+                                <Stack direction="row" gap={2}>
+                                    <EditIcon />
+                                    <div>Edit team</div>
+                                </Stack>
+                            </MenuItemTwo>
+                            <MenuItemTwo
+                                onClick={(e) => {
+                                    e.stopPropagation();
                                     setDeleteModal(true);
                                     handleClose(e);
                                 }}
@@ -283,7 +479,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                                             color: hover ? 'red' : 'black',
                                         }}
                                     >
-                                        Delete
+                                        Delete team
                                     </div>
                                 </Stack>
                             </MenuItemTwo>
@@ -292,11 +488,27 @@ export const TeamTileCard = (props: TeamCardProps) => {
                 </StyledActionContainer>
             </StyledTileCard>
             <Modal open={deleteModal}>
+                <StyledModalTitle>
+                    <Typography sx={{ color: '#000000DE' }} variant="h6">
+                        Delete Team
+                    </Typography>
+                    <IconButton onClick={() => setDeleteModal(false)}>
+                        <Close />
+                    </IconButton>
+                </StyledModalTitle>
                 <Modal.Content>
-                    Are you sure you want to delete group {id}
+                    <Typography sx={{ color: '#000000DE' }} variant="body1">
+                        Are you sure you want to delete group {id}
+                    </Typography>
                 </Modal.Content>
-                <Modal.Actions>
-                    <Button onClick={() => setDeleteModal(false)}>
+                <Modal.Actions
+                    sx={{ marginBottom: '24px', paddingRight: '16px' }}
+                >
+                    <Button
+                        onClick={() => setDeleteModal(false)}
+                        variant="text"
+                        sx={{ color: '#212121' }}
+                    >
                         Cancel
                     </Button>
                     <Button
@@ -304,7 +516,159 @@ export const TeamTileCard = (props: TeamCardProps) => {
                         color={'error'}
                         onClick={() => deleteGroup()}
                     >
-                        Confirm
+                        Delete
+                    </Button>
+                </Modal.Actions>
+            </Modal>
+            <AddTeamModal
+                open={editModal}
+                isEdit={true}
+                type={type.toLocaleLowerCase()}
+                id={id}
+                description={description}
+                onClose={(team) => {
+                    if (team) {
+                        const obj = {
+                            id: team.id,
+                            description: team.description,
+                        };
+
+                        if (team.type != 'Custom') {
+                            obj['type'] = team.type;
+                        }
+
+                        dispatch({
+                            type: 'field',
+                            field: 'teams',
+                            value: [...teams, obj],
+                        });
+                    }
+                    setEditModal(false);
+                }}
+            />
+            <Modal open={addMember} fullWidth>
+                <StyledModalTitle>
+                    <Typography sx={{ color: '#000000DE' }} variant="h6">
+                        Add Members to Team
+                    </Typography>
+                    <IconButton onClick={() => setAddMember(false)}>
+                        <Close />
+                    </IconButton>
+                </StyledModalTitle>
+                <StyledModal>
+                    <Autocomplete
+                        label="Search"
+                        loading={isLoading || searchLoading}
+                        multiple={true}
+                        freeSolo={false}
+                        filterOptions={(x) => x}
+                        options={renderedMembers ? renderedMembers : []}
+                        includeInputInList={true}
+                        limitTags={2}
+                        ListboxProps={{
+                            onScroll: ({ target }) =>
+                                setIsScrollBottom(
+                                    nearBottom(
+                                        target as {
+                                            scrollHeight?: number;
+                                            scrollTop?: number;
+                                            clientHeight?: number;
+                                        },
+                                    ),
+                                ),
+                        }}
+                        getLimitTagsText={() =>
+                            ` +${selectedMembers.length - 2}`
+                        }
+                        value={selectedMembers}
+                        inputValue={search}
+                        getOptionLabel={(option) => {
+                            return `${option.name}`;
+                        }}
+                        isOptionEqualToValue={(option, value) => {
+                            return option.id === value.id;
+                        }}
+                        onInputChange={(event, newValue) => {
+                            setSearch(newValue);
+                            setOffset(0);
+                            setInfiniteOn(true);
+                            setRenderedMembers([]);
+                            setSearchLoading(true);
+                        }}
+                        onChange={(event, newValue) => {
+                            setSelectedMembers(newValue || []);
+                        }}
+                        renderOption={(props, option) => {
+                            const { ...optionProps } = props;
+                            return (
+                                <li key={option.id} {...optionProps}>
+                                    <MembersAddOverlayUser
+                                        name={option.name}
+                                        id={option.id}
+                                        email={option.email}
+                                        type={option.type}
+                                    />
+                                </li>
+                            );
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                variant="outlined"
+                                placeholder="Search users"
+                                InputProps={{
+                                    ...params.InputProps,
+                                    startAdornment: null,
+                                }}
+                            />
+                        )}
+                    />
+                    <StyledOuterBox>
+                        {selectedMembers.map((user) => (
+                            <MembersAddOverlayUser
+                                key={user.id}
+                                name={user.name}
+                                id={user.id}
+                                email={user.email}
+                                type={user.type}
+                                action={
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => {
+                                            const filtered =
+                                                selectedMembers.filter(
+                                                    (val) => val.id !== user.id,
+                                                );
+
+                                            setSelectedMembers(filtered);
+                                        }}
+                                    >
+                                        <ClearRounded fontSize="small" />
+                                    </IconButton>
+                                }
+                            />
+                        ))}
+                    </StyledOuterBox>
+                </StyledModal>
+                <Modal.Actions
+                    sx={{ marginBottom: '24px', paddingRight: '16px' }}
+                >
+                    <Button
+                        variant="text"
+                        sx={{ color: '#212121' }}
+                        onClick={() => setAddMember(false)}
+                    >
+                        Cancel
+                    </Button>
+                    {/* {user === null && ( */}
+                    <Button
+                        variant={'contained'}
+                        color="primary"
+                        onClick={() => {
+                            addMembers();
+                        }}
+                    >
+                        Add
                     </Button>
                 </Modal.Actions>
             </Modal>

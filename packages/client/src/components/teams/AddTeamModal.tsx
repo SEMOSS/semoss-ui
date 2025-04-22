@@ -1,6 +1,7 @@
 import { Controller, useForm } from 'react-hook-form';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import { Close } from '@mui/icons-material';
+import { useEffect } from 'react';
 
 import {
     Stack,
@@ -38,6 +39,7 @@ const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
     width: '100%',
     display: 'flex',
     justifyContent: 'space-between',
+    marginTop: theme.spacing(2),
 }));
 
 const StyledIcon = styled(PeopleAltIcon)(({ theme }) => ({
@@ -101,11 +103,14 @@ interface AddTeamModalProps {
      */
     // eslint-disable-next-line no-unused-vars
     onClose: (team?: TeamReturn) => void;
+    isEdit?: boolean;
+    id?: string;
+    type?: string;
+    description?: string;
 }
 
 export const AddTeamModal = (props: AddTeamModalProps) => {
-    const { open, onClose } = props;
-
+    const { open, onClose, isEdit, id, type, description } = props;
     const notification = useNotification();
     const { monolithStore, configStore } = useRootStore();
 
@@ -120,7 +125,17 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
             TEAM_DESCRIPTION: '',
             TEAM_TYPE: '',
         },
+        mode: 'onChange', // Ensures validation updates on field changes
     });
+
+    // Synchronize props with form state
+    useEffect(() => {
+        reset({
+            TEAM_NAME: id || '',
+            TEAM_DESCRIPTION: description || '',
+            TEAM_TYPE: type || '',
+        });
+    }, [id, type, description, reset]);
 
     const loginTypes = [
         {
@@ -215,7 +230,13 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
     return (
         <Modal open={open} fullWidth>
             <StyledModalTitle>
-                <>Create New Team</>
+                {isEdit ? (
+                    <Typography sx={{ color: '#000000DE' }} variant="h6">
+                        Edit Team
+                    </Typography>
+                ) : (
+                    <>Create New Team</>
+                )}
                 <IconButton
                     onClick={() => {
                         onClose();
@@ -241,7 +262,9 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                                             fullWidth={true}
                                             error={!!error}
                                             value={
-                                                field.value ? field.value : ''
+                                                field.value
+                                                    ? field.value
+                                                    : type || ''
                                             }
                                             onChange={(value) =>
                                                 field.onChange(value)
@@ -325,7 +348,9 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                                         <TextField
                                             label="Name"
                                             value={
-                                                field.value ? field.value : ''
+                                                field.value
+                                                    ? field.value
+                                                    : id || ''
                                             }
                                             onChange={(value) =>
                                                 field.onChange(value)
@@ -347,7 +372,9 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                                         <TextField
                                             label="Description"
                                             value={
-                                                field.value ? field.value : ''
+                                                field.value
+                                                    ? field.value
+                                                    : description || ''
                                             }
                                             onChange={(value) =>
                                                 field.onChange(value)
@@ -369,6 +396,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                     >
                         <Button
                             type="button"
+                            sx={{ color: '#212121' }}
                             onClick={() => {
                                 onClose();
                             }}
@@ -380,7 +408,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                             variant={'contained'}
                             disabled={!isValid}
                         >
-                            Add
+                            {isEdit ? 'Update' : 'Add'}
                         </Button>
                     </Stack>
                 </Modal.Actions>

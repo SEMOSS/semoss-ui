@@ -12,13 +12,16 @@ import {
     Typography,
     Box,
     Button,
+    IconButton,
+    Menu,
+    MenuItemTwo,
 } from '@semoss/ui';
 
 import { useRootStore, useAPI } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 import { TeamTileCard } from '@/components/teams/TeamTileCard';
 import { AddTeamModal } from '@/components/teams/AddTeamModal';
-import { Add } from '@mui/icons-material';
+import { Add, ExpandMore, ArrowForward, ArrowBack } from '@mui/icons-material';
 
 export interface DBMember {
     ID: string;
@@ -86,10 +89,10 @@ const StyledAddButton = styled(Button)({
 });
 
 const StyledGrid = styled('div')({
-        display: 'grid',
-        width: '100%,', /* Set a fixed width for the container */
-        gridTemplateColumns: 'repeat(4, 1fr)', 
-        gap: '24px' /* 24px spacing between rows and columns */
+    display: 'grid',
+    width: '100%,' /* Set a fixed width for the container */,
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: '24px' /* 24px spacing between rows and columns */,
 });
 
 const reducer = (state, action) => {
@@ -111,8 +114,10 @@ export const TeamsSettingsPage = observer(() => {
 
     const [addModal, setAddModal] = useState(false);
     const [filteredTeams, setFilteredTeams] = useState([]);
+
     const [state, dispatch] = useReducer(reducer, initialState);
     const { teams } = state;
+    const [anchorEl, setAnchorEl] = useState(null);
 
     const [search, setSearch] = useState('');
 
@@ -147,14 +152,48 @@ export const TeamsSettingsPage = observer(() => {
     useDebounce(
         () => {
             setFilteredTeams(
-                teams.filter((d) =>
-                    d.id.toLowerCase().includes(search.toLowerCase()),
-                ).sort((a,b)=>a.id.localeCompare(b.id)),
+                teams
+                    .filter((d) =>
+                        d.id.toLowerCase().includes(search.toLowerCase()),
+                    )
+                    .sort((a, b) => a.id.localeCompare(b.id)),
             );
         },
         [teams, search],
         150,
     );
+
+    const handleMenuClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
+    const handleSort = (order) => {
+        const sorted = [...filteredTeams].sort((a, b) => {
+            if (order === 'asc') {
+                return a.id.localeCompare(b.id);
+            } else {
+                return b.id.localeCompare(a.id);
+            }
+        });
+        setFilteredTeams(sorted);
+        handleMenuClose();
+    };
+
+    const isAsc = () => {
+        const sorted = [...filteredTeams].sort((a, b) => {
+            return a.id.localeCompare(b.id);
+        });
+        return JSON.stringify(filteredTeams) === JSON.stringify(sorted);
+    };
+
+    const isDesc = () => {
+        const sorted = [...filteredTeams].sort((a, b) => {
+            return b.id.localeCompare(a.id);
+        });
+        return JSON.stringify(filteredTeams) === JSON.stringify(sorted);
+    };
 
     return (
         <>
@@ -193,13 +232,52 @@ export const TeamsSettingsPage = observer(() => {
                         </StyledAddButton>
                     </StyledSearchbarDiv>
                 </StyledSearchbarContainer>
+                <div
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        width: '100%',
+                    }}
+                >
+                    <IconButton onClick={handleMenuClick}>
+                        <Typography
+                            sx={{ color: '#212121', borderRadius: '0px' }}
+                            variant="body2"
+                        >
+                            Sort By
+                        </Typography>
+                        <ExpandMore />
+                    </IconButton>
+                </div>
+                <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={handleMenuClose}
+                >
+                    <MenuItemTwo
+                        onClick={() => handleSort('asc')}
+                        sx={{
+                            backgroundColor: isAsc() ? '#EBF3F8' : 'inherit',
+                        }}
+                    >
+                        A<ArrowForward fontSize="small" />Z
+                    </MenuItemTwo>
+                    <MenuItemTwo
+                        onClick={() => handleSort('desc')}
+                        sx={{
+                            backgroundColor: isDesc() ? '#EBF3F8' : 'inherit',
+                        }}
+                    >
+                        Z<ArrowBack fontSize="small" />A
+                    </MenuItemTwo>
+                </Menu>
                 {/* <Grid container spacing={3}>  */}
-                <StyledGrid> 
+                <StyledGrid>
                     {filteredTeams.length
                         ? filteredTeams.map((team, i) => {
                               return (
-                                <div>
-                                   {/* <Grid
+                                  <div>
+                                      {/* <Grid
                                       item
                                       key={i}
                                        sm={12}
@@ -237,12 +315,12 @@ export const TeamsSettingsPage = observer(() => {
                                               //   );
                                           }}
                                       />
-                                      </div>
-                                //   </Grid>
+                                  </div>
+                                  //   </Grid>
                               );
                           })
                         : null}
-                {/* </Grid> */}
+                    {/* </Grid> */}
                 </StyledGrid>
 
                 <AddTeamModal
