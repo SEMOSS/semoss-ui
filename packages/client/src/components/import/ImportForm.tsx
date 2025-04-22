@@ -792,7 +792,7 @@ export const ImportForm = (props) => {
                                                     }
                                                     error={invalid}
                                                     inputProps={{
-                                                        'data-testid': `${val.fieldName}`,
+                                                        'data-testid': `importForm-textField-${val.fieldName}`,
                                                     }}
                                                     {...field}
                                                 ></TextField>
@@ -819,7 +819,7 @@ export const ImportForm = (props) => {
                                                         field.onChange(value)
                                                     }
                                                     inputProps={{
-                                                        'data-testid': `${val.fieldName}`,
+                                                        'data-testid': `importForm-textField-${val.fieldName}`,
                                                     }}
                                                     helperText={val.helperText}
                                                 ></TextField>
@@ -848,7 +848,7 @@ export const ImportForm = (props) => {
                                                         );
                                                     }}
                                                     InputProps={{
-                                                        'data-testid': `${val.fieldName}`,
+                                                        'data-testid': `importForm-selectField-${val.fieldName}`,
                                                     }}
                                                     helperText={val.helperText}
                                                 >
@@ -896,7 +896,7 @@ export const ImportForm = (props) => {
                                                     }
                                                     helperText={val.helperText}
                                                     inputProps={{
-                                                        'data-testid': `${val.fieldName}`,
+                                                        'data-testid': `importForm-textField-${val.fieldName}`,
                                                     }}
                                                 ></TextField>
                                             );
@@ -1002,7 +1002,7 @@ export const ImportForm = (props) => {
                                                                     val.helperText
                                                                 }
                                                                 inputProps={{
-                                                                    'data-testid': `${val.fieldName}`,
+                                                                    'data-testid': `importForm-textField-${val.fieldName}`,
                                                                 }}
                                                             ></TextField>
                                                         );
@@ -1042,7 +1042,7 @@ export const ImportForm = (props) => {
                                                                     val.helperText
                                                                 }
                                                                 inputProps={{
-                                                                    'data-testid': `${val.fieldName}`,
+                                                                    'data-testid': `importForm-textField-${val.fieldName}`,
                                                                 }}
                                                             ></TextField>
                                                         );
@@ -1082,7 +1082,7 @@ export const ImportForm = (props) => {
                                                                     val.helperText
                                                                 }
                                                                 inputProps={{
-                                                                    'data-testid': `${val.fieldName}`,
+                                                                    'data-testid': `importForm-textField-${val.fieldName}`,
                                                                 }}
                                                             ></TextField>
                                                         );

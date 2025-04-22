@@ -141,7 +141,7 @@ By adopting this approach, we enhance the maintainability and scalability of our
 
 ## Testing
 
-Components must have unique identifiers to ensure reliable and maintainable test code coverage. Use unique `ids`, `roles`, or `data-testid's` on each element of a page to more easily be selected during testing. `Roles` are primarily used as part of the applications accessibility strategy where `data-testid's` are a custom attribute used solely for testing. 
+Components must have unique identifiers to ensure reliable and maintainable test code coverage. Use unique `ids`, `roles`, or `data-testid's` on each element of a page to more easily be selected during testing. `Roles` are primarily used as part of the application's accessibility strategy, where `data-testid's` are a custom attribute used solely for testing. When adding a `data-testid`, use the following naming method for the element: 'data-testid: fileName-component-uniqueIdentifier'.
 
 ## Style
 

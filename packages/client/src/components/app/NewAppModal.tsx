@@ -242,7 +242,8 @@ export const NewAppModal = (props: NewAppModalProps) => {
                                         }
                                         fullWidth={true}
                                         inputProps={{
-                                            'data-testid': 'new-app-name',
+                                            'data-testid':
+                                                'newAppModal-textField-name',
                                         }}
                                     />
                                 );
