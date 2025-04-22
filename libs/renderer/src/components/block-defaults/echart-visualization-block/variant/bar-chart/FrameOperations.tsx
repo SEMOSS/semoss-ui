@@ -513,6 +513,14 @@ export const FrameOperations = observer(
             }
             if (variation === "echart-line-graph" && firstColumn !== null && secondColumn !== null) {
                 const tempValue = JSON.parse(computedValue);
+                tempValue["xAxis"] = {
+                    ...tempValue["xAxis"],
+                    name: firstColumn?.values,
+                };
+                tempValue["yAxis"] = {
+                    ...tempValue["yAxis"],
+                    name: secondColumn?.values,
+                };
 
                 tempValue["_state"] = {};
                 tempValue["_state"]["fields"] = {};
@@ -523,6 +531,26 @@ export const FrameOperations = observer(
                     yAxis: secondColumn?.values,
                     tooltip: columnsDrop[2]?.values ? columnsDrop[2]?.values : [],
                 };
+
+                for (let i = 0; i < secondColumn?.values.length; i++) {
+                    tempValue["series"][i] = {
+                        ...tempValue["series"][i],
+                        name: secondColumn?.values[i],
+                        type: "line",
+                        data: tempValue["series"][i]?.data ?? [],
+                        lineStyle: {
+                            type: "solid",
+                            width: 1,
+                        },
+                        label: {
+                            show: true,
+                            position: "top",
+                            rotate: 45,
+                            fontSize: 12,
+                            color: "#000000",
+                        },
+                    };  
+                }
 
                 // set the value
                 setValue(JSON.stringify(tempValue));
