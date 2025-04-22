@@ -46,12 +46,12 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 
     const [blocksToRemove, setBlocksToRemove] = useState([]);
 
-    let list 
+    let list;
     if (typeof data.source === "string") {
         try {
             list = JSON.parse(data.source);
         } catch {
-            list = data.source
+            list = data.source;
         }
     }
 
@@ -70,10 +70,10 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
                         message: ActionMessages.REMOVE_BLOCK,
                         payload: {
                             id: b,
-                            keep: false
-                        }
-                    })
-                })
+                            keep: false,
+                        },
+                    });
+                });
 
                 list.forEach(async (j, i) => {
                     // Skip the first
@@ -118,10 +118,10 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
                         },
                     });
 
-                    newIds.push(newBlockId)
+                    newIds.push(newBlockId);
                 });
 
-                setBlocksToRemove(newIds)
+                setBlocksToRemove(newIds);
             }
         }
         // TODO: FIx Dependency array

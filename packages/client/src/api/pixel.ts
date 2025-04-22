@@ -33,6 +33,7 @@ export const runPixel = async <O extends unknown[] | []>(
                 output: O[number];
                 pixelExpression: string;
                 pixelId: string;
+                timeToRun: number;
             }[];
         }>(`${Env.MODULE}/api/engine/runPixel`, postData, {
             headers: {
