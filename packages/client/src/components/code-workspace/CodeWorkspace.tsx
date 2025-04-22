@@ -8,6 +8,7 @@ import {
     FileExplorerPanel,
     FileEditorPanel,
     TerminalPanel,
+    ChatPanel,
 } from '@/components/workspace';
 
 import { CodeWorkspaceActions } from './CodeWorkspaceActions';
@@ -45,6 +46,21 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                     component: 'file-explorer',
                                     enableClose: false,
                                     config: {},
+                                },
+                            ],
+                        },
+                        {
+                            type: 'border',
+                            location: 'right',
+                            size: DEFAULT_BORDER_SIZE,
+                            children: [
+                                {
+                                    type: 'tab',
+                                    name: 'Chat',
+                                    component: 'chat',
+                                    config: {},
+                                    helpText: 'AI Assistant',
+                                    // icon: '@/assets/favicon.svg',
                                 },
                             ],
                         },
@@ -136,6 +152,8 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
         return <SettingsPanel />;
     } else if (component === 'terminal') {
         return <TerminalPanel />;
+    } else if (component === 'chat') {
+        return <ChatPanel />;
     }
 
     return <>{component}</>;

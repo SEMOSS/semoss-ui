@@ -18,6 +18,7 @@ interface ConfigStoreInterface {
         loggedIn: boolean;
         id: string;
         name: string;
+        initials: string;
         email: string;
         admin: boolean;
     };
@@ -103,6 +104,7 @@ export class ConfigStore {
             loggedIn: false,
             id: '',
             name: '',
+            initials: '',
             email: '',
             admin: false,
         },
@@ -278,6 +280,12 @@ export class ConfigStore {
 
                 this._store.user.id = user.id || '';
                 this._store.user.name = user.name || '';
+                this._store.user.initials = String(user.name || '')
+                    .match(/(\b\S)?/g)
+                    .join('')
+                    .match(/(^\S|\S$)?/g)
+                    .join('')
+                    .toUpperCase();
                 this._store.user.email = user.email || '';
                 this._store.userEpoch = user.userEpoch;
 
@@ -317,6 +325,7 @@ export class ConfigStore {
                 admin: false,
                 id: '',
                 name: '',
+                initials: '',
                 email: '',
             };
         });
@@ -342,6 +351,7 @@ export class ConfigStore {
                 admin: false,
                 id: '',
                 name: '',
+                initials: '',
                 email: '',
             };
         });
@@ -396,6 +406,7 @@ export class ConfigStore {
                 admin: false,
                 id: '',
                 name: '',
+                initials: '',
                 email: '',
             };
         });
@@ -443,6 +454,7 @@ export class ConfigStore {
                 admin: false,
                 id: '',
                 name: '',
+                initials: '',
                 email: '',
             };
         });
@@ -471,6 +483,7 @@ export class ConfigStore {
                 admin: false,
                 id: '',
                 name: '',
+                initials: '',
                 email: '',
             };
         });
@@ -498,6 +511,7 @@ export class ConfigStore {
                 admin: false,
                 id: '',
                 name: '',
+                initials: '',
                 email: '',
             };
 

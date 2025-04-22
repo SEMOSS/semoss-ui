@@ -25,6 +25,7 @@ import {
     FileExplorerPanel,
     FileEditorPanel,
     TerminalPanel,
+    ChatPanel,
 } from '@/components/workspace';
 import {
     VariablesPanel,
@@ -112,6 +113,14 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                     config: {},
                                     helpText:
                                         'Settings for UI component you have selected',
+                                    // icon: '@/assets/favicon.svg',
+                                },
+                                {
+                                    type: 'tab',
+                                    name: 'Chat',
+                                    component: 'chat',
+                                    config: {},
+                                    helpText: 'AI Assistant',
                                     // icon: '@/assets/favicon.svg',
                                 },
                             ],
@@ -217,6 +226,8 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
         return <NotebookViewerPanel id={config.id} />;
     } else if (component === 'terminal') {
         return <TerminalPanel />;
+    } else if (component === 'chat') {
+        return <ChatPanel />;
     }
 
     // TODO: Clean out session storage for old workspaces

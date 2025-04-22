@@ -5,10 +5,16 @@ export interface AvatarProps {
     /** children to be rendered */
     children?: ReactNode;
 
+    /**
+     * Used in combination with `src` or `srcSet` to
+     * provide an alt attribute for the rendered `img` element.
+     */
+    alt?: string;
+
     /** custom style object */
     sx?: SxProps;
 
-    //** shape of avatar */
+    /*** shape of avatar */
     variant?: "circular" | "rounded";
 
     /**

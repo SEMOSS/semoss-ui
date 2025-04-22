@@ -49,6 +49,7 @@ export interface TypographyProps {
     title?: MuiTypographyProps["title"];
     id?: string;
     component?: React.ElementType;
+    flex?: MuiTypographyProps["flex"];
     gutterBottom?: MuiTypographyProps["gutterBottom"];
 }
 
