@@ -1,8 +1,8 @@
-import { render, screen } from "../utils";
+import { fireEvent, render, screen } from "../utils";
 import { expect } from "vitest";
 import "@testing-library/jest-dom";
 
-import { CheckboxBlock } from "../../components/block-defaults/checkbox-block/CheckboxBlock";
+import { CheckboxBlock } from "@/components/block-defaults/checkbox-block/CheckboxBlock";
 
 const blocks = {
     checkbox: {
@@ -116,5 +116,20 @@ describe("Checkbox block", () => {
         expect(element).toBeInTheDocument();
         expect(element.querySelector(".Mui-checked")).toBeInTheDocument();
         expect(element.querySelector(".Mui-disabled")).toBeInTheDocument();
+    });
+
+    it("checks checkbox when clicked", async () => {
+        const { container } = render(<CheckboxBlock id="checkbox" />, {
+            blocks: blocks,
+        });
+
+        const element = container.querySelector("[data-block='checkbox']");
+        const clickElement = container.querySelector(
+            "[data-block='checkbox'] input",
+        );
+        expect(element).toBeInTheDocument();
+        fireEvent.click(clickElement);
+        expect(element.querySelector(".Mui-checked")).toBeInTheDocument();
+        expect(element.querySelector(".Mui-disabled")).toBeNull();
     });
 });
