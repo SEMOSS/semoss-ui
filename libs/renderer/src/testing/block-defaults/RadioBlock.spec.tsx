@@ -1,8 +1,8 @@
-import { render, screen } from "../utils";
+import { fireEvent, render, screen } from "../utils";
 import { expect } from "vitest";
 import "@testing-library/jest-dom";
 
-import { RadioBlock } from "../../components/block-defaults/radio-block/RadioBlock";
+import { RadioBlock } from "@/components/block-defaults/radio-block/RadioBlock";
 
 const blocks = {
     radio: {
@@ -65,7 +65,10 @@ const blocks = {
             },
             label: "Radio 3 test",
             required: true,
-            options: [{ label: "Radio choice 3", value: "radioChoice2" }],
+            options: [
+                { label: "Radio choice 3", value: "radioChoice3" },
+                { label: "Radio choice 4", value: "radioChoice4" },
+            ],
         },
         id: "radio3",
         widget: "radio3",
@@ -88,7 +91,6 @@ describe("radio block", () => {
         });
 
         const element = container.querySelector("[data-block='radio']");
-        // console.log({ element });
 
         expect(element).toBeInTheDocument();
         expect(screen.getByText("Radio test")).toBeInTheDocument();
@@ -101,7 +103,6 @@ describe("radio block", () => {
         });
 
         const element = container.querySelector("[data-block='radio2']");
-        // console.log({ element });
         const disabledElement = container.querySelector(".Mui-disabled");
         expect(element).toBeInTheDocument();
         expect(screen.getByText("Radio 2 test")).toBeInTheDocument();
@@ -115,13 +116,32 @@ describe("radio block", () => {
         });
 
         const element = container.querySelector("[data-block='radio3']");
-        // console.log({ element });
         const requiredElement = container.querySelector(
             ".MuiFormLabel-asterisk",
         );
         expect(element).toBeInTheDocument();
         expect(screen.getByText("Radio 3 test")).toBeInTheDocument();
         expect(screen.getByText("Radio choice 3")).toBeInTheDocument();
+        expect(screen.getByText("Radio choice 4")).toBeInTheDocument();
+        expect(requiredElement).toBeInTheDocument();
+    });
+
+    it("selects radio choice 3", async () => {
+        const { container } = render(<RadioBlock id="radio3" />, {
+            blocks: blocks,
+        });
+
+        const element = container.querySelector("[data-block='radio3']");
+        const requiredElement = container.querySelector(
+            ".MuiFormLabel-asterisk",
+        );
+        fireEvent.click(screen.getByText("Radio choice 4"));
+        const clickedElement = container.querySelector(
+            "span.Mui-checked [value='radioChoice4']",
+        );
+        expect(element).toBeInTheDocument();
+        expect(screen.getByText("Radio 3 test")).toBeInTheDocument();
+        expect(clickedElement).not.toBeNull();
         expect(requiredElement).toBeInTheDocument();
     });
 });
