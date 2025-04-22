@@ -29,6 +29,7 @@ import { ColumnTextWrap } from "./operations/WrapTextSettings";
 import { RowSpanning } from "./operations/RowSpanning";
 import { GridResizeSettings } from "./operations/GridResizeSettings";
 import { PathValue } from "@/types";
+import { ColorByValue } from "./operations/ColorByValue";
 
 interface GridBlockToolProps {
     id: string;
@@ -302,6 +303,40 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
                                     </Button>
                                 </Stack>
                             </Stack>
+                        </StyledItem>
+                    )}
+                </ListItem>
+
+                {/* Color By Value  */}
+                <ListItem disablePadding style={{ display: "block" }}>
+                    <ListItemButton
+                        onClick={(e) =>
+                            setSelectedList((prevList) =>
+                                prevList === "colorByValue"
+                                    ? ""
+                                    : "colorByValue",
+                            )
+                        }
+                        selected={selectedList === "colorByValue"}
+                    >
+                        <ListItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
+                            <ImageIcon
+                                fontSize="large"
+                                color={
+                                    selectedList === "colorByValue"
+                                        ? "primary"
+                                        : "disabled"
+                                }
+                            />
+                        </ListItemIcon>
+                        <Box display="flex" alignItems="center" gap={1}>
+                            <ListItemText primary="Color By Value" />
+                            <InfoOutlined color="disabled" />
+                        </Box>
+                    </ListItemButton>
+                    {selectedList === "colorByValue" && (
+                        <StyledItem>
+                            <ColorByValue id={id} path={"option"} />
                         </StyledItem>
                     )}
                 </ListItem>

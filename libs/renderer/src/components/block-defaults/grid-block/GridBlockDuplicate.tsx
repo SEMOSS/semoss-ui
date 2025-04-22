@@ -31,7 +31,6 @@ const StyledBlock = styled("div")(() => ({
     flexDirection: "column",
     height: DEFAULT_HEIGHT,
     width: DEFAULT_WIDTH,
-    overflow: "hidden",
 }));
 
 const StyledTitle = styled("div")(() => ({
@@ -94,6 +93,16 @@ export interface WrapTextSettings {
     textWrap: boolean;
 }
 
+export interface ColorRule {
+    id: string;
+    column: string;
+    comparator: string;
+    value: string;
+    valueColumn: string;
+    color: string;
+    colorEntireRow: boolean;
+}
+
 export interface GridBlockDef extends BlockDef<"grid"> {
     widget: "grid";
 
@@ -109,8 +118,8 @@ export interface GridBlockDef extends BlockDef<"grid"> {
 
         /** */
         style: {
-            height: number;
-            width: number;
+            height: string | undefined;
+            width: string | undefined;
             display: string | undefined;
             flexDirection: string | undefined;
             padding: string | undefined;
@@ -124,6 +133,7 @@ export interface GridBlockDef extends BlockDef<"grid"> {
             chartTitleSettings?: ChartTitleSettings;
             wrapTextSettings?: WrapTextSettings;
             rowSpanning?: boolean;
+            colorByValue?: ColorRule[];
         };
         variation: undefined | string;
         show: boolean;
@@ -189,13 +199,69 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
         return acc + parseInt(DEFAULT_COLUMN_WIDTH);
     }, 0);
 
+    /**
+     * Handle the callback for the context menu
+     * @param event - triggered event
+     * @param column - selected column
+     * @param row - value
+     */
+    const handleTableCellOnContextMenu = (
+        event: React.MouseEvent,
+        column: GridBlockColumn,
+        value: unknown,
+    ) => {
+        // prevent the default interaction
+        event.preventDefault();
+
+        // open the menu and save the data
+        setContextMenu(
+            contextMenu === null
+                ? {
+                      mouseX: event.clientX + 2,
+                      mouseY: event.clientY - 6,
+                      column: column,
+                      value: value,
+                  }
+                : // repeated contextmenu when it is already open closes it with Chrome 84 on Ubuntu
+                  // Other native context menus might behave different.
+                  // With this behavior we prevent contextmenu from the backdrop to re-locale existing context menus.
+                  null,
+        );
+    };
+
+    function evaluate(
+        cellValue: string,
+        comparator: string,
+        target: string,
+    ): boolean {
+        const a =
+            typeof cellValue === "number" ? cellValue : parseFloat(cellValue);
+        const b = typeof target === "number" ? target : parseFloat(target);
+        switch (comparator) {
+            case "==":
+                return a == b;
+            case "!=":
+                return a != b;
+            case ">":
+                return a > b;
+            case "<":
+                return a < b;
+            case ">=":
+                return a >= b;
+            case "<=":
+                return a <= b;
+            default:
+                return false;
+        }
+    }
+
     console.log(data, "DATA");
     console.log(frame, "FRAME");
 
     const columns = data.columns.map((col) => ({
         field: col.name,
         headerName: col.name,
-        soetable: false,
+        sortable: false,
         renderHeader: () => (
             <div
                 style={{
@@ -233,34 +299,66 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
             const isWrapEnabled =
                 wrapTextSettings.textWrap &&
                 wrapTextSettings.selectedColumn.includes(col.name);
+
+            console.log(colorRules, "colorRules");
+            console.log(params, "PARAMS");
+
+            const origionalStyle: React.CSSProperties = {
+                // Apply style if the column is selected
+                backgroundColor: cellSettings.selectedColumn.includes(col.name)
+                    ? cellSettings.backgroundColor
+                    : "inherit",
+                color: cellSettings.selectedColumn.includes(col.name)
+                    ? cellSettings.fontColor
+                    : "inherit",
+                fontSize: cellSettings.selectedColumn.includes(col.name)
+                    ? `${cellSettings.fontSize}px`
+                    : "inherit",
+                padding: "8px",
+                width: "100%",
+                lineHeight: isWrapEnabled ? "1.5" : "normal",
+                whiteSpace:
+                    wrapTextSettings.textWrap &&
+                    wrapTextSettings.selectedColumn.includes(col.name)
+                        ? "normal"
+                        : "nowrap",
+                wordBreak:
+                    wrapTextSettings.textWrap &&
+                    wrapTextSettings.selectedColumn.includes(col.name)
+                        ? "break-word"
+                        : "normal",
+            };
+
+            const matchingRowRules = colorRules.filter((rule) => {
+                return evaluate(
+                    params.row[rule.column],
+                    rule.comparator,
+                    rule.value,
+                );
+            });
+
+            let style = { ...origionalStyle };
+            for (let rule of matchingRowRules) {
+                if (rule.colorEntireRow) {
+                    style.backgroundColor = rule.color;
+                    style.color = "#fff";
+                    break;
+                }
+
+                if (rule.valueColumn === col.name) {
+                    style.backgroundColor = rule.color;
+                    style.color = "#fff";
+                    break;
+                }
+            }
+
             return (
                 <div
+                    onContextMenu={(e) =>
+                        handleTableCellOnContextMenu(e, col, params.value)
+                    }
                     style={{
-                        // Apply style if the column is selected
-                        backgroundColor: cellSettings.selectedColumn.includes(
-                            col.name,
-                        )
-                            ? cellSettings.backgroundColor
-                            : "inherit",
-                        color: cellSettings.selectedColumn.includes(col.name)
-                            ? cellSettings.fontColor
-                            : "inherit",
-                        fontSize: cellSettings.selectedColumn.includes(col.name)
-                            ? `${cellSettings.fontSize}px`
-                            : "inherit",
-                        padding: "8px",
-                        width: "100%",
-                        lineHeight: isWrapEnabled ? "1.5" : "normal",
-                        whiteSpace:
-                            wrapTextSettings.textWrap &&
-                            wrapTextSettings.selectedColumn.includes(col.name)
-                                ? "normal"
-                                : "nowrap",
-                        wordBreak:
-                            wrapTextSettings.textWrap &&
-                            wrapTextSettings.selectedColumn.includes(col.name)
-                                ? "break-word"
-                                : "normal",
+                        ...style,
                     }}
                 >
                     {params.value}
@@ -322,6 +420,10 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
         ...data.option?.wrapTextSettings,
     };
 
+    const colorRules: ColorRule[] = data.option?.colorByValue || [];
+
+    console.log(colorRules, "COLOR RULES");
+
     const getRowHeight = (params: any) => {
         if (data.option?.rowSpanning) {
             return 50;
@@ -347,7 +449,6 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
                     flex: 1,
                     width: "100%",
                     height: "100%",
-                    minHeight: "400px",
                 }}
             >
                 <DataGrid
@@ -361,13 +462,20 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
                     onPaginationModelChange={handlePaginationModalChange}
                     pageSizeOptions={[10, 50, 100, 500]}
                     getRowHeight={getRowHeight}
-                    columnHeaderHeight={38}
+                    columnHeaderHeight={50}
                     disableColumnMenu
                     disableColumnSorting
-                    showCellVerticalBorder
-                    showColumnVerticalBorder
+                    showCellVerticalBorder={
+                        data.option?.rowSpanning ? true : false
+                    }
+                    showColumnVerticalBorder={
+                        data.option?.rowSpanning ? true : false
+                    }
                     unstable_rowSpanning={data.option?.rowSpanning}
                     sx={{
+                        border: "none",
+                        borderRadius: "0",
+                        "& .MuiDataGrid-main": {},
                         "& .MuiDataGrid-columnHeader": {
                             padding: "0px",
                         },

@@ -114,7 +114,6 @@ export interface GridBlockDef extends BlockDef<"grid"> {
             padding: string | undefined;
             gap: string | undefined;
             flexWrap: string | undefined;
-            border: string | undefined;
         };
         option: {
             // backgroundColor: string;
