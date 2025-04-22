@@ -123,6 +123,10 @@ export const FrameOperations = observer(
             }
         }, [storedColumns]);
 
+        useEffect(() => {
+            setDroppedColumns({});
+        }, [data.variation]);
+
         const handleSearch = (searchValue: string) => {
             setSearch(searchValue); // Update the search state
             const lowerCaseSearch = searchValue.toLowerCase();

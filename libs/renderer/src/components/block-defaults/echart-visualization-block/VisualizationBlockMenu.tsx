@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState , useEffect} from "react";
 
 import { Stack, styled, ToggleTabsGroup } from "@semoss/ui";
 import { useBlock, useBlockSettings } from "../../../hooks";
@@ -94,6 +94,9 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
             setForceRender(prev => !prev); // Force re-render to update the chart with the new data
         }
     };
+    useEffect(() => {
+        setSelectedColumn([]); 
+    }, [data.variation]);
     return (
         <StyledStack>
             {/* CodeEditorSettings is a dup of JsonSettings with LLM prompting and wordwrap added to the editor and ability to work with HTML as well as JSON */}
