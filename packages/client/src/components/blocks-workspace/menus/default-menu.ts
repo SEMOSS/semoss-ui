@@ -2335,6 +2335,7 @@ export const CLIENT_BLOCKS_MENU = [
         json: {
             widget: 'container',
             parent: {
+                // can be null
                 id: 'page-1',
                 slot: 'content',
             },

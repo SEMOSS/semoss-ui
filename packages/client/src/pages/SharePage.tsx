@@ -87,7 +87,7 @@ export const SharePage = observer(() => {
 
     // hide the screen while it loads
     if (!type) {
-        return <LoadingScreen.Trigger description="Initializing app" />;
+        return <LoadingScreen.Trigger />;
     }
 
     /**

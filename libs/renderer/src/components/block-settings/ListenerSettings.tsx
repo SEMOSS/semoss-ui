@@ -25,6 +25,9 @@ import {
     useNotification,
     styled,
     Modal,
+    ToggleButtonGroup,
+    ToggleButton,
+    Stack,
 } from "@semoss/ui";
 
 import { useBlockSettings, useBlocks } from "../../hooks";
@@ -313,15 +316,35 @@ export const ListenerSettings = observer(
                         </List>
                     </SortableContext>
                 </DndContext>
-                <Button
-                    fullWidth={true}
-                    variant={"outlined"}
-                    size="small"
-                    onClick={() => openActionOverlay(-1)}
-                    startIcon={<Add />}
-                >
-                    New Action
-                </Button>
+                <Stack direction="row" gap={1}>
+                    <Button
+                        fullWidth={true}
+                        variant={"outlined"}
+                        size="small"
+                        onClick={() => openActionOverlay(-1)}
+                        startIcon={<Add />}
+                    >
+                        New Action
+                    </Button>
+                    <ToggleButtonGroup size={"small"} value={"Sync"}>
+                        <ToggleButton
+                            value="Async"
+                            onClick={() => {
+                                console.log("bind property to event");
+                            }}
+                        >
+                            Async
+                        </ToggleButton>
+                        <ToggleButton
+                            value="Sync"
+                            onClick={() => {
+                                console.log("bind property to event");
+                            }}
+                        >
+                            Sync
+                        </ToggleButton>
+                    </ToggleButtonGroup>
+                </Stack>
                 <Modal open={openModal} fullWidth={true}>
                     <ListenerActionOverlay
                         id={id}

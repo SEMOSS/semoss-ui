@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction, toJS } from "mobx";
 
 import { runPixel, download } from "@semoss/sdk";
-import { cancellablePromise, getValueByPath } from "../../utility";
+import { cancellablePromise, getValueByPath, syncronousPromise } from "../../utility";
 
 import {
     ActionMessages,
@@ -420,7 +420,7 @@ export class StateStore {
             } else if (ActionMessages.RUN_QUERY === action.message) {
                 const { queryId } = action.payload;
 
-                this.runQuery(queryId);
+                return this.runQuery(queryId);
             } else if (ActionMessages.NEW_CELL === action.message) {
                 const { queryId, cellId, config, previousCellId } =
                     action.payload;
@@ -492,6 +492,38 @@ export class StateStore {
             console.error(e);
         }
     };
+
+    dispatchEventAction = async (action: Actions) => {
+        try {
+            if (ActionMessages.RUN_QUERY === action.message) {
+                const { queryId } = action.payload;
+
+                const run = async () => {
+                    setTimeout(() => {
+                        debugger
+                        return queryId
+                    }, 3000)
+                    // return o
+                }
+
+                return await run()
+                debugger
+                // const o = await this.runQuery(queryId);
+                debugger
+
+                // return o
+            }else if (ActionMessages.DISPATCH_EVENT === action.message) {
+                const { name, detail } = action.payload;
+
+                this.dispatchEvent(name, detail);
+            } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
+
+                this.dispatchOutputsEvent()
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
 
     /** Variable Methods */
     /**
@@ -1318,21 +1350,41 @@ export class StateStore {
         this._utils.queryPromises[key]?.cancel();
 
         // setup the promise
-        const p = cancellablePromise(async () => {
-            // run the query
-            await q._run();
+        // const p = cancellablePromise(async () => {
+        //     // run the query
+        //     await q._run();
 
-            // turn it off
-            return true;
-        });
+        //     // turn it off
+        //     return true;
+        // });
 
-        p.promise
-            .then(() => {
-                // noop
+        let p;
+
+        // TODO: Pass from calling fn
+        let sync = true;
+        if (sync) {
+            p = syncronousPromise(async () => {
+                await q._run();
+                return true;
             })
-            .catch((e) => {
-                console.error("ERROR:", e);
-            });
+        } else {
+            p = cancellablePromise(async () => {
+                await q._run()
+                return true
+            })
+        }
+
+        if(sync) {
+            return p.promise
+        } else  {
+            p.promise
+                .then((resp) => {
+                    // noop
+                })
+                .catch((e) => {
+                    console.error("ERROR:", e);
+                });
+        }
 
         // save the promise
         this._utils.queryPromises[key] = p;
