@@ -56,10 +56,6 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
     width: '100%',
     paddingBottom: theme.spacing(1),
     overflowY: 'auto',
-
-    // ">.MuiStack-root": {
-    //         height: '100%',
-    //     },
 }));
 
 const StyledMessage = styled('div')(({ theme }) => ({
