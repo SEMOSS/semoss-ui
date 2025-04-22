@@ -42,6 +42,7 @@ export interface FacetColumns{
     name: string;
     selector: string;
     value: string | number;
+    isFacet?: boolean;
 }
 export interface EchartVisualizationBlockDef {
     widget: "e-chart";
