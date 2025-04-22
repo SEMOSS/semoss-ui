@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "../utils";
+import { fireEvent, render } from "../utils";
 import { expect } from "vitest";
 import "@testing-library/jest-dom";
 
