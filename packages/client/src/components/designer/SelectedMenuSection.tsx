@@ -33,8 +33,11 @@ const StyledTypography = styled(Typography)(() => ({
     fontWeight: 'bold',
 }));
 
-const StyledMenuSectionTitle = styled(Accordion.Trigger)(({ theme }) => ({
+const StyledMenuSectionTitle = styled(Accordion.Trigger)<{
+    expansion?: boolean;
+}>(({ theme, expansion }) => ({
     minHeight: 'auto !important',
+    borderLeft: expansion ? '4px solid #1976d2' : '4px solid transparent',
     height: theme.spacing(6),
 }));
 
@@ -74,7 +77,8 @@ export const SelectedMenuSection = observer(
                                 }
                             >
                                 <StyledMenuSectionTitle
-                                    expandIcon={<ExpandMore />}
+                                    expandIcon={''}
+                                    expansion={props.accordion[key]}
                                 >
                                     <StyledTypography variant="body2">
                                         {s.name}
