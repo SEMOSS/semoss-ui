@@ -176,7 +176,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
             }
 
             // go through each one and trigger it
-            actions.forEach((a) => {
+            actions.forEach(async (a) => {
                 // convert back to a normal action
                 let action: ListenerActions | null = a;
 
@@ -189,7 +189,16 @@ export const useBlock = <D extends BlockDef = BlockDef>(
                     return;
                 }
 
-                state.dispatch(action);
+                console.log("Before Dispatch", action)
+                
+                const d = await state.dispatchEventAction(action)
+                console.log("After Dispatch", state.queries)
+                console.log("Data:", d)
+
+                // state.dispatch(action);
+                // 
+                // const data = await state.dispatch(action);
+                debugger
             });
         };
 
@@ -211,7 +220,10 @@ export const useBlock = <D extends BlockDef = BlockDef>(
                 // try to extract the variable
 
                 // debugger
-                return state.parseVariable(instance, block.widget !== 'iteration' ? block.id : null);
+                return state.parseVariable(
+                    instance,
+                    block.widget !== "iteration" ? block.id : null,
+                );
             }
 
             return instance;

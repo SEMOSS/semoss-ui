@@ -8,7 +8,7 @@ import { ActionMessages, DefaultCells, useBlocks } from '@semoss/renderer';
 /**
  * TODO: DOES THIS NEED TO BE REMOVED
  */
-import { NewCellAction } from '@/stores';
+import { NewCellAction } from '@semoss/renderer';
 
 type NewCellForm = {
     ID: string;
