@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
-import { MoreVert, DeleteRounded } from '@mui/icons-material';
-
+import { MoreVert, DeleteRounded, Close } from '@mui/icons-material';
 import {
     Card,
     Chip,
@@ -15,7 +14,8 @@ import {
     MenuList,
     MenuItemTwo,
 } from '@semoss/ui';
-
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import EditIcon from '@mui/icons-material/Edit';
 import { useRootStore } from '@/hooks';
 
 const colors = [
@@ -121,6 +121,13 @@ interface TeamCardProps {
 
     onClick?: (value: string) => void;
 }
+
+const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginTop: theme.spacing(2),
+}));
 
 export const TeamTileCard = (props: TeamCardProps) => {
     const { id, description, type, tag, dispatch, teams, onClick } = props;
@@ -264,6 +271,30 @@ export const TeamTileCard = (props: TeamCardProps) => {
                             <MenuItemTwo
                                 onClick={(e) => {
                                     e.stopPropagation();
+                                    handleClose(e);
+                                    // need to implement add member to team
+                                }}
+                            >
+                                <Stack direction="row" gap={2}>
+                                    <PersonAddIcon />
+                                    <div>Add member to team</div>
+                                </Stack>
+                            </MenuItemTwo>
+                            <MenuItemTwo
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleClose(e);
+                                    // need to implement edit team
+                                }}
+                            >
+                                <Stack direction="row" gap={2}>
+                                    <EditIcon />
+                                    <div>Edit team</div>
+                                </Stack>
+                            </MenuItemTwo>
+                            <MenuItemTwo
+                                onClick={(e) => {
+                                    e.stopPropagation();
                                     setDeleteModal(true);
                                     handleClose(e);
                                 }}
@@ -283,7 +314,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                                             color: hover ? 'red' : 'black',
                                         }}
                                     >
-                                        Delete
+                                        Delete team
                                     </div>
                                 </Stack>
                             </MenuItemTwo>
@@ -292,11 +323,27 @@ export const TeamTileCard = (props: TeamCardProps) => {
                 </StyledActionContainer>
             </StyledTileCard>
             <Modal open={deleteModal}>
+                <StyledModalTitle>
+                    <Typography sx={{ color: '#000000DE' }} variant="h6">
+                        Delete Team
+                    </Typography>
+                    <IconButton onClick={() => setDeleteModal(false)}>
+                        <Close />
+                    </IconButton>
+                </StyledModalTitle>
                 <Modal.Content>
-                    Are you sure you want to delete group {id}
+                    <Typography sx={{ color: '#000000DE' }} variant="body1">
+                        Are you sure you want to delete group {id}
+                    </Typography>
                 </Modal.Content>
-                <Modal.Actions>
-                    <Button onClick={() => setDeleteModal(false)}>
+                <Modal.Actions
+                    sx={{ marginBottom: '24px', paddingRight: '16px' }}
+                >
+                    <Button
+                        onClick={() => setDeleteModal(false)}
+                        variant="text"
+                        sx={{ color: '#212121' }}
+                    >
                         Cancel
                     </Button>
                     <Button
@@ -304,7 +351,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                         color={'error'}
                         onClick={() => deleteGroup()}
                     >
-                        Confirm
+                        Delete
                     </Button>
                 </Modal.Actions>
             </Modal>
