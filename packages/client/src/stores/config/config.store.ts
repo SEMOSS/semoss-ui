@@ -1,8 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
-// Shouldnt this come from sdk
-import { runPixelTwo } from '@semoss/sdk';
-
+// TODO: Pull from sdk
+import { runPixelTwo } from '../../runPixelTwo';
 import { RootStore, WorkspaceStore, WorkspaceConfigInterface } from '@/stores';
 import { AppMetadata } from '@/components/app';
 

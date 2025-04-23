@@ -3,7 +3,6 @@ import dayjs from 'dayjs';
 import { Delete, Edit, PlayArrow } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 
-import { runPixelTwo } from '@semoss/sdk';
 import {
     Chip,
     IconButton,
@@ -14,6 +13,7 @@ import {
     useNotification,
 } from '@semoss/ui';
 
+import { runPixelTwo } from '../../runPixelTwo';
 import { Job, JobBuilder } from './job.types';
 import { getHumanReadableCronExpression } from './job.utils';
 

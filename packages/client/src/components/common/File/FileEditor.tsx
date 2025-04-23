@@ -16,7 +16,7 @@ import prettier from 'prettier';
 
 import { styled, useNotification } from '@semoss/ui';
 import { LoadingScreen } from '@/components/ui';
-import { runPixelTwo } from '@semoss/sdk';
+import { runPixelTwo } from '../../../runPixelTwo';
 
 const Editor = lazy(() => import('@monaco-editor/react'));
 

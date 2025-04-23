@@ -18,8 +18,8 @@ import {
     Stack,
     Typography,
 } from '@semoss/ui';
-import { runPixelTwo } from '@semoss/sdk';
 
+import { runPixelTwo } from '../../runPixelTwo';
 import { useDebounce, useRootStore } from '@/hooks';
 import { JobCard } from './JobCard';
 import { JobHistory } from './JobHistory';

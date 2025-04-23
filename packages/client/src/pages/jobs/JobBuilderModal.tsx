@@ -12,8 +12,8 @@ import {
     ToggleButtonGroup,
     useNotification,
 } from '@semoss/ui';
-import { runPixelTwo } from '@semoss/sdk';
 
+import { runPixelTwo } from '../../runPixelTwo';
 import { JobBuilder } from './job.types';
 import { getEncodeByJobType } from './job.utils';
 import { JobTypesBuilder } from './JobTypesBuilder';

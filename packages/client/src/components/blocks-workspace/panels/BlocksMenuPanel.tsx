@@ -14,8 +14,8 @@ import {
     InputAdornment,
     IconButton,
 } from '@semoss/ui';
-import { runPixelTwo } from '@semoss/sdk';
 
+import { runPixelTwo } from '../../../runPixelTwo';
 import { Panel } from '@/components/workspace';
 import { CLIENT_BLOCKS_MENU, SECTION_ORDER } from '../menus/default-menu';
 import { AddBlocksMenuCard } from '@/components/designer';

@@ -10,7 +10,7 @@ import { CodeRenderer } from '@/components/code-workspace';
 import { AppType, AppMetadata } from '@/components/app';
 
 import { Renderer } from '@semoss/renderer';
-import { Env, InsightProvider, runPixelTwo } from '@semoss/sdk';
+import { runPixelTwo } from '../runPixelTwo';
 
 const StyledViewport = styled('div')(() => ({
     display: 'flex',

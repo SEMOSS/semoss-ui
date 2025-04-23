@@ -13,8 +13,7 @@ import {
     STATE_VERSION,
 } from '@semoss/renderer';
 
-import { runPixelTwo } from '@semoss/sdk';
-
+import { runPixelTwo } from '../../runPixelTwo';
 import { WorkspaceStore, DesignerStore, WorkspaceOptions } from '@/stores';
 import { DesignerContext } from '@/contexts';
 import { LoadingScreen } from '@/components/ui';

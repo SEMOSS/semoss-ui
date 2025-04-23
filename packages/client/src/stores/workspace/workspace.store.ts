@@ -1,6 +1,5 @@
 import { makeAutoObservable, reaction } from 'mobx';
 
-// This should likely come from sdk
 import { runPixel } from '@semoss/sdk';
 
 import { Role } from '@/types';
