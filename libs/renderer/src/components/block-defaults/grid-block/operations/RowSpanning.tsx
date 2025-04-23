@@ -1,23 +1,12 @@
+import { ChangeEvent, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { useBlockSettings } from "../../../../hooks";
-import {
-    CellBackgroundSettings,
-    ChartTitleSettings,
-    GridBlockDef,
-    WrapTextSettings,
-} from "../GridBlock";
-import { GridBlockColumn } from "../grid-block.types";
-import { Button, styled, Switch, TextField, Typography } from "@semoss/ui";
-import { ColorPickerSettingsNew } from "../../../block-settings/shared/ColorPickerSettingsNew";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+
+import { styled, Switch, TextField, Typography } from "@semoss/ui";
 
 import { Paths, PathValue } from "@/types";
 import { Block, BlockDef } from "../../../../store";
-import CheckBoxIcon from "@mui/icons-material/CheckBox";
-import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
-import Checkbox from "@mui/material/Checkbox";
-import { Autocomplete } from "@mui/material";
-import { set } from "mobx";
+import { useBlockSettings } from "../../../../hooks";
+import { GridBlockDef } from "../GridBlock";
 
 export interface TitleStylingProps<D extends BlockDef = GridBlockDef> {
     id: string;
@@ -28,17 +17,6 @@ const StyledContainer = styled("div")(({ theme }) => ({
     display: "flex",
     flexDirection: "column",
     gap: theme.spacing(1),
-}));
-
-const StyledFieldWrapper = styled("div")(() => ({
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    gap: "8px",
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-    width: "100%",
 }));
 
 const StyledAxisDiv = styled("div")<{
@@ -58,11 +36,6 @@ export const RowSpanning = observer(
     <D extends BlockDef = GridBlockDef>({ id, path }: TitleStylingProps<D>) => {
         const { data, setData } = useBlockSettings<GridBlockDef>(id);
         const [rowSpanning, setRowSpanning] = useState(false);
-        const [wrapTextSettings, setWrapTextSettings] =
-            useState<WrapTextSettings>({
-                selectedColumn: [] as string[],
-                textWrap: false,
-            });
 
         useEffect(() => {
             if (data.option?.rowSpanning !== rowSpanning) {
@@ -83,12 +56,8 @@ export const RowSpanning = observer(
             );
         };
 
-        const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
-        const checkedIcon = <CheckBoxIcon fontSize="small" />;
-
         return (
             <StyledContainer>
-                {/* <StyledFieldWrapper> */}
                 <StyledAxisDiv
                     display="flex"
                     gap="8px"
@@ -106,7 +75,6 @@ export const RowSpanning = observer(
                         Show Row Spanning
                     </Typography>
                 </StyledAxisDiv>
-                {/* </StyledFieldWrapper> */}
             </StyledContainer>
         );
     },

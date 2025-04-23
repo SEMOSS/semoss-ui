@@ -1,22 +1,18 @@
+import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { useBlockSettings } from "../../../../hooks";
-import {
-    CellBackgroundSettings,
-    ChartTitleSettings,
-    GridBlockDef,
-} from "../GridBlock";
-import { GridBlockColumn } from "../grid-block.types";
-import { Button, styled, TextField, Typography } from "@semoss/ui";
-import { ColorPickerSettingsNew } from "../../../block-settings/shared/ColorPickerSettingsNew";
-import { useEffect, useMemo, useState } from "react";
-
-import { Paths, PathValue } from "@/types";
-import { Block, BlockDef } from "../../../../store";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import Checkbox from "@mui/material/Checkbox";
-import { Autocomplete } from "@mui/material";
-import { set } from "mobx";
+
+import { Button, styled, TextField, Typography } from "@semoss/ui";
+
+import { useBlockSettings } from "../../../../hooks";
+import { GridBlockColumn } from "../grid-block.types";
+
+import { Paths, PathValue } from "@/types";
+import { Block, BlockDef } from "../../../../store";
+import { ChartTitleSettings, GridBlockDef } from "../GridBlock";
+import { ColorPickerSettingsNew } from "../../../block-settings/shared/ColorPickerSettingsNew";
 
 export interface TitleStylingProps<D extends BlockDef = GridBlockDef> {
     id: string;
@@ -67,44 +63,6 @@ export const ChartTitle = observer(
                 setTitle(data.option.chartTitleSettings);
             }
         }, [data.option]);
-
-        // const handleColumnChange = (_, selected: GridBlockColumn[]) => {
-        //     const newSelected = selected.map((col) => col.name);
-        //     const newOption = {
-        //         ...data.option,
-        //         cellBackgroundSettings: {
-        //             ...gridStyle,
-        //             selectedColumn: newSelected,
-        //         },
-        //     };
-        //     setGridStyle((prev) => ({
-        //         ...prev,
-        //         selectedColumns: newSelected,
-        //     }));
-        //     setData(
-        //         "option",
-        //         newOption as PathValue<GridBlockDef["data"], "option">,
-        //     );
-        // };
-
-        // const handleColorChange = (newColor: string) => {
-        //     const newOption = {
-        //         ...data.option,
-        //         chartTitleSettings: {
-        //             ...titleStyle,
-        //             backgroundColor: newColor,
-        //         },
-        //     };
-        //     setGridStyle((prev) => ({
-        //         ...prev,
-        //         backgroundColor: newColor,
-        //     }));
-
-        //     setData(
-        //         "option",
-        //         newOption as PathValue<GridBlockDef["data"], "option">,
-        //     );
-        // };
 
         const handleFontColorChange = (newColor: string) => {
             const newOption = {

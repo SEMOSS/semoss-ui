@@ -18,10 +18,6 @@ import { getValueByPath } from "../../../../utility";
  * Supports % and px units for size
  */
 
-const StyledBase = styled("div")(({ theme }) => ({
-    padding: "8px 16px",
-}));
-
 interface SizeSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with

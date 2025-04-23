@@ -1,17 +1,19 @@
+import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { useBlockSettings } from "../../../../hooks";
-import { CellBackgroundSettings, GridBlockDef } from "../GridBlock";
-import { GridBlockColumn } from "../grid-block.types";
-import { Button, styled, TextField, Typography } from "@semoss/ui";
-import { ColorPickerSettingsNew } from "../../../block-settings/shared/ColorPickerSettingsNew";
-import { useEffect, useMemo, useState } from "react";
-
-import { Paths, PathValue } from "@/types";
-import { Block, BlockDef } from "../../../../store";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import Checkbox from "@mui/material/Checkbox";
 import { Autocomplete } from "@mui/material";
+
+import { Button, styled, TextField, Typography } from "@semoss/ui";
+
+import { useBlockSettings } from "../../../../hooks";
+import { GridBlockColumn } from "../grid-block.types";
+
+import { Paths, PathValue } from "@/types";
+import { Block, BlockDef } from "../../../../store";
+import { CellBackgroundSettings, GridBlockDef } from "../GridBlock";
+import { ColorPickerSettingsNew } from "../../../block-settings/shared/ColorPickerSettingsNew";
 
 export interface CellStylingProps<D extends BlockDef = GridBlockDef> {
     id: string;

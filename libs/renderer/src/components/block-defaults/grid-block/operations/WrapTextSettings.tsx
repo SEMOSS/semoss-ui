@@ -1,23 +1,17 @@
-import { observer } from "mobx-react-lite";
-import { useBlockSettings } from "../../../../hooks";
-import {
-    CellBackgroundSettings,
-    ChartTitleSettings,
-    GridBlockDef,
-    WrapTextSettings,
-} from "../GridBlock";
-import { GridBlockColumn } from "../grid-block.types";
-import { Button, styled, Switch, TextField, Typography } from "@semoss/ui";
-import { ColorPickerSettingsNew } from "../../../block-settings/shared/ColorPickerSettingsNew";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
-
-import { Paths, PathValue } from "@/types";
-import { Block, BlockDef } from "../../../../store";
+import { observer } from "mobx-react-lite";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import Checkbox from "@mui/material/Checkbox";
 import { Autocomplete } from "@mui/material";
-import { set } from "mobx";
+
+import { styled, Switch, TextField, Typography } from "@semoss/ui";
+
+import { useBlockSettings } from "../../../../hooks";
+import { Paths, PathValue } from "@/types";
+import { Block, BlockDef } from "../../../../store";
+import { GridBlockDef, WrapTextSettings } from "../GridBlock";
+import { GridBlockColumn } from "../grid-block.types";
 
 export interface TitleStylingProps<D extends BlockDef = GridBlockDef> {
     id: string;
@@ -68,22 +62,6 @@ export const ColumnTextWrap = observer(
                 setWrapTextSettings(data.option.wrapTextSettings);
             }
         }, [data.option]);
-
-        const resetToInitialState = () => {
-            const defaultState = {
-                selectedColumn: [] as string[],
-                textWrap: false,
-            };
-            setWrapTextSettings(defaultState);
-            const newOption = {
-                ...data.option,
-                wrapTextSettings: defaultState,
-            };
-            setData(
-                "option",
-                newOption as PathValue<GridBlockDef["data"], "option">,
-            );
-        };
 
         const handleColumnChange = (_, selected: GridBlockColumn[]) => {
             const newSelected = selected.map((col) => col.name);
@@ -172,7 +150,6 @@ export const ColumnTextWrap = observer(
                         )}
                     />
                 </StyledFieldWrapper>
-                {/* <StyledFieldWrapper> */}
                 <StyledAxisDiv
                     display="flex"
                     gap="8px"
@@ -190,7 +167,6 @@ export const ColumnTextWrap = observer(
                         Show Title
                     </Typography>
                 </StyledAxisDiv>
-                {/* </StyledFieldWrapper> */}
             </StyledContainer>
         );
     },

@@ -1,26 +1,13 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
+import { styled, TableContainer } from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
 
 import { useBlock, useFrame } from "../../../hooks";
 import { BlockComponent, BlockDef } from "../../../store";
-import {
-    styled,
-    LinearProgress,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-} from "@mui/material";
 
 import { GridBlockColumn } from "./grid-block.types";
 import { GridBlockContextMenu } from "./GridBlockContextMenu";
-import { VisualizationColumns } from "../echart-visualization-block";
-import { Typography } from "@semoss/ui";
-// import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
 const DEFAULT_HEIGHT = "300px";
 const DEFAULT_WIDTH = "500px";
@@ -35,37 +22,7 @@ const StyledBlock = styled("div")(() => ({
 
 const StyledTitle = styled("div")(() => ({
     display: "flex",
-
     justifyContent: "start",
-}));
-
-const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
-    flex: "1",
-    background: theme.palette.background.paper,
-}));
-
-const StyledTableHeadRow = styled(TableRow)(() => ({
-    color: "inherit",
-    backgroundColor: "inherit",
-}));
-
-const StyledTableHeadCell = styled(TableCell)(({ theme }) => ({
-    textTransform: "capitalize",
-    fontWeight: 700,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-    background: theme.palette.background.paper,
-}));
-
-const StyledTableCell = styled(TableCell)(() => ({
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-}));
-
-const StyledTablePagination = styled(TablePagination)(({ theme }) => ({
-    background: theme.palette.background.paper,
 }));
 
 export interface HeaderBackgroundSettings {
@@ -127,7 +84,6 @@ export interface GridBlockDef extends BlockDef<"grid"> {
             flexWrap: string | undefined;
         };
         option: {
-            // backgroundColor: string;
             headerBackgroundSettings?: HeaderBackgroundSettings;
             cellBackgroundSettings?: CellBackgroundSettings;
             chartTitleSettings?: ChartTitleSettings;
@@ -254,9 +210,6 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
                 return false;
         }
     }
-
-    console.log(data, "DATA");
-    console.log(frame, "FRAME");
 
     const columns = data.columns.map((col) => ({
         field: col.name,
@@ -391,7 +344,6 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
     };
 
     const headerSettings = {
-        // columns: [],
         fontSize: "16",
         fontColor: "#000000",
         selectedColumn: [],
@@ -400,7 +352,6 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
     };
 
     const cellSettings = {
-        // columns: [],
         fontSize: "16",
         fontColor: "#000000",
         selectedColumn: [],
@@ -422,16 +373,12 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
 
     const colorRules: ColorRule[] = data.option?.colorByValue || [];
 
-    console.log(colorRules, "COLOR RULES");
-
     const getRowHeight = (params: any) => {
         if (data.option?.rowSpanning) {
             return 50;
         }
         return "auto";
     };
-
-    console.log(data, "Dattaaaaaaaaa");
 
     return (
         <StyledBlock sx={data.style} {...attrs}>
@@ -464,6 +411,7 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
                     getRowHeight={getRowHeight}
                     columnHeaderHeight={50}
                     disableColumnMenu
+                    disableRowSelectionOnClick
                     disableColumnSorting
                     showCellVerticalBorder={
                         data.option?.rowSpanning ? true : false
@@ -475,7 +423,9 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
                     sx={{
                         border: "none",
                         borderRadius: "0",
-                        "& .MuiDataGrid-main": {},
+                        "& .MuiDataGrid-columnHeaderTitleContainer": {
+                            fontWeight: "bold",
+                        },
                         "& .MuiDataGrid-columnHeader": {
                             padding: "0px",
                         },

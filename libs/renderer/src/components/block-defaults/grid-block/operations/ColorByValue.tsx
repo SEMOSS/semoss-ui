@@ -1,31 +1,5 @@
+import { ChangeEvent, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import {
-    useBlock,
-    useBlockSettings,
-    useBlocksPixel,
-    useFrame,
-    useFrameHeaders,
-} from "../../../../hooks";
-import { GridBlockDef, HeaderBackgroundSettings } from "../GridBlockDuplicate";
-import { GridBlockColumn } from "../grid-block.types";
-import {
-    // Autocomplete,
-    Button,
-    styled,
-    Switch,
-    TextField,
-    Typography,
-    // Checkbox,
-} from "@semoss/ui";
-import { ColorPickerSettingsNew } from "../../../block-settings/shared/ColorPickerSettingsNew";
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { computed, set, when } from "mobx";
-import { getValueByPath } from "@/utility";
-import { Paths, PathValue } from "@/types";
-import { Block, BlockDef } from "../../../../store";
-import CheckBoxIcon from "@mui/icons-material/CheckBox";
-import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
-import Checkbox from "@mui/material/Checkbox";
 import {
     Autocomplete,
     IconButton,
@@ -35,9 +9,15 @@ import {
     TableHead,
     TableRow,
 } from "@mui/material";
-import { ColorRule } from "../GridBlockDuplicate";
 import { Delete, Edit } from "@mui/icons-material";
-import { get } from "http";
+
+import { GridBlockDef } from "../GridBlockDuplicate";
+import { Button, styled, Switch, TextField, Typography } from "@semoss/ui";
+
+import { useBlockSettings, useFrame } from "../../../../hooks";
+import { Paths } from "@/types";
+import { Block } from "../../../../store";
+import { ColorRule } from "../GridBlockDuplicate";
 import { ColorPickerWithSwatch } from "../../../block-settings/shared/ColorPickerWithSwatch";
 
 export interface ColorByValueProps {
@@ -55,7 +35,14 @@ const StyledButtonWrapper = styled("div")(({ theme }) => ({
 const StyledContainer = styled("div")(({ theme }) => ({
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing(1),
+    gap: theme.spacing(2),
+    padding: "0px 16px",
+}));
+
+const StyledTableContainer = styled("div")(({ theme }) => ({
+    display: "flex",
+    flexDirection: "column",
+    gap: theme.spacing(2),
 }));
 
 const Styledbutton = styled(Button)(({ theme }) => ({
@@ -67,10 +54,6 @@ const StyledFieldWrapper = styled("div")(() => ({
     flexDirection: "column",
     justifyContent: "center",
     gap: "8px",
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-    width: "100%",
 }));
 
 const StyledAxisDiv = styled("div")<{
@@ -85,8 +68,6 @@ const StyledAxisDiv = styled("div")<{
     alignItems: "center",
     gap: gap ?? undefined,
 }));
-
-const COMPARATORS = ["==", "!=", ">", "<", ">=", "<="];
 
 const columnComparision = [
     {
@@ -149,7 +130,6 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
     };
 
     const handleEditRule = (rule: ColorRule) => {
-        console.log(rule, "handleEditRule");
         setMode("edit");
         setEditingRule(rule);
     };
@@ -168,7 +148,6 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
             ...prevRule,
             [field]: value,
         }));
-        console.log("editingRulefromupdate", editingRule);
     };
 
     const handleReset = () => {
@@ -226,7 +205,6 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
 
         const getValues = () => {
             const values = [];
-            console.log(editingRule, "editingRule");
             if (editingRule) {
                 const values = rows.map((item) => item[editingRule.column]);
                 return values;
@@ -237,7 +215,7 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
 
         return (
             <StyledContainer>
-                <Typography variant="h6">
+                <Typography variant="body1">
                     {mode === "edit" ? "Edit Rule" : "Add Rule"}
                 </Typography>
                 <StyledFieldWrapper>
@@ -315,6 +293,7 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
                         )}
                     />
                 </StyledFieldWrapper>
+
                 {/* Comparator  */}
                 <StyledFieldWrapper>
                     <label>
@@ -345,6 +324,7 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
                         )}
                     />
                 </StyledFieldWrapper>
+
                 {/* Select Values  */}
                 <StyledFieldWrapper>
                     <label>
@@ -370,6 +350,8 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
                         )}
                     />
                 </StyledFieldWrapper>
+
+                {/* Button container  */}
                 <StyledButtonWrapper>
                     <Button size="small" variant="text" onClick={handleReset}>
                         Reset
@@ -387,7 +369,7 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
     };
 
     return (
-        <StyledContainer>
+        <StyledTableContainer>
             {/* List of the applied rule  */}
             <div>
                 {rules.length > 0 && (
@@ -403,7 +385,11 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
                             {rules.map((rule) => (
                                 <TableRow key={rule.id}>
                                     <TableCell>{rule.column}</TableCell>
-                                    <TableCell>{rule.comparator}</TableCell>
+                                    <TableCell>
+                                        {rule.column}
+                                        {rule.comparator}
+                                        {rule.value}
+                                    </TableCell>
                                     <TableCell>
                                         <div>
                                             <IconButton
@@ -435,6 +421,6 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
             </div>
 
             {editingRule && renderEditForm()}
-        </StyledContainer>
+        </StyledTableContainer>
     );
 });

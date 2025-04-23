@@ -7,8 +7,6 @@ import {
     ListItemButton,
     ListItemIcon,
     ListItemText,
-    Autocomplete,
-    TextField,
     Box,
 } from "@mui/material";
 
@@ -16,11 +14,6 @@ import { Button, List, Stack, styled } from "@semoss/ui";
 
 import { useBlockSettings } from "../../../hooks";
 
-import {
-    SelectInputSettings,
-    BaseSettingSection,
-    ResizeSetting,
-} from "../../block-settings";
 import { GridBlockDef } from "./GridBlock";
 import { HeaderStyling } from "./operations/HeaderStyling";
 import { CellStyling } from "./operations/CellStyling";
@@ -34,10 +27,6 @@ import { ColorByValue } from "./operations/ColorByValue";
 interface GridBlockToolProps {
     id: string;
 }
-//Styled list item with contents type display
-const StyledListItem = styled(ListItem)(({}) => ({
-    display: "contents !important",
-}));
 
 const StyledItem = styled("div")(() => ({
     display: "block",
@@ -45,12 +34,15 @@ const StyledItem = styled("div")(() => ({
     padding: "0.5rem 1rem",
 }));
 
+const StyledItemWithoutPadding = styled("div")(() => ({
+    display: "block",
+    width: "100%",
+    padding: "0.5rem 0",
+}));
+
 export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
     const { data, setData } = useBlockSettings<GridBlockDef>(id);
     const [selectedList, setSelectedList] = useState(""); // maintain the current selected list, for expansion and collapsing
-    const [generalSettings, setGeneralSettings] = useState({
-        showBlock: data.show,
-    });
 
     const resetToInitialState = () => {
         const defaultState = {
@@ -65,7 +57,6 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
         setData("style", newOption as PathValue<GridBlockDef["data"], "style">);
     };
 
-    function updateChart() {}
     return (
         <>
             <List style={{ width: "100%" }}>
@@ -98,13 +89,6 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
                     </ListItemButton>
                     {selectedList === "generalchartsettings" && (
                         <StyledItem>
-                            {/* <SelectInputSettings
-                                id={id}
-                                path={"show"}
-                                label={"Show Block"}
-                                options={[]}
-                            />
-                            <p>Some contents will show here</p> */}
                             <HeaderStyling id={id} path={"option"} />
                         </StyledItem>
                     )}
@@ -182,6 +166,40 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
                         <StyledItem>
                             <ChartTitle id={id} path={"option"} />
                         </StyledItem>
+                    )}
+                </ListItem>
+
+                {/* Color By Value  */}
+                <ListItem disablePadding style={{ display: "block" }}>
+                    <ListItemButton
+                        onClick={(e) =>
+                            setSelectedList((prevList) =>
+                                prevList === "colorByValue"
+                                    ? ""
+                                    : "colorByValue",
+                            )
+                        }
+                        selected={selectedList === "colorByValue"}
+                    >
+                        <ListItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
+                            <ImageIcon
+                                fontSize="large"
+                                color={
+                                    selectedList === "colorByValue"
+                                        ? "primary"
+                                        : "disabled"
+                                }
+                            />
+                        </ListItemIcon>
+                        <Box display="flex" alignItems="center" gap={1}>
+                            <ListItemText primary="Color By Value" />
+                            <InfoOutlined color="disabled" />
+                        </Box>
+                    </ListItemButton>
+                    {selectedList === "colorByValue" && (
+                        <StyledItemWithoutPadding>
+                            <ColorByValue id={id} path={"option"} />
+                        </StyledItemWithoutPadding>
                     )}
                 </ListItem>
 
@@ -303,40 +321,6 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
                                     </Button>
                                 </Stack>
                             </Stack>
-                        </StyledItem>
-                    )}
-                </ListItem>
-
-                {/* Color By Value  */}
-                <ListItem disablePadding style={{ display: "block" }}>
-                    <ListItemButton
-                        onClick={(e) =>
-                            setSelectedList((prevList) =>
-                                prevList === "colorByValue"
-                                    ? ""
-                                    : "colorByValue",
-                            )
-                        }
-                        selected={selectedList === "colorByValue"}
-                    >
-                        <ListItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
-                            <ImageIcon
-                                fontSize="large"
-                                color={
-                                    selectedList === "colorByValue"
-                                        ? "primary"
-                                        : "disabled"
-                                }
-                            />
-                        </ListItemIcon>
-                        <Box display="flex" alignItems="center" gap={1}>
-                            <ListItemText primary="Color By Value" />
-                            <InfoOutlined color="disabled" />
-                        </Box>
-                    </ListItemButton>
-                    {selectedList === "colorByValue" && (
-                        <StyledItem>
-                            <ColorByValue id={id} path={"option"} />
                         </StyledItem>
                     )}
                 </ListItem>

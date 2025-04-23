@@ -1,31 +1,16 @@
+import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import {
-    useBlock,
-    useBlockSettings,
-    useBlocksPixel,
-    useFrame,
-    useFrameHeaders,
-} from "../../../../hooks";
-import { GridBlockDef, HeaderBackgroundSettings } from "../GridBlock";
-import { GridBlockColumn } from "../grid-block.types";
-import {
-    // Autocomplete,
-    Button,
-    styled,
-    TextField,
-    Typography,
-    // Checkbox,
-} from "@semoss/ui";
-import { ColorPickerSettingsNew } from "../../../block-settings/shared/ColorPickerSettingsNew";
-import { useEffect, useMemo, useState } from "react";
-import { computed, when } from "mobx";
-import { getValueByPath } from "@/utility";
-import { Paths, PathValue } from "@/types";
-import { Block, BlockDef } from "../../../../store";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import Checkbox from "@mui/material/Checkbox";
 import { Autocomplete } from "@mui/material";
+import { Button, styled, TextField, Typography } from "@semoss/ui";
+import { useBlockSettings } from "../../../../hooks";
+import { GridBlockColumn } from "../grid-block.types";
+import { Paths, PathValue } from "@/types";
+import { Block, BlockDef } from "../../../../store";
+import { GridBlockDef, HeaderBackgroundSettings } from "../GridBlock";
+import { ColorPickerSettingsNew } from "../../../block-settings/shared/ColorPickerSettingsNew";
 
 export interface HeaderStylingProps<D extends BlockDef = GridBlockDef> {
     id: string;
@@ -63,14 +48,11 @@ const StyledAxisDiv = styled("div")<{
 }));
 
 export const HeaderStyling = observer(
-    // ({ id,path }: HeaderStylingProps<D>) => {
     <D extends BlockDef = GridBlockDef>({
         id,
         path,
     }: HeaderStylingProps<D>) => {
         const { data, setData } = useBlockSettings<GridBlockDef>(id);
-        const [value, setValue] = useState("");
-        const [showValueLabel, setShowValueLabel] = useState(true);
 
         const [gridStyle, setGridStyle] = useState<HeaderBackgroundSettings>({
             backgroundColor: "#ffffff",
@@ -80,14 +62,6 @@ export const HeaderStyling = observer(
         });
 
         useEffect(() => {
-            // const headerSettings = data.option?.headerBackgroundSettings;
-            // if (headerSettings) {
-            //     setGridStyle({
-            //         backgroundColor: headerSettings.backgroundColor,
-            //         selectedColumn: headerSettings.columns,
-            //     });
-            // }
-
             if (data.option?.headerBackgroundSettings) {
                 setGridStyle(data.option.headerBackgroundSettings);
             }
@@ -98,8 +72,6 @@ export const HeaderStyling = observer(
             const newOption = {
                 ...data.option,
                 headerBackgroundSettings: {
-                    // backgroundColor: gridStyle.backgroundColor,
-                    // columns: newSelected,
                     ...gridStyle,
                     selectedColumn: newSelected,
                 },
@@ -118,8 +90,6 @@ export const HeaderStyling = observer(
             const newOption = {
                 ...data.option,
                 headerBackgroundSettings: {
-                    // backgroundColor: newColor,
-                    // columns: gridStyle.selectedColumn,
                     ...gridStyle,
                     backgroundColor: newColor,
                 },
@@ -128,7 +98,6 @@ export const HeaderStyling = observer(
                 ...prev,
                 backgroundColor: newColor,
             }));
-            // setData(path, newOption as PathValue<D["data"], typeof path>);
 
             setData(
                 "option",
@@ -148,7 +117,7 @@ export const HeaderStyling = observer(
                 ...prev,
                 fontColor: newColor,
             }));
-            // setData(path, newOption as PathValue<D["data"], typeof path>);
+
             setData(
                 "option",
                 newOption as PathValue<GridBlockDef["data"], "option">,
@@ -170,7 +139,7 @@ export const HeaderStyling = observer(
                 ...prev,
                 fontSize: newFontSize,
             }));
-            // setData(path, newOption as PathValue<D["data"], typeof path>);
+
             setData(
                 "option",
                 newOption as PathValue<GridBlockDef["data"], "option">,
@@ -194,50 +163,6 @@ export const HeaderStyling = observer(
                 newOption as PathValue<GridBlockDef["data"], "option">,
             );
         };
-
-        // const computedValue = useMemo(() => {
-        //     return computed(() => {
-        //         if (!data) {
-        //             return "";
-        //         }
-        //         const v = getValueByPath(data, path);
-        //         if (typeof v === "undefined") {
-        //             return "";
-        //         } else if (typeof v === "string") {
-        //             return v;
-        //         }
-        //         return JSON.stringify(v, null, 2);
-        //     });
-        // }, [data, path]).get();
-
-        // useEffect(() => {
-        //     setValue(computedValue);
-        // }, [computedValue, data]);
-
-        // useEffect(() => {
-        //     if (data.hasOwnProperty("option")) {
-        //         reInitializeFeatures(data.option);
-        //     }
-        // }, [id]);
-
-        // useEffect(() => {
-        //     if (data.hasOwnProperty("option")) {
-        //         retainLocalState(data.option);
-        //     }
-        // }, [showValueLabel]);
-
-        //Retain the local state of the feature on toggle switch and on reset button
-        //With the local state we will be displaying the values in the fields
-        // const retainLocalState = (options) => {
-        //     setGridStyle((prev) => ({
-        //         ...prev,
-        //         backgroundColor: options?.backgroundColor || "white",
-        //     }));
-        // };
-
-        // const reInitializeFeatures = (options) => {
-        //     // setShowTitle(options["title"].show ?? true);
-        // };
 
         const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
         const checkedIcon = <CheckBoxIcon fontSize="small" />;
@@ -301,10 +226,6 @@ export const HeaderStyling = observer(
                         name="length"
                         value={gridStyle?.fontSize}
                         onChange={handleFontSizeChange}
-                        // onChange={
-                        //     (e) =>
-                        //     handleInputChange("labelLength", e.target.value)
-                        // }
                     />
                 </StyledFieldWrapper>
 
@@ -319,8 +240,6 @@ export const HeaderStyling = observer(
                         path="option.headerBackgroundSettings.fontColor"
                         colorValue={gridStyle.fontColor}
                         onChange={handleFontColorChange}
-                        // colorValue={valueLabel.fontColor}
-                        // onChange={(e) => handleInputChange("color", e)}
                     />
                 </StyledFieldWrapper>
 
@@ -335,9 +254,6 @@ export const HeaderStyling = observer(
                         path="option.headerBackgroundSettings.backgroundColor"
                         colorValue={gridStyle.backgroundColor}
                         onChange={handleColorChange}
-                        // onChange={(e) =>
-                        //     handleInputChange("backgroundColor", e)
-                        // }
                     />
                 </StyledFieldWrapper>
 
