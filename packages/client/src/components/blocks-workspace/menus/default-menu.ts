@@ -1636,6 +1636,28 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
+        section: SECTION_LAYOUT,
+        name: 'Iterator',
+        helperText: 'Render a template for each item in a list/array',
+        isBeta: true,
+        json: {
+            widget: 'iteration',
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                },
+                source: '',
+                child: null,
+                show: 'true',
+            },
+            listeners: {},
+            slots: {
+                children: [],
+            },
+        },
+    },
+    {
         section: SECTION_ELEMENT,
         activeImage: BLOCK_IMAGES['CHIP_ACTIVE'],
         hoverImage: BLOCK_IMAGES['CHIP_HOVER'],
@@ -2286,6 +2308,7 @@ export const CLIENT_BLOCKS_MENU = [
         json: {
             widget: 'container',
             parent: {
+                // can be null
                 id: 'page-1',
                 slot: 'content',
             },

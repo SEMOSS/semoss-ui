@@ -97,8 +97,8 @@ export const CustomizeSymbol = observer(
         }, [data, "option"]).get();
         //useeffect to update initial state if available
         useEffect(() => {
-            let option = JSON.parse(computedValue);
-            let columnDetails = option["customSettings"]?.["columnDetails"];
+            const option = JSON.parse(computedValue);
+            const columnDetails = option["customSettings"]?.["columnDetails"];
             if (columnDetails) {
                 let startDate = {},
                     endDate = {},
@@ -117,7 +117,7 @@ export const CustomizeSymbol = observer(
                           ["currentKey"]: "milestone",
                       }
                     : {};
-                let finalData = [];
+                const finalData = [];
                 if (Object.keys(startDate).length) {
                     finalData.push(startDate);
                 }
@@ -131,8 +131,8 @@ export const CustomizeSymbol = observer(
                     return [...finalData];
                 });
             }
-            let existingOption = option["customSettings"]["gantttools"];
-            let existingOptionList = customizeSymbolData;
+            const existingOption = option["customSettings"]["gantttools"];
+            const existingOptionList = customizeSymbolData;
             if (existingOption?.["dimension"]) {
                 existingOptionList["dimension"] = existingOption["dimension"];
             }
@@ -156,10 +156,10 @@ export const CustomizeSymbol = observer(
                     ...existingOptionList,
                 };
             });
-            let seriesIndex = option["series"].findIndex((item) =>
+            const seriesIndex = option["series"].findIndex((item) =>
                 item.hasOwnProperty("chartrendered"),
             );
-            let mileStoneIndex = option["series"].findIndex((item) =>
+            const mileStoneIndex = option["series"].findIndex((item) =>
                 item.hasOwnProperty("milestonerendered"),
             );
             let startDateData = [];
@@ -193,15 +193,15 @@ export const CustomizeSymbol = observer(
                 });
             }
             //if applied symbol data is available then set the applied symbol data
-            let customizeSettings =
+            const customizeSettings =
                 option["customSettings"]["gantttools"]?.["customizeSymbol"] ||
                 [];
             setAppliedSymbolData((prevAppliedSymbol) => customizeSettings);
         }, []);
         function convertTimeZone(date) {
-            let currentTimezone =
+            const currentTimezone =
                 Intl.DateTimeFormat().resolvedOptions().timeZone;
-            let dateConvertedToTimeZone = new Date(date).toLocaleString(
+            const dateConvertedToTimeZone = new Date(date).toLocaleString(
                 "en-US",
                 {
                     timeZone: currentTimezone,
@@ -229,8 +229,8 @@ export const CustomizeSymbol = observer(
             });
             //if a dimension field is changed, then dimension selected is also updated
             if (field === "dimension") {
-                let value = e.target.value;
-                let dimensionSelected = dimensionList.find(
+                const value = e.target.value;
+                const dimensionSelected = dimensionList.find(
                     (item) => item.selector === value,
                 );
                 if (dimensionSelected.hasOwnProperty("currentKey")) {
@@ -262,7 +262,7 @@ export const CustomizeSymbol = observer(
             )?.name || customizeSymbolData.dimension;
         //update chart data when a field is changed
         function updateChartData() {
-            let option = JSON.parse(computedValue);
+            const option = JSON.parse(computedValue);
             //if customize symbol is newly being created
             if (editingInstanceIndex === -1) {
                 option["customSettings"] = {
@@ -348,7 +348,7 @@ export const CustomizeSymbol = observer(
                         option as PathValue<D["data"], typeof path>,
                     );
                     //updating the applied symbol data only when the state is updated
-                    let appliedSymbolDataList = appliedSymbolData;
+                    const appliedSymbolDataList = appliedSymbolData;
                     if (
                         editingInstanceIndex > -1 &&
                         appliedSymbolDataList?.[editingInstanceIndex]
@@ -393,7 +393,7 @@ export const CustomizeSymbol = observer(
         //removing the applied data
         function deleteAppliedData(index) {
             let updatedAppliedData = appliedSymbolData;
-            let option = JSON.parse(computedValue);
+            const option = JSON.parse(computedValue);
             updatedAppliedData = updatedAppliedData.filter(
                 (item, itemIndex) => itemIndex !== index,
             );
@@ -454,7 +454,7 @@ export const CustomizeSymbol = observer(
             setAppliedSymbolData((prevAppliedSymbol) => {
                 return [];
             });
-            let option = JSON.parse(computedValue);
+            const option = JSON.parse(computedValue);
             if (option["customSettings"]["gantttools"]?.["customizeSymbol"]) {
                 option["customSettings"]["gantttools"]["customizeSymbol"] = [];
                 setTimeout(() => {
@@ -470,7 +470,7 @@ export const CustomizeSymbol = observer(
             }
         }
         //updated instances data
-        let updatedInstances = appliedSymbolData.map((item, index) => {
+        const updatedInstances = appliedSymbolData.map((item, index) => {
             return {
                 label:
                     "Instances of " +

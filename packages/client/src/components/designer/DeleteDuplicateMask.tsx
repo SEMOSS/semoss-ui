@@ -164,6 +164,8 @@ export const DeleteDuplicateMask = observer(
          * Delete the block
          */
         const onDelete = () => {
+            const parentBlock = state.getBlock(block.parent.id);
+
             // dispatch the event
             state.dispatch({
                 message: ActionMessages.REMOVE_BLOCK,
@@ -172,6 +174,18 @@ export const DeleteDuplicateMask = observer(
                     keep: false,
                 },
             });
+
+            // If its within an iteration block, clean up the data.child
+            if (parentBlock.widget === 'iteration') {
+                state.dispatch({
+                    message: ActionMessages.SET_BLOCK_DATA,
+                    payload: {
+                        id: parentBlock.id,
+                        path: 'child',
+                        value: null,
+                    },
+                });
+            }
 
             // clear the selected value
             designer.setSelected('');
