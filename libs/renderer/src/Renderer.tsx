@@ -4,8 +4,7 @@ import { useSearchParams, useLocation } from "react-router-dom";
 
 import { runPixel, useInsight } from "@semoss/sdk";
 import {
-    Button,
-    LoadingScreen,
+    Backdrop,
     Notification,
     Typography,
     useNotification,
@@ -21,6 +20,7 @@ import {
     STATE_VERSION,
     StateStore,
 } from "./store/state";
+import { CircularProgress, Stack } from "@mui/material";
 
 // TODO: Add component library notification component
 
@@ -132,7 +132,10 @@ export const Renderer = observer((props: RendererProps) => {
                     });
 
                     // set it
-                    setStateStore(store);
+                    setTimeout(()=> {
+
+                        setStateStore(store);
+                    }, 5000)
 
                     if (appId) {
                         const { errors: errs } = await runPixel(
@@ -173,15 +176,51 @@ export const Renderer = observer((props: RendererProps) => {
 
     if (!isAuthorized) {
         return (
-            <Typography variant="h6">Authorizing Renderer SDK...</Typography>
+            <Backdrop
+                open={true}
+                sx={{
+                    background: "rgba(255, 255, 255, 0.5)",
+                    zIndex: 1501,
+                    position: "relative",
+                    width: "100%"
+                }}
+            >
+                <Stack
+                    direction={"column"}
+                    alignItems={"center"}
+                    justifyContent={"center"}
+                    spacing={1}
+                    width={"100%"}
+                >
+                    <CircularProgress color={"info"} />
+                </Stack>
+            </Backdrop>
         );
-        // return <LoadingScreen.Trigger message="Authorizing Renderer SDK"/>;
     }
 
     if (!stateStore || (isLoading && !preview)) {
         if (!preview) {
-            return <Typography variant="h6">Initializing Blocks...</Typography>;
-            // return <LoadingScreen.Trigger message="Initializing Blocks"/>;
+            return (
+                <Backdrop
+                    open={true}
+                    sx={{
+                        background: "rgba(255, 255, 255, 0.5)",
+                        zIndex: 1501,
+                        position: "relative",
+                        width: "100%"
+                    }}
+                >
+                    <Stack
+                        direction={"column"}
+                        alignItems={"center"}
+                        justifyContent={"center"}
+                        spacing={1}
+                        width={"100%"}
+                    >
+                        <CircularProgress color={"info"} />
+                    </Stack>
+                </Backdrop>
+            );
         } else {
             return <Typography variant="h6">Fetching Preview...</Typography>;
         }

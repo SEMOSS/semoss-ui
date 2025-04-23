@@ -3,6 +3,11 @@ import { ToggleButton as MuiToggleButton, SxProps } from "@mui/material";
 
 export interface ToggleButtonProps<V> {
     /**
+     * Content
+     */
+    children?: ReactNode;
+
+    /**
      * The value to associate with the button when selected in a
      * ToggleButtonGroup.
      */
@@ -56,9 +61,10 @@ export interface ToggleButtonProps<V> {
      */
     size?: "small" | "medium" | "large";
 
-    children?: ReactNode;
-    /** custom style object */
+    /* custom style object */
     sx?: SxProps;
+
+    title?: string;
 }
 
 export const ToggleButton = <V extends string | number | boolean>(
