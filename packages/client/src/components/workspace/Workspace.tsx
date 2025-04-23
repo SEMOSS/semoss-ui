@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
+import { Menu, MenuOpen, Public, RestartAlt } from '@mui/icons-material';
+import { Layout, TabNode } from 'flexlayout-react';
+import 'flexlayout-react/style/light.css';
+import './flexlayout.css';
+
 import {
     Avatar,
     styled,
@@ -12,19 +17,13 @@ import {
     Drawer,
     Button,
 } from '@semoss/ui';
-// import { Drawer } from '@mui/material';
-import { Menu, MenuOpen, Public, RestartAlt } from '@mui/icons-material';
-import { Layout, TabNode } from 'flexlayout-react';
-import 'flexlayout-react/style/light.css';
-import './flexlayout.css';
+import { Env } from '@semoss/sdk';
 
-import { Env } from '@/env';
 import { THEME } from '@/constants';
 import { WorkspaceContext } from '@/contexts';
 import { WorkspaceStore, WorkspaceOptions } from '@/stores';
 import { useRootStore } from '@/hooks';
 import { LoginPopover } from '@/components/ui';
-
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
 import { WorkspaceTabs } from './WorkspaceTabs';

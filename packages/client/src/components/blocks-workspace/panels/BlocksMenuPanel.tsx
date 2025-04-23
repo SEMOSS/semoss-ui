@@ -14,6 +14,7 @@ import {
     InputAdornment,
     IconButton,
 } from '@semoss/ui';
+import { runPixelTwo } from '@semoss/sdk';
 
 import { Panel } from '@/components/workspace';
 import { CLIENT_BLOCKS_MENU, SECTION_ORDER } from '../menus/default-menu';
@@ -24,7 +25,6 @@ import {
     DesignerMenuItem,
     FilterCategory,
 } from '../menus/menu-types';
-import { runPixel } from '@/api';
 
 const StyledTitle = styled('div')(({ theme }) => ({
     paddingTop: theme.spacing(1.5),
@@ -123,7 +123,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
      * TODO: REPLACE WITH A CALL TO THE BACKEND
      */
     const getClientBlocks = async () => {
-        runPixel('1+1').then((res) => {
+        runPixelTwo('1+1').then((res) => {
             setClientBlock(CLIENT_BLOCKS_MENU);
         });
     };

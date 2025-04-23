@@ -78,14 +78,14 @@ export const AppPage = observer(() => {
         return <LoadingScreen.Trigger description="Initializing app" />;
     }
 
-    /**
-     * Initialize insight for app building
-     */
-    if (workspace.type === 'BLOCKS') {
-        Env.update({
-            MODULE: process.env.MODULE || '',
-        });
-    }
+    // /**
+    //  * Initialize insight for app building
+    //  */
+    // if (workspace.type === 'BLOCKS') {
+    //     Env.update({
+    //         MODULE: process.env.MODULE || '',
+    //     });
+    // }
 
     return (
         <StyledViewport>

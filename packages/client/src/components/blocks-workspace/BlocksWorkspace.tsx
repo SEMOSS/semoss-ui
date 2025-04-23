@@ -13,7 +13,8 @@ import {
     STATE_VERSION,
 } from '@semoss/renderer';
 
-import { runPixel } from '@/api';
+import { runPixelTwo } from '@semoss/sdk';
+
 import { WorkspaceStore, DesignerStore, WorkspaceOptions } from '@/stores';
 import { DesignerContext } from '@/contexts';
 import { LoadingScreen } from '@/components/ui';
@@ -219,15 +220,6 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
         return <TerminalPanel />;
     }
 
-    // TODO: Clean out session storage for old workspaces
-    // else if (component === 'viz') {
-    //     return (
-    //         <BlocksMenuPanel
-    //             title={'Add Visualization'}
-    //             items={VISUALIZATION_MENU}
-    //         />
-    //     );
-    // }
     return <>{component}</>;
 };
 
@@ -252,7 +244,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         workspace.setLoading(true);
 
         // load the app
-        runPixel<[SerializedState]>(
+        runPixelTwo<[SerializedState]>(
             `GetAppBlocksJson ( project=["${workspace.appId}"]);`,
             'new',
         )
@@ -284,7 +276,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                 // set it
                 setState(s);
 
-                const { errors: errs } = await runPixel(
+                const { errors: errs } = await runPixelTwo(
                     `SetContext("${workspace.appId}");`,
                     insightId,
                 );
@@ -325,12 +317,12 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         return <LoadingScreen.Trigger />;
     }
 
-    /**
-     * Initialize insight for app building
-     */
-    Env.update({
-        MODULE: process.env.MODULE || '',
-    });
+    // /**
+    //  * Initialize insight for app building
+    //  */
+    // Env.update({
+    //     MODULE: process.env.MODULE || '',
+    // });
 
     return (
         <InsightProvider>

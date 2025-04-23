@@ -90,13 +90,6 @@ export const SharePage = observer(() => {
         return <LoadingScreen.Trigger />;
     }
 
-    /**
-     * Initialize insight for app building
-     */
-    Env.update({
-        MODULE: process.env.MODULE || '',
-    });
-
     return (
         <StyledViewport>
             {type === 'CODE' ? <CodeRenderer appId={appId} /> : null}

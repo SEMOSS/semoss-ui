@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
 // Shouldnt this come from sdk
-import { runPixel } from '@/api';
+import { runPixelTwo } from '@semoss/sdk';
 
 import { RootStore, WorkspaceStore, WorkspaceConfigInterface } from '@/stores';
 import { AppMetadata } from '@/components/app';
@@ -513,7 +513,7 @@ export class ConfigStore {
      * @param pixel - pixel to execute
      */
     async runPixel<O extends unknown[] | []>(pixel: string) {
-        return await runPixel<O>(
+        return await runPixelTwo<O>(
             this._store.insightID ? this._store.insightID : 'new',
             pixel,
         );
@@ -549,7 +549,10 @@ export class ConfigStore {
             ...getAppInfo.pixelReturn[0].output,
         };
 
-        const { insightId } = await runPixel(`SetContext("${appId}")`, 'new');
+        const { insightId } = await runPixelTwo(
+            `SetContext("${appId}")`,
+            'new',
+        );
 
         const workspace: WorkspaceConfigInterface = {
             appId: appId,
@@ -573,7 +576,7 @@ export class ConfigStore {
      */
     async setGeneralReactors() {
         try {
-            const res = await runPixel('META|HelpJson();');
+            const res = await runPixelTwo('META|HelpJson();');
 
             runInAction(() => {
                 const generalReactorList = res.pixelReturn[0].output['General'];

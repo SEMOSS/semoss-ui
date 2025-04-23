@@ -25,6 +25,7 @@
         "@babel/core": "7.22.5",
         "cross-env": "7.0.3",
         "typescript": "5.1.3",
+        "axios": "^1.5.0",
         "@semoss/ui": "workspace:*"
     },
     "devDependencies": {

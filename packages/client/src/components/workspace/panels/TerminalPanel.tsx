@@ -14,7 +14,6 @@ import {
 } from '@semoss/ui';
 import { CodeRounded, TerminalRounded } from '@mui/icons-material';
 
-import { runPixel } from '@/api';
 import PythonLogo from '@/assets/img/Python-logo.svg';
 import RLogo from '@/assets/img/R-logo.svg';
 
