@@ -535,10 +535,15 @@ export class ConfigStore {
             throw new Error('Unauthorized');
         }
 
+        const { insightId } = await runPixelTwo(
+            `SetContext("${appId}")`,
+            'new',
+        );
+
         // get the metadata
         const getAppInfo = await this._root.monolithStore.runQuery<
             [AppMetadata]
-        >(`ProjectInfo(project=["${appId}"]);`);
+        >(`ProjectInfo(project=["${appId}"]);`, insightId);
 
         // throw the errors if there are any
         if (getAppInfo.errors.length > 0) {
@@ -548,11 +553,6 @@ export class ConfigStore {
         const metadata = {
             ...getAppInfo.pixelReturn[0].output,
         };
-
-        const { insightId } = await runPixelTwo(
-            `SetContext("${appId}")`,
-            'new',
-        );
 
         const workspace: WorkspaceConfigInterface = {
             appId: appId,

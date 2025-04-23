@@ -246,7 +246,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         // load the app
         runPixelTwo<[SerializedState]>(
             `GetAppBlocksJson ( project=["${workspace.appId}"]);`,
-            'new',
+            workspace.insightId ? workspace.insightId : 'new',
         )
             .then(async ({ pixelReturn, errors, insightId }) => {
                 if (errors.length) {
@@ -275,18 +275,6 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 
                 // set it
                 setState(s);
-
-                const { errors: errs } = await runPixelTwo(
-                    `SetContext("${workspace.appId}");`,
-                    insightId,
-                );
-
-                if (errs.length) {
-                    notification.add({
-                        color: 'error',
-                        message: errs.join(''),
-                    });
-                }
             })
             .catch((e) => {
                 notification.add({
@@ -317,30 +305,21 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         return <LoadingScreen.Trigger />;
     }
 
-    // /**
-    //  * Initialize insight for app building
-    //  */
-    // Env.update({
-    //     MODULE: process.env.MODULE || '',
-    // });
-
     return (
-        <InsightProvider>
-            <Blocks state={state} registry={DefaultBlocks}>
-                <DesignerContext.Provider
-                    value={{
-                        designer: designer,
-                    }}
-                >
-                    <Workspace
-                        options={DEFAULT_OPTIONS}
-                        workspace={workspace}
-                        endTopbar={<BlocksWorkspaceActions />}
-                        factory={FACTORY}
-                    />
-                    <BlocksWorkspaceDev />
-                </DesignerContext.Provider>
-            </Blocks>
-        </InsightProvider>
+        <Blocks state={state} registry={DefaultBlocks}>
+            <DesignerContext.Provider
+                value={{
+                    designer: designer,
+                }}
+            >
+                <Workspace
+                    options={DEFAULT_OPTIONS}
+                    workspace={workspace}
+                    endTopbar={<BlocksWorkspaceActions />}
+                    factory={FACTORY}
+                />
+                <BlocksWorkspaceDev />
+            </DesignerContext.Provider>
+        </Blocks>
     );
 });

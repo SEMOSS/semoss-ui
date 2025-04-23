@@ -123,9 +123,9 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
      * TODO: REPLACE WITH A CALL TO THE BACKEND
      */
     const getClientBlocks = async () => {
-        runPixelTwo('1+1').then((res) => {
-            setClientBlock(CLIENT_BLOCKS_MENU);
-        });
+        // runPixelTwo('1+1').then((res) => {
+        setClientBlock(CLIENT_BLOCKS_MENU);
+        // });
     };
 
     useEffect(() => {
