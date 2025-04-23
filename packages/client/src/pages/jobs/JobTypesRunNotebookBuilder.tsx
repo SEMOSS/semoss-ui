@@ -24,10 +24,12 @@ export const JobTypesRunNotebookBuilder = (props: {
     const getNotebooks = async () => {
         try {
             const response = await monolithStore.runQuery(
-                `GetProjectList();`,
+                `MyProjects(onlyPortal=true);`,
             );
             console.log(response);
-            const notebooks = response.pixelReturn[0].output.map((notebook: any) => `${notebook.low_project_name}: ${notebook.project_name} (${notebook.project_id})`);
+            const notebooks = response.pixelReturn[0].output
+                .filter((notebook: any) => notebook.project_type === 'BLOCKS')
+                .map((notebook: any) => `${notebook.low_project_name}: ${notebook.project_name} (${notebook.project_id})`);
             setUserNotebooks(notebooks);
             console.log('User Notebooksa:', notebooks);
         } catch (error) {

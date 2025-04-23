@@ -10,6 +10,7 @@ import {
     CircularProgress,
     useNotification,
 } from '@semoss/ui';
+import { useRootStore } from '@/hooks';
 import { Delete, Edit, PlayArrow } from '@mui/icons-material';
 import { Job, JobBuilder } from './job.types';
 import { runPixel } from '@/api';
@@ -49,9 +50,28 @@ export const JobsTable = (props: {
     const notification = useNotification();
 
     const [runJobLoading, setRunJobLoading] = useState<boolean>(false);
-
+    const { monolithStore } = useRootStore();
     const runJob = async (job: Job) => {
         setRunJobLoading(true);
+        if (job.jobType === 'Run Notebook') {
+            try {
+                console.log('Running notebook:', job.notebook);
+                const response = await monolithStore.runQuery(
+                    `ExecuteAppNotebook(id = "${job.id}");`,
+                )
+                if (response.pixelReturn[0].operationType[0] === 'ERROR') {
+                    notification.add({
+                        color: 'error',
+                        message: 'Notebook could not be executed: ' + response.pixelReturn[0].output, 
+                    });
+                }
+            } catch (e) {
+                notification.add({
+                    color: 'error',
+                    message: 'Job could not be executed.',
+                });
+            }
+        }
         try {
             await runPixel(
                 `META | ExecuteScheduledJob ( jobId = [ "${job.id}" ] , jobGroup = [ "${job.group}" ] ) ;`,
