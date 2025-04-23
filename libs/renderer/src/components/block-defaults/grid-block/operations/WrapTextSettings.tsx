@@ -5,7 +5,7 @@ import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import Checkbox from "@mui/material/Checkbox";
 import { Autocomplete } from "@mui/material";
 
-import { styled, Switch, TextField, Typography } from "@semoss/ui";
+import { Button, styled, Switch, TextField, Typography } from "@semoss/ui";
 
 import { useBlockSettings } from "../../../../hooks";
 import { Paths, PathValue } from "@/types";
@@ -100,6 +100,22 @@ export const ColumnTextWrap = observer(
             );
         };
 
+        const resetToInitialState = () => {
+            const defaultState = {
+                selectedColumn: [] as string[],
+                textWrap: false,
+            };
+            setWrapTextSettings(defaultState);
+            const newOption = {
+                ...data.option,
+                wrapTextSettings: defaultState,
+            };
+            setData(
+                "option",
+                newOption as PathValue<GridBlockDef["data"], "option">,
+            );
+        };
+
         const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
         const checkedIcon = <CheckBoxIcon fontSize="small" />;
         const renderOption = (
@@ -161,11 +177,21 @@ export const ColumnTextWrap = observer(
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                             handleInputChange(e.target.checked)
                         }
-                        title="Show Title"
+                        title="Wrap Text"
                     />
                     <Typography variant="body2" color="secondary">
-                        Show Title
+                        Wrap Text
                     </Typography>
+                </StyledAxisDiv>
+                <StyledAxisDiv display="flex" justifyContent="end">
+                    <Button
+                        size="small"
+                        color="primary"
+                        variant="contained"
+                        onClick={resetToInitialState}
+                    >
+                        Reset
+                    </Button>
                 </StyledAxisDiv>
             </StyledContainer>
         );

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
-import { styled, TableContainer } from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
+import { styled } from "@mui/material";
+import { DataGrid, GridToolbarContainer } from "@mui/x-data-grid";
 
 import { useBlock, useFrame } from "../../../hooks";
 import { BlockComponent, BlockDef } from "../../../store";
@@ -21,8 +21,9 @@ const StyledBlock = styled("div")(() => ({
 }));
 
 const StyledTitle = styled("div")(() => ({
+    width: "100%",
     display: "flex",
-    justifyContent: "start",
+    justifyContent: "center",
 }));
 
 export interface HeaderBackgroundSettings {
@@ -145,16 +146,6 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
         enableCount: true,
     });
 
-    // get the total width of the table based on the columns
-    const tableWidth: number = data.columns.reduce((acc, val) => {
-        // if it is a number, add it
-        if (!isNaN(Number(val.width))) {
-            return acc + Number(val.width);
-        }
-
-        return acc + parseInt(DEFAULT_COLUMN_WIDTH);
-    }, 0);
-
     /**
      * Handle the callback for the context menu
      * @param event - triggered event
@@ -253,9 +244,6 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
                 wrapTextSettings.textWrap &&
                 wrapTextSettings.selectedColumn.includes(col.name);
 
-            console.log(colorRules, "colorRules");
-            console.log(params, "PARAMS");
-
             const origionalStyle: React.CSSProperties = {
                 // Apply style if the column is selected
                 backgroundColor: cellSettings.selectedColumn.includes(col.name)
@@ -320,8 +308,6 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
         },
     }));
 
-    console.log(columns, "COLUMNS");
-
     const rows = frame.data.values.map((r, idx) => {
         const obj: Record<string, any> = { id: idx };
         columns.forEach((c, cIdx) => {
@@ -329,7 +315,6 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
         });
         return obj;
     });
-    console.log(rows, "ROWS");
 
     const handlePaginationModalChange = (newmodel) => {
         // if the page size has changed reset the page
@@ -380,17 +365,23 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
         return "auto";
     };
 
+    const GridToolbar = () => {
+        return (
+            <GridToolbarContainer sx={{ justifyContent: "center" }}>
+                <StyledTitle
+                    sx={{
+                        fontSize: `${titleSettings.fontSize}px`,
+                        color: titleSettings.fontColor,
+                    }}
+                >
+                    {titleSettings.chartTitle}
+                </StyledTitle>
+            </GridToolbarContainer>
+        );
+    };
+
     return (
         <StyledBlock sx={data.style} {...attrs}>
-            <StyledTitle
-                sx={{
-                    fontSize: `${titleSettings.fontSize}px`,
-                    color: titleSettings.fontColor,
-                }}
-            >
-                {titleSettings.chartTitle}
-            </StyledTitle>
-
             <div
                 style={{
                     flex: 1,
@@ -413,6 +404,9 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
                     disableColumnMenu
                     disableRowSelectionOnClick
                     disableColumnSorting
+                    slots={{
+                        toolbar: titleSettings.chartTitle && GridToolbar,
+                    }}
                     showCellVerticalBorder={
                         data.option?.rowSpanning ? true : false
                     }
@@ -421,7 +415,6 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
                     }
                     unstable_rowSpanning={data.option?.rowSpanning}
                     sx={{
-                        border: "none",
                         borderRadius: "0",
                         "& .MuiDataGrid-columnHeaderTitleContainer": {
                             fontWeight: "bold",
