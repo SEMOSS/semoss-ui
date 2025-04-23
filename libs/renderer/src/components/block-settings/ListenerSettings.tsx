@@ -326,7 +326,8 @@ export const ListenerSettings = observer(
                     >
                         New Action
                     </Button>
-                    <ToggleButtonGroup size={"small"} value={"Sync"}>
+                    {/* TODO: John Accidentally pushed WIP */}
+                    {/* <ToggleButtonGroup size={"small"} value={"Sync"}>
                         <ToggleButton
                             value="Async"
                             onClick={() => {
@@ -343,7 +344,7 @@ export const ListenerSettings = observer(
                         >
                             Sync
                         </ToggleButton>
-                    </ToggleButtonGroup>
+                    </ToggleButtonGroup> */}
                 </Stack>
                 <Modal open={openModal} fullWidth={true}>
                     <ListenerActionOverlay

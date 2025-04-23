@@ -121,7 +121,7 @@ export const MapChartBlockSettings = observer(
          * @param {string} label - The selected label alias.
          */
         const handleChangeLabel = (label) => {
-            debugger;
+            // debugger;
             // Parse the current value from JSON
             const tempValue = JSON.parse(value);
 
