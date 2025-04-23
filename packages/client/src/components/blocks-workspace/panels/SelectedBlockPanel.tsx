@@ -60,6 +60,7 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
     overflowY: 'auto',
     '>.MuiBox-root': {
         width: '100%',
+        backgroundColor: 'transparent',
     },
 }));
 
@@ -82,11 +83,16 @@ const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
     margin: '0 auto',
     display: 'flex',
     justifyContent: 'space-between',
-    '>.MuiTabs-scroller': {
+    '.MuiTabs-scroller': {
         display: 'flex',
         justifyContent: 'space-around',
         '.MuiTabs-flexContainer': {
             flex: 1,
+            backgroundColor: 'rgb(0, 0, 0, 0.04)',
+            borderRadius: '12px',
+            '.MuiButtonBase-root': {
+                margin: '4px',
+            },
         },
     },
 }));
@@ -103,7 +109,7 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
     },
 }));
 const StyledCustomTabPanel = styled('div')(({ theme }) => ({
-    role: 'tabpanel',
+    // role: 'tabpanel',
 }));
 
 export const SelectedBlockPanel = observer(() => {
@@ -387,8 +393,12 @@ export const SelectedBlockPanel = observer(() => {
                             <StyledToggleTabsGroup
                                 variant="fullWidth"
                                 value={settingSection}
-                                style={{
-                                    width: '100% !important',
+                                sx={{
+                                    display: 'flex',
+                                    padding: '8px 16px',
+                                    alignItems: 'center',
+                                    alignSelf: 'stretch',
+                                    // backgroundColor: "rgb(0 0 0 / 4%)",
                                 }}
                                 onChange={(
                                     e: React.SyntheticEvent,
@@ -415,6 +425,7 @@ export const SelectedBlockPanel = observer(() => {
                          */
                         contentMenu.length > 0 && (
                             <StyledCustomTabPanel
+                                role="tabpanel"
                                 id={`simple-tabpanel-0`}
                                 aria-labelledby={`simple-tab-0`}
                                 hidden={settingSection !== 0 ? true : false}
@@ -439,6 +450,7 @@ export const SelectedBlockPanel = observer(() => {
                          */
                         styleMenu.length > 0 && (
                             <StyledCustomTabPanel
+                                role="tabpanel"
                                 id={`simple-tabpanel-1`}
                                 aria-labelledby={`simple-tab-1`}
                                 hidden={settingSection !== 1 ? true : false}
