@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Stack, styled, ToggleTabsGroup } from "@semoss/ui";
-
 import { useBlock } from "../../../hooks";
 import { BlockComponent } from "../../../store";
 import { GridBlockColumnSettings } from "../grid-block/GridBlockColumnSettings";
@@ -69,8 +68,7 @@ export const GridBlockMenu: BlockComponent = ({ id }) => {
     const { data } = useBlock(id);
 
     const [selectedTab, setSelectedTab] = useState("Tools");
-    console.log(data, "Variation");
-    function updateFrame() {}
+
     return (
         <StyledStack>
             <StyledToggleTabsGroup

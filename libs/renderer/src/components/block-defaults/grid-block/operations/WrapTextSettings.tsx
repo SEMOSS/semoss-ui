@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
@@ -29,10 +29,6 @@ const StyledFieldWrapper = styled("div")(() => ({
     flexDirection: "column",
     justifyContent: "center",
     gap: "8px",
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-    width: "100%",
 }));
 
 const StyledAxisDiv = styled("div")<{

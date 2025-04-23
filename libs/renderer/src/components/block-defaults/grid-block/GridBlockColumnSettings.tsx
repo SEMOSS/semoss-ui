@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { DragDropContext, Droppable } from "react-beautiful-dnd";
+
 import { Sync } from "@mui/icons-material";
 import { Stack, Box } from "@mui/material";
 import { DndContext, closestCenter } from "@dnd-kit/core";

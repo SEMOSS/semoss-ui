@@ -1983,8 +1983,6 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 style: {
                     display: 'flex',
                     flexDirection: 'row',
-                    // padding: '4px',
-                    // gap: '8px',
                     flexWrap: 'wrap',
                     width: '450px',
                     height: '350px',

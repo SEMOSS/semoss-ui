@@ -11,7 +11,6 @@ import { GridBlockContextMenu } from "./GridBlockContextMenu";
 
 const DEFAULT_HEIGHT = "300px";
 const DEFAULT_WIDTH = "500px";
-const DEFAULT_COLUMN_WIDTH = "160px";
 
 const StyledBlock = styled("div")(() => ({
     display: "flex",
