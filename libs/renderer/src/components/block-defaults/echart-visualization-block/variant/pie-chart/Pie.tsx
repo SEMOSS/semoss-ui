@@ -67,7 +67,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
         if (id) {
             //get the options JSON of the selected block
             //let blockJSON = this._store.blocks[id].data.option;
-            let blockJSON = data.option;
+            const blockJSON = data.option;
             //initialize the selector string
             let selector = "Select(";
 
@@ -75,7 +75,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
             if (!blockJSON["_state"]) return null;
 
             //get the fields
-            let selectorFields = blockJSON["_state"]["fields"];
+            const selectorFields = blockJSON["_state"]["fields"];
 
             //  get the value and tooltip properties
             // let dynamicYAndTooltipSet = [
@@ -84,7 +84,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
             //         ...selectorFields["tooltip"],
             //     ]),
             // ];
-            let dynamicYAndTooltipSet = Array.from(
+            const dynamicYAndTooltipSet = Array.from(
                 new Set([
                     ...selectorFields["Value"],
                     ...selectorFields["tooltip"],
@@ -128,7 +128,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
     /**
      * @description
      */
-    let parsedOption = useMemo(() => {
+    const parsedOption = useMemo(() => {
         return typeof computedValue === "string"
             ? JSON.parse(computedValue)
             : computedValue;
@@ -153,7 +153,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
     const formatDataPoints = useCallback(
         (resultData: unknown) => {
             if (frame.data.values.length > 0) {
-                let valuesDataSet = JSON.parse(
+                const valuesDataSet = JSON.parse(
                     JSON.stringify(frame.data.values),
                 );
                 let headersDataSet: string[] = JSON.parse(
@@ -183,7 +183,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
         contextmenu: (params) => {
             //  let currentOption = chart.getOption();
             if (params.data) {
-                let labelName = data.option["_state"]["fields"]["Label"][0];
+                const labelName = data.option["_state"]["fields"]["Label"][0];
                 setContextMenu(
                     contextMenu === null
                         ? {

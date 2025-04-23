@@ -5,8 +5,6 @@ import {
     AccordionBlockDef,
 } from "./accordion-block";
 
-import { config as PopoverBlockConfig, PopoverBlockDef } from "./popover-block";
-
 import { config as AudioBlockConfig, AudioBlockDef } from "./audio-block";
 import {
     config as AudioInputBlockConfig,
@@ -19,6 +17,7 @@ import {
     config as CheckboxBlockConfig,
     CheckboxBlockDef,
 } from "./checkbox-block";
+import { config as ChipBlockConfig, ChipBlockDef } from "./chip-block";
 import {
     config as ContainerBlockConfig,
     ContainerBlockDef,
@@ -39,6 +38,10 @@ import { config as IconBlockConfig, IconBlockDef } from "./Icon_block";
 import { config as IframeBlockConfig, IframeBlockDef } from "./iframe-block";
 import { config as ImageBlockConfig, ImageBlockDef } from "./image-block";
 import { config as InputBlockConfig, InputBlockDef } from "./input-block";
+import {
+    config as IterationBlockConfig,
+    IterationBlockDef,
+} from "./iteration-block";
 
 import { config as LinkBlockConfig, LinkBlockDef } from "./link-block";
 import { config as LogsBlockConfig, LogsBlockDef } from "./logs-block";
@@ -59,6 +62,7 @@ import {
     config as PDFViewerBlockConfig,
     PDFViewerBlockDef,
 } from "./pdfViewer-block";
+import { config as PopoverBlockConfig, PopoverBlockDef } from "./popover-block";
 import {
     config as ProgressBlockConfig,
     ProgressBlockDef,
@@ -104,6 +108,7 @@ export type DefaultBlockDefinitions =
     | AudioInputBlockDef
     | ButtonBlockDef
     | CheckboxBlockDef
+    | ChipBlockDef
     | ContainerBlockDef
     | DividerBlockDef
     | EchartVisualizationBlockDef
@@ -113,6 +118,7 @@ export type DefaultBlockDefinitions =
     | IframeBlockDef
     | ImageBlockDef
     | InputBlockDef
+    | IterationBlockDef
     | LinkBlockDef
     | LLMComparisonBlockDef
     | LogsBlockDef
@@ -152,6 +158,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
+    [ChipBlockConfig.widget]: ChipBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [DividerBlockConfig.widget]: DividerBlockConfig,
     [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
@@ -160,6 +167,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [IframeBlockConfig.widget]: IframeBlockConfig,
     [ImageBlockConfig.widget]: ImageBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
+    [IterationBlockConfig.widget]: IterationBlockConfig,
     [LinkBlockConfig.widget]: LinkBlockConfig,
     [LLMComparisonBlockConfig.widget]: LLMComparisonBlockConfig,
     [LogsBlockConfig.widget]: LogsBlockConfig,
@@ -193,6 +201,7 @@ export {
     AudioInputBlockConfig,
     ButtonBlockConfig,
     CheckboxBlockConfig,
+    ChipBlockConfig,
     ContainerBlockConfig,
     DividerBlockConfig,
     GridBlockConfig,
@@ -200,6 +209,7 @@ export {
     IframeBlockConfig,
     ImageBlockConfig,
     InputBlockConfig,
+    IterationBlockConfig,
     MarkdownBlockConfig,
     HTMLBlockConfig,
     PageBlockConfig,

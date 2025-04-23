@@ -54,6 +54,12 @@
     color: rgb(4, 113, 240);
 }
 
+.flexlayout__border_bottom {
+    border-top: none;
+    background: none;
+    padding-left: 34px;
+}
+
 /* 
 Main Content tabs
 */

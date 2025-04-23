@@ -2,6 +2,7 @@ import { BlockConfig } from "../../../store";
 import { InputSettings } from "../../block-settings";
 
 import {
+    buildShowField,
     buildTextAlignSection,
     buildTypographySection,
 } from "../block-defaults.shared";
@@ -22,6 +23,7 @@ export const config: BlockConfig<LinkBlockDef> = {
         },
         href: "",
         text: "Insert text",
+        show: "true",
     },
     listeners: {},
     slots: {},
@@ -31,6 +33,7 @@ export const config: BlockConfig<LinkBlockDef> = {
         {
             name: "General",
             children: [
+                ...buildShowField(),
                 {
                     description: "Destination",
                     render: ({ id }) => (

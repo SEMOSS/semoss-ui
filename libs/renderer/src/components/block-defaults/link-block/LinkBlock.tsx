@@ -12,6 +12,7 @@ export interface LinkBlockDef extends BlockDef<"link"> {
         style: CSSProperties;
         href: string;
         text: string;
+        show: string;
     };
 }
 

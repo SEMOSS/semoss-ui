@@ -176,7 +176,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
             }
 
             // go through each one and trigger it
-            actions.forEach((a) => {
+            actions.forEach(async (a) => {
                 // convert back to a normal action
                 let action: ListenerActions | null = a;
 
@@ -190,6 +190,13 @@ export const useBlock = <D extends BlockDef = BlockDef>(
                 }
 
                 state.dispatch(action);
+
+                // TODO: John accidently pushed, sync and async events WIP
+                // console.log("Before Dispatch", action)
+                // const d = await state.dispatchEventAction(action)
+                // console.log("After Dispatch", state.queries)
+                // console.log("Data:", d)
+                // debugger
             });
         };
 
@@ -209,7 +216,12 @@ export const useBlock = <D extends BlockDef = BlockDef>(
         return copy(block.data, (instance) => {
             if (typeof instance === "string") {
                 // try to extract the variable
-                return state.parseVariable(instance);
+
+                // debugger
+                return state.parseVariable(
+                    instance,
+                    block.widget !== "iteration" ? block.id : null,
+                );
             }
 
             return instance;
