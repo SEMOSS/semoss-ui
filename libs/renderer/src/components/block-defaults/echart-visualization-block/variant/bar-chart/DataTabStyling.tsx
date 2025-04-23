@@ -1,34 +1,38 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { TextField, styled } from "@semoss/ui";
 import { observer } from "mobx-react-lite";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
-import { useBlockSettings, useBlocksPixel, useFrameHeaders } from "../../../../../hooks";
-import { BlockDef } from "../../../../../store";
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import Switch from '@mui/material/Switch';
-import { DragDropContext, Droppable } from "react-beautiful-dnd";
+import { Droppable } from "react-beautiful-dnd";
 import { Autocomplete, Popover } from "@mui/material";
+import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+import { useBlockSettings, useBlocksPixel, useFrameHeaders } from "../../../../../hooks";
+import { BlockDef } from "../../../../../store";
 import { VisualMapConstant } from "../../VisualMapConstant";
 import { VisualMap } from "../../VisualMap";
 
+//styled components for the data tab
 const StyledMain = styled("div")(() => ({
     width: "100%",
     height: "100%",
     marginTop: "1px",
 }));
+//styled span of frame for the frame and visual selection
 const StyledSpanFrame = styled("span")(() => ({
     fontSize: "1rem",
     color: "#808080",
     paddingLeft: "16px",
     position: "relative",
 }));
+//styled span of label for the frame and visual selection
 const StyledSpanLabel = styled("span")(() => ({
     fontSize: "1rem",
     paddingLeft: "16px",
     position: "relative",
 }));
+//styled section for the frame and visual selection
 const StyledSubSection = styled("div")(() => ({
     display: "flex",
     justifyContent: "center",
@@ -36,25 +40,30 @@ const StyledSubSection = styled("div")(() => ({
     width: "100%",
     marginTop: "5px",
 }));
+//styled droppable area of the frame and visual selection
 const StyledDroppable = styled("div")(() => ({
     marginTop: "8px",
 }));
+//styled label area  of the frame and visual selection
 const StyledLabelSection = styled("div")(() => ({
     display: "flex",
     width: "100%",
 }));
+//styled section for the label of the frame and visual selection
 const StyledSwitchSection = styled("div")(() => ({
     display: "flex",
     marginTop: "15px",
     marginLeft: "8px",
     width: "100%",
 }));
+//styled label for the constants
 const StyledSpanSwitch = styled("span")(() => ({
     fontSize: "1rem",
     color: "#808080",
     marginTop: "5px",
     position: "relative",
 }));
+//droppable item styling
 const DropContainer = styled("div")(() => ({
     padding: "8px",
     minHeight: "50px",
@@ -63,6 +72,7 @@ const DropContainer = styled("div")(() => ({
     alignItems: "center",
 }));
 
+//data tab right section of the echart visualization block
 export const DataTabStyling = observer(
     <D extends BlockDef = BlockDef>({ id, updateFrame, path, dragdropColumns, deleteColumns, formmattedColumns, isAdd, syncHeader, chart, storedColumns, visual, selectedItem }) => {
         const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);

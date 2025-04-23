@@ -27,7 +27,7 @@ export const SECTION_ORDER = [
 
 // Development Environment Blocks
 const DEV_BLOCKS = [];
-
+// update the json structure also in VisualMapConstant.tsx
 if (process.env.NODE_ENV === 'development') {
     DEV_BLOCKS.push({
         section: SECTION_CHARTS,

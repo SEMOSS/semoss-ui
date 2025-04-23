@@ -1,10 +1,10 @@
-import { Autocomplete, Button, Select, styled, TextField, InputAdornment, IconButton, Stack } from "@semoss/ui";
-import { Sync, Search } from "@mui/icons-material";
 import { useState, useRef, useEffect } from "react";
-import { VisualMapConstant } from "./VisualMapConstant";
 import { observer } from "mobx-react-lite";
-import { BlockDef } from "../../../store";
+import { Search } from "@mui/icons-material";
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+import { styled, TextField, InputAdornment, IconButton, Stack } from "@semoss/ui";
+import { BlockDef } from "../../../store";
+import { VisualMapConstant } from "./VisualMapConstant";
 
 export const VisualMap = observer(
     <D extends BlockDef = BlockDef>({ selectedItem, handleClose }) => {

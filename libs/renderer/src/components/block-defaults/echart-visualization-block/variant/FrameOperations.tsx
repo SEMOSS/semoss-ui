@@ -1,23 +1,23 @@
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { Sync, Search } from "@mui/icons-material";
+import { Search } from "@mui/icons-material";
 import { computed } from "mobx";
 import { Tooltip, Checkbox } from "@mui/material";
-import { Autocomplete, Button, Select, styled, TextField, InputAdornment, IconButton, Stack } from "@semoss/ui";
+import { styled, TextField, InputAdornment, IconButton, Stack } from "@semoss/ui";
 import {
     useBlockSettings,
     useBlocksPixel,
     useFrameHeaders,
-} from "../../../../../hooks";
-import { BlockDef } from "../../../../../store";
-import { PathValue } from "../../../../../types";
-import { getValueByPath } from "../../../../../utility";
-import { BAR_CHART_DATA } from "../../Visualization.constants";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
-import { DataTabStyling } from "./DataTabStyling";
+} from "../../../../hooks";
+import { BlockDef } from "../../../../store";
+import { PathValue } from "../../../../types";
+import { getValueByPath } from "../../../../utility";
+import { BAR_CHART_DATA } from "../Visualization.constants";
+import { EchartVisualizationBlockDef } from "../VisualizationBlock";
+import { DataTabStyling } from "./bar-chart/DataTabStyling";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import StringIcon from "../../../../../../../../packages/client/src/assets/img/StringIcon.svg";
-import NumberIcon from "../../../../../../../../packages/client/src/assets/img/NumberIcon.svg";
+import StringIcon from "../../../../../../../packages/client/src/assets/img/StringIcon.svg";
+import NumberIcon from "../../../../../../../packages/client/src/assets/img/NumberIcon.svg";
 
 //frame operations component props structure
 export interface FrameOperationsProps {
@@ -69,6 +69,7 @@ const COLOUR_PALATTE_DATA = [
     "#ea7ccc",
 ];
 
+//data tab left section to show the data tab and the drag area for the selected columns
 export const FrameOperations = observer(
     <D extends BlockDef = BlockDef>({ id, updateFrame, path, chart, storedColumns, handleStoreData, selectedItem }) => {
         const { data, setData } =

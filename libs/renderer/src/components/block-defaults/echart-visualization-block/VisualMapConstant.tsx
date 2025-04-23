@@ -37,7 +37,6 @@ import VivaGraphIcon from "../../../../../../packages/client/src/assets/img/Viva
 import FunnelIcon from "../../../../../../packages/client/src/assets/img/Funnel.svg";
 import GanttIcon from "../../../../../../packages/client/src/assets/img/GanttIcon.svg";
 import SankeyIcon from "../../../../../../packages/client/src/assets/img/Sankey.svg";
-import { title } from 'process';
 
 export const VisualMapConstant = {
         'Comparison': [

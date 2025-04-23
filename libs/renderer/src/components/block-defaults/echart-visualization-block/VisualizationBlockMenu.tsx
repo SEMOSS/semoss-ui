@@ -6,7 +6,7 @@ import { EchartVisualizationBlockDef } from "./VisualizationBlock";
 import { BlockComponent } from "../../../store";
 import { AIGenerationSettings, JsonSettings } from "../../block-settings";
 import { UpgradedVisualizationTool } from "./variant/bar-chart/UpgradedVisualizationTool";
-import { FrameOperations } from "./variant/bar-chart/FrameOperations";
+import { FrameOperations } from "./variant/FrameOperations";
 import { Bar, Pie, ScatterPlot, StackChart, Line, WorldMap, Gantt } from "./variant/Constant";
 
 const StyledContainer = styled("div")(() => ({
