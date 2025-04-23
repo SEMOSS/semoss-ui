@@ -221,6 +221,7 @@ export const JobBuilderModal = (props: {
                 JSON.stringify(initialBuilder.bcc) ||
             builder.from !== initialBuilder.from ||
             builder.message !== initialBuilder.message ||
+            builder.notebook !== initialBuilder.notebook ||
             builder.username !== initialBuilder.username ||
             builder.password !== initialBuilder.password
         );
@@ -237,6 +238,7 @@ export const JobBuilderModal = (props: {
         builder.to,
         builder.from,
         builder.message,
+        builder.notebook,
         builder.username,
         builder.password,
     ]);
@@ -409,6 +411,7 @@ export const JobBuilderModal = (props: {
                         }
                         onClick={() => {
                             isEditMode ? updateJob() : addJob();
+                            console.log('builder', builder);
                         }}
                         loading={isLoading}
                     >

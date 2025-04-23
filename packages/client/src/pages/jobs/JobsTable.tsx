@@ -15,6 +15,7 @@ import { Delete, Edit, PlayArrow } from '@mui/icons-material';
 import { Job, JobBuilder } from './job.types';
 import { runPixel } from '@/api';
 import { getHumanReadableCronExpression } from './job.utils';
+import { JobTypeRunNotebook } from './job.constants';
 
 const StyledDataGrid = styled(DataGrid)(() => ({
     '.MuiDataGrid-overlayWrapper': {
@@ -53,9 +54,8 @@ export const JobsTable = (props: {
     const { monolithStore } = useRootStore();
     const runJob = async (job: Job) => {
         setRunJobLoading(true);
-        if (job.jobType === 'Run Notebook') {
+        if (job.jobType === JobTypeRunNotebook) {
             try {
-                console.log('Running notebook:', job.notebook);
                 const response = await monolithStore.runQuery(
                     `ExecuteAppNotebook(id = "${job.id}");`,
                 )

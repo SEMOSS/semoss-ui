@@ -17,7 +17,7 @@ export const JobTypesRunNotebookBuilder = (props: {
     const { builder, setBuilderField } = props;
     const filter = createFilterOptions<string>();
 
-    const { configStore, monolithStore } = useRootStore();
+    const {monolithStore } = useRootStore();
 
     const [userNotebooks, setUserNotebooks] = useState<string[]>([]);
 
@@ -31,7 +31,7 @@ export const JobTypesRunNotebookBuilder = (props: {
                 .filter((notebook: any) => notebook.project_type === 'BLOCKS')
                 .map((notebook: any) => `${notebook.low_project_name}: ${notebook.project_name} (${notebook.project_id})`);
             setUserNotebooks(notebooks);
-            console.log('User Notebooksa:', notebooks);
+            console.log('User Notebooks:', notebooks);
         } catch (error) {
             console.error('Error fetching notebooks:', error);
         }
@@ -45,8 +45,10 @@ export const JobTypesRunNotebookBuilder = (props: {
             <TextField
                 select
                 label="Select Notebook"
-                value={builder.notebook || ''}
-                onChange={(e) => setBuilderField('notebook', e.target.value)}
+                value={builder.notebook}
+                onChange={(e) => {
+                    setBuilderField('notebook', e.target.value);
+                }}
             >
                 {userNotebooks.map((notebook) => (
                     <MenuItem key={notebook} value={notebook}>
