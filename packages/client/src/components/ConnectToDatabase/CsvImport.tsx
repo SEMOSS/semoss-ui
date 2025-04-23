@@ -16,7 +16,7 @@ import DataSelection from './DataSelection';
 import { useForm } from 'react-hook-form';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 
-type Props = {};
+type Props = object;
 
 function CsvImport({}: Props) {
     const StyledTextField = styled('div')(() => ({
@@ -55,11 +55,12 @@ function CsvImport({}: Props) {
     const [dbName, setDbName] = useState('');
     const [dbDescription, setDbDescription] = useState('');
     const [dbTag, setDbTag] = useState('');
-    const [delimiter, setDelimiter] = useState('');
+    const [delimiter, setDelimiter] = useState(',');
     const [uploadedFile, setUploadedFile] = useState<File[]>([]);
     const [selectedDbType, setSelectedDbType] = useState<string>();
     const [selectedMetaModelType, setSelectedMetaModelType] =
         useState<string>();
+    const [fileName, setFileName] = useState('');
     const { monolithStore, configStore } = useRootStore();
     const [parsedData, setParsedData] = useState<any>(null);
     const [filePath, setfilePath] = useState<string>();
@@ -136,7 +137,6 @@ function CsvImport({}: Props) {
 
             const response = await monolithStore.runQuery(pixelString);
             const output = response.pixelReturn[0].output;
-            console.log('parsedData', output);
             const operationType = response.pixelReturn[0].operationType;
             const pixelExpression = response.pixelReturn[0].pixelExpression;
             const filePathMatch = pixelExpression.match(
@@ -146,6 +146,11 @@ function CsvImport({}: Props) {
                 ? filePathMatch[1]
                 : null;
             setfilePath(filePathFromExpression);
+
+            if (filePathFromExpression) {
+                const name = filePathFromExpression.split(/[/\\]/).pop() || '';
+                setFileName(name);
+            }
 
             if (operationType.includes('ERROR')) {
                 notification.add({ color: 'error', message: output });
@@ -165,7 +170,6 @@ function CsvImport({}: Props) {
         }
     };
 
-    console.log('filePath', filePath);
     const handleCancel = () => {
         setStep('import');
         setUploadedFile(uploadedFile);
@@ -177,20 +181,20 @@ function CsvImport({}: Props) {
     const descriptionMap = {};
     const logicalNamesMap = {};
 
-    const submitMetmodelPixel = async (payloadObject) => {
-        let pixel = `RdbmsUploadTableData(
+    const submitMetmodelPixel = async (payloadObject: any) => {
+        const pixel = `RdbmsUploadTableData(
             database=["${watchDatabaseName}"],
             filePath=["${watchFile}"],
             delimiter=["${delimiter}"],
-            dataTypeMap=[${JSON.stringify(payloadObject.dataTypes)}],
-            newHeaders=[${JSON.stringify(newHeaders)}],
+            dataTypeMap=[${JSON.stringify(payloadObject.dataTypeMap)}],
+            newHeaders=[${JSON.stringify(payloadObject.newHeaders)}],
             additionalDataTypes=[${JSON.stringify(
                 payloadObject.additionalDataTypes,
             )}],
-            descriptionMap=[${JSON.stringify(descriptionMap)}],
-            logicalNamesMap=[${JSON.stringify(logicalNamesMap)}],
+            descriptionMap=[${JSON.stringify(payloadObject.descriptionMap)}],
+            logicalNamesMap=[${JSON.stringify(payloadObject.logicalNamesMap)}],
             existing=[false]
-        );`;
+          );`;
 
         try {
             const response = await monolithStore.runQuery(pixel);
@@ -502,7 +506,8 @@ function CsvImport({}: Props) {
             ) : (
                 <DataSelection
                     files={parsedData}
-                    onImport={() => submitMetmodelPixel(parsedData)}
+                    fileName={fileName}
+                    onImport={(payload) => submitMetmodelPixel(payload)}
                     onCancel={handleCancel}
                 />
             )}

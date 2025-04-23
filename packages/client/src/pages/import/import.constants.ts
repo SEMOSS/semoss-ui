@@ -82,6 +82,7 @@ import AWS_TRANSCRIBE from '@/assets/img/AWS_TRANSCRIBE.png';
 import CHROMADB from '@/assets/img/CHROMADB.png';
 import PINECONE from '@/assets/img/PINECONE.png';
 import WEVIATE from '@/assets/img/WEVIATE.png';
+import FILE_EXCEL from '@/assets/img/file-excel.svg';
 
 // TODO: Get rid of this and throw it into Connection Options
 export const stepsOne = [
@@ -14905,4 +14906,8 @@ export const ENGINE_IMAGES = {
             icon: ZIP,
         },
     ],
+};
+
+export const CSV_UPLOAD_ICONS = {
+    FILE_EXCEL,
 };
