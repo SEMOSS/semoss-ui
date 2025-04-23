@@ -823,7 +823,7 @@ export const NotebookCell = observer(
                     </Collapse>
                 </StyledAddCellContainer>
 
-                {/* <AddVariableModal
+                <AddVariableModal
                     open={variableModal}
                     type={'cell'}
                     to={queryId}
@@ -831,7 +831,7 @@ export const NotebookCell = observer(
                     onClose={() => {
                         setVariableModal(false);
                     }}
-                /> */}
+                />
             </StyledStack>
         );
     },

@@ -9,8 +9,10 @@ import { ScatterPlotBlock } from "./variant/scatter-plot/ScatterPlot";
 import { useBlock, useBlocks, useBlockSettings } from "../../../hooks";
 import { BlockComponent, BlockDef } from "../../../store";
 import { PathValue } from "../../../types";
+import { Map } from "./variant/map-chart/Map";
 import { Line } from "./variant/line-chart/Line";
 import { StackChart } from "./variant/stack-chart/StackChart";
+import { Gantt } from "./variant/Gantt/Gantt";
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -144,11 +146,17 @@ export const VisualizationBlock: BlockComponent = observer(
                         {data.variation === "echart-scatter-plots" && (
                             <ScatterPlotBlock id={id} />
                         )}
+                        {data.variation === "echart-world-map-chart" && (
+                            <Map id={id}></Map>
+                        )}
                         {data.variation === "echart-line-graph" && (
                             <Line id={id} updateJson={updateChartJson} />
                         )}
                         {data.variation === "echart-stack-chart" && (
                             <StackChart id={id} />
+                        )}
+                        {data.variation === "echart-gantt-chart" && (
+                            <Gantt id={id} updateChart={updateChartJson} />
                         )}
                     </StyledNoDataContainer>
                 );
@@ -171,11 +179,17 @@ export const VisualizationBlock: BlockComponent = observer(
                 {data.variation === "echart-scatter-plots" && (
                     <ScatterPlotBlock id={id} />
                 )}
+                {data.variation === "echart-world-map-chart" && (
+                    <Map id={id}></Map>
+                )}
                 {data.variation === "echart-line-graph" && (
                     <Line id={id} updateJson={updateChartJson} />
                 )}
                 {data.variation === "echart-stack-chart" && (
                     <StackChart id={id} />
+                )}
+                {data.variation === "echart-gantt-chart" && (
+                    <Gantt id={id} updateChart={updateChartJson} />
                 )}
             </StyledDataContainer>
         );

@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { ConstructionOutlined } from '@mui/icons-material';
 
-import { useNotification, styled, Typography, Stack } from '@semoss/ui';
+import { useNotification } from '@semoss/ui';
 import { Env, InsightProvider } from '@semoss/sdk';
 import {
     StateStore,
@@ -25,6 +24,7 @@ import {
     SettingsPanel,
     FileExplorerPanel,
     FileEditorPanel,
+    TerminalPanel,
 } from '@/components/workspace';
 import {
     VariablesPanel,
@@ -116,6 +116,21 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                 },
                             ],
                         },
+                        // {
+                        //     type: 'border',
+                        //     location: 'bottom',
+                        //     size: DEFAULT_BORDER_SIZE,
+                        //     children: [
+                        //         {
+                        //             id: 'terminal',
+                        //             type: 'tab',
+                        //             name: 'Terminal',
+                        //             component: 'terminal',
+                        //             enableClose: false,
+                        //             config: {},
+                        //         },
+                        //     ],
+                        // },
                     ],
                     layout: {
                         type: 'row',
@@ -200,6 +215,8 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
         return <NotebookExplorerPanel layout={layout} />;
     } else if (component === 'notebook-viewer') {
         return <NotebookViewerPanel id={config.id} />;
+    } else if (component === 'terminal') {
+        return <TerminalPanel />;
     }
 
     // TODO: Clean out session storage for old workspaces
