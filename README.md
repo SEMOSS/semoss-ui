@@ -206,8 +206,6 @@ Contributing Designer - Let us know if you have any question or issue with figma
 - Natalie
 - Sarah
 - KT
-- Eric
-- Jong
 
 
 # Code reviews

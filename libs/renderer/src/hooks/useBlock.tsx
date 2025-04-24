@@ -189,16 +189,14 @@ export const useBlock = <D extends BlockDef = BlockDef>(
                     return;
                 }
 
-                console.log("Before Dispatch", action)
-                
-                const d = await state.dispatchEventAction(action)
-                console.log("After Dispatch", state.queries)
-                console.log("Data:", d)
+                state.dispatch(action);
 
-                // state.dispatch(action);
-                // 
-                // const data = await state.dispatch(action);
-                debugger
+                // TODO: John accidently pushed, sync and async events WIP
+                // console.log("Before Dispatch", action)
+                // const d = await state.dispatchEventAction(action)
+                // console.log("After Dispatch", state.queries)
+                // console.log("Data:", d)
+                // debugger
             });
         };
 
