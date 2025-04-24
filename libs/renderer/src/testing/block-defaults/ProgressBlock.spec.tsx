@@ -53,6 +53,26 @@ describe("Progress Block", async () => {
 			blocks: localBlocks,
 		});
 		// screen.debug();
+        const element = screen.queryByRole("progressbar");
+		expect(element).not.toBeInTheDocument();
+	});
+	it("Should do not include label", async () => {
+		const localBlocks = {
+			"progress-id": {
+				...blocks["progress-id"],
+				data: {
+					type: "linear",
+					value: 25,
+					includeLabel: false,
+					size: "300px",
+					show: "true",
+				},
+			},
+		};
+		const { container } = await render(<ProgressBlock id="progress-id" />, {
+			blocks: localBlocks,
+		});
+		// screen.debug();
 		expect(screen.queryByText("25%")).not.toBeInTheDocument();
 	});
 
