@@ -14,11 +14,11 @@ import {
 } from '@semoss/ui';
 import { CodeRounded, TerminalRounded } from '@mui/icons-material';
 
-import { runPixel } from '@/api';
 import PythonLogo from '@/assets/img/Python-logo.svg';
 import RLogo from '@/assets/img/R-logo.svg';
 
 import { Panel } from './Panel';
+import { useWorkspace } from '@/hooks';
 
 const StyledImage = styled('img')(({ theme }) => ({
     height: '13px',
@@ -59,6 +59,7 @@ export const TerminalPanel: React.FC = observer(() => {
 
     const [history, setHistory] = useState<TerminalProps['history']>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const { workspace } = useWorkspace();
 
     const [command, setCommand] = useState<string>('');
     const [language, setLanguage] = useState('PIXEL');
@@ -108,8 +109,8 @@ export const TerminalPanel: React.FC = observer(() => {
             }
 
             // run the pixel
-            // TODO: Fix Insight ID
-            const response = await runPixel(pixel);
+            // TODO: We need to fix workspace.store so we just call runWorkspacePixel
+            const response = await workspace.runWorkspacePixel(pixel);
 
             const updatedHistory = [...history];
             for (const r of response.pixelReturn) {
