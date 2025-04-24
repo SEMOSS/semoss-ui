@@ -19,7 +19,8 @@ import { GridBlockColumn } from "../../../grid-block/grid-block.types";
 import { useEffect, useMemo, useState } from "react";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { computed } from "mobx";
-import { getValueByPath } from "@/utility";
+
+import { getValueByPath } from "../../../../../utility";
 import { Paths } from "@/types";
 import { Block, BlockDef } from "../../../../../store";
 
@@ -121,7 +122,7 @@ export const MapChartBlockSettings = observer(
          * @param {string} label - The selected label alias.
          */
         const handleChangeLabel = (label) => {
-            debugger;
+            // debugger;
             // Parse the current value from JSON
             const tempValue = JSON.parse(value);
 

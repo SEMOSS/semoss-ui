@@ -4,8 +4,7 @@ import { useSearchParams, useLocation } from "react-router-dom";
 
 import { runPixel, useInsight } from "@semoss/sdk";
 import {
-    Button,
-    LoadingScreen,
+    Backdrop,
     Notification,
     Typography,
     useNotification,
@@ -21,12 +20,16 @@ import {
     STATE_VERSION,
     StateStore,
 } from "./store/state";
+import { CircularProgress, Stack } from "@mui/material";
 
 // TODO: Add component library notification component
 
 export interface RendererProps {
     /** App to render */
     appId?: string;
+    
+    /** Insight to tie all pixels that are ran to */
+    insightId?: string;
 
     /** State to render */
     state?: SerializedState;
@@ -36,17 +39,17 @@ export interface RendererProps {
      * Do we want to see load screen. Ex: preview on tooltip
      * */
     preview?: boolean;
+
 }
 
 /**
  * Render a block app
  */
 export const Renderer = observer((props: RendererProps) => {
-    const { appId, state, preview } = props;
+    const { appId, insightId, state, preview } = props;
+
     // const notification = useNotification();
     const [searchParams, setSearchParams] = useSearchParams();
-    const { insightId, isAuthorized } = useInsight();
-
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [stateStore, setStateStore] = useState<StateStore | null>();
     const queryStringParams = new URLSearchParams(useLocation().search);
@@ -54,7 +57,7 @@ export const Renderer = observer((props: RendererProps) => {
     const [homePage, setHomePage] = useState("");
 
     useEffect(() => {
-        if (isAuthorized) {
+        // if (isAuthorized) {
             // start the loading
             setIsLoading(true);
 
@@ -80,9 +83,9 @@ export const Renderer = observer((props: RendererProps) => {
             if (!pixel) {
                 return;
             }
-
+            
             // load the app
-            runPixel<[SerializedState]>(pixel, "new")
+            runPixel<[SerializedState]>(pixel, insightId ? insightId : "new")
                 .then(async ({ pixelReturn, errors, insightId }) => {
                     if (errors.length) {
                         throw new Error(errors.join(""));
@@ -134,19 +137,6 @@ export const Renderer = observer((props: RendererProps) => {
                     // set it
                     setStateStore(store);
 
-                    if (appId) {
-                        const { errors: errs } = await runPixel(
-                            `SetContext("${appId}");`,
-                            insightId,
-                        );
-
-                        if (errs.length) {
-                            // notification.add({
-                            //     color: "error",
-                            //     message: errs.join(""),
-                            // });
-                        }
-                    }
 
                     if (stateFilter) {
                         // notification.add({
@@ -168,20 +158,34 @@ export const Renderer = observer((props: RendererProps) => {
                     // close the loading screen
                     setIsLoading(false);
                 });
-        }
-    }, [state, appId, isAuthorized]);
-
-    if (!isAuthorized) {
-        return (
-            <Typography variant="h6">Authorizing Renderer SDK...</Typography>
-        );
-        // return <LoadingScreen.Trigger message="Authorizing Renderer SDK"/>;
-    }
+        // }
+    }, [state, appId, insightId]);
 
     if (!stateStore || (isLoading && !preview)) {
         if (!preview) {
-            return <Typography variant="h6">Initializing Blocks...</Typography>;
-            // return <LoadingScreen.Trigger message="Initializing Blocks"/>;
+            return (
+                <Backdrop
+                    open={true}
+                    sx={{
+                        background: "rgba(255, 255, 255, 0.5)",
+                        zIndex: 1501,
+                        position: "relative",
+                        width: "100%",
+                        height: "100%"
+                    }}
+                >
+                    <Stack
+                        direction={"column"}
+                        alignItems={"center"}
+                        justifyContent={"center"}
+                        spacing={1}
+                        width={"100%"}
+                        height={"100%"}
+                    >
+                        <CircularProgress color={"info"} />
+                    </Stack>
+                </Backdrop>
+            );
         } else {
             return <Typography variant="h6">Fetching Preview...</Typography>;
         }

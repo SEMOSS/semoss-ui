@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { makeAutoObservable } from 'mobx';
 
-import { Env } from '@/env';
+import { Env } from '@semoss/sdk';
+// import { Env } from '@/env';
+
 import { Role } from '@/types';
 import { RootStore } from '@/stores';
 

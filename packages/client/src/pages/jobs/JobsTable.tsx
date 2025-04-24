@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
+import { Delete, Edit, PlayArrow } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
+
 import {
     Chip,
     IconButton,
@@ -12,8 +14,8 @@ import {
 } from '@semoss/ui';
 import { useRootStore } from '@/hooks';
 import { Delete, Edit, PlayArrow } from '@mui/icons-material';
+import { runPixelTwo } from '../../runPixelTwo';
 import { Job, JobBuilder } from './job.types';
-import { runPixel } from '@/api';
 import { getHumanReadableCronExpression } from './job.utils';
 import { JobTypeRunNotebook } from './job.constants';
 
@@ -73,7 +75,7 @@ export const JobsTable = (props: {
             }
         }
         try {
-            await runPixel(
+            await runPixelTwo(
                 `META | ExecuteScheduledJob ( jobId = [ "${job.id}" ] , jobGroup = [ "${job.group}" ] ) ;`,
             );
         } catch (e) {
