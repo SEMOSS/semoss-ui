@@ -241,6 +241,10 @@ export const NewAppModal = (props: NewAppModalProps) => {
                                             field.onChange(value)
                                         }
                                         fullWidth={true}
+                                        inputProps={{
+                                            'data-testid':
+                                                'newAppModal-textField-name',
+                                        }}
                                     />
                                 );
                             }}

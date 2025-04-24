@@ -1505,6 +1505,33 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
+        section: SECTION_LAYOUT,
+        name: 'Flip Card',
+        helperText: 'Flip content on hover or click to reveal more information',
+        activeImage: BLOCK_IMAGES['FLIP_CARD_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['FLIP_CARD_HOVER'],
+        json: {
+            widget: 'flip-card',
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '4px',
+                    gap: '8px',
+                },
+                frontBgColor: '#ffffff',
+                backBgColor: '#ffffff',
+                isFlipped: false,
+                show: 'true',
+            },
+            listeners: {},
+            slots: {
+                front: [],
+                back: [],
+            },
+        },
+    },
+    {
         section: SECTION_ELEMENT,
         name: 'Progress',
         helperText: 'Display progress tracking or status',

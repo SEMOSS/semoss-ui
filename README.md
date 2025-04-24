@@ -21,7 +21,7 @@
     NODE_ENV=development
 ```
 
-**If you are coming from another client project (within SEMOSS)**, MODULE within the `.env.local` as well as `.packages/legacy/app.constants` may have to be adjusted for that client specific endpoint, consult with your client project lead for details on that endpoint.
+**If you are coming from another client project (within SEMOSS)**, MODULE within the `.env.local` as well as `.packages/legacy/app.constants` may have to be adjusted for that client-specific endpoint; consult with your client project lead for details on that endpoint.
 
 1. Run `pnpm install` in root directory.
 
@@ -139,13 +139,17 @@ To seamlessly access and manipulate the state within these contexts, we provide 
 
 By adopting this approach, we enhance the maintainability and scalability of our application, as each business feature maintains its own state in isolation. Developers can easily understand and extend the functionality of a feature without impacting the broader application state. This modular design fosters a more organized and collaborative development environment.
 
+## Testing
+
+Components must have unique identifiers to ensure reliable and maintainable test code coverage. Use unique `ids`, `roles`, or `data-testid's` on each element of a page to more easily be selected during testing. `Roles` are primarily used as part of the application's accessibility strategy, where `data-testid's` are a custom attribute used solely for testing. When adding a `data-testid`, use the following naming method for the element: 'data-testid: fileName-component-uniqueIdentifier'.
+
 ## Style
 
 In our development practices, we prioritize the use of styled components over inline styles to craft visually appealing and maintainable user interfaces. Styled components offer a powerful and intuitive way to manage styles in React applications.
 
 Rather than scattering styles throughout the JSX code, styled components allow us to encapsulate styles within dedicated components. This not only promotes a cleaner and more readable codebase but also ensures a clear separation of concerns between structure and presentation.
 
-1. Styled component accesing our theme:
+1. Styled component accessing our theme:
 ```
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -186,7 +190,7 @@ When you see decimal or value not divisible of 8/4px, please flag the issue to d
 
 ## Spacing
 ### Pixel vs rem
-In figma, Use dev, and change th unit to 'rem'
+In figma, use dev, and change the unit to 'rem'
 - 1rem = 16px
 - 1.5rem = 24px
 - 2 rem = 32px
@@ -206,8 +210,6 @@ Contributing Designer - Let us know if you have any question or issue with figma
 - Natalie
 - Sarah
 - KT
-- Eric
-- Jong
 
 
 # Code reviews
@@ -228,8 +230,8 @@ Submitting code for review should follow these steps:
 
 Reviewing someone else's code should follow the following steps:
 
-1. Review the pull request, using inline commenting for specific issues.
-2. If you are satisfied with the pull request (without any questions, or after your questions have been answered), then explicitly state that the pull request is ready to be merged as a comment on the pull request.
+1. Review the pull request using inline commenting for specific issues.
+2. If you are satisfied with the pull request (without any questions or after your questions have been answered), then explicitly state that the pull request is ready to be merged as a comment on the pull request.
 
 ### Responsibility
 
@@ -237,7 +239,7 @@ Reviewers don't hold final responsibility for code - the person who wrote the co
 
 ## Why
 
-There are many reasons to do code reviews, here are the reasons that are important for us to do code reviews:
+There are many reasons to do code reviews. Here are the reasons that are important for us to do code reviews:
 
 * We have a diverse team of developers with a wide range of professional experience: code reviews are an avenue for knowledge sharing.
 * We have a great number of projects and products, but most of us work in particular areas: code reviews provide visibility and insight into what else is happening with our technical product beyond what any one person directly works on.

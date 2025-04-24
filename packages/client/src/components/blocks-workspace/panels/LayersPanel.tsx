@@ -25,24 +25,35 @@ import {
     SearchOff,
     Home,
     Delete,
+    MoreVert,
 } from '@mui/icons-material/';
 
-import { useBlocks, INPUT_BLOCK_TYPES, ActionMessages } from '@semoss/renderer';
+import {
+    useBlocks,
+    INPUT_BLOCK_TYPES,
+    ActionMessages,
+    BlockJSON,
+} from '@semoss/renderer';
 import {
     Divider,
     Icon,
     IconButton,
+    MenuItem,
     Stack,
     TextField,
     TreeView,
     Typography,
     styled,
     useNotification,
+    Menu,
 } from '@semoss/ui';
 
 import { AddVariableModal } from '@/components/notebook';
 import { useDesigner, useWorkspace } from '@/hooks';
 import { Panel } from '@/components/workspace';
+import { toJS } from 'mobx';
+import DuplicateIcon from '../../../assets/img/Duplicate.svg';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 
 const customCollisionDetection = (args) => {
     const collisions = closestCenter(args);
@@ -525,19 +536,228 @@ export const LayersPanel = observer((): JSX.Element => {
      * @param id - id of the block to render
      * @returns tree of the widgets
      */
-    const renderBlock = (id: string) => {
-        // get the block
-        const block = state.blocks[id];
+    const TreeViewComponent = ({
+        block,
+        variableName,
+        WidgetIcon,
+        canVariabilize,
+    }: {
+        block: any;
+        variableName: string;
+        WidgetIcon: any;
+        canVariabilize: boolean;
+    }) => {
+        const [menuAnchorEl, setMenuAnchorEl] =
+            React.useState<null | HTMLElement>(null);
+        const handleMenuOpen = (
+            event: React.MouseEvent<HTMLElement>,
+            id: string,
+        ) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setMenuAnchorEl(event.currentTarget);
+        };
+        const handleMenuClose = () => {
+            setMenuAnchorEl(null);
+        };
+        const handleDelete = (deletedId: string) => {
+            state.dispatch({
+                message: ActionMessages.REMOVE_BLOCK,
+                payload: {
+                    id: deletedId,
+                    keep: false,
+                },
+            });
+            setTimeout(() => {
+                designer.setSelected('');
+                designer.setHovered('');
+                setSelectedLayers([]);
+                const block = state.blocks[selectedPages];
+                handlePageSelection(block);
+            }, 0);
+            handleMenuClose();
+        };
 
-        // render each of hte c
-        if (!block) {
-            return null;
-        }
+        const handleDuplicate = (
+            event: React.MouseEvent<HTMLElement>,
+            duplicateId: string,
+        ) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const getJsonForBlock = (id: string) => {
+                const block = state.blocks[id];
+
+                const blockJson = {
+                    widget: toJS(block.widget),
+                    data: toJS(block.data),
+                    listeners: toJS(block.listeners),
+                    slots: {},
+                };
+
+                // generate the slots
+                for (const slot in block.slots) {
+                    if (block.slots[slot]) {
+                        blockJson.slots[slot] = block.slots[slot].children.map(
+                            (childId) => {
+                                return getJsonForBlock(childId);
+                            },
+                        );
+                    }
+                }
+
+                // return it
+                return blockJson;
+            };
+
+            const position = block?.parent?.id
+                ? {
+                      parent: block.parent.id,
+                      slot: block.parent.slot,
+                      sibling: block.id,
+                      type: 'after',
+                  }
+                : undefined;
+
+            const id = state.dispatch({
+                message: ActionMessages.ADD_BLOCK,
+                payload: {
+                    json: getJsonForBlock(duplicateId) as BlockJSON,
+                    position: position,
+                },
+            });
+            setSelectedLayers([]); // Clear first
+
+            // Apply selection and hover
+            designer.setSelected(id as string);
+            designer.setHovered(id as string);
+
+            // Ensure visual selection state is fully synced
+            const nodeIds = [id as string];
+            setSelectedLayers(nodeIds);
+
+            // Render and scroll to the new block (if your system supports it)
+            renderBlock(id as string);
+            handleMenuClose();
+        };
+
+        return (
+            <>
+                <StyledTreeItemLabel>
+                    <StyledTreeItemIcon>
+                        <WidgetIcon />
+                    </StyledTreeItemIcon>
+                    <StyledLabelContainer
+                        search={
+                            search
+                                ? [block.widget, block.id]
+                                      .join('')
+                                      .toLowerCase()
+                                      .indexOf(search.toLowerCase()) > -1
+                                : false
+                        }
+                    >
+                        <StyledLabelTitle>
+                            {block.widget.charAt(0).toUpperCase() +
+                                block.widget.slice(1)}
+                        </StyledLabelTitle>
+                        <StyledLabelSubtitleText>
+                            {variableName || block.id}
+                        </StyledLabelSubtitleText>
+                    </StyledLabelContainer>
+                    {variableName ? (
+                        <StyledTreeItemIconButton
+                            aria-label="copy"
+                            title={`Copy variable`}
+                            color="default"
+                            size="small"
+                            onClick={(e: React.SyntheticEvent) => {
+                                e.stopPropagation();
+                                copy(`{{${variableName}}}`);
+                            }}
+                            data-onhover
+                        >
+                            <ContentCopy fontSize="small" />
+                        </StyledTreeItemIconButton>
+                    ) : canVariabilize ? (
+                        <StyledTreeItemIconButton
+                            aria-label="add"
+                            title={`Add variable`}
+                            size="small"
+                            color="primary"
+                            onClick={(e: React.SyntheticEvent) => {
+                                e.stopPropagation();
+                                setVariableModal(block.id);
+                            }}
+                            data-onhover
+                        >
+                            <LibraryAdd fontSize="small" />
+                        </StyledTreeItemIconButton>
+                    ) : null}
+
+                    {/* 3-dot menu button */}
+                    <IconButton
+                        size="small"
+                        aria-label="more"
+                        onClick={(e) => handleMenuOpen(e, block.id)}
+                    >
+                        <MoreVert fontSize="small" />
+                    </IconButton>
+                </StyledTreeItemLabel>
+                <Menu
+                    anchorEl={menuAnchorEl}
+                    open={Boolean(menuAnchorEl)}
+                    onClose={handleMenuClose}
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'right',
+                    }}
+                    transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right',
+                    }}
+                    sx={{
+                        '.MuiPopover-paper': {
+                            borderRadius: '4px',
+                            padding: '8px 0px',
+                            boxShadow: '0px 5px 24px 0px rgba(0, 0, 0, 0.32)',
+                        },
+                    }}
+                >
+                    <MenuItem
+                        value="duplicate"
+                        sx={{ display: 'flex' }}
+                        onClick={(e: React.MouseEvent<HTMLElement>) =>
+                            handleDuplicate(e, block.id)
+                        }
+                    >
+                        <img
+                            src={DuplicateIcon}
+                            alt="Duplicate Icon"
+                            style={{ marginRight: '8px' }}
+                        />{' '}
+                        Duplicate
+                    </MenuItem>
+                    <MenuItem
+                        value="delete"
+                        sx={{ display: 'flex' }}
+                        onClick={() => handleDelete(block.id)}
+                    >
+                        <DeleteOutlineOutlinedIcon
+                            style={{ color: '#757575', marginRight: '6px' }}
+                        />{' '}
+                        Delete
+                    </MenuItem>
+                </Menu>
+            </>
+        );
+    };
+    const renderBlock = (id: string) => {
+        const block = state.blocks[id];
+        if (!block) return null;
+
         const variableName = state.getAlias(id);
         const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
-
         const WidgetIcon = registry[block.widget].icon;
-
         const children = [];
         for (const s in block.slots) {
             children.push(...block.slots[s].children);
@@ -555,68 +775,12 @@ export const LayersPanel = observer((): JSX.Element => {
                             key={block.id}
                             nodeId={block.id}
                             label={
-                                <StyledTreeItemLabel>
-                                    <StyledTreeItemIcon>
-                                        <WidgetIcon />
-                                    </StyledTreeItemIcon>
-                                    <StyledLabelContainer
-                                        search={
-                                            search
-                                                ? [block.widget, block.id]
-                                                      .join('')
-                                                      .toLowerCase()
-                                                      .indexOf(
-                                                          search.toLowerCase(),
-                                                      ) > -1
-                                                : false
-                                        }
-                                    >
-                                        <StyledLabelTitle>
-                                            {block.widget
-                                                .charAt(0)
-                                                .toUpperCase() +
-                                                block.widget.slice(1)}
-                                        </StyledLabelTitle>
-                                        <StyledLabelSubtitleText>
-                                            {variableName
-                                                ? variableName
-                                                : block.id}
-                                        </StyledLabelSubtitleText>
-                                    </StyledLabelContainer>
-                                    {variableName ? (
-                                        <StyledTreeItemIconButton
-                                            aria-label="copy"
-                                            title={`Copy variable`}
-                                            color="default"
-                                            size="small"
-                                            onClick={(
-                                                e: React.SyntheticEvent,
-                                            ) => {
-                                                e.stopPropagation();
-                                                copy(`{{${variableName}}}`);
-                                            }}
-                                            data-onhover
-                                        >
-                                            <ContentCopy fontSize="small" />
-                                        </StyledTreeItemIconButton>
-                                    ) : canVariabilize ? (
-                                        <StyledTreeItemIconButton
-                                            aria-label="add"
-                                            title={`Add variable`}
-                                            size="small"
-                                            color={'primary'}
-                                            onClick={(
-                                                e: React.SyntheticEvent,
-                                            ) => {
-                                                e.stopPropagation();
-                                                setVariableModal(block.id);
-                                            }}
-                                            data-onhover
-                                        >
-                                            <LibraryAdd fontSize="small" />
-                                        </StyledTreeItemIconButton>
-                                    ) : null}
-                                </StyledTreeItemLabel>
+                                <TreeViewComponent
+                                    block={block}
+                                    variableName={variableName}
+                                    WidgetIcon={WidgetIcon}
+                                    canVariabilize={canVariabilize}
+                                />
                             }
                             onClick={(e: React.SyntheticEvent) => {
                                 e.stopPropagation();
@@ -631,13 +795,9 @@ export const LayersPanel = observer((): JSX.Element => {
                                 e.stopPropagation();
                                 designer.setHovered('');
                             }}
-                            sx={{
-                                minWidth: 0,
-                            }}
+                            sx={{ minWidth: 0 }}
                         >
-                            {children.map((c) => {
-                                return renderBlock(c);
-                            })}
+                            {children.map((c) => renderBlock(c))}
                         </TreeView.Item>
                     </DraggableTreeItem>
                 </DroppableTreeItem>

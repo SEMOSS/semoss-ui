@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
+import { Menu, MenuOpen, Public, RestartAlt } from '@mui/icons-material';
+import { Layout, TabNode } from 'flexlayout-react';
+import 'flexlayout-react/style/light.css';
+import './flexlayout.css';
+
 import {
     Avatar,
     styled,
@@ -12,19 +17,13 @@ import {
     Drawer,
     Button,
 } from '@semoss/ui';
-// import { Drawer } from '@mui/material';
-import { Menu, MenuOpen, Public, RestartAlt } from '@mui/icons-material';
-import { Layout, TabNode } from 'flexlayout-react';
-import 'flexlayout-react/style/light.css';
-import './flexlayout.css';
+import { Env } from '@semoss/sdk';
 
-import { Env } from '@/env';
 import { THEME } from '@/constants';
 import { WorkspaceContext } from '@/contexts';
 import { WorkspaceStore, WorkspaceOptions } from '@/stores';
-import { usePixel, useRootStore } from '@/hooks';
+import { useRootStore } from '@/hooks';
 import { LoginPopover } from '@/components/ui';
-
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
 import { WorkspaceTabs } from './WorkspaceTabs';
@@ -137,10 +136,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
     // build the model from the layout
     const model = workspace.selectedLayout?.model;
 
-    const validateDependencies = usePixel(
-        'ValidateUserProjectDependencies(project="' + workspace.appId + '");',
-    );
-
     useEffect(() => {
         // default options if not loaded from cache
         const defaultOptions = JSON.parse(JSON.stringify(options));
@@ -151,29 +146,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
             workspace.load(defaultOptions);
         }
     }, [options]);
-
-    useEffect(() => {
-        if (validateDependencies.status !== 'SUCCESS') {
-            return;
-        } else if (validateDependencies.data !== null) {
-            const needsAccess = [];
-            Object.entries(validateDependencies.data).forEach((kv) => {
-                const hasAccess = kv[1];
-
-                if (!hasAccess) {
-                    needsAccess.push(kv[0]);
-                }
-            });
-            if (needsAccess.length) {
-                notification.add({
-                    color: 'warning',
-                    message:
-                        needsAccess.join(', ') +
-                        '- are dependencies you do not have access to',
-                });
-            }
-        }
-    }, [validateDependencies.status, validateDependencies.data]);
 
     const themeMap = useMemo(() => {
         const theme = configStore.store.config['theme'];
