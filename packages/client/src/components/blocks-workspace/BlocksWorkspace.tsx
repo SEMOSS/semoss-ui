@@ -13,7 +13,7 @@ import {
     STATE_VERSION,
 } from '@semoss/renderer';
 
-import { runPixel } from '@/api';
+import { runPixelTwo } from '../../runPixelTwo';
 import { WorkspaceStore, DesignerStore, WorkspaceOptions } from '@/stores';
 import { DesignerContext } from '@/contexts';
 import { LoadingScreen } from '@/components/ui';
@@ -219,15 +219,6 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
         return <TerminalPanel />;
     }
 
-    // TODO: Clean out session storage for old workspaces
-    // else if (component === 'viz') {
-    //     return (
-    //         <BlocksMenuPanel
-    //             title={'Add Visualization'}
-    //             items={VISUALIZATION_MENU}
-    //         />
-    //     );
-    // }
     return <>{component}</>;
 };
 
@@ -252,9 +243,9 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         workspace.setLoading(true);
 
         // load the app
-        runPixel<[SerializedState]>(
+        runPixelTwo<[SerializedState]>(
             `GetAppBlocksJson ( project=["${workspace.appId}"]);`,
-            'new',
+            workspace.insightId ? workspace.insightId : 'new',
         )
             .then(async ({ pixelReturn, errors, insightId }) => {
                 if (errors.length) {
@@ -283,18 +274,6 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 
                 // set it
                 setState(s);
-
-                const { errors: errs } = await runPixel(
-                    `SetContext("${workspace.appId}");`,
-                    insightId,
-                );
-
-                if (errs.length) {
-                    notification.add({
-                        color: 'error',
-                        message: errs.join(''),
-                    });
-                }
             })
             .catch((e) => {
                 notification.add({
@@ -325,30 +304,21 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         return <LoadingScreen.Trigger />;
     }
 
-    /**
-     * Initialize insight for app building
-     */
-    Env.update({
-        MODULE: process.env.MODULE || '',
-    });
-
     return (
-        <InsightProvider>
-            <Blocks state={state} registry={DefaultBlocks}>
-                <DesignerContext.Provider
-                    value={{
-                        designer: designer,
-                    }}
-                >
-                    <Workspace
-                        options={DEFAULT_OPTIONS}
-                        workspace={workspace}
-                        endTopbar={<BlocksWorkspaceActions />}
-                        factory={FACTORY}
-                    />
-                    <BlocksWorkspaceDev />
-                </DesignerContext.Provider>
-            </Blocks>
-        </InsightProvider>
+        <Blocks state={state} registry={DefaultBlocks}>
+            <DesignerContext.Provider
+                value={{
+                    designer: designer,
+                }}
+            >
+                <Workspace
+                    options={DEFAULT_OPTIONS}
+                    workspace={workspace}
+                    endTopbar={<BlocksWorkspaceActions />}
+                    factory={FACTORY}
+                />
+                <BlocksWorkspaceDev />
+            </DesignerContext.Provider>
+        </Blocks>
     );
 });

@@ -6398,9 +6398,9 @@ export const Ncrt = () => {
 
     return (
         <div style={{ height: '100vh', width: '100vw' }}>
-            <InsightProvider>
+            {/* <InsightProvider> */}
                 <Renderer state={state} />
-            </InsightProvider>
+            {/* </InsightProvider> */}
         </div>
     );
 };
