@@ -36,6 +36,25 @@ describe("Progress Block", async () => {
 		const exist = container.querySelector("[data-block='progress-id']");
 		expect(exist).toBeInTheDocument();
 	});
+	it("Should not render the Progress Block", async () => {
+		const localBlocks = {
+			"progress-id": {
+				...blocks["progress-id"],
+				data: {
+					type: "linear",
+					value: 25,
+					includeLabel: true,
+					size: "300px",
+					show: "false",
+				},
+			},
+		};
+		const { container } = await render(<ProgressBlock id="progress-id" />, {
+			blocks: localBlocks,
+		});
+		// screen.debug();
+		expect(screen.queryByText("25%")).not.toBeInTheDocument();
+	});
 
 	it("Should render 0%", async () => {
 		const { container } = render(
