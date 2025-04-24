@@ -8,17 +8,17 @@ import {
     forwardRef,
     useImperativeHandle,
 } from 'react';
-import { styled, useNotification } from '@semoss/ui';
-
 import { OnMount } from '@monaco-editor/react';
 import parserBabel from 'prettier/parser-babel';
 import parserCss from 'prettier/parser-postcss';
 import parserHtml from 'prettier/parser-html';
 import prettier from 'prettier';
-const Editor = lazy(() => import('@monaco-editor/react'));
 
-import { runPixel } from '@/api';
+import { styled, useNotification } from '@semoss/ui';
 import { LoadingScreen } from '@/components/ui';
+import { runPixelTwo } from '../../../runPixelTwo';
+
+const Editor = lazy(() => import('@monaco-editor/react'));
 
 const IS_PRODUCTION = process.env.NODE_ENV == 'production';
 
@@ -41,6 +41,9 @@ interface FileEditorProps {
 
     /** Path to the file file */
     path: string;
+
+    /** insight id */
+    insightId?: string | null;
 
     /**
      * Optional Model Engine to use
@@ -75,6 +78,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
             type = 'app',
             space = '',
             path = '',
+            insightId = null,
             agentModelEngine = '',
             onChange = () => null,
         } = props;
@@ -199,7 +203,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                     throw new Error('Error missing pixel to get file');
                 }
 
-                const response = await runPixel<[string]>(pixel);
+                const response = await runPixelTwo<[string]>(pixel, insightId);
 
                 // set the content
                 const content = response.pixelReturn[0].output;
@@ -299,7 +303,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                     throw new Error('Error missing pixel to get file');
                 }
 
-                const { errors } = await runPixel(pixel);
+                const { errors } = await runPixelTwo(pixel, insightId);
 
                 // bubble up the errors
                 for (const e of errors) {
@@ -336,8 +340,9 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                     throw new Error('No Agent Model Engine');
                 }
 
-                const response = await runPixel(
+                const response = await runPixelTwo(
                     `LLM(engine = "${agentModelEngine}", command = "${prompt}", paramValues = [ {} ] );`,
+                    insightId,
                 );
 
                 const LLMResponse = response.pixelReturn[0].output['response'];

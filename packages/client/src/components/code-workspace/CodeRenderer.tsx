@@ -1,5 +1,5 @@
 import { styled } from '@semoss/ui';
-import { Env } from '@/env';
+import { Env } from '@semoss/sdk';
 
 const StyledIframe = styled('iframe')(() => ({
     flex: '1',

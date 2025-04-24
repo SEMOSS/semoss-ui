@@ -435,6 +435,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
                 key={counter}
                 type={EXPLORER_TYPE}
                 space={workspace.appId}
+                insightId={workspace.insightId}
                 onSelect={(path) => {
                     handleOnSelect(path);
                 }}

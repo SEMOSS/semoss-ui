@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { useNotification } from '@semoss/ui';
 
-import { useRootStore } from '@/hooks';
+import { usePixel, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
 import { BlocksWorkspace } from '@/components/blocks-workspace';
@@ -20,6 +20,12 @@ export const WorkspacePage = observer(() => {
     const navigate = useNavigate();
 
     const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
+
+    const validateDependencies = usePixel(
+        appId
+            ? 'ValidateUserProjectDependencies(project="' + appId + '");'
+            : '',
+    );
 
     useEffect(() => {
         let isMounted = true;
@@ -48,6 +54,29 @@ export const WorkspacePage = observer(() => {
             isMounted = false;
         };
     }, [appId]);
+
+    useEffect(() => {
+        if (validateDependencies.status !== 'SUCCESS') {
+            return;
+        } else if (validateDependencies.data !== null) {
+            const needsAccess = [];
+            Object.entries(validateDependencies.data).forEach((kv) => {
+                const hasAccess = kv[1];
+
+                if (!hasAccess) {
+                    needsAccess.push(kv[0]);
+                }
+            });
+            if (needsAccess.length) {
+                notification.add({
+                    color: 'warning',
+                    message:
+                        needsAccess.join(', ') +
+                        '- are dependencies you do not have access to',
+                });
+            }
+        }
+    }, [validateDependencies.status, validateDependencies.data]);
 
     // hide the screen while it loads
     if (!workspace) {

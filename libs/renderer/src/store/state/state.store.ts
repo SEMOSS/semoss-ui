@@ -408,7 +408,7 @@ export class StateStore {
             } else if (ActionMessages.NEW_QUERY === action.message) {
                 const { queryId, config } = action.payload;
 
-                return this.newQuery(queryId, config);
+                this.newQuery(queryId, config);
             } else if (ActionMessages.DELETE_QUERY === action.message) {
                 const { queryId } = action.payload;
 
@@ -493,23 +493,30 @@ export class StateStore {
         }
     };
 
+    
+    /**
+     * TODO: Accidently commited, work to handly sync and async events. John
+     * Used in useBlock
+     * @param action 
+     * @returns 
+     */
     dispatchEventAction = async (action: Actions) => {
         try {
             if (ActionMessages.RUN_QUERY === action.message) {
                 const { queryId } = action.payload;
 
-                const run = async () => {
-                    setTimeout(() => {
-                        debugger
-                        return queryId
-                    }, 3000)
-                    // return o
-                }
+                // const run = async () => {
+                //     setTimeout(() => {
+                //         debugger
+                //         return queryId
+                //     }, 3000)
+                // }
 
-                return await run()
-                debugger
+                // return await run()
+                // debugger
                 // const o = await this.runQuery(queryId);
-                debugger
+                // debugger
+                // Return the promise to resolve to caller
 
                 // return o
             }else if (ActionMessages.DISPATCH_EVENT === action.message) {
@@ -1350,44 +1357,55 @@ export class StateStore {
         this._utils.queryPromises[key]?.cancel();
 
         // setup the promise
-        // const p = cancellablePromise(async () => {
-        //     // run the query
-        //     await q._run();
+        const p = cancellablePromise(async () => {
+            // run the query
+            await q._run();
 
-        //     // turn it off
-        //     return true;
-        // });
+            // turn it off
+            return true;
+        });
 
-        let p;
-
-        // TODO: Pass from calling fn
-        let sync = true;
-        if (sync) {
-            p = syncronousPromise(async () => {
-                await q._run();
-                return true;
+        p.promise
+            .then(() => {
+                // noop
             })
-        } else {
-            p = cancellablePromise(async () => {
-                await q._run()
-                return true
-            })
-        }
-
-        if(sync) {
-            return p.promise
-        } else  {
-            p.promise
-                .then((resp) => {
-                    // noop
-                })
-                .catch((e) => {
-                    console.error("ERROR:", e);
-                });
-        }
+            .catch((e) => {
+                console.error("ERROR:", e);
+            });
 
         // save the promise
         this._utils.queryPromises[key] = p;
+        
+        // TODO: John accidentally pushed, need to fix sync and async events on blocks
+        // Wait till whole query resolves
+        //
+        // let p;
+        // let sync = true;
+        // if (sync) {
+        //     p = syncronousPromise(async () => {
+        //         await q._run();
+        //         return true;
+        //     })
+        // } else {
+        //     p = cancellablePromise(async () => {
+        //         await q._run()
+        //         return true
+        //     })
+        // }
+        // if(sync) {
+        //     return p.promise
+        // } else  {
+        //     p.promise
+        //         .then((resp) => {
+        //             // noop
+        //         })
+        //         .catch((e) => {
+        //             console.error("ERROR:", e);
+        //         });
+        // }
+
+        // save the promise
+        // this._utils.queryPromises[key] = p;
     };
 
     /**
@@ -1525,6 +1543,7 @@ export class StateStore {
     };
 
     /**
+     * 
      * Dispatch an event
      * @param detail - payload associated with event
      */
