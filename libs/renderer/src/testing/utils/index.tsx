@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom";
 import { DefaultBlocks } from "@/components/block-defaults";
-import { Blocks } from "@/components/blocks";
+import { Blocks, RendererEngine } from "@/components/blocks";
 import { type Block, StateStore } from "@/store";
 import { render, type RenderOptions } from "@testing-library/react";
 import type React from "react";
@@ -8,9 +8,10 @@ import type React from "react";
 interface MockProviderProps {
     children: React.ReactNode;
     blocks: Record<string, Block>;
+    renderEngineId: string
 }
 
-const MockProvider: React.FC<MockProviderProps> = ({ children, blocks }) => {
+const MockProvider: React.FC<MockProviderProps> = ({ children, blocks, renderEngineId }) => {
     const store = new StateStore({
         state: {
             executionOrder: [],
@@ -23,7 +24,7 @@ const MockProvider: React.FC<MockProviderProps> = ({ children, blocks }) => {
 
     return (
         <Blocks state={store} registry={DefaultBlocks}>
-            {children}
+            <RendererEngine id={renderEngineId}/>
         </Blocks>
     );
 };
@@ -40,8 +41,9 @@ const customRender = (
     options?: CustomRenderOptions,
 ): ReturnType<typeof render> => {
     const { blocks } = options || {}; // Destructure parameters from options
+    const {id : renderEngineId} = ui.props // Destructure ui block props and get its id prop to be used in renderEngine
     return render(ui, {
-        wrapper: (props) => <MockProvider {...props} blocks={blocks} />,
+        wrapper: (props) => <MockProvider {...props} blocks={blocks} renderEngineId={renderEngineId} />,
         ...options,
     });
 };
