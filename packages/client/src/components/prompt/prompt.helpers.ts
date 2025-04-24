@@ -7,13 +7,15 @@ import {
     INPUT_TYPE_CUSTOM_QUERY,
     INPUT_TYPE_DATABASE,
 } from './prompt.constants';
+
+import { MonolithStore } from '@/stores';
 import {
     ActionMessages,
     Block,
-    MonolithStore,
     QueryStateConfig,
     SerializedState,
-} from '@/stores';
+} from '@semoss/renderer';
+
 import { AppMetadata } from '../app';
 
 export const DESCRIPTION_CONTAINER = 'description-container';

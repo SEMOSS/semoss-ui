@@ -13,13 +13,17 @@ const STYLED_FONT_SIZE_INPUT_WIDTH = 168;
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'absolute',
-    padding: theme.spacing(2),
+    padding: theme.spacing(1, 0, 0, 2),
     top: '0',
     right: '0',
     bottom: '0',
     left: '0',
     zIndex: '30',
     height: 'fit-content',
+    maxWidth: `${
+        STYLED_FONT_STYLE_INPUT_WIDTH + STYLED_FONT_SIZE_INPUT_WIDTH
+    }px`,
+    minWidth: 'fit-content',
 }));
 
 interface FontStyleSizeMaskProps {
@@ -100,6 +104,7 @@ export const BlockSettingsMask = observer((props: FontStyleSizeMaskProps) => {
         const screenElementSize = screenEle.getBoundingClientRect();
         // get position of selected block element
         const selectedElement = getBlockElement(designer.selected);
+        if (!selectedElement) return;
         const selectedElementSize = selectedElement.getBoundingClientRect();
 
         // check for overflow

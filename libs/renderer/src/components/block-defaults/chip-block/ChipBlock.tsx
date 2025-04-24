@@ -2,13 +2,14 @@ import React from "react";
 import { observer } from "mobx-react-lite";
 import { CSSProperties } from "react";
 import { Face } from "@mui/icons-material";
-import { Chip } from "@mui/material";
 import { darken } from "@mui/material/styles";
+import { Chip, styled } from "@mui/material";
 
 import { Avatar } from "@semoss/ui";
 
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent } from "../../../store";
+import { iconMap } from "../../../constants";
 
 export interface ChipBlockDef extends BlockDef<"chip"> {
     widget: "chip";
@@ -23,7 +24,7 @@ export interface ChipBlockDef extends BlockDef<"chip"> {
         clickable?: boolean;
         multiSelect?: boolean;
         link?: string;
-        icon?: React.JSX.Element;
+        icon?: string;
         src: string;
         title: string;
         show: string;
@@ -55,6 +56,7 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
         const link = data?.link || null;
         const color = data.style.color || "Default";
         const avatarColor = data.style.color || "rgb(156, 153, 153)";
+        const Icon = iconMap[data.icon] || iconMap["Face"];
 
         const chipProps = {
             label: data.label ?? data.type ?? "Chip",
@@ -62,10 +64,11 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
             variant: data.variant,
             clickable: data.clickable,
             sx: {
-                backgroundColor: color,
-                color: data.style.color
+                backgroundColor: data.variant !== 'outlined' && color,
+                color: data.variant !== 'outlined' ? data.style.color
                     ? getContrastColor(data.style.color)
-                    : "black",
+                    : "black" : color,
+                border: data.variant === 'outlined' && data.style.color && `solid ${color}`
             },
         };
 
@@ -80,10 +83,10 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
                             <Avatar
                                 sx={{
                                     "&&": {
-                                        backgroundColor: data.style.color
+                                        backgroundColor: data.style.color && data.variant === 'outlined'
                                             ? darken(avatarColor, 0.4)
                                             : "Default",
-                                        color: getContrastColor(color),
+                                        color:  data.variant !== 'outlined' && getContrastColor(color),
                                     },
                                 }}
                             >
@@ -97,13 +100,13 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
                     <Chip
                         {...chipProps}
                         icon={
-                            <Face
+                            <Icon
                                 sx={{
                                     "&&": {
-                                        backgroundColor: color,
-                                        color: data.style.color
-                                            ? getContrastColor(color)
+                                        backgroundColor: data.style.color && data.variant === 'outlined'
+                                            ? darken(avatarColor, 0.4)
                                             : "Default",
+                                        color:  data.variant !== 'outlined' && getContrastColor(color),
                                     },
                                 }}
                             />

@@ -1,8 +1,10 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
+
 import { styled, Switch } from "@semoss/ui";
-import { getValueByPath } from "@/utility";
+
+import { getValueByPath } from "../../../../../utility";
 import { PathValue } from "@/types";
 import { useBlockSettings } from "../../../../../hooks";
 import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks/VisualizationBlock";
@@ -40,7 +42,7 @@ export const GanttDisplayValueLabels = observer(
         }, [data, "option"]).get();
         // retain the values of the display value labels
         useEffect(() => {
-            let parsedJson = JSON.parse(computedValue);
+            const parsedJson = JSON.parse(computedValue);
             if (
                 parsedJson["customSettings"]?.["gantttools"]?.[
                     "showDisplayValueLabels"

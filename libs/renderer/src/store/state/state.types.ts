@@ -1,5 +1,5 @@
 import React from "react";
-import { RunQueryAction, DispatchEventAction } from "./state.actions";
+import { RunQueryAction, DispatchEventAction, DispatchOutputsEventAction } from "./state.actions";
 import { CellState } from "./cell.state";
 import { QueryStateConfig } from "./query.state";
 
@@ -37,7 +37,7 @@ export type VariableType =
     | "JSON"
     | "date"
     | "array"
-    | "LLM Comparison";
+    | "LLM Comparison"; // TODO: Ignore and delete later
 
 /**
  * Variables
@@ -267,7 +267,7 @@ export type RegistryUnwrap<R extends Registry<BlockDef>> = R extends Registry<
 /**
  * Listener Actions
  */
-export type ListenerActions = RunQueryAction | DispatchEventAction;
+export type ListenerActions = RunQueryAction | DispatchEventAction | DispatchOutputsEventAction;
 
 /**
  * Cell Definition

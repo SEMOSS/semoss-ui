@@ -29,13 +29,13 @@ export const MapTool = observer<MapToolProps>(({ id }) => {
     ).clientHeight;
     const [dataElementWidth, setDataElementWidth] = useState(ElementWidth);
     const [dataElementHeight, setDataElementHeight] = useState(ElementHeight);
-    let echartInstance = useRef(null);
+    const echartInstance = useRef(null);
 
     useEffect(() => {
-        let dataBlockWidth = document.querySelector(
+        const dataBlockWidth = document.querySelector(
             `div#${workingPage} div[data-block="${id}"]`,
         ).clientWidth;
-        let dataBlockHeight = document.querySelector(
+        const dataBlockHeight = document.querySelector(
             `div#${workingPage} div[data-block="${id}"]`,
         ).clientHeight;
         setDataElementWidth((prevWidth) => {
@@ -44,13 +44,13 @@ export const MapTool = observer<MapToolProps>(({ id }) => {
         setDataElementHeight((prevHeight) => {
             return dataBlockHeight;
         });
-        let workingPageElement = document.getElementById(workingPage);
+        const workingPageElement = document.getElementById(workingPage);
         let canvasElement: any =
             workingPageElement.getElementsByTagName("CANVAS")[0] || null;
         if (canvasElement === null) return;
         let instance = null;
         while (instance == null) {
-            let instanceReceived = echarts.getInstanceByDom(canvasElement);
+            const instanceReceived = echarts.getInstanceByDom(canvasElement);
             if (instanceReceived) {
                 instance = instanceReceived;
                 if (canvasElement.id === id) {
@@ -64,7 +64,7 @@ export const MapTool = observer<MapToolProps>(({ id }) => {
     }, []);
 
     function getAndUpdateWidth(e) {
-        let existingWidth = document.querySelector(
+        const existingWidth = document.querySelector(
             `div#${workingPage} div[data-block="${id}"]`,
         ).clientWidth;
         setDataElementWidth((prevWidth) => {
@@ -73,7 +73,7 @@ export const MapTool = observer<MapToolProps>(({ id }) => {
     }
 
     function getAndUpdateHeight(e) {
-        let existingHeight = document.querySelector(
+        const existingHeight = document.querySelector(
             `div#${workingPage} div[data-block="${id}"]`,
         ).clientHeight;
         setDataElementHeight((prevHeight) => {
@@ -82,19 +82,19 @@ export const MapTool = observer<MapToolProps>(({ id }) => {
     }
 
     function updateElementWidth() {
-        let dataBlockElement = document.querySelector(
+        const dataBlockElement = document.querySelector(
             `div#${workingPage} div[data-block="${id}"]`,
         ) as HTMLElement;
-        let dataBlockIdElement = document.querySelector(
+        const dataBlockIdElement = document.querySelector(
             `div#${workingPage} div[data-block-id="${id}"]`,
         ) as HTMLElement;
         updateElementHeight();
     }
     function updateElementHeight() {
-        let dataBlockElement = document.querySelector(
+        const dataBlockElement = document.querySelector(
             `div#${workingPage} div[data-block="${id}"]`,
         ) as HTMLElement;
-        let dataBlockIdElement = document.querySelector(
+        const dataBlockIdElement = document.querySelector(
             `div#${workingPage} div[data-block-id="${id}"]`,
         ) as HTMLElement;
         console.log(echartInstance.current);

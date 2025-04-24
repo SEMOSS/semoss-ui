@@ -219,7 +219,6 @@ export const UserTable = (props: UserTableProps) => {
 
     /** Member Table State */
     const [selectedMembers, setSelectedMembers] = useState([]);
-    const [count, setCount] = useState(0);
 
     /** Add User State */
     const [addModalOpen, setAddModalOpen] = useState<boolean>(false);
@@ -232,7 +231,7 @@ export const UserTable = (props: UserTableProps) => {
         adminMode,
         debouncedSearch ? debouncedSearch : '',
         (page + 1) * rowsPerPage - rowsPerPage, // offset
-        count, // limit
+        0, // limit
     ]);
 
     // track if the page is loading
@@ -376,7 +375,6 @@ export const UserTable = (props: UserTableProps) => {
                 }
             }
         } finally {
-            setCount(count + 1);
             setSelectedMembers([]);
         }
     };
@@ -524,9 +522,6 @@ export const UserTable = (props: UserTableProps) => {
                                                 Name
                                             </Table.Cell>
                                             <Table.Cell size="small">
-                                                Email
-                                            </Table.Cell>
-                                            <Table.Cell size="small">
                                                 Type
                                             </Table.Cell>
                                             <Table.Cell size="small">
@@ -667,9 +662,6 @@ export const UserTable = (props: UserTableProps) => {
                                                                     </Stack>
                                                                 </Stack>
                                                             </StyledCenteredBox>
-                                                        </Table.Cell>
-                                                        <Table.Cell>
-                                                            {user.email}
                                                         </Table.Cell>
                                                         <Table.Cell>
                                                             {user.type}

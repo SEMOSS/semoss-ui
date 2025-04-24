@@ -499,7 +499,7 @@ export const buildListener = <D extends BlockDef = BlockDef>(
  * get show field optionslist which will contain static true false, dynamic variables list when the block is selected
  */
 export function getShowFieldOptions(id: string) {
-    let { state } = useBlocks();
+    const { state } = useBlocks();
     const stateVariableList = Object.keys(state.variables).reduce(
         (acc, queryKey) => {
             if (

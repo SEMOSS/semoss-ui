@@ -128,6 +128,8 @@ export const ListenerActionOverlay = observer(
                     name: "",
                     detail: {},
                 });
+            } else if (message === ActionMessages.DISPATCH_OUTPUTS_EVENT) {
+                setValue("payload", {});
             }
         }, [message]);
 
@@ -153,6 +155,7 @@ export const ListenerActionOverlay = observer(
                                         {[
                                             ActionMessages.RUN_QUERY,
                                             ActionMessages.DISPATCH_EVENT,
+                                            ActionMessages.DISPATCH_OUTPUTS_EVENT,
                                         ].map((a, aIdx) => (
                                             <Select.Item key={aIdx} value={a}>
                                                 {ACTIONS_DISPLAY[a]}
@@ -216,6 +219,29 @@ export const ListenerActionOverlay = observer(
                                         );
                                     }}
                                 />
+                                {/* TODO: data structure to send with event  */}
+                                {/* <Controller
+                                    name={"payload.detail"}
+                                    control={control}
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                label="Data"
+                                                helperText={"Need to make this a JSON Editor"}
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ""
+                                                }
+                                                onChange={(value) =>
+                                                    field.onChange(JSON.stringify({
+                                                        data: value
+                                                    }))
+                                                }
+                                            />
+                                        );
+                                    }}
+                                /> */}
                             </>
                         ) : null}
                     </Stack>
