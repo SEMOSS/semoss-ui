@@ -891,9 +891,9 @@ export const LandingPage = () => {
 
     return (
         <div style={{ width: '100%' }}>
-            <InsightProvider>
+            {/* <InsightProvider> */}
                 <Renderer state={state} />
-            </InsightProvider>
+            {/* </InsightProvider> */}
         </div>
     );
 };

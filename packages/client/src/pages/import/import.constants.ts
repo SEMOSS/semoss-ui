@@ -7255,7 +7255,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false },
                         advanced: true,
                         helperText: '',
-                    }
+                    },
                 ],
             },
             {
@@ -7399,7 +7399,8 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
-                        helperText: 'Only update this value if you have a dedicated cluster',
+                        helperText:
+                            'Only update this value if you have a dedicated cluster',
                     },
                     {
                         fieldName: 'COLLECTION_NAME',

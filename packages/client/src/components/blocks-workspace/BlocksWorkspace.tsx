@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { ConstructionOutlined } from '@mui/icons-material';
 
-import { useNotification, styled, Typography, Stack } from '@semoss/ui';
+import { useNotification } from '@semoss/ui';
 import { Env, InsightProvider } from '@semoss/sdk';
 import {
     StateStore,
@@ -14,7 +13,7 @@ import {
     STATE_VERSION,
 } from '@semoss/renderer';
 
-import { runPixel } from '@/api';
+import { runPixelTwo } from '../../runPixelTwo';
 import { WorkspaceStore, DesignerStore, WorkspaceOptions } from '@/stores';
 import { DesignerContext } from '@/contexts';
 import { LoadingScreen } from '@/components/ui';
@@ -25,6 +24,7 @@ import {
     SettingsPanel,
     FileExplorerPanel,
     FileEditorPanel,
+    TerminalPanel,
 } from '@/components/workspace';
 import {
     VariablesPanel,
@@ -116,6 +116,21 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                 },
                             ],
                         },
+                        // {
+                        //     type: 'border',
+                        //     location: 'bottom',
+                        //     size: DEFAULT_BORDER_SIZE,
+                        //     children: [
+                        //         {
+                        //             id: 'terminal',
+                        //             type: 'tab',
+                        //             name: 'Terminal',
+                        //             component: 'terminal',
+                        //             enableClose: false,
+                        //             config: {},
+                        //         },
+                        //     ],
+                        // },
                     ],
                     layout: {
                         type: 'row',
@@ -200,17 +215,10 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
         return <NotebookExplorerPanel layout={layout} />;
     } else if (component === 'notebook-viewer') {
         return <NotebookViewerPanel id={config.id} />;
+    } else if (component === 'terminal') {
+        return <TerminalPanel />;
     }
 
-    // TODO: Clean out session storage for old workspaces
-    // else if (component === 'viz') {
-    //     return (
-    //         <BlocksMenuPanel
-    //             title={'Add Visualization'}
-    //             items={VISUALIZATION_MENU}
-    //         />
-    //     );
-    // }
     return <>{component}</>;
 };
 
@@ -235,9 +243,9 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         workspace.setLoading(true);
 
         // load the app
-        runPixel<[SerializedState]>(
+        runPixelTwo<[SerializedState]>(
             `GetAppBlocksJson ( project=["${workspace.appId}"]);`,
-            'new',
+            workspace.insightId ? workspace.insightId : 'new',
         )
             .then(async ({ pixelReturn, errors, insightId }) => {
                 if (errors.length) {
@@ -266,18 +274,6 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 
                 // set it
                 setState(s);
-
-                const { errors: errs } = await runPixel(
-                    `SetContext("${workspace.appId}");`,
-                    insightId,
-                );
-
-                if (errs.length) {
-                    notification.add({
-                        color: 'error',
-                        message: errs.join(''),
-                    });
-                }
             })
             .catch((e) => {
                 notification.add({
@@ -308,30 +304,21 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         return <LoadingScreen.Trigger />;
     }
 
-    /**
-     * Initialize insight for app building
-     */
-    Env.update({
-        MODULE: process.env.MODULE || '',
-    });
-
     return (
-        <InsightProvider>
-            <Blocks state={state} registry={DefaultBlocks}>
-                <DesignerContext.Provider
-                    value={{
-                        designer: designer,
-                    }}
-                >
-                    <Workspace
-                        options={DEFAULT_OPTIONS}
-                        workspace={workspace}
-                        endTopbar={<BlocksWorkspaceActions />}
-                        factory={FACTORY}
-                    />
-                    <BlocksWorkspaceDev />
-                </DesignerContext.Provider>
-            </Blocks>
-        </InsightProvider>
+        <Blocks state={state} registry={DefaultBlocks}>
+            <DesignerContext.Provider
+                value={{
+                    designer: designer,
+                }}
+            >
+                <Workspace
+                    options={DEFAULT_OPTIONS}
+                    workspace={workspace}
+                    endTopbar={<BlocksWorkspaceActions />}
+                    factory={FACTORY}
+                />
+                <BlocksWorkspaceDev />
+            </DesignerContext.Provider>
+        </Blocks>
     );
 });
