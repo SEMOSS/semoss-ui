@@ -33,8 +33,9 @@ describe("Progress Block", async () => {
 			},
 		);
 
-		const exist = container.querySelector("[data-block='progress-id']");
-		expect(exist).toBeInTheDocument();
+		const element = screen.queryByRole("progressbar")
+        // screen.debug()
+		expect(element).toBeInTheDocument();
 	});
 	it("Should not render the Progress Block", async () => {
 		const localBlocks = {
