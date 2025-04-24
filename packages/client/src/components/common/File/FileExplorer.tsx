@@ -24,6 +24,9 @@ interface FileExplorerProps {
     /** Space where the file is located */
     space: string;
 
+    /** insight id */
+    insightId?: string | null;
+
     /** Trigger a callback when an file is selected */
     onSelect?: (path: string) => void;
 
@@ -44,6 +47,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
     const {
         type,
         space,
+        insightId = null,
         onSelect = () => null,
         onDragStart = () => null,
         onDragEnd = () => null,
@@ -61,6 +65,8 @@ export const FileExplorer = (props: FileExplorerProps) => {
         type === 'app'
             ? `BrowseAsset(filePath=["version/assets"], space=["${space}"]);`
             : '',
+        {},
+        insightId,
     );
 
     const initLoadComplete = getAssets.status === 'SUCCESS';
