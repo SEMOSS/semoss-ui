@@ -78,15 +78,6 @@ export const AppPage = observer(() => {
         return <LoadingScreen.Trigger description="Initializing app" />;
     }
 
-    /**
-     * Initialize insight for app building
-     */
-    if (workspace.type === 'BLOCKS') {
-        Env.update({
-            MODULE: process.env.MODULE || '',
-        });
-    }
-
     return (
         <StyledViewport>
             <Stack
@@ -139,11 +130,7 @@ export const AppPage = observer(() => {
             </Stack>
             <StyledContent>
                 {workspace.type === 'BLOCKS' ? (
-                    <>
-                        <InsightProvider>
-                            <Renderer appId={appId} />
-                        </InsightProvider>
-                    </>
+                    <Renderer appId={appId} insightId={workspace.insightId} />
                 ) : null}
                 {workspace.type === 'CODE' ? (
                     <CodeRenderer appId={appId} />

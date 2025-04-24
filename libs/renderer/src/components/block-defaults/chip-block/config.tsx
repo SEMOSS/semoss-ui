@@ -1,11 +1,8 @@
-//React and Third Party Modules
 import { CSSProperties } from "react";
 import { LabelRounded } from "@mui/icons-material";
 
-//Internal Semoss libs
 import { Avatar } from "@semoss/ui";
 
-//Modules internal to current package
 import { BlockConfig } from "../../../store";
 import { InputSettings, SelectInputSettings } from "../../block-settings";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";

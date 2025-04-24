@@ -16,6 +16,8 @@ export { default as COMPARE_LLMS_ACTIVE } from './Compare_LLMS_Active.png';
 export { default as COMPARE_LLMS_HOVER } from './Compare_LLMS_Hover.png';
 export { default as CONTAINER_ACTIVE } from './Container_Active.png';
 export { default as CONTAINER_HOVER } from './Container_Hover.png';
+export { default as FLIP_CARD_ACTIVE } from './Flip_Card_Active.png';
+export { default as FLIP_CARD_HOVER } from './Flip_Card_Hover.png';
 export { default as H1_ACTIVE } from './H1_Active.png';
 export { default as H1_HOVER } from './H1_Hover.png';
 export { default as H2_ACTIVE } from './H2_Active.png';
