@@ -1,16 +1,13 @@
-//React and Third Party Libraries
 import React from "react";
 import { observer } from "mobx-react-lite";
 import { CSSProperties } from "react";
-import { Face } from "@mui/icons-material";
 import { Chip, styled } from "@mui/material";
 
-//Internal Semoss libs
 import { Avatar } from "@semoss/ui";
 
-//Modules internal to current package
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent } from "../../../store";
+import { iconMap } from "../../../constants";
 
 export interface ChipBlockDef extends BlockDef<"chip"> {
     widget: "chip";
@@ -32,7 +29,7 @@ export interface ChipBlockDef extends BlockDef<"chip"> {
         clickable?: boolean;
         multiSelect?: boolean;
         link?: string;
-        icon?: React.JSX.Element;
+        icon?: string;
         src: string;
         title: string;
         show: string;
@@ -62,6 +59,7 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
     const displayChip = (key): React.ReactNode => {
         const avatar = data?.avatar;
         const link = data?.link || null;
+        const Icon = iconMap[data.icon] || iconMap["Face"];
 
         const chipProps = {
             label: data.label ?? data.type ?? "Chip",
@@ -86,7 +84,7 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
                     />
                 );
             case "Icon":
-                return <Chip {...chipProps} icon={<Face />} />;
+                return <Chip {...chipProps} icon={<Icon />} />;
             case "Link":
                 return (
                     <a href={link}>
