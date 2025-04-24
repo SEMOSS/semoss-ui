@@ -145,6 +145,9 @@ export const Notification = (props: NotificationProps): JSX.Element => {
                 open={isOpen}
                 anchorOrigin={anchorOrigin}
                 autoHideDuration={autoHideDuration}
+                data-testId={`${
+                    active ? "notification" + active.id : "notificationId"
+                }`}
                 onClose={(event, reason) => {
                     if (reason === "clickaway") {
                         return;

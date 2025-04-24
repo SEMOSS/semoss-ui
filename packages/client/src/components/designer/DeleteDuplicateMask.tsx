@@ -109,6 +109,7 @@ export const DeleteDuplicateMask = observer(
             const screenElementSize = screenEle.getBoundingClientRect();
             // get position of selected block element
             const selectedElement = getBlockElement(designer.selected);
+            if (!selectedElement) return;
             const selectedElementSize = selectedElement.getBoundingClientRect();
 
             // check for overflow
