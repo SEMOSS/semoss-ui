@@ -1,0 +1,70 @@
+import axios from 'axios';
+
+import { Env } from '@semoss/sdk';
+
+/**
+ * Run a pixel string
+ * TODO: Revisit code - Delete this and fix all callers
+ * Duplicate right below, but 2 diff ways of setting params
+ * @param pixel - pixel
+ * @param insightId - id of the insight to run
+ */
+export const runPixelTwo = async <O extends unknown[] | []>(
+    pixel: string,
+    insightId?: string,
+) => {
+    if (!pixel) {
+        throw Error('No Pixel To Execute');
+    }
+
+    // build the expression
+    let postData = '';
+
+    postData += 'expression=' + encodeURIComponent(pixel);
+    if (insightId) {
+        postData += '&insightId=' + encodeURIComponent(insightId);
+    }
+
+    const response = await axios
+        .post<{
+            insightID: string;
+            pixelReturn: {
+                isMeta: boolean;
+                operationType: string[];
+                output: O[number];
+                pixelExpression: string;
+                pixelId: string;
+                timeToRun: number;
+            }[];
+        }>(`${Env.MODULE}/api/engine/runPixel`, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        })
+        .catch((error) => {
+            // throw the message
+            throw Error(error.response.data.errorMessage);
+        });
+
+    // there was no response, that is an error
+    if (!response) {
+        throw Error('No Pixel Response');
+    }
+
+    const errors: string[] = [];
+
+    // collect the errors
+    for (const p of response.data.pixelReturn) {
+        const { output, operationType } = p;
+
+        if (operationType.indexOf('ERROR') > -1) {
+            errors.push(output as string);
+        }
+    }
+
+    return {
+        errors: errors,
+        insightId: response.data.insightID,
+        pixelReturn: response.data.pixelReturn,
+    };
+};
