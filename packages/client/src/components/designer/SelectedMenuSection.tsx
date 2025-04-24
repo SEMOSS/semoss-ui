@@ -60,6 +60,7 @@ const StyledStack = styled(Stack)(() => ({
         paddingTop: '8px',
         paddingBottom: '8px',
         marginTop: '0px',
+        marginBottom: '8px',
         // border: '1px solid #E6E6E6'
     },
 }));

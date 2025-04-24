@@ -88,10 +88,11 @@ const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
         justifyContent: 'space-around',
         '.MuiTabs-flexContainer': {
             flex: 1,
+            padding: '3px',
             backgroundColor: 'rgb(0, 0, 0, 0.04)',
             borderRadius: '12px',
             '.MuiButtonBase-root': {
-                margin: '4px',
+                padding: '6px 8px',
             },
         },
     },
@@ -408,7 +409,7 @@ export const SelectedBlockPanel = observer(() => {
                                 }}
                             >
                                 <StyledToggleTabsGroupItem
-                                    label="Setting"
+                                    label="Settings"
                                     value={0}
                                 />
                                 <StyledToggleTabsGroupItem
