@@ -41,6 +41,7 @@ import { AddVariableModal } from './AddVariableModal';
 
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard } from '@/utility';
+import { useWorkspace } from '@/hooks';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     paddingBottom: theme.spacing(2),
@@ -241,7 +242,7 @@ export const NotebookCell = observer(
         const { queryId, cellId, cellPlayCounter, setCellPlayCounter } = props;
 
         const { state, notebook } = useBlocks();
-
+        const { workspace } = useWorkspace();
         const notification = useNotification();
 
         const [contentExpanded, setContentExpanded] = useState(true);
@@ -364,8 +365,9 @@ export const NotebookCell = observer(
             return createElement(cell.component, {
                 cell: cell,
                 isExpanded: contentExpanded,
+                defaultModelId: workspace.agentModelEngine,
             });
-        }, [cell.component ? cell.component : null, contentExpanded]);
+        }, [cell.component ? cell.component : null, contentExpanded, workspace.agentModelEngine]);
 
         const getExecutionTimeString = (
             timeMilliseconds: number | undefined,

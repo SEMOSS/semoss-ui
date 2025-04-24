@@ -1,8 +1,8 @@
-import React, { useRef, useState, Suspense, lazy } from "react";
+import React, { useRef, useState, Suspense, lazy, useMemo } from "react";
 import { observer } from "mobx-react-lite";
 import { Code, KeyboardArrowDown } from "@mui/icons-material";
 
-import { styled, Button, Stack, Select } from "@semoss/ui";
+import { styled, Button, Stack, Select, useNotification } from "@semoss/ui";
 import { runPixel } from "@semoss/sdk";
 
 import {
@@ -121,8 +121,9 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     const diffEditorRef = useRef(null);
 
-    const { cell, isExpanded } = props;
+    const { cell, isExpanded, defaultModelId } = props;
     const { state } = useBlocks();
+    const notification = useNotification();
 
     const [editorHeight, setEditorHeight] = useState<number>(null);
 
@@ -135,6 +136,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     const [isLLMRejected, setIsLLMRejected] = useState(false);
     const [count, setCount] = useState(0);
+    const[ modelId, setModelId] = useState(defaultModelId);
     // const { workspace } = useWorkspace();
 
     /**
@@ -142,34 +144,33 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
      * @param prompt - prompt passed to the LLM
      * @returns LLM Response
      */
-    // const promptLLM = async (prompt: string) => {
-    //     try {
-    //         setLLMLoading(true);
+    const promptLLM = async (prompt: string) => {
+        try {
+            setLLMLoading(true);
+            if (!modelId) {
+                throw new Error("No Agent Model Engine");
+            }
 
-    //         if (!workspace.agentModelEngine) {
-    //             throw new Error("No Agent Model Engine");
-    //         }
+            const res = await runPixel(
+                `LLM(engine = "${modelId}", command = "${prompt}", paramValues = [ {} ] );`,
+            );
 
-    //         const res = await runPixel(
-    //             `LLM(engine = "${workspace.agentModelEngine}", command = "${prompt}", paramValues = [ {} ] );`,
-    //         );
+            const LLMResponse = res.pixelReturn[0].output["response"];
+            let trimmedStarterCode = LLMResponse;
+            trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
 
-    //         const LLMResponse = res.pixelReturn[0].output["response"];
-    //         let trimmedStarterCode = LLMResponse;
-    //         trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
+            trimmedStarterCode = trimmedStarterCode.substring(
+                trimmedStarterCode.indexOf("\n") + 1,
+            );
 
-    //         trimmedStarterCode = trimmedStarterCode.substring(
-    //             trimmedStarterCode.indexOf("\n") + 1,
-    //         );
-
-    //         return trimmedStarterCode;
-    //     } catch {
-    //         console.error("Failed response from AI Code Generator");
-    //         return "";
-    //     } finally {
-    //         setLLMLoading(false);
-    //     }
-    // };
+            return trimmedStarterCode;
+        } catch {
+            console.error("Failed response from AI Code Generator");
+            return "";
+        } finally {
+            setLLMLoading(false);
+        }
+    };
 
     /**
      * Handle mounting of the diff editor
@@ -227,6 +228,15 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         // if diffedit code has been rejected set to old editor content
         if (isLLMRejected) {
             editor.getModel().setValue(oldContentDiffEdit);
+            state.dispatch({
+                message: ActionMessages.UPDATE_CELL,
+                payload: {
+                    queryId: cell.query.id,
+                    cellId: cell.id,
+                    path: "parameters.code",
+                    value: oldContentDiffEdit,
+                },
+            });
             setIsLLMRejected(false);
         }
 
@@ -285,6 +295,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             contextMenuOrder: 1,
             id: "prompt-LLM",
             label: "Generate Code",
+            disabled: true,
             keybindings: [
                 monaco.KeyMod.CtrlCmd |
                     monaco.KeyMod.Shift |
@@ -292,32 +303,60 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             ],
 
             run: async (editor) => {
-                // const selection = editor.getSelection();
-                // selectionRef.current = selection;
-                // const selectedText = editor
-                //     .getModel()
-                //     .getValueInRange(selection);
-                // const LLMReturnText = await promptLLM(
-                //     `Create code for a .${
-                //         EditorLanguages[cell.parameters.type]
-                //     } file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
-                // );
-                // LLMReturnRef.current = LLMReturnText;
-                // setOldContentDiffEdit(editor.getModel().getValue());
-                // editor.executeEdits("custom-action", [
-                //     {
-                //         range: new monaco.Range(
-                //             selection.endLineNumber + 2,
-                //             1,
-                //             selection.endLineNumber + 2,
-                //             1,
-                //         ),
-                //         text: `\n\n${LLMReturnText}\n`,
-                //         forceMoveMarkers: true,
-                //     },
-                // ]);
-                // setNewContentDiffEdit(editor.getModel().getValue());
-                // setDiffEditMode(true);
+                if (!modelId) {
+                    console.error("No Agent Model Engine");
+                    notification.add({
+                        color: 'error',
+                        message: 'No Agent Model Engine selected. Please select a model.',
+                    });
+                    return;
+                }
+                const selection = editor.getSelection();
+                selectionRef.current = selection;
+                const selectedText = editor
+                    .getModel()
+                    .getValueInRange(selection);
+
+                // Capture original state BEFORE any edits
+                const originalContent = editor.getModel().getValue();
+                setOldContentDiffEdit(originalContent);
+
+                 // Determine comment symbol
+                const language = EditorLanguages[cell.parameters.type];
+                const commentSymbol = {
+                    pixel: '//',
+                    python: '#',
+                    r: '#',
+                }[language] || '//';
+
+                // Create commented version (diff preview)
+                const commentedText = selectedText.split('\n').map(line => `${commentSymbol} ${line}`).join('\n');
+
+                // Create LLM response
+                const LLMReturnText = await promptLLM(
+                    `Write me code that does ${selectedText} in ${language}`, // filetype should be sent as param to LLM
+                );
+                LLMReturnRef.current = LLMReturnText;
+                setOldContentDiffEdit(editor.getModel().getValue());//
+                editor.executeEdits("custom-action", [
+                    {
+                        range: selection,
+                        text: commentedText,
+                        forceMoveMarkers: true,
+                    },
+                    {
+                        range: new monaco.Range(
+                            selection.endLineNumber + 2,
+                            1,
+                            selection.endLineNumber + 2,
+                            1,
+                        ),
+                        text: `\n\n${LLMReturnText}\n`,
+                        forceMoveMarkers: true,
+                    },
+                ]);
+                setNewContentDiffEdit(editor.getModel().getValue());
+                setDiffEditMode(true);
             },
         });
 
@@ -607,6 +646,11 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         return isExpanded ? editorHeight : EditorLineHeight;
     };
 
+    useMemo(() => {
+        setModelId(defaultModelId);
+        setCount(count+1);
+    }, [defaultModelId]);
+
     return (
         <StyledContent>
             {LLMLoading && (
@@ -653,6 +697,8 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                         <>
                             <Suspense fallback={<>...</>}>
                                 <DiffEditor
+                                    width="100%"
+                                    height={getHeight()}
                                     original={oldContentDiffEdit}
                                     modified={newContentDiffEdit}
                                     language={
@@ -675,6 +721,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                 direction="row"
                                 alignItems={"center"}
                                 justifyContent={"center"}
+                                margin={1}
                             >
                                 <Button
                                     title="Accept changes"
@@ -699,6 +746,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                     ) : (
                         <Suspense fallback={<>...</>}>
                             <Editor
+                                key={count}
                                 width="100%"
                                 height={getHeight()}
                                 language={

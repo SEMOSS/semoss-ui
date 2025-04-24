@@ -295,6 +295,8 @@ export type CellComponent<D extends CellDef = CellDef> =
         cell: CellState<D>;
         /** Whether the content is expanded */
         isExpanded?: boolean;
+        /** Default Model */
+        defaultModelId?: string;
     }>;
 
 /**

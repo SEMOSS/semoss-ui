@@ -503,4 +503,11 @@ export class WorkspaceStore {
     get overlay() {
         return this._store.overlay;
     }
+
+    /**
+     * Set the agentModelEngine
+     */
+    setAgentModelEngine = (id:string) => {
+        this._store.agentModelEngine = id;
+    }
 }
