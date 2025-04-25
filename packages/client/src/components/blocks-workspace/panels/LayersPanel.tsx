@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import { toJS } from 'mobx';
 import { Actions, DockLocation, TabNode } from 'flexlayout-react';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToFirstScrollableAncestor } from '@dnd-kit/modifiers';
@@ -45,13 +46,13 @@ import {
     Typography,
     styled,
     useNotification,
+    Grid,
     Menu,
 } from '@semoss/ui';
 
 import { AddVariableModal } from '@/components/notebook';
 import { useDesigner, useWorkspace } from '@/hooks';
 import { Panel } from '@/components/workspace';
-import { toJS } from 'mobx';
 import DuplicateIcon from '../../../assets/img/Duplicate.svg';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 
@@ -267,7 +268,8 @@ export const LayersPanel = observer((): JSX.Element => {
             selectLayer(parentPage);
             setSelectedPages(parentPage);
         }
-        setExpanded(parents);
+        setSelectedLayers(parents);
+        setExpanded((prev) => [...new Set([...prev, ...parents])]);
     }, [designer.selected]);
 
     useEffect(() => {
@@ -784,8 +786,10 @@ export const LayersPanel = observer((): JSX.Element => {
                             }
                             onClick={(e: React.SyntheticEvent) => {
                                 e.stopPropagation();
-                                designer.setSelected(block.id);
-                                handleOnSelect(block);
+                                if (!expanded.includes(block.id)) {
+                                    designer.setSelected(block.id);
+                                    handleOnSelect(block);
+                                }
                             }}
                             onMouseOver={(e: React.SyntheticEvent) => {
                                 e.stopPropagation();
@@ -849,6 +853,7 @@ export const LayersPanel = observer((): JSX.Element => {
 
     const handlePageSelection = (block) => {
         selectLayer(block.id);
+        setExpanded([]);
         designer.setSelected(block.id);
         handleOnSelect(block);
         setSelectedPages(block.id);
@@ -1107,137 +1112,178 @@ export const LayersPanel = observer((): JSX.Element => {
 
     return (
         <Panel>
-            <StyledMenu>
-                <StyledMenuHeader>
-                    <Stack spacing={2} paddingBottom={1} width={'100%'}>
-                        <Stack
-                            direction="row"
-                            justifyContent="space-between"
-                            alignItems={'center'}
-                        >
-                            <Typography variant="h6">Pages</Typography>
-                            <IconButton
-                                className="layers-menu__add-layer-button"
-                                onClick={(e) => {
-                                    handlePageAdd();
-                                }}
-                            >
-                                <Add />
-                            </IconButton>
-                        </Stack>
-                    </Stack>
-                </StyledMenuHeader>
-                <StyledMenuScroll>
-                    {allPages?.length ? (
-                        allPages.map((page) => renderPage(page.id))
-                    ) : (
-                        <StyledTreeItemMessage>
-                            <Typography variant="caption">No Pages</Typography>
-                        </StyledTreeItemMessage>
-                    )}
-                </StyledMenuScroll>
-            </StyledMenu>
-            <Divider />
-            <DndContext
-                sensors={sensors}
-                collisionDetection={customCollisionDetection}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                modifiers={[restrictToFirstScrollableAncestor]}
+            <Grid
+                container
+                direction="column"
+                sx={{
+                    width: '100%',
+                    height: '100%',
+                }}
             >
-                <StyledMenu>
-                    <StyledMenuHeader>
-                        <Stack spacing={2} paddingBottom={1} width={'100%'}>
-                            <Stack
-                                direction="row"
-                                justifyContent="space-between"
-                                alignItems={'center'}
-                            >
-                                <Typography variant="h6">Layers</Typography>
-                                {showSearch ? (
-                                    <TextField
-                                        placeholder="Search"
-                                        size="small"
-                                        sx={{
-                                            width: '100%',
-                                            maxWidth: '200px',
-                                        }}
-                                        value={search}
-                                        variant="outlined"
-                                        onChange={(e) =>
-                                            setSearch(e.target.value)
-                                        }
-                                    />
-                                ) : (
-                                    <>&nbsp;</>
-                                )}
-                                <IconButton
-                                    color="default"
-                                    size="small"
-                                    onClick={() => {
-                                        setShowSearch(!showSearch);
-                                        setSearch('');
-                                    }}
-                                    style={{ padding: '0px' }}
+                <Grid item xs={12} width={'100%'} height={'100%'}>
+                    <Grid item xs={12} height={'30%'}>
+                        <StyledMenu>
+                            <StyledMenuHeader>
+                                <Stack
+                                    spacing={2}
+                                    paddingBottom={1}
+                                    width={'100%'}
                                 >
-                                    {showSearch ? (
-                                        <SearchOff fontSize="medium" />
-                                    ) : (
-                                        <Search fontSize="medium" />
-                                    )}
-                                </IconButton>
-                            </Stack>
-                        </Stack>
-                    </StyledMenuHeader>
-
-                    <StyledMenuScroll>
-                        <TreeView
-                            expanded={expanded}
-                            selected={selectedLayers}
-                            onNodeToggle={(
-                                e: React.SyntheticEvent,
-                                nodeIds: string[],
-                            ) => {
-                                setExpanded(nodeIds);
-                            }}
-                            onNodeSelect={(
-                                e: React.SyntheticEvent,
-                                nodeIds: string[],
-                            ) => {
-                                setSelectedLayers(nodeIds);
-                            }}
-                            defaultCollapseIcon={
-                                <StyledTreeItemIcon>
-                                    <ExpandMore />
-                                </StyledTreeItemIcon>
-                            }
-                            defaultExpandIcon={
-                                <StyledTreeItemIcon>
-                                    <ChevronRight />
-                                </StyledTreeItemIcon>
-                            }
+                                    <Stack
+                                        direction="row"
+                                        justifyContent="space-between"
+                                        alignItems={'center'}
+                                    >
+                                        <Typography variant="h6">
+                                            Pages
+                                        </Typography>
+                                        <IconButton
+                                            className="layers-menu__add-layer-button"
+                                            onClick={(e) => {
+                                                handlePageAdd();
+                                            }}
+                                        >
+                                            <Add />
+                                        </IconButton>
+                                    </Stack>
+                                </Stack>
+                            </StyledMenuHeader>
+                            <StyledMenuScroll>
+                                {allPages?.length ? (
+                                    allPages.map((page) => renderPage(page.id))
+                                ) : (
+                                    <StyledTreeItemMessage>
+                                        <Typography variant="caption">
+                                            No Pages
+                                        </Typography>
+                                    </StyledTreeItemMessage>
+                                )}
+                            </StyledMenuScroll>
+                        </StyledMenu>
+                    </Grid>
+                    <Grid item xs={12} height={'1%'}>
+                        <Divider />
+                    </Grid>
+                    <Grid item xs={12} height={'69%'}>
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={customCollisionDetection}
+                            onDragStart={handleDragStart}
+                            onDragEnd={handleDragEnd}
+                            modifiers={[restrictToFirstScrollableAncestor]}
                         >
-                            {selectedLayer?.length ? (
-                                selectedLayer.map((c) => renderBlock(c))
-                            ) : (
-                                <StyledTreeItemMessage>
-                                    <Typography variant="caption">
-                                        No Layers
-                                    </Typography>
-                                </StyledTreeItemMessage>
-                            )}
-                        </TreeView>
-                    </StyledMenuScroll>
-                    {variableModal ? (
-                        <AddVariableModal
-                            open={true}
-                            to={variableModal}
-                            type={'block'}
-                            onClose={() => setVariableModal('')}
-                        />
-                    ) : null}
-                </StyledMenu>
-            </DndContext>
+                            <StyledMenu>
+                                <StyledMenuHeader>
+                                    <Stack
+                                        spacing={2}
+                                        paddingBottom={1}
+                                        width={'100%'}
+                                    >
+                                        <Stack
+                                            direction="row"
+                                            justifyContent="space-between"
+                                            alignItems={'center'}
+                                        >
+                                            <Typography variant="h6">
+                                                Layers
+                                            </Typography>
+                                            {showSearch ? (
+                                                <TextField
+                                                    placeholder="Search"
+                                                    size="small"
+                                                    sx={{
+                                                        width: '100%',
+                                                        maxWidth: '200px',
+                                                    }}
+                                                    value={search}
+                                                    variant="outlined"
+                                                    onChange={(e) =>
+                                                        setSearch(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                            ) : (
+                                                <>&nbsp;</>
+                                            )}
+                                            <IconButton
+                                                color="default"
+                                                size="small"
+                                                onClick={() => {
+                                                    setShowSearch(!showSearch);
+                                                    setSearch('');
+                                                }}
+                                                style={{ padding: '0px' }}
+                                            >
+                                                {showSearch ? (
+                                                    <SearchOff fontSize="medium" />
+                                                ) : (
+                                                    <Search fontSize="medium" />
+                                                )}
+                                            </IconButton>
+                                        </Stack>
+                                    </Stack>
+                                </StyledMenuHeader>
+
+                                <StyledMenuScroll>
+                                    <TreeView
+                                        selected={selectedLayers}
+                                        expanded={expanded}
+                                        onNodeToggle={(
+                                            e: React.SyntheticEvent,
+                                            nodeIds: string[],
+                                        ) => {
+                                            e.stopPropagation();
+                                            setExpanded(nodeIds);
+                                        }}
+                                        onNodeSelect={(
+                                            e: React.SyntheticEvent,
+                                            nodeIds: string[],
+                                        ) => {
+                                            e.stopPropagation();
+                                            if (
+                                                !expanded.includes(nodeIds[0])
+                                            ) {
+                                                setSelectedLayers(nodeIds);
+                                            }
+                                        }}
+                                        defaultCollapseIcon={
+                                            <StyledTreeItemIcon>
+                                                <ExpandMore />
+                                            </StyledTreeItemIcon>
+                                        }
+                                        defaultExpandIcon={
+                                            <StyledTreeItemIcon>
+                                                <ChevronRight />
+                                            </StyledTreeItemIcon>
+                                        }
+                                    >
+                                        {selectedLayer?.length ? (
+                                            selectedLayer.map((c) =>
+                                                renderBlock(c),
+                                            )
+                                        ) : (
+                                            <StyledTreeItemMessage>
+                                                <Typography variant="caption">
+                                                    No Layers
+                                                </Typography>
+                                            </StyledTreeItemMessage>
+                                        )}
+                                    </TreeView>
+                                </StyledMenuScroll>
+                                {variableModal ? (
+                                    <AddVariableModal
+                                        open={true}
+                                        to={variableModal}
+                                        type={'block'}
+                                        onClose={() => setVariableModal('')}
+                                    />
+                                ) : null}
+                            </StyledMenu>
+                        </DndContext>
+                    </Grid>
+                </Grid>
+            </Grid>
         </Panel>
     );
 });

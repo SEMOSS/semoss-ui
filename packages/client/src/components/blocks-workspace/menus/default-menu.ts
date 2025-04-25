@@ -1666,6 +1666,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_LAYOUT,
         name: 'Iterator',
         helperText: 'Render a template for each item in a list/array',
+        activeImage: BLOCK_IMAGES['ITERATOR_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['ITERATOR_HOVER'],
         isBeta: true,
         json: {
             widget: 'iteration',

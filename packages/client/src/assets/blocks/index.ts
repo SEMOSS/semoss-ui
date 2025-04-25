@@ -40,6 +40,8 @@ export { default as IMAGE_ACTIVE } from './Image_Active.png';
 export { default as IMAGE_HOVER } from './Image_Hover.png';
 export { default as INPUT_ACTIVE } from './Input_Active.png';
 export { default as INPUT_HOVER } from './Input_Hover.png';
+export { default as ITERATOR_ACTIVE } from './Iterator_Active.png';
+export { default as ITERATOR_HOVER } from './Iterator_Hover.png';
 export { default as LINK_ACTIVE } from './Link_Active.png';
 export { default as LINK_HOVER } from './Link_Hover.png';
 export { default as LOGS_ACTIVE } from './Logs_Active.png';
