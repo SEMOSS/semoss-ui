@@ -1,8 +1,10 @@
+import { useEffect, useMemo, useRef } from 'react';
+
+import { Env } from '@semoss/sdk';
+
 import { Role } from '@/types';
 import { ENGINE_IMAGES } from '@/pages/import';
 import BRAIN from '@/assets/img/BRAIN.png';
-import { Env } from '@/env';
-import { useEffect, useMemo, useRef } from 'react';
 
 /**
  * @desc splits a string at the period

@@ -449,11 +449,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                         },
                     };
 
-                    return (
-                        <InsightProvider>
-                            <Renderer state={s} />
-                        </InsightProvider>
-                    );
+                    return <Renderer state={s} />;
                 } else if (variableType === 'query') {
                     const query = state.getQuery(variablePointer);
 

@@ -1,5 +1,5 @@
 import { styled } from '@semoss/ui';
-import { Env } from '@/env';
+import { Env } from '@semoss/sdk';
 
 const StyledIframe = styled('iframe')(() => ({
     flex: '1',
@@ -20,5 +20,10 @@ export const CodeRenderer = (props: CodeRendererProps) => {
     const { appId } = props;
 
     // return the app
-    return <StyledIframe src={`${Env.MODULE}/public_home/${appId}/portals/`} />;
+    return (
+        <StyledIframe
+            src={`${Env.MODULE}/public_home/${appId}/portals/`}
+            data-test={`iframe--${appId}`}
+        />
+    );
 };
