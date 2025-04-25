@@ -56,16 +56,13 @@ export const UserTablePopover = (props: UserTablePopoverProps) => {
                 horizontal: 'left',
             }}
             sx={{ pointerEvents: 'none' }}
-            
         >
-            <StyledGridContainer container direction="row" >
+            <StyledGridContainer container direction="row">
                 {/* avatar icon */}
                 <Grid item>
                     {hoveredUser?.name && ( // prevents seeing default icon
                         <AvatarWrapper>
-                            <Avatar>
-                                {hoveredUser.name[0].toUpperCase()}
-                            </Avatar>
+                            <Avatar>{hoveredUser.name[0].toUpperCase()}</Avatar>
                         </AvatarWrapper>
                     )}
                 </Grid>
@@ -77,13 +74,19 @@ export const UserTablePopover = (props: UserTablePopoverProps) => {
                             </Typography>
                             <StyledInnerGridContainer container direction="row">
                                 <Grid item>
-                                    <Typography variant="caption" color="secondary">
+                                    <Typography
+                                        variant="caption"
+                                        color="secondary"
+                                    >
                                         ID: {hoveredUser?.id}
                                     </Typography>
                                 </Grid>
                                 <Grid item>
-                                    <StyledIconButton size="small"
-                                        onClick={() => { handleCopy(hoveredUser?.id) }}
+                                    <StyledIconButton
+                                        size="small"
+                                        onClick={() => {
+                                            handleCopy(hoveredUser?.id);
+                                        }}
                                     >
                                         <CopyAllIcon fontSize="inherit" />
                                     </StyledIconButton>
@@ -91,13 +94,19 @@ export const UserTablePopover = (props: UserTablePopoverProps) => {
                             </StyledInnerGridContainer>
                             <StyledInnerGridContainer container direction="row">
                                 <Grid item>
-                                    <Typography variant="caption" color="secondary">
+                                    <Typography
+                                        variant="caption"
+                                        color="secondary"
+                                    >
                                         Email: {hoveredUser?.email}
                                     </Typography>
                                 </Grid>
                                 <Grid item>
-                                    <StyledIconButton size="small"
-                                        onClick={() => { handleCopy(hoveredUser?.email) }}
+                                    <StyledIconButton
+                                        size="small"
+                                        onClick={() => {
+                                            handleCopy(hoveredUser?.email);
+                                        }}
                                     >
                                         <CopyAllIcon fontSize="inherit" />
                                     </StyledIconButton>
@@ -110,4 +119,3 @@ export const UserTablePopover = (props: UserTablePopoverProps) => {
         </Popover>
     );
 };
-

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Add, Delete, Edit, } from '@mui/icons-material';
+import { Add, Delete, Edit } from '@mui/icons-material';
 import {
     styled,
     useNotification,
@@ -388,19 +388,21 @@ export const UserTable = (props: UserTableProps) => {
     };
     /**
      * Handle user popover open
-     * @param event 
-     * @param user 
+     * @param event
+     * @param user
      */
-    const handlePopoverOpen = (event: React.MouseEvent<HTMLElement>, user: User) => {
-            setAnchorEl(event.currentTarget);
-            setHoveredUser(user);
+    const handlePopoverOpen = (
+        event: React.MouseEvent<HTMLElement>,
+        user: User,
+    ) => {
+        setAnchorEl(event.currentTarget);
+        setHoveredUser(user);
     };
     const handlePopoverClose = () => {
         setAnchorEl(null);
-      
-            setHoveredUser(null);
-        
-    }
+
+        setHoveredUser(null);
+    };
     const handleCopy = (text: string) => {
         navigator.clipboard.writeText(text);
         notification.add({
@@ -627,7 +629,7 @@ export const UserTable = (props: UserTableProps) => {
                                                             />
                                                         </StyledTableCell>
                                                         <Table.Cell>
-                                                            <StyledCenteredBox >
+                                                            <StyledCenteredBox>
                                                                 <AvatarWrapper>
                                                                     <Avatar>
                                                                         {user.name[0].toUpperCase()}
@@ -639,7 +641,9 @@ export const UserTable = (props: UserTableProps) => {
                                                                     }
                                                                     spacing={0}
                                                                     flex={1}
-                                                                    onMouseEnter={(event) =>
+                                                                    onMouseEnter={(
+                                                                        event,
+                                                                    ) =>
                                                                         handlePopoverOpen(
                                                                             event,
                                                                             user,
@@ -648,13 +652,13 @@ export const UserTable = (props: UserTableProps) => {
                                                                     onMouseLeave={() =>
                                                                         handlePopoverClose()
                                                                     }
-                                                               >
+                                                                >
                                                                     <StyledPrimaryText
                                                                         variant="body1"
                                                                         noWrap={
                                                                             true
                                                                         }
-                                                                        title={`Name: ${user.name}`}                                                                 
+                                                                        title={`Name: ${user.name}`}
                                                                     >
                                                                         {user.name || (
                                                                             <>
@@ -663,7 +667,7 @@ export const UserTable = (props: UserTableProps) => {
                                                                         )}
                                                                     </StyledPrimaryText>
                                                                 </Stack>
-                                                            </StyledCenteredBox>    
+                                                            </StyledCenteredBox>
                                                         </Table.Cell>
                                                         <Table.Cell>
                                                             {user.type}
@@ -793,13 +797,17 @@ export const UserTable = (props: UserTableProps) => {
                                             />
                                         </Table.Row>
                                     </Table.Footer>
-                                   <UserTablePopover
+                                    <UserTablePopover
                                         hoveredUser={
                                             hoveredUser
                                                 ? {
                                                       id: hoveredUser.id,
-                                                      name: hoveredUser.name || 'Unknown',
-                                                      email: hoveredUser.email || '',
+                                                      name:
+                                                          hoveredUser.name ||
+                                                          'Unknown',
+                                                      email:
+                                                          hoveredUser.email ||
+                                                          '',
                                                   }
                                                 : null
                                         }
