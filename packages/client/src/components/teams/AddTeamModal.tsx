@@ -124,7 +124,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 
     const loginTypes = [
         {
-            provider: 'Custom',
+            provider: 'custom',
             name: 'Custom',
             description: 'Directly manage users in the team',
             isOauth: false,

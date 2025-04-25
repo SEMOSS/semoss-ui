@@ -14,7 +14,6 @@ import { EngineIndexPage } from './EngineIndexPage';
 import { EngineMetadataPage } from './EngineMetadataPage';
 import { EngineSettingsPage } from './EngineSettingsPage';
 import { EngineFilePage } from './EngineFilePage';
-import { EngineReportingPage } from './EngineReportingPage';
 import { EngineQAPage } from './EngineQAPage';
 // import { EngineQueryDataPage } from './EngineQueryDataPage';
 // import { EngineReplaceDataPage } from './EngineReplaceDataPage';
@@ -82,12 +81,12 @@ export const ENGINE_ROUTES: {
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
             },
-            {
-                name: 'Reporting',
-                path: 'reporting',
-                component: EngineReportingPage,
-                restrict: ['EDIT', 'OWNER'],
-            },
+            // {
+            //     name: 'Reporting',
+            //     path: 'reporting',
+            //     component: EngineReportingPage,
+            //     restrict: ['EDIT', 'OWNER'],
+            // },
             {
                 name: 'SMSS',
                 path: 'smss',
@@ -128,12 +127,12 @@ export const ENGINE_ROUTES: {
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
             },
-            {
-                name: 'Reporting',
-                path: 'reporting',
-                component: EngineReportingPage,
-                restrict: ['EDIT', 'OWNER'],
-            },
+            // {
+            //     name: 'Reporting',
+            //     path: 'reporting',
+            //     component: EngineReportingPage,
+            //     restrict: ['EDIT', 'OWNER'],
+            // },
             {
                 name: 'SMSS',
                 path: 'smss',
@@ -192,12 +191,12 @@ export const ENGINE_ROUTES: {
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
             },
-            {
-                name: 'Reporting',
-                path: 'reporting',
-                component: EngineReportingPage,
-                restrict: ['EDIT', 'OWNER'],
-            },
+            // {
+            //     name: 'Reporting',
+            //     path: 'reporting',
+            //     component: EngineReportingPage,
+            //     restrict: ['EDIT', 'OWNER'],
+            // },
             {
                 name: 'SMSS',
                 path: 'smss',
@@ -254,7 +253,7 @@ export const ENGINE_ROUTES: {
             {
                 name: 'Reporting',
                 path: 'reporting',
-                component: EngineReportingPage,
+                component: EngineReportPage,
                 restrict: ['EDIT', 'OWNER'],
             },
             {
