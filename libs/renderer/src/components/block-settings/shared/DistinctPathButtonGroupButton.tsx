@@ -114,7 +114,9 @@ export const DistinctPathButtonGroupButton = observer(
             return !!(
                 (blockData?.hasOwnProperty("href") && title === "Underlined") ||
                 (blockData?.hasOwnProperty("variant") &&
-                    ["h1"].includes(blockData.variant as string) &&
+                    ["h1", "h2", "h3", "h4", "h5", "h6"].includes(
+                        blockData.variant as string,
+                    ) &&
                     title === "Bold")
             );
         }, [blockData, id, title]);
