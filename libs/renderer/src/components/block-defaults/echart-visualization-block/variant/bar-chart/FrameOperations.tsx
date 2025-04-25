@@ -17,8 +17,8 @@ import { BAR_CHART_DATA } from "../../Visualization.constants";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { DataTabStyling } from "./DataTabStyling";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import StringIcon from "../../../../../../../../packages/client/src/assets/img/StringIcon.svg";
-import NumberIcon from "../../../../../../../../packages/client/src/assets/img/NumberIcon.svg";
+import StringIcon from '../../../../../assets/img/StringIcon.svg';
+import NumberIcon from '../../../../../assets/img/NumberIcon.svg';
 
 //frame operations component props structure
 export interface FrameOperationsProps {

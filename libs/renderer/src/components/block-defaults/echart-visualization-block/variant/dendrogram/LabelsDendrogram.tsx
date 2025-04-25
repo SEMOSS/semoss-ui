@@ -114,14 +114,14 @@ export const LabelsDendrogram = observer(
             setSeriesIndexData(`option.series.${seriesIndex}.label.color`);
         },[]);
 
-        function runStateUpdateCustom(option: PathValue<D["data"], typeof path>){
+        function runStateUpdateCustom(option){
             if(timeoutRef.current){
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = null;
             }
             timeoutRef.current = setTimeout(()=>{
                 try{
-                    setData(path, option as PathValue<D["data"], typeof path>);
+                    setData(path, option);
                 }
                 catch(e){
                     console.log(e);
