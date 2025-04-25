@@ -1,4 +1,4 @@
-import React, { useRef, useState, Suspense, lazy, useMemo } from "react";
+import React, { useRef, useState, Suspense, lazy, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { Code, KeyboardArrowDown } from "@mui/icons-material";
 
@@ -136,7 +136,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     const [isLLMRejected, setIsLLMRejected] = useState(false);
     const [count, setCount] = useState(0);
-    const[ modelId, setModelId] = useState(defaultModelId);
+    const [modelId, setModelId] = useState(defaultModelId);
     // const { workspace } = useWorkspace();
 
     /**
@@ -295,7 +295,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             contextMenuOrder: 1,
             id: "prompt-LLM",
             label: "Generate Code",
-            disabled: true,
             keybindings: [
                 monaco.KeyMod.CtrlCmd |
                     monaco.KeyMod.Shift |
@@ -306,8 +305,9 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                 if (!modelId) {
                     console.error("No Agent Model Engine");
                     notification.add({
-                        color: 'error',
-                        message: 'No Agent Model Engine selected. Please select a model.',
+                        color: "error",
+                        message:
+                            "No Agent Model Engine selected. Please select a model.",
                     });
                     return;
                 }
@@ -321,23 +321,27 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                 const originalContent = editor.getModel().getValue();
                 setOldContentDiffEdit(originalContent);
 
-                 // Determine comment symbol
+                // Determine comment symbol
                 const language = EditorLanguages[cell.parameters.type];
-                const commentSymbol = {
-                    pixel: '//',
-                    python: '#',
-                    r: '#',
-                }[language] || '//';
+                const commentSymbol =
+                    {
+                        pixel: "//",
+                        python: "#",
+                        r: "#",
+                    }[language] || "//";
 
                 // Create commented version (diff preview)
-                const commentedText = selectedText.split('\n').map(line => `${commentSymbol} ${line}`).join('\n');
+                const commentedText = selectedText
+                    .split("\n")
+                    .map((line) => `${commentSymbol} ${line}`)
+                    .join("\n");
 
                 // Create LLM response
                 const LLMReturnText = await promptLLM(
                     `Write me code that does ${selectedText} in ${language}`, // filetype should be sent as param to LLM
                 );
                 LLMReturnRef.current = LLMReturnText;
-                setOldContentDiffEdit(editor.getModel().getValue());//
+                setOldContentDiffEdit(editor.getModel().getValue());
                 editor.executeEdits("custom-action", [
                     {
                         range: selection,
@@ -646,9 +650,9 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         return isExpanded ? editorHeight : EditorLineHeight;
     };
 
-    useMemo(() => {
+    useEffect(() => {
         setModelId(defaultModelId);
-        setCount(count+1);
+        setCount(count + 1);
     }, [defaultModelId]);
 
     return (
