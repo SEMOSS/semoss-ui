@@ -1,12 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { usePixel, useRootStore } from '@/hooks';
+import {
+    Add,
+    CloudDownload,
+    Delete,
+    SimCardDownload,
+    UploadFile,
+} from '@mui/icons-material';
 import {
     Button,
     Checkbox,
+    CircularProgress,
     FileDropzone,
     IconButton,
     LinearProgress,
-    CircularProgress,
     Modal,
     Search,
     styled,
@@ -14,8 +20,8 @@ import {
     Typography,
     useNotification,
 } from '@semoss/ui';
-import { Add, Delete, SimCardDownload } from '@mui/icons-material';
-import { usePixel, useRootStore } from '@/hooks';
+import { useEffect, useRef, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 
 const StyledTableContainer = styled(Table.Container)({
     borderRadius: '12px',
@@ -68,6 +74,10 @@ type FileUploadForm = {
     PROJECT_UPLOAD: File[];
 };
 
+type FileUploadSingleForm = {
+    PROJECT_UPLOAD_SINGLE: File;
+};
+
 interface FileExplorerProps {
     fileName: string;
     fileSize: number;
@@ -78,6 +88,12 @@ export const FileTable = (props: FileTableProps) => {
     const NUM_RESULTS_PER_PAGE = 5;
     // embed modal
     const [open, setOpen] = useState<boolean>(false);
+
+    //upload one file
+    const [uploadFileModal, setUploadFileModal] = useState<boolean>(false);
+    const [fileToUpload, setFileToUpload] = useState<FileExplorerProps | null>(
+        null,
+    );
 
     //delete one file
     const [deleteFileModal, setDeleteFileModal] = useState<boolean>(false);
@@ -114,6 +130,7 @@ export const FileTable = (props: FileTableProps) => {
     const { control, watch, setValue, handleSubmit } = useForm<{
         FILES: FileExplorerProps[];
         PROJECT_UPLOAD: File[];
+        PROJECT_UPLOAD_SINGLE: File;
         SEARCH_FILTER: string;
     }>({
         defaultValues: {
@@ -122,6 +139,7 @@ export const FileTable = (props: FileTableProps) => {
             // Filters for Files table
             SEARCH_FILTER: '',
             PROJECT_UPLOAD: [],
+            PROJECT_UPLOAD_SINGLE: null,
         },
     });
 
@@ -223,6 +241,7 @@ export const FileTable = (props: FileTableProps) => {
             getFileDetails.refresh();
             setIsLoading(false);
             setValue('PROJECT_UPLOAD', []);
+            setValue('PROJECT_UPLOAD_SINGLE', null);
             setOpen(false);
         }
     });
@@ -308,6 +327,20 @@ export const FileTable = (props: FileTableProps) => {
     };
 
     const downloadSelectedFiles = async (files: FileExplorerProps[]) => {
+        //Check for Source Exist or no
+        let fileExistCounter = 0;
+        files.forEach((f) => {
+            checkFileExistForSource(f) ? ++fileExistCounter : '';
+        });
+
+        if (fileExistCounter == 0) {
+            const output = 'File does not exist for the selected sources ';
+            notification.add({
+                color: 'error',
+                message: output,
+            });
+            return;
+        }
         // construct the string of files
         setExportLoading(true);
         let fileArray = '';
@@ -325,13 +358,113 @@ export const FileTable = (props: FileTableProps) => {
         const pixel = `META | VectorFileDownload(engine = "${id}", filenames=[${fileArray}]);`;
 
         monolithStore.runQuery(pixel).then((response) => {
-            const output = response.pixelReturn[0].output,
-                insightId = response.insightId;
-
-            monolithStore.download(insightId, output);
+            try {
+                const { insightId } = response;
+                const { output, operationType } = response.pixelReturn[0];
+                if (operationType.indexOf('ERROR') === -1) {
+                    monolithStore.download(insightId, output);
+                    notification.add({
+                        color: 'success',
+                        message: `Successfully downloaded document`,
+                    });
+                } else {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+                }
+            } catch (e) {
+                notification.add({
+                    color: 'warning',
+                    message: `${e}`,
+                });
+            }
         });
         setExportLoading(false);
     };
+
+    //utility fn - if file size and last modiifed is not recevied meaning the file does not exist
+    //i.e cant be downloaded and file needs to be attached to the source
+    const checkFileExistForSource = (file: FileExplorerProps) => {
+        if (
+            file.lastModified &&
+            file.lastModified !== '' &&
+            file.fileSize &&
+            file.fileSize > 0
+        ) {
+            return true;
+        } else {
+            return false;
+        }
+    };
+
+    //donwload file from action
+    const downloadSelectedFileAction = async (file: FileExplorerProps) => {
+        setIsLoading(true);
+        try {
+            const pixel = `META | VectorFileDownload(engine = "${id}", filenames=["${file.fileName}"]);`;
+            const response = await monolithStore.runQuery(pixel);
+            const { insightId } = response;
+            const { output, operationType } = response.pixelReturn[0];
+            if (operationType.indexOf('ERROR') === -1) {
+                await monolithStore.download(insightId, output);
+                notification.add({
+                    color: 'success',
+                    message: `Successfully downloaded document`,
+                });
+            } else {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+            }
+        } catch (e) {
+            notification.add({
+                color: 'warning',
+                message: `${e}`,
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    //Upload file from action for csv
+    const uploadSelectedFileAction = handleSubmit(
+        async (file: FileUploadSingleForm) => {
+            setIsLoading(true);
+            try {
+                const upload = await monolithStore.uploadFile(
+                    [file.PROJECT_UPLOAD_SINGLE],
+                    configStore.store.insightID,
+                );
+                const { fileLocation } = upload[0];
+                const pixel = `AttachSourceToVectorDb(filePath=["\\${fileLocation}"], engine="${id}",fileName="\\\\${fileToUpload.fileName}" );`;
+                const response = await monolithStore.runQuery(pixel);
+                const { output, operationType } = response.pixelReturn[0];
+                if (operationType.indexOf('ERROR') === -1) {
+                    notification.add({
+                        color: 'success',
+                        message: `Successfully Uploaded document`,
+                    });
+                } else {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+                }
+            } catch (e) {
+                notification.add({
+                    color: 'warning',
+                    message: `${e}`,
+                });
+            } finally {
+                setValue('PROJECT_UPLOAD_SINGLE', null);
+                getFileDetails.refresh();
+                setUploadFileModal(false);
+                setIsLoading(false);
+            }
+        },
+    );
 
     return (
         <StyledFileContent>
@@ -486,12 +619,44 @@ export const FileTable = (props: FileTableProps) => {
                                                 component="td"
                                                 scope="row"
                                             >
-                                                {Math.round(
-                                                    file.fileSize * 10,
-                                                ) / 10}{' '}
-                                                KB
+                                                {/* {Math.round(file.fileSize * 10,) / 10} {' '}KB */}
+                                                {!isNaN(file.fileSize)
+                                                    ? `${
+                                                          Math.round(
+                                                              file.fileSize *
+                                                                  10,
+                                                          ) / 10
+                                                      } KB`
+                                                    : ''}
                                             </Table.Cell>
                                             <Table.Cell>
+                                                {checkFileExistForSource(
+                                                    file,
+                                                ) ? (
+                                                    <IconButton
+                                                        onClick={() => {
+                                                            downloadSelectedFileAction(
+                                                                file,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <CloudDownload />
+                                                    </IconButton>
+                                                ) : (
+                                                    <IconButton
+                                                        onClick={() => {
+                                                            setFileToUpload(
+                                                                file,
+                                                            );
+                                                            setUploadFileModal(
+                                                                true,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <UploadFile />
+                                                    </IconButton>
+                                                )}
+
                                                 <IconButton
                                                     onClick={() => {
                                                         setDeleteFileModal(
@@ -582,6 +747,79 @@ export const FileTable = (props: FileTableProps) => {
                 </form>
                 {isLoading && <LinearProgress />}
             </Modal>
+            {/* Single File upload */}
+            <Modal
+                open={uploadFileModal}
+                onClose={() => {
+                    setFileToUpload(null);
+                    setUploadFileModal(false);
+                    setValue('PROJECT_UPLOAD_SINGLE', null);
+                }}
+                fullWidth
+            >
+                <Modal.Title>
+                    Attach File to Source {fileToUpload?.fileName}
+                </Modal.Title>
+                <form onSubmit={uploadSelectedFileAction}>
+                    <Modal.Content>
+                        <Controller
+                            name={'PROJECT_UPLOAD_SINGLE'}
+                            control={control}
+                            rules={{ required: true }}
+                            render={({ field }) => {
+                                return (
+                                    <FileDropzone
+                                        multiple={false}
+                                        value={field.value}
+                                        extensions={[
+                                            '.pdf',
+                                            '.csv',
+                                            '.txt',
+                                            '.doc',
+                                            '.ppt',
+                                            '.docx',
+                                            '.pptx',
+                                        ]}
+                                        disabled={isLoading}
+                                        onChange={(newValues) => {
+                                            field.onChange(newValues);
+                                        }}
+                                    />
+                                );
+                            }}
+                        />
+                    </Modal.Content>
+                    <Modal.Actions>
+                        <Button
+                            variant={'outlined'}
+                            disabled={isLoading}
+                            onClick={() => {
+                                setValue('PROJECT_UPLOAD_SINGLE', null);
+                                setFileToUpload(null);
+                                setUploadFileModal(false);
+                            }}
+                        >
+                            Close
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant={'contained'}
+                            disabled={isLoading}
+                            startIcon={
+                                isLoading ? (
+                                    <CircularProgress size="1em" />
+                                ) : (
+                                    <></>
+                                )
+                            }
+                        >
+                            Upload
+                        </Button>
+                    </Modal.Actions>
+                </form>
+                {isLoading && <LinearProgress />}
+            </Modal>
+
             <Modal open={deleteFileModal} maxWidth="md">
                 <Modal.Title>
                     <Typography variant="h6">Are you sure?</Typography>
@@ -622,7 +860,7 @@ export const FileTable = (props: FileTableProps) => {
             <Modal open={deleteFilesModal}>
                 <Modal.Title>Are you sure?</Modal.Title>
                 <Modal.Content>
-                    Would you like to delete all selected members
+                    Would you like to delete all selected sources
                 </Modal.Content>
                 <Modal.Actions>
                     <Button
