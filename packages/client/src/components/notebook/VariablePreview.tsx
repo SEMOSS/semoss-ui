@@ -110,9 +110,7 @@ export const VariablePreview = observer(
                 if (config) {
                     return (
                         <StyledBlocksBox>
-                            <InsightProvider>
-                                <Renderer state={config} preview={true} />
-                            </InsightProvider>
+                            <Renderer state={config} preview={true} />
                         </StyledBlocksBox>
                     );
                 } else {
