@@ -1,10 +1,11 @@
 import { fireEvent, render, screen } from "../utils";
+import { observable } from "mobx";
 import { expect, test } from "vitest";
 import "@testing-library/jest-dom";
 
 import { ButtonBlock } from "../../components/block-defaults/button-block/ButtonBlock";
 import { ActionMessages, QueryStateConfig, RunQueryAction } from "@/store";
-import { useBlock, useBlocks } from "@/hooks";
+//import { useBlock } from "@/hooks";
 
 // mock data for default button component
 const blocks = {
@@ -90,7 +91,7 @@ const queryBlock = {
                 gap: "8px",
                 flexWrap: "wrap",
             },
-            label: "hi",
+            label: "0",
             loading: false,
             disabled: false,
             variant: "contained",
@@ -104,8 +105,6 @@ const queryBlock = {
         },
     },
 };
-
-const mockDispatch = vi.fn();
 
 describe("button block", () => {
     // checks button exists with correct label
@@ -134,44 +133,81 @@ describe("button block", () => {
         expect(buttonElement).toHaveClass("MuiButton-outlinedSecondary");
         expect(buttonElement).toHaveStyle({ width: "30px", height: "50px" });
     });
+});
+
+describe("button query", () => {
+    // executies mock function for only tests within this describe block
+
+    beforeAll(() => {
+        // create mock function to access useBlock
+        vi.mock("@/hooks/useBlock.tsx", async () => {
+            //let value = 0;
+            const queryBlock = {
+                queryButton: {
+                    data: {
+                        style: {
+                            display: "flex",
+                            flexDirection: "column",
+                            padding: "4px",
+                            gap: "8px",
+                            flexWrap: "wrap",
+                        },
+                        label: 0,
+                        loading: false,
+                        disabled: false,
+                        variant: "contained",
+                        color: "primary",
+                    },
+                    id: "queryButton",
+                    widget: "button",
+                    slots: {},
+                    listeners: {
+                        onClick: [query],
+                    },
+                },
+            };
+
+            return {
+                // mock result of useBlock() to access onClick
+                useBlock: () => ({
+                    attrs: {},
+                    data: queryBlock.queryButton.data,
+                    listeners: {
+                        // inject onClick mock function
+                        onClick: vi.fn(() => {
+                            // increment
+                            queryBlock.queryButton.data.label++;
+                            [query];
+                        }),
+                    },
+                }),
+            };
+        });
+    });
+
+    afterAll(() => {
+        vi.unmock("@/hooks/useBlock.tsx");
+    });
 
     // checks onClick functionality
-    //it("has successful onClick query", async () => {
-        // mock result of useBlocks()
+    it("has successful onClick query", async () => {
+        const { container } = render(<ButtonBlock id="queryButton" />, {
+            blocks: queryBlock,
+            query: queries,
+        });
 
-    //     vi.mock("@/hooks/useBlock.tsx", () => ({
-    //         useBlock: () => ({
-    //             state: {
-    //                 dispatch: mockDispatch,
-    //                 getBlock: (id: string) =>
-    //                     id === "queryButton" ? queryBlock.queryButton : null,
-    //             },
-    //         }),
-    //     }));
+        const buttonElement = container.querySelector("button");
 
-    //     // vi.mock("@/hooks/useBlocks.tsx", () => ({
-    //     //     useBlocks: () => ({
-    //     //         state: {
-    //     //             dispatch: mockDispatch,
-    //     //             getBlock: (id: string) =>
-    //     //                 id === "queryButton" ? queryBlock.queryButton : null,
-    //     //         },
-    //     //     }),
-    //     // }));
+        expect(buttonElement).toBeInTheDocument();
+        expect(buttonElement).toHaveTextContent("0");
 
-    //     const { container } = render(<ButtonBlock id="queryButton" />, {
-    //         blocks: queryBlock,
-    //         query: queries,
-    //     });
+        //console.log(container.innerHTML);
 
-    //     const buttonElement = container.querySelector("button");
+        fireEvent.click(buttonElement);
 
-    //     //console.log(container.innerHTML);
+        // validate state was updated
+        expect(buttonElement).toHaveTextContent("1");
 
-    //     fireEvent.click(buttonElement);
-    
-    //     // validate query dispatch
-    //     expect(mockDispatch).toHaveBeenCalledWith(queries);
-    //});
-   // )},
+        //dispatch message: ACTION ::: RUN_QUERY { queryId: 'testQuery' } to stdout
+    });
 });
