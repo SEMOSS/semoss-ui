@@ -13,7 +13,6 @@ interface MockProviderProps {
 }
 
 const MockProvider: React.FC<MockProviderProps> = ({
-    children,
     blocks,
     renderEngineId,
     queryConfig,
