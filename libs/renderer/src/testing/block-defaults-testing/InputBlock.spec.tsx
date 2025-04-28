@@ -86,11 +86,11 @@ const blocks = {
             onChange: [],
         },
     },
-    "rowType-input": {
+    "valueType-input": {
         data: {
             style: {},
             label: "Example Input",
-            value: 1,
+            value: "Example",
             type: "number",
             rows: 1,
             multiline: false,
@@ -98,7 +98,7 @@ const blocks = {
             required: false,
             loading: false,
         },
-        id: "rowType-input",
+        id: "valueType-input",
         widget: "input",
         slots: {},
         listeners: {
@@ -114,7 +114,6 @@ describe("input block", () => {
         });
 
         const element = container.querySelector("[data-block='string-input']");
-        //console.log(container.innerHTML);
         expect(element).toBeInTheDocument();
     });
 
@@ -137,33 +136,23 @@ describe("input block", () => {
             blocks: blocks,
         });
 
-        console.log(container.innerHTML);
-
-        const element = container.querySelector("input");
-        const rows = container.querySelector("textarea");
+        const input = screen.getByRole("textbox");
         const label = screen.getByLabelText("Example Input");
 
         expect(label).toBeTruthy();
-        expect(rows).toHaveAttribute("rows", "3");
-        // expect(element).toHaveAttribute(
-        //     "value",
-        //     "Example #1\nExample #2\nExample #3\n",
-        // );
+        expect(input).toHaveAttribute("rows", "3");
+        expect(input).toHaveValue("Example #1\nExample #2\nExample #3\n");
     });
 
-    test("does not render if values greater than row number", async () => {
+    test("does not display multiline if row number does not match ", async () => {
         const { container } = render(<InputBlock id="rowValue-input" />, {
             blocks: blocks,
         });
 
-        const element = container.querySelector("input");
-        console.log(container.innerHTML);
+        const input = screen.getByRole("textbox");
 
-        expect(element).toHaveAttribute("rows", "1");
-        expect(element).not.toHaveAttribute(
-            "value",
-            "Example #1\nExample#2\nExample#3\n",
-        );
+        expect(input).toHaveAttribute("rows", "1");
+        expect(input).toHaveValue("Example #1Example #2Example #3");
     });
 
     test("renders input with number type", async () => {
@@ -180,7 +169,21 @@ describe("input block", () => {
         expect(element).toHaveAttribute("value", "1");
     });
 
-    // type and value mismatch
+    test("does not display input with mismatch value and type", async () => {
+        const { container } = render(<InputBlock id="valueType-input" />, {
+            blocks: blocks,
+        });
+
+        const element = container.querySelector("input");
+        const input = screen.getByRole("spinbutton");
+
+        expect(element).toHaveAttribute("type", "number");
+        expect(element).toHaveAttribute("value", "Example");
+
+        // ui should not display value if type is mismatched
+        expect(input).toHaveValue(null);
+    });
+
     // input overflows container
     // onChange
 });
