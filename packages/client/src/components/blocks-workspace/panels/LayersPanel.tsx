@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
+import { toJS } from 'mobx';
 import { Actions, DockLocation, TabNode } from 'flexlayout-react';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToFirstScrollableAncestor } from '@dnd-kit/modifiers';
@@ -25,13 +26,20 @@ import {
     SearchOff,
     Home,
     Delete,
+    MoreVert,
 } from '@mui/icons-material/';
 
-import { useBlocks, INPUT_BLOCK_TYPES, ActionMessages } from '@semoss/renderer';
+import {
+    useBlocks,
+    INPUT_BLOCK_TYPES,
+    ActionMessages,
+    BlockJSON,
+} from '@semoss/renderer';
 import {
     Divider,
     Icon,
     IconButton,
+    MenuItem,
     Stack,
     TextField,
     TreeView,
@@ -39,12 +47,15 @@ import {
     styled,
     useNotification,
     Grid,
+    Menu,
 } from '@semoss/ui';
 
 import { AddVariableModal } from '@/components/notebook';
 import { useDesigner, useWorkspace } from '@/hooks';
 import { Panel } from '@/components/workspace';
 import { getBlockElement } from '@/stores';
+import DuplicateIcon from '../../../assets/img/Duplicate.svg';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 
 const customCollisionDetection = (args) => {
     const collisions = closestCenter(args);
@@ -565,23 +576,109 @@ export const LayersPanel = observer((): JSX.Element => {
      * @param id - id of the block to render
      * @returns tree of the widgets
      */
-    const renderBlock = (id: string) => {
-        // get the block
-        const block = state.blocks[id];
+    const TreeViewComponent = ({
+        block,
+        variableName,
+        WidgetIcon,
+        canVariabilize,
+    }: {
+        block: any;
+        variableName: string;
+        WidgetIcon: any;
+        canVariabilize: boolean;
+    }) => {
+        const [menuAnchorEl, setMenuAnchorEl] =
+            React.useState<null | HTMLElement>(null);
+        const handleMenuOpen = (
+            event: React.MouseEvent<HTMLElement>,
+            id: string,
+        ) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setMenuAnchorEl(event.currentTarget);
+        };
+        const handleMenuClose = () => {
+            setMenuAnchorEl(null);
+        };
+        const handleDelete = (deletedId: string) => {
+            state.dispatch({
+                message: ActionMessages.REMOVE_BLOCK,
+                payload: {
+                    id: deletedId,
+                    keep: false,
+                },
+            });
+            setTimeout(() => {
+                designer.setSelected('');
+                designer.setHovered('');
+                setSelectedLayers([]);
+                const block = state.blocks[selectedPages];
+                handlePageSelection(block);
+            }, 0);
+            handleMenuClose();
+        };
 
-        // render each of hte c
-        if (!block) {
-            return null;
-        }
-        const variableName = state.getAlias(id);
-        const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
+        const handleDuplicate = (
+            event: React.MouseEvent<HTMLElement>,
+            duplicateId: string,
+        ) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const getJsonForBlock = (id: string) => {
+                const block = state.blocks[id];
 
-        const WidgetIcon = registry[block.widget].icon;
+                const blockJson = {
+                    widget: toJS(block.widget),
+                    data: toJS(block.data),
+                    listeners: toJS(block.listeners),
+                    slots: {},
+                };
 
-        const children = [];
-        for (const s in block.slots) {
-            children.push(...block.slots[s].children);
-        }
+                // generate the slots
+                for (const slot in block.slots) {
+                    if (block.slots[slot]) {
+                        blockJson.slots[slot] = block.slots[slot].children.map(
+                            (childId) => {
+                                return getJsonForBlock(childId);
+                            },
+                        );
+                    }
+                }
+
+                // return it
+                return blockJson;
+            };
+
+            const position = block?.parent?.id
+                ? {
+                      parent: block.parent.id,
+                      slot: block.parent.slot,
+                      sibling: block.id,
+                      type: 'after',
+                  }
+                : undefined;
+
+            const id = state.dispatch({
+                message: ActionMessages.ADD_BLOCK,
+                payload: {
+                    json: getJsonForBlock(duplicateId) as BlockJSON,
+                    position: position,
+                },
+            });
+            setSelectedLayers([]); // Clear first
+
+            // Apply selection and hover
+            designer.setSelected(id as string);
+            designer.setHovered(id as string);
+
+            // Ensure visual selection state is fully synced
+            const nodeIds = [id as string];
+            setSelectedLayers(nodeIds);
+
+            // Render and scroll to the new block (if your system supports it)
+            renderBlock(id as string);
+            handleMenuClose();
+        };
 
         return (
             <>
@@ -681,8 +778,10 @@ export const LayersPanel = observer((): JSX.Element => {
                             }
                             onClick={(e: React.SyntheticEvent) => {
                                 e.stopPropagation();
-                                designer.setSelected(block.id);
-                                handleOnSelect(block);
+                                if (!expanded.includes(block.id)) {
+                                    designer.setSelected(block.id);
+                                    handleOnSelect(block);
+                                }
                             }}
                             onMouseOver={(e: React.SyntheticEvent) => {
                                 e.stopPropagation();
@@ -692,13 +791,9 @@ export const LayersPanel = observer((): JSX.Element => {
                                 e.stopPropagation();
                                 designer.setHovered('');
                             }}
-                            sx={{
-                                minWidth: 0,
-                            }}
+                            sx={{ minWidth: 0 }}
                         >
-                            {children.map((c) => {
-                                return renderBlock(c);
-                            })}
+                            {children.map((c) => renderBlock(c))}
                         </TreeView.Item>
                     </DraggableTreeItem>
                 </DroppableTreeItem>

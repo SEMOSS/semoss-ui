@@ -212,7 +212,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
             } catch (e) {
                 notification.add({
                     color: 'error',
-                    message: e,
+                    message: e.message,
                 });
 
                 console.error(e);
@@ -268,7 +268,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
             } catch (e) {
                 notification.add({
                     color: 'error',
-                    message: e,
+                    message: e.message,
                 });
 
                 console.error(e);
@@ -315,7 +315,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
             } catch (e) {
                 notification.add({
                     color: 'error',
-                    message: e,
+                    message: e.message,
                 });
 
                 console.error(e);
