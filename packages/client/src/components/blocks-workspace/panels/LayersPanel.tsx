@@ -571,11 +571,6 @@ export const LayersPanel = observer((): JSX.Element => {
             return prev.filter((item) => item !== id);
         });
     };
-    /**
-     * Render the block and it's children
-     * @param id - id of the block to render
-     * @returns tree of the widgets
-     */
     const TreeViewComponent = ({
         block,
         variableName,
@@ -682,6 +677,130 @@ export const LayersPanel = observer((): JSX.Element => {
 
         return (
             <>
+                <StyledTreeItemLabel>
+                    <StyledTreeItemIcon>
+                        <WidgetIcon />
+                    </StyledTreeItemIcon>
+                    <StyledLabelContainer
+                        search={
+                            search
+                                ? [block.widget, block.id]
+                                      .join('')
+                                      .toLowerCase()
+                                      .indexOf(search.toLowerCase()) > -1
+                                : false
+                        }
+                    >
+                        <StyledLabelTitle>
+                            {block.widget.charAt(0).toUpperCase() +
+                                block.widget.slice(1)}
+                        </StyledLabelTitle>
+                        <StyledLabelSubtitleText>
+                            {variableName || block.id}
+                        </StyledLabelSubtitleText>
+                    </StyledLabelContainer>
+                    {variableName ? (
+                        <StyledTreeItemIconButton
+                            aria-label="copy"
+                            title={`Copy variable`}
+                            color="default"
+                            size="small"
+                            onClick={(e: React.SyntheticEvent) => {
+                                e.stopPropagation();
+                                copy(`{{${variableName}}}`);
+                            }}
+                            data-onhover
+                        >
+                            <ContentCopy fontSize="small" />
+                        </StyledTreeItemIconButton>
+                    ) : canVariabilize ? (
+                        <StyledTreeItemIconButton
+                            aria-label="add"
+                            title={`Add variable`}
+                            size="small"
+                            color="primary"
+                            onClick={(e: React.SyntheticEvent) => {
+                                e.stopPropagation();
+                                setVariableModal(block.id);
+                            }}
+                            data-onhover
+                        >
+                            <LibraryAdd fontSize="small" />
+                        </StyledTreeItemIconButton>
+                    ) : null}
+
+                    {/* 3-dot menu button */}
+                    <IconButton
+                        size="small"
+                        aria-label="more"
+                        onClick={(e) => handleMenuOpen(e, block.id)}
+                    >
+                        <MoreVert fontSize="small" />
+                    </IconButton>
+                </StyledTreeItemLabel>
+                <Menu
+                    anchorEl={menuAnchorEl}
+                    open={Boolean(menuAnchorEl)}
+                    onClose={handleMenuClose}
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'right',
+                    }}
+                    transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right',
+                    }}
+                    sx={{
+                        '.MuiPopover-paper': {
+                            borderRadius: '4px',
+                            padding: '8px 0px',
+                            boxShadow: '0px 5px 24px 0px rgba(0, 0, 0, 0.32)',
+                        },
+                    }}
+                >
+                    <MenuItem
+                        value="duplicate"
+                        sx={{ display: 'flex' }}
+                        onClick={(e: React.MouseEvent<HTMLElement>) =>
+                            handleDuplicate(e, block.id)
+                        }
+                    >
+                        <img
+                            src={DuplicateIcon}
+                            alt="Duplicate Icon"
+                            style={{ marginRight: '8px' }}
+                        />{' '}
+                        Duplicate
+                    </MenuItem>
+                    <MenuItem
+                        value="delete"
+                        sx={{ display: 'flex' }}
+                        onClick={() => handleDelete(block.id)}
+                    >
+                        <DeleteOutlineOutlinedIcon
+                            style={{ color: '#757575', marginRight: '6px' }}
+                        />{' '}
+                        Delete
+                    </MenuItem>
+                </Menu>
+            </>
+        );
+    };
+    const renderBlock = (id: string) => {
+        const block = state.blocks[id];
+        if (!block) {
+            return null;
+        }
+        const variableName = state.getAlias(id);
+        const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
+        const WidgetIcon = registry[block.widget].icon;
+        const children = [];
+        for (const s in block.slots) {
+            children.push(...block.slots[s].children);
+        }
+
+        return (
+            <>
                 <DroppableTreeItem
                     node={block}
                     key={block.id}
@@ -713,75 +832,17 @@ export const LayersPanel = observer((): JSX.Element => {
                                 </StyledTreeItemIcon>
                             }
                             label={
-                                <StyledTreeItemLabel>
-                                    <StyledTreeItemIcon>
-                                        <WidgetIcon />
-                                    </StyledTreeItemIcon>
-                                    <StyledLabelContainer
-                                        search={
-                                            search
-                                                ? [block.widget, block.id]
-                                                      .join('')
-                                                      .toLowerCase()
-                                                      .indexOf(
-                                                          search.toLowerCase(),
-                                                      ) > -1
-                                                : false
-                                        }
-                                    >
-                                        <StyledLabelTitle>
-                                            {block.widget
-                                                .charAt(0)
-                                                .toUpperCase() +
-                                                block.widget.slice(1)}
-                                        </StyledLabelTitle>
-                                        <StyledLabelSubtitleText>
-                                            {variableName
-                                                ? variableName
-                                                : block.id}
-                                        </StyledLabelSubtitleText>
-                                    </StyledLabelContainer>
-                                    {variableName ? (
-                                        <StyledTreeItemIconButton
-                                            aria-label="copy"
-                                            title={`Copy variable`}
-                                            color="default"
-                                            size="small"
-                                            onClick={(
-                                                e: React.SyntheticEvent,
-                                            ) => {
-                                                e.stopPropagation();
-                                                copy(`{{${variableName}}}`);
-                                            }}
-                                            data-onhover
-                                        >
-                                            <ContentCopy fontSize="small" />
-                                        </StyledTreeItemIconButton>
-                                    ) : canVariabilize ? (
-                                        <StyledTreeItemIconButton
-                                            aria-label="add"
-                                            title={`Add variable`}
-                                            size="small"
-                                            color={'primary'}
-                                            onClick={(
-                                                e: React.SyntheticEvent,
-                                            ) => {
-                                                e.stopPropagation();
-                                                setVariableModal(block.id);
-                                            }}
-                                            data-onhover
-                                        >
-                                            <LibraryAdd fontSize="small" />
-                                        </StyledTreeItemIconButton>
-                                    ) : null}
-                                </StyledTreeItemLabel>
+                                <TreeViewComponent
+                                    block={block}
+                                    variableName={variableName}
+                                    WidgetIcon={WidgetIcon}
+                                    canVariabilize={canVariabilize}
+                                />
                             }
                             onClick={(e: React.SyntheticEvent) => {
                                 e.stopPropagation();
-                                if (!expanded.includes(block.id)) {
-                                    designer.setSelected(block.id);
-                                    handleOnSelect(block);
-                                }
+                                designer.setSelected(block.id);
+                                handleOnSelect(block);
                             }}
                             onMouseOver={(e: React.SyntheticEvent) => {
                                 e.stopPropagation();
@@ -791,9 +852,13 @@ export const LayersPanel = observer((): JSX.Element => {
                                 e.stopPropagation();
                                 designer.setHovered('');
                             }}
-                            sx={{ minWidth: 0 }}
+                            sx={{
+                                minWidth: 0,
+                            }}
                         >
-                            {children.map((c) => renderBlock(c))}
+                            {children.map((c) => {
+                                return renderBlock(c);
+                            })}
                         </TreeView.Item>
                     </DraggableTreeItem>
                 </DroppableTreeItem>
