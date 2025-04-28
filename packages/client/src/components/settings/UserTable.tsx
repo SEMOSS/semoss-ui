@@ -13,11 +13,15 @@ import {
     Search,
     Box,
     Stack,
+    Popover,
+    Grid,
 } from '@semoss/ui';
 import { useRootStore, useAPI, useSettings, useDebounceValue } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { UserAddOverlay } from './UserAddOverlay';
 import SearchIcon from '@mui/icons-material/Search';
+import CopyAllIcon from '@mui/icons-material/CopyAll';
+import { UserTablePopover } from './UserTablePopover';
 
 const AvatarWrapper = styled('div')({
     display: 'inline-block',
@@ -220,6 +224,10 @@ export const UserTable = (props: UserTableProps) => {
     /** Member Table State */
     const [selectedMembers, setSelectedMembers] = useState([]);
 
+    /** Utility for Popover */
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+    const [hoveredUser, setHoveredUser] = useState<User | null>(null);
+    const isPopoverOpen = Boolean(anchorEl);
     /** Add User State */
     const [addModalOpen, setAddModalOpen] = useState<boolean>(false);
     const [addModalUser, setAddModalUser] = useState<User | null>(null);
@@ -378,7 +386,30 @@ export const UserTable = (props: UserTableProps) => {
             setSelectedMembers([]);
         }
     };
+    /**
+     * Handle user popover open
+     * @param event
+     * @param user
+     */
+    const handlePopoverOpen = (
+        event: React.MouseEvent<HTMLElement>,
+        user: User,
+    ) => {
+        setAnchorEl(event.currentTarget);
+        setHoveredUser(user);
+    };
+    const handlePopoverClose = () => {
+        setAnchorEl(null);
 
+        setHoveredUser(null);
+    };
+    const handleCopy = (text: string) => {
+        navigator.clipboard.writeText(text);
+        notification.add({
+            color: 'success',
+            message: 'Copied to clipboard',
+        });
+    };
     // Avatars rendered
     const Avatars = useMemo(() => {
         if (!renderedMembers.length) {
@@ -610,6 +641,17 @@ export const UserTable = (props: UserTableProps) => {
                                                                     }
                                                                     spacing={0}
                                                                     flex={1}
+                                                                    onMouseEnter={(
+                                                                        event,
+                                                                    ) =>
+                                                                        handlePopoverOpen(
+                                                                            event,
+                                                                            user,
+                                                                        )
+                                                                    }
+                                                                    onMouseLeave={() =>
+                                                                        handlePopoverClose()
+                                                                    }
                                                                 >
                                                                     <StyledPrimaryText
                                                                         variant="body1"
@@ -624,42 +666,6 @@ export const UserTable = (props: UserTableProps) => {
                                                                             </>
                                                                         )}
                                                                     </StyledPrimaryText>
-                                                                    <Stack
-                                                                        direction={
-                                                                            'row'
-                                                                        }
-                                                                        alignItems={
-                                                                            'center'
-                                                                        }
-                                                                        spacing={
-                                                                            1
-                                                                        }
-                                                                        width={
-                                                                            '150px'
-                                                                        }
-                                                                        title={`Id: ${user.id}`}
-                                                                    >
-                                                                        <StyledSecondaryText
-                                                                            variant="body2"
-                                                                            noWrap={
-                                                                                true
-                                                                            }
-                                                                        >
-                                                                            ID:
-                                                                        </StyledSecondaryText>
-                                                                        <StyledPrimaryText
-                                                                            variant="body2"
-                                                                            noWrap={
-                                                                                true
-                                                                            }
-                                                                        >
-                                                                            {user.id || (
-                                                                                <>
-                                                                                    &nbsp;
-                                                                                </>
-                                                                            )}
-                                                                        </StyledPrimaryText>
-                                                                    </Stack>
                                                                 </Stack>
                                                             </StyledCenteredBox>
                                                         </Table.Cell>
@@ -791,6 +797,24 @@ export const UserTable = (props: UserTableProps) => {
                                             />
                                         </Table.Row>
                                     </Table.Footer>
+                                    <UserTablePopover
+                                        hoveredUser={
+                                            hoveredUser
+                                                ? {
+                                                      id: hoveredUser.id,
+                                                      name:
+                                                          hoveredUser.name ||
+                                                          'Unknown',
+                                                      email:
+                                                          hoveredUser.email ||
+                                                          '',
+                                                  }
+                                                : null
+                                        }
+                                        isPopoverOpen={isPopoverOpen}
+                                        anchorEl={anchorEl}
+                                        handlePopoverClose={handlePopoverClose}
+                                    />
                                 </StyledMemberTable>
                             ) : (
                                 <StyledNoUsersDiv>
