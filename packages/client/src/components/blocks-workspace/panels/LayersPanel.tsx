@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Actions, DockLocation, TabNode } from 'flexlayout-react';
 import { CSS } from '@dnd-kit/utilities';
@@ -44,6 +44,7 @@ import {
 import { AddVariableModal } from '@/components/notebook';
 import { useDesigner, useWorkspace } from '@/hooks';
 import { Panel } from '@/components/workspace';
+import { getBlockElement } from '@/stores';
 
 const customCollisionDetection = (args) => {
     const collisions = closestCenter(args);
@@ -238,6 +239,7 @@ export const LayersPanel = observer((): JSX.Element => {
     const [globalDropPositions, setGlobalDropPositions] = useState<
         'top' | 'bottom' | 'inside' | null
     >(null);
+    const accordionRefs = useRef({});
 
     const [activeNode, setActiveNode] = useState<TreeNode | null>(null);
 
@@ -248,6 +250,21 @@ export const LayersPanel = observer((): JSX.Element => {
         }),
     );
 
+    const scrollIntoView = (
+        element: Element | null,
+        {
+            behavior = 'smooth' as ScrollBehavior,
+            block = 'center' as ScrollLogicalPosition,
+            inline = 'start' as ScrollLogicalPosition,
+        } = {},
+    ) => {
+        (element as HTMLElement)?.scrollIntoView({
+            behavior,
+            block,
+            inline,
+        });
+    };
+
     useEffect(() => {
         const parents = state.getAllParents(designer.selected);
         if (parents.length) {
@@ -256,9 +273,18 @@ export const LayersPanel = observer((): JSX.Element => {
             );
             selectLayer(parentPage);
             setSelectedPages(parentPage);
+            setSelectedLayers(parents);
+            setExpanded((prev) => [...new Set([...prev, ...parents])]);
         }
-        setSelectedLayers(parents);
-        setExpanded((prev) => [...new Set([...prev, ...parents])]);
+        const scrollTimeout = setTimeout(() => {
+            // Scroll to the selected block in the accordion
+            scrollIntoView(accordionRefs.current[designer.selected], {
+                block: parents.length > 2 ? 'center' : 'start',
+            });
+        }, 100);
+        return () => {
+            clearTimeout(scrollTimeout);
+        };
     }, [designer.selected]);
 
     useEffect(() => {
@@ -522,6 +548,18 @@ export const LayersPanel = observer((): JSX.Element => {
         );
     };
 
+    const handleAccordionToggle = (
+        event: React.MouseEvent<SVGSVGElement, MouseEvent>,
+    ) => {
+        event.stopPropagation();
+        const id = event.currentTarget.getAttribute('data-expand-id');
+        setExpanded((prev) => {
+            if (event.currentTarget.getAttribute('name') === 'expand') {
+                return [...prev, id];
+            }
+            return prev.filter((item) => item !== id);
+        });
+    };
     /**
      * Render the block and it's children
      * @param id - id of the block to render
@@ -556,6 +594,27 @@ export const LayersPanel = observer((): JSX.Element => {
                         <TreeView.Item
                             key={block.id}
                             nodeId={block.id}
+                            ref={(ele) =>
+                                (accordionRefs.current[block.id] = ele)
+                            }
+                            expandIcon={
+                                <StyledTreeItemIcon>
+                                    <ChevronRight
+                                        name="expand"
+                                        data-expand-id={block.id}
+                                        onClick={handleAccordionToggle}
+                                    />
+                                </StyledTreeItemIcon>
+                            }
+                            collapseIcon={
+                                <StyledTreeItemIcon>
+                                    <ExpandMore
+                                        name="collapse"
+                                        data-expand-id={block.id}
+                                        onClick={handleAccordionToggle}
+                                    />
+                                </StyledTreeItemIcon>
+                            }
                             label={
                                 <StyledTreeItemLabel>
                                     <StyledTreeItemIcon>
@@ -622,10 +681,8 @@ export const LayersPanel = observer((): JSX.Element => {
                             }
                             onClick={(e: React.SyntheticEvent) => {
                                 e.stopPropagation();
-                                if (!expanded.includes(block.id)) {
-                                    designer.setSelected(block.id);
-                                    handleOnSelect(block);
-                                }
+                                designer.setSelected(block.id);
+                                handleOnSelect(block);
                             }}
                             onMouseOver={(e: React.SyntheticEvent) => {
                                 e.stopPropagation();
@@ -694,6 +751,7 @@ export const LayersPanel = observer((): JSX.Element => {
     const handlePageSelection = (block) => {
         selectLayer(block.id);
         setExpanded([]);
+        accordionRefs.current = {};
         designer.setSelected(block.id);
         handleOnSelect(block);
         setSelectedPages(block.id);
@@ -809,8 +867,11 @@ export const LayersPanel = observer((): JSX.Element => {
      * id - id of the layer
      */
     const handleOnSelect = (blockData) => {
-        if (blockData.widget !== 'page') return;
         const id = blockData.id;
+        if (blockData.widget !== 'page') {
+            scrollIntoView(getBlockElement(id));
+            return;
+        }
         // try to select a panel, if it doesn't exist create it. Save the path
         const IsSelected = selectPanel(id);
         if (!IsSelected) {
@@ -1069,13 +1130,6 @@ export const LayersPanel = observer((): JSX.Element => {
                                     <TreeView
                                         selected={selectedLayers}
                                         expanded={expanded}
-                                        onNodeToggle={(
-                                            e: React.SyntheticEvent,
-                                            nodeIds: string[],
-                                        ) => {
-                                            e.stopPropagation();
-                                            setExpanded(nodeIds);
-                                        }}
                                         onNodeSelect={(
                                             e: React.SyntheticEvent,
                                             nodeIds: string[],
@@ -1087,16 +1141,6 @@ export const LayersPanel = observer((): JSX.Element => {
                                                 setSelectedLayers(nodeIds);
                                             }
                                         }}
-                                        defaultCollapseIcon={
-                                            <StyledTreeItemIcon>
-                                                <ExpandMore />
-                                            </StyledTreeItemIcon>
-                                        }
-                                        defaultExpandIcon={
-                                            <StyledTreeItemIcon>
-                                                <ChevronRight />
-                                            </StyledTreeItemIcon>
-                                        }
                                     >
                                         {selectedLayer?.length ? (
                                             selectedLayer.map((c) =>
