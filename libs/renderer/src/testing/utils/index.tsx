@@ -9,12 +9,13 @@ interface MockProviderProps {
     children: React.ReactNode;
     blocks: Record<string, Block>;
     queryConfig?: Record<string, QueryStateConfig>;
-    renderEngineId: string
+    renderEngineId: string;
 }
 
 const MockProvider: React.FC<MockProviderProps> = ({
     children,
-    blocks, renderEngineId,
+    blocks,
+    renderEngineId,
     queryConfig,
 }) => {
     const store = new StateStore({
@@ -29,7 +30,7 @@ const MockProvider: React.FC<MockProviderProps> = ({
 
     return (
         <Blocks state={store} registry={DefaultBlocks}>
-            <RendererEngine id={renderEngineId}/>
+            <RendererEngine id={renderEngineId} />
         </Blocks>
     );
 };
@@ -48,14 +49,15 @@ const customRender = (
 ): ReturnType<typeof render> => {
     const { blocks } = options || {}; // Destructure parameters from options
     const { queryConfig } = options || {};
-    const {id : renderEngineId} = ui.props // Destructure ui block props and get its id prop to be used in renderEngine
+    const { id: renderEngineId } = ui.props; // Destructure ui block props and get its id prop to be used in renderEngine
     return render(ui, {
         wrapper: (props) => (
             <MockProvider
                 {...props}
                 blocks={blocks}
                 queryConfig={queryConfig}
-            renderEngineId={renderEngineId} />
+                renderEngineId={renderEngineId}
+            />
         ),
         ...options,
     });

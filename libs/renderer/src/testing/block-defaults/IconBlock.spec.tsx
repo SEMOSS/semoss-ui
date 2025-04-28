@@ -46,7 +46,9 @@ describe("icon block", () => {
         });
 
         const icon = container.querySelector("[data-block='icon']");
-        const iconType = icon.querySelector("[data-testid='InsertEmoticonOutlinedIcon']");
+        const iconType = icon.querySelector(
+            "[data-testid='InsertEmoticonOutlinedIcon']",
+        );
 
         expect(iconType).toBeInTheDocument();
     });
