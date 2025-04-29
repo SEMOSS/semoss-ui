@@ -1,6 +1,6 @@
 import { render } from "../utils";
-import { expect, test } from "vitest";
-import { fireEvent, waitFor, screen } from "@testing-library/react";
+import { expect } from "vitest";
+import { screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
 import { IconBlock } from "../../components/block-defaults/Icon_block";

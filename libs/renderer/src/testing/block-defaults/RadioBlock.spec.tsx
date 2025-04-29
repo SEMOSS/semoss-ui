@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from "../utils";
 import { expect } from "vitest";
 import "@testing-library/jest-dom";
+
+import { fireEvent, render, screen } from "../utils";
 
 import { RadioBlock } from "@/components/block-defaults/radio-block/RadioBlock";
 

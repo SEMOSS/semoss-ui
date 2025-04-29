@@ -1,23 +1,24 @@
-import { render } from "../utils";
-import { expect, test } from "vitest";
+import { expect } from "vitest";
 import { fireEvent, waitFor, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
+
+import { render } from "../utils";
 
 import { SwitchBlock } from "../../components/block-defaults/switch-block/SwitchBlock";
 
 const blocks = {
     switch: {
         data: {
-                style: {width: "fit-content",},
-                label: "Toggle Switch",
-                value: false,
-                disabled: false,
-                color: "primary",
-                size: "medium",
-                helperText: "",
-                required: false,
-                labelPlacement: "end",
-            },
+            style: { width: "fit-content" },
+            label: "Toggle Switch",
+            value: false,
+            disabled: false,
+            color: "primary",
+            size: "medium",
+            helperText: "",
+            required: false,
+            labelPlacement: "end",
+        },
         id: "switch",
         widget: "switch",
         slots: {},
@@ -29,7 +30,7 @@ const blocks = {
 
 describe("switch block", () => {
     it("renders correctly", async () => {
-        const { container } = render(< SwitchBlock id="switch" />, {
+        const { container } = render(<SwitchBlock id="switch" />, {
             blocks: blocks,
         });
 
@@ -38,7 +39,7 @@ describe("switch block", () => {
     });
 
     it("displays default text label", async () => {
-        const { container } = render(< SwitchBlock id="switch" />, {
+        render(<SwitchBlock id="switch" />, {
             blocks: blocks,
         });
 
@@ -46,7 +47,7 @@ describe("switch block", () => {
     });
 
     it("toggles value on clicked", async () => {
-        const { container } = render(< SwitchBlock id="switch" />, {
+        render(<SwitchBlock id="switch" />, {
             blocks: blocks,
         });
         const switchElement = screen.getByRole("checkbox");
