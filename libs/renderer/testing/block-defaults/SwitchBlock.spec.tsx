@@ -1,9 +1,8 @@
 import { expect } from "vitest";
-import { fireEvent, waitFor, screen } from "@testing-library/react";
+import { fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
-import { render } from "../utils";
-
+import { screen, render } from "../utils";
 import { SwitchBlock } from "@/components/block-defaults/switch-block/SwitchBlock";
 
 const blocks = {

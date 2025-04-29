@@ -2,7 +2,6 @@ import { expect } from "vitest";
 import "@testing-library/jest-dom";
 
 import { render } from "../utils";
-
 import { ModalBlock } from "@/components/block-defaults/modal-block/ModalBlock";
 
 const blocks = {

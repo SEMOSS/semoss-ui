@@ -1,8 +1,8 @@
 import { expect } from "vitest";
 import "@testing-library/jest-dom";
+import { fireEvent } from "@testing-library/react";
 
-import { fireEvent, render } from "../utils";
-
+import { render } from "../utils";
 import { CheckboxBlock } from "@/components/block-defaults/checkbox-block/CheckboxBlock";
 
 const blocks = {

@@ -1,8 +1,8 @@
 import { expect } from "vitest";
+import { fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
-import { fireEvent, render, screen } from "../utils";
-
+import { render, screen } from "../utils";
 import { RadioBlock } from "@/components/block-defaults/radio-block/RadioBlock";
 
 const blocks = {

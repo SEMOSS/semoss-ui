@@ -1,8 +1,8 @@
 import { expect } from "vitest";
 import "@testing-library/jest-dom";
+import { fireEvent } from "@testing-library/react";
 
-import { fireEvent, render, screen } from "../utils";
-
+import { render, screen } from "../utils";
 import { ToggleButtonBlock } from "@/components/block-defaults/toggle-button-block/ToggleButtonBlock";
 
 const blocks = {

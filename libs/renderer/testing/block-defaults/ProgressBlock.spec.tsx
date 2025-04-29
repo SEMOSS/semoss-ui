@@ -1,5 +1,4 @@
 import { render, screen } from "../utils";
-
 import { ProgressBlock } from "@/components/block-defaults/progress-block/ProgressBlock";
 
 const blocks = {

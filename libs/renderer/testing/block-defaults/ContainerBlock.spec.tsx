@@ -1,5 +1,4 @@
 import { render, screen } from "../utils";
-
 import { ContainerBlock } from "@/components/block-defaults/container-block/ContainerBlock";
 
 const blocks = {
