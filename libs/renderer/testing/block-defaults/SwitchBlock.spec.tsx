@@ -4,7 +4,7 @@ import "@testing-library/jest-dom";
 
 import { render } from "../utils";
 
-import { SwitchBlock } from "../../components/block-defaults/switch-block/SwitchBlock";
+import { SwitchBlock } from "@/components/block-defaults/switch-block/SwitchBlock";
 
 const blocks = {
     switch: {

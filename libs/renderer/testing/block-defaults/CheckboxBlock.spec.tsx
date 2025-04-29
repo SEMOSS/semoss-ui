@@ -1,6 +1,7 @@
-import { fireEvent, render } from "../utils";
 import { expect } from "vitest";
 import "@testing-library/jest-dom";
+
+import { fireEvent, render } from "../utils";
 
 import { CheckboxBlock } from "@/components/block-defaults/checkbox-block/CheckboxBlock";
 

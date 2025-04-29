@@ -1,9 +1,8 @@
-import { render } from "../utils";
 import { expect } from "vitest";
-import { screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
-import { IconBlock } from "../../components/block-defaults/Icon_block";
+import { render } from "../utils";
+import { IconBlock } from "@/components/block-defaults/Icon_block";
 
 const blocks = {
     icon: {
@@ -37,7 +36,7 @@ describe("icon block", () => {
         const icon = container.querySelector("[data-block='icon']");
         expect(icon).toBeInTheDocument();
 
-        screen.debug();
+        // screen.debug();
     });
 
     it("shows default icon", async () => {

@@ -1,9 +1,10 @@
+import type React from "react";
 import "@testing-library/jest-dom";
+
+import { type Block, type QueryStateConfig, StateStore } from "@/store";
 import { DefaultBlocks } from "@/components/block-defaults";
 import { Blocks, RendererEngine } from "@/components/blocks";
-import { type Block, type QueryStateConfig, StateStore } from "@/store";
 import { render, type RenderOptions } from "@testing-library/react";
-import type React from "react";
 
 interface MockProviderProps {
     children: React.ReactNode;
