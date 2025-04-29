@@ -360,7 +360,9 @@ export class StateStore {
     }
 
     /**
+     * -------------------------------------
      * Actions
+     * -------------------------------------
      */
     /**
      * Dispatch a message to update the state
