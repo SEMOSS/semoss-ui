@@ -1,9 +1,9 @@
-import { render } from "../utils/index";
-import { expect, test } from "vitest";
-import { fireEvent, waitFor } from "@testing-library/react";
+import { expect } from "vitest";
 import "@testing-library/jest-dom";
 
-import { ModalBlock } from "../../components/block-defaults/modal-block/ModalBlock";
+import { render } from "../utils";
+
+import { ModalBlock } from "@/components/block-defaults/modal-block/ModalBlock";
 
 const blocks = {
     modal: {
@@ -22,7 +22,7 @@ const blocks = {
             minWidth: "sm",
             designMode: true,
         },
-        id: "modalTest",
+        id: "modal",
         widget: "modal",
         slots: {
             content: {
@@ -42,11 +42,11 @@ const blocks = {
 
 describe("modal block", () => {
     it("renders correctly with mocked provider", async () => {
-        const { container } = render(<ModalBlock id="modalTest" />, {
+        const { container } = render(<ModalBlock id="modal" />, {
             blocks: blocks,
         });
 
-        // const modal = container.querySelector("[data-block='modal']");
-        // expect(modal).toBeInTheDocument();
+        const modal = container.querySelector("[data-block='modal']");
+        expect(modal).toBeInTheDocument();
     });
 });
