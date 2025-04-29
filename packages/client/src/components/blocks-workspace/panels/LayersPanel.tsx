@@ -289,9 +289,12 @@ export const LayersPanel = observer((): JSX.Element => {
         }
         const scrollTimeout = setTimeout(() => {
             // Scroll to the selected block in the accordion
-            scrollIntoView(accordionRefs.current[designer.selected], {
-                block: parents.length > 2 ? 'center' : 'start',
-            });
+            const refEl = accordionRefs.current[designer.selected];
+            if (refEl) {
+                scrollIntoView(refEl, {
+                    block: parents.length > 2 ? 'center' : 'start',
+                });
+            }
         }, 100);
         return () => {
             clearTimeout(scrollTimeout);
@@ -564,11 +567,13 @@ export const LayersPanel = observer((): JSX.Element => {
     ) => {
         event.stopPropagation();
         const id = event.currentTarget.getAttribute('data-expand-id');
+        if (!id) return;
+        const action = event.currentTarget.getAttribute('name');
         setExpanded((prev) => {
-            if (event.currentTarget.getAttribute('name') === 'expand') {
+            if (action === 'expand') {
                 return [...prev, id];
             }
-            return prev.filter((item) => item !== id);
+            return prev.filter((nodeId) => nodeId !== id);
         });
     };
     const TreeViewComponent = ({
@@ -810,8 +815,9 @@ export const LayersPanel = observer((): JSX.Element => {
                         <TreeView.Item
                             key={block.id}
                             nodeId={block.id}
-                            ref={(ele) =>
-                                (accordionRefs.current[block.id] = ele)
+                            ref={(node) =>
+                                (accordionRefs.current[block.id] =
+                                    node instanceof HTMLElement ? node : null)
                             }
                             expandIcon={
                                 <StyledTreeItemIcon>
