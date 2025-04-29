@@ -18,20 +18,23 @@ export enum ActionMessages {
     SET_LISTENER = "SET_LISTENER",
     SET_QUERY = "SET_QUERY",
     NEW_QUERY = "NEW_QUERY",
-    DELETE_QUERY = "DELETE_QUERY",
-    UPDATE_QUERY = "UPDATE_QUERY",
-    RUN_QUERY = "RUN_QUERY",
     NEW_CELL = "NEW_CELL",
+    DELETE_QUERY = "DELETE_QUERY",
     DELETE_CELL = "DELETE_CELL",
+    UPDATE_QUERY = "UPDATE_QUERY",
     UPDATE_CELL = "UPDATE_CELL",
-    RUN_CELL = "RUN_CELL",
-    DISPATCH_EVENT = "DISPATCH_EVENT",
-    DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
     ADD_VARIABLE = "ADD_VARIABLE",
     RENAME_VARIABLE = "RENAME_VARIABLE",
     EDIT_VARIABLE = "EDIT_VARIABLE",
     DELETE_VARIABLE = "DELETE_VARIABLE",
     SET_SHEET_EXECUTION_ORDER = "SET_SHEET_EXECUTION_ORDER",
+    /**
+     * Events
+    */
+   RUN_CELL = "RUN_CELL",
+   RUN_QUERY = "RUN_QUERY",
+   DISPATCH_EVENT = "DISPATCH_EVENT",
+   DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
 }
 
 export type Actions =
@@ -184,6 +187,14 @@ export interface RunQueryAction extends Action {
     };
 }
 
+export interface RunCellAction extends Action {
+    message: ActionMessages.RUN_CELL;
+    payload: {
+        queryId: string;
+        cellId: string;
+    };
+}
+
 export interface NewCellAction extends Action {
     message: ActionMessages.NEW_CELL;
     payload: {
@@ -212,13 +223,6 @@ export interface UpdateCellAction extends Action {
     };
 }
 
-export interface RunCellAction extends Action {
-    message: ActionMessages.RUN_CELL;
-    payload: {
-        queryId: string;
-        cellId: string;
-    };
-}
 
 export interface DispatchEventAction extends Action {
     message: ActionMessages.DISPATCH_EVENT;
