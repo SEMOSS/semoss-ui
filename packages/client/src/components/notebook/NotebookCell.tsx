@@ -478,8 +478,9 @@ export const NotebookCell = observer(
                 }}
             >
                 <StyledRow direction="row" width="100%" spacing={1}>
+                    {/* TODO: Alright so do we want to just automate cells as variables, if so no need for condition  */}
                     <StyledName variant="subtitle2">
-                        {variableName ? variableName : cell.config.name}
+                        {variableName ? variableName : cell.id}
                     </StyledName>
 
                     <StyledCellActions in={showCellActions}>

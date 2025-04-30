@@ -1,7 +1,8 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
+// TODO: Pull from sdk
+import { runPixelTwo } from '../../runPixelTwo';
 import { RootStore, WorkspaceStore, WorkspaceConfigInterface } from '@/stores';
-import { runPixel } from '@/api';
 import { AppMetadata } from '@/components/app';
 
 interface ConfigStoreInterface {
@@ -511,7 +512,7 @@ export class ConfigStore {
      * @param pixel - pixel to execute
      */
     async runPixel<O extends unknown[] | []>(pixel: string) {
-        return await runPixel<O>(
+        return await runPixelTwo<O>(
             this._store.insightID ? this._store.insightID : 'new',
             pixel,
         );
@@ -533,10 +534,15 @@ export class ConfigStore {
             throw new Error('Unauthorized');
         }
 
+        const { insightId } = await runPixelTwo(
+            `SetContext("${appId}")`,
+            'new',
+        );
+
         // get the metadata
         const getAppInfo = await this._root.monolithStore.runQuery<
             [AppMetadata]
-        >(`ProjectInfo(project=["${appId}"]);`);
+        >(`ProjectInfo(project=["${appId}"]);`, insightId);
 
         // throw the errors if there are any
         if (getAppInfo.errors.length > 0) {
@@ -549,6 +555,7 @@ export class ConfigStore {
 
         const workspace: WorkspaceConfigInterface = {
             appId: appId,
+            insightId: insightId,
             type: 'CODE',
             role: role,
             metadata: metadata,
@@ -568,7 +575,7 @@ export class ConfigStore {
      */
     async setGeneralReactors() {
         try {
-            const res = await runPixel('META|HelpJson();');
+            const res = await runPixelTwo('META|HelpJson();');
 
             runInAction(() => {
                 const generalReactorList = res.pixelReturn[0].output['General'];

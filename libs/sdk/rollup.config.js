@@ -37,12 +37,5 @@ export default defineConfig({
         postcss(),
         bundleSize(),
     ],
-    external: [
-        "react",
-        "react-dom",
-        "@mui/material",
-        "@mui/icons-material",
-        "@emotion/react",
-        "@emotion/styled",
-    ],
+    external: ["react", "react-dom"],
 });

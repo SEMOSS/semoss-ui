@@ -30,7 +30,6 @@
 
         "paths": {
             "@/*": ["*"],
-            "@semoss/ui": ["../ui/src/index.ts"]
         }
     },
     "include": ["src"],

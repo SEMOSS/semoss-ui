@@ -2,7 +2,7 @@ import { expect } from "vitest";
 import "@testing-library/jest-dom";
 
 import { render, screen } from "../utils";
-import { LinkBlock } from "../../components/block-defaults/link-block/LinkBlock";
+import { LinkBlock } from "@/components/block-defaults/link-block/LinkBlock";
 
 const blocks = {
     link: {
@@ -38,7 +38,6 @@ describe("link block", () => {
         });
 
         const element = container.querySelector("[data-block='link']");
-        // console.log({ element });
 
         expect(element).toBeInTheDocument();
         expect(element.tagName).equal("A", "element is type a");
