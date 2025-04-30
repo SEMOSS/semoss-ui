@@ -33,10 +33,7 @@ const StyledMenuSection = styled(Accordion)<{ expansion: boolean }>(
     }),
 );
 
-const StyledTypography = styled(Typography)(() => ({
-    // textTransform: 'uppercase',
-    // fontWeight: 'bold',
-}));
+const StyledTypography = styled(Typography)(() => ({}));
 
 const StyledMenuSectionTitle = styled(Accordion.Trigger)<{
     expansion?: boolean;
@@ -47,7 +44,6 @@ const StyledMenuSectionTitle = styled(Accordion.Trigger)<{
     paddingLeft: '12px',
     paddingTop: '8px',
     paddingBottom: '8px',
-    // backgroundColor: expansion ? 'transparent' : '#F5F5F5',
     ':hover': {
         backgroundColor: expansion ? 'transparent' : '#F5F5F5',
     },
@@ -61,7 +57,6 @@ const StyledStack = styled(Stack)(() => ({
         paddingBottom: '8px',
         marginTop: '0px',
         marginBottom: '8px',
-        // border: '1px solid #E6E6E6'
     },
 }));
 

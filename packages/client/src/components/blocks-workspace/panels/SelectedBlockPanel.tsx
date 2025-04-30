@@ -109,9 +109,7 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
         boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.05)',
     },
 }));
-const StyledCustomTabPanel = styled('div')(({ theme }) => ({
-    // role: 'tabpanel',
-}));
+const StyledCustomTabPanel = styled('div')(({ theme }) => ({}));
 
 export const SelectedBlockPanel = observer(() => {
     const { designer } = useDesigner();
@@ -399,7 +397,6 @@ export const SelectedBlockPanel = observer(() => {
                                     padding: '8px 16px',
                                     alignItems: 'center',
                                     alignSelf: 'stretch',
-                                    // backgroundColor: "rgb(0 0 0 / 4%)",
                                 }}
                                 onChange={(
                                     e: React.SyntheticEvent,
