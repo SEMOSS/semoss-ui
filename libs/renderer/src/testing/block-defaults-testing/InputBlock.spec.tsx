@@ -1,9 +1,7 @@
-import { render, screen } from "../utils/index";
 import { expect, test } from "vitest";
-import { waitFor } from "@testing-library/react";
-import { CSSProperties } from "react";
 import "@testing-library/jest-dom";
 
+import { render, screen } from "../utils/index";
 import { InputBlock } from "../../components/block-defaults/input-block/InputBlock";
 
 const blocks = {
@@ -136,18 +134,28 @@ describe("input block", () => {
             blocks: blocks,
         });
 
-        const input = screen.getByRole("textbox");
-        const label = screen.getByLabelText("Example Input");
+        const element = container.querySelector(
+            "[data-block='multiLine-input']",
+        );
 
-        expect(label).toBeTruthy();
+        expect(element).toBeInTheDocument();
+
+        const input = screen.getByRole("textbox");
+
         expect(input).toHaveAttribute("rows", "3");
         expect(input).toHaveValue("Example #1\nExample #2\nExample #3\n");
     });
 
-    test("does not display multiline if row number does not match ", async () => {
+    test("does not display multiline if input does not match row number", async () => {
         const { container } = render(<InputBlock id="rowValue-input" />, {
             blocks: blocks,
         });
+
+        const element = container.querySelector(
+            "[data-block='rowValue-input']",
+        );
+
+        expect(element).toBeInTheDocument();
 
         const input = screen.getByRole("textbox");
 
@@ -160,13 +168,15 @@ describe("input block", () => {
             blocks: blocks,
         });
 
-        const element = container.querySelector("input");
-        const label = screen.getByLabelText("Example Input");
+        const input = container.querySelector("[data-block='number-input']");
 
-        expect(label).toBeTruthy();
+        expect(input).toBeInTheDocument();
+
+        const element = screen.getByRole("spinbutton");
+
         expect(element).toHaveAttribute("rows", "1");
         expect(element).toHaveAttribute("type", "number");
-        expect(element).toHaveAttribute("value", "1");
+        expect(element).toHaveValue(1);
     });
 
     test("does not display input with mismatch value and type", async () => {
@@ -183,7 +193,4 @@ describe("input block", () => {
         // ui should not display value if type is mismatched
         expect(input).toHaveValue(null);
     });
-
-    // input overflows container
-    // onChange
 });
