@@ -279,33 +279,38 @@ export const QueryInputSettings = observer(
 
                     if (variable.type === "query") {
                         const q = state.getQuery(variable.to);
-                        for (const f in q._exposed) {
-                            pathMap[`${alias}.${f}`] = {
-                                id: `${alias}.${f}`,
-                                path: `${alias}.${f}`,
-                                type: typeof q[f], // TODO: get value
-                                display: `${alias}.${f}`,
-                                blockType: "query-prop",
-                                variabilized: true,
-                                groupAlias: groupAliasMapper("query-prop"),
-                            };
+                        if(q) {
+                            for (const f in q._exposed) {
+                                pathMap[`${alias}.${f}`] = {
+                                    id: `${alias}.${f}`,
+                                    path: `${alias}.${f}`,
+                                    type: typeof q[f], // TODO: get value
+                                    display: `${alias}.${f}`,
+                                    blockType: "query-prop",
+                                    variabilized: true,
+                                    groupAlias: groupAliasMapper("query-prop"),
+                                };
+                            }
                         }
                     }
 
                     if (variable.type === "cell") {
                         const q = state.getQuery(variable.to);
-                        const c = q.getCell(variable.cellId);
 
-                        for (const f in c._exposed) {
-                            pathMap[`${alias}.${f}`] = {
-                                id: `${alias}.${f}`,
-                                path: `${alias}.${f}`,
-                                type: typeof c[f], // TODO: get value
-                                display: `${alias}.${f}`,
-                                blockType: "cell-prop",
-                                variabilized: true,
-                                groupAlias: groupAliasMapper("cell-prop"),
-                            };
+                        if(q) {
+                            const c = q.getCell(variable.cellId);
+    
+                            for (const f in c._exposed) {
+                                pathMap[`${alias}.${f}`] = {
+                                    id: `${alias}.${f}`,
+                                    path: `${alias}.${f}`,
+                                    type: typeof c[f], // TODO: get value
+                                    display: `${alias}.${f}`,
+                                    blockType: "cell-prop",
+                                    variabilized: true,
+                                    groupAlias: groupAliasMapper("cell-prop"),
+                                };
+                            }
                         }
                     }
                 },

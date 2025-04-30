@@ -8,7 +8,12 @@ import { ContentCopy, Delete, DeleteOutline } from '@mui/icons-material';
 import { getRelativeSize, getBlockElement } from '@/stores';
 
 import { useDesigner } from '@/hooks';
-import { BlockJSON, ActionMessages, useBlocks } from '@semoss/renderer';
+import {
+    BlockJSON,
+    ActionMessages,
+    useBlocks,
+    INPUT_BLOCK_TYPES,
+} from '@semoss/renderer';
 
 const STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH = 48;
 const STYLED_BUTTON_GROUP_ICON_BUTTON_HEIGHT = 32;
@@ -235,6 +240,21 @@ export const DeleteDuplicateMask = observer(
                     position: position,
                 },
             });
+
+            // TODO: REFACTOR
+            // Add variables for all blocks that are inputs from user
+            // TODO: What about grouping of inputs
+            if (INPUT_BLOCK_TYPES.indexOf(block.widget) > -1) {
+                state.dispatch({
+                    message: ActionMessages.ADD_VARIABLE,
+                    payload: {
+                        id: id as string,
+                        type: 'block',
+                        to: id as string,
+                        isInput: true,
+                    },
+                });
+            }
 
             designer.setSelected(id ? (id as string) : '');
         };
