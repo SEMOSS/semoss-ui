@@ -32,6 +32,8 @@ export interface TypographyProps {
         | "subtitle2"
         | "body1"
         | "body2"
+        | "body3"
+        | "body4"
         | "caption"
         | "button"
         | "overline";
