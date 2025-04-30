@@ -1,20 +1,10 @@
-<<<<<<< HEAD
 import { useEffect, useMemo, useRef, useState } from "react";
 import { TextField, styled } from "@semoss/ui";
 import { observer } from "mobx-react-lite";
-=======
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Autocomplete, TextField, styled } from "@semoss/ui";
-import { observer } from "mobx-react-lite";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
-import { useBlockSettings, useBlocksPixel, useFrameHeaders } from "../../../../../hooks";
-import { BlockDef } from "../../../../../store";
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import Switch from '@mui/material/Switch';
-<<<<<<< HEAD
 import { Droppable } from "react-beautiful-dnd";
 import { Autocomplete, Popover } from "@mui/material";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
@@ -24,38 +14,25 @@ import { VisualMapConstant } from "../../VisualMapConstant";
 import { VisualMap } from "../../VisualMap";
 
 //styled components for the data tab
-=======
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
 const StyledMain = styled("div")(() => ({
     width: "100%",
     height: "100%",
     marginTop: "1px",
 }));
-<<<<<<< HEAD
 //styled span of frame for the frame and visual selection
-=======
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
 const StyledSpanFrame = styled("span")(() => ({
     fontSize: "1rem",
     color: "#808080",
     paddingLeft: "16px",
     position: "relative",
 }));
-<<<<<<< HEAD
 //styled span of label for the frame and visual selection
-=======
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
 const StyledSpanLabel = styled("span")(() => ({
     fontSize: "1rem",
     paddingLeft: "16px",
     position: "relative",
 }));
-<<<<<<< HEAD
 //styled section for the frame and visual selection
-=======
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
 const StyledSubSection = styled("div")(() => ({
     display: "flex",
     justifyContent: "center",
@@ -63,45 +40,30 @@ const StyledSubSection = styled("div")(() => ({
     width: "100%",
     marginTop: "5px",
 }));
-<<<<<<< HEAD
 //styled droppable area of the frame and visual selection
 const StyledDroppable = styled("div")(() => ({
     marginTop: "8px",
 }));
 //styled label area  of the frame and visual selection
-=======
-const StyledDroppable = styled("div")(() => ({
-    marginTop: "8px",
-}));
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
 const StyledLabelSection = styled("div")(() => ({
     display: "flex",
     width: "100%",
 }));
-<<<<<<< HEAD
 //styled section for the label of the frame and visual selection
-=======
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
 const StyledSwitchSection = styled("div")(() => ({
     display: "flex",
     marginTop: "15px",
     marginLeft: "8px",
     width: "100%",
 }));
-<<<<<<< HEAD
 //styled label for the constants
-=======
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
 const StyledSpanSwitch = styled("span")(() => ({
     fontSize: "1rem",
     color: "#808080",
     marginTop: "5px",
     position: "relative",
 }));
-<<<<<<< HEAD
 //droppable item styling
-=======
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
 const DropContainer = styled("div")(() => ({
     padding: "8px",
     minHeight: "50px",
@@ -110,34 +72,20 @@ const DropContainer = styled("div")(() => ({
     alignItems: "center",
 }));
 
-<<<<<<< HEAD
 //data tab right section of the echart visualization block
 export const DataTabStyling = observer(
     <D extends BlockDef = BlockDef>({ id, updateFrame, path, dragdropColumns, deleteColumns, formmattedColumns, isAdd, syncHeader, chart, storedColumns, visual, selectedItem }) => {
         const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
-=======
-export const DataTabStyling = observer(
-    <D extends BlockDef = BlockDef>({ id, updateFrame, path, dragdropColumns, deleteColumns, formmattedColumns,isAdd , syncHeader, chart, storedColumns}) => {
-        const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
-        const [columnsData, setColumnsData] = useState([]);
-        const [droppedColumns, setDroppedColumns] = useState<string[]>([]);
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
         const [selectedColumns, setSelectedColumns] = useState<Record<string, string[]>>(() => {
             return storedColumns || {}; // Initialize with storedColumns if available
         });
         const [checkedInstruction, setCheckedInstruction] = useState(false);
         const [checkedVisual, setCheckedVisual] = useState(false);
-<<<<<<< HEAD
         const [isAddIcon, setIsAddIcon] = useState(false);
         const getFrames = useBlocksPixel<string[]>("GetFrames();", { data: [] });
         const options = getFrames.status === "SUCCESS" ? getFrames.data : [];
         const [initialVisual, setInitialVisual] = useState(false);
         const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-=======
-        const [isAddIcon, setIsAddIcon] =useState(false);
-        const getFrames = useBlocksPixel<string[]>("GetFrames();", { data: [] });
-        const options = getFrames.status === "SUCCESS" ? getFrames.data : [];
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
 
         const frameHeaders = useFrameHeaders(data.frame?.name);
         // fetch custom details about headers like alias, header, etc and assign to the variable for using it whenever required
@@ -152,7 +100,6 @@ export const DataTabStyling = observer(
             });
         }, [frameHeaders]);
 
-<<<<<<< HEAD
         const matchedVisualMap = getMatchingVisualMapRow(data);
 
         function getMatchingVisualMapRow(data: any) {
@@ -182,8 +129,6 @@ export const DataTabStyling = observer(
             Object.keys(dragdropColumns).forEach((key) => delete dragdropColumns[key]);
         };
 
-=======
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
         useEffect(() => {
             const updatedColumns = { ...selectedColumns };
             storedColumns.forEach((item, index) => {
@@ -198,11 +143,7 @@ export const DataTabStyling = observer(
         }, [JSON.stringify(storedColumns)]);
 
         useEffect(() => {
-<<<<<<< HEAD
             const updatedColumns = { ...dragdropColumns, ...selectedColumns };
-=======
-            const updatedColumns = { ...dragdropColumns , ...selectedColumns };
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
 
             chart.forEach((item, index) => {
                 const key = `data-tab-drop-area-${index}`;
@@ -216,7 +157,6 @@ export const DataTabStyling = observer(
         }, [dragdropColumns]);
 
         useEffect(() => {
-<<<<<<< HEAD
             if (!columnsSelector || columnsSelector.length === 0) {
                 return;
             }
@@ -249,8 +189,6 @@ export const DataTabStyling = observer(
             if (!columnsSelector || columnsSelector.length === 0) {
                 return;
             }
-=======
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
             const formattedArray = chart.map((item, index) => {
                 const key = `data-tab-drop-area-${index}`;
                 const matchedColumns = columnsSelector.filter((column) =>
@@ -264,7 +202,6 @@ export const DataTabStyling = observer(
                     dataType: matchedColumns.map((column) => column.dataType),
                 };
             });
-<<<<<<< HEAD
             formmattedColumns(formattedArray, data.variation);
         }, [selectedColumns, columnsSelector.length]);
 
@@ -277,11 +214,6 @@ export const DataTabStyling = observer(
             setInitialVisual(false);
             setMenuAnchorEl(null);
         }
-=======
-
-            formmattedColumns(formattedArray,data.variation);
-        }, [selectedColumns]);
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
 
         return (
             <StyledMain>
@@ -306,17 +238,12 @@ export const DataTabStyling = observer(
                     />
                 </StyledSubSection>
                 <StyledSpanFrame>Selected Visual</StyledSpanFrame>
-<<<<<<< HEAD
                 <StyledSubSection onClick={(e: any) => handleChangeVisual(initialVisual, e)}>
-=======
-                <StyledSubSection>
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
                     <Autocomplete
                         fullWidth
                         id="Echart-Visuals"
                         multiple={false}
                         disabled={getFrames.status !== "SUCCESS"}
-<<<<<<< HEAD
                         options={[]} // No options to display in the dropdown
                         disablePortal
                         PopperComponent={() => null}
@@ -357,13 +284,6 @@ export const DataTabStyling = observer(
                                 />
                             );
                         }}
-=======
-                        options={options}
-                        freeSolo={false}
-                        renderInput={(params) => (
-                            <TextField {...params} size="small" variant="outlined" />
-                        )}
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
                     />
                 </StyledSubSection>
 
@@ -488,7 +408,6 @@ export const DataTabStyling = observer(
                     />
                     <StyledSpanSwitch>Auto Visualize</StyledSpanSwitch>
                 </StyledSwitchSection>
-<<<<<<< HEAD
                 <div>
                     <Popover
                         id={'visual-popover'}
@@ -506,8 +425,6 @@ export const DataTabStyling = observer(
                         />
                     </Popover>
                 </div>
-=======
->>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
             </StyledMain>
         );
     }
