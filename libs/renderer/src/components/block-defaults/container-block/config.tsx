@@ -12,7 +12,7 @@ import {
     buildPositionSection,
 } from "../block-defaults.shared";
 import { BlockComponent, BlockConfig, Block, BlockDef } from "../../../store";
-import { useBlock, useBlockSettings } from "../../../hooks";
+import { useBlocks, useBlockSettings } from "../../../hooks";
 import { Paths, PathValue } from "../../../types";
 import { MenuItem, Select, Stack, ToggleTabsGroup, styled } from "@semoss/ui";
 import { getValueByPath } from "../../../utility";
@@ -77,7 +77,14 @@ interface ContainerGridSectionProps<D extends BlockDef = BlockDef> {
 export const ContainerGridSection = observer(
     <D extends BlockDef = BlockDef>({ id }: ContainerGridSectionProps<D>) => {
         const { data, setData } = useBlockSettings(id);
-        console.log({ data });
+        const { state } = useBlocks();
+
+        //get the main container of the grouped containers
+        const gridContainer = state.getBlock(id);
+
+        console.log("find children", gridContainer.slots?.children);
+
+        //the child styling to change
         const path = "style.flex";
 
         // track the value
@@ -94,6 +101,7 @@ export const ContainerGridSection = observer(
                 }
 
                 const v = getValueByPath(data, path);
+                console.log({ v });
                 if (typeof v === "undefined") {
                     return "";
                 } else if (typeof v === "string") {
@@ -116,6 +124,7 @@ export const ContainerGridSection = observer(
          */
         const onChange = (value: string) => {
             console.log({ value });
+
             // set the value
             setValue(value);
 
@@ -146,6 +155,7 @@ export const ContainerGridSection = observer(
 
         return (
             <Select
+                fullWidth
                 size="small"
                 value={value}
                 onChange={(e) => {
