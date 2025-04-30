@@ -32,6 +32,11 @@ export const config: BlockConfig<EchartVisualizationBlockDef> = {
             hideUnfilter: false,
             hideExclude: false,
         },
+        show: true,
+        facet:{
+            facetList: [],
+            facetSelected: [],
+        },
     },
     listeners: {},
     slots: {},

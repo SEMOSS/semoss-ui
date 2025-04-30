@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
+    ChangeCircleOutlined,
+    Code,
+    ImportExport,
+    KeyboardArrowDown,
+    KeyboardArrowUp,
+    TextFields,
+} from '@mui/icons-material';
+
+import {
     styled,
     Button,
     Divider,
@@ -9,7 +18,6 @@ import {
     Stack,
     Modal,
 } from '@semoss/ui';
-
 import {
     useBlocks,
     ActionMessages,
@@ -23,17 +31,8 @@ import {
     UnFilterDataCellConfig,
     CodeCellConfig,
     DataImportFormModal,
+    NewCellAction,
 } from '@semoss/renderer';
-
-import { NewCellAction } from '@/stores';
-import {
-    ChangeCircleOutlined,
-    Code,
-    ImportExport,
-    KeyboardArrowDown,
-    KeyboardArrowUp,
-    TextFields,
-} from '@mui/icons-material';
 
 import { ModelBrain } from '@/assets/img/ModelBrain';
 
@@ -270,6 +269,17 @@ export const NotebookAddCell = observer(
                         config: config as Omit<CellStateConfig, 'id'>,
                     },
                 });
+
+                state.dispatch({
+                    message: ActionMessages.ADD_VARIABLE,
+                    payload: {
+                        id: `${query.id}--${newCellId}`,
+                        type: 'cell',
+                        to: query.id,
+                        cellId: newCellId,
+                    },
+                });
+
                 notebook.selectCell(query.id, newCellId);
             } catch (e) {
                 console.error(e);

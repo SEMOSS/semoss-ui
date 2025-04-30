@@ -11,6 +11,7 @@ export interface IconBlockDef extends BlockDef<"icon"> {
         style: CSSProperties;
         src: string;
         title: string;
+        show: string;
     };
     slots: never;
 }
@@ -19,7 +20,7 @@ export const IconBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<IconBlockDef>(id);
 
     const displayIcon = (key: string) => {
-        const Icon = iconMap[key] || iconMap["Default"];
+        const Icon = iconMap[key] || iconMap["Icon"];
         const color = data.style.color || "primary";
         const width = data.style.width ?? null;
         const maxWidth = data.style.maxWidth ?? null;

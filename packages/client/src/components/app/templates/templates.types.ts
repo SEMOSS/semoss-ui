@@ -1,4 +1,4 @@
-import { SerializedState } from '@/stores';
+import { SerializedState } from '@semoss/renderer';
 
 export type Template = {
     /** Name of the template */

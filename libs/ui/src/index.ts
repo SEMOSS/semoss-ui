@@ -21,6 +21,7 @@ export * from "./components/Checkbox";
 export * from "./components/Checklist";
 export * from "./components/Chip";
 export * from "./components/CircularProgress";
+export * from "./components/Code";
 export * from "./components/Collapse";
 // export * from "./components/Colorpicker";
 export * from "./components/Container";
@@ -36,6 +37,7 @@ export * from "./components/LinearProgress";
 export * from "./components/Link";
 export * from "./components/List";
 export * from "./components/LoadingScreen";
+export * from "./components/Markdown";
 export * from "./components/Menu";
 export * from "./components/Modal";
 export * from "./components/Notification";
@@ -53,6 +55,7 @@ export * from "./components/Stack";
 export * from "./components/Switch";
 export * from "./components/Table";
 export * from "./components/Tabs";
+export * from "./components/Terminal";
 export * from "./components/ToggleButton";
 export * from "./components/ToggleButtonGroup";
 export * from "./components/ToggleTabsGroup";
@@ -62,3 +65,31 @@ export * from "./components/ThemeProvider";
 export * from "./components/TextArea";
 export * from "./components/TextField";
 export * from "./components/TreeView";
+
+// TODO: fix miscellaneous mui components/functions
+import {
+    Autocomplete,
+    Chip,
+    Fade,
+    ListItemIcon,
+    ListItemText,
+    MenuList,
+    MenuItem,
+    Popper,
+    Tooltip,
+    TooltipProps,
+} from "@mui/material";
+
+export {
+    Fade,
+    ListItemIcon,
+    ListItemText,
+    MenuList,
+    Popper,
+    MenuItem as MenuItemTwo,
+    Tooltip as TooltipTwo,
+    Chip as ChipTwo,
+    Autocomplete as AutocompleteTwo,
+};
+
+export type { TooltipProps as TooltipPropsTwo };

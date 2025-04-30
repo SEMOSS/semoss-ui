@@ -9,8 +9,11 @@ import { ScatterPlotBlock } from "./variant/scatter-plot/ScatterPlot";
 import { useBlock, useBlocks, useBlockSettings } from "../../../hooks";
 import { BlockComponent, BlockDef } from "../../../store";
 import { PathValue } from "../../../types";
+import { Map } from "./variant/map-chart/Map";
 import { Line } from "./variant/line-chart/Line";
 import { StackChart } from "./variant/stack-chart/StackChart";
+import { Gantt } from "./variant/Gantt/Gantt";
+import { Dendrogram } from './variant/dendrogram/Dendrogram';
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -35,6 +38,12 @@ export interface VisualizationColumns {
     width: string;
 }
 
+export interface FacetColumns{
+    name: string;
+    selector: string;
+    value: string | number;
+    isFacet?: boolean;
+}
 export interface EchartVisualizationBlockDef {
     widget: "e-chart";
     data: {
@@ -58,6 +67,11 @@ export interface EchartVisualizationBlockDef {
             hideFilter: boolean;
             hideExclude: boolean;
         };
+        show: boolean;
+        facet: {
+            facetList: string[] | number[];
+            facetSelected:FacetColumns[];
+        }
     };
     listeners: {};
     slots: never;
@@ -101,15 +115,15 @@ export const VisualizationBlock: BlockComponent = observer(
          * @description get the updated data style when data.style is changed
          */
         const updatedDataStyle = useMemo(() => {
-            let isEm =
+            const isEm =
                 data.style.height.toString().endsWith("em") &&
                 data.style.width.toString().endsWith("em");
-            let isPx =
+            const isPx =
                 data.style.height.toString().endsWith("px") &&
                 data.style.width.toString().endsWith("px");
             if (isEm || isPx) return { ...data.style }; //if values mentioned in em or px, then return same style
-            let calculatedHeight = data.style.height;
-            let calculatedWidth = data.style.width;
+            const calculatedHeight = data.style.height;
+            const calculatedWidth = data.style.width;
             //return updated style
             return {
                 ...data.style,
@@ -143,12 +157,23 @@ export const VisualizationBlock: BlockComponent = observer(
                         {data.variation === "echart-scatter-plots" && (
                             <ScatterPlotBlock id={id} />
                         )}
+                        {data.variation === "echart-world-map-chart" && (
+                            <Map id={id}></Map>
+                        )}
                         {data.variation === "echart-line-graph" && (
                             <Line id={id} updateJson={updateChartJson} />
                         )}
                         {data.variation === "echart-stack-chart" && (
                             <StackChart id={id} />
                         )}
+                        {data.variation === "echart-gantt-chart" && (
+                            <Gantt id={id} updateChart={updateChartJson} />
+                        )}
+                        {
+                            data.variation === 'echart-dendrogram-chart' && (
+                                <Dendrogram id={id} updateJson={updateChartJson} />
+                            )
+                        }
                     </StyledNoDataContainer>
                 );
             } catch (e) {
@@ -170,12 +195,23 @@ export const VisualizationBlock: BlockComponent = observer(
                 {data.variation === "echart-scatter-plots" && (
                     <ScatterPlotBlock id={id} />
                 )}
+                {data.variation === "echart-world-map-chart" && (
+                    <Map id={id}></Map>
+                )}
                 {data.variation === "echart-line-graph" && (
                     <Line id={id} updateJson={updateChartJson} />
                 )}
                 {data.variation === "echart-stack-chart" && (
                     <StackChart id={id} />
                 )}
+                {data.variation === "echart-gantt-chart" && (
+                    <Gantt id={id} updateChart={updateChartJson} />
+                )}
+                {
+                data.variation === 'echart-dendrogram-chart' && (
+                    <Dendrogram id={id} updateJson={updateChartJson} />
+                )
+                }
             </StyledDataContainer>
         );
     },

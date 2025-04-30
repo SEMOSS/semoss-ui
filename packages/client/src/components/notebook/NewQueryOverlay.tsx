@@ -58,7 +58,7 @@ export const NewQueryOverlay = observer(
             if (!data.ID) {
                 setError('ID', {
                     type: 'manual',
-                    message: `Query Id is required`,
+                    message: `Notebook Id is required`,
                 });
                 return;
             }
@@ -67,7 +67,7 @@ export const NewQueryOverlay = observer(
             if (state.queries[data.ID] || state.blocks[data.ID]) {
                 setError('ID', {
                     type: 'manual',
-                    message: `Query Id ${data.ID} already exists`,
+                    message: `Notebook Id ${data.ID} already exists`,
                 });
                 return;
             }

@@ -2,7 +2,10 @@ import { CSSProperties } from "react";
 import { BlockConfig } from "../../../store";
 import { InputSettings, SelectInputSettings } from "../../block-settings";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
-import { buildDimensionsSection } from "../block-defaults.shared";
+import {
+    buildDimensionsSection,
+    buildShowField,
+} from "../block-defaults.shared";
 
 import { DividerBlockDef, DividerBlock } from "./DividerBlock";
 import { HorizontalRule } from "@mui/icons-material";
@@ -23,6 +26,7 @@ export const config: BlockConfig<DividerBlockDef> = {
         light: false,
         text: "",
         showText: false,
+        show: "true",
     },
     listeners: {
         onClick: [],
@@ -34,6 +38,7 @@ export const config: BlockConfig<DividerBlockDef> = {
         {
             name: "General",
             children: [
+                ...buildShowField(),
                 {
                     description: "Variant",
                     render: ({ id }) => (

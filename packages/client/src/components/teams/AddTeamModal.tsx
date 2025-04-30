@@ -1,6 +1,7 @@
 import { Controller, useForm } from 'react-hook-form';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import { Close } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 
 import {
     Stack,
@@ -13,6 +14,7 @@ import {
     styled,
     useNotification,
     IconButton,
+    Container,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
@@ -40,6 +42,21 @@ const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
     justifyContent: 'space-between',
 }));
 
+const StyledContainer = styled(Container)({
+    width: '524px',
+    height: '20px',
+    backgroundColor: 'inherit',
+    fontSize: '12px',
+    fontWeight: '400',
+    fontFamily: 'Inter',
+    color: '#666666',
+    lineHeight: '20px',
+    letterSpacing: '0.4px',
+    paddingLeft: '14px ! important',
+    marginLeft: '0px',
+    marginTop: '3px',
+});
+
 const StyledIcon = styled(PeopleAltIcon)(({ theme }) => ({
     color: theme.palette.secondary.dark,
 }));
@@ -54,7 +71,10 @@ const StyledSelectItem = styled(Select.Item, {
     /** Track if the page header is stuck */
     type: string;
 }>(({ theme, type }) => ({
-    borderBottom: type === 'Custom' ? `solid ${theme.palette.divider}` : 'none',
+    borderBottom:
+        type === 'Custom'
+            ? '1px solid var(--Secondary-Border, #C4C4C4)'
+            : 'none',
 }));
 
 const TypeImageObject = {
@@ -105,6 +125,7 @@ interface AddTeamModalProps {
 
 export const AddTeamModal = (props: AddTeamModalProps) => {
     const { open, onClose } = props;
+    const navigate = useNavigate();
 
     const notification = useNotification();
     const { monolithStore, configStore } = useRootStore();
@@ -114,6 +135,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
         control,
         reset,
         formState: { isValid },
+        watch,
     } = useForm<NewTeamForm>({
         defaultValues: {
             TEAM_NAME: '',
@@ -121,6 +143,8 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
             TEAM_TYPE: '',
         },
     });
+
+    const selectedTeamType = watch('TEAM_TYPE');
 
     const loginTypes = [
         {
@@ -170,6 +194,20 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                     color: 'success',
                     message: 'Successfully added group',
                 });
+                navigate(
+                    `${data.TEAM_NAME.toLowerCase()
+                        .replace(/['"]+/g, '')
+                        .replace(/\s/g, '-')}`,
+                    {
+                        state: {
+                            name: data.TEAM_NAME,
+                            type:
+                                data.TEAM_TYPE !== 'Custom'
+                                    ? data.TEAM_TYPE
+                                    : undefined,
+                        },
+                    },
+                );
             });
         } catch (e) {
             console.error(e);
@@ -292,16 +330,29 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                                 rules={{ required: true }}
                                 render={({ field }) => {
                                     return (
-                                        <TextField
-                                            label="Name"
-                                            value={
-                                                field.value ? field.value : ''
-                                            }
-                                            onChange={(value) =>
-                                                field.onChange(value)
-                                            }
-                                            fullWidth={true}
-                                        />
+                                        <>
+                                            <TextField
+                                                label="Name*"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                                fullWidth={true}
+                                            />
+                                            {selectedTeamType !== 'Custom' &&
+                                            selectedTeamType !== '' ? (
+                                                <StyledContainer>
+                                                    Must be the name of the
+                                                    group/team from your IdP
+                                                </StyledContainer>
+                                            ) : (
+                                                ''
+                                            )}
+                                        </>
                                     );
                                 }}
                             />

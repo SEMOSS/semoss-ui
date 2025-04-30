@@ -1,5 +1,10 @@
-import { styled, Paper } from '@semoss/ui';
-import { tooltipClasses, Tooltip, TooltipProps } from '@mui/material';
+import {
+    styled,
+    tooltipClasses,
+    Paper,
+    TooltipTwo,
+    TooltipPropsTwo,
+} from '@semoss/ui';
 
 export const StyledStepPaper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(4),
@@ -23,8 +28,8 @@ interface StyledTooltipProps {
     disableBorder?: boolean;
 }
 export const StyledTooltip = styled(
-    ({ className, ...props }: TooltipProps) => (
-        <Tooltip
+    ({ className, ...props }: TooltipPropsTwo) => (
+        <TooltipTwo
             {...props}
             classes={{ popper: className }}
             PopperProps={{
