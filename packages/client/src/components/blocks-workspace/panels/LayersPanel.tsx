@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { toJS } from 'mobx';
 import { Actions, DockLocation, TabNode } from 'flexlayout-react';
@@ -53,6 +53,7 @@ import {
 import { AddVariableModal } from '@/components/notebook';
 import { useDesigner, useWorkspace } from '@/hooks';
 import { Panel } from '@/components/workspace';
+import { getBlockElement } from '@/stores';
 import DuplicateIcon from '../../../assets/img/Duplicate.svg';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 
@@ -249,6 +250,7 @@ export const LayersPanel = observer((): JSX.Element => {
     const [globalDropPositions, setGlobalDropPositions] = useState<
         'top' | 'bottom' | 'inside' | null
     >(null);
+    const accordionRefs = useRef({});
 
     const [activeNode, setActiveNode] = useState<TreeNode | null>(null);
 
@@ -259,6 +261,21 @@ export const LayersPanel = observer((): JSX.Element => {
         }),
     );
 
+    const scrollIntoView = (
+        element: Element | null,
+        {
+            behavior = 'smooth' as ScrollBehavior,
+            block = 'center' as ScrollLogicalPosition,
+            inline = 'start' as ScrollLogicalPosition,
+        } = {},
+    ) => {
+        (element as HTMLElement)?.scrollIntoView({
+            behavior,
+            block,
+            inline,
+        });
+    };
+
     useEffect(() => {
         const parents = state.getAllParents(designer.selected);
         if (parents.length) {
@@ -267,9 +284,21 @@ export const LayersPanel = observer((): JSX.Element => {
             );
             selectLayer(parentPage);
             setSelectedPages(parentPage);
+            setSelectedLayers(parents);
+            setExpanded((prev) => [...new Set([...prev, ...parents])]);
         }
-        setSelectedLayers(parents);
-        setExpanded((prev) => [...new Set([...prev, ...parents])]);
+        const scrollTimeout = setTimeout(() => {
+            // Scroll to the selected block in the accordion
+            const refEl = accordionRefs.current[designer.selected];
+            if (refEl) {
+                scrollIntoView(refEl, {
+                    block: parents.length > 2 ? 'center' : 'start',
+                });
+            }
+        }, 100);
+        return () => {
+            clearTimeout(scrollTimeout);
+        };
     }, [designer.selected]);
 
     useEffect(() => {
@@ -533,11 +562,20 @@ export const LayersPanel = observer((): JSX.Element => {
         );
     };
 
-    /**
-     * Render the block and it's children
-     * @param id - id of the block to render
-     * @returns tree of the widgets
-     */
+    const handleAccordionToggle = (
+        event: React.MouseEvent<SVGSVGElement, MouseEvent>,
+    ) => {
+        event.stopPropagation();
+        const id = event.currentTarget.getAttribute('data-expand-id');
+        if (!id) return;
+        const action = event.currentTarget.getAttribute('name');
+        setExpanded((prev) => {
+            if (action === 'expand') {
+                return [...prev, id];
+            }
+            return prev.filter((nodeId) => nodeId !== id);
+        });
+    };
     const TreeViewComponent = ({
         block,
         variableName,
@@ -755,8 +793,9 @@ export const LayersPanel = observer((): JSX.Element => {
     };
     const renderBlock = (id: string) => {
         const block = state.blocks[id];
-        if (!block) return null;
-
+        if (!block) {
+            return null;
+        }
         const variableName = state.getAlias(id);
         const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
         const WidgetIcon = registry[block.widget].icon;
@@ -776,6 +815,28 @@ export const LayersPanel = observer((): JSX.Element => {
                         <TreeView.Item
                             key={block.id}
                             nodeId={block.id}
+                            ref={(node) =>
+                                (accordionRefs.current[block.id] =
+                                    node instanceof HTMLElement ? node : null)
+                            }
+                            expandIcon={
+                                <StyledTreeItemIcon>
+                                    <ChevronRight
+                                        name="expand"
+                                        data-expand-id={block.id}
+                                        onClick={handleAccordionToggle}
+                                    />
+                                </StyledTreeItemIcon>
+                            }
+                            collapseIcon={
+                                <StyledTreeItemIcon>
+                                    <ExpandMore
+                                        name="collapse"
+                                        data-expand-id={block.id}
+                                        onClick={handleAccordionToggle}
+                                    />
+                                </StyledTreeItemIcon>
+                            }
                             label={
                                 <TreeViewComponent
                                     block={block}
@@ -786,10 +847,8 @@ export const LayersPanel = observer((): JSX.Element => {
                             }
                             onClick={(e: React.SyntheticEvent) => {
                                 e.stopPropagation();
-                                if (!expanded.includes(block.id)) {
-                                    designer.setSelected(block.id);
-                                    handleOnSelect(block);
-                                }
+                                designer.setSelected(block.id);
+                                handleOnSelect(block);
                             }}
                             onMouseOver={(e: React.SyntheticEvent) => {
                                 e.stopPropagation();
@@ -799,9 +858,13 @@ export const LayersPanel = observer((): JSX.Element => {
                                 e.stopPropagation();
                                 designer.setHovered('');
                             }}
-                            sx={{ minWidth: 0 }}
+                            sx={{
+                                minWidth: 0,
+                            }}
                         >
-                            {children.map((c) => renderBlock(c))}
+                            {children.map((c) => {
+                                return renderBlock(c);
+                            })}
                         </TreeView.Item>
                     </DraggableTreeItem>
                 </DroppableTreeItem>
@@ -854,6 +917,7 @@ export const LayersPanel = observer((): JSX.Element => {
     const handlePageSelection = (block) => {
         selectLayer(block.id);
         setExpanded([]);
+        accordionRefs.current = {};
         designer.setSelected(block.id);
         handleOnSelect(block);
         setSelectedPages(block.id);
@@ -969,8 +1033,11 @@ export const LayersPanel = observer((): JSX.Element => {
      * id - id of the layer
      */
     const handleOnSelect = (blockData) => {
-        if (blockData.widget !== 'page') return;
         const id = blockData.id;
+        if (blockData.widget !== 'page') {
+            scrollIntoView(getBlockElement(id));
+            return;
+        }
         // try to select a panel, if it doesn't exist create it. Save the path
         const IsSelected = selectPanel(id);
         if (!IsSelected) {
@@ -1229,13 +1296,6 @@ export const LayersPanel = observer((): JSX.Element => {
                                     <TreeView
                                         selected={selectedLayers}
                                         expanded={expanded}
-                                        onNodeToggle={(
-                                            e: React.SyntheticEvent,
-                                            nodeIds: string[],
-                                        ) => {
-                                            e.stopPropagation();
-                                            setExpanded(nodeIds);
-                                        }}
                                         onNodeSelect={(
                                             e: React.SyntheticEvent,
                                             nodeIds: string[],
@@ -1247,16 +1307,6 @@ export const LayersPanel = observer((): JSX.Element => {
                                                 setSelectedLayers(nodeIds);
                                             }
                                         }}
-                                        defaultCollapseIcon={
-                                            <StyledTreeItemIcon>
-                                                <ExpandMore />
-                                            </StyledTreeItemIcon>
-                                        }
-                                        defaultExpandIcon={
-                                            <StyledTreeItemIcon>
-                                                <ChevronRight />
-                                            </StyledTreeItemIcon>
-                                        }
                                     >
                                         {selectedLayer?.length ? (
                                             selectedLayer.map((c) =>
