@@ -171,9 +171,6 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
         useEffect(() => {
             setSelectedFrame(cell.parameters.frameName);
         }, [framelist]);
-        useEffect(() => {
-            handleTargetCellChange();
-        }, [selectedFrame]);
         const stringOperators = [
             { label: "Equals", value: "==" },
             { label: "Not Equals", value: "!=" },
@@ -545,7 +542,6 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
             };
             return groups.map(generate).join(" AND ");
         };
-
         async function handleFrame() {
             const getFrames = await state.runSideEffect("GetFrames();");
             let list = getFrames["pixelReturn"][0]["output"] as string[];
@@ -555,6 +551,7 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
         }
         async function handleFrameSelected(frameSelected) {
             setSelectedFrame(frameSelected);
+            
             const response = await state.runSideEffect(
                 `META | ${frameSelected} | FrameHeaders();`,
             );
@@ -566,6 +563,25 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
                     type: element["dataType"],
                 }));
                 setSelectedFrameHeaders(headers);
+            }
+            const querryResponse = await state.runSideEffect(
+                `META | Frame("${frameSelected}") | QueryAll()| Limit(1000) | CollectAll()`,
+            );
+            if(querryResponse){
+                let responseData = querryResponse["pixelReturn"][0]["output"]["data"];
+            const headers = querryResponse["pixelReturn"][0]["output"][
+                "headerInfo"
+            ].map((element) => ({
+                name: element["header"],
+                type: element["dataType"],
+            }));
+            const fieldToValues: Record<string, any[]> = {};
+            headers.forEach((name, index) => {
+                fieldToValues[name.name] = responseData.values.map(
+                    (row) => row[index],
+                );
+            });
+            setValueOptionsMap(fieldToValues);
             }
             let target = frameSelected.match(/\d+/);
             const targetID = target ? parseInt(target[0], 10) : null;
@@ -590,7 +606,18 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
                     },
                 },
             });
+            resetAllRules();
         }
+            //setRuleGroups([]);
+            const resetAllRules = () => {
+                setRuleGroups(prev => {
+                    if (prev.length === 0) return prev;
+                    // Keep only the top-level group and empty its rules
+                    const rootGroup = { ...prev[0], rules: [] };
+                    return [rootGroup];
+                });
+                setQuery(""); // Reset the query string
+            };
         const helpText =
             !doesFrameExist && cell.parameters.targetCell.id
                 ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying filter.`
