@@ -24,7 +24,7 @@ import { useDesigner } from '@/hooks';
 import { BlockAvatar, SelectedMenuSection } from '@/components/designer';
 import { AddVariableModal } from '@/components/notebook';
 import { Panel } from '@/components/workspace';
-import VariationIcon from '../../../assets/img/VariationLogo.svg';
+import VariationIcon from '../../../../../../libs/renderer/src/assets/img/VariationLogo.svg';
 
 const StyledTitle = styled(Typography)(() => ({
     textTransform: 'capitalize',
