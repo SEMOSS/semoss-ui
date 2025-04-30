@@ -1,8 +1,10 @@
 import { Command, Flags } from '@oclif/core';
 import { Env, Insight } from '@semoss/sdk';
+import { config } from 'dotenv';
+import * as fs from 'node:fs';
 import Listr from 'listr';
 
-import { setSemoss } from '../Utility/SetSemoss.js';
+import { Config } from '../types.js';
 
 export default class Deploy extends Command {
     static description = 'Initialize a new app';
@@ -24,6 +26,11 @@ init (./src/commands/init.ts)
             char: 'n',
             description: 'Name of the project',
         }),
+        // config
+        config: Flags.string({
+            char: 'c',
+            description: 'Path to the configuration. Default is smss.json',
+        }),
     };
 
     public async run(): Promise<void> {
@@ -32,12 +39,68 @@ init (./src/commands/init.ts)
         // path to the environment variables
         const envPath = flags.env ?? '.env';
 
-        setSemoss(envPath);
+        // path to the config (optional)
+        const configPath = flags.config ?? 'smss.json';
+
+        // define the config
+        let configOptions: Config | null = null;
+
+        try {
+            // load the env
+            config({ path: envPath });
+
+            // try to load the configOptions (optional)
+            try {
+                // load it
+                configOptions = JSON.parse(
+                    fs.readFileSync(configPath, 'utf8'),
+                ) as Config;
+            } catch (e) {
+                // noop
+            }
+
+            // update the environment
+            Env.update({
+                ACCESS_KEY: process.env.ACCESS_KEY,
+                MODULE: process.env.MODULE,
+                SECRET_KEY: process.env.SECRET_KEY,
+            });
+        } catch (error) {
+            this.error(error as Error);
+        }
 
         // throw the error
-        const name = flags.name;
+        const name =
+            configOptions && configOptions.name
+                ? configOptions.name
+                : flags.name;
         if (!name) {
             throw new Error('Name is required');
+        }
+
+        // check the environment
+        if (!Env.MODULE) {
+            this.error(
+                'MODULE is required. Define one in your environment variables (.env)',
+            );
+        }
+
+        if (!Env.ACCESS_KEY) {
+            this.error(
+                'ACCESS_KEY is required. Define one in your environment variables (.env)',
+            );
+        }
+
+        if (!Env.SECRET_KEY) {
+            this.error(
+                'SECRET_KEY is required. Define one in your environment variables (.env)',
+            );
+        }
+
+        if (Env.APP) {
+            this.error(
+                'APP is already defined. Delete from your environment variables (.env) to create a new app',
+            );
         }
 
         // create a new insight
@@ -66,7 +129,7 @@ init (./src/commands/init.ts)
                 },
             },
             {
-                title: 'Creating App',
+                title: 'Configuring App',
                 task: async (context) => {
                     // Load the insight classes
                     const { pixelReturn } = await insight.actions.run<
@@ -84,9 +147,23 @@ init (./src/commands/init.ts)
                         throw new Error('No App');
                     }
 
-                    Env.update({
-                        APP: context.APP,
-                    });
+                    let content = {
+                        app: '',
+                        name: '',
+                    };
+
+                    if (configOptions) {
+                        content = configOptions;
+                    }
+
+                    content.app = context.APP;
+                    content.name = name;
+
+                    // write it
+                    fs.writeFileSync(
+                        configPath,
+                        JSON.stringify(content, null, 4),
+                    );
 
                     return true;
                 },
