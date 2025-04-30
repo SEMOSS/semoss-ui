@@ -195,22 +195,24 @@ export const TeamTileCard = (props: TeamCardProps) => {
     }, [isScrollBottom]);
 
     useEffect(() => {
-        if (searchMemberInput) {
-            setSearchLoading(true);
-        }
-        const timer = setTimeout(() => {
-            if (!offset) {
-                getUsersNonGroup(false);
-            } else {
-                if (canCollect) {
+        if (addMembersModal) {
+            if (searchMemberInput) {
+                setSearchLoading(true);
+            }
+            const timer = setTimeout(() => {
+                if (!offset) {
                     getUsersNonGroup(false);
                 } else {
-                    getUsersNonGroup(true);
+                    if (canCollect) {
+                        getUsersNonGroup(false);
+                    } else {
+                        getUsersNonGroup(true);
+                    }
                 }
-            }
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [offset, searchMemberInput, isCustomGroup]);
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [addMembersModal, offset, searchMemberInput]);
 
     const nearBottom = (
         target: {
@@ -330,8 +332,6 @@ export const TeamTileCard = (props: TeamCardProps) => {
         if (isCustomGroup) {
             try {
                 let response;
-                // possibly add more db table columns / keys here to get id type for display under username
-                // eslint-disable-next-line prefer-const
                 response = await monolithStore.getNonTeamUsers(
                     id,
                     AUTOCOMPLETE_LIMIT,
