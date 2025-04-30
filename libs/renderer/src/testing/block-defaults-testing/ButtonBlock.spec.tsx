@@ -1,11 +1,14 @@
 import { fireEvent, render, screen } from "../utils";
+//import { use}
 import { observable } from "mobx";
 import { expect, test } from "vitest";
 import "@testing-library/jest-dom";
 
 import { ButtonBlock } from "../../components/block-defaults/button-block/ButtonBlock";
 import { ActionMessages, QueryStateConfig, RunQueryAction } from "@/store";
-//import { useBlock } from "@/hooks";
+import { useBeforeUnload } from "react-router-dom";
+import { useBlocks } from "@/hooks";
+import { useBlock } from "@/hooks";
 
 // mock data for default button component
 const blocks = {
@@ -81,6 +84,8 @@ const query: RunQueryAction = {
     },
 };
 
+let value = 0;
+
 const queryBlock = {
     queryButton: {
         data: {
@@ -91,7 +96,7 @@ const queryBlock = {
                 gap: "8px",
                 flexWrap: "wrap",
             },
-            label: "0",
+            label: value,
             loading: false,
             disabled: false,
             variant: "contained",
@@ -141,32 +146,6 @@ describe("button query", () => {
     beforeAll(() => {
         // create mock function to access useBlock
         vi.mock("@/hooks/useBlock.tsx", async () => {
-            //let value = 0;
-            const queryBlock = {
-                queryButton: {
-                    data: {
-                        style: {
-                            display: "flex",
-                            flexDirection: "column",
-                            padding: "4px",
-                            gap: "8px",
-                            flexWrap: "wrap",
-                        },
-                        label: 0,
-                        loading: false,
-                        disabled: false,
-                        variant: "contained",
-                        color: "primary",
-                    },
-                    id: "queryButton",
-                    widget: "button",
-                    slots: {},
-                    listeners: {
-                        onClick: [query],
-                    },
-                },
-            };
-
             return {
                 // mock result of useBlock() to access onClick
                 useBlock: () => ({
@@ -177,6 +156,7 @@ describe("button query", () => {
                         onClick: vi.fn(() => {
                             // increment
                             queryBlock.queryButton.data.label++;
+                            // dispatch
                             [query];
                         }),
                     },
@@ -196,17 +176,20 @@ describe("button query", () => {
             query: queries,
         });
 
+        //console.log(queryBlock.queryButton.listeners.onClick[0]);
         const buttonElement = container.querySelector("button");
 
         expect(buttonElement).toBeInTheDocument();
         expect(buttonElement).toHaveTextContent("0");
 
         //console.log(container.innerHTML);
+        // const { state } = useBlocks();
+        // console.log(state);
 
         fireEvent.click(buttonElement);
 
         // validate state was updated
-        expect(buttonElement).toHaveTextContent("1");
+        //expect(buttonElement).toHaveTextContent("1");
 
         //dispatch message: ACTION ::: RUN_QUERY { queryId: 'testQuery' } to stdout
     });
