@@ -360,7 +360,9 @@ export class StateStore {
     }
 
     /**
+     * -------------------------------------
      * Actions
+     * -------------------------------------
      */
     /**
      * Dispatch a message to update the state
@@ -1298,7 +1300,35 @@ export class StateStore {
             this,
         );
 
+        // TODO: Do we want this to be done here
+
+        // Automate variable creation for notebook and new cell
+        this.dispatch({
+            message: ActionMessages.ADD_VARIABLE,
+            payload: {
+                id: queryId,
+                type: "query",
+                to: queryId,
+                isOutput: true
+            }
+        })
+
+        Object.entries(this._store.queries[queryId].cells).forEach((c) => {
+            // Automate variable creation for notebook and new cell
+            const cId = c[0]
+            this.dispatch({
+                message: ActionMessages.ADD_VARIABLE,
+                payload: {
+                    id: `${queryId}--${cId}`,
+                    type: "cell",
+                    to: queryId,
+                    cellId: cId
+                }
+            })
+        })
+
         this._store.executionOrder.push(queryId);
+
 
         return queryId;
     };

@@ -7,7 +7,8 @@ import { BlockComponent } from "../../../store";
 import { AIGenerationSettings, JsonSettings } from "../../block-settings";
 import { UpgradedVisualizationTool } from "./variant/bar-chart/UpgradedVisualizationTool";
 import { FrameOperations } from "./variant/FrameOperations";
-import { Bar, Pie, ScatterPlot, StackChart, Line, WorldMap, Gantt } from "./variant/Constant";
+import { Bar, Pie, ScatterPlot, StackChart, Line, WorldMap, Gantt , Dendrogram} from "./variant/Constant";
+import { GanttFrameSection } from "./variant/Gantt/GanttFrameSection";
 
 const StyledContainer = styled("div")(() => ({
     height: "100%",

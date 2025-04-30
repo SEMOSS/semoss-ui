@@ -146,6 +146,7 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
                 ref={fileEditorRef}
                 type={'app'}
                 space={workspace.appId}
+                insightId={workspace.insightId}
                 path={path}
                 agentModelEngine={workspace.agentModelEngine}
                 onChange={(content, isModified) => {

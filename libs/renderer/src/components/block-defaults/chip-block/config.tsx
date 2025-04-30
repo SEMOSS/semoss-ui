@@ -1,13 +1,14 @@
-//React and Third Party Modules
 import { CSSProperties } from "react";
 import { LabelRounded } from "@mui/icons-material";
 
-//Internal Semoss libs
 import { Avatar } from "@semoss/ui";
 
-//Modules internal to current package
 import { BlockConfig } from "../../../store";
-import { InputSettings, SelectInputSettings } from "../../block-settings";
+import {
+    ColorSettings,
+    InputSettings,
+    SelectInputSettings,
+} from "../../block-settings";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 import { ChipSettings } from "../../block-settings/custom/ChipSettings";
 import { buildListener, buildShowField } from "../block-defaults.shared";
@@ -20,8 +21,10 @@ export const config: BlockConfig<ChipBlockDef> = {
     widget: "chip",
     type: BLOCK_TYPE_DISPLAY,
     data: {
-        style: DefaultStyles,
-        color: "default",
+        style: {
+            color: "grey",
+            ...DefaultStyles,
+        },
         size: "small",
         avatar: <Avatar>A</Avatar>,
         type: "Chip",
@@ -124,39 +127,51 @@ export const config: BlockConfig<ChipBlockDef> = {
                 {
                     description: "Color",
                     render: ({ id }) => (
-                        <SelectInputSettings
+                        <ColorSettings
                             id={id}
                             label="Color"
-                            path="color"
-                            options={[
-                                {
-                                    value: "default",
-                                    display: "default",
-                                },
-                                {
-                                    value: "primary",
-                                    display: "primary",
-                                },
-                                {
-                                    value: "secondary",
-                                    display: "secondary",
-                                },
-                                {
-                                    value: "success",
-                                    display: "success",
-                                },
-                                {
-                                    value: "warning",
-                                    display: "warning",
-                                },
-                                {
-                                    value: "error",
-                                    display: "error",
-                                },
-                            ]}
+                            path="style.color"
                         />
                     ),
                 },
+                //     ],
+                // },
+                // {
+                //     description: "Color",
+                //     render: ({ id }) => (
+                //         <SelectInputSettings
+                //             id={id}
+                //             label="Color"
+                //             path="color"
+                //             options={[
+                //                 {
+                //                     value: "default",
+                //                     display: "default",
+                //                 },
+                //                 {
+                //                     value: "primary",
+                //                     display: "primary",
+                //                 },
+                //                 {
+                //                     value: "secondary",
+                //                     display: "secondary",
+                //                 },
+                //                 {
+                //                     value: "success",
+                //                     display: "success",
+                //                 },
+                //                 {
+                //                     value: "warning",
+                //                     display: "warning",
+                //                 },
+                //                 {
+                //                     value: "error",
+                //                     display: "error",
+                //                 },
+                //             ]}
+                //         />
+                //     ),
+                // },
                 {
                     description: "Size",
                     render: ({ id }) => (

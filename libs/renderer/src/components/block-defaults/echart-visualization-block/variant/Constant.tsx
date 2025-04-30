@@ -15,12 +15,20 @@ export const Pie = [
     {
         name: "Value",
         multiLabel: false,
+<<<<<<< HEAD
         label: "Value",
+=======
+        label: "value",
+>>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
     },
     {
         name: "Label",
         multiLabel: false,
+<<<<<<< HEAD
         label: "Label",
+=======
+        label: "label",
+>>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
     },
 ]
 
@@ -33,12 +41,20 @@ export const ScatterPlot = [
     {
         name: "X Axis",
         multiLabel: false,
+<<<<<<< HEAD
         label: "XAxis",
+=======
+        label: "xAxis",
+>>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
     },
     {
         name: "Y Axis",
         multiLabel: false,
+<<<<<<< HEAD
         label: "YAxis",
+=======
+        label: "yAxis",
+>>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
     },
     {
         name: "Size",
@@ -61,12 +77,20 @@ export const StackChart = [
     {
         name: "X Axis",
         multiLabel: false,
+<<<<<<< HEAD
         label: "XAxis",
+=======
+        label: "xAxis",
+>>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
     },
     {
         name: "Y Axis",
         multiLabel: false,
+<<<<<<< HEAD
         label: "YAxis",
+=======
+        label: "yAxis",
+>>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
     },
     {
         name: "Category",
@@ -107,12 +131,20 @@ export const WorldMap = [
     {
         name : "Latitude",
         multiLabel : false, 
+<<<<<<< HEAD
         label : "Latitude",
+=======
+        label : "latitude",
+>>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
     },
     {
         name : "Longitude",
         multiLabel : false, 
+<<<<<<< HEAD
         label : "Longitude",
+=======
+        label : "longitude",
+>>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
     },
     {
         name : "Size",
@@ -169,4 +201,20 @@ export const WorldMap = [
     }
   ]
 
+<<<<<<< HEAD
+=======
+  export const Dendrogram = [
+    {
+        name: "Dimensions",
+        multiLabel: true,
+        label: "dimensions",
+    },
+    {
+        name: "Facet",
+        multiLabel: false,
+        label: "facet",
+    },
+  ]
+
+>>>>>>> b826301a6a1ad7f1bdc3dbb0cdd72d98be5c9548
 
