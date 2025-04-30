@@ -1723,7 +1723,7 @@ const LineChartTools = (({id})=>{
                             )
                         }
                         {
-                            data.variation === 'echart-dendgram-chart' && (
+                            data.variation === 'echart-dendrogram-chart' && (
                                 <DendrogramToolsList id={id}/>
                             )
                         }
