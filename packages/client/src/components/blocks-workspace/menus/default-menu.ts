@@ -2428,6 +2428,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 ];
 
 // TODO: Move to the backend
+//ROSE HERE
 export const CLIENT_BLOCKS_MENU = [
     {
         section: SECTION_GROUPED,
@@ -2964,6 +2965,360 @@ export const CLIENT_BLOCKS_MENU = [
                                                 },
                                             },
                                         ],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+    },
+    {
+        section: SECTION_GROUPED,
+        name: '3x3 Grid',
+        helperText: 'A pre-built 3x3 grid container',
+        json: {
+            widget: 'container',
+            parent: {
+                // can be null
+                id: 'page-1',
+                slot: 'content',
+            },
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: 'px',
+                    gap: 'px',
+                    flexWrap: 'wrap',
+                },
+            },
+            listeners: {},
+            slots: {
+                children: [
+                    {
+                        widget: 'container',
+                        data: {
+                            style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '8px',
+                                flexWrap: 'wrap',
+                                border: '2px dotted #4a4a4a',
+                                padding: '5px',
+                            },
+                        },
+                        listeners: {},
+                        slots: {
+                            children: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            flexWrap: 'wrap',
+                                            width: '100%',
+                                            flex: '1 1 auto',
+                                            gap: '5px',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        height: '100%',
+                                                        border: '2px solid #D3D3D3',
+                                                        flex: '1 1 auto',
+                                                        justifyContent:
+                                                            'center',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [],
+                                                },
+                                            },
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        height: '100%',
+                                                        border: '2px solid #D3D3D3',
+                                                        flex: '1 1 auto',
+                                                        justifyContent:
+                                                            'center',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [],
+                                                },
+                                            },
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        height: '100%',
+                                                        border: '2px solid #D3D3D3',
+                                                        flex: '1 1 auto',
+                                                        justifyContent:
+                                                            'center',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            flexWrap: 'wrap',
+                                            width: '100%',
+                                            flex: '1 1 auto',
+                                            gap: '5px',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        height: '100%',
+                                                        border: '2px solid #D3D3D3',
+                                                        flex: '1 1 auto',
+                                                        justifyContent:
+                                                            'center',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [],
+                                                },
+                                            },
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        height: '100%',
+                                                        border: '2px solid #D3D3D3',
+                                                        flex: '1 1 auto',
+                                                        justifyContent:
+                                                            'center',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [],
+                                                },
+                                            },
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        height: '100%',
+                                                        border: '2px solid #D3D3D3',
+                                                        flex: '1 1 auto',
+                                                        justifyContent:
+                                                            'center',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            flexWrap: 'wrap',
+                                            width: '100%',
+                                            flex: '1 1 auto',
+                                            gap: '5px',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        height: '100%',
+                                                        border: '2px solid #D3D3D3',
+                                                        flex: '1 1 auto',
+                                                        justifyContent:
+                                                            'center',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [],
+                                                },
+                                            },
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        height: '100%',
+                                                        border: '2px solid #D3D3D3',
+                                                        flex: '1 1 auto',
+                                                        justifyContent:
+                                                            'center',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [],
+                                                },
+                                            },
+                                            {
+                                                widget: 'container',
+                                                data: {
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        height: '100%',
+                                                        border: '2px solid #D3D3D3',
+                                                        flex: '1 1 auto',
+                                                        justifyContent:
+                                                            'center',
+                                                    },
+                                                },
+                                                listeners: {},
+                                                slots: {
+                                                    children: [],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+    },
+    {
+        section: SECTION_GROUPED,
+        name: '3x3 Grid TEST',
+        helperText: 'A pre-built 3x3 grid container',
+        json: {
+            widget: 'container',
+            parent: {
+                // can be null
+                id: 'page-1',
+                slot: 'content',
+            },
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: 'px',
+                    gap: 'px',
+                    flexWrap: 'wrap',
+                },
+            },
+            listeners: {},
+            slots: {
+                children: [
+                    {
+                        widget: 'container',
+                        data: {
+                            style: {
+                                display: 'flex',
+                                padding: '16px',
+                                gap: '8px',
+                                flexWrap: 'wrap',
+                                justifyContent: 'space-around',
+                                border: '2px dotted #4a4a4a',
+                            },
+                        },
+                        listeners: {},
+                        slots: {
+                            children: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #2a4689',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #2a4689',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #2a4689',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
                                     },
                                 },
                             ],
