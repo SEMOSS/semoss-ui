@@ -578,7 +578,7 @@ export class StateStore {
                     const variable = expression.match(/\$(.*?)\./)[1];
                     const stripped = iteratorList.slice(2, -2);
 
-                    // TODO: how do we handle nested loops $array.warehouse.warehouseSections
+                    // TODO: how do we handle nested loops $array.warehouse.warehouseSections --> = []
                     // Do we just call this recursively
                     if (variable === stripped) {
                         const path = expression.split(".").splice(1);
@@ -606,6 +606,11 @@ export class StateStore {
         const path = cleaned.split(".");
 
         if (this._store.variables[path[0]]) {
+            // TODO: Problem we want to reference cells by a special syntax
+            // I don't want to change ids to be numbered i think we are good with our id generation
+
+            // We should be able to interpret by varaible name as we do below
+            debugger
             const variable = this._store.variables[path[0]];
             const value = this.getVariable(
                 variable.to,
