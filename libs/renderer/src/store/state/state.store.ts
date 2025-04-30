@@ -610,17 +610,39 @@ export class StateStore {
             // I don't want to change ids to be numbered i think we are good with our id generation
 
             // We should be able to interpret by varaible name as we do below
-            debugger
             const variable = this._store.variables[path[0]];
-            const value = this.getVariable(
-                variable.to,
-                variable.type,
-                path,
-                variable.cellId,
-                variable.type !== "cell" && variable.value
-                    ? variable.value
-                    : null,
-            );
+            let value
+
+            const isNumber = !isNaN(parseFloat(path[1]))
+            if(variable.type === "query" && isNumber) {
+                try {
+                    const c = this._store.queries[variable.to].cellList[parseFloat(path[1]) - 1]
+                    
+                    const cellAlias = this.getAlias(variable.to, c.id)
+                    const p = path
+                    p.splice(0,2)
+    
+                    value = this.getVariable(
+                        variable.to,
+                        "cell",
+                        [cellAlias, ...p],
+                        c.id,
+                        null
+                    ) 
+                } catch {
+                    value = undefined
+                }
+            } else {
+                value = this.getVariable(
+                    variable.to,
+                    variable.type,
+                    path,
+                    variable.cellId,
+                    variable.type !== "cell" && variable.value
+                        ? variable.value
+                        : null,
+                );
+            }
 
             // TODO: Check this, protects for false values
             // (query.isLoading tied to a block.label **bad use-case)
