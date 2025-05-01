@@ -167,10 +167,8 @@ export const ContainerGridSection = observer(
     },
 );
 
-export const ContainerMenu: BlockComponent = ({ id }) => {
+export const ContainerMenu: BlockComponent = observer(({ id }) => {
     const [selectedTab, setSelectedTab] = useState("Custom");
-
-    const layout = buildLayoutSection();
 
     return (
         <StyledStack>
@@ -276,7 +274,7 @@ export const ContainerMenu: BlockComponent = ({ id }) => {
             </StyledContainer>
         </StyledStack>
     );
-};
+});
 
 // export the config for the block
 export const config: BlockConfig<ContainerBlockDef> = {

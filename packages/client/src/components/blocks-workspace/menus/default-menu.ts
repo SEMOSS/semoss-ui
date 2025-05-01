@@ -2617,7 +2617,6 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 ];
 
 // TODO: Move to the backend
-//ROSE HERE
 export const CLIENT_BLOCKS_MENU = [
     {
         section: SECTION_GROUPED,
