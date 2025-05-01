@@ -1189,7 +1189,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 // accordionContentStyles:
                 // -------------------------------------------
             },
-            listeners: {},
+            listeners: {
+                onMount: [],
+            },
             slots: {
                 header: [],
                 content: [],

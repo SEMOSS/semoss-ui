@@ -10,6 +10,7 @@ import {
     buildDimensionsSection,
     buildBorderSection,
     buildShowField,
+    buildListener
 } from "../block-defaults.shared";
 
 export const config: BlockConfig<AccordionBlockDef> = {
@@ -22,7 +23,9 @@ export const config: BlockConfig<AccordionBlockDef> = {
         showExpandIcon: true,
         show: "true",
     },
-    listeners: {},
+    listeners: {
+        onMount: []
+    },
     slots: {
         header: [],
         content: [],
@@ -46,6 +49,10 @@ export const config: BlockConfig<AccordionBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "on Mount",
+            children: [...buildListener("onMount")],
         },
     ],
     styleMenu: [
