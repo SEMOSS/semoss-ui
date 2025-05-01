@@ -355,7 +355,7 @@ export const FileTable = (props: FileTableProps) => {
             }
         });
 
-        const pixel = `META | VectorFileDownload(engine = "${id}", filenames=[${fileArray}]);`;
+        const pixel = `META | VectorFileDownload(engine="${id}", fileNames=[${fileArray}]);`;
 
         monolithStore.runQuery(pixel).then((response) => {
             try {
@@ -402,7 +402,7 @@ export const FileTable = (props: FileTableProps) => {
     const downloadSelectedFileAction = async (file: FileExplorerProps) => {
         setIsLoading(true);
         try {
-            const pixel = `META | VectorFileDownload(engine = "${id}", filenames=["${file.fileName}"]);`;
+            const pixel = `META | VectorFileDownload(engine="${id}", fileNames=["${file.fileName}"]);`;
             const response = await monolithStore.runQuery(pixel);
             const { insightId } = response;
             const { output, operationType } = response.pixelReturn[0];
@@ -438,7 +438,7 @@ export const FileTable = (props: FileTableProps) => {
                     configStore.store.insightID,
                 );
                 const { fileLocation } = upload[0];
-                const pixel = `AttachSourceToVectorDb(filePath=["\\${fileLocation}"], engine="${id}",fileName="\\\\${fileToUpload.fileName}" );`;
+                const pixel = `VectorAttachFileToSource(engine="${id}", filePath=["\\${fileLocation}"], source="\\\\${fileToUpload.fileName}" );`;
                 const response = await monolithStore.runQuery(pixel);
                 const { output, operationType } = response.pixelReturn[0];
                 if (operationType.indexOf('ERROR') === -1) {
