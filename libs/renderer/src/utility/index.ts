@@ -4,6 +4,7 @@ import { useDebounced } from "./useDebounced";
 // import { ENGINE_IMAGES } from "../constants";
 
 export { useDebounced as debounced };
+
 /**
  * @desc Checks if output and verify if its a JSON object
  */
@@ -112,6 +113,30 @@ export const cancellablePromise = <R>(
             // mark as cancelled
             cancelled = true;
         },
+    };
+};
+
+/**
+ * Ignore the result of a promise
+ * @param executor - function that returns a promise
+ * @returns
+ */
+export const syncronousPromise = <R>(
+    executor: () => Promise<R>,
+): {
+    promise: Promise<R>;
+    cancel: () => void;
+} => {
+    return {
+        promise: new Promise<R>((resolve, reject) => {
+            try {
+                const response = executor();
+                return resolve(response);
+            } catch (err) {
+                return reject(err);
+            }
+        }),
+        cancel: () => {},
     };
 };
 

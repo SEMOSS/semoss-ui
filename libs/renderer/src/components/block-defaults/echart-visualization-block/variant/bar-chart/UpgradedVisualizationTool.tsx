@@ -72,6 +72,10 @@ import {
     SelectInputSettings,
     BaseSettingSection,
 } from "../../../../block-settings";
+import { CustomizeDendrogramSymbol } from '../dendrogram/CustomizeDendrogramSymbol';
+import { ChangeOrientation } from '../dendrogram/ChangeOrientation';
+import { LegendDendrogram } from "../dendrogram/LegendDendrogram";
+import { LabelsDendrogram } from "../dendrogram/LabelsDendrogram";
 //upgraded visualization tool propsimport { EditXAxisScatterPlot } from '../ScatterPlot/EditXAxisScatterPlot';
 
 interface UpgradedVisualizationToolProps {
@@ -87,6 +91,126 @@ const StyledItem = styled("div")(() => ({
     width: "100%",
     padding: "0.5rem",
 }));
+
+const DendrogramToolsList = (({id}) => {
+    const [dendrogramSelection, setDendrogramSelection] = useState('');
+   return (
+       <>
+           <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setDendrogramSelection((prevList) =>
+                            prevList === "customizeDendrogramSymbol"
+                                ? ""
+                                : "customizeDendrogramSymbol",
+                        )
+                    }
+                    selected={dendrogramSelection === "customizeDendrogramSymbol"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                dendrogramSelection === "customizeDendrogramSymbol"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Customize Symbol" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {dendrogramSelection === "customizeDendrogramSymbol" && (
+                    <CustomizeDendrogramSymbol id={id}/>
+                )}
+           </StyledListItem>
+           <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setDendrogramSelection((prevList) =>
+                            prevList === "changeOrientation"
+                                ? ""
+                                : "changeOrientation",
+                        )
+                    }
+                    selected={dendrogramSelection === "changeOrientation"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                dendrogramSelection === "changeOrientation"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Change Orientation" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {dendrogramSelection === "changeOrientation" && (
+                    <ChangeOrientation id={id}/>
+                )}
+           </StyledListItem>
+           <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setDendrogramSelection((prevList) =>
+                            prevList === "legendDendrogram"
+                                ? ""
+                                : "legendDendrogram",
+                        )
+                    }
+                    selected={dendrogramSelection === "legendDendrogram"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                dendrogramSelection === "legendDendrogram"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Legend" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {dendrogramSelection === "legendDendrogram" && (
+                    <LegendDendrogram id={id}/>
+                )}
+           </StyledListItem>
+           <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setDendrogramSelection((prevList) =>
+                            prevList === "showLabelsDendrogram"
+                                ? ""
+                                : "showLabelsDendrogram",
+                        )
+                    }
+                    selected={dendrogramSelection === "showLabelsDendrogram"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                dendrogramSelection === "showLabelsDendrogram"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Labels" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {dendrogramSelection === "showLabelsDendrogram" && (
+                    <LabelsDendrogram id={id} path={'option'} />
+                )}
+           </StyledListItem>
+       </>
+   ) 
+});
 
 export const UpgradedVisualizationTool =
     observer<UpgradedVisualizationToolProps>(({ id }) => {
@@ -1118,197 +1242,221 @@ export const UpgradedVisualizationTool =
                             <LineStyling id={id} path="option" />
                         )}
                     </StyledListItem>
-
-                    <StyledListItem disablePadding>
-                        <ListItemButton
-                            onClick={(e) =>
-                                setSelectedList((prevList) =>
-                                    prevList === "fiscalaxis"
-                                        ? ""
-                                        : "fiscalaxis",
-                                )
-                            }
-                            selected={selectedList === "fiscalaxis"}
-                        >
-                            <ListItemIcon>
-                                <ImageIcon
-                                    fontSize="large"
-                                    color={
-                                        selectedList === "fiscalaxis"
-                                            ? "primary"
-                                            : "disabled"
+                    {data.variation === "echart-gantt-chart" && (
+                            <StyledListItem disablePadding>
+                                <ListItemButton
+                                    onClick={(e) =>
+                                        setSelectedList((prevList) =>
+                                            prevList === "fiscalaxis"
+                                                ? ""
+                                                : "fiscalaxis",
+                                        )
                                     }
-                                />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary="Fiscal Axis"
-                                style={{ flex: "0.5 1 auto" }}
-                            />
-                            <InfoOutlined />
-                        </ListItemButton>
-                    </StyledListItem>
+                                    selected={selectedList === "fiscalaxis"}
+                                >
+                                    <ListItemIcon>
+                                        <ImageIcon
+                                            fontSize="large"
+                                            color={
+                                                selectedList === "fiscalaxis"
+                                                    ? "primary"
+                                                    : "disabled"
+                                            }
+                                        />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary="Fiscal Axis"
+                                        style={{ flex: "0.5 1 auto" }}
+                                    />
+                                    <InfoOutlined />
+                                </ListItemButton>
+                        </StyledListItem>  
+                    )}
                     {selectedList === "fiscalaxis" && (
                         <GanttFiscal id={id} path={"option"} />
                     )}
-                    <StyledListItem disablePadding>
-                        <ListItemButton
-                            onClick={(e) =>
-                                setSelectedList((prevList) =>
-                                    prevList === "targetdate"
-                                        ? ""
-                                        : "targetdate",
-                                )
-                            }
-                            selected={selectedList === "targetdate"}
-                        >
-                            <ListItemIcon>
-                                <ImageIcon
-                                    fontSize="large"
-                                    color={
-                                        selectedList === "targetdate"
-                                            ? "primary"
-                                            : "disabled"
-                                    }
+                    {data.variation === "echart-gantt-chart" && (
+                        <StyledListItem disablePadding>
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === "targetdate"
+                                            ? ""
+                                            : "targetdate",
+                                    )
+                                }
+                                selected={selectedList === "targetdate"}
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList === "targetdate"
+                                                ? "primary"
+                                                : "disabled"
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary="Target Date"
+                                    style={{ flex: "0.5 1 auto" }}
                                 />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary="Target Date"
-                                style={{ flex: "0.5 1 auto" }}
-                            />
-                            <InfoOutlined />
-                        </ListItemButton>
-                    </StyledListItem>
+                                <InfoOutlined />
+                            </ListItemButton>
+                        </StyledListItem>
+                    )}
                     {selectedList === "targetdate" && (
                         <GanttTargetLine id={id} path={"option"} />
                     )}
-                    <StyledListItem disablePadding>
-                        <ListItemButton
-                            onClick={(e) =>
-                                setSelectedList((prevList) =>
-                                    prevList === "customizesymbol"
-                                        ? ""
-                                        : "customizesymbol",
-                                )
-                            }
-                            selected={selectedList === "customizesymbol"}
-                        >
-                            <ListItemIcon>
-                                <ImageIcon
-                                    fontSize="large"
-                                    color={
-                                        selectedList === "customizesymbol"
-                                            ? "primary"
-                                            : "disabled"
-                                    }
+                    {
+                    data.variation === "echart-gantt-chart" && (
+                        <StyledListItem disablePadding>
+                            <ListItemButton
+                                onClick={(e) =>
+                                    setSelectedList((prevList) =>
+                                        prevList === "customizesymbol"
+                                            ? ""
+                                            : "customizesymbol",
+                                    )
+                                }
+                                selected={selectedList === "customizesymbol"}
+                            >
+                                <ListItemIcon>
+                                    <ImageIcon
+                                        fontSize="large"
+                                        color={
+                                            selectedList === "customizesymbol"
+                                                ? "primary"
+                                                : "disabled"
+                                        }
+                                    />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary="Customize Symbol"
+                                    style={{ flex: "0.5 1 auto" }}
                                 />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary="Customize Symbol"
-                                style={{ flex: "0.5 1 auto" }}
-                            />
-                            <InfoOutlined />
-                        </ListItemButton>
-                    </StyledListItem>
+                                <InfoOutlined />
+                            </ListItemButton>
+                        </StyledListItem>
+                    )
+                    }
                     {selectedList === "customizesymbol" && (
                         <CustomizeSymbol id={id} path={"option"} />
                     )}
-                    <StyledListItem disablePadding>
-                        <ListItemButton
-                            onClick={(e) =>
-                                setSelectedList((prevList) =>
-                                    prevList === "togglelegendgantt"
-                                        ? ""
-                                        : "togglelegendgantt",
-                                )
-                            }
-                            selected={selectedList === "togglelegendgantt"}
-                        >
-                            <ListItemIcon>
-                                <ImageIcon
-                                    fontSize="large"
-                                    color={
-                                        selectedList === "togglelegendgantt"
-                                            ? "primary"
-                                            : "disabled"
+                    {
+                        data.variation === "echart-gantt-chart" && (
+                            <StyledListItem disablePadding>
+                                <ListItemButton
+                                    onClick={(e) =>
+                                        setSelectedList((prevList) =>
+                                            prevList === "togglelegendgantt"
+                                                ? ""
+                                                : "togglelegendgantt",
+                                        )
                                     }
-                                />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary="Legend"
-                                style={{ flex: "0.5 1 auto" }}
-                            />
-                            <InfoOutlined />
-                        </ListItemButton>
-                    </StyledListItem>
+                                    selected={selectedList === "togglelegendgantt"}
+                                >
+                                    <ListItemIcon>
+                                        <ImageIcon
+                                            fontSize="large"
+                                            color={
+                                                selectedList === "togglelegendgantt"
+                                                    ? "primary"
+                                                    : "disabled"
+                                            }
+                                        />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary="Legend"
+                                        style={{ flex: "0.5 1 auto" }}
+                                    />
+                                    <InfoOutlined />
+                                </ListItemButton>
+                            </StyledListItem>
+                        )
+                    }
                     {selectedList === "togglelegendgantt" && (
                         <GanttLegend id={id} path={"option"} />
                     )}
-                    <StyledListItem disablePadding>
-                        <ListItemButton
-                            onClick={(e) =>
-                                setSelectedList((prevList) =>
-                                    prevList === "togglegroupview"
-                                        ? ""
-                                        : "togglegroupview",
-                                )
-                            }
-                            selected={selectedList === "togglegroupview"}
-                        >
-                            <ListItemIcon>
-                                <ImageIcon
-                                    fontSize="large"
-                                    color={
-                                        selectedList === "togglegroupview"
-                                            ? "primary"
-                                            : "disabled"
+                    {
+                        data.variation === 'echart-gantt-chart' && (
+                            <StyledListItem disablePadding>
+                                <ListItemButton
+                                    onClick={(e) =>
+                                        setSelectedList((prevList) =>
+                                            prevList === "togglegroupview"
+                                                ? ""
+                                                : "togglegroupview",
+                                        )
                                     }
-                                />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary="Group View"
-                                style={{ flex: "0.5 1 auto" }}
-                            />
-                            <InfoOutlined />
-                        </ListItemButton>
-                    </StyledListItem>
+                                    selected={selectedList === "togglegroupview"}
+                                >
+                                    <ListItemIcon>
+                                        <ImageIcon
+                                            fontSize="large"
+                                            color={
+                                                selectedList === "togglegroupview"
+                                                    ? "primary"
+                                                    : "disabled"
+                                            }
+                                        />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary="Group View"
+                                        style={{ flex: "0.5 1 auto" }}
+                                    />
+                                    <InfoOutlined />
+                                </ListItemButton>
+                            </StyledListItem>
+                        )
+                    }
                     {selectedList === "togglegroupview" && (
                         <>
                             <GanttGroupView id={id} path={"option"} />
                         </>
                     )}
-                    <StyledListItem disablePadding>
-                        <ListItemButton
-                            onClick={(e) =>
-                                setSelectedList((prevList) =>
-                                    prevList === "displayvaluelabels"
-                                        ? ""
-                                        : "displayvaluelabels",
-                                )
-                            }
-                            selected={selectedList === "displayvaluelabels"}
-                        >
-                            <ListItemIcon>
-                                <ImageIcon
-                                    fontSize="large"
-                                    color={
-                                        selectedList === "displayvaluelabels"
-                                            ? "primary"
-                                            : "disabled"
+                    {
+                        data.variation === 'echart-gantt-chart' && (
+                            <StyledListItem disablePadding>
+                                <ListItemButton
+                                    onClick={(e) =>
+                                        setSelectedList((prevList) =>
+                                            prevList === "displayvaluelabels"
+                                                ? ""
+                                                : "displayvaluelabels",
+                                        )
                                     }
-                                />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary="Display Value Labels"
-                                style={{ flex: "0.5 1 auto" }}
-                            />
-                            <InfoOutlined />
-                        </ListItemButton>
-                    </StyledListItem>
+                                    selected={selectedList === "displayvaluelabels"}
+                                >
+                                    <ListItemIcon>
+                                        <ImageIcon
+                                            fontSize="large"
+                                            color={
+                                                selectedList === "displayvaluelabels"
+                                                    ? "primary"
+                                                    : "disabled"
+                                            }
+                                        />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary="Display Value Labels"
+                                        style={{ flex: "0.5 1 auto" }}
+                                    />
+                                    <InfoOutlined />
+                                </ListItemButton>
+                            </StyledListItem>
+                        )
+                    }
                     {selectedList === "displayvaluelabels" && (
                         <>
                             <GanttDisplayValueLabels id={id} path="option" />
                         </>
                     )}
+                    {
+                        data.variation === 'echart-dendrogram-chart' && (
+                            <DendrogramToolsList id={id} />
+                        )
+                    }
                 </List>
             </>
         );
