@@ -6,14 +6,6 @@ import {
     AlignHorizontalRight,
     ArrowDownward,
     ArrowForward,
-    FormatAlignCenter,
-    FormatAlignJustify,
-    FormatAlignLeft,
-    FormatAlignRight,
-    FormatBold,
-    FormatItalic,
-    RestartAlt,
-    FormatUnderlined,
     VerticalAlignBottom,
     VerticalAlignCenter,
     VerticalAlignTop,
@@ -36,6 +28,7 @@ import {
     ActionMessages,
 } from "../../../store";
 import { useBlocks, useBlockSettings } from "../../../hooks";
+import { Paths, PathValue } from "../../../types";
 import { MenuItem, Select, Stack, ToggleTabsGroup, styled } from "@semoss/ui";
 import { ButtonGroupSettings } from "../../block-settings/shared/ButtonGroupSettings";
 import { SizeSettings } from "../../block-settings/shared/SizeSettings";
@@ -91,18 +84,26 @@ interface ContainerGridSectionProps<D extends BlockDef = BlockDef> {
      * Id of the block that is being worked with
      */
     id: string;
+
+    /**
+     * Path to update
+     */
+    path: Paths<Block<D>["data"]>;
 }
 
 export const ContainerGridSection = observer(
-    <D extends BlockDef = BlockDef>({ id }: ContainerGridSectionProps<D>) => {
-        const { data, setData } = useBlockSettings(id);
+    <D extends BlockDef = BlockDef>({
+        id,
+        path,
+    }: ContainerGridSectionProps<D>) => {
+        const { data, setData } = useBlockSettings<ContainerBlockDef>(id);
         const { state } = useBlocks();
 
         //get the parent container of the grouped containers
         const parentContainer: Block = state.getBlock(id);
 
         // track the value of the layout dropdown
-        const [value, setValue] = useState("0 0 33.33%");
+        const [value, setValue] = useState("");
 
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -111,8 +112,6 @@ export const ContainerGridSection = observer(
          * Sync the data on change
          */
         const onChange = (value: string) => {
-            console.log({ value });
-
             // set the value of the grid layout dropdown
             setValue(value);
 
@@ -123,25 +122,20 @@ export const ContainerGridSection = observer(
             }
 
             // iterate through each slot of the parent
-            Object.entries(parentContainer.slots).forEach((slot, key) => {
+            Object.entries(parentContainer.slots).forEach((slot) => {
                 // set the new width of each child container
-                slot[1].children.forEach((child, childIdx) => {
-                    console.log({ child });
-
+                slot[1].children.forEach((child) => {
                     timeoutRef.current = setTimeout(() => {
                         try {
-                            // // set the value
-                            // setData(
-                            //     path,
-                            //     value as PathValue<D["data"], typeof path>,
-                            // );
+                            // set the value
+                            setData("style.flex", value);
 
                             // emit event to set child block data
                             state.dispatch({
                                 message: ActionMessages.SET_BLOCK_DATA,
                                 payload: {
                                     id: child,
-                                    path: "style.flex",
+                                    path: path,
                                     value: value,
                                 },
                             });
@@ -263,6 +257,7 @@ export const ContainerMenu: BlockComponent = ({ id }) => {
                         />
                         <SizeSettings id={id} label="Gap" path="style.gap" />
 
+                        {/* TODO having an issue rendering these */}
                         {/* {[
                                 buildLayoutSection(),
                                 buildPositionSection(),
@@ -275,7 +270,7 @@ export const ContainerMenu: BlockComponent = ({ id }) => {
                 )}
                 {selectedTab === "Grid" && (
                     <StyledToolsSection>
-                        <ContainerGridSection id={id} />
+                        <ContainerGridSection id={id} path={"style.flex"} />
                     </StyledToolsSection>
                 )}
             </StyledContainer>
