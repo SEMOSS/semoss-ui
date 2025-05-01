@@ -11,7 +11,13 @@ import {
     buildColorSection,
     buildPositionSection,
 } from "../block-defaults.shared";
-import { BlockComponent, BlockConfig, Block, BlockDef } from "../../../store";
+import {
+    BlockComponent,
+    BlockConfig,
+    Block,
+    BlockDef,
+    ActionMessages,
+} from "../../../store";
 import { useBlocks, useBlockSettings } from "../../../hooks";
 import { Paths, PathValue } from "../../../types";
 import { MenuItem, Select, Stack, ToggleTabsGroup, styled } from "@semoss/ui";
@@ -80,44 +86,13 @@ export const ContainerGridSection = observer(
         const { state } = useBlocks();
 
         //get the main container of the grouped containers
-        const gridContainer = state.getBlock(id);
+        const parentContainer: Block = state.getBlock(id);
 
-        console.log("find children", gridContainer.slots?.children);
-
-        //the child styling to change
-        const path = "style.flex";
-
-        // track the value
-        const [value, setValue] = useState("33.33%");
+        // track the value of the layout dropdown
+        const [value, setValue] = useState("0 0 33.33%");
 
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
-
-        // get the value of the input (wrapped in usememo because of path prop)
-        const computedValue = useMemo(() => {
-            return computed(() => {
-                if (!data) {
-                    return "";
-                }
-
-                const v = getValueByPath(data, path);
-                console.log({ v });
-                if (typeof v === "undefined") {
-                    return "";
-                } else if (typeof v === "string") {
-                    return v;
-                }
-
-                return JSON.stringify(v);
-            });
-        }, [data, path]).get();
-
-        console.log({ computedValue });
-
-        // update the value whenever the computed one changes
-        useEffect(() => {
-            setValue(computedValue);
-        }, [computedValue]);
 
         /**
          * Sync the data on change
@@ -125,32 +100,44 @@ export const ContainerGridSection = observer(
         const onChange = (value: string) => {
             console.log({ value });
 
-            // set the value
+            // set the value of the grid layout dropdown
             setValue(value);
 
-            // // clear out he old timeout
-            // if (timeoutRef.current) {
-            //     clearTimeout(timeoutRef.current);
-            //     timeoutRef.current = null;
-            // }
-            //loop through each child inside grid to set the flex or width
-            // timeoutRef.current = setTimeout(() => {
-            //     try {
-            //         // set the value
-            //         setData(path, value as PathValue<D["data"], typeof path>);
-            //         if (resizeOnSet) {
-            //             // emit event to resize the block on the screen
-            //             state.dispatch({
-            //                 message: ActionMessages.DISPATCH_EVENT,
-            //                 payload: {
-            //                     name: "blockResized",
-            //                 },
-            //             });
-            //         }
-            //     } catch (e) {
-            //         console.log(e);
-            //     }
-            // }, 300);
+            // clear out the old timeout
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+            }
+
+            // iterate through each slot of the parent
+            Object.entries(parentContainer.slots).forEach((slot, key) => {
+                // set the new width of each child container
+                slot[1].children.forEach((child, childIdx) => {
+                    console.log({ child });
+
+                    timeoutRef.current = setTimeout(() => {
+                        try {
+                            // // set the value
+                            // setData(
+                            //     path,
+                            //     value as PathValue<D["data"], typeof path>,
+                            // );
+
+                            // emit event to set child block data
+                            state.dispatch({
+                                message: ActionMessages.SET_BLOCK_DATA,
+                                payload: {
+                                    id: child,
+                                    path: "style.flex",
+                                    value: value,
+                                },
+                            });
+                        } catch (e) {
+                            console.log(e);
+                        }
+                    }, 300);
+                });
+            });
         };
 
         return (
@@ -164,10 +151,10 @@ export const ContainerGridSection = observer(
                 }}
                 label={"Grid Layout"}
             >
-                <MenuItem value={"33.33%"}>3x3</MenuItem>
-                <MenuItem value={"25%"}>4x4</MenuItem>
-                <MenuItem value={"20%"}>5x5</MenuItem>
-                <MenuItem value={"16.66%"}>6x6</MenuItem>
+                <MenuItem value={"0 0 33.33%"}>3x3</MenuItem>
+                <MenuItem value={"0 0 25%"}>4x4</MenuItem>
+                <MenuItem value={"0 0 20%"}>5x5</MenuItem>
+                <MenuItem value={"0 0 16.66%"}>6x6</MenuItem>
             </Select>
         );
     },
