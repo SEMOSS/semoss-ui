@@ -1,7 +1,24 @@
-import { useEffect, useState, useRef, useMemo } from "react";
-import { HighlightAlt } from "@mui/icons-material";
+import { useState, useRef } from "react";
+import {
+    HighlightAlt,
+    AlignHorizontalCenter,
+    AlignHorizontalLeft,
+    AlignHorizontalRight,
+    ArrowDownward,
+    ArrowForward,
+    FormatAlignCenter,
+    FormatAlignJustify,
+    FormatAlignLeft,
+    FormatAlignRight,
+    FormatBold,
+    FormatItalic,
+    RestartAlt,
+    FormatUnderlined,
+    VerticalAlignBottom,
+    VerticalAlignCenter,
+    VerticalAlignTop,
+} from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { computed } from "mobx";
 
 import {
     buildLayoutSection,
@@ -19,9 +36,9 @@ import {
     ActionMessages,
 } from "../../../store";
 import { useBlocks, useBlockSettings } from "../../../hooks";
-import { Paths, PathValue } from "../../../types";
 import { MenuItem, Select, Stack, ToggleTabsGroup, styled } from "@semoss/ui";
-import { getValueByPath } from "../../../utility";
+import { ButtonGroupSettings } from "../../block-settings/shared/ButtonGroupSettings";
+import { SizeSettings } from "../../block-settings/shared/SizeSettings";
 
 import { ContainerBlockDef, ContainerBlock } from "./ContainerBlock";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
@@ -40,11 +57,8 @@ const StyledToolsSection = styled("div")(() => ({
     width: "100%",
 }));
 const StyledStack = styled(Stack)(() => ({
-    ">.MuiBox-root": {
-        width: "60%",
-        gap: "8px",
-        justifyContent: "center",
-    },
+    padding: "12px",
+    gap: "8px",
 }));
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
     border: "1px",
@@ -63,7 +77,6 @@ const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
 }));
 const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
     height: "38px",
-    // width:'33%',
     padding: "8px 11px",
     "&.MuiTab-root": {
         borderRadius: theme.shape.borderRadius,
@@ -85,7 +98,7 @@ export const ContainerGridSection = observer(
         const { data, setData } = useBlockSettings(id);
         const { state } = useBlocks();
 
-        //get the main container of the grouped containers
+        //get the parent container of the grouped containers
         const parentContainer: Block = state.getBlock(id);
 
         // track the value of the layout dropdown
@@ -163,13 +176,12 @@ export const ContainerGridSection = observer(
 export const ContainerMenu: BlockComponent = ({ id }) => {
     const [selectedTab, setSelectedTab] = useState("Custom");
 
+    const layout = buildLayoutSection();
+
     return (
         <StyledStack>
             <StyledToggleTabsGroup
                 value={selectedTab}
-                style={{
-                    width: "100% !important",
-                }}
                 onChange={(e: React.SyntheticEvent, val: string) => {
                     setSelectedTab(val);
                 }}
@@ -180,9 +192,78 @@ export const ContainerMenu: BlockComponent = ({ id }) => {
             <StyledContainer>
                 {selectedTab === "Custom" && (
                     <StyledSubSection>
-                        <>
-                            Test
-                            {/* {[
+                        <ButtonGroupSettings
+                            id={id}
+                            path="style.alignItems"
+                            label="Vertical Align"
+                            options={[
+                                {
+                                    value: "start",
+                                    icon: VerticalAlignTop,
+                                    title: "Top",
+                                    isDefault: true,
+                                },
+                                {
+                                    value: "center",
+                                    icon: VerticalAlignCenter,
+                                    title: "Center",
+                                    isDefault: false,
+                                },
+                                {
+                                    value: "end",
+                                    icon: VerticalAlignBottom,
+                                    title: "Bottom",
+                                    isDefault: false,
+                                },
+                            ]}
+                        />
+                        <ButtonGroupSettings
+                            id={id}
+                            path="style.justifyContent"
+                            label="Horizontal Align"
+                            options={[
+                                {
+                                    value: "left",
+                                    icon: AlignHorizontalLeft,
+                                    title: "Top",
+                                    isDefault: true,
+                                },
+                                {
+                                    value: "center",
+                                    icon: AlignHorizontalCenter,
+                                    title: "Center",
+                                    isDefault: false,
+                                },
+                                {
+                                    value: "right",
+                                    icon: AlignHorizontalRight,
+                                    title: "Right",
+                                    isDefault: false,
+                                },
+                            ]}
+                        />
+                        <ButtonGroupSettings
+                            id={id}
+                            path="style.flexDirection"
+                            label="Direction"
+                            options={[
+                                {
+                                    value: "column",
+                                    icon: ArrowDownward,
+                                    title: "Column",
+                                    isDefault: true,
+                                },
+                                {
+                                    value: "row",
+                                    icon: ArrowForward,
+                                    title: "Row",
+                                    isDefault: false,
+                                },
+                            ]}
+                        />
+                        <SizeSettings id={id} label="Gap" path="style.gap" />
+
+                        {/* {[
                                 buildLayoutSection(),
                                 buildPositionSection(),
                                 buildSpacingSection(),
@@ -190,7 +271,6 @@ export const ContainerMenu: BlockComponent = ({ id }) => {
                                 buildColorSection(),
                                 buildBorderSection(),
                             ]} */}
-                        </>
                     </StyledSubSection>
                 )}
                 {selectedTab === "Grid" && (
