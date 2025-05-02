@@ -578,7 +578,7 @@ export class StateStore {
                     const variable = expression.match(/\$(.*?)\./)[1];
                     const stripped = iteratorList.slice(2, -2);
 
-                    // TODO: how do we handle nested loops $array.warehouse.warehouseSections
+                    // TODO: how do we handle nested loops $array.warehouse.warehouseSections --> = []
                     // Do we just call this recursively
                     if (variable === stripped) {
                         const path = expression.split(".").splice(1);
@@ -604,10 +604,55 @@ export class StateStore {
 
         // get the keys in the path
         const path = cleaned.split(".");
+        const pointer = path[0];
+
+        // Special syntax to parse by cell order
+        const isNumber = !isNaN(parseFloat(path[1]))
+
+        if (isNumber) {
+            let q;
+
+            // TODO: Problem we want to reference cells by a special syntax
+            // I don't want to change ids to be numbered for cells, 
+            // i think we are good with our id generation
+            if(this._store.variables[pointer]) {
+                const variable = this._store.variables[path[0]];
+                if(variable.type === "query") {
+                    q = this._store.queries[variable.to]
+                }
+            } else if (this._store.queries[pointer]) {
+                q = this._store.queries[pointer]
+            }
+
+            if(q) {
+                try {
+                    const c = q.cellList[parseFloat(path[1]) - 1]
+                    const p = path
+                    p.splice(0,2)
+
+                    if(p.length === 0) {
+                        return c.output
+                    } else {
+                        const key = p[0];
+                        
+                        if (key in c._exposed) {
+                            // get the search path
+                            const s = p.join(".");
+
+                            return getValueByPath(c._exposed, s);
+                        }
+                    }
+                } catch (e) {
+                    return expression
+                }
+
+            }
+        }
 
         if (this._store.variables[path[0]]) {
+            // We should be able to interpret by varaible name as we do below
             const variable = this._store.variables[path[0]];
-            const value = this.getVariable(
+            let value = this.getVariable(
                 variable.to,
                 variable.type,
                 path,
@@ -616,6 +661,7 @@ export class StateStore {
                     ? variable.value
                     : null,
             );
+            
 
             // TODO: Check this, protects for false values
             // (query.isLoading tied to a block.label **bad use-case)
