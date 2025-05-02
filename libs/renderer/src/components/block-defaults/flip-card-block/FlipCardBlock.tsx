@@ -1,4 +1,4 @@
-import { CSSProperties, useState } from "react";
+import { CSSProperties, useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { Card, styled } from "@semoss/ui";
 
@@ -58,16 +58,25 @@ export interface FlipCardBlockDef extends BlockDef<"flip-card"> {
         front: true;
         back: true;
     };
+    listeners: {
+        preProcess: true;
+    };
 }
 
 export const FlipCardBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots } = useBlock<FlipCardBlockDef>(id);
+    const { attrs, data, slots, listeners } = useBlock<FlipCardBlockDef>(id);
     const { state } = useBlocks();
 
     const isStatic = state.mode === "static";
     const { width, height, padding, margin, ...withoutDimensions } = data.style;
 
     const [flipped, setFlipped] = useState(false);
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
 
     return (
         <CardContainer

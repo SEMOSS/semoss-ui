@@ -53,7 +53,7 @@ export interface AccordionBlockDef extends BlockDef<"accordion"> {
         content: true;
     };
     listeners: {
-        onMount: true;
+        preProcess: true;
     };
 }
 
@@ -61,10 +61,10 @@ export const AccordionBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, slots, listeners } = useBlock<AccordionBlockDef>(id);
 
     useEffect(() => {
-        if(listeners.onMount) {
-            listeners.onMount();
+        if (listeners.preProcess) {
+            listeners.preProcess();
         }
-    }, [])
+    }, []);
 
     return (
         <StyledAccordion

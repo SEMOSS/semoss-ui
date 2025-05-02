@@ -32,6 +32,7 @@ export const config: BlockConfig<InputBlockDef> = {
         show: "true",
     },
     listeners: {
+        preProcess: [],
         onChange: [],
     },
     slots: {
@@ -136,6 +137,10 @@ export const config: BlockConfig<InputBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
         {
             name: "on Change",

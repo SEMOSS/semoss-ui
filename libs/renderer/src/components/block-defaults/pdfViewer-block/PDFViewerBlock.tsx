@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import { observer } from "mobx-react-lite";
-import { BlockComponent, BlockDef } from "../../../store";
-import { useBlock, useBlocks } from "../../../hooks";
 import { Typography, CircularProgress, Paper, Box } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import IconButton from "@mui/material/IconButton";
 import ClearIcon from "@mui/icons-material/Clear";
-import { useParams } from "react-router-dom";
+
 import { Env, runPixel } from "@semoss/sdk";
+
+import { BlockComponent, BlockDef } from "../../../store";
+import { useBlock, useBlocks } from "../../../hooks";
 
 export interface PDFViewerBlockDef extends BlockDef<"pdfViewer"> {
     widget: "pdfViewer";
@@ -19,6 +21,9 @@ export interface PDFViewerBlockDef extends BlockDef<"pdfViewer"> {
         };
         selectedPdf: string | null;
         show: string;
+    };
+    listeners: {
+        preProcess: true;
     };
 }
 
@@ -69,12 +74,18 @@ const PDFIframe = styled("iframe")({
 });
 
 export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, setData } = useBlock<PDFViewerBlockDef>(id);
+    const { attrs, data, setData, listeners } = useBlock<PDFViewerBlockDef>(id);
     const { state } = useBlocks();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [pdfContent, setPdfContent] = useState<string | null>(null);
     const { appId } = useParams();
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
 
     const downloadAndPrepareFile = useCallback(async (path: string) => {
         try {

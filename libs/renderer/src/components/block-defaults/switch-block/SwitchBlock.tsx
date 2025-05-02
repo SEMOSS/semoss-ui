@@ -1,4 +1,4 @@
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import {
     styled,
@@ -45,16 +45,26 @@ export interface SwitchBlockDef extends BlockDef<"switch"> {
         labelPlacement: "start" | "end" | "top" | "bottom";
     };
     listeners: {
+        preProcess: true;
         onChange: true;
     };
 }
 
 export const SwitchBlock: BlockComponent = observer(({ id }) => {
     try {
-        const { attrs, data, setData } = useBlock<SwitchBlockDef>(id);
+        const { attrs, data, setData, listeners } =
+            useBlock<SwitchBlockDef>(id);
+
+        useEffect(() => {
+            if (listeners.preProcess) {
+                listeners.preProcess();
+            }
+        }, []);
 
         const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
             setData("value", event.target.checked);
+
+            listeners.onChange();
         };
 
         const showLabel = data.label && data.label.trim() !== "";

@@ -1190,7 +1190,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 // -------------------------------------------
             },
             listeners: {
-                onMount: [],
+                preProcess: [],
             },
             slots: {
                 header: [],
@@ -1215,7 +1215,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 contentBgColor: '',
             },
             listeners: {
-                onClick: [],
+                onOpen: [],
+                onClose: [],
             },
             slots: {
                 header: [],
@@ -1256,7 +1257,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 source: '',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1282,7 +1285,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 showText: false,
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1301,6 +1306,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             },
             listeners: {
                 onChange: [],
+                preProcess: [],
             },
             slots: {
                 children: [],
@@ -1327,7 +1333,10 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 required: false,
                 labelPlacement: 'end',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+                onChange: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1356,6 +1365,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 views: ['hours', 'minutes'],
             },
             listeners: {
+                preProcess: [],
                 onChange: [],
             },
             slots: {} as BlockJSON['slots'],
@@ -1380,6 +1390,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             },
             listeners: {
                 onClick: [],
+                preProcess: [],
             },
             slots: {} as BlockJSON['slots'],
         },
@@ -1404,6 +1415,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             },
             listeners: {
                 onChange: [],
+                preProcess: [],
             },
             slots: {} as BlockJSON['slots'],
         },
@@ -1434,6 +1446,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             },
             listeners: {
                 onChange: [],
+                preProcess: [],
             },
             slots: {} as BlockJSON['slots'],
         },
@@ -1456,6 +1469,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 designMode: true,
             },
             listeners: {
+                preProcess: [],
                 onSubmit: [],
             },
             slots: {
@@ -1489,6 +1503,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 show: 'true',
             },
             listeners: {
+                preProcess: [],
                 onChange: [],
             },
             slots: {
@@ -1518,7 +1533,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 show: 'true',
             },
             listeners: {
-                onClick: [],
+                preProcess: [],
+                onComplete: [],
             },
             slots: {} as BlockJSON['slots'],
         },
@@ -1545,6 +1561,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 show: 'true',
             },
             listeners: {
+                preProcess: [],
                 onChange: [],
             },
             slots: {
@@ -1574,6 +1591,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 show: 'true',
             },
             listeners: {
+                preProcess: [],
                 onChange: [],
             },
             slots: {
@@ -1599,7 +1617,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {
                 children: [],
             },
@@ -1625,7 +1645,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 isFlipped: false,
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {
                 front: [],
                 back: [],
@@ -1647,7 +1669,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 size: '300px',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1666,7 +1690,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 enableFrameInteractions: true,
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1687,7 +1713,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 selectedPdf: null,
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1714,7 +1742,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 title: '',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1759,7 +1789,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 queryId: '',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1781,7 +1813,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 child: null,
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {
                 children: [],
             },
@@ -1806,7 +1840,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 title: '',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1837,7 +1873,10 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 multiple: false,
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+                onChange: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1859,7 +1898,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 text: 'Insert text',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {},
         },
     },
@@ -1878,7 +1919,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 markdown: '**Hello world**',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1920,7 +1963,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'h1',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1942,7 +1987,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'h2',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1964,7 +2011,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'h3',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1986,7 +2035,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'h4',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -2008,7 +2059,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'h5',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -2030,7 +2083,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'h6',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -2052,7 +2107,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'p',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -2395,7 +2452,10 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 anchor: 'left',
                 designMode: true,
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+                postProcess: [],
+            },
             slots: {
                 content: [],
             },
@@ -2422,6 +2482,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 size: '300px',
             },
             listeners: {
+                preProcess: [],
                 onChange: [],
             },
             slots: {} as BlockJSON['slots'],

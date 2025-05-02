@@ -10,7 +10,7 @@ import {
     buildDimensionsSection,
     buildBorderSection,
     buildShowField,
-    buildListener
+    buildListener,
 } from "../block-defaults.shared";
 
 export const config: BlockConfig<AccordionBlockDef> = {
@@ -24,7 +24,7 @@ export const config: BlockConfig<AccordionBlockDef> = {
         show: "true",
     },
     listeners: {
-        onMount: []
+        preProcess: [],
     },
     slots: {
         header: [],
@@ -51,8 +51,8 @@ export const config: BlockConfig<AccordionBlockDef> = {
             ],
         },
         {
-            name: "on Mount",
-            children: [...buildListener("onMount")],
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
     ],
     styleMenu: [

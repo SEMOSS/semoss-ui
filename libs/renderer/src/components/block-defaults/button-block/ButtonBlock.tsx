@@ -1,4 +1,4 @@
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
 import { useBlock } from "../../../hooks";
@@ -41,6 +41,7 @@ export interface ButtonBlockDef extends BlockDef<"button"> {
     };
     listeners: {
         onClick: true;
+        preProcess: true;
     };
 }
 
@@ -50,6 +51,12 @@ const StyledContainer = styled("div")(({ theme }) => ({
 
 export const ButtonBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, listeners } = useBlock<ButtonBlockDef>(id);
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
     return (
         <StyledContainer {...attrs}>
             <StyledButton
