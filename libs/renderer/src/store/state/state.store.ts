@@ -606,61 +606,60 @@ export class StateStore {
         cleaned
             .split(" ")
             .filter((item) => item?.length > 0)
-            .forEach((path: string[] | string) => {
-                const isArray = Array.isArray(path);
-                const pointer = isArray ? path[0] : null;
+            .forEach((path: string) => {
+                // const isArray = Array.isArray(path);
+                // const pointer = isArray ? path[0] : null;
 
                 // Special syntax to parse by cell order
-                const isNumber = pointer && !isNaN(parseFloat(path[1]));
+                const isNumber = !isNaN(parseFloat(path));
 
-                if (isNumber && isArray) {
+                if (isNumber) {
                     let q;
 
                     // TODO: Problem we want to reference cells by a special syntax
                     // I don't want to change ids to be numbered for cells,
                     // i think we are good with our id generation
-                    if (this._store.variables[pointer]) {
-                        const variable = this._store.variables[path[0]];
+                    if (this._store.variables[path]) {
+                        const variable = this._store.variables[path];
                         if (variable.type === "query") {
                             q = this._store.queries[variable.to];
                         }
-                    } else if (this._store.queries[pointer]) {
-                        q = this._store.queries[pointer];
+                    } else if (this._store.queries[path]) {
+                        q = this._store.queries[path];
                     }
 
                     if (q) {
                         try {
-                            const c = q.cellList[parseFloat(path[1]) - 1];
-                            const p = path;
-                            p.splice(0, 2);
+                            const c = q.cellList[parseFloat(path) - 1];
+                            // const p = path;
+                            // p.splice(0, 2);
 
-                            if (p.length === 0) {
-                                combinedValues += ` ${c.output}`;
-                                // return c.output
-                            } else {
-                                const key = p[0];
+                            // if (p.length === 0) {
+                            //     combinedValues += ` ${c.output}`;
+                            //     // return c.output
+                            // } else {
+                            const key = path; // p[0];
 
-                                if (key in c._exposed) {
-                                    // get the search path
-                                    const s = p.join(".");
+                            if (key in c._exposed) {
+                                // get the search path
+                                // const s = p.join(".");
 
-                                    combinedValues += ` ${getValueByPath(
-                                        c._exposed,
-                                        s,
-                                    )}`;
-                                }
+                                combinedValues += ` ${getValueByPath(
+                                    c._exposed,
+                                    path,
+                                )}`;
                             }
+                            //     }
                         } catch (e) {
-                            combinedValues += ` ${expression}`;
+                            if (expression) {
+                                combinedValues += ` ${expression}`;
+                            }
                         }
                     }
                 }
 
-                const variable =
-                    typeof path === "string"
-                        ? this._store.variables?.[path]
-                        : false;
-                if (variable && typeof path === "string") {
+                const variable = this._store.variables?.[path];
+                if (variable) {
                     const value = this.getVariable(
                         variable.to,
                         variable.type,
