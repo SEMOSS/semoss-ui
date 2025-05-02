@@ -13,7 +13,6 @@ import {
 import { Blocks, RendererEngine } from "./components/blocks";
 import { DefaultBlocks } from "./components/block-defaults";
 import { DefaultCells } from "./components/cell-defaults";
-import { getHomePage } from "./utility";
 import {
     MigrationManager,
     SerializedState,
@@ -56,110 +55,111 @@ export const Renderer = observer((props: RendererProps) => {
 
     const [homePage, setHomePage] = useState("");
 
+    const URLroute = window.location.href;
+    const route = URLroute.split("/").pop() ?? "";
+
     useEffect(() => {
         // if (isAuthorized) {
-            // start the loading
-            setIsLoading(true);
+        // start the loading
+        setIsLoading(true);
 
-            let stateFilter;
+        let stateFilter;
 
-            searchParams.forEach((value, key) => {
-                if (key === "state") {
-                    stateFilter = JSON.parse(value);
+        searchParams.forEach((value, key) => {
+            if (key === "state") {
+                stateFilter = JSON.parse(value);
+            }
+        });
+
+        // initialize a new insight
+        let pixel = "";
+        if (appId && !stateFilter) {
+            pixel = `GetAppBlocksJson ( project=["${appId}"]);`;
+        } else if (state || stateFilter) {
+            pixel = `true`;
+        } else {
+            console.error("Missing appId or state");
+        }
+
+        // ignore if there is not pixel
+        if (!pixel) {
+            return;
+        }
+
+        // load the app
+        runPixel<[SerializedState]>(pixel, insightId ? insightId : "new")
+            .then(async ({ pixelReturn, errors, insightId }) => {
+                if (errors.length) {
+                    throw new Error(errors.join(""));
                 }
-            });
 
-            // initialize a new insight
-            let pixel = "";
-            if (appId && !stateFilter) {
-                pixel = `GetAppBlocksJson ( project=["${appId}"]);`;
-            } else if (state || stateFilter) {
-                pixel = `true`;
-            } else {
-                console.error("Missing appId or state");
-            }
-
-            // ignore if there is not pixel
-            if (!pixel) {
-                return;
-            }
-            
-            // load the app
-            runPixel<[SerializedState]>(pixel, insightId ? insightId : "new")
-                .then(async ({ pixelReturn, errors, insightId }) => {
-                    if (errors.length) {
-                        throw new Error(errors.join(""));
-                    }
-
-                    // set the state
-                    let s: SerializedState;
-                    if (appId && !stateFilter) {
-                        s = pixelReturn[0].output;
-                    } else if (state || stateFilter) {
-                        if (stateFilter) {
-                            s = stateFilter;
-                        } else {
-                            s = state;
-                        }
-                    } else {
-                        return;
-                    }
-
-                    // ignore if there is state
-                    if (!s) {
-                        return;
-                    }
-
-                    // run migration if not up to date
-                    if (s.version !== STATE_VERSION) {
-                        const migration = new MigrationManager();
-                        s = await migration.run(s);
-                    }
-
-                    const active = await getHomePage(s);
-                    setHomePage(active);
-
-                    // Replace variable values with query params
-                    const params = {};
-                    queryStringParams.forEach((value, key) => {
-                        params[key] = value;
-                    });
-
-                    // create a new state store
-                    const store = new StateStore({
-                        mode: "interactive",
-                        insightId: insightId,
-                        state: s,
-                        cellRegistry: DefaultCells,
-                        initialParams: params,
-                    });
-
-                    // set it
-                    setStateStore(store);
-
-
+                // set the state
+                let s: SerializedState;
+                if (appId && !stateFilter) {
+                    s = pixelReturn[0].output;
+                } else if (state || stateFilter) {
                     if (stateFilter) {
-                        // notification.add({
-                        //     color: "warning",
-                        //     message:
-                        //         "Please be mindful this may not represent the current state of the app, due to the filters present in the URL",
-                        // });
+                        s = stateFilter;
+                    } else {
+                        s = state;
                     }
-                })
-                .catch((e) => {
-                    // notification.add({
-                    //     color: "error",
-                    //     message: e.message,
-                    // });
+                } else {
+                    return;
+                }
 
-                    console.log(e);
-                })
-                .finally(() => {
-                    // close the loading screen
-                    setIsLoading(false);
+                // ignore if there is state
+                if (!s) {
+                    return;
+                }
+
+                // run migration if not up to date
+                if (s.version !== STATE_VERSION) {
+                    const migration = new MigrationManager();
+                    s = await migration.run(s);
+                }
+                const activePage = wrapper(s);
+                setHomePage(activePage);
+
+                // Replace variable values with query params
+                const params = {};
+                queryStringParams.forEach((value, key) => {
+                    params[key] = value;
                 });
+
+                // create a new state store
+                const store = new StateStore({
+                    mode: "interactive",
+                    insightId: insightId,
+                    state: s,
+                    cellRegistry: DefaultCells,
+                    initialParams: params,
+                });
+
+                // set it
+                setStateStore(store);
+
+                if (stateFilter) {
+                    // notification.add({
+                    //     color: "warning",
+                    //     message:
+                    //         "Please be mindful this may not represent the current state of the app, due to the filters present in the URL",
+                    // });
+                }
+            })
+            .catch((e) => {
+                // notification.add({
+                //     color: "error",
+                //     message: e.message,
+                // });
+
+                console.log(e);
+            })
+            .finally(() => {
+                // close the loading screen
+                setIsLoading(false);
+            });
         // }
-    }, [state, appId, insightId]);
+    }, [state, appId, insightId, route]);
 
     if (!stateStore || (isLoading && !preview)) {
         if (!preview) {
@@ -199,3 +199,24 @@ export const Renderer = observer((props: RendererProps) => {
         </Notification>
     );
 });
+
+const wrapper = (state:SerializedState) => {
+    const URLroute = window.location.href;
+    const match = URLroute.match(/#\/s\/[^/]+\/(.+)/);
+    const currentRoute = match ? match[1] : "";
+    let activePageID = "";
+    const blocks = state?.blocks;
+    if(!blocks) {
+        return}
+    Object?.entries(blocks).forEach(([_, block]) => {
+        if (block?.widget === "page") {
+            if (currentRoute === block?.data.route) {
+                activePageID = block?.id;
+            }
+        }
+    });
+    if (activePageID === "") {
+        activePageID = "page-1";
+    }
+    return activePageID;
+}
