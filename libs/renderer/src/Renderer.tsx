@@ -56,7 +56,6 @@ export const Renderer = observer((props: RendererProps) => {
     const [homePage, setHomePage] = useState("");
 
     const URLroute = window.location.href;
-    const route = URLroute.split("/").pop() ?? "";
 
     useEffect(() => {
         // if (isAuthorized) {
@@ -159,7 +158,7 @@ export const Renderer = observer((props: RendererProps) => {
                 setIsLoading(false);
             });
         // }
-    }, [state, appId, insightId, route]);
+    }, [state, appId, insightId, URLroute]);
 
     if (!stateStore || (isLoading && !preview)) {
         if (!preview) {
