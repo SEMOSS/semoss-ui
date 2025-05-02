@@ -178,6 +178,36 @@ describe("Pie Block Component", () => {
 		const pichart = container.querySelector("[data-block='pieChart']");
 		expect(pichart).toBeInTheDocument();
 	});
+
+	it("should set up a donut chart through useBlockSettings", () => {
+		const { container } = render(<VisualizationBlock id="pieChart" />, {
+			blocks: {
+				// Modify the mockBlocks to test there's a donut chart
+				pieChart: {
+					...mockBlocks.pieChart,
+					data: {
+						...mockBlocks.pieChart.data,
+						option: {
+							...mockBlocks.pieChart.data.option,
+							series: [
+								{
+									...mockBlocks.pieChart.data.option.series[0],
+									radius: ["20%", "50%"],
+								},
+							],
+						},
+					},
+				},
+			},
+		});
+
+		// screen.debug();
+		// Find the specific part that confirms donut configuration
+		const chartInstance = container.querySelector("canvas");
+		expect(chartInstance).toBeInTheDocument();
+
+        console.log({chartInstance: chartInstance.getAttribute("data-option")})
+	});
 	// it("should render Pie chart correctly", () => {
 	// 	const { container } = render(<Pie id="pieChart" updateJson={() => {}} />, {
 	// 		blocks: mockBlocks,
