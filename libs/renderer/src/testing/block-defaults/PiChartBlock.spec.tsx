@@ -4,6 +4,7 @@ import { render } from "@/testing/utils"; // Assuming 'customRender' is exported
 // import { Pie } from '../../src/components/block-defaults/echart-visualization-block/variant/pie-chart/Pie';
 import { screen } from "@testing-library/react";
 import { Pie } from "@/components/block-defaults/echart-visualization-block/variant/pie-chart/Pie";
+import { VisualizationBlock } from "@/components/block-defaults/echart-visualization-block";
 
 // Mock data for testing
 const mockBlocks = {
@@ -155,42 +156,46 @@ const mockBlocks = {
 };
 
 describe("Pie Block Component", () => {
-	it("should render Pie chart correctly", () => {
-		const { container } = render(<Pie id="pieChart" updateJson={() => {}} />, {
-			blocks: mockBlocks,
+	// Mock clientWidth and clientHeight to avoid ECharts error
+	beforeEach(() => {
+		Object.defineProperties(HTMLElement.prototype, {
+			clientWidth: {
+				configurable: true,
+				value: 800, // Arbitrary non-zero width
+			},
+			clientHeight: {
+				configurable: true,
+				value: 600, // Arbitrary non-zero height
+			},
 		});
-
-        screen.debug();
-		const pichart = container.querySelector("[data-block]='pieChart'");
-		expect(pichart).toBeInTheDocument();
-
-		// Verify if the option for "donut" (a modification to inner radius or some other option) is applied
-		// const chartOptions = JSON.parse(
-		// 	container.querySelector("canvas")?.getAttribute("data-option") ?? "{}",
-		// );
-
-
-		// console.log({ chartOptions });
-		// expect(chartOptions.series[0].type).toBe("pie");
 	});
 	it("should render Pie chart correctly", () => {
-		const { container } = render(<Pie id="pieChart" updateJson={() => {}} />, {
+		const { container } = render(<VisualizationBlock id="pieChart" />, {
 			blocks: mockBlocks,
 		});
-
-		const pichart = container.querySelector("[data-block]='piChart'");
-		expect(pichart).toBeInTheDocument();
-
-		// Verify if the option for "donut" (a modification to inner radius or some other option) is applied
-		// const chartOptions = JSON.parse(
-		// 	container.querySelector("canvas")?.getAttribute("data-option") ?? "{}",
-		// );
 
 		// screen.debug();
-
-		// console.log({ chartOptions });
-		// expect(chartOptions.series[0].type).toBe("pie");
+		const pichart = container.querySelector("[data-block='pieChart']");
+		expect(pichart).toBeInTheDocument();
 	});
+	// it("should render Pie chart correctly", () => {
+	// 	const { container } = render(<Pie id="pieChart" updateJson={() => {}} />, {
+	// 		blocks: mockBlocks,
+	// 	});
+
+	// 	const pichart = container.querySelector("[data-block]='piChart'");
+	// 	expect(pichart).toBeInTheDocument();
+
+	// 	// Verify if the option for "donut" (a modification to inner radius or some other option) is applied
+	// 	// const chartOptions = JSON.parse(
+	// 	// 	container.querySelector("canvas")?.getAttribute("data-option") ?? "{}",
+	// 	// );
+
+	// 	// screen.debug();
+
+	// 	// console.log({ chartOptions });
+	// 	// expect(chartOptions.series[0].type).toBe("pie");
+	// });
 
 	// Add more tests to assert different behaviors and scenarios
 });
