@@ -145,14 +145,11 @@ export const Notification = (props: NotificationProps): JSX.Element => {
                 open={isOpen}
                 anchorOrigin={anchorOrigin}
                 autoHideDuration={autoHideDuration}
-                data-testId={`${
-                    active ? "notification" + active.id : "notificationId"
-                }`}
+                id={`${active ? active.id : getUuid()}`}
                 onClose={(event, reason) => {
                     if (reason === "clickaway") {
                         return;
                     }
-
                     // close it
                     setIsOpen(false);
                 }}
