@@ -5,6 +5,7 @@ import { SizeSettings } from "../block-settings/shared/SizeSettings";
 import { ColorSettings } from "../block-settings/shared/ColorSettings";
 import { BorderSettings } from "../block-settings/custom/BorderSettings";
 import { ButtonGroupSettings } from "../block-settings/shared/ButtonGroupSettings";
+import { BoxShadowSizeSettings } from "../block-settings/shared/BoxShadowSizeSettings";
 import {
     AlignHorizontalCenter,
     AlignHorizontalLeft,
@@ -36,6 +37,16 @@ const falseSegment = DEFAULT_FALSE_VARIABLE;
 /**
  * Build the Layout Section
  */
+
+export interface BoxShadowParts {
+    offsetX?: string;
+    offsetY?: string;
+    blurRadius?: string;
+    spreadRadius?: string;
+    color?: string;
+}
+
+
 export const buildLayoutSection = () => ({
     name: "Layout",
     children: [
@@ -298,9 +309,93 @@ export const buildBorderSection = () => ({
 });
 
 /**
+ * Build the Box Shadow Section
+ * @returns a box shadow section
+ */
+
+export const buildShadowSection = () => ({
+    name: "Box Shadow",
+    children: [
+        {
+            description: "Offset-x",
+            render: ({ id }) => (
+                <BoxShadowSizeSettings
+                    id={id}
+                    label="Offset-x"
+                    path="style.boxShadowParts.offsetX"
+                    required={true}
+                />
+            ),
+        },
+        {
+            description: "Offset-y",
+            render: ({ id }) => (
+                <BoxShadowSizeSettings
+                    id={id}
+                    label="Offset-y"
+                    path="style.boxShadowParts.offsetY"
+                    required={true}
+                />
+            ),
+        },
+        {
+            description: "Blur Radius",
+            render: ({ id }) => (
+                <BoxShadowSizeSettings
+                    id={id}
+                    label="Blur Radius"
+                    path="style.boxShadowParts.blurRadius"
+                />
+            ),
+        },
+        {
+            description: "Spread Radius",
+            render: ({ id }) => (
+                <BoxShadowSizeSettings
+                    id={id}
+                    label="Spread Radius"
+                    path="style.boxShadowParts.spreadRadius"
+                />
+            ),
+        },
+        {
+            description: "Color",
+            render: ({ id }) => (
+                <ColorSettings
+                    id={id}
+                    label="Color"
+                    path="style.boxShadowParts.color"    
+                />
+            ),
+        },
+    ],
+});
+
+/**
+ * Build a box shadow string from the given BoxShadowParts
+ * @param {BoxShadowParts} [parts] - the BoxShadowParts to build the string from
+ * @returns {string} the box shadow string
+ */
+export const buildBoxShadowFromParts = (parts?: BoxShadowParts): string => {
+    if (!parts) return "";
+    const {
+        offsetX = "0px",
+        offsetY = "0px",
+        blurRadius = "0px",
+        spreadRadius = "0px",
+        color = "rgba(0,0,0,0.2)",
+    } = parts;
+    
+    // build the box shadow string by concatenating the parts
+    // into the format "offsetX offsetY blurRadius spreadRadius color"
+    return `${offsetX} ${offsetY} ${blurRadius} ${spreadRadius} ${color}`;
+};
+
+/**
  * Build the Position Section
  * @returns a position section
  */
+
 export const buildPositionSection = () => ({
     name: "Position",
     children: [
@@ -489,11 +584,11 @@ export const buildTypographySection = () => ({
 export const buildListener = <D extends BlockDef = BlockDef>(
     trigger: Extract<keyof D["listeners"], string>,
 ) => [
-    {
-        description: trigger,
-        render: ({ id }) => <ListenerSettings id={id} listener={trigger} />,
-    },
-];
+        {
+            description: trigger,
+            render: ({ id }) => <ListenerSettings id={id} listener={trigger} />,
+        },
+    ];
 
 /**
  * get show field optionslist which will contain static true false, dynamic variables list when the block is selected

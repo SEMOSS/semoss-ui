@@ -11,16 +11,17 @@ const StyledTypography = styled(Typography)(() => ({
  */
 
 export const BaseSettingSection = (props: {
-    label: string;
+    label?: string;
     children: ReactNode;
     wide?: boolean;
     description?: string;
+    labelElement?: React.ReactNode;
 }) => {
     return (
         <Stack direction="column" spacing={1} className="base-setting-section">
             <Stack direction="row" alignItems="center" spacing={1}>
                 <StyledTypography variant="body2">
-                    {props.label}
+                    {props.label ?? props.labelElement} 
                 </StyledTypography>
                 {!!props.description?.length && (
                     <Tooltip placement="top" title={props.description} arrow>

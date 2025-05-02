@@ -8,6 +8,7 @@ import {
     buildBorderSection,
     buildColorSection,
     buildPositionSection,
+    buildShadowSection,
 } from "../block-defaults.shared";
 
 import { ContainerBlockDef, ContainerBlock } from "./ContainerBlock";
@@ -42,5 +43,6 @@ export const config: BlockConfig<ContainerBlockDef> = {
         buildDimensionsSection(),
         buildColorSection(),
         buildBorderSection(),
+        buildShadowSection(),
     ],
 };
