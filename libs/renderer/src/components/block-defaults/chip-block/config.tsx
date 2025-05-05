@@ -35,12 +35,11 @@ export const config: BlockConfig<ChipBlockDef> = {
         show: "true",
     },
     listeners: {
-        //onClick: [],
+        preProcess: [],
     },
     slots: {},
     render: ChipBlock,
     icon: LabelRounded,
-
     contentMenu: [
         {
             name: "General",
@@ -96,8 +95,8 @@ export const config: BlockConfig<ChipBlockDef> = {
             ],
         },
         {
-            name: "on Click",
-            children: [...buildListener("onClick")],
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
     ],
     styleMenu: [

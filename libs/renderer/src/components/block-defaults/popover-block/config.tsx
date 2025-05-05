@@ -175,11 +175,11 @@ export const config: BlockConfig<PopoverBlockDef> = {
             ],
         },
         {
-            name: "on Open",
+            name: "Pre Process",
             children: [...buildListener("onOpen")],
         },
         {
-            name: "on Close",
+            name: "Post Process",
             children: [...buildListener("onClose")],
         },
     ],

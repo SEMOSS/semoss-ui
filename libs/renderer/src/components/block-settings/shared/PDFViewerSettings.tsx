@@ -73,7 +73,8 @@ export const PDFViewerSettings = observer(
 
         return (
             <BaseSettingSection label="Files">
-                <div>Fix Autocomplete</div>
+                <div>Please contact admin on usage</div>
+                {/* <div>Fix Autocomplete</div> */}
                 {/* <Autocomplete
                     options={pdfFiles}
                     value={
