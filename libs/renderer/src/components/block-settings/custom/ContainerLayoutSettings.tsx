@@ -86,30 +86,51 @@ export const ContainerLayoutSettings = observer(
         const { data, setData } = useBlockSettings(id);
         const { state } = useBlocks();
 
-        const gridDimension = getValueByPath(data, "dimension") as unknown as string;
+        const gridDimension = getValueByPath(
+            data,
+            "dimension",
+        ) as unknown as string;
         const layoutType = getValueByPath(data, "type") as unknown as string;
-        const flexDirection = getValueByPath(data, "style.flexDirection") as unknown as string;
-        let gap = getValueByPath(data, "style.gap") as unknown as string
-        let rowSpacing = getValueByPath(data, "rowSpacing") as unknown as string;
-        
-        if(rowSpacing) rowSpacing = rowSpacing.slice(0, -2)
-        if(gap) gap = gap.slice(0, -1);
+        const flexDirection = getValueByPath(
+            data,
+            "style.flexDirection",
+        ) as unknown as string;
+        let gap = getValueByPath(data, "style.gap") as unknown as string;
+        let rowSpacing = getValueByPath(
+            data,
+            "rowSpacing",
+        ) as unknown as string;
+
+        if (rowSpacing) rowSpacing = rowSpacing.slice(0, -2);
+        if (gap) gap = gap.slice(0, -1);
 
         /**
          * Sync the data on change
          */
         const changeRowSpacing = (amount: string) => {
             setData("rowSpacing", `${amount}px`);
+
+            const b = state.getBlock(id);
+
+            if (b.slots.children.children.length) {
+                b.slots.children.children.forEach(async (cId) => {
+                    state.dispatch({
+                        message: ActionMessages.SET_BLOCK_DATA,
+                        payload: {
+                            id: cId,
+                            path: "style.marginBottom",
+                            value: `${amount}px`,
+                        },
+                    });
+                });
+            }
         };
 
         const modifyGrid = (val: string, g?: string) => {
             const b = state.getBlock(id);
-            const width = calculateItemWidth(
-                100,
-                val,
-                g ? g : gap,
-            ) as string;
+            const width = calculateItemWidth(100, val, g ? g : gap) as string;
 
+            const elsCount = parseInt(val as string);
             // Modify width of existing blocks in container
             if (b.slots.children.children.length) {
                 b.slots.children.children.forEach(async (cId) => {
@@ -118,13 +139,57 @@ export const ContainerLayoutSettings = observer(
                         payload: {
                             id: cId,
                             path: "style.width",
-                            // value: val,
                             value: `${width}%`,
                         },
                     });
                 });
+
+                if (b.slots.children.children.length < elsCount) {
+                    const leftOver = Array.from({
+                        length: elsCount - b.slots.children.children.length,
+                    });
+
+                    let position = {
+                        parent: b.id,
+                        slot: "children",
+                        sibling:
+                            b.slots.children.children[
+                                b.slots.children.children.length - 1
+                            ],
+                        type: "after",
+                    };
+
+                    leftOver.forEach(async () => {
+                        // Add some blocks automatically for user
+                        const id = await state.dispatch({
+                            message: ActionMessages.ADD_BLOCK,
+                            payload: {
+                                json: {
+                                    widget: "container",
+                                    data: {
+                                        style: {
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: "8px",
+                                            flexWrap: "wrap",
+                                            width: `${width}%`,
+                                            border: "solid blue",
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                } as BlockJSON,
+                                position: position,
+                            },
+                        });
+
+                        position["sibling"] = id as string;
+                    });
+                }
             } else {
-                const l = Array.from({length: parseInt(val as string)});
+                const l = Array.from({ length: parseInt(val as string) });
                 let position = {
                     parent: b.id,
                     slot: "children",
@@ -277,7 +342,7 @@ export const ContainerLayoutSettings = observer(
                                         `${e.target.value}%` as never,
                                     );
 
-                                    modifyGrid(gridDimension, e.target.value)
+                                    modifyGrid(gridDimension, e.target.value);
                                 }}
                                 size="small"
                                 variant="outlined"
@@ -338,48 +403,74 @@ export const ContainerLayoutSettings = observer(
                         <ButtonGroupSettings
                             id={id}
                             path="style.alignItems"
-                            label={flexDirection === "row" ? "Vertical Align" : "Horizontal Align"}
+                            label={
+                                flexDirection === "row"
+                                    ? "Vertical Align"
+                                    : "Horizontal Align"
+                            }
                             options={[
                                 {
                                     value: "start",
-                                    icon: flexDirection === "row" ? VerticalAlignTop : AlignHorizontalLeft,
+                                    icon:
+                                        flexDirection === "row"
+                                            ? VerticalAlignTop
+                                            : AlignHorizontalLeft,
                                     title: "Top",
                                     isDefault: true,
                                 },
                                 {
                                     value: "center",
-                                    icon: flexDirection === "row" ? VerticalAlignCenter : AlignHorizontalCenter,
+                                    icon:
+                                        flexDirection === "row"
+                                            ? VerticalAlignCenter
+                                            : AlignHorizontalCenter,
                                     title: "Center",
                                     isDefault: false,
                                 },
                                 {
                                     value: "end",
-                                    icon: flexDirection === "row" ? VerticalAlignBottom : AlignHorizontalRight,
+                                    icon:
+                                        flexDirection === "row"
+                                            ? VerticalAlignBottom
+                                            : AlignHorizontalRight,
                                     title: "Bottom",
                                     isDefault: false,
                                 },
                             ]}
-                            />
+                        />
                         <ButtonGroupSettings
                             id={id}
                             path="style.justifyContent"
-                            label={flexDirection === "row" ? "Horizontal Align" : "Vertical Align"}
+                            label={
+                                flexDirection === "row"
+                                    ? "Horizontal Align"
+                                    : "Vertical Align"
+                            }
                             options={[
                                 {
                                     value: "left",
-                                    icon: flexDirection === "row" ? AlignHorizontalLeft : VerticalAlignTop,
+                                    icon:
+                                        flexDirection === "row"
+                                            ? AlignHorizontalLeft
+                                            : VerticalAlignTop,
                                     title: "Top",
                                     isDefault: true,
                                 },
                                 {
                                     value: "center",
-                                    icon: flexDirection === "row" ? AlignHorizontalCenter : VerticalAlignCenter,
+                                    icon:
+                                        flexDirection === "row"
+                                            ? AlignHorizontalCenter
+                                            : VerticalAlignCenter,
                                     title: "Center",
                                     isDefault: false,
                                 },
                                 {
                                     value: "right",
-                                    icon: flexDirection === "row" ? AlignHorizontalRight : VerticalAlignBottom,
+                                    icon:
+                                        flexDirection === "row"
+                                            ? AlignHorizontalRight
+                                            : VerticalAlignBottom,
                                     title: "Right",
                                     isDefault: false,
                                 },
