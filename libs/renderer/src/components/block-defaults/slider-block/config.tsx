@@ -33,6 +33,7 @@ export const config: BlockConfig<SliderBlockDef> = {
     },
     listeners: {
         onChange: [],
+        preProcess: [],
     },
     slots: {},
     render: SliderBlock,
@@ -156,6 +157,10 @@ export const config: BlockConfig<SliderBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
         {
             name: "on Change",
