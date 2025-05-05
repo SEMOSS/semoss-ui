@@ -179,6 +179,7 @@ describe("Pie Block Component", () => {
 		expect(pichart).toBeInTheDocument();
 	});
 
+    // THIS DOES NOT WORK ATM
 	it("should set up a donut chart through useBlockSettings", () => {
 		const { container } = render(<VisualizationBlock id="pieChart" />, {
 			blocks: {
