@@ -1,8 +1,9 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { Sync, Search } from "@mui/icons-material";
 import { computed } from "mobx";
+import { Sync, Search } from "@mui/icons-material";
 import { Tooltip, Checkbox } from "@mui/material";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Autocomplete, Button, Select, styled, TextField, InputAdornment, IconButton, Stack } from "@semoss/ui";
 import {
     useBlockSettings,
@@ -16,7 +17,6 @@ import { getValueByPath } from "../../../../../utility";
 import { BAR_CHART_DATA } from "../../Visualization.constants";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { DataTabStyling } from "./DataTabStyling";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import StringIcon from '../../../../../assets/img/StringIcon.svg';
 import NumberIcon from '../../../../../assets/img/NumberIcon.svg';
 

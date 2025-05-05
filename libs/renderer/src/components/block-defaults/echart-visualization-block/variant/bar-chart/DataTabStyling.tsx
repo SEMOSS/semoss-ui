@@ -1,14 +1,14 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Autocomplete, TextField, styled } from "@semoss/ui";
 import { observer } from "mobx-react-lite";
+import Switch from '@mui/material/Switch';
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { useBlockSettings, useBlocksPixel, useFrameHeaders } from "../../../../../hooks";
 import { BlockDef } from "../../../../../store";
-import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import Switch from '@mui/material/Switch';
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 const StyledMain = styled("div")(() => ({
     width: "100%",

@@ -67,9 +67,6 @@ export const ChartStyling = observer(
             useBlockSettings<EchartVisualizationBlockDef>(id); //json data for chart rendering
         const [chartStyle, setChartStyle] = useState(INITIAL_CHART_STYLE); //chart style initial state
         const [value, setValue] = useState(data.option);
-        const [chartPageState, setChartPageState] = useState({
-            accordionExpanded: false,
-        });
         const [chartDataChanged, setChartDataChanged] = useState(false);
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
         //default chart alignment for dropdown

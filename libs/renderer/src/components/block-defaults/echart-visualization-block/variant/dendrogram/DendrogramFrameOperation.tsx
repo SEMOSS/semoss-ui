@@ -2,10 +2,10 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import styled from '@emotion/styled';
 import { Autocomplete, TextField, Button } from "@mui/material";
+import { useNotification } from "@semoss/ui";
 import { useBlockSettings, useBlocksPixel, useFrameHeaders } from "../../../../../hooks";
 import { BlockDef } from "../../../../../store";
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
-import { useNotification } from "@semoss/ui";
 
 // a styled section to maintain the basic styles for every element in the component
 const StyledSubSection = styled("div")(() => ({
