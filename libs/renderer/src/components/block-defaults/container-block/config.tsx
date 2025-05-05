@@ -1,8 +1,11 @@
 import { CSSProperties } from "react";
-import { BlockConfig } from "../../../store";
+import { HighlightAlt } from "@mui/icons-material";
 
+import { BlockConfig } from "../../../store";
+import { ContainerBlockDef, ContainerBlock } from "./ContainerBlock";
+import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
+import { ContainerLayoutSettings } from "../../block-settings"
 import {
-    buildLayoutSection,
     buildSpacingSection,
     buildDimensionsSection,
     buildBorderSection,
@@ -11,15 +14,14 @@ import {
     buildListener,
 } from "../block-defaults.shared";
 
-import { ContainerBlockDef, ContainerBlock } from "./ContainerBlock";
-import { HighlightAlt } from "@mui/icons-material";
-import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
-
 // export the config for the block
 export const config: BlockConfig<ContainerBlockDef> = {
     widget: "container",
     type: BLOCK_TYPE_LAYOUT,
     data: {
+        type: "custom",
+        dimension: null,
+        show: "true",
         style: {
             display: "flex",
             flexDirection: "column",
@@ -27,7 +29,6 @@ export const config: BlockConfig<ContainerBlockDef> = {
             gap: "8px",
             flexWrap: "wrap",
         },
-        show: "true",
     },
     listeners: {
         preProcess: [],
@@ -44,7 +45,16 @@ export const config: BlockConfig<ContainerBlockDef> = {
         },
     ],
     styleMenu: [
-        buildLayoutSection(),
+        {
+            name: "Layout",
+            children: [
+                {
+                    description: "Layout",
+                    render: ({ id }) => <ContainerLayoutSettings id={id} />,
+                },
+            ]
+        },
+        // buildLayoutSection(),
         buildPositionSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
