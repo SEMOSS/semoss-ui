@@ -73,19 +73,26 @@ export interface EchartVisualizationBlockDef {
             facetSelected:FacetColumns[];
         }
     };
-    listeners: {};
+    listeners: {
+        preProcess: true;
+    };
     slots: never;
 }
 
 export const VisualizationBlock: BlockComponent = observer(
     <D extends BlockDef = BlockDef>({ id }) => {
-        const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
+        const { data, attrs, listeners } = useBlock<EchartVisualizationBlockDef>(id);
         const { setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
         const { state } = useBlocks();
 
         const elementRef = useRef<HTMLDivElement>(null);
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
+        useEffect(() => {
+            if (listeners.preProcess) {
+                listeners.preProcess();
+            }
+        }, []);
         /**
          *
          * @param data

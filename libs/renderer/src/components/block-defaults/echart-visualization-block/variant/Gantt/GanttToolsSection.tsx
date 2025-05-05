@@ -10,7 +10,7 @@ import styled from "@emotion/styled";
 import { List, Switch } from "@semoss/ui";
 import { GrainTwoTone, InfoOutlined } from "@mui/icons-material";
 import ImageIcon from "@mui/icons-material/Image";
-import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks/VisualizationBlock";
+import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { useBlockSettings } from "../../../../../hooks";
 import { GanttTargetLine } from "./GanttTargetLine";
 import { CustomizeSymbol } from "./CustomizeSymbol";
