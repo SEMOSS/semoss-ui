@@ -1,4 +1,4 @@
-import React, { CSSProperties } from "react";
+import React, { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
 import { useBlock, useTypeWriter, useBlocks } from "../../../hooks";
@@ -15,19 +15,28 @@ export interface TextBlockDef extends BlockDef<"text"> {
         show: string;
     };
     slots: never;
+    listeners: {
+        preProcess: true;
+    };
 }
 
 export const TextBlock: BlockComponent = observer(({ id }) => {
     // const { attrs, data } = useBlock<TextBlockDef>(id);
     const block = useBlock<TextBlockDef>(id);
     const state = useBlocks();
-    const { attrs, data } = block;
+    const { attrs, data, listeners } = block;
 
     const textContent =
         typeof data.text == "string" ? data.text : JSON.stringify(data.text);
     let displayTxt = useTypeWriter(data.isStreaming ? textContent : "");
 
     if (!data.isStreaming) displayTxt = textContent;
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
 
     // TODO: Why?
     return showBlock(block, state)

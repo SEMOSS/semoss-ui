@@ -18,6 +18,7 @@ export const config: BlockConfig<RatingsBlockDef> = {
     },
     listeners: {
         onChange: [],
+        preProcess: [],
     },
     slots: {
         content: [],
@@ -64,6 +65,10 @@ export const config: BlockConfig<RatingsBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
         {
             name: "on Change",

@@ -1,4 +1,4 @@
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { TextField, Typography, styled } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -41,6 +41,7 @@ export interface TimePickerBlockDef extends BlockDef<"timepicker"> {
         views: ("hours" | "minutes" | "seconds")[];
     };
     listeners: {
+        preProcess: true;
         onChange: true;
     };
 }
@@ -49,6 +50,12 @@ export const TimePickerBlock: BlockComponent = observer(({ id }) => {
     try {
         const { attrs, data, setData, listeners } =
             useBlock<TimePickerBlockDef>(id);
+
+        useEffect(() => {
+            if (listeners.preProcess) {
+                listeners.preProcess();
+            }
+        }, []);
 
         // Parse the value string to a dayjs object, default to null if invalid
         const timeValue = data.value ? dayjs(data.value) : null;
