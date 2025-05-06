@@ -1,8 +1,9 @@
 import { makeAutoObservable, reaction } from 'mobx';
 
+import { runPixel } from '@semoss/sdk';
+
 import { Role } from '@/types';
 import { RootStore, WorkspaceOptions } from '@/stores';
-
 import { AppMetadata } from '@/components/app';
 import { Model } from 'flexlayout-react';
 
@@ -11,6 +12,11 @@ export interface WorkspaceStoreInterface {
      * ID of App
      */
     appId: string;
+
+    /**
+     * ID of Workspace Insight
+     */
+    insightId: string;
 
     /**
      * Show Loading or not
@@ -101,6 +107,11 @@ export interface WorkspaceConfigInterface {
     appId: string;
 
     /**
+     * Get the ID of the Insight tied to app workspace
+     */
+    insightId: string;
+
+    /**
      * User's role relative to the app
      */
     role: Role;
@@ -123,6 +134,7 @@ export class WorkspaceStore {
     private _root: RootStore;
     private _store: WorkspaceStoreInterface = {
         appId: '',
+        insightId: '',
         isLoading: false,
         role: 'READ_ONLY',
         type: 'CODE',
@@ -158,8 +170,9 @@ export class WorkspaceStore {
         // register the root
         this._root = root;
 
-        // set the appId
+        // set the app and insight Id
         this._store.appId = config.appId;
+        this._store.insightId = config.insightId;
         this._store.type = config.type;
 
         // update the data
@@ -210,6 +223,13 @@ export class WorkspaceStore {
      */
     get appId() {
         return this._store.appId;
+    }
+
+    /**
+     * Get the ID of the workspace insight
+     */
+    get insightId() {
+        return this._store.insightId;
     }
 
     /**
@@ -291,6 +311,13 @@ export class WorkspaceStore {
     /**
      * Actions
      */
+
+    /**
+     * runs pixel off of workspace insight
+     */
+    runWorkspacePixel = async (command: string) => {
+        return await runPixel(command, this._store.insightId);
+    };
 
     /**
      * Load the workspace

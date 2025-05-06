@@ -13,6 +13,7 @@ import { Map } from "./variant/map-chart/Map";
 import { Line } from "./variant/line-chart/Line";
 import { StackChart } from "./variant/stack-chart/StackChart";
 import { Gantt } from "./variant/Gantt/Gantt";
+import { Dendrogram } from './variant/dendrogram/Dendrogram';
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -37,6 +38,12 @@ export interface VisualizationColumns {
     width: string;
 }
 
+export interface FacetColumns{
+    name: string;
+    selector: string;
+    value: string | number;
+    isFacet?: boolean;
+}
 export interface EchartVisualizationBlockDef {
     widget: "e-chart";
     data: {
@@ -61,6 +68,10 @@ export interface EchartVisualizationBlockDef {
             hideExclude: boolean;
         };
         show: boolean;
+        facet: {
+            facetList: string[] | number[];
+            facetSelected:FacetColumns[];
+        }
     };
     listeners: {};
     slots: never;
@@ -158,6 +169,11 @@ export const VisualizationBlock: BlockComponent = observer(
                         {data.variation === "echart-gantt-chart" && (
                             <Gantt id={id} updateChart={updateChartJson} />
                         )}
+                        {
+                            data.variation === 'echart-dendrogram-chart' && (
+                                <Dendrogram id={id} updateJson={updateChartJson} />
+                            )
+                        }
                     </StyledNoDataContainer>
                 );
             } catch (e) {
@@ -191,6 +207,11 @@ export const VisualizationBlock: BlockComponent = observer(
                 {data.variation === "echart-gantt-chart" && (
                     <Gantt id={id} updateChart={updateChartJson} />
                 )}
+                {
+                data.variation === 'echart-dendrogram-chart' && (
+                    <Dendrogram id={id} updateJson={updateChartJson} />
+                )
+                }
             </StyledDataContainer>
         );
     },

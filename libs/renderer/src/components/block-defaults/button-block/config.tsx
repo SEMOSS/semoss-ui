@@ -34,6 +34,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
     },
     listeners: {
         onClick: [],
+        preProcess: [],
     },
     slots: {},
     render: ButtonBlock,
@@ -61,6 +62,10 @@ export const config: BlockConfig<ButtonBlockDef> = {
                 },
                 ...buildShowField(),
             ],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
         {
             name: "on Click",

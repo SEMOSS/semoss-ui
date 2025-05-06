@@ -56,9 +56,9 @@ export const ChildBlockSettings = (props: ChildBlockSettingsProps) => {
     const [openDesignerModal, setOpenDesignerModal] = useState(false);
     const [state, setState] = useState<StateStore>();
 
-    useEffect(() => {
-        runPixel<[SerializedState]>(`1+1`, "new").then(
-            async ({ pixelReturn, errors, insightId }) => {
+    // useEffect(() => {
+        // runPixel<[SerializedState]>(`1+1`, "new").then(
+            // async ({ pixelReturn, errors, insightId }) => {
                 // create a new state store
                 // const s = new StateStore({
                 //     mode: 'static',
@@ -68,27 +68,25 @@ export const ChildBlockSettings = (props: ChildBlockSettingsProps) => {
                 // });
                 // set it
                 // setState(s);
-            },
-        );
-    }, []);
+            // },
+        // );
+    // }, []);
 
-    if (!state) {
-        return <>Loading...</>;
-    }
+    // if (!state) {
+    //     return <>Loading...</>;
+    // }
 
-    /**
-     * Initialize insight for app building
-     */
-    Env.update({
-        MODULE: process.env.MODULE || "",
-    });
+    // /**
+    //  * Initialize insight for app building
+    //  */
+    // Env.update({
+    //     MODULE: process.env.MODULE || "",
+    // });
 
     return (
         <Stack>
             <Stack
                 direction={"row"}
-                alignItems={"center"}
-                justifyContent={"space-between"}
             >
                 <Typography align={"center"} variant={"body1"}>
                     Design

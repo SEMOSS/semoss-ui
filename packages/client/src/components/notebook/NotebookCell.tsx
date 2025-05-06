@@ -50,18 +50,25 @@ const StyledRow = styled(Stack)(() => ({
     position: 'relative',
 }));
 
-const StyledName = styled(Typography)(({ theme }) => ({
+const StyledStackTwo = styled(Stack)(({ theme }) => ({
     position: 'absolute',
     top: theme.spacing(-1.5),
     left: theme.spacing(10.5),
-    paddingLeft: theme.spacing(0.5),
-    paddingRight: theme.spacing(0.5),
+    paddingLeft: theme.spacing(1.5),
+    paddingRight: theme.spacing(1.5),
     zIndex: 1,
     color: theme.palette.text.disabled,
     borderRadius: theme.shape.borderRadius,
     background: theme.palette.background.paper,
     overflow: 'hidden',
+    '&:hover': {
+        backgroundColor: theme.palette.primaryContrast['50'],
+        color: theme.palette.text.disabled,
+        cursor: 'pointer !important',
+    },
 }));
+
+const StyledName = styled(Typography)(({ theme }) => ({}));
 
 const StyledCellActions = styled(Collapse)(({ theme }) => ({
     position: 'absolute',
@@ -306,6 +313,17 @@ export const NotebookCell = observer(
             }
         }, [cellPlayCounter]);
 
+        const cellOrderNumber = useMemo(() => {
+            const nbCellList = state.queries[cell.query.id].cellList;
+
+            let matchIndex = 0;
+            nbCellList.forEach((c, i) => {
+                if (c.id === cell.id) matchIndex = i;
+            });
+
+            return matchIndex + 1;
+        }, [cell.id, cell.query.cellList.length]);
+
         /**
          * Create a duplicate cell
          */
@@ -478,9 +496,23 @@ export const NotebookCell = observer(
                 }}
             >
                 <StyledRow direction="row" width="100%" spacing={1}>
-                    <StyledName variant="subtitle2">
-                        {variableName ? variableName : cell.config.name}
-                    </StyledName>
+                    {/* TODO: Alright so do we want to just automate cells as variables, if so no need for condition  */}
+
+                    <StyledStackTwo
+                        onClick={() => {
+                            copyTextToClipboard(
+                                `{{${queryId}.${cellOrderNumber}}}`,
+                                notification,
+                            );
+                        }}
+                    >
+                        <StyledName
+                            variant="subtitle2"
+                            title={'Copy reference id'}
+                        >
+                            {cellOrderNumber}
+                        </StyledName>
+                    </StyledStackTwo>
 
                     <StyledCellActions in={showCellActions}>
                         <Stack gap={1} direction={'row'} alignItems={'center'}>
