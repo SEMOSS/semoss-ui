@@ -7,7 +7,6 @@ import { copy } from "../utility";
 
 import { useBlocks } from "./useBlocks";
 
-import { upload } from "@semoss/sdk/react";
 
 /**
  * useBlockReturn
@@ -166,7 +165,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
          * @param actions - Actions to dispatch
          * @param intercept - Intercept and modify an action
          */
-        const dispatchAction = (
+        const dispatchAction = async (
             actions: ListenerActions[],
             intercept?: (action: ListenerActions) => ListenerActions | null,
         ) => {
@@ -176,7 +175,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
             }
 
             // go through each one and trigger it
-            actions.forEach(async (a) => {
+            for (const a of actions) {
                 // convert back to a normal action
                 let action: ListenerActions | null = a;
 
@@ -189,15 +188,26 @@ export const useBlock = <D extends BlockDef = BlockDef>(
                     return;
                 }
 
-                state.dispatch(action);
+                // state.dispatch(action);
 
-                // TODO: John accidently pushed, sync and async events WIP
-                // console.log("Before Dispatch", action)
-                // const d = await state.dispatchEventAction(action)
-                // console.log("After Dispatch", state.queries)
-                // console.log("Data:", d)
-                // debugger
-            });
+                const d = await state.dispatchEventAction(action);
+                console.log("Data:", d);
+            }
+            // actions.forEach(async (a) => {
+            //     // convert back to a normal action
+            //     let action: ListenerActions | null = a;
+
+            //     // allow the action to be intercepted before dispatch
+            //     if (intercept) {
+            //         action = intercept(action);
+            //     }
+
+            //     if (action === null) {
+            //         return;
+            //     }
+
+            //     // state.dispatch(action);
+            // });
         };
 
         // create the listeners
