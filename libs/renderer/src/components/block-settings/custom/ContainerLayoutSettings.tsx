@@ -18,7 +18,10 @@ import {
     VerticalAlignBottom,
     VerticalAlignCenter,
     VerticalAlignTop,
+    FormatLineSpacing,
+    SpaceBar,
 } from "@mui/icons-material";
+import InputAdornment from "@mui/material/InputAdornment";
 
 import {
     MenuItem,
@@ -149,7 +152,7 @@ export const ContainerLayoutSettings = observer(
                         length: elsCount - b.slots.children.children.length,
                     });
 
-                    let position = {
+                    const position = {
                         parent: b.id,
                         slot: "children",
                         sibling:
@@ -190,7 +193,7 @@ export const ContainerLayoutSettings = observer(
                 }
             } else {
                 const l = Array.from({ length: parseInt(val as string) });
-                let position = {
+                const position = {
                     parent: b.id,
                     slot: "children",
                     sibling: "",
@@ -300,6 +303,13 @@ export const ContainerLayoutSettings = observer(
                                 size="small"
                                 variant="outlined"
                                 autoComplete="off"
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <FormatLineSpacing />
+                                        </InputAdornment>
+                                    ),
+                                }}
                             />
                             <ToggleButtonGroup
                                 value={"px"}
@@ -347,6 +357,13 @@ export const ContainerLayoutSettings = observer(
                                 size="small"
                                 variant="outlined"
                                 autoComplete="off"
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <SpaceBar />
+                                        </InputAdornment>
+                                    ),
+                                }}
                             />
                             <ToggleButtonGroup
                                 value={"%"}
