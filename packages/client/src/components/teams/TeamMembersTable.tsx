@@ -433,7 +433,11 @@ export const TeamMembersTable = (props: MembersTableProps) => {
     const deleteUser = async (user: MemberObj) => {
         try {
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            response = await monolithStore.deleteTeamUser(user);
+            response = await monolithStore.deleteTeamUser({
+                groupid: user.groupid,
+                type: user.type,
+                userid: user.userid,
+            });
 
             if (!response) {
                 return;
@@ -465,9 +469,11 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                 try {
                     let response: AxiosResponse<{ success: boolean }> | null =
                         null;
-                    response = await monolithStore.deleteTeamUser(
-                        selectedMembers[i],
-                    );
+                    response = await monolithStore.deleteTeamUser({
+                        groupid: selectedMembers[i].groupid,
+                        type: selectedMembers[i].type,
+                        userid: selectedMembers[i].userid,
+                    });
 
                     if (!response) {
                         return;

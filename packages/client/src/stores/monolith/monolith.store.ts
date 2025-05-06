@@ -1274,7 +1274,11 @@ export class MonolithStore {
      * @param userId
      * @returns
      */
-    async deleteTeamUser(user) {
+    async deleteTeamUser(user: {
+        groupid: string;
+        type: string;
+        userid: string;
+    }) {
         let url = `${Env.MODULE}/api/auth/admin/`,
             postData = '';
 
