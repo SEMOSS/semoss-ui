@@ -103,7 +103,7 @@ export const TerminalPanel: React.FC = observer(() => {
             if (language === 'PIXEL') {
                 pixel = cleaned;
             } else if (language === 'SHELL') {
-                pixel = `Command("<encode>${cleaned}</encode>");`;
+                pixel = `Command("${cleaned}");`;
             } else if (language === 'PYTHON') {
                 pixel = `Py("<encode>${cleaned}</encode>");`;
             }
@@ -164,6 +164,10 @@ export const TerminalPanel: React.FC = observer(() => {
                     ) {
                         formatted = output[0].output;
                     }
+                } else if (operationType.indexOf('HELP') > -1) {
+                    formatted = (output as unknown as string)
+                        .split('\n')
+                        .join('\n\r');
                 } else if (operationType.indexOf('INVALID_SYNTAX') > -1) {
                     formatted = `\x1b[31mInvalid Syntax: ${output}\x1b[0m`;
                 } else if (operationType.indexOf('ERROR') > -1) {
