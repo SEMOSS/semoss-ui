@@ -56,10 +56,10 @@ export const SizeSpacingSettings = observer(
         // track the value
         const [parsed, setParsed] = useState<{
             unit: "%" | "px" | "em" | "";
-            left: string;
-            top: string;
-            right: string;
-            bottom: string;
+            left?: string;
+            top?: string;
+            right?: string;
+            bottom?: string;
         }>({
             unit: "",
             left: "",
@@ -108,33 +108,39 @@ export const SizeSpacingSettings = observer(
                 p.unit = "em";
             }
 
-            console.log({ computedValue });
-
             //check if the computed value has spaces
             if (p.unit) {
-                const amount = computedValue.replace(/\D+/g, "");
+                //remove the units from the computed value, keep numbers and spaces
+                const amount = JSON.stringify(computedValue).replace(
+                    /[^0-9\s]/g,
+                    "",
+                );
                 const parts = amount.split(" ");
 
-                if (JSON.stringify(computedValue).indexOf(" ") == 1) {
-                    p.top = parts[0];
-                    p.bottom = parts[0];
-                    p.left = parts[1];
-                    p.right = parts[1];
-                } else if (JSON.stringify(computedValue).indexOf(" ") == 2) {
-                    p.top = parts[0];
-                    p.left = parts[1];
-                    p.right = parts[1];
-                    p.bottom = parts[2];
-                } else if (JSON.stringify(computedValue).indexOf(" ") == 3) {
-                    p.top = parts[0];
-                    p.right = parts[1];
-                    p.bottom = parts[2];
-                    p.left = parts[3];
+                //determine which sides have value based on spacing
+                //i.e. padding: "8px 5px 10px"
+                if (amount.match(/\s/g)) {
+                    if (amount.match(/\s/g).length == 1) {
+                        p.top = parts[0];
+                        p.bottom = parts[0];
+                        p.left = parts[1];
+                        p.right = parts[1];
+                    } else if (amount.match(/\s/g).length == 2) {
+                        p.top = parts[0];
+                        p.left = parts[1];
+                        p.right = parts[1];
+                        p.bottom = parts[2];
+                    } else if (amount.match(/\s/g).length == 3) {
+                        p.top = parts[0];
+                        p.right = parts[1];
+                        p.bottom = parts[2];
+                        p.left = parts[3];
+                    }
                 } else {
-                    p.left = amount;
                     p.top = amount;
                     p.right = amount;
                     p.bottom = amount;
+                    p.left = amount;
                 }
             } else {
                 p.left = computedValue;
@@ -151,73 +157,150 @@ export const SizeSpacingSettings = observer(
          */
         const onChange = (
             amount: string,
-            sideType: string,
+            type: string,
             unit: "%" | "px" | "em" | "",
         ) => {
+            //value to set
+            let v;
+
             // updated the parsed value
             if (customView) {
-                switch (sideType) {
+                switch (type) {
                     case "top":
                         setParsed({
                             unit: unit,
                             top: amount,
-                            bottom: amount,
+                            bottom: parsed.bottom,
                             left: parsed.left,
                             right: parsed.right,
                         });
+                        v =
+                            amount +
+                            unit +
+                            " " +
+                            parsed.right +
+                            unit +
+                            " " +
+                            parsed.bottom +
+                            unit +
+                            " " +
+                            parsed.left +
+                            unit;
                         break;
                     case "bottom":
                         setParsed({
                             unit: unit,
-                            top: parsed.top,
                             bottom: amount,
+                            top: parsed.top,
                             left: parsed.left,
                             right: parsed.right,
                         });
+                        v =
+                            parsed.top +
+                            unit +
+                            " " +
+                            parsed.right +
+                            unit +
+                            " " +
+                            amount +
+                            unit +
+                            " " +
+                            parsed.left +
+                            unit;
                         break;
                     case "left":
                         setParsed({
                             unit: unit,
+                            left: amount,
                             top: parsed.top,
                             bottom: parsed.bottom,
-                            left: amount,
                             right: parsed.right,
                         });
+                        v =
+                            parsed.top +
+                            unit +
+                            " " +
+                            parsed.right +
+                            unit +
+                            " " +
+                            parsed.bottom +
+                            unit +
+                            " " +
+                            amount +
+                            unit;
                         break;
                     case "right":
                         setParsed({
                             unit: unit,
+                            right: amount,
                             top: parsed.top,
                             bottom: parsed.bottom,
                             left: parsed.left,
-                            right: amount,
                         });
+                        v =
+                            parsed.top +
+                            unit +
+                            " " +
+                            amount +
+                            unit +
+                            " " +
+                            parsed.bottom +
+                            unit +
+                            " " +
+                            parsed.left +
+                            unit;
                         break;
                 }
             } else {
-                switch (sideType) {
+                switch (type) {
                     case "top":
                         setParsed({
                             unit: unit,
-                            top: amount,
-                            bottom: amount,
                             left: parsed.left,
                             right: parsed.right,
+                            top: amount,
+                            bottom: amount,
                         });
+                        v =
+                            parsed.top +
+                            unit +
+                            " " +
+                            parsed.right +
+                            unit +
+                            " " +
+                            parsed.bottom +
+                            unit +
+                            " " +
+                            amount +
+                            unit;
                         break;
                     case "left":
                         setParsed({
                             unit: unit,
-                            top: parsed.top,
-                            bottom: parsed.bottom,
                             left: amount,
                             right: amount,
+                            top: parsed.top,
+                            bottom: parsed.bottom,
                         });
+                        v =
+                            parsed.top +
+                            unit +
+                            " " +
+                            amount +
+                            unit +
+                            " " +
+                            parsed.bottom +
+                            unit +
+                            " " +
+                            amount +
+                            unit;
+                        break;
+                    default:
                         break;
                 }
             }
 
-            if (sideType == "unit") {
+            if (type == "unit") {
                 setParsed({
                     unit: unit,
                     top: parsed.top,
@@ -226,22 +309,6 @@ export const SizeSpacingSettings = observer(
                     right: parsed.right,
                 });
             }
-
-            // get value with unit for setting data
-            const v = unit
-                ? parsed.top +
-                  unit +
-                  " " +
-                  parsed.left +
-                  unit +
-                  " " +
-                  parsed.right +
-                  unit +
-                  " " +
-                  parsed.bottom +
-                  unit
-                : amount;
-            console.log({ parsed });
 
             // clear the old timeout
             if (timeoutRef.current) {
@@ -552,7 +619,7 @@ export const SizeSpacingSettings = observer(
                 <IconButton
                     onClick={() => setCustomView(!customView)}
                     color={customView ? "primary" : "default"}
-                    data-testId={"sizeSpacingSetting-button-allSides"}
+                    data-testid={"sizeSpacingSetting-button-allSides"}
                 >
                     <SelectAll />
                 </IconButton>
