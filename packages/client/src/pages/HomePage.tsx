@@ -392,14 +392,18 @@ export const HomePage = observer((): JSX.Element => {
                     {mode != 'System' && favoritedApps.length > 0 ? (
                         <StyledSection>
                             {favoritedApps.map((app, i) => {
+                                console.log('its been updated so many times');
+                                console.log('UPDATE');
                                 return (
                                     <AppTileCard
                                         key={i}
                                         app={app}
                                         systemApp={false}
-                                        href={`#/app/${app.project_id}`}
+                                        href={`#/app/${app.project_id}/detail`}
                                         onAction={() =>
-                                            navigate(`/app/${app.project_id}`)
+                                            navigate(
+                                                `/app/${app.project_id}/detail`,
+                                            )
                                         }
                                         appType={app.project_type}
                                         isFavorite={isFavorited(app.project_id)}
