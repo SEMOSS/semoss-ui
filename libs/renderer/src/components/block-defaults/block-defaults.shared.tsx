@@ -32,13 +32,6 @@ import {
 } from "./block-defaults.constants";
 import { BoxShadowSizeSettings } from "../block-settings/shared/BoxShadowSetting";
 import { StandardColorSettings } from "../block-settings/shared/StandardColorSettings";
-export interface BoxShadowParts {
-    offsetX?: string;
-    offsetY?: string;
-    blurRadius?: string;
-    spreadRadius?: string;
-    color?: string;
-}
 
 const trueSegment = DEFAULT_TRUE_VARIABLE;
 const falseSegment = DEFAULT_FALSE_VARIABLE;
@@ -576,7 +569,7 @@ export const buildShadowSection = () => ({
                 <BoxShadowSizeSettings
                     id={id}
                     label="Offset-x"
-                    path="style.boxShadowParts.offsetX"
+                    path="boxShadowParts.offsetX"
                     required={true}
                 />
             ),
@@ -587,7 +580,7 @@ export const buildShadowSection = () => ({
                 <BoxShadowSizeSettings
                     id={id}
                     label="Offset-y"
-                    path="style.boxShadowParts.offsetY"
+                    path="boxShadowParts.offsetY"
                     required={true}
                 />
             ),
@@ -598,7 +591,7 @@ export const buildShadowSection = () => ({
                 <BoxShadowSizeSettings
                     id={id}
                     label="Blur Radius"
-                    path="style.boxShadowParts.blurRadius"
+                    path="boxShadowParts.blurRadius"
                 />
             ),
         },
@@ -608,7 +601,7 @@ export const buildShadowSection = () => ({
                 <BoxShadowSizeSettings
                     id={id}
                     label="Spread Radius"
-                    path="style.boxShadowParts.spreadRadius"
+                    path="boxShadowParts.spreadRadius"
                 />
             ),
         },
@@ -618,46 +611,9 @@ export const buildShadowSection = () => ({
                 <StandardColorSettings
                     id={id}
                     label="Color"
-                    path="style.boxShadowParts.color"
+                    path="boxShadowParts.color"
                 />
             ),
         },
     ],
 });
-
-/**
- * Build a CSS box-shadow string from the given BoxShadowParts
- * @param {BoxShadowParts} parts The box shadow parts
- * @returns {string} The constructed box shadow string
- */
-export const buildBoxShadowFromParts = (parts?: BoxShadowParts): string => {
-    if(!parts) return "";
-    
-    const safe = (value?: string): string => {
-        // Check if the value is defined. If so, trim whitespace and return it.
-        // If not, return the default value "0px".
-        return value?.trim() || "0px";
-    };
-
-    /**
-     * The color of the box shadow. If it doesn't exist, default to "rgba(0,0,0,0.2)"
-     * @type {string}
-     */
-    const color = parts?.color?.trim() || "rgba(0,0,0,0.2)";
-
-    /**
-     * The box shadow string. This is constructed by joining the parts of the box
-     * shadow with spaces. The resulting string should look like:
-     * "offset-x offset-y blur-radius spread-radius color"
-     * @type {string}
-     */
-    const shadow = [
-        safe(parts?.offsetX), // offset-x
-        safe(parts?.offsetY), // offset-y
-        safe(parts?.blurRadius), // blur-radius
-        safe(parts?.spreadRadius), // spread-radius
-        color, // color
-    ].join(" ");
-
-    return shadow;
-};
