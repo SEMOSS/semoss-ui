@@ -90,7 +90,7 @@ export const StandardColorSettings = observer(
             // The dependencies of this useCallback are:
             //  - setData: the function to set the color in the block's data
             //  - path: the path to the color in the block's data
-            [setData, path],
+            [setData, path, state.dispatch, onChange],
         );
 
         return (

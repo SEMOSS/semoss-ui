@@ -30,7 +30,7 @@ import {
     DEFAULT_TRUE_VARIABLE,
     DEFAULT_FALSE_VARIABLE,
 } from "./block-defaults.constants";
-import { BoxShadowSizeSettings } from "../block-settings/shared/BoxShadowSetting";
+import { BoxShadowSizeSettings } from "../block-settings/shared/BoxShadowSizeSetting";
 import { StandardColorSettings } from "../block-settings/shared/StandardColorSettings";
 
 const trueSegment = DEFAULT_TRUE_VARIABLE;

@@ -67,7 +67,7 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
             listeners.preProcess();
         }
     }, []);
-// debugger;
+
     return (
         <div
             style={{
