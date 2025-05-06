@@ -9,16 +9,16 @@ import {
     TextArea,
     TextField,
     useNotification,
+    Checkbox,
 } from '@semoss/ui';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DataSelection from './DataSelection';
 import { useForm } from 'react-hook-form';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import { MetaModelType } from './MetaModelType';
 
-type Props = object;
-
-function CsvImport({}: Props) {
+function CsvImport() {
     const StyledTextField = styled('div')(() => ({
         cursor: 'not-allowed',
         backgroundColor: '#f5f5f5',
@@ -37,7 +37,9 @@ function CsvImport({}: Props) {
         gap: '25px',
     }));
 
-    const [step, setStep] = useState<'import' | 'selection'>('import');
+    const [step, setStep] = useState<
+        'import' | 'table' | 'metaModel' | 'propFile'
+    >('import');
     const databaseTypeOptions = [
         { label: 'H2', value: 'h2' },
         { label: 'RDF', value: 'rdf' },
@@ -50,6 +52,15 @@ function CsvImport({}: Props) {
         { label: 'From Scratch', value: 'fromScratch' },
         { label: 'From Prop File', value: 'frompropFile' },
     ];
+    const tinkerOptions = [
+        { label: 'TG', value: 'tg' },
+        { label: 'Neo4j', value: 'neo4j' },
+        { label: 'XML', value: 'xml' },
+        { label: 'JSON', value: 'json' },
+    ];
+    const [useCustomURI, setUseCustomURI] = useState(false);
+    const [customURI, setCustomURI] = useState('');
+    const [selectedTinkerType, setSelectedTinkerType] = useState<string>('');
     const [formLoading, setFormLoading] = useState(false);
     const { watch } = useForm();
     const [dbName, setDbName] = useState('');
@@ -68,28 +79,53 @@ function CsvImport({}: Props) {
     const { steps } = useStepper();
     const navigate = useNavigate();
     const IsDisabled = uploadedFile.length === 0;
+    const [engineId, setEngineId] = useState<string | null>(null);
+
+    const updateStepBasedOnMetamodel = (metamodelType: string) => {
+        if (
+            metamodelType === 'asFlatTable' ||
+            metamodelType === 'fromScratch'
+        ) {
+            setStep('table');
+        } else if (metamodelType === 'asSuggestedMetamodel') {
+            setStep('metaModel');
+        } else if (metamodelType === 'frompropFile') {
+            setStep('propFile');
+        } else {
+            setStep('import');
+        }
+    };
+
     const onFileUpload = (files: File | File[]) => {
         const fileArray = Array.isArray(files) ? files : [files];
         setUploadedFile((prevFiles) => [...prevFiles, ...fileArray]);
         setSelectedDbType(databaseTypeOptions[0].value);
         setSelectedMetaModelType(metaModelTypeOptions[0].value);
     };
+
     const dbNameRef = useRef<HTMLInputElement | null>(null);
     const dbDescRef = useRef<HTMLInputElement | null>(null);
     const dbTagRef = useRef<HTMLInputElement | null>(null);
     const delimiterRef = useRef<HTMLInputElement | null>(null);
 
     const formatFileSize = (size: number) => {
-        if (size < 1024) {
-            return `${size} B`;
-        } else if (size < 1024 * 1024) {
-            return `${(size / 1024).toFixed(2)} KB`;
-        } else if (size < 1024 * 1024 * 1024) {
+        if (size < 1024) return `${size} B`;
+        else if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
+        else if (size < 1024 * 1024 * 1024)
             return `${(size / (1024 * 1024)).toFixed(2)} MB`;
-        } else {
-            return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-        }
+        else return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
     };
+
+    let filteredMetaModelTypeOptions = metaModelTypeOptions;
+    if (selectedDbType === 'rdf') {
+        filteredMetaModelTypeOptions = metaModelTypeOptions.filter(
+            (option) => option.value !== 'asFlatTable',
+        );
+    } else if (selectedDbType === 'r') {
+        filteredMetaModelTypeOptions = [
+            { label: 'As Flat Table', value: 'asFlatTable' },
+        ];
+    }
 
     useEffect(() => {
         dbNameRef.current?.focus();
@@ -105,65 +141,91 @@ function CsvImport({}: Props) {
     }, [delimiter]);
 
     const onSubmit = async () => {
-        if (!dbName) {
+        if (!dbName || !dbDescription || !dbTag) {
             notification.add({
                 color: 'error',
-                message: 'Please Enter Database Name',
-            });
-            return;
-        } else if (!dbDescription) {
-            notification.add({
-                color: 'error',
-                message: 'Please Enter Database Description',
-            });
-            return;
-        } else if (!dbTag) {
-            notification.add({
-                color: 'error',
-                message: 'Please Enter Database Tag',
+                message: 'Please fill all the required fields.',
             });
             return;
         }
+
+        if (uploadedFile.length === 0) {
+            notification.add({
+                color: 'error',
+                message: 'Please upload at least one file.',
+            });
+            return;
+        }
+
         setFormLoading(true);
+
         try {
             const upload = await monolithStore.uploadFile(
                 uploadedFile,
                 configStore.store.insightID,
             );
-            const pixelString =
-                steps[0].data === 'DATABASE'
-                    ? `PredictDataTypes(filePath=["${upload[0].fileLocation}"])`
-                    : `UploadEngine(filePath=["${upload[0].fileLocation}"], engineTypes=["${steps[0].data}"])`;
 
-            const response = await monolithStore.runQuery(pixelString);
-            const output = response.pixelReturn[0].output;
-            const operationType = response.pixelReturn[0].operationType;
-            const pixelExpression = response.pixelReturn[0].pixelExpression;
-            const filePathMatch = pixelExpression.match(
-                /filePath\s*=\s*\[\s*"(.+?)"\s*\]/,
-            );
-            const filePathFromExpression = filePathMatch
-                ? filePathMatch[1]
-                : null;
-            setfilePath(filePathFromExpression);
-
-            if (filePathFromExpression) {
-                const name = filePathFromExpression.split(/[/\\]/).pop() || '';
-                setFileName(name);
-            }
-
-            if (operationType.includes('ERROR')) {
-                notification.add({ color: 'error', message: output });
+            if (!upload || !Array.isArray(upload)) {
+                console.error(
+                    'Upload failed or returned unexpected format:',
+                    upload,
+                );
+                notification.add({
+                    color: 'error',
+                    message: 'Upload failed or returned invalid response.',
+                });
                 setFormLoading(false);
                 return;
             }
-            setParsedData(output);
-            setStep('selection');
+
+            let pixelExpressions: string[] = [];
+
+            if (
+                selectedMetaModelType === 'asFlatTable' ||
+                selectedMetaModelType === 'fromScratch'
+            ) {
+                pixelExpressions = upload.map(
+                    (file) =>
+                        `PredictDataTypes(filePath=["${file.fileLocation}"], delimiter=["${delimiter}"], rowCount=[false])`,
+                );
+            } else if (selectedMetaModelType === 'asSuggestedMetamodel') {
+                pixelExpressions = upload.map(
+                    (file) =>
+                        `PredictMetamodel(filePath=["${file.fileLocation}"], delimiter=["${delimiter}"], rowCount=[false])`,
+                );
+            } else if (selectedMetaModelType === 'frompropFile') {
+                notification.add({
+                    color: 'error',
+                    message: 'Prop File logic not implemented.',
+                });
+                setFormLoading(false);
+                return;
+            }
+
+            const parsedResults: any[] = [];
+
+            for (const pixelString of pixelExpressions) {
+                const response = await monolithStore.runQuery(pixelString);
+                const output = response?.pixelReturn?.[0]?.output;
+                const pixelExpression =
+                    response?.pixelReturn?.[0]?.pixelExpression;
+                const filePathMatch = pixelExpression?.match(
+                    /filePath\s*=\s*\[\s*"(.+?)"\s*\]/,
+                );
+                const filePathFromExpression = filePathMatch
+                    ? filePathMatch[1]
+                    : null;
+                setfilePath(filePathFromExpression);
+                setEngineId(response.insightId);
+                parsedResults.push(output);
+            }
+            setParsedData(parsedResults);
+            updateStepBasedOnMetamodel(selectedMetaModelType!);
         } catch (error) {
             console.error('Upload error:', error);
             notification.add({
                 color: 'error',
-                message: 'An error occurred while uploading.',
+                message: 'An error occurred during upload.',
             });
         } finally {
             setFormLoading(false);
@@ -180,17 +242,81 @@ function CsvImport({}: Props) {
     const newHeaders = {};
     const descriptionMap = {};
     const logicalNamesMap = {};
+    const additionalDataTypes = {};
+    const dataTypeMap = {};
 
-    const submitMetmodelPixel = async (payloadObject: any) => {
+    const submitMetamodelPixel = async (parsedData) => {
+        if (!parsedData?.length || !parsedData[0]) {
+            notification.add({
+                color: 'error',
+                message: 'Parsed data is missing or invalid.',
+            });
+            return;
+        }
+
+        const {
+            fileLocation,
+            dataTypes,
+            additionalDataTypes,
+            headerModifications,
+            positions,
+            relation,
+            nodeProp,
+        } = parsedData[0];
+        const logicalNamesMap = {};
+        const descriptionMap = {};
+        const metamodel = [
+            {
+                relation,
+                nodeProp,
+            },
+        ];
+        const pixel = `
+            databaseVar = RdbmsCsvUpload(
+                database=["${dbName}"],
+                filePath=["${watchFile}"],
+                delimiter=["${delimiter}"],
+                metamodel=${JSON.stringify(metamodel)},
+                newHeaders=[${JSON.stringify(newHeaders)}],
+                additionalDataTypes=[${JSON.stringify(additionalDataTypes)}],
+                dataTypeMap=[${JSON.stringify(dataTypes)}],
+                descriptionMap=[${JSON.stringify(descriptionMap)}],
+                logicalNamesMap=[${JSON.stringify(logicalNamesMap)}],
+                existing=[false]
+            );
+            ExtractDatabaseMeta(database=[databaseVar]);
+           
+        `;
+        // SaveOwlPositions(database=[databaseVar],
+        // positionMap=[${JSON.stringify(positions)}]);
+
+        const response = await monolithStore.runQuery(pixel);
+
+        const { output, operationType } = response.pixelReturn[0];
+        if (operationType.indexOf('ERROR') > -1) {
+            notification.add({
+                color: 'error',
+                message: output,
+            });
+
+            return;
+        } else {
+            notification.add({
+                color: 'success',
+                message: 'success',
+            });
+            navigate(`/engine/database/${output.database_id}`);
+        }
+    };
+
+    const submitTablePixel = async (payloadObject) => {
         const pixel = `RdbmsUploadTableData(
             database=["${watchDatabaseName}"],
             filePath=["${watchFile}"],
             delimiter=["${delimiter}"],
-            dataTypeMap=[${JSON.stringify(payloadObject.dataTypeMap)}],
-            newHeaders=[${JSON.stringify(payloadObject.newHeaders)}],
-            additionalDataTypes=[${JSON.stringify(
-                payloadObject.additionalDataTypes,
-            )}],
+            dataTypeMap=[${JSON.stringify(dataTypeMap)}],
+            newHeaders=[${JSON.stringify(newHeaders)}],
+            additionalDataTypes=[${JSON.stringify(additionalDataTypes)}],
             descriptionMap=[${JSON.stringify(payloadObject.descriptionMap)}],
             logicalNamesMap=[${JSON.stringify(payloadObject.logicalNamesMap)}],
             existing=[false]
@@ -224,7 +350,7 @@ function CsvImport({}: Props) {
 
     return (
         <>
-            {step === 'import' ? (
+            {step === 'import' && (
                 <form>
                     <StyledDiv>
                         <StyledDiv>
@@ -460,14 +586,13 @@ function CsvImport({}: Props) {
                                             size="small"
                                             fullWidth
                                             value={selectedMetaModelType}
-                                            disabled={uploadedFile === null}
                                             onChange={(e) =>
                                                 setSelectedMetaModelType(
                                                     e.target.value,
                                                 )
                                             }
                                         >
-                                            {metaModelTypeOptions.map(
+                                            {filteredMetaModelTypeOptions.map(
                                                 (option) => (
                                                     <MenuItem
                                                         key={option.value}
@@ -478,6 +603,94 @@ function CsvImport({}: Props) {
                                                 ),
                                             )}
                                         </Select>
+                                    )}
+                                </div>
+                                <div style={{ marginBottom: '20px' }}>
+                                    {selectedDbType === 'rdf' && (
+                                        <div
+                                            style={{
+                                                marginTop: '20px',
+                                                padding: '10px',
+                                                border: '1px solid #e0e0e0',
+                                                borderRadius: '7px',
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    fontWeight: '600',
+                                                    marginBottom: '10px',
+                                                }}
+                                            >
+                                                Enter URI:
+                                            </div>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '10px',
+                                                }}
+                                            >
+                                                <Checkbox
+                                                    checked={useCustomURI}
+                                                    onChange={(e) =>
+                                                        setUseCustomURI(
+                                                            !useCustomURI,
+                                                        )
+                                                    }
+                                                />
+                                                <span>Use Custom URI:</span>
+                                                <TextField
+                                                    size="small"
+                                                    sx={{ width: '60%' }}
+                                                    placeholder="Enter custom URI"
+                                                    disabled={!useCustomURI}
+                                                    value={customURI}
+                                                    onChange={(e) =>
+                                                        setCustomURI(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                    {selectedDbType === 'tinker' && (
+                                        <div
+                                            style={{
+                                                marginTop: '20px',
+                                                padding: '10px',
+                                                border: '1px solid #e0e0e0',
+                                                borderRadius: '7px',
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    fontWeight: '600',
+                                                    marginBottom: '10px',
+                                                }}
+                                            >
+                                                Select Tinker Type:
+                                            </div>
+                                            <Select
+                                                size="small"
+                                                fullWidth
+                                                value={selectedTinkerType}
+                                                onChange={(e) =>
+                                                    setSelectedTinkerType(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            >
+                                                {tinkerOptions.map((option) => (
+                                                    <MenuItem
+                                                        key={option.value}
+                                                        value={option.value}
+                                                    >
+                                                        {option.label}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -503,14 +716,22 @@ function CsvImport({}: Props) {
                         </Button>
                     </div>
                 </form>
-            ) : (
+            )}
+            {/* {step === 'table' && parsedData && parsedData.length > 0 && (
                 <DataSelection
                     files={parsedData}
-                    fileName={fileName}
-                    onImport={(payload) => submitMetmodelPixel(payload)}
+                    onImport={() => submitTablePixel(parsedData)}
+                    onCancel={handleCancel}
+                />
+            )} */}
+            {step === 'metaModel' && parsedData && parsedData.length > 0 && (
+                <MetaModelType
+                    parsedData={parsedData}
+                    onImport={() => submitMetamodelPixel(parsedData)}
                     onCancel={handleCancel}
                 />
             )}
+            {step === 'propFile' && <div>Prop file logic UI goes here</div>}
         </>
     );
 }
