@@ -21,7 +21,6 @@ import {
     FormatLineSpacing,
     SpaceBar,
 } from "@mui/icons-material";
-import InputAdornment from "@mui/material/InputAdornment";
 
 import {
     MenuItem,
@@ -32,6 +31,7 @@ import {
     ToggleButton,
     ToggleButtonGroup,
     ToggleTabsGroup,
+    InputAdornment,
 } from "@semoss/ui";
 
 import { Paths, PathValue } from "../../../types";
