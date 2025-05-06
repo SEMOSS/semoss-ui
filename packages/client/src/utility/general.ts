@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 
-import { Env } from '@semoss/sdk';
+import { Env } from '@semoss/sdk/react';
 
 import { Role } from '@/types';
 import { ENGINE_IMAGES } from '@/pages/import';
@@ -135,32 +135,12 @@ export const copyTextToClipboard = (text: string, notificationService) => {
     }
 };
 
-const getCorrectPath = () => {
-    //create an object with every portion of the path
-    const splitPath = Env.PATH.split('/').filter((entry) => entry !== '');
-    const pathDict = {};
-    splitPath.map((value) => (pathDict[value] = 1));
-    //this is the correct link
-    let finalString = Env.PATH;
-
-    //split the module along the /
-    const splitModule = Env.MODULE.split('/').filter((entry) => entry !== '');
-
-    //create a new array with only the unique members of Env.MODULE
-    const uniqueModule = splitModule.filter((value) => pathDict[value] !== 1);
-
-    //add those to the new string with a /
-    uniqueModule.map((value) => (finalString += `/${value}`));
-    return finalString;
-};
-
 export const getSDKSnippet = (
     type: 'py' | 'js',
     accessKey?: string,
     secretKey?: string,
 ) => {
     if (type === 'py') {
-        const correctLink = getCorrectPath();
         return `
 # import the ai platform package
 import ai_server
@@ -173,13 +153,12 @@ server_connection=ai_server.ServerClient(
     secret_key="${
         secretKey ? secretKey : '<your access key>'
     }",             # example: "c2b3fae8-20d1-458c-8565-30ae935c4dfb"
-    base="${Env.ORIGIN}${correctLink}/api"
+    base="${Env.MODULE}/api"
 )
 `;
     } else {
         return `
 # .env
-ENDPOINT="${Env.ORIGIN}${Env.PATH}"
 MODULE="${Env.MODULE}"
 
 #.env.local

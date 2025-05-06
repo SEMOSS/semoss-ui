@@ -1,9 +1,8 @@
-import React, { useRef, useState, Suspense, lazy } from "react";
+import { useRef, useState, Suspense, lazy } from "react";
 import { observer } from "mobx-react-lite";
 import { Code, KeyboardArrowDown } from "@mui/icons-material";
 
 import { styled, Button, Stack, Select } from "@semoss/ui";
-import { runPixel } from "@semoss/sdk";
 
 import {
     ActionMessages,

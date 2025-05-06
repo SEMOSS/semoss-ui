@@ -48,9 +48,8 @@ const config = {
             babelConfig: 'packages/client/.babelrc',
             // index: './src/template.html',
             baseHref: '/',
-            outputHashing:
-                process.env['NODE_ENV'] == 'production' ? 'all' : 'none',
-            watch: process.env['NODE_ENV'] == 'production' ? false : true,
+            outputHashing: isProduction ? 'all' : 'none',
+            watch: isProduction ? false : true,
             memoryLimit: 8192,
         }),
         new NxReactWebpackPlugin({
@@ -65,16 +64,27 @@ const config = {
             template: path.resolve(__dirname, './src/template.html'),
             filename: 'index.html',
         }),
-
-        // importMetaEnv.webpack({ example: '.env.local' }),
         new webpack.ProvidePlugin({
             React: 'react',
             ReactDOM: 'react-dom',
         }),
         new webpack.DefinePlugin({
-            'process.env': JSON.stringify({
-                ...process.env,
-            }),
+            'process.env.NODE_ENV': JSON.stringify(
+                isProduction ? 'production' : 'development',
+            ),
+
+            'process.env.MODULE': process.env.MODULE
+                ? JSON.stringify(process.env.MODULE)
+                : '',
+            'process.env.THEME_TITLE': process.env.THEME_TITLE
+                ? JSON.stringify(process.env.THEME_TITLE)
+                : '',
+            'process.env.THEME_FAVICON': process.env.THEME_FAVICON
+                ? JSON.stringify(process.env.THEME_FAVICON)
+                : '',
+            'process.env.DOCUMENTATION_URL': process.env.DOCUMENTATION_URL
+                ? JSON.stringify(process.env.DOCUMENTATION_URL)
+                : '',
         }),
         new MiniCssExtractPlugin({
             filename: isProduction ? '[name].[contenthash].css' : '[name].css',
@@ -125,16 +135,17 @@ const config = {
         alias: {
             '@': path.resolve(__dirname, './src'),
             react: path.resolve('./node_modules/react'),
-            '@semoss/ui': path.resolve(__dirname, '../../libs/ui/src/index.ts'),
+            // '@semoss/ui': path.resolve(__dirname, '../../libs/ui/src/index.ts'),
         },
     },
 };
 
-module.exports = (_, context) => {
+module.exports = () => {
     if (isProduction) {
         config.mode = 'production';
     } else {
         config.mode = 'development';
     }
+
     return config;
 };

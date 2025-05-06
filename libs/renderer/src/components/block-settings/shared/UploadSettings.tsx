@@ -7,7 +7,7 @@ import { useBlockSettings, useBlocks } from "../../../hooks";
 import { Block, BlockDef } from "../../../store";
 import { getValueByPath } from "../../../utility";
 import { BaseSettingSection } from "../BaseSettingSection";
-import { upload } from "@semoss/sdk";
+import { upload } from "@semoss/sdk/react";
 
 interface UploadSettingsProps<D extends BlockDef = BlockDef> {
     /**

@@ -10,7 +10,7 @@
         "baseUrl": "src",
         "rootDir": "src",
         "module": "esnext",
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "allowSyntheticDefaultImports": true,
         "allowImportingTsExtensions": true,
         "resolveJsonModule": true,

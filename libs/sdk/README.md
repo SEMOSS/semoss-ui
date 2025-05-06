@@ -173,7 +173,7 @@ const download = (path) => {
 
 ### For Users Migrating from @semoss/sdk-react
 
-If you are a user migrating from [@semoss/sdk-react] to [@semoss/sdk-react], this section will help you with the transition.
+If you are a user migrating from [@semoss/sdk-react] to [@semoss/sdk], this section will help you with the transition.
 
 #### Key Change
 
@@ -182,7 +182,7 @@ If you are a user migrating from [@semoss/sdk-react] to [@semoss/sdk-react], thi
 #### Migration Steps
 
 1. Uninstall the old package `@semoss/sdk-react`
-2. Swap import statements, any module that was once imported from `@semoss/sdk-react` can now be imported from `@semoss/sdk`
+2. Swap import statements, any module that was once imported from `@semoss/sdk-react` can now be imported from `@semoss/sdk/react`
 
 Eg.
 
@@ -193,7 +193,7 @@ import { useInsight } from '@semoss/sdk-react'
 Should now import as such:
 
 ```
-import { useInsight } from '@semoss/sdk'
+import { useInsight } from '@semoss/sdk/react'
 ```
 
 ## Tips and Tricks
