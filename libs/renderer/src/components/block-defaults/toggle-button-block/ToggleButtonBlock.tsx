@@ -1,9 +1,9 @@
+import { useEffect } from "react";
 import { observer } from "mobx-react-lite";
+import { styled, ToggleButtonGroup, ToggleButton } from "@mui/material";
 
 import { useBlock, useDebounce } from "../../../hooks";
 import { BlockDef, BlockComponent } from "../../../store";
-
-import { styled, ToggleButtonGroup, ToggleButton } from "@mui/material";
 import { debounced } from "../../../utility";
 
 const StyledContainer = styled("div")(() => ({
@@ -23,11 +23,21 @@ export interface ToggleButtonBlockDef extends BlockDef<"toggle-button"> {
         multiple: boolean;
         show: string;
     };
+    listeners: {
+        preProcess: true;
+        onChange: true;
+    };
 }
 
 export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } =
         useBlock<ToggleButtonBlockDef>(id);
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
 
     const debouncedCallback = debounced(() => {
         listeners.onChange();

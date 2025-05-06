@@ -1,6 +1,4 @@
-import React from 'react';
-
-import { Env, InsightProvider } from '@semoss/sdk';
+import { Env } from '@semoss/sdk/react';
 import { ActionMessages, Renderer, SerializedState } from '@semoss/renderer';
 
 const state: SerializedState = {
@@ -6398,9 +6396,9 @@ export const Ncrt = () => {
 
     return (
         <div style={{ height: '100vh', width: '100vw' }}>
-            <InsightProvider>
-                <Renderer state={state} />
-            </InsightProvider>
+            {/* <InsightProvider> */}
+            <Renderer state={state} />
+            {/* </InsightProvider> */}
         </div>
     );
 };

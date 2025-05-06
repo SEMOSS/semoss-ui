@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
+import { toJS } from 'mobx';
 import { Actions, DockLocation, TabNode } from 'flexlayout-react';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToFirstScrollableAncestor } from '@dnd-kit/modifiers';
@@ -25,24 +26,36 @@ import {
     SearchOff,
     Home,
     Delete,
+    MoreVert,
 } from '@mui/icons-material/';
 
-import { useBlocks, INPUT_BLOCK_TYPES, ActionMessages } from '@semoss/renderer';
+import {
+    useBlocks,
+    INPUT_BLOCK_TYPES,
+    ActionMessages,
+    BlockJSON,
+} from '@semoss/renderer';
 import {
     Divider,
     Icon,
     IconButton,
+    MenuItem,
     Stack,
     TextField,
     TreeView,
     Typography,
     styled,
     useNotification,
+    Grid,
+    Menu,
 } from '@semoss/ui';
 
 import { AddVariableModal } from '@/components/notebook';
 import { useDesigner, useWorkspace } from '@/hooks';
 import { Panel } from '@/components/workspace';
+import { getBlockElement } from '@/stores';
+import DuplicateIcon from '../../../assets/img/Duplicate.svg';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 
 const customCollisionDetection = (args) => {
     const collisions = closestCenter(args);
@@ -237,6 +250,7 @@ export const LayersPanel = observer((): JSX.Element => {
     const [globalDropPositions, setGlobalDropPositions] = useState<
         'top' | 'bottom' | 'inside' | null
     >(null);
+    const accordionRefs = useRef({});
 
     const [activeNode, setActiveNode] = useState<TreeNode | null>(null);
 
@@ -247,6 +261,21 @@ export const LayersPanel = observer((): JSX.Element => {
         }),
     );
 
+    const scrollIntoView = (
+        element: Element | null,
+        {
+            behavior = 'smooth' as ScrollBehavior,
+            block = 'center' as ScrollLogicalPosition,
+            inline = 'start' as ScrollLogicalPosition,
+        } = {},
+    ) => {
+        (element as HTMLElement)?.scrollIntoView({
+            behavior,
+            block,
+            inline,
+        });
+    };
+
     useEffect(() => {
         const parents = state.getAllParents(designer.selected);
         if (parents.length) {
@@ -255,8 +284,21 @@ export const LayersPanel = observer((): JSX.Element => {
             );
             selectLayer(parentPage);
             setSelectedPages(parentPage);
+            setSelectedLayers(parents);
+            setExpanded((prev) => [...new Set([...prev, ...parents])]);
         }
-        setExpanded(parents);
+        const scrollTimeout = setTimeout(() => {
+            // Scroll to the selected block in the accordion
+            const refEl = accordionRefs.current[designer.selected];
+            if (refEl) {
+                scrollIntoView(refEl, {
+                    block: parents.length > 2 ? 'center' : 'start',
+                });
+            }
+        }, 100);
+        return () => {
+            clearTimeout(scrollTimeout);
+        };
     }, [designer.selected]);
 
     useEffect(() => {
@@ -520,24 +562,243 @@ export const LayersPanel = observer((): JSX.Element => {
         );
     };
 
-    /**
-     * Render the block and it's children
-     * @param id - id of the block to render
-     * @returns tree of the widgets
-     */
-    const renderBlock = (id: string) => {
-        // get the block
-        const block = state.blocks[id];
+    const handleAccordionToggle = (
+        event: React.MouseEvent<SVGSVGElement, MouseEvent>,
+    ) => {
+        event.stopPropagation();
+        const id = event.currentTarget.getAttribute('data-expand-id');
+        if (!id) return;
+        const action = event.currentTarget.getAttribute('name');
+        setExpanded((prev) => {
+            if (action === 'expand') {
+                return [...prev, id];
+            }
+            return prev.filter((nodeId) => nodeId !== id);
+        });
+    };
+    const TreeViewComponent = ({
+        block,
+        variableName,
+        WidgetIcon,
+        canVariabilize,
+    }: {
+        block: any;
+        variableName: string;
+        WidgetIcon: any;
+        canVariabilize: boolean;
+    }) => {
+        const [menuAnchorEl, setMenuAnchorEl] =
+            React.useState<null | HTMLElement>(null);
+        const handleMenuOpen = (
+            event: React.MouseEvent<HTMLElement>,
+            id: string,
+        ) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setMenuAnchorEl(event.currentTarget);
+        };
+        const handleMenuClose = () => {
+            setMenuAnchorEl(null);
+        };
+        const handleDelete = (deletedId: string) => {
+            state.dispatch({
+                message: ActionMessages.REMOVE_BLOCK,
+                payload: {
+                    id: deletedId,
+                    keep: false,
+                },
+            });
+            setTimeout(() => {
+                designer.setSelected('');
+                designer.setHovered('');
+                setSelectedLayers([]);
+                const block = state.blocks[selectedPages];
+                handlePageSelection(block);
+            }, 0);
+            handleMenuClose();
+        };
 
-        // render each of hte c
+        const handleDuplicate = (
+            event: React.MouseEvent<HTMLElement>,
+            duplicateId: string,
+        ) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const getJsonForBlock = (id: string) => {
+                const block = state.blocks[id];
+
+                const blockJson = {
+                    widget: toJS(block.widget),
+                    data: toJS(block.data),
+                    listeners: toJS(block.listeners),
+                    slots: {},
+                };
+
+                // generate the slots
+                for (const slot in block.slots) {
+                    if (block.slots[slot]) {
+                        blockJson.slots[slot] = block.slots[slot].children.map(
+                            (childId) => {
+                                return getJsonForBlock(childId);
+                            },
+                        );
+                    }
+                }
+
+                // return it
+                return blockJson;
+            };
+
+            const position = block?.parent?.id
+                ? {
+                      parent: block.parent.id,
+                      slot: block.parent.slot,
+                      sibling: block.id,
+                      type: 'after',
+                  }
+                : undefined;
+
+            const id = state.dispatch({
+                message: ActionMessages.ADD_BLOCK,
+                payload: {
+                    json: getJsonForBlock(duplicateId) as BlockJSON,
+                    position: position,
+                },
+            });
+            setSelectedLayers([]); // Clear first
+
+            // Apply selection and hover
+            designer.setSelected(id as string);
+            designer.setHovered(id as string);
+
+            // Ensure visual selection state is fully synced
+            const nodeIds = [id as string];
+            setSelectedLayers(nodeIds);
+
+            // Render and scroll to the new block (if your system supports it)
+            renderBlock(id as string);
+            handleMenuClose();
+        };
+
+        return (
+            <>
+                <StyledTreeItemLabel>
+                    <StyledTreeItemIcon>
+                        <WidgetIcon />
+                    </StyledTreeItemIcon>
+                    <StyledLabelContainer
+                        search={
+                            search
+                                ? [block.widget, block.id]
+                                      .join('')
+                                      .toLowerCase()
+                                      .indexOf(search.toLowerCase()) > -1
+                                : false
+                        }
+                    >
+                        <StyledLabelTitle>
+                            {block.widget.charAt(0).toUpperCase() +
+                                block.widget.slice(1)}
+                        </StyledLabelTitle>
+                        <StyledLabelSubtitleText>
+                            {variableName || block.id}
+                        </StyledLabelSubtitleText>
+                    </StyledLabelContainer>
+                    {variableName ? (
+                        <StyledTreeItemIconButton
+                            aria-label="copy"
+                            title={`Copy variable`}
+                            color="default"
+                            size="small"
+                            onClick={(e: React.SyntheticEvent) => {
+                                e.stopPropagation();
+                                copy(`{{${variableName}}}`);
+                            }}
+                            data-onhover
+                        >
+                            <ContentCopy fontSize="small" />
+                        </StyledTreeItemIconButton>
+                    ) : canVariabilize ? (
+                        <StyledTreeItemIconButton
+                            aria-label="add"
+                            title={`Add variable`}
+                            size="small"
+                            color="primary"
+                            onClick={(e: React.SyntheticEvent) => {
+                                e.stopPropagation();
+                                setVariableModal(block.id);
+                            }}
+                            data-onhover
+                        >
+                            <LibraryAdd fontSize="small" />
+                        </StyledTreeItemIconButton>
+                    ) : null}
+
+                    {/* 3-dot menu button */}
+                    <IconButton
+                        size="small"
+                        aria-label="more"
+                        onClick={(e) => handleMenuOpen(e, block.id)}
+                    >
+                        <MoreVert fontSize="small" />
+                    </IconButton>
+                </StyledTreeItemLabel>
+                <Menu
+                    anchorEl={menuAnchorEl}
+                    open={Boolean(menuAnchorEl)}
+                    onClose={handleMenuClose}
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'right',
+                    }}
+                    transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right',
+                    }}
+                    sx={{
+                        '.MuiPopover-paper': {
+                            borderRadius: '4px',
+                            padding: '8px 0px',
+                            boxShadow: '0px 5px 24px 0px rgba(0, 0, 0, 0.32)',
+                        },
+                    }}
+                >
+                    <MenuItem
+                        value="duplicate"
+                        sx={{ display: 'flex' }}
+                        onClick={(e: React.MouseEvent<HTMLElement>) =>
+                            handleDuplicate(e, block.id)
+                        }
+                    >
+                        <img
+                            src={DuplicateIcon}
+                            alt="Duplicate Icon"
+                            style={{ marginRight: '8px' }}
+                        />{' '}
+                        Duplicate
+                    </MenuItem>
+                    <MenuItem
+                        value="delete"
+                        sx={{ display: 'flex' }}
+                        onClick={() => handleDelete(block.id)}
+                    >
+                        <DeleteOutlineOutlinedIcon
+                            style={{ color: '#757575', marginRight: '6px' }}
+                        />{' '}
+                        Delete
+                    </MenuItem>
+                </Menu>
+            </>
+        );
+    };
+    const renderBlock = (id: string) => {
+        const block = state.blocks[id];
         if (!block) {
             return null;
         }
         const variableName = state.getAlias(id);
         const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
-
         const WidgetIcon = registry[block.widget].icon;
-
         const children = [];
         for (const s in block.slots) {
             children.push(...block.slots[s].children);
@@ -554,69 +815,35 @@ export const LayersPanel = observer((): JSX.Element => {
                         <TreeView.Item
                             key={block.id}
                             nodeId={block.id}
+                            ref={(node) =>
+                                (accordionRefs.current[block.id] =
+                                    node instanceof HTMLElement ? node : null)
+                            }
+                            expandIcon={
+                                <StyledTreeItemIcon>
+                                    <ChevronRight
+                                        name="expand"
+                                        data-expand-id={block.id}
+                                        onClick={handleAccordionToggle}
+                                    />
+                                </StyledTreeItemIcon>
+                            }
+                            collapseIcon={
+                                <StyledTreeItemIcon>
+                                    <ExpandMore
+                                        name="collapse"
+                                        data-expand-id={block.id}
+                                        onClick={handleAccordionToggle}
+                                    />
+                                </StyledTreeItemIcon>
+                            }
                             label={
-                                <StyledTreeItemLabel>
-                                    <StyledTreeItemIcon>
-                                        <WidgetIcon />
-                                    </StyledTreeItemIcon>
-                                    <StyledLabelContainer
-                                        search={
-                                            search
-                                                ? [block.widget, block.id]
-                                                      .join('')
-                                                      .toLowerCase()
-                                                      .indexOf(
-                                                          search.toLowerCase(),
-                                                      ) > -1
-                                                : false
-                                        }
-                                    >
-                                        <StyledLabelTitle>
-                                            {block.widget
-                                                .charAt(0)
-                                                .toUpperCase() +
-                                                block.widget.slice(1)}
-                                        </StyledLabelTitle>
-                                        <StyledLabelSubtitleText>
-                                            {variableName
-                                                ? variableName
-                                                : block.id}
-                                        </StyledLabelSubtitleText>
-                                    </StyledLabelContainer>
-                                    {variableName ? (
-                                        <StyledTreeItemIconButton
-                                            aria-label="copy"
-                                            title={`Copy variable`}
-                                            color="default"
-                                            size="small"
-                                            onClick={(
-                                                e: React.SyntheticEvent,
-                                            ) => {
-                                                e.stopPropagation();
-                                                copy(`{{${variableName}}}`);
-                                            }}
-                                            data-onhover
-                                        >
-                                            <ContentCopy fontSize="small" />
-                                        </StyledTreeItemIconButton>
-                                    ) : canVariabilize ? (
-                                        <StyledTreeItemIconButton
-                                            aria-label="add"
-                                            title={`Add variable`}
-                                            size="small"
-                                            color={'primary'}
-                                            onClick={(
-                                                e: React.SyntheticEvent,
-                                            ) => {
-                                                e.stopPropagation();
-                                                setVariableModal(block.id);
-                                            }}
-                                            data-onhover
-                                        >
-                                            <LibraryAdd fontSize="small" />
-                                        </StyledTreeItemIconButton>
-                                    ) : null}
-                                </StyledTreeItemLabel>
+                                <TreeViewComponent
+                                    block={block}
+                                    variableName={variableName}
+                                    WidgetIcon={WidgetIcon}
+                                    canVariabilize={canVariabilize}
+                                />
                             }
                             onClick={(e: React.SyntheticEvent) => {
                                 e.stopPropagation();
@@ -689,6 +916,8 @@ export const LayersPanel = observer((): JSX.Element => {
 
     const handlePageSelection = (block) => {
         selectLayer(block.id);
+        setExpanded([]);
+        accordionRefs.current = {};
         designer.setSelected(block.id);
         handleOnSelect(block);
         setSelectedPages(block.id);
@@ -804,8 +1033,11 @@ export const LayersPanel = observer((): JSX.Element => {
      * id - id of the layer
      */
     const handleOnSelect = (blockData) => {
-        if (blockData.widget !== 'page') return;
         const id = blockData.id;
+        if (blockData.widget !== 'page') {
+            scrollIntoView(getBlockElement(id));
+            return;
+        }
         // try to select a panel, if it doesn't exist create it. Save the path
         const IsSelected = selectPanel(id);
         if (!IsSelected) {
@@ -947,137 +1179,161 @@ export const LayersPanel = observer((): JSX.Element => {
 
     return (
         <Panel>
-            <StyledMenu>
-                <StyledMenuHeader>
-                    <Stack spacing={2} paddingBottom={1} width={'100%'}>
-                        <Stack
-                            direction="row"
-                            justifyContent="space-between"
-                            alignItems={'center'}
-                        >
-                            <Typography variant="h6">Pages</Typography>
-                            <IconButton
-                                className="layers-menu__add-layer-button"
-                                onClick={(e) => {
-                                    handlePageAdd();
-                                }}
-                            >
-                                <Add />
-                            </IconButton>
-                        </Stack>
-                    </Stack>
-                </StyledMenuHeader>
-                <StyledMenuScroll>
-                    {allPages?.length ? (
-                        allPages.map((page) => renderPage(page.id))
-                    ) : (
-                        <StyledTreeItemMessage>
-                            <Typography variant="caption">No Pages</Typography>
-                        </StyledTreeItemMessage>
-                    )}
-                </StyledMenuScroll>
-            </StyledMenu>
-            <Divider />
-            <DndContext
-                sensors={sensors}
-                collisionDetection={customCollisionDetection}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                modifiers={[restrictToFirstScrollableAncestor]}
+            <Grid
+                container
+                direction="column"
+                sx={{
+                    width: '100%',
+                    height: '100%',
+                }}
             >
-                <StyledMenu>
-                    <StyledMenuHeader>
-                        <Stack spacing={2} paddingBottom={1} width={'100%'}>
-                            <Stack
-                                direction="row"
-                                justifyContent="space-between"
-                                alignItems={'center'}
-                            >
-                                <Typography variant="h6">Layers</Typography>
-                                {showSearch ? (
-                                    <TextField
-                                        placeholder="Search"
-                                        size="small"
-                                        sx={{
-                                            width: '100%',
-                                            maxWidth: '200px',
-                                        }}
-                                        value={search}
-                                        variant="outlined"
-                                        onChange={(e) =>
-                                            setSearch(e.target.value)
-                                        }
-                                    />
-                                ) : (
-                                    <>&nbsp;</>
-                                )}
-                                <IconButton
-                                    color="default"
-                                    size="small"
-                                    onClick={() => {
-                                        setShowSearch(!showSearch);
-                                        setSearch('');
-                                    }}
-                                    style={{ padding: '0px' }}
+                <Grid item xs={12} width={'100%'} height={'100%'}>
+                    <Grid item xs={12} height={'30%'}>
+                        <StyledMenu>
+                            <StyledMenuHeader>
+                                <Stack
+                                    spacing={2}
+                                    paddingBottom={1}
+                                    width={'100%'}
                                 >
-                                    {showSearch ? (
-                                        <SearchOff fontSize="medium" />
-                                    ) : (
-                                        <Search fontSize="medium" />
-                                    )}
-                                </IconButton>
-                            </Stack>
-                        </Stack>
-                    </StyledMenuHeader>
-
-                    <StyledMenuScroll>
-                        <TreeView
-                            expanded={expanded}
-                            selected={selectedLayers}
-                            onNodeToggle={(
-                                e: React.SyntheticEvent,
-                                nodeIds: string[],
-                            ) => {
-                                setExpanded(nodeIds);
-                            }}
-                            onNodeSelect={(
-                                e: React.SyntheticEvent,
-                                nodeIds: string[],
-                            ) => {
-                                setSelectedLayers(nodeIds);
-                            }}
-                            defaultCollapseIcon={
-                                <StyledTreeItemIcon>
-                                    <ExpandMore />
-                                </StyledTreeItemIcon>
-                            }
-                            defaultExpandIcon={
-                                <StyledTreeItemIcon>
-                                    <ChevronRight />
-                                </StyledTreeItemIcon>
-                            }
+                                    <Stack
+                                        direction="row"
+                                        justifyContent="space-between"
+                                        alignItems={'center'}
+                                    >
+                                        <Typography variant="h6">
+                                            Pages
+                                        </Typography>
+                                        <IconButton
+                                            className="layers-menu__add-layer-button"
+                                            onClick={(e) => {
+                                                handlePageAdd();
+                                            }}
+                                        >
+                                            <Add />
+                                        </IconButton>
+                                    </Stack>
+                                </Stack>
+                            </StyledMenuHeader>
+                            <StyledMenuScroll>
+                                {allPages?.length ? (
+                                    allPages.map((page) => renderPage(page.id))
+                                ) : (
+                                    <StyledTreeItemMessage>
+                                        <Typography variant="caption">
+                                            No Pages
+                                        </Typography>
+                                    </StyledTreeItemMessage>
+                                )}
+                            </StyledMenuScroll>
+                        </StyledMenu>
+                    </Grid>
+                    <Grid item xs={12} height={'1%'}>
+                        <Divider />
+                    </Grid>
+                    <Grid item xs={12} height={'69%'}>
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={customCollisionDetection}
+                            onDragStart={handleDragStart}
+                            onDragEnd={handleDragEnd}
+                            modifiers={[restrictToFirstScrollableAncestor]}
                         >
-                            {selectedLayer?.length ? (
-                                selectedLayer.map((c) => renderBlock(c))
-                            ) : (
-                                <StyledTreeItemMessage>
-                                    <Typography variant="caption">
-                                        No Layers
-                                    </Typography>
-                                </StyledTreeItemMessage>
-                            )}
-                        </TreeView>
-                    </StyledMenuScroll>
-                    {variableModal ? (
-                        <AddVariableModal
-                            open={true}
-                            to={variableModal}
-                            type={'block'}
-                            onClose={() => setVariableModal('')}
-                        />
-                    ) : null}
-                </StyledMenu>
-            </DndContext>
+                            <StyledMenu>
+                                <StyledMenuHeader>
+                                    <Stack
+                                        spacing={2}
+                                        paddingBottom={1}
+                                        width={'100%'}
+                                    >
+                                        <Stack
+                                            direction="row"
+                                            justifyContent="space-between"
+                                            alignItems={'center'}
+                                        >
+                                            <Typography variant="h6">
+                                                Layers
+                                            </Typography>
+                                            {showSearch ? (
+                                                <TextField
+                                                    placeholder="Search"
+                                                    size="small"
+                                                    sx={{
+                                                        width: '100%',
+                                                        maxWidth: '200px',
+                                                    }}
+                                                    value={search}
+                                                    variant="outlined"
+                                                    onChange={(e) =>
+                                                        setSearch(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                            ) : (
+                                                <>&nbsp;</>
+                                            )}
+                                            <IconButton
+                                                color="default"
+                                                size="small"
+                                                onClick={() => {
+                                                    setShowSearch(!showSearch);
+                                                    setSearch('');
+                                                }}
+                                                style={{ padding: '0px' }}
+                                            >
+                                                {showSearch ? (
+                                                    <SearchOff fontSize="medium" />
+                                                ) : (
+                                                    <Search fontSize="medium" />
+                                                )}
+                                            </IconButton>
+                                        </Stack>
+                                    </Stack>
+                                </StyledMenuHeader>
+
+                                <StyledMenuScroll>
+                                    <TreeView
+                                        selected={selectedLayers}
+                                        expanded={expanded}
+                                        onNodeSelect={(
+                                            e: React.SyntheticEvent,
+                                            nodeIds: string[],
+                                        ) => {
+                                            e.stopPropagation();
+                                            if (
+                                                !expanded.includes(nodeIds[0])
+                                            ) {
+                                                setSelectedLayers(nodeIds);
+                                            }
+                                        }}
+                                    >
+                                        {selectedLayer?.length ? (
+                                            selectedLayer.map((c) =>
+                                                renderBlock(c),
+                                            )
+                                        ) : (
+                                            <StyledTreeItemMessage>
+                                                <Typography variant="caption">
+                                                    No Layers
+                                                </Typography>
+                                            </StyledTreeItemMessage>
+                                        )}
+                                    </TreeView>
+                                </StyledMenuScroll>
+                                {variableModal ? (
+                                    <AddVariableModal
+                                        open={true}
+                                        to={variableModal}
+                                        type={'block'}
+                                        onClose={() => setVariableModal('')}
+                                    />
+                                ) : null}
+                            </StyledMenu>
+                        </DndContext>
+                    </Grid>
+                </Grid>
+            </Grid>
         </Panel>
     );
 });

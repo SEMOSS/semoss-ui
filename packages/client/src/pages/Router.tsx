@@ -1,4 +1,10 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import {
+    Routes,
+    Route,
+    Navigate,
+    useSearchParams,
+    useLocation,
+} from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
 import { useRootStore } from '@/hooks';
@@ -23,6 +29,7 @@ import { PrivacyNotice } from './legal/PrivacyNotice';
 import { WorkspacePage } from './WorkspacePage';
 
 import { PlatformMessages } from './PlatformMessages';
+import { ALL_TYPES } from '@/types';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
@@ -52,15 +59,48 @@ export const Router = observer(() => {
     const showCookieNotice = parseThemeMapForValue('cookiePolicyNoticePage');
     const showPrivacyNotice = parseThemeMapForValue('privacyNoticePage');
 
+    const RestrictedRoute = ({ routeType, children }) => {
+        const [searchParams] = useSearchParams();
+        const location = useLocation();
+
+        let type: ALL_TYPES | '' = '';
+        if (routeType === 'app' && location.pathname === '/app/new') {
+            type = 'APP';
+        } else if (searchParams.get('type')) {
+            type = searchParams.get('type').toUpperCase() as ALL_TYPES;
+        }
+
+        const isRestricted = type
+            ? configStore.isEngineOperationAvailable(type, 'add')
+            : true;
+
+        return isRestricted ? <Navigate to="/" replace /> : <>{children}</>;
+    };
+
     return (
         <Routes>
             <Route path="/" element={<AuthenticatedLayout />}>
                 <Route path="*" element={<NavigatorLayout />}>
                     <Route index element={<HomePage />} />
-                    <Route path="import" element={<ImportRouter />} />
+                    <Route
+                        path="import"
+                        element={
+                            <RestrictedRoute routeType="import">
+                                <ImportRouter />
+                            </RestrictedRoute>
+                        }
+                    />
+
                     <Route path="settings/*" element={<SettingsRouter />} />
                     <Route path="engine/*" element={<EngineRouter />} />
-                    <Route path="app/*" element={<AppRouter />} />
+                    <Route
+                        path="app/*"
+                        element={
+                            <RestrictedRoute routeType="app">
+                                <AppRouter />
+                            </RestrictedRoute>
+                        }
+                    />
                     <Route path="prompt/*" element={<PromptRouter />} />
                 </Route>
                 <Route

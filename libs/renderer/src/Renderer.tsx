@@ -2,14 +2,8 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useSearchParams, useLocation } from "react-router-dom";
 
-import { runPixel, useInsight } from "@semoss/sdk";
-import {
-    Button,
-    LoadingScreen,
-    Notification,
-    Typography,
-    useNotification,
-} from "@semoss/ui";
+import { runPixel } from "@semoss/sdk/react";
+import { Backdrop, Notification, Typography } from "@semoss/ui";
 
 import { Blocks, RendererEngine } from "./components/blocks";
 import { DefaultBlocks } from "./components/block-defaults";
@@ -21,12 +15,16 @@ import {
     STATE_VERSION,
     StateStore,
 } from "./store/state";
+import { CircularProgress, Stack } from "@mui/material";
 
 // TODO: Add component library notification component
 
 export interface RendererProps {
     /** App to render */
     appId?: string;
+
+    /** Insight to tie all pixels that are ran to */
+    insightId?: string;
 
     /** State to render */
     state?: SerializedState;
@@ -42,11 +40,10 @@ export interface RendererProps {
  * Render a block app
  */
 export const Renderer = observer((props: RendererProps) => {
-    const { appId, state, preview } = props;
+    const { appId, insightId, state, preview } = props;
+
     // const notification = useNotification();
     const [searchParams, setSearchParams] = useSearchParams();
-    const { insightId, isAuthorized } = useInsight();
-
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [stateStore, setStateStore] = useState<StateStore | null>();
     const queryStringParams = new URLSearchParams(useLocation().search);
@@ -54,134 +51,134 @@ export const Renderer = observer((props: RendererProps) => {
     const [homePage, setHomePage] = useState("");
 
     useEffect(() => {
-        if (isAuthorized) {
-            // start the loading
-            setIsLoading(true);
+        // if (isAuthorized) {
+        // start the loading
+        setIsLoading(true);
 
-            let stateFilter;
+        let stateFilter;
 
-            searchParams.forEach((value, key) => {
-                if (key === "state") {
-                    stateFilter = JSON.parse(value);
-                }
-            });
-
-            // initialize a new insight
-            let pixel = "";
-            if (appId && !stateFilter) {
-                pixel = `GetAppBlocksJson ( project=["${appId}"]);`;
-            } else if (state || stateFilter) {
-                pixel = `true`;
-            } else {
-                console.error("Missing appId or state");
+        searchParams.forEach((value, key) => {
+            if (key === "state") {
+                stateFilter = JSON.parse(value);
             }
+        });
 
-            // ignore if there is not pixel
-            if (!pixel) {
-                return;
-            }
-
-            // load the app
-            runPixel<[SerializedState]>(pixel, "new")
-                .then(async ({ pixelReturn, errors, insightId }) => {
-                    if (errors.length) {
-                        throw new Error(errors.join(""));
-                    }
-
-                    // set the state
-                    let s: SerializedState;
-                    if (appId && !stateFilter) {
-                        s = pixelReturn[0].output;
-                    } else if (state || stateFilter) {
-                        if (stateFilter) {
-                            s = stateFilter;
-                        } else {
-                            s = state;
-                        }
-                    } else {
-                        return;
-                    }
-
-                    // ignore if there is state
-                    if (!s) {
-                        return;
-                    }
-
-                    // run migration if not up to date
-                    if (s.version !== STATE_VERSION) {
-                        const migration = new MigrationManager();
-                        s = await migration.run(s);
-                    }
-
-                    const active = await getHomePage(s);
-                    setHomePage(active);
-
-                    // Replace variable values with query params
-                    const params = {};
-                    queryStringParams.forEach((value, key) => {
-                        params[key] = value;
-                    });
-
-                    // create a new state store
-                    const store = new StateStore({
-                        mode: "interactive",
-                        insightId: insightId,
-                        state: s,
-                        cellRegistry: DefaultCells,
-                        initialParams: params,
-                    });
-
-                    // set it
-                    setStateStore(store);
-
-                    if (appId) {
-                        const { errors: errs } = await runPixel(
-                            `SetContext("${appId}");`,
-                            insightId,
-                        );
-
-                        if (errs.length) {
-                            // notification.add({
-                            //     color: "error",
-                            //     message: errs.join(""),
-                            // });
-                        }
-                    }
-
-                    if (stateFilter) {
-                        // notification.add({
-                        //     color: "warning",
-                        //     message:
-                        //         "Please be mindful this may not represent the current state of the app, due to the filters present in the URL",
-                        // });
-                    }
-                })
-                .catch((e) => {
-                    // notification.add({
-                    //     color: "error",
-                    //     message: e.message,
-                    // });
-
-                    console.log(e);
-                })
-                .finally(() => {
-                    // close the loading screen
-                    setIsLoading(false);
-                });
+        // initialize a new insight
+        let pixel = "";
+        if (appId && !stateFilter) {
+            pixel = `GetAppBlocksJson ( project=["${appId}"]);`;
+        } else if (state || stateFilter) {
+            pixel = `true`;
+        } else {
+            console.error("Missing appId or state");
         }
-    }, [state, appId, isAuthorized]);
 
-    if (!isAuthorized) {
-        return (
-            <Typography variant="h6">Authorizing Renderer SDK...</Typography>
-        );
-        // return <LoadingScreen.Trigger message="Authorizing Renderer SDK"/>;
-    }
+        // ignore if there is not pixel
+        if (!pixel) {
+            return;
+        }
+
+        // load the app
+        runPixel<[SerializedState]>(pixel, insightId ? insightId : "new")
+            .then(async ({ pixelReturn, errors, insightId }) => {
+                if (errors.length) {
+                    throw new Error(errors.join(""));
+                }
+
+                // set the state
+                let s: SerializedState;
+                if (appId && !stateFilter) {
+                    s = pixelReturn[0].output;
+                } else if (state || stateFilter) {
+                    if (stateFilter) {
+                        s = stateFilter;
+                    } else {
+                        s = state;
+                    }
+                } else {
+                    return;
+                }
+
+                // ignore if there is state
+                if (!s) {
+                    return;
+                }
+
+                // run migration if not up to date
+                if (s.version !== STATE_VERSION) {
+                    const migration = new MigrationManager();
+                    s = await migration.run(s);
+                }
+
+                const active = await getHomePage(s);
+                setHomePage(active);
+
+                // Replace variable values with query params
+                const params = {};
+                queryStringParams.forEach((value, key) => {
+                    params[key] = value;
+                });
+
+                // create a new state store
+                const store = new StateStore({
+                    mode: "interactive",
+                    insightId: insightId,
+                    state: s,
+                    cellRegistry: DefaultCells,
+                    initialParams: params,
+                });
+
+                // set it
+                setStateStore(store);
+
+                if (stateFilter) {
+                    // notification.add({
+                    //     color: "warning",
+                    //     message:
+                    //         "Please be mindful this may not represent the current state of the app, due to the filters present in the URL",
+                    // });
+                }
+            })
+            .catch((e) => {
+                // notification.add({
+                //     color: "error",
+                //     message: e.message,
+                // });
+
+                console.log(e);
+            })
+            .finally(() => {
+                // close the loading screen
+                setIsLoading(false);
+            });
+        // }
+    }, [state, appId, insightId]);
 
     if (!stateStore || (isLoading && !preview)) {
         if (!preview) {
-            return <Typography variant="h6">Initializing Blocks...</Typography>;
-            // return <LoadingScreen.Trigger message="Initializing Blocks"/>;
+            return (
+                <Backdrop
+                    open={true}
+                    sx={{
+                        background: "rgba(255, 255, 255, 0.5)",
+                        zIndex: 1501,
+                        position: "relative",
+                        width: "100%",
+                        height: "100%",
+                    }}
+                >
+                    <Stack
+                        direction={"column"}
+                        alignItems={"center"}
+                        justifyContent={"center"}
+                        spacing={1}
+                        width={"100%"}
+                        height={"100%"}
+                    >
+                        <CircularProgress color={"info"} />
+                    </Stack>
+                </Backdrop>
+            );
         } else {
             return <Typography variant="h6">Fetching Preview...</Typography>;
         }

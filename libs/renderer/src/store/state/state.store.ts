@@ -1,7 +1,11 @@
 import { makeAutoObservable, runInAction, toJS } from "mobx";
 
-import { runPixel, download } from "@semoss/sdk";
-import { cancellablePromise, getValueByPath } from "../../utility";
+import { runPixel, download } from "@semoss/sdk/react";
+import {
+    cancellablePromise,
+    getValueByPath,
+    syncronousPromise,
+} from "../../utility";
 
 import {
     ActionMessages,
@@ -360,7 +364,9 @@ export class StateStore {
     }
 
     /**
+     * -------------------------------------
      * Actions
+     * -------------------------------------
      */
     /**
      * Dispatch a message to update the state
@@ -408,7 +414,7 @@ export class StateStore {
             } else if (ActionMessages.NEW_QUERY === action.message) {
                 const { queryId, config } = action.payload;
 
-                return this.newQuery(queryId, config);
+                this.newQuery(queryId, config);
             } else if (ActionMessages.DELETE_QUERY === action.message) {
                 const { queryId } = action.payload;
 
@@ -420,7 +426,7 @@ export class StateStore {
             } else if (ActionMessages.RUN_QUERY === action.message) {
                 const { queryId } = action.payload;
 
-                this.runQuery(queryId);
+                return this.runQuery(queryId);
             } else if (ActionMessages.NEW_CELL === action.message) {
                 const { queryId, cellId, config, previousCellId } =
                     action.payload;
@@ -442,9 +448,10 @@ export class StateStore {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
-            } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
-
-                this.dispatchOutputsEvent()
+            } else if (
+                ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
+            ) {
+                this.dispatchOutputsEvent();
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { id, alias } = action.payload;
 
@@ -487,6 +494,45 @@ export class StateStore {
                 const { list } = action.payload;
 
                 return this.setExecutionOrder(list);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    /**
+     * TODO: Accidently commited, work to handly sync and async events. John
+     * Used in useBlock
+     * @param action
+     * @returns
+     */
+    dispatchEventAction = async (action: Actions) => {
+        try {
+            if (ActionMessages.RUN_QUERY === action.message) {
+                const { queryId } = action.payload;
+
+                // const run = async () => {
+                //     setTimeout(() => {
+                //         debugger
+                //         return queryId
+                //     }, 3000)
+                // }
+
+                // return await run()
+                // debugger
+                // const o = await this.runQuery(queryId);
+                // debugger
+                // Return the promise to resolve to caller
+
+                // return o
+            } else if (ActionMessages.DISPATCH_EVENT === action.message) {
+                const { name, detail } = action.payload;
+
+                this.dispatchEvent(name, detail);
+            } else if (
+                ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
+            ) {
+                this.dispatchOutputsEvent();
             }
         } catch (e) {
             console.error(e);
@@ -537,7 +583,7 @@ export class StateStore {
                     const variable = expression.match(/\$(.*?)\./)[1];
                     const stripped = iteratorList.slice(2, -2);
 
-                    // TODO: how do we handle nested loops $array.warehouse.warehouseSections
+                    // TODO: how do we handle nested loops $array.warehouse.warehouseSections --> = []
                     // Do we just call this recursively
                     if (variable === stripped) {
                         const path = expression.split(".").splice(1);
@@ -563,10 +609,54 @@ export class StateStore {
 
         // get the keys in the path
         const path = cleaned.split(".");
+        const pointer = path[0];
+
+        // Special syntax to parse by cell order
+        const isNumber = !isNaN(parseFloat(path[1]));
+
+        if (isNumber) {
+            let q;
+
+            // TODO: Problem we want to reference cells by a special syntax
+            // I don't want to change ids to be numbered for cells,
+            // i think we are good with our id generation
+            if (this._store.variables[pointer]) {
+                const variable = this._store.variables[path[0]];
+                if (variable.type === "query") {
+                    q = this._store.queries[variable.to];
+                }
+            } else if (this._store.queries[pointer]) {
+                q = this._store.queries[pointer];
+            }
+
+            if (q) {
+                try {
+                    const c = q.cellList[parseFloat(path[1]) - 1];
+                    const p = path;
+                    p.splice(0, 2);
+
+                    if (p.length === 0) {
+                        return c.output;
+                    } else {
+                        const key = p[0];
+
+                        if (key in c._exposed) {
+                            // get the search path
+                            const s = p.join(".");
+
+                            return getValueByPath(c._exposed, s);
+                        }
+                    }
+                } catch (e) {
+                    return expression;
+                }
+            }
+        }
 
         if (this._store.variables[path[0]]) {
+            // We should be able to interpret by varaible name as we do below
             const variable = this._store.variables[path[0]];
-            const value = this.getVariable(
+            let value = this.getVariable(
                 variable.to,
                 variable.type,
                 path,
@@ -693,7 +783,7 @@ export class StateStore {
         // add the data
         block.data = json.data;
 
-        if(json.widget === "page") {
+        if (json.widget === "page") {
             // Defaulting the route to the block id
             block.data.route = id;
         }
@@ -1259,6 +1349,33 @@ export class StateStore {
             this,
         );
 
+        // TODO: Do we want this to be done here
+
+        // Automate variable creation for notebook and new cell
+        this.dispatch({
+            message: ActionMessages.ADD_VARIABLE,
+            payload: {
+                id: queryId,
+                type: "query",
+                to: queryId,
+                isOutput: true,
+            },
+        });
+
+        Object.entries(this._store.queries[queryId].cells).forEach((c) => {
+            // Automate variable creation for notebook and new cell
+            const cId = c[0];
+            this.dispatch({
+                message: ActionMessages.ADD_VARIABLE,
+                payload: {
+                    id: `${queryId}--${cId}`,
+                    type: "cell",
+                    to: queryId,
+                    cellId: cId,
+                },
+            });
+        });
+
         this._store.executionOrder.push(queryId);
 
         return queryId;
@@ -1336,6 +1453,37 @@ export class StateStore {
 
         // save the promise
         this._utils.queryPromises[key] = p;
+
+        // TODO: John accidentally pushed, need to fix sync and async events on blocks
+        // Wait till whole query resolves
+        //
+        // let p;
+        // let sync = true;
+        // if (sync) {
+        //     p = syncronousPromise(async () => {
+        //         await q._run();
+        //         return true;
+        //     })
+        // } else {
+        //     p = cancellablePromise(async () => {
+        //         await q._run()
+        //         return true
+        //     })
+        // }
+        // if(sync) {
+        //     return p.promise
+        // } else  {
+        //     p.promise
+        //         .then((resp) => {
+        //             // noop
+        //         })
+        //         .catch((e) => {
+        //             console.error("ERROR:", e);
+        //         });
+        // }
+
+        // save the promise
+        // this._utils.queryPromises[key] = p;
     };
 
     /**
@@ -1467,30 +1615,33 @@ export class StateStore {
         const event = new CustomEvent(name, {
             detail: detail,
         });
-        
+
         // dispatch the event to the window
         window.dispatchEvent(event);
     };
 
     /**
+     *
      * Dispatch an event
      * @param detail - payload associated with event
      */
     private dispatchOutputsEvent = (): void => {
-
         let outputMap = {};
 
         Object.keys(this._store.variables).forEach((k) => {
-            if(this._store.variables[k].isOutput) {
-                outputMap[k] = this.parseVariable(`{{${k}}}`)
+            if (this._store.variables[k].isOutput) {
+                outputMap[k] = this.parseVariable(`{{${k}}}`);
             }
-        })
+        });
 
         // Communication with Iframe
-        window.parent.postMessage({
-            type: "DISPATCH_APP_OUTPUTS",
-            data: outputMap
-        }, '*') // --> Cross Origin Communications
+        window.parent.postMessage(
+            {
+                type: "DISPATCH_APP_OUTPUTS",
+                data: outputMap,
+            },
+            "*",
+        ); // --> Cross Origin Communications
     };
 
     // -----------------------------------

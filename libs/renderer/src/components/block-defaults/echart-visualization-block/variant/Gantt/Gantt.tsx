@@ -6,12 +6,14 @@ import { TableRow, TableCell, TableBody } from "@mui/material";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import ReactECharts from "echarts-for-react";
+
 import { useBlock, useBlockSettings, useFrame } from "../../../../../hooks";
 import { BlockDef } from "../../../../../store";
-import { getValueByPath } from "@/utility";
+import { getValueByPath } from "../../../../../utility";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 import { GANTT_CHART } from "../../Visualization.constants";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+
 //Main container where gantt chart will render
 const StyledMainContainer = styled("div")(({ theme }) => ({
     width: "100%",
