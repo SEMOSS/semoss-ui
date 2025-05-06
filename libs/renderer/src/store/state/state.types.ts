@@ -128,7 +128,7 @@ export type Block<D extends BlockDef = BlockDef> = D extends D
           data: D["data"];
 
           /** Event listeners associated with the block */
-          listeners: Record<keyof D["listeners"], ListenerActions[]>;
+          listeners: Record<keyof D["listeners"], {order: ListenerActions[], type: "sync"| "async"}>;
 
           /** Slots associated with the block */
           slots: Record<
@@ -240,7 +240,7 @@ export type BlockJSON<
           data: T["data"];
 
           /** Event listeners associated with the widget */
-          listeners: Record<keyof T["listeners"], ListenerActions[]>;
+          listeners: Record<keyof T["listeners"], {order: ListenerActions[], type: "sync" | "async"}>;
 
           /** Slot information */
 

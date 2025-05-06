@@ -44,7 +44,7 @@ function getTextFieldInputBlock(
     inputType: string,
     index: number,
     label: string,
-) {
+): Block {
     return {
         id: getIdForInput(inputType, index),
         widget: 'input',
@@ -62,13 +62,20 @@ function getTextFieldInputBlock(
             },
         },
         listeners: {
-            onChange: [],
+            onChange: {
+                type: 'sync',
+                order: [],
+            },
         },
         slots: {},
     };
 }
 
-function getSelectInputBlock(inputType: string, index: number, label: string) {
+function getSelectInputBlock(
+    inputType: string,
+    index: number,
+    label: string,
+): Block {
     return {
         id: getIdForInput(inputType, index),
         widget: 'select',
@@ -85,7 +92,10 @@ function getSelectInputBlock(inputType: string, index: number, label: string) {
             options: [],
         },
         listeners: {
-            onChange: [],
+            onChange: {
+                type: 'sync',
+                order: [],
+            },
         },
         slots: {},
     };
@@ -440,14 +450,17 @@ export async function setBlocksAndOpenUIBuilder(
                     loading: `{{${PROMPT_QUERY_DEFINITION_ID}.isLoading}}`,
                 },
                 listeners: {
-                    onPageLoad: [
-                        {
-                            message: ActionMessages.RUN_QUERY,
-                            payload: {
-                                queryId: PROMPT_QUERY_DEFINITION_ID,
+                    onPageLoad: {
+                        type: 'sync',
+                        order: [
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: PROMPT_QUERY_DEFINITION_ID,
+                                },
                             },
-                        },
-                    ],
+                        ],
+                    },
                 },
                 slots: {
                     content: {
@@ -559,14 +572,17 @@ export async function setBlocksAndOpenUIBuilder(
                     variant: 'contained',
                 },
                 listeners: {
-                    onClick: [
-                        {
-                            message: ActionMessages.RUN_QUERY,
-                            payload: {
-                                queryId: PROMPT_QUERY_ID,
+                    onClick: {
+                        type: 'sync',
+                        order: [
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: PROMPT_QUERY_ID,
+                                },
                             },
-                        },
-                    ],
+                        ],
+                    },
                 },
                 slots: {},
             },

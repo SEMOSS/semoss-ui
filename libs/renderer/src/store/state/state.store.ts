@@ -408,9 +408,9 @@ export class StateStore {
 
                 this.deleteBlockData(id, path);
             } else if (ActionMessages.SET_LISTENER === action.message) {
-                const { id, listener, actions } = action.payload;
+                const { id, listener, actions, type } = action.payload;
 
-                this.setListener(id, listener, actions);
+                this.setListener(id, listener, actions, type);
             } else if (ActionMessages.NEW_QUERY === action.message) {
                 const { queryId, config } = action.payload;
 
@@ -506,13 +506,13 @@ export class StateStore {
      * @param action 
      * @returns 
      */
-    dispatchEventAction = async (action: Actions) => {
+    dispatchEventAction = async (action: Actions, type: 'sync' | 'async') => {
         try {
             if (ActionMessages.RUN_QUERY === action.message) {
                 const { queryId } = action.payload;
 
                 const run = () => new Promise(async (resolve) => { 
-                    await this.runQuery(queryId)
+                    await this.runQuery(queryId, type)
                     debugger
                     resolve(this._store.queries[queryId].output)
                     setTimeout(() => { 
@@ -1332,8 +1332,12 @@ export class StateStore {
         id: string,
         listener: string,
         actions: ListenerActions[],
+        type: "sync" | "async"
     ): void => {
-        this._store.blocks[id].listeners[listener] = actions;
+        this._store.blocks[id].listeners[listener] = {
+            type: type,
+            order: actions
+        }
     };
 
     /**
@@ -1430,7 +1434,7 @@ export class StateStore {
      * Run a query
      * @param queryId - name of the query that we are running
      */
-    private runQuery = (queryId: string): void => {
+    private runQuery = (queryId: string, type?: 'sync' | 'async'): void => {
         const q = this._store.queries[queryId];
 
         const key = `query--${queryId};`;
@@ -1439,7 +1443,13 @@ export class StateStore {
         this._utils.queryPromises[key]?.cancel();
         
         let p;
-        let sync = true;
+        let sync;
+
+        if(!type || type === 'async') {
+            sync = false
+        } else {
+            sync = true
+        }
         
         if (sync) {
             p = syncronousPromise(async () => {

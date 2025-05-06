@@ -12,25 +12,16 @@ const config: Migration = {
     run: (state) => {
         const newState = { ...state };
 
-        // Object.values(newState.blocks).forEach((b) => {
-        //     newState.blocks[b.id]["listenerExecution"] = {}
-        //     Object.keys(b.listeners).forEach((l) => {
-        //         newState.blocks[b.id]["listenerExecution"][l] = 'async' 
-        //     })
-        // })
+        Object.values(newState.blocks).forEach((b) => {
+            Object.keys(b.listeners).forEach((l) => {
+                const val = {
+                    type: "sync",
+                    order: newState.blocks[b.id]['listeners'][l]
+                }
 
-        // Object.values(newState.blocks).forEach((b) => {
-        //     Object.keys(b.listeners).forEach((l) => {
-        //         const val = {
-        //             type: "async",
-        //             order: newState.blocks[b.id]['listeners'][l]
-        //         }
-
-        //         newState.blocks[b.id]['listeners'][l] = val
-        //     })
-        // })
-
-        // debugger
+                newState.blocks[b.id]['listeners'][l] = val
+            })
+        })
 
         return newState;
     },

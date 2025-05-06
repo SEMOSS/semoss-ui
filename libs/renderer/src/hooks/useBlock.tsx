@@ -1,10 +1,11 @@
 import { useCallback, useMemo } from "react";
 import { computed } from "mobx";
 
+import { upload } from "@semoss/sdk/react";
+
 import { Paths, PathValue } from "../types";
 import { ActionMessages, Block, BlockDef, ListenerActions } from "../store";
 import { copy } from "../utility";
-
 import { useBlocks } from "./useBlocks";
 
 
@@ -166,7 +167,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
          * @param intercept - Intercept and modify an action
          */
         const dispatchAction = async (
-            actions: ListenerActions[],
+            actions: {order: ListenerActions[], type: 'sync' | 'async'},
             intercept?: (action: ListenerActions) => ListenerActions | null,
         ) => {
             // ignore if static
@@ -175,7 +176,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
             }
 
             // go through each one and trigger it
-            for (const a of actions) {
+            for (const a of actions.order) {
                 // convert back to a normal action
                 let action: ListenerActions | null = a;
 
@@ -188,26 +189,9 @@ export const useBlock = <D extends BlockDef = BlockDef>(
                     return;
                 }
 
-                // state.dispatch(action);
-
-                const d = await state.dispatchEventAction(action);
-                console.log("Data:", d);
+                debugger
+                await state.dispatchEventAction(action, actions.type);
             }
-            // actions.forEach(async (a) => {
-            //     // convert back to a normal action
-            //     let action: ListenerActions | null = a;
-
-            //     // allow the action to be intercepted before dispatch
-            //     if (intercept) {
-            //         action = intercept(action);
-            //     }
-
-            //     if (action === null) {
-            //         return;
-            //     }
-
-            //     // state.dispatch(action);
-            // });
         };
 
         // create the listeners
