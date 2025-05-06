@@ -6,7 +6,7 @@ import { TextField } from "@semoss/ui";
 
 import { BlockConfig, BlockDef, Block } from "../../../store";
 import { InputSettings } from "../../block-settings";
-import { buildListener } from "../block-defaults.shared";
+import { buildListener, buildShowField } from "../block-defaults.shared";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import { ModalBlockDef, ModalBlock } from "./ModalBlock";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
@@ -105,6 +105,10 @@ export const config: BlockConfig<ModalBlockDef> = {
     render: ModalBlock,
     icon: Schema,
     contentMenu: [
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
         {
             name: "General",
             children: [
