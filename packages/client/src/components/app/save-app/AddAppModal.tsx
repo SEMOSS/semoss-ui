@@ -176,7 +176,7 @@ export const AddAppModal = (props: AddAppProps) => {
 
         if (data[ADD_APP_FORM_FIELD_TYPE] === 'Import File') {
             const resp = await monolithStore.runQuery(
-                `UploadProject(filePath=["${upload[0].fileLocation}"], global=[${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}]);`,
+                `UploadApp(filePath=["${upload[0].fileLocation}"], global=[${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}]);`,
             );
 
             output = resp.pixelReturn[0].output;
