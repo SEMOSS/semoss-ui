@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { usePixel } from "@semoss/sdk";
+import { usePixel } from "@semoss/sdk/react";
 import {
     styled,
     List,
@@ -7,14 +7,12 @@ import {
     Card,
     Divider,
     LinearProgress,
-    Typography,
     Collapse,
 } from "@semoss/ui";
 import {
     AccessTime,
     DateRange,
     FontDownload,
-    KeyboardArrowRight,
     Numbers,
     TableChartOutlined,
 } from "@mui/icons-material";

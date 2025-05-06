@@ -1,3 +1,4 @@
+export * from "../../";
 export { InsightProvider } from "./InsightProvider";
 
 export { useInsight } from "./useInsight";

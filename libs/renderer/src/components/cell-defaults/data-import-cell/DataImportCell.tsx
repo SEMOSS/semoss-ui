@@ -12,7 +12,7 @@ import {
     Edit,
 } from "@mui/icons-material";
 
-import { usePixel } from "@semoss/sdk";
+import { usePixel } from "@semoss/sdk/react";
 import {
     styled,
     Button,

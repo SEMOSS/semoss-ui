@@ -86,6 +86,10 @@ interface ConfigStoreInterface {
          * Track if python is enabled
          */
         python: boolean;
+        /**
+         * Track if csrf is enabled
+         */
+        csrf: boolean;
         [key: string]: unknown;
     };
 }
@@ -118,6 +122,7 @@ export class ConfigStore {
             },
             r: true,
             python: true,
+            csrf: false,
         },
     };
     private _generalReactors: Array<string> = [];

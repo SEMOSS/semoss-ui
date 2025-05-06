@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { Add } from "@mui/icons-material";
 // import { toJS } from "mobx";
 
-import { runPixel } from "@semoss/sdk";
+import { runPixel } from "@semoss/sdk/react";
 import {
     styled,
     Stack,
