@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import { Add, FilterListRounded } from '@mui/icons-material';
+
+import { useBlocks, VARIABLE_TYPES } from '@semoss/renderer';
 import {
     Button,
     Box,
@@ -12,10 +15,8 @@ import {
     Search,
     Popover,
 } from '@semoss/ui';
-import { Add, FilterListRounded } from '@mui/icons-material';
 
-import { useBlocks, usePixel } from '@/hooks';
-import { VARIABLE_TYPES } from '@/stores';
+import { usePixel } from '@/hooks';
 import { NotebookVariable, AddVariablePopover } from '@/components/notebook';
 import { Panel } from '@/components/workspace';
 

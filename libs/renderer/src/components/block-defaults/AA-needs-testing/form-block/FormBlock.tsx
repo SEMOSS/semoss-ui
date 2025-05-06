@@ -1,0 +1,45 @@
+import { CSSProperties } from "react";
+import { observer } from "mobx-react-lite";
+
+import { useBlock } from "../../../../hooks";
+import { BlockDef, BlockComponent } from "../../../../store";
+import { Slot } from "../../../blocks";
+import { Button } from "@semoss/ui";
+
+export interface FormBlockDef extends BlockDef<"form"> {
+    widget: "form";
+    data: {
+        style: CSSProperties;
+        label: string;
+    };
+    slots: {
+        children: true;
+    };
+}
+
+export const FormBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data, slots, listeners } = useBlock<FormBlockDef>(id);
+
+    return (
+        <form
+            style={{
+                display: "flex",
+                ...data.style,
+            }}
+            {...attrs}
+        >
+            <Slot slot={slots.children}></Slot>
+            <Button
+                sx={{
+                    ...data.style,
+                }}
+                onClick={() => {
+                    listeners.onClick();
+                }}
+                {...attrs}
+            >
+                {data.label}
+            </Button>
+        </form>
+    );
+});

@@ -1,9 +1,11 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
-import { IconButton, Stack, useNotification, Tooltip } from '@semoss/ui';
 import { ShareRounded, SaveOutlined, PlayArrow } from '@mui/icons-material';
 
-import { useWorkspace, useRootStore, useBlocks } from '@/hooks';
+import { IconButton, Stack, useNotification, Tooltip } from '@semoss/ui';
+import { useBlocks } from '@semoss/renderer';
+
+import { useWorkspace, useRootStore } from '@/hooks';
 import { PreviewOverlay } from '@/components/workspace';
 import { ShareOverlay } from '@/components/ui';
 
@@ -132,17 +134,17 @@ export const BlocksWorkspaceActions = observer(() => {
         }
     };
 
-    /**
-     * Trigger save on ctrl+s
-     */
-    const onDocumentKeydown = useCallback((event: KeyboardEvent) => {
-        if (event.key === 's' && event.ctrlKey) {
-            event.preventDefault();
-            saveApp();
-        }
-    }, []);
-
     useEffect(() => {
+        /**
+         * Trigger save on ctrl + s or command + s
+         */
+        const onDocumentKeydown = (event: KeyboardEvent) => {
+            if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+                event.preventDefault();
+                saveApp();
+            }
+        };
+
         // attach the event listener
         document.addEventListener('keydown', onDocumentKeydown);
 
@@ -150,7 +152,7 @@ export const BlocksWorkspaceActions = observer(() => {
         return () => {
             document.removeEventListener('keydown', onDocumentKeydown);
         };
-    }, [onDocumentKeydown]);
+    }, []);
 
     return (
         <Stack direction="row" spacing={1} alignItems={'center'}>
@@ -176,7 +178,7 @@ export const BlocksWorkspaceActions = observer(() => {
                     <ShareRounded fontSize="inherit" />
                 </IconButton>
             </Tooltip>
-            <Tooltip title={'Save App (ctrl + s)'}>
+            <Tooltip title={'Save App (ctrl/command + s)'}>
                 <IconButton
                     size={'small'}
                     color={'primary'}

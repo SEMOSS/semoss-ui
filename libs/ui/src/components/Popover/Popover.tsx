@@ -44,6 +44,21 @@ export interface PopoverProps {
     anchorOrigin?: PopoverOrigin;
 
     /**
+     * This is the point on the anchor where the popover's
+     * `anchorEl` will attach to. This is not used when the
+     * anchorReference is 'anchorPosition'.
+     *
+     * Options:
+     * vertical: [top, center, bottom];
+     * horizontal: [left, center, right].
+     * @default {
+     *   vertical: 'top',
+     *   horizontal: 'left',
+     * }
+     */
+    transformOrigin?: PopoverOrigin;
+
+    /**
      * This is the position that may be used to set the position of the popover.
      * The coordinates are relative to the application's client area.
      */

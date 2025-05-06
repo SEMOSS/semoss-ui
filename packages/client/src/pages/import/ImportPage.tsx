@@ -72,17 +72,12 @@ const StyledCard = styled(Card, {
 })<{
     disabled: boolean;
 }>(({ theme, disabled }) => {
-    const palette = theme.palette as unknown as {
-        primary: Record<string, string>;
-        primaryContrast: Record<string, string>;
-    };
-
     return {
         backgroundColor: disabled ? theme.palette.grey['100'] : 'white',
         '&:hover': {
             boxShadow: disabled
                 ? '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)'
-                : `0px 5px 22px 0px ${palette.primaryContrast['shadow']}`,
+                : `0px 5px 22px 0px ${theme.palette.primaryContrast['shadow']}`,
             cursor: 'pointer',
         },
     };
@@ -134,11 +129,6 @@ const StyledFormTypeBox = styled(Box, {
 })<{
     disabled: boolean;
 }>(({ theme, disabled }) => {
-    const palette = theme.palette as unknown as {
-        primary: Record<string, string>;
-        primaryContrast: Record<string, string>;
-    };
-
     return {
         maxWidth: '215px',
         maxHeight: '75px',
@@ -157,7 +147,7 @@ const StyledFormTypeBox = styled(Box, {
             cursor: 'pointer',
             boxShadow: disabled
                 ? '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)'
-                : `0px 5px 22px 0px ${palette.primaryContrast['shadow']}`,
+                : `0px 5px 22px 0px ${theme.palette.primaryContrast['shadow']}`,
         },
     };
 });

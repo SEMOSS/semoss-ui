@@ -1,6 +1,8 @@
-import { Typography } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 import { JsonViewer } from '@textea/json-viewer';
+
+import { Typography } from '@semoss/ui';
+
 import { isOutputJSON } from '@/utility';
 
 interface SuccessOperationProps {

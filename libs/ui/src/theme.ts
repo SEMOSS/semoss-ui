@@ -13,6 +13,25 @@ export { alpha, styled, useTheme, keyframes };
 export type { ThemeOptions };
 
 declare module "@mui/material" {
+    interface Theme {
+        shape: {
+            borderRadiusNone: number;
+            borderRadiusSm: number;
+            borderRadiusLg: number;
+            borderRadiusCircle: number;
+            borderRadiusChip: number;
+            borderRadius: number;
+        };
+    }
+
+    interface Palette {
+        primaryContrast?: CustomPaletteColor;
+        green?: CustomPaletteColor;
+        darkBlue?: CustomPaletteColor;
+        pink?: CustomPaletteColor;
+        purple?: CustomPaletteColor;
+    }
+
     interface PaletteColor {
         hover?: string;
         selected?: string;
@@ -132,6 +151,7 @@ export const lightTheme: CustomThemeOptions = {
             primary: "#000000",
             main: "#000000",
             secondary: "#666666",
+            white: "#FFFFFF",
             disabled: "#9E9E9E",
         },
         error: {

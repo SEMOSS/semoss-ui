@@ -1,0 +1,40 @@
+{
+    "name": "@semoss/renderer",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/renderer/src",
+    "projectType": "library",
+    "tags": [],
+    "targets": {
+        "build1": {
+            "executor": "@nx/rollup:rollup",
+            "outputs": ["{projectRoot}/dist"],
+            "cache": true,
+            "inputs": ["production", "^production"],
+            "options": {
+                "main": "libs/renderer/src/index.ts",
+                "tsConfig": "libs/renderer/tsconfig.json",
+                "outputPath": "libs/renderer/dist",
+                "rollupConfig": "libs/renderer/rollup.config.js",
+                "format": ["esm", "cjs"]
+            },
+            "configurations": {}
+        },
+        "dev": {
+            "executor": "nx:run-commands",
+            "options": {
+                "cwd": "libs/renderer",
+                "command": "rollup -w -c"
+            },
+            "cache": true,
+            "dependsOn": ["^rollup:build"],
+            "inputs": [
+                "default",
+                "^default",
+                {
+                    "externalDependencies": ["rollup"]
+                }
+            ],
+            "outputs": ["{projectRoot}/dist"]
+        }
+    }
+}

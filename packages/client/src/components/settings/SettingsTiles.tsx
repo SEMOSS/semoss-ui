@@ -280,15 +280,18 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
             if (response.data.success || response.data) {
                 setDiscoverable(!discoverable);
-
                 notification.add({
                     color: 'success',
-                    message: `Successfully made ${name} discoverable`,
+                    message: `Successfully made ${name} ${
+                        discoverable ? 'undiscoverable' : 'discoverable'
+                    }`,
                 });
             } else {
                 notification.add({
                     color: 'error',
-                    message: `Error making ${name} discoverable`,
+                    message: `Error making ${name} ${
+                        discoverable ? 'undiscoverable' : 'discoverable'
+                    }`,
                 });
             }
         } catch (e) {
@@ -341,12 +344,16 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
                 notification.add({
                     color: 'success',
-                    message: `Successfully made ${name} global`,
+                    message: `Successfully made ${name} ${
+                        global ? 'non-global' : 'global'
+                    }`,
                 });
             } else {
                 notification.add({
                     color: 'error',
-                    message: `Error making ${name} global`,
+                    message: `Error making ${name} ${
+                        global ? 'non-global' : 'global'
+                    }`,
                 });
             }
         } catch (e) {
@@ -382,9 +389,10 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 }
                                 checked={global}
                                 disabled={
-                                    configStore.store.config[
-                                        'adminOnlyProjectSetPublic'
-                                    ] && !configStore.store.user.admin
+                                    !configStore.isEngineOperationAvailable(
+                                        type,
+                                        'public',
+                                    )
                                 }
                                 onChange={() => {
                                     changeGlobal();
@@ -413,7 +421,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                                 ? `Make ${name} non-discoverable`
                                                 : `Make ${name} discoverable`
                                         }
-                                        disabled={global}
+                                        disabled={
+                                            global ||
+                                            !configStore.isEngineOperationAvailable(
+                                                type,
+                                                'discoverable',
+                                            )
+                                        }
                                         checked={discoverable}
                                         onChange={() => {
                                             changeDiscoverable();
@@ -449,7 +463,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                             ? `Make ${name} non-discoverable`
                                             : `Make ${name} discoverable`
                                     }
-                                    disabled={global}
+                                    disabled={
+                                        global ||
+                                        !configStore.isEngineOperationAvailable(
+                                            type,
+                                            'discoverable',
+                                        )
+                                    }
                                     checked={discoverable}
                                     onChange={() => {
                                         changeDiscoverable();
@@ -482,9 +502,10 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 variant="contained"
                                 color="error"
                                 disabled={
-                                    configStore.store.config[
-                                        'adminOnlyProjectDelete'
-                                    ] && !configStore.store.user.admin
+                                    !configStore.isEngineOperationAvailable(
+                                        type,
+                                        'delete',
+                                    )
                                 }
                                 onClick={() => setDeleteModal(true)}
                             >
@@ -576,9 +597,10 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 }
                                 checked={global}
                                 disabled={
-                                    configStore.store.config[
-                                        'adminOnlyProjectSetPublic'
-                                    ] && !configStore.store.user.admin
+                                    !configStore.isEngineOperationAvailable(
+                                        type,
+                                        'public',
+                                    )
                                 }
                                 onChange={() => {
                                     changeGlobal();
@@ -605,7 +627,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 icon={false}
                                 action={
                                     <Switch
-                                        disabled={global}
+                                        disabled={
+                                            global ||
+                                            !configStore.isEngineOperationAvailable(
+                                                type,
+                                                'discoverable',
+                                            )
+                                        }
                                         title={
                                             discoverable
                                                 ? `Make ${name} non-discoverable`
@@ -642,7 +670,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             icon={false}
                             action={
                                 <Switch
-                                    disabled={global}
+                                    disabled={
+                                        global ||
+                                        !configStore.isEngineOperationAvailable(
+                                            type,
+                                            'discoverable',
+                                        )
+                                    }
                                     title={
                                         discoverable
                                             ? `Make ${name} non-discoverable`
@@ -682,6 +716,12 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                     variant="contained"
                                     color="error"
                                     onClick={() => setDeleteModal(true)}
+                                    disabled={
+                                        !configStore.isEngineOperationAvailable(
+                                            type,
+                                            'delete',
+                                        )
+                                    }
                                 >
                                     Delete
                                 </Button>

@@ -1,7 +1,8 @@
-import { ExpandMore } from '@mui/icons-material';
-import { Accordion, Stack, Typography, styled } from '@semoss/ui';
-import { observer } from 'mobx-react-lite';
 import React, { createElement } from 'react';
+import { observer } from 'mobx-react-lite';
+import { ExpandMore } from '@mui/icons-material';
+
+import { Accordion, Stack, Typography, styled } from '@semoss/ui';
 
 const StyledMenuSectionHeader = styled('div')(({ theme }) => ({
     alignItems: 'center',
@@ -31,12 +32,6 @@ const StyledTypography = styled(Typography)(() => ({
     textTransform: 'uppercase',
     fontWeight: 'bold',
 }));
-
-// const StyledTypographyNoAccordion = styled(Typography)(({ theme }) => ({
-//     textTransform: 'uppercase',
-//     fontWeight: 'bold',
-//     paddingLeft: theme.spacing(2),
-// }));
 
 const StyledMenuSectionTitle = styled(Accordion.Trigger)(({ theme }) => ({
     minHeight: 'auto !important',
@@ -85,7 +80,6 @@ export const SelectedMenuSection = observer(
                                         {s.name}
                                     </StyledTypography>
                                 </StyledMenuSectionTitle>
-                                {/* )} */}
 
                                 <Accordion.Content>
                                     {s.children.length > 0 ? (

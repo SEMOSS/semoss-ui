@@ -1,6 +1,23 @@
 import { useEffect, useState, createElement, useMemo, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
+    ContentCopy,
+    Delete,
+    PlayCircle,
+    CheckCircle,
+    Error,
+    Pending,
+    KeyboardArrowRight,
+    MoreVert,
+    ArrowUpward,
+    ArrowDownward,
+    PlayArrowRounded,
+    LowPriority,
+    LibraryAdd,
+} from '@mui/icons-material';
+
+import { ActionMessages, useBlocks } from '@semoss/renderer';
+import {
     styled,
     Stack,
     Typography,
@@ -16,28 +33,14 @@ import {
     Menu,
     MenuProps,
 } from '@semoss/ui';
-import {
-    ContentCopy,
-    Delete,
-    PlayCircle,
-    CheckCircle,
-    Error,
-    Pending,
-    KeyboardArrowRight,
-    MoreVert,
-    ArrowUpward,
-    ArrowDownward,
-    PlayArrowRounded,
-    LowPriority,
-    LibraryAdd,
-} from '@mui/icons-material';
-import { ActionMessages } from '@/stores';
-import { useBlocks } from '@/hooks';
+
 import { NotebookAddCell } from './NotebookAddCell';
 import { NotebookCellConsole } from './NotebookCellConsole';
 import { Operation } from './operations';
-import { copyTextToClipboard } from '@/utility';
 import { AddVariableModal } from './AddVariableModal';
+
+// TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
+import { copyTextToClipboard } from '@/utility';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     paddingBottom: theme.spacing(2),
@@ -47,18 +50,25 @@ const StyledRow = styled(Stack)(() => ({
     position: 'relative',
 }));
 
-const StyledName = styled(Typography)(({ theme }) => ({
+const StyledStackTwo = styled(Stack)(({ theme }) => ({
     position: 'absolute',
     top: theme.spacing(-1.5),
     left: theme.spacing(10.5),
-    paddingLeft: theme.spacing(0.5),
-    paddingRight: theme.spacing(0.5),
+    paddingLeft: theme.spacing(1.5),
+    paddingRight: theme.spacing(1.5),
     zIndex: 1,
     color: theme.palette.text.disabled,
     borderRadius: theme.shape.borderRadius,
     background: theme.palette.background.paper,
     overflow: 'hidden',
+    '&:hover': {
+        backgroundColor: theme.palette.primaryContrast['50'],
+        color: theme.palette.text.disabled,
+        cursor: 'pointer !important',
+    },
 }));
+
+const StyledName = styled(Typography)(({ theme }) => ({}));
 
 const StyledCellActions = styled(Collapse)(({ theme }) => ({
     position: 'absolute',
@@ -303,6 +313,17 @@ export const NotebookCell = observer(
             }
         }, [cellPlayCounter]);
 
+        const cellOrderNumber = useMemo(() => {
+            const nbCellList = state.queries[cell.query.id].cellList;
+
+            let matchIndex = 0;
+            nbCellList.forEach((c, i) => {
+                if (c.id === cell.id) matchIndex = i;
+            });
+
+            return matchIndex + 1;
+        }, [cell.id, cell.query.cellList.length]);
+
         /**
          * Create a duplicate cell
          */
@@ -475,9 +496,23 @@ export const NotebookCell = observer(
                 }}
             >
                 <StyledRow direction="row" width="100%" spacing={1}>
-                    <StyledName variant="subtitle2">
-                        {variableName ? variableName : cell.config.name}
-                    </StyledName>
+                    {/* TODO: Alright so do we want to just automate cells as variables, if so no need for condition  */}
+
+                    <StyledStackTwo
+                        onClick={() => {
+                            copyTextToClipboard(
+                                `{{${queryId}.${cellOrderNumber}}}`,
+                                notification,
+                            );
+                        }}
+                    >
+                        <StyledName
+                            variant="subtitle2"
+                            title={'Copy reference id'}
+                        >
+                            {cellOrderNumber}
+                        </StyledName>
+                    </StyledStackTwo>
 
                     <StyledCellActions in={showCellActions}>
                         <Stack gap={1} direction={'row'} alignItems={'center'}>

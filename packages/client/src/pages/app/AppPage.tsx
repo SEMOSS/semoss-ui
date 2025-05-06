@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
+
 import {
     Avatar,
     styled,
@@ -14,13 +15,15 @@ import {
 } from '@semoss/ui';
 import { EditOutlined, ShareRounded } from '@mui/icons-material';
 
-import { Env } from '@/env';
+import { Env } from '@semoss/sdk/react';
 import { WorkspaceStore } from '@/stores';
 import { useRootStore } from '@/hooks';
 import { LoadingScreen, ShareOverlay } from '@/components/ui';
-import { BlocksRenderer } from '@/components/blocks-workspace';
+// import { BlocksRenderer } from '@/components/blocks-workspace';
 import { CodeRenderer } from '@/components/code-workspace';
 import { Link } from 'react-router-dom';
+
+import { Renderer } from '@semoss/renderer';
 
 const StyledViewport = styled('div')(() => ({
     height: '100%',
@@ -126,7 +129,7 @@ export const AppPage = observer(() => {
             </Stack>
             <StyledContent>
                 {workspace.type === 'BLOCKS' ? (
-                    <BlocksRenderer appId={appId} />
+                    <Renderer appId={appId} insightId={workspace.insightId} />
                 ) : null}
                 {workspace.type === 'CODE' ? (
                     <CodeRenderer appId={appId} />

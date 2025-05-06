@@ -1,17 +1,5 @@
 import React, { useState } from 'react';
 import {
-    Avatar,
-    ButtonGroup,
-    Card,
-    Chip,
-    IconButton,
-    Stack,
-    Typography,
-    styled,
-    Menu,
-    useNotification,
-} from '@semoss/ui';
-import {
     Person,
     Star,
     StarOutlineOutlined,
@@ -23,10 +11,25 @@ import {
     BookmarkBorder,
     MoreVert,
 } from '@mui/icons-material';
-import { Env } from '@/env';
+
+import {
+    Avatar,
+    ButtonGroup,
+    Card,
+    Chip,
+    IconButton,
+    Stack,
+    Typography,
+    styled,
+    Menu,
+    useNotification,
+} from '@semoss/ui';
+import { Env } from '@semoss/sdk/react';
+
+import BRAIN from '@/assets/img/BRAIN.png';
 import GOOGLE from '@/assets/img/google.png';
 import { ENGINE_IMAGES } from '../../pages/import/import.constants';
-import BRAIN from '@/assets/img/BRAIN.png';
+import { TruncatedText } from '../../../../../libs/ui/src/components/TruncatedText';
 
 const StyledCardImg = styled('img')({
     display: 'flex',
@@ -362,7 +365,10 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
                 <StyledLandscapeCardHeaderDiv>
                     <Typography variant={'body1'}>
                         <Typography variant={'body1'}>
-                            {formatDBName(name)}
+                            <TruncatedText variant="body1">
+                                {formatDBName(name)}
+                            </TruncatedText>
+                            {/* {formatDBName(name)} */}
                         </Typography>
                         {sub_type === 'EMBEDDED' ? (
                             <StyledCardImg src={GOOGLE}></StyledCardImg>

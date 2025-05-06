@@ -1,30 +1,30 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { ConstructionOutlined } from '@mui/icons-material';
-import { useNotification, styled, Typography, Stack } from '@semoss/ui';
-import { runPixel } from '@/api';
+
+import { useNotification } from '@semoss/ui';
 import {
-    SerializedState,
     StateStore,
-    WorkspaceStore,
+    Blocks,
+    SerializedState,
+    DefaultCells,
+    DefaultBlocks,
     MigrationManager,
     STATE_VERSION,
-    DesignerStore,
-    WorkspaceOptions,
-} from '@/stores';
+} from '@semoss/renderer';
+
+import { runPixelTwo } from '../../runPixelTwo';
+import { WorkspaceStore, DesignerStore, WorkspaceOptions } from '@/stores';
 import { DesignerContext } from '@/contexts';
-import { DefaultCells } from '@/components/cell-defaults';
-import { DefaultBlocks } from '@/components/block-defaults';
-import { Blocks } from '@/components/blocks';
+import { LoadingScreen } from '@/components/ui';
+import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
+import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
 import {
     Workspace,
     SettingsPanel,
     FileExplorerPanel,
     FileEditorPanel,
+    TerminalPanel,
 } from '@/components/workspace';
-import { LoadingScreen } from '@/components/ui';
-import { DEFAULT_MENU, VISUALIZATION_MENU } from '@/components/designer';
-import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 import {
     VariablesPanel,
     BlocksMenuPanel,
@@ -34,22 +34,9 @@ import {
     NotebookExplorerPanel,
     NotebookViewerPanel,
 } from './panels';
-import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
+import { DEFAULT_MENU } from './menus/default-menu';
 
 const DEFAULT_BORDER_SIZE = 300;
-
-const StyledAlert = styled('div')(({ theme }) => ({
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing(1),
-    paddingLeft: theme.spacing(2),
-    paddingRight: theme.spacing(2),
-    height: theme.spacing(4),
-    borderRadius: '4px',
-    background: 'rgba(253, 237, 225, 1)',
-}));
 
 const DEFAULT_OPTIONS: WorkspaceOptions = {
     version: '',
@@ -77,14 +64,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                     config: {},
                                     helpText:
                                         'UI components that can be used to display for your app',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Visualizations',
-                                    component: 'viz',
-                                    config: {},
-                                    helpText:
-                                        'Visualizations to be used within the designer',
                                 },
                                 {
                                     type: 'tab',
@@ -136,6 +115,21 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                 },
                             ],
                         },
+                        // {
+                        //     type: 'border',
+                        //     location: 'bottom',
+                        //     size: DEFAULT_BORDER_SIZE,
+                        //     children: [
+                        //         {
+                        //             id: 'terminal',
+                        //             type: 'tab',
+                        //             name: 'Terminal',
+                        //             component: 'terminal',
+                        //             enableClose: false,
+                        //             config: {},
+                        //         },
+                        //     ],
+                        // },
                     ],
                     layout: {
                         type: 'row',
@@ -212,13 +206,6 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
         return <SelectedBlockPanel />;
     } else if (component === 'blocks') {
         return <BlocksMenuPanel title={'Add Blocks'} items={DEFAULT_MENU} />;
-    } else if (component === 'viz') {
-        return (
-            <BlocksMenuPanel
-                title={'Add Visualization'}
-                items={VISUALIZATION_MENU}
-            />
-        );
     } else if (component === 'file-explorer') {
         return <FileExplorerPanel layout={layout} />;
     } else if (component === 'file-editor') {
@@ -227,6 +214,8 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
         return <NotebookExplorerPanel layout={layout} />;
     } else if (component === 'notebook-viewer') {
         return <NotebookViewerPanel id={config.id} />;
+    } else if (component === 'terminal') {
+        return <TerminalPanel />;
     }
 
     return <>{component}</>;
@@ -253,9 +242,9 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         workspace.setLoading(true);
 
         // load the app
-        runPixel<[SerializedState]>(
+        runPixelTwo<[SerializedState]>(
             `GetAppBlocksJson ( project=["${workspace.appId}"]);`,
-            'new',
+            workspace.insightId ? workspace.insightId : 'new',
         )
             .then(async ({ pixelReturn, errors, insightId }) => {
                 if (errors.length) {
@@ -284,18 +273,6 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 
                 // set it
                 setState(s);
-
-                const { errors: errs } = await runPixel(
-                    `SetContext("${workspace.appId}");`,
-                    insightId,
-                );
-
-                if (errs.length) {
-                    notification.add({
-                        color: 'error',
-                        message: errs.join(''),
-                    });
-                }
             })
             .catch((e) => {
                 notification.add({
@@ -337,30 +314,6 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                     options={DEFAULT_OPTIONS}
                     workspace={workspace}
                     endTopbar={<BlocksWorkspaceActions />}
-                    alert={
-                        <StyledAlert>
-                            <Stack
-                                direction="row"
-                                padding={0}
-                                spacing={0.5}
-                                alignItems={'center'}
-                            >
-                                <ConstructionOutlined
-                                    fontSize="small"
-                                    color={'warning'}
-                                />
-                                <Typography
-                                    variant={'caption'}
-                                    fontWeight="bold"
-                                >
-                                    Note:
-                                </Typography>
-                                <Typography variant={'caption'}>
-                                    This feature is currently in alpha.
-                                </Typography>
-                            </Stack>
-                        </StyledAlert>
-                    }
                     factory={FACTORY}
                 />
                 <BlocksWorkspaceDev />

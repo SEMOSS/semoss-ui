@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Stack, Typography, styled } from '@semoss/ui';
+import { Stack, Typography, styled, useNotification } from '@semoss/ui';
 
-import { ActionMessages, getRelativeSize, getBlockElement } from '@/stores';
-import { useBlocks, useDesigner } from '@/hooks';
+import { useDesigner } from '@/hooks';
+import { getRelativeSize, getBlockElement } from '@/stores';
 
 import { DragIndicator } from '@mui/icons-material';
+
+import { ActionMessages, useBlocks } from '@semoss/renderer';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'absolute',
@@ -47,6 +49,7 @@ interface SelectedMaskProps {
  */
 export const SelectedMask = observer((props: SelectedMaskProps) => {
     const { screenEle } = props;
+    const notification = useNotification();
 
     // create the state
     const [size, setSize] = useState<{
@@ -109,6 +112,8 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 
         // apply the action
         const placeholderAction = designer.drag.placeholderAction;
+        const sw = state.getBlock(placeholderAction.id);
+
         if (placeholderAction) {
             if (
                 placeholderAction.type === 'before' ||
@@ -117,6 +122,18 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
                 const siblingWidget = state.getBlock(placeholderAction.id);
 
                 if (siblingWidget.parent) {
+                    const parent = state.getBlock(sw.parent.id);
+                    if (parent.widget === 'iteration') {
+                        if (parent.slots.children.children.length) {
+                            notification.add({
+                                color: 'error',
+                                message:
+                                    'Please delete block within iterator before adding another child',
+                            });
+                            designer.deactivateDrag();
+                            return;
+                        }
+                    }
                     state.dispatch({
                         message: ActionMessages.MOVE_BLOCK,
                         payload: {
@@ -131,6 +148,17 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
                     });
                 }
             } else if (placeholderAction.type === 'replace') {
+                if (sw.widget === 'iteration') {
+                    state.dispatch({
+                        message: ActionMessages.SET_BLOCK_DATA,
+                        payload: {
+                            id: placeholderAction.id,
+                            path: 'child',
+                            value: state.getBlock(designer.selected),
+                        },
+                    });
+                }
+
                 state.dispatch({
                     message: ActionMessages.MOVE_BLOCK,
                     payload: {

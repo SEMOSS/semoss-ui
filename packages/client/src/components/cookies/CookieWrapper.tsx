@@ -41,7 +41,7 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
     const { children } = props;
     const { configStore } = useRootStore();
 
-    const [visible, setVisible] = useState(true);
+    const [visible, setVisible] = useState(false);
     const [viewCookiePolicy, setViewCookiePolicy] = useState(false);
 
     const [cookieBanner, setCookieBanner] = useState('');
@@ -63,21 +63,16 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
 
                     if (themeCookieBanner) {
                         setCookieBanner(themeCookieBanner);
-                    } else {
-                        setVisible(false);
+                        setVisible(true);
                     }
                 } catch {
                     console.error('Unable to parse theme for cookie wrapper');
                 }
-            } else {
-                setVisible(false);
             }
-        } else {
-            setVisible(false);
         }
 
         return () => {
-            setVisible(true);
+            setVisible(false);
         };
     }, [Object.keys(configStore.store.config).length]);
 

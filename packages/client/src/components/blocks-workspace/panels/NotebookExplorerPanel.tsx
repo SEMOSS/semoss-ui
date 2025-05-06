@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Actions, DockLocation, Layout, TabNode } from 'flexlayout-react';
-import { useNotification, IconButton, Stack } from '@semoss/ui';
 import { NoteAddOutlined, Refresh } from '@mui/icons-material';
+import { Actions, DockLocation, Layout, TabNode } from 'flexlayout-react';
 
-import { useBlocks, useWorkspace } from '@/hooks';
-import { ActionMessages } from '@/stores';
+import { ActionMessages, useBlocks } from '@semoss/renderer';
+import { useNotification, IconButton, Stack } from '@semoss/ui';
+
+import { useWorkspace } from '@/hooks';
+import { Panel } from '@/components/workspace';
 import { NewQueryOverlay, DeleteNotebookOverlay } from '@/components/notebook';
 import { NotebookExplorerItem } from './NotebookExplorerPanelItem';
-import { Panel } from '@/components/workspace';
 
 interface NotebookExplorerPanelProps {
     /** Current layoutobject */

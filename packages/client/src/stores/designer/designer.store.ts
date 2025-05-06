@@ -1,6 +1,6 @@
 import { makeAutoObservable } from 'mobx';
 
-import { StateStore } from '../state';
+import { StateStore } from '@semoss/renderer';
 
 export interface DesignerStoreInterface {
     /** Blocks state information */

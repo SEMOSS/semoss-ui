@@ -5,6 +5,8 @@ import {
     TextField as MuiTextField,
 } from "@mui/material";
 
+import { Typography } from "../Typography";
+
 export interface AutocompleteProps<
     T,
     Multiple extends boolean | undefined,
@@ -84,6 +86,11 @@ export function Autocomplete<
                     }}
                     {...params}
                     label={label}
+                    helperText={
+                        <Typography variant="caption">
+                            Press enter to add
+                        </Typography>
+                    }
                 />
             )}
             {...props}

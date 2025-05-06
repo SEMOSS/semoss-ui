@@ -2,12 +2,17 @@ import { createElement } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Outlet, Link, useLocation, matchPath } from 'react-router-dom';
 import { styled, Stack, Icon, Divider, Tooltip } from '@semoss/ui';
-import { LibraryBooksOutlined, Settings } from '@mui/icons-material';
+import {
+    ArticleOutlined,
+    LibraryBooksOutlined,
+    Settings,
+} from '@mui/icons-material';
 
 import { Navbar } from '@/components/ui';
 import { ErrorBoundary } from '@/components/common';
 import { ENGINE_ROUTES } from '@/pages/engine';
 import { ErrorPage } from './ErrorPage';
+import { PlatformMessages } from './PlatformMessages';
 
 const NAV_HEIGHT = '48px';
 const SIDEBAR_WIDTH = '56px';
@@ -142,7 +147,9 @@ export const NavigatorLayout = observer(() => {
                 </Tooltip>
             </StyledSidebar>
             <StyledContent>
-                <Outlet />
+                <PlatformMessages platformAssist={true}>
+                    <Outlet />
+                </PlatformMessages>
             </StyledContent>
         </ErrorBoundary>
     );

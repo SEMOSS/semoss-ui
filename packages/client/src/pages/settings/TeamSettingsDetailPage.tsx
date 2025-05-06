@@ -1,11 +1,12 @@
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams, useParams } from 'react-router-dom';
 import { styled } from '@semoss/ui';
 
 import {
     TeamMembersTable,
     TeamProjectsTable,
     TeamEnginesTable,
-} from '@/components/settings';
+} from '@/components/teams';
+import { TeamMembersProviderBanner } from '@/components/teams/TeamMembersProviderBanner';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
@@ -28,18 +29,31 @@ const StyledContent = styled('div')(({ theme }) => ({
 export const TeamSettingsDetailPage = () => {
     const { state } = useLocation();
 
+    /**
+     * TODO: Likely want to send with :id from url
+     * And pull info from database
+     */
+    const type = state.type;
+    const id = state.name;
+
     return (
         <StyledContainer>
             <StyledContent>
-                <TeamMembersTable groupId={state.name} name="MEMBERS" />
+                {!type ? (
+                    <TeamMembersTable groupId={id} name="MEMBERS" />
+                ) : (
+                    <TeamMembersProviderBanner type={type} />
+                )}
+
                 <TeamProjectsTable
-                    groupId={state.name}
-                    groupType={state.type}
+                    groupId={id}
+                    groupType={type}
                     name="PROJECTS"
                 />
+
                 <TeamEnginesTable
-                    groupId={state.name}
-                    groupType={state.type}
+                    groupId={id}
+                    groupType={type}
                     name="ENGINES"
                 />
             </StyledContent>

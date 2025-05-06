@@ -1,14 +1,5 @@
 import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled, Button, Divider, MenuProps, Menu, Stack } from '@semoss/ui';
-
-import { useBlocks } from '@/hooks';
-import {
-    ActionMessages,
-    CellStateConfig,
-    NewCellAction,
-    QueryState,
-} from '@/stores';
 import {
     ChangeCircleOutlined,
     Code,
@@ -17,15 +8,32 @@ import {
     KeyboardArrowUp,
     TextFields,
 } from '@mui/icons-material';
+
 import {
-    DefaultCellDefinitions,
+    styled,
+    Button,
+    Divider,
+    MenuProps,
+    Menu,
+    Stack,
+    Modal,
+} from '@semoss/ui';
+import {
+    useBlocks,
+    ActionMessages,
     DefaultCells,
+    CellStateConfig,
+    QueryState,
+    DefaultCellDefinitions,
     TransformationCells,
-} from '@/components/cell-defaults';
-import { QueryImportCellConfig } from '../cell-defaults/query-import-cell';
-import { CodeCellConfig } from '../cell-defaults/code-cell';
+    QueryImportCellConfig,
+    CodeCellConfig,
+    DataImportFormModal,
+    NewCellAction,
+} from '@semoss/renderer';
+import { MoreHoriz } from '@mui/icons-material';
+
 import { ModelBrain } from '@/assets/img/ModelBrain';
-import { DataImportFormModal } from './DataImportFormModal';
 
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
@@ -98,6 +106,13 @@ const DataImportDropdownOptions = [
     },
 ];
 
+const OtherOptions = [
+    {
+        display: `Send Email`,
+        defaultCellType: 'send-email',
+    },
+];
+
 const AddCellOptions: Record<string, AddCellOption> = {
     code: {
         display: 'Cell',
@@ -151,6 +166,11 @@ const AddCellOptions: Record<string, AddCellOption> = {
         display: 'LLM',
         defaultCellType: 'llm',
         icon: <ModelBrain color={'#666666'} width={'20'} height={'20'} />,
+    },
+    others: {
+        display: 'Others',
+        icon: <MoreHoriz />,
+        options: OtherOptions,
     },
 };
 
@@ -206,6 +226,17 @@ export const NotebookAddCell = observer(
                         config: config as Omit<CellStateConfig, 'id'>,
                     },
                 });
+
+                state.dispatch({
+                    message: ActionMessages.ADD_VARIABLE,
+                    payload: {
+                        id: `${query.id}--${newCellId}`,
+                        type: 'cell',
+                        to: query.id,
+                        cellId: newCellId,
+                    },
+                });
+
                 notebook.selectCell(query.id, newCellId);
             } catch (e) {
                 console.error(e);
@@ -286,6 +317,24 @@ export const NotebookAddCell = observer(
                                     );
                                 },
                             )}
+                        {selectedAddCell === 'others' &&
+                            Array.from(
+                                AddCellOptions[selectedAddCell]?.options || [],
+                                ({ display, defaultCellType }, index) => {
+                                    return (
+                                        <StyledMenuItem
+                                            key={index}
+                                            value={display}
+                                            onClick={() => {
+                                                appendCell(defaultCellType);
+                                                setAnchorEl(null);
+                                            }}
+                                        >
+                                            {display}
+                                        </StyledMenuItem>
+                                    );
+                                },
+                            )}
 
                         {selectedAddCell === 'import-data' && (
                             <>
@@ -316,13 +365,17 @@ export const NotebookAddCell = observer(
                 </Stack>
 
                 {isDataImportModalOpen && (
-                    <DataImportFormModal
-                        setIsDataImportModalOpen={setIsDataImportModalOpen}
-                        query={query}
-                        previousCellId={previousCellId}
-                        cell={null}
-                        editMode={false}
-                    />
+                    <Modal
+                        open={setIsDataImportModalOpen as unknown as boolean}
+                    >
+                        <DataImportFormModal
+                            setIsDataImportModalOpen={setIsDataImportModalOpen}
+                            query={query}
+                            previousCellId={previousCellId}
+                            cell={null}
+                            editMode={false}
+                        />
+                    </Modal>
                 )}
             </>
         );

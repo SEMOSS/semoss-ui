@@ -31,11 +31,11 @@ const StyledEditorContainer = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(1),
 }));
 
-const StyledModalHeader = styled(Box)(({ theme }) => ({
+const StyledModalHeader = styled(Box)({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-}));
+});
 
 interface EditEngineDetailsProps {
     /** Track if the edit is open */
@@ -285,7 +285,7 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
                                         value={model.app_id}
                                         key={model.app_id + '_modId'}
                                     >
-                                        <>{model.app_name}</>
+                                        {model.app_name as string}
                                     </Select.Item>
                                 );
                             })}
@@ -331,6 +331,8 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
             )}
             <Modal.Content>
                 <Stack spacing={3}>
+                    {/* div included to prevent the first title from clipping */}
+                    <div />
                     {engineMetaKeys.map((key) => {
                         const { metakey, display_options } = key;
                         const label =
@@ -360,6 +362,7 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
                                 </StyledEditorContainer>
                             );
                         } else if (display_options === 'textarea') {
+                            const isDescription = metakey === 'description';
                             return (
                                 <Controller
                                     key={metakey}
@@ -380,6 +383,16 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
                                                     field.onChange(
                                                         e.target.value,
                                                     )
+                                                }
+                                                InputLabelProps={
+                                                    isDescription
+                                                        ? { shrink: true }
+                                                        : undefined
+                                                }
+                                                placeholder={
+                                                    isDescription
+                                                        ? `Please provide a description for this ${type.toLocaleLowerCase()} to help others find it and understand how to use it.`
+                                                        : undefined
                                                 }
                                             />
                                         );
@@ -429,7 +442,13 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
                                             >
                                                 freeSolo={true}
                                                 multiple={true}
-                                                label={label}
+                                                renderInput={(params) => (
+                                                    <TextField
+                                                        {...params}
+                                                        label={label}
+                                                        helperText={`Press enter to add ${metakey}`}
+                                                    />
+                                                )}
                                                 options={
                                                     filterOptions[metakey]
                                                         ? filterOptions[metakey]

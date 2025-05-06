@@ -84,6 +84,8 @@ function settingsService(
                     termsReact: '',
                     cookiePolicyModalBodyReact: '',
                     cookiePolicyBannerReact: '',
+                    privacyNoticePage: "",
+                    cookiePolicyNoticePage: "",
                     materialTheme: {
                         palette: {
                             mode: "light",

@@ -99,6 +99,29 @@ export const FileTable = (props: FileTableProps) => {
     //download multiple files modal
     const [exportLoading, setExportLoading] = useState(false);
 
+    const [order, setOrder] = useState<'asc' | 'desc'>('asc');
+    const [orderBy, setOrderBy] = useState<string>('name');
+    const headCell = [
+        {
+            id: 'name',
+            numeric: false,
+            disablePadding: true,
+            label: 'Name',
+        },
+        {
+            id: 'date',
+            numeric: true,
+            disablePadding: false,
+            label: 'Date Uploaded',
+        },
+        {
+            id: 'size',
+            numeric: true,
+            disablePadding: false,
+            label: 'Size',
+        },
+    ];
+
     //grabbing ID out of props
     const { id } = props;
 
@@ -152,6 +175,13 @@ export const FileTable = (props: FileTableProps) => {
         const filteredFiles = files.filter((file) =>
             file.fileName.toLowerCase().includes(searchFilter.toLowerCase()),
         );
+
+        filteredFiles.sort(
+            (a, b) =>
+                new Date(a.lastModified).getTime() -
+                new Date(b.lastModified).getTime(),
+        );
+
         setValue('FILES', filteredFiles);
 
         if (!didMount.current) {
@@ -196,11 +226,28 @@ export const FileTable = (props: FileTableProps) => {
             });
 
             // Embedding the File
-            await monolithStore.runQuery(`
+            const response = await monolithStore.runQuery(`
                 CreateEmbeddingsFromDocuments( engine= "${id}", filePaths= [${fileLocations}])
             `);
+
+            const { output, operationType } = response.pixelReturn[0];
+
+            if (operationType.indexOf('ERROR') === -1) {
+                notification.add({
+                    color: 'success',
+                    message: `Successfully added document`,
+                });
+            } else {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+            }
         } catch (e) {
-            console.error(e);
+            notification.add({
+                color: 'error',
+                message: String(e),
+            });
         } finally {
             //turn off loading
             getFileDetails.refresh();
@@ -214,9 +261,23 @@ export const FileTable = (props: FileTableProps) => {
         const { fileName } = file;
         setIsLoading(true);
         try {
-            await monolithStore.runQuery(`
+            const response = await monolithStore.runQuery(`
             RemoveDocumentFromVectorDatabase(engine = "${id}", fileNames=["${fileName}"])
             `);
+
+            const { output, operationType } = response.pixelReturn[0];
+
+            if (operationType.indexOf('ERROR') === -1) {
+                notification.add({
+                    color: 'success',
+                    message: `Successfully removed document`,
+                });
+            } else {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+            }
         } catch (e) {
             notification.add({
                 color: 'warning',
@@ -245,9 +306,23 @@ export const FileTable = (props: FileTableProps) => {
         });
 
         try {
-            await monolithStore.runQuery(`
+            const response = await monolithStore.runQuery(`
                 RemoveDocumentFromVectorDatabase(engine = "${id}", fileNames=[${fileArray}])
             `);
+
+            const { output, operationType } = response.pixelReturn[0];
+
+            if (operationType.indexOf('ERROR') === -1) {
+                notification.add({
+                    color: 'success',
+                    message: `Successfully removed document`,
+                });
+            } else {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+            }
         } catch (e) {
             notification.add({
                 color: 'warning',
@@ -286,6 +361,33 @@ export const FileTable = (props: FileTableProps) => {
             monolithStore.download(insightId, output);
         });
         setExportLoading(false);
+    };
+
+    const createSortHandler = (property) => (event) => {
+        const isAsc = order === 'asc';
+        const newOrder = isAsc ? 'desc' : 'asc';
+        setOrder(newOrder);
+        setOrderBy(property);
+
+        const sortedFiles = [...verifiedFiles].sort((a, b) => {
+            if (property === 'name') {
+                return newOrder === 'asc'
+                    ? a.fileName.localeCompare(b.fileName)
+                    : b.fileName.localeCompare(a.fileName);
+            } else if (property === 'size') {
+                return newOrder === 'asc'
+                    ? a.fileSize - b.fileSize
+                    : b.fileSize - a.fileSize;
+            } else if (property === 'date') {
+                return newOrder === 'asc'
+                    ? new Date(a.lastModified).getTime() -
+                          new Date(b.lastModified).getTime()
+                    : new Date(b.lastModified).getTime() -
+                          new Date(a.lastModified).getTime();
+            }
+            return 0; // Default case (should not be reached)
+        });
+        setValue('FILES', sortedFiles);
     };
 
     return (
@@ -367,9 +469,39 @@ export const FileTable = (props: FileTableProps) => {
                                 }}
                             />
                         </Table.Cell>
-                        <Table.Cell size="small">Name</Table.Cell>
-                        <Table.Cell size="small">Date Modified</Table.Cell>
-                        <Table.Cell size="small">Size</Table.Cell>
+                        <Table.Cell size="small">
+                            <Table.Sort
+                                active={true} // sort icon is always visible
+                                direction={
+                                    orderBy === headCell[0].id ? order : 'asc'
+                                }
+                                onClick={createSortHandler(headCell[0].id)}
+                            >
+                                Name
+                            </Table.Sort>
+                        </Table.Cell>
+                        <Table.Cell size="small">
+                            <Table.Sort
+                                active={true} // sort icon is always visible
+                                direction={
+                                    orderBy === headCell[1].id ? order : 'asc'
+                                }
+                                onClick={createSortHandler(headCell[1].id)}
+                            >
+                                Date Uploaded
+                            </Table.Sort>
+                        </Table.Cell>
+                        <Table.Cell size="small">
+                            <Table.Sort
+                                active={true} // sort icon is always visible
+                                direction={
+                                    orderBy === headCell[2].id ? order : 'asc'
+                                }
+                                onClick={createSortHandler(headCell[2].id)}
+                            >
+                                Size
+                            </Table.Sort>
+                        </Table.Cell>
                         <Table.Cell size="small">Action</Table.Cell>
                     </Table.Head>
                     <Table.Body>

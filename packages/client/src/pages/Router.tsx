@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-import { useEffect, useState } from 'react';
 
 import { useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
@@ -23,6 +22,8 @@ import { PrivacyNotice } from './legal/PrivacyNotice';
 
 import { WorkspacePage } from './WorkspacePage';
 
+import { PlatformMessages } from './PlatformMessages';
+
 export const Router = observer(() => {
     const { configStore } = useRootStore();
 
@@ -36,7 +37,6 @@ export const Router = observer(() => {
         if (theme && theme['THEME_MAP']) {
             try {
                 const map = JSON.parse(theme['THEME_MAP'] as string);
-                console.log('THEME MAP', map);
 
                 return !!map['cookiePolicyNoticePage'];
             } catch {
@@ -58,13 +58,28 @@ export const Router = observer(() => {
                 <Route path="*" element={<NavigatorLayout />}>
                     <Route index element={<HomePage />} />
                     <Route path="import" element={<ImportRouter />} />
+
                     <Route path="settings/*" element={<SettingsRouter />} />
                     <Route path="engine/*" element={<EngineRouter />} />
                     <Route path="app/*" element={<AppRouter />} />
                     <Route path="prompt/*" element={<PromptRouter />} />
                 </Route>
-                <Route path="workspace/:appId/*" element={<WorkspacePage />} />
-                <Route path="s/:appId/*" element={<SharePage />} />
+                <Route
+                    path="workspace/:appId/*"
+                    element={
+                        <PlatformMessages platformAssist={false}>
+                            <WorkspacePage />
+                        </PlatformMessages>
+                    }
+                />
+                <Route
+                    path="s/:appId/*"
+                    element={
+                        <PlatformMessages platformAssist={false}>
+                            <SharePage />
+                        </PlatformMessages>
+                    }
+                />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
             {showCookieNotice && (

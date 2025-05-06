@@ -48,10 +48,13 @@ export interface TypographyProps {
     noWrap?: MuiTypographyProps["noWrap"];
     title?: MuiTypographyProps["title"];
     id?: string;
+    component?: React.ElementType;
+    gutterBottom?: MuiTypographyProps["gutterBottom"];
 }
 
 export const Typography = (props: TypographyProps) => {
     const { sx, color, ...otherProps } = props;
+
     return (
         <MuiTypography
             sx={sx}

@@ -29,7 +29,6 @@ export interface BuilderStepItem {
 }
 export interface Builder {
     title: BuilderStepItem;
-    tags: BuilderStepItem;
     model: BuilderStepItem;
     context: BuilderStepItem;
     inputs: BuilderStepItem;

@@ -1,19 +1,22 @@
 import { useLayoutEffect, useState } from 'react';
 import { toJS } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { styled, ButtonGroup, Button } from '@semoss/ui';
-import { ContentCopy, Delete } from '@mui/icons-material';
 
+import { styled, ButtonGroup, Button, IconButton, Tooltip } from '@semoss/ui';
+import { ContentCopy, Delete, DeleteOutline } from '@mui/icons-material';
+
+import { getRelativeSize, getBlockElement } from '@/stores';
+
+import { useDesigner } from '@/hooks';
 import {
-    ActionMessages,
-    getRelativeSize,
-    getBlockElement,
     BlockJSON,
-} from '@/stores';
-import { useBlocks, useDesigner } from '@/hooks';
+    ActionMessages,
+    useBlocks,
+    INPUT_BLOCK_TYPES,
+} from '@semoss/renderer';
 
-const STYLED_BUTTON_GROUP_BUTTON_WIDTH = 116;
-const STYLED_BUTTON_GROUP_BUTTON_HEIGHT = 32;
+const STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH = 48;
+const STYLED_BUTTON_GROUP_ICON_BUTTON_HEIGHT = 32;
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'absolute',
@@ -23,19 +26,20 @@ const StyledContainer = styled('div')(({ theme }) => ({
     bottom: '0',
     left: '0',
     zIndex: '30',
-    width: `${STYLED_BUTTON_GROUP_BUTTON_WIDTH}px`,
-    height: `${STYLED_BUTTON_GROUP_BUTTON_HEIGHT}px`,
+    width: `${STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH}px`,
+    height: `${STYLED_BUTTON_GROUP_ICON_BUTTON_HEIGHT}px`,
 }));
 
 const StyledButtonGroup = styled(ButtonGroup)(() => ({
     boxShadow:
-        '0px 5px 22px 0px rgba(0, 0, 0, 0.10), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)', // custom from design team
-}));
-const StyledButtonGroupButton = styled(Button)(() => ({
-    width: `${STYLED_BUTTON_GROUP_BUTTON_WIDTH}px`,
+        '0px 5px 22px 0px rgba(0, 0, 0, 0.10), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)', // custom from design
     backgroundColor: 'white',
-    boxShadow:
-        '0 0 0 0 rgba(0,0,0,0), 0 0 0 0 rgba(0,0,0,0), 0px 1px 5px 0px rgba(0,0,0,0.12)',
+}));
+
+const StyledButtonGroupIconButton = styled(IconButton)(({ theme }) => ({
+    width: `${STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH}px`,
+    backgroundColor: 'white',
+    borderRadius: theme.shape.borderRadius,
 }));
 
 interface DeleteDuplicateMaskProps {
@@ -110,25 +114,30 @@ export const DeleteDuplicateMask = observer(
             const screenElementSize = screenEle.getBoundingClientRect();
             // get position of selected block element
             const selectedElement = getBlockElement(designer.selected);
+            if (!selectedElement) return;
             const selectedElementSize = selectedElement.getBoundingClientRect();
 
             // check for overflow
             const hasLeftOverflow =
                 screenElementSize.left === selectedElementSize.left &&
                 selectedElementSize.width <
-                    STYLED_BUTTON_GROUP_BUTTON_WIDTH * 2;
+                    STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH * 2;
             const hasRightOverflow =
                 screenElementSize.right === selectedElementSize.right &&
                 selectedElementSize.width <
-                    STYLED_BUTTON_GROUP_BUTTON_WIDTH * 2;
+                    STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH * 2;
 
             const leftValue =
-                size.left + size.width / 2 - STYLED_BUTTON_GROUP_BUTTON_WIDTH;
+                size.left +
+                size.width -
+                STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH * 2 -
+                12;
+
             let left: string;
             if (hasRightOverflow) {
                 left = `${
                     leftValue -
-                    (STYLED_BUTTON_GROUP_BUTTON_WIDTH * 2 -
+                    (STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH * 2 -
                         selectedElementSize.width) +
                     8
                 }px`;
@@ -138,7 +147,7 @@ export const DeleteDuplicateMask = observer(
                 left = `${leftValue}px`;
             }
 
-            const top = size.top + size.height;
+            const top = size.top - STYLED_BUTTON_GROUP_ICON_BUTTON_HEIGHT * 2;
 
             return { top, left };
         };
@@ -161,6 +170,8 @@ export const DeleteDuplicateMask = observer(
          * Delete the block
          */
         const onDelete = () => {
+            const parentBlock = state.getBlock(block.parent.id);
+
             // dispatch the event
             state.dispatch({
                 message: ActionMessages.REMOVE_BLOCK,
@@ -169,6 +180,18 @@ export const DeleteDuplicateMask = observer(
                     keep: false,
                 },
             });
+
+            // If its within an iteration block, clean up the data.child
+            if (parentBlock.widget === 'iteration') {
+                state.dispatch({
+                    message: ActionMessages.SET_BLOCK_DATA,
+                    payload: {
+                        id: parentBlock.id,
+                        path: 'child',
+                        value: null,
+                    },
+                });
+            }
 
             // clear the selected value
             designer.setSelected('');
@@ -218,6 +241,21 @@ export const DeleteDuplicateMask = observer(
                 },
             });
 
+            // TODO: REFACTOR
+            // Add variables for all blocks that are inputs from user
+            // TODO: What about grouping of inputs
+            if (INPUT_BLOCK_TYPES.indexOf(block.widget) > -1) {
+                state.dispatch({
+                    message: ActionMessages.ADD_VARIABLE,
+                    payload: {
+                        id: id as string,
+                        type: 'block',
+                        to: id as string,
+                        isInput: true,
+                    },
+                });
+            }
+
             designer.setSelected(id ? (id as string) : '');
         };
 
@@ -226,28 +264,27 @@ export const DeleteDuplicateMask = observer(
         return (
             <StyledContainer id="delete-duplicate-mask" style={getStyle()}>
                 <StyledButtonGroup>
-                    <StyledButtonGroupButton
-                        color="inherit"
-                        size="small"
-                        startIcon={<ContentCopy />}
-                        variant="contained"
-                        onClick={onDuplicate}
-                    >
-                        Duplicate
-                    </StyledButtonGroupButton>
-                    <StyledButtonGroupButton
-                        color="inherit"
-                        size="small"
-                        startIcon={<Delete />}
-                        variant="contained"
-                        onClick={
-                            designer.rendered === designer.selected
-                                ? onClear
-                                : onDelete
-                        }
-                    >
-                        Delete
-                    </StyledButtonGroupButton>
+                    <Tooltip title="Duplicate">
+                        <StyledButtonGroupIconButton
+                            sx={{ color: '#757575' }}
+                            size="small"
+                            onClick={onDuplicate}
+                        >
+                            <ContentCopy />
+                        </StyledButtonGroupIconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete">
+                        <StyledButtonGroupIconButton
+                            sx={{ color: '#757575' }}
+                            onClick={
+                                designer.rendered === designer.selected
+                                    ? onClear
+                                    : onDelete
+                            }
+                        >
+                            <DeleteOutline />
+                        </StyledButtonGroupIconButton>
+                    </Tooltip>
                 </StyledButtonGroup>
             </StyledContainer>
         );

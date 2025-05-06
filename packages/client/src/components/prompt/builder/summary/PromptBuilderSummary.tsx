@@ -1,15 +1,15 @@
+import { PendingOutlined, CheckCircleOutlined } from '@mui/icons-material';
+
+import { styled, Avatar, Typography, List } from '@semoss/ui';
+
+import { Builder, BuilderStepItem, Token } from '../../prompt.types';
+import { PromptBuilderSummaryProgress } from './PromptBuilderSummaryProgress';
 import {
     PROMPT_BUILDER_INPUT_TYPES_STEP,
     PROMPT_BUILDER_PREVIEW_STEP,
     SUMMARY_STEPS,
     TOKEN_TYPE_INPUT,
 } from '../../prompt.constants';
-import { Builder, BuilderStepItem, Token } from '../../prompt.types';
-import { styled, Avatar, Collapse, Typography, List } from '@semoss/ui';
-import { PendingOutlined, CheckCircleOutlined } from '@mui/icons-material';
-import { PromptBuilderSummaryStepItem } from './PromptBuilderSummaryStepItem';
-import { PromptBuilderSummaryProgress } from './PromptBuilderSummaryProgress';
-import { useEffect } from 'react';
 
 const StyledListItem = styled(List.Item)(({ theme }) => ({
     borderRadius: theme.shape.borderRadius,
@@ -184,12 +184,6 @@ export const PromptBuilderSummary = (props: {
                                 }
                             />
                         </StyledStepListItem>
-                        <Collapse in={isActive}>
-                            <PromptBuilderSummaryStepItem
-                                builder={props.builder}
-                                currentBuilderStep={i + 1}
-                            />
-                        </Collapse>
                     </span>
                 );
             })}

@@ -1,9 +1,10 @@
-import { TOKEN_TYPE_TEXT, INPUT_TYPE_DISPLAY } from '../../prompt.constants';
+import { Typography } from '@semoss/ui';
+
 import { Token } from '../../prompt.types';
 import { StyledTooltip } from '../../prompt.styled';
-import { Typography } from '@semoss/ui';
 import { PromptTokenChip } from './PromptTokenChip';
 import { PromptTokenTextButton } from './PromptTokenTextButton';
+import { TOKEN_TYPE_TEXT, INPUT_TYPE_DISPLAY } from '../../prompt.constants';
 
 export const PromptHoverToken = (props: {
     token: Token;

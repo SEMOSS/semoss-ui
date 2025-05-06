@@ -1,1 +1,0 @@
-export { GridSettings } from './GridSettings';
