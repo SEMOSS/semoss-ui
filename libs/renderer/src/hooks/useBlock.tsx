@@ -7,7 +7,7 @@ import { copy } from "../utility";
 
 import { useBlocks } from "./useBlocks";
 
-import { upload } from "@semoss/sdk";
+import { upload } from "@semoss/sdk/react";
 
 /**
  * useBlockReturn

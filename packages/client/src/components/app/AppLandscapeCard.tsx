@@ -16,7 +16,7 @@ import {
     useNotification,
     Popover,
 } from '@semoss/ui';
-import { Env } from '@semoss/sdk';
+import { Env } from '@semoss/sdk/react';
 
 import { AppMetadata } from './app.types';
 import { useRootStore } from '@/hooks';

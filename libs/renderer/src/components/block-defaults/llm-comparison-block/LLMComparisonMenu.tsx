@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { observer } from "mobx-react-lite";
 
-import { runPixel } from "@semoss/sdk";
+import { runPixel } from "@semoss/sdk/react";
 import { styled, ToggleTabsGroup, useNotification } from "@semoss/ui";
 
 import { LLMComparisonContext } from "./context/LLMComparisonContext";

@@ -681,6 +681,12 @@ export const AppSettings = (props: AppSettingsProps) => {
                                         onChange={() => {
                                             enablePublishing();
                                         }}
+                                        disabled={
+                                            !configStore.isEngineOperationAvailable(
+                                                'APP',
+                                                'access',
+                                            )
+                                        }
                                     ></StyledRightSwitch>
                                 </StyledSubRow>
                             </StyledSubColumn>
@@ -706,7 +712,11 @@ export const AppSettings = (props: AppSettingsProps) => {
                                             variant="outlined"
                                             startIcon={<StyledPublishedIcon />}
                                             disabled={
-                                                !portalDetails.project_has_portal
+                                                !portalDetails.project_has_portal ||
+                                                !configStore.isEngineOperationAvailable(
+                                                    'APP',
+                                                    'access',
+                                                )
                                             }
                                             onClick={() => {
                                                 publish();
@@ -837,6 +847,12 @@ export const AppSettings = (props: AppSettingsProps) => {
                                 name={'PROJECT_UPLOAD'}
                                 control={control}
                                 rules={{}}
+                                disabled={
+                                    !configStore.isEngineOperationAvailable(
+                                        'APP',
+                                        'access',
+                                    )
+                                }
                                 render={({ field }) => {
                                     return (
                                         <FileDropzone

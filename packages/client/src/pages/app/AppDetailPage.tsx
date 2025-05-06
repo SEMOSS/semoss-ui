@@ -26,7 +26,7 @@ import {
     Stack,
     CircularProgress,
 } from '@semoss/ui';
-import { Env } from '@semoss/sdk';
+import { Env } from '@semoss/sdk/react';
 
 import { useRootStore } from '@/hooks';
 import { formatPermission, toTitleCase } from '@/utility';

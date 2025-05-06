@@ -9,7 +9,7 @@ import {
     getPixelConsole,
     getPixelAsyncResult,
     runPixelAsync,
-} from "@semoss/sdk";
+} from "@semoss/sdk/react";
 
 export interface CellStateStoreInterface<D extends CellDef = CellDef> {
     /** Id of the cell */

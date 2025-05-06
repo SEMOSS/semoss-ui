@@ -4,6 +4,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import { runPixelTwo } from '../../runPixelTwo';
 import { RootStore, WorkspaceStore, WorkspaceConfigInterface } from '@/stores';
 import { AppMetadata } from '@/components/app';
+import { ALL_TYPES } from '@/types';
 
 interface ConfigStoreInterface {
     /** Status of the application */
@@ -86,6 +87,48 @@ interface ConfigStoreInterface {
          * Track if python is enabled
          */
         python: boolean;
+        /**
+         * Track if csrf is enabled
+         */
+        csrf: boolean;
+
+        /**
+         * Flags
+         */
+        adminOnlyDbAdd: boolean;
+        adminOnlyDbAddAccess: boolean;
+        adminOnlyDbDelete: boolean;
+        adminOnlyDbSetDiscoverable: boolean;
+        adminOnlyDbSetPublic: boolean;
+        adminOnlyFunctionAdd: boolean;
+        adminOnlyFunctionAddAccess: boolean;
+        adminOnlyFunctionDelete: boolean;
+        adminOnlyFunctionSetDiscoverable: boolean;
+        adminOnlyFunctionSetPublic: boolean;
+        adminOnlyInsightAddAccess: boolean;
+        adminOnlyInsightSetPublic: boolean;
+        adminOnlyInsightShare: boolean;
+        adminOnlyModelAdd: boolean;
+        adminOnlyModelAddAccess: boolean;
+        adminOnlyModelDelete: boolean;
+        adminOnlyModelSetDiscoverable: boolean;
+        adminOnlyModelSetPublic: boolean;
+        adminOnlyProjectAdd: boolean;
+        adminOnlyProjectAddAccess: boolean;
+        adminOnlyProjectDelete: boolean;
+        adminOnlyProjectSetDiscoverable: boolean;
+        adminOnlyProjectSetPublic: boolean;
+        adminOnlyStorageAdd: boolean;
+        adminOnlyStorageAddAccess: boolean;
+        adminOnlyStorageDelete: false;
+        adminOnlyStorageSetDiscoverable: boolean;
+        adminOnlyStorageSetPublic: boolean;
+        adminOnlyVectorAdd: boolean;
+        adminOnlyVectorAddAccess: boolean;
+        adminOnlyVectorDelete: boolean;
+        adminOnlyVectorSetDiscoverable: boolean;
+        adminOnlyVectorSetPublic: boolean;
+
         [key: string]: unknown;
     };
 }
@@ -118,6 +161,40 @@ export class ConfigStore {
             },
             r: true,
             python: true,
+            csrf: false,
+            adminOnlyDbAdd: false,
+            adminOnlyDbAddAccess: false,
+            adminOnlyDbDelete: false,
+            adminOnlyDbSetDiscoverable: false,
+            adminOnlyDbSetPublic: false,
+            adminOnlyFunctionAdd: false,
+            adminOnlyFunctionAddAccess: false,
+            adminOnlyFunctionDelete: false,
+            adminOnlyFunctionSetDiscoverable: false,
+            adminOnlyFunctionSetPublic: false,
+            adminOnlyInsightAddAccess: false,
+            adminOnlyInsightSetPublic: false,
+            adminOnlyInsightShare: false,
+            adminOnlyModelAdd: false,
+            adminOnlyModelAddAccess: false,
+            adminOnlyModelDelete: false,
+            adminOnlyModelSetDiscoverable: false,
+            adminOnlyModelSetPublic: false,
+            adminOnlyProjectAdd: false,
+            adminOnlyProjectAddAccess: false,
+            adminOnlyProjectDelete: false,
+            adminOnlyProjectSetDiscoverable: false,
+            adminOnlyProjectSetPublic: false,
+            adminOnlyStorageAdd: false,
+            adminOnlyStorageAddAccess: false,
+            adminOnlyStorageDelete: false,
+            adminOnlyStorageSetDiscoverable: false,
+            adminOnlyStorageSetPublic: false,
+            adminOnlyVectorAdd: false,
+            adminOnlyVectorAddAccess: false,
+            adminOnlyVectorDelete: false,
+            adminOnlyVectorSetDiscoverable: false,
+            adminOnlyVectorSetPublic: false,
         },
     };
     private _generalReactors: Array<string> = [];
@@ -146,6 +223,50 @@ export class ConfigStore {
     get generalReactors() {
         return this._generalReactors;
     }
+
+    /**
+     * Get the config
+     */
+    get config() {
+        return this._store.config;
+    }
+
+    /**
+     * Track if an engine operation is available
+     */
+    isEngineOperationAvailable = (
+        type: ALL_TYPES,
+        flag: 'access' | 'add' | 'delete' | 'discoverable' | 'public',
+    ): boolean => {
+        // it is always available if the user is an admin
+        if (this.store.user.admin) {
+            return true;
+        }
+
+        const moduleMap = {
+            APP: 'Project',
+            DATABASE: 'Db',
+            FUNCTION: 'Function',
+            MODEL: 'Model',
+            STORAGE: 'Storage',
+            VECTOR: 'Vector',
+        } as const;
+
+        const operationMap = {
+            access: 'AddAccess',
+            add: 'Add',
+            delete: 'Delete',
+            discoverable: 'SetDiscoverable',
+            public: 'SetPublic',
+        } as const;
+
+        // if the flag is set to true, the user needs admin access
+        return (
+            this._store.config[
+                `adminOnly${moduleMap[type]}${operationMap[flag]}`
+            ] === false
+        );
+    };
 
     // *********************************************************
     // Actions

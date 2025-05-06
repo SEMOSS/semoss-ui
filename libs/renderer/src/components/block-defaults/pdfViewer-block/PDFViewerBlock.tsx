@@ -5,8 +5,7 @@ import { Typography, CircularProgress, Paper, Box } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import IconButton from "@mui/material/IconButton";
 import ClearIcon from "@mui/icons-material/Clear";
-
-import { Env, runPixel } from "@semoss/sdk";
+import { Env, runPixel } from "@semoss/sdk/react";
 
 import { BlockComponent, BlockDef } from "../../../store";
 import { useBlock, useBlocks } from "../../../hooks";
