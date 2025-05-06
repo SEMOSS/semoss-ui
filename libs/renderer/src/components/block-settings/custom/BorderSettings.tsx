@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { SketchPicker } from "react-color";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 
@@ -9,7 +10,8 @@ import {
     ToggleButton,
     ToggleButtonGroup,
 } from "@semoss/ui";
-
+import { Box, ClickAwayListener, IconButton, Typography } from "@mui/material";
+import { FormatColorFill } from "@mui/icons-material";
 import { Paths, PathValue } from "../../../types";
 import { useBlockSettings } from "../../../hooks";
 import { Block, BlockDef } from "../../../store";
@@ -44,7 +46,7 @@ export const BorderSettings = observer(
         const [borderColorValue, setBorderColorValue] = useState("#FFFFFF");
         // track the unit of the value, ex % or px
         const [valueType, setValueType] = useState(null);
-
+        const [showPicker, setShowPicker] = useState(false);
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
         // get the value of the input (wrapped in usememo because of path prop)
@@ -221,27 +223,72 @@ export const BorderSettings = observer(
                         <MenuItem value={"dotted"}>Dotted</MenuItem>
                     </Select>
                 </BaseSettingSection>
-                <BaseSettingSection label="Border Color">
-                    <TextField
-                        fullWidth
-                        type="color"
-                        value={borderColorValue ?? "#FFFFFF"}
-                        onChange={(e) => {
-                            if (e.target.value) {
-                                onChange(
-                                    borderSizeValue ?? "0px",
-                                    borderStyleValue ?? "solid",
-                                    e.target.value,
-                                );
-                            } else {
-                                onChange("", "", "");
-                            }
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    <Typography variant="body2" color="black">
+                        Border Color
+                    </Typography>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            justifyContent: "space-between",
                         }}
-                        size="small"
-                        variant="outlined"
-                        autoComplete="off"
-                    />
-                </BaseSettingSection>
+                    >
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 3,
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    width: 33,
+                                    height: 33,
+                                    borderRadius: "4px",
+                                    backgroundColor:
+                                        borderColorValue ?? "#FFFFFF",
+                                    border: "1px solid #ccc",
+                                }}
+                            />
+                            <Typography variant="body2" color="textPrimary">
+                                {borderColorValue ?? "#FFFFFF"}
+                            </Typography>
+                        </Box>
+                        <IconButton onClick={() => setShowPicker(!showPicker)}>
+                            <FormatColorFill />
+                        </IconButton>
+                    </Box>
+
+                    {showPicker && (
+                        <ClickAwayListener
+                            onClickAway={() => setShowPicker(false)}
+                        >
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    justifyContent: "flex-end",
+                                    mt: 1,
+                                }}
+                            >
+                                <Box sx={{ borderRadius: 1 }}>
+                                    <SketchPicker
+                                        color={borderColorValue ?? "#FFFFFF"}
+                                        onChange={(color) => {
+                                            onChange(
+                                                borderSizeValue ?? "0px",
+                                                borderStyleValue ?? "solid",
+                                                color.hex ?? "#FFFFFF",
+                                            );
+                                        }}
+                                        width="90%"
+                                    />
+                                </Box>
+                            </Box>
+                        </ClickAwayListener>
+                    )}
+                </Box>
             </>
         );
     },

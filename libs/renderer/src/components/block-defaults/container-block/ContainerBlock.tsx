@@ -1,14 +1,19 @@
 import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
-
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent } from "../../../store";
 import { Slot } from "../../blocks";
+import {
+    BoxShadowParts,
+    buildBoxShadowFromParts,
+} from "../block-defaults.shared";
 
 export interface ContainerBlockDef extends BlockDef<"container"> {
     widget: "container";
     data: {
-        style: CSSProperties;
+        style: CSSProperties & {
+            boxShadowParts?: BoxShadowParts;
+        };
         show: string;
     };
     slots: {
@@ -21,19 +26,21 @@ export interface ContainerBlockDef extends BlockDef<"container"> {
 
 export const ContainerBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, slots, listeners } = useBlock<ContainerBlockDef>(id);
-
+    const { boxShadowParts, ...restStyle } = data.style || {};
+    
     useEffect(() => {
         if (listeners.preProcess) {
             listeners.preProcess();
         }
     }, []);
-
+debugger;
     return (
         <div
             style={{
                 ...data.style,
                 display: "flex",
                 overflowWrap: "anywhere", // text that overflows container
+                //boxShadow: buildBoxShadowFromParts(boxShadowParts),
             }}
             {...attrs}
         >
