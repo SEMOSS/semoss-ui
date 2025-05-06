@@ -44,9 +44,12 @@ export const config: BlockConfig<SelectBlockDef> = {
     icon: ViewList,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Multi Select",
                     render: ({ id }) => (

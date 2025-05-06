@@ -5,7 +5,7 @@ import { Select, MenuItem } from "@semoss/ui";
 
 import { BlockConfig } from "../../../store";
 import { useBlockSettings } from "../../../hooks";
-import { buildListener } from "../block-defaults.shared";
+import { buildListener, buildShowField } from "../block-defaults.shared";
 import { SliderBlockDef, SliderBlock } from "./SliderBlock";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import {
@@ -39,6 +39,10 @@ export const config: BlockConfig<SliderBlockDef> = {
     render: SliderBlock,
     icon: BlurLinear,
     contentMenu: [
+        {
+             name: "Conditional",
+            children: [...buildShowField()],
+        },
         {
             name: "Slider Type",
             children: [

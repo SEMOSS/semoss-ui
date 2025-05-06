@@ -13,6 +13,7 @@ import {
     buildColorSection,
     buildBorderSection,
     buildListener,
+    buildShowField,
 } from "../block-defaults.shared";
 
 export const config: BlockConfig<SidebarBlockDef> = {
@@ -37,6 +38,10 @@ export const config: BlockConfig<SidebarBlockDef> = {
     render: SidebarBlock,
     icon: Schema,
     contentMenu: [
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
         {
             name: "General",
             children: [

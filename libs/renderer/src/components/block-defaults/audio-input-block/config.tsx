@@ -41,9 +41,12 @@ export const config: BlockConfig<AudioInputBlockDef> = {
     icon: KeyboardVoice,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Mode",
                     render: ({ id }) => (

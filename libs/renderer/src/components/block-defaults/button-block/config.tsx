@@ -41,6 +41,10 @@ export const config: BlockConfig<ButtonBlockDef> = {
     icon: SmartButton,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
                 {
@@ -60,7 +64,6 @@ export const config: BlockConfig<ButtonBlockDef> = {
                         />
                     ),
                 },
-                ...buildShowField(),
             ],
         },
         {

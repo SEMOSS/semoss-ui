@@ -30,9 +30,12 @@ export const config: BlockConfig<ProgressBlockDef> = {
     icon: BlurLinear,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Type",
                     render: ({ id }) => {

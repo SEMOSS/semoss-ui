@@ -180,9 +180,12 @@ export const config: BlockConfig<RadioBlockDef> = {
     icon: RadioButtonCheckedOutlinedIcon,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Options Management",
                     render: ({ id }) => {

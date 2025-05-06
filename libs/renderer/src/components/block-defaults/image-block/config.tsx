@@ -38,9 +38,12 @@ export const config: BlockConfig<ImageBlockDef> = {
     icon: PanoramaOutlined,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Image Source",
                     render: ({ id }) => (

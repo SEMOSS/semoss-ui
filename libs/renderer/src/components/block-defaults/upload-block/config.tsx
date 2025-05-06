@@ -67,9 +67,12 @@ export const config: BlockConfig<UploadBlockDef> = {
     icon: Upload,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Value",
                     render: ({ id }) => (

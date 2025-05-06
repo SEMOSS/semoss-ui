@@ -39,7 +39,6 @@ const falseSegment = DEFAULT_FALSE_VARIABLE;
 export const buildLayoutSection = () => ({
     name: "Layout",
     children: [
-        ...buildShowField(),
         {
             description: "Vertical Align",
             render: ({ id }) => (

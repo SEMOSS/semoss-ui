@@ -36,9 +36,12 @@ export const config: BlockConfig<TextBlockDef> = {
     icon: TextFields,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Text",
                     render: ({ id }) => (

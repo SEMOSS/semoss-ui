@@ -25,9 +25,12 @@ export const config: BlockConfig<PDFViewerBlockDef> = {
     icon: PictureAsPdf,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Files",
                     render: ({ id }) => (

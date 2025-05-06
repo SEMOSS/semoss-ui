@@ -32,9 +32,12 @@ export const config: BlockConfig<IframeBlockDef> = {
     icon: AspectRatio,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Source",
                     render: ({ id }) => (

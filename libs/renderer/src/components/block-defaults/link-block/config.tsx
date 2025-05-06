@@ -34,9 +34,12 @@ export const config: BlockConfig<LinkBlockDef> = {
     icon: Link,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Destination",
                     render: ({ id }) => (

@@ -7,6 +7,7 @@ import {
     buildBorderSection,
     buildPositionSection,
     buildListener,
+    buildShowField,
 } from "../block-defaults.shared";
 
 import { FlipCardBlockDef, FlipCardBlock } from "./FlipCardBlock";
@@ -48,6 +49,10 @@ export const config: BlockConfig<FlipCardBlockDef> = {
     render: FlipCardBlock,
     icon: HighlightAlt,
     contentMenu: [
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
         {
             name: "General",
             children: [

@@ -42,7 +42,7 @@ export const config: BlockConfig<ChipBlockDef> = {
     icon: LabelRounded,
     contentMenu: [
         {
-            name: "General",
+            name: "Conditional",
             children: [...buildShowField()],
         },
         {

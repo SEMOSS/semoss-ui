@@ -36,9 +36,12 @@ export const config: BlockConfig<MarkdownBlockDef> = {
     icon: FormatListBulleted,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Markdown",
                     render: ({ id }) => (

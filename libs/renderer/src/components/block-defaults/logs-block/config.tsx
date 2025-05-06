@@ -22,9 +22,12 @@ export const config: BlockConfig<LogsBlockDef> = {
     icon: HighlightAlt,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Sheet",
                     render: ({ id }) => (

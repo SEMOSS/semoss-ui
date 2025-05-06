@@ -26,6 +26,7 @@ import {
 
 import { ThemeBlockDef, ThemeBlock } from "./ThemeBlock";
 import { BLOCK_TYPE_THEME } from "../block-defaults.constants";
+import { buildShowField} from "../block-defaults.shared";
 
 export const DefaultStyles: CSSProperties = {
     display: "flex",
@@ -65,6 +66,10 @@ export const config: BlockConfig<ThemeBlockDef> = {
     render: ThemeBlock,
     icon: FileCopyOutlined,
     contentMenu: [
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
         {
             name: "Theme Type",
             children: [

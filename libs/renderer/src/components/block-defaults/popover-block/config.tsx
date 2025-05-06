@@ -18,6 +18,7 @@ import {
     buildBorderSection,
     buildColorSection,
     buildListener,
+    buildShowField,
 } from "../block-defaults.shared";
 
 const TRIGGER_OPTIONS = [
@@ -140,6 +141,10 @@ export const config: BlockConfig<PopoverBlockDef> = {
     icon: Schema,
 
     contentMenu: [
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
         {
             name: "General",
             children: [

@@ -9,6 +9,7 @@ import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 import {
     buildDimensionsSection,
     buildListener,
+    buildShowField,
 } from "../block-defaults.shared";
 
 export const DefaultStyles: CSSProperties = {};
@@ -51,6 +52,10 @@ export const config: BlockConfig<TimePickerBlockDef> = {
     render: TimePickerBlock,
     icon: AccessTime,
     contentMenu: [
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
         {
             name: "General",
             children: [

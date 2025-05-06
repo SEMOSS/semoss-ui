@@ -38,9 +38,12 @@ export const config: BlockConfig<IconBlockDef> = {
     icon: InsertEmoticon,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "Select Icon",
             children: [
-                ...buildShowField(),
                 {
                     description: "Icon",
                     render: ({ id }) => (

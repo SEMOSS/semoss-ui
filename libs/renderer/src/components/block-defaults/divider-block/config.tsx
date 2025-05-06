@@ -37,9 +37,12 @@ export const config: BlockConfig<DividerBlockDef> = {
     icon: HorizontalRule,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Variant",
                     render: ({ id }) => (

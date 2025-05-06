@@ -42,9 +42,12 @@ export const config: BlockConfig<InputBlockDef> = {
     icon: FormatShapes,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Value",
                     render: ({ id }) => (

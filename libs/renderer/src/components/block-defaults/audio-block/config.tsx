@@ -29,9 +29,12 @@ export const config: BlockConfig<AudioBlockDef> = {
     icon: HeadsetIcon,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Label",
                     render: ({ id }) => (

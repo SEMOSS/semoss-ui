@@ -8,6 +8,7 @@ import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 import {
     buildDimensionsSection,
     buildListener,
+    buildShowField
 } from "../block-defaults.shared";
 import {
     InputSettings,
@@ -42,6 +43,10 @@ export const config: BlockConfig<SwitchBlockDef> = {
     render: SwitchBlock,
     icon: ToggleOn,
     contentMenu: [
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
         {
             name: "General",
             children: [

@@ -9,6 +9,7 @@ import {
     buildColorSection,
     buildPositionSection,
     buildListener,
+    buildShowField,
 } from "../block-defaults.shared";
 
 import { ContainerBlockDef, ContainerBlock } from "./ContainerBlock";
@@ -38,6 +39,10 @@ export const config: BlockConfig<ContainerBlockDef> = {
     render: ContainerBlock,
     icon: HighlightAlt,
     contentMenu: [
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
         {
             name: "Pre Process",
             children: [...buildListener("preProcess")],

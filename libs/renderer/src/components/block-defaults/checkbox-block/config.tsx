@@ -29,9 +29,12 @@ export const config: BlockConfig<CheckboxBlockDef> = {
     icon: CheckBox,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Checked",
                     render: ({ id }) => (

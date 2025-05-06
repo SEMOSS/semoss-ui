@@ -46,9 +46,12 @@ export const config: BlockConfig<ToggleButtonBlockDef> = {
     icon: SmartButton,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Options",
                     render: ({ id }) => (

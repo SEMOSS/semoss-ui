@@ -118,8 +118,9 @@ export const AIGenerationSettings = observer(
                     app_id: d.app_id,
                 })),
             );
-
+            if(myModels.data.length) {
             setModelId(myModels.data[0].app_id);
+            }
         }, [myModels.status, myModels.data]);
 
         useEffect(() => {
@@ -133,8 +134,9 @@ export const AIGenerationSettings = observer(
                     app_id: d.app_id,
                 })),
             );
-
+            if(myModels.data.length) {
             setModelId(myModels.data[0].app_id);
+            }
         }, [myModels.status, myModels.data]);
 
         const generateAIResponse = async () => {

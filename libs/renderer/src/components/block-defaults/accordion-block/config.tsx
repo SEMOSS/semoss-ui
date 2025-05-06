@@ -34,9 +34,12 @@ export const config: BlockConfig<AccordionBlockDef> = {
     icon: Schema,
     contentMenu: [
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "Accessories",
             children: [
-                ...buildShowField(),
                 {
                     description: "Show expand icon",
                     render: ({ id }) => (
