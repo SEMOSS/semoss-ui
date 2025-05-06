@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { toJS } from 'mobx';
 import { Actions, DockLocation, TabNode } from 'flexlayout-react';
@@ -27,6 +27,7 @@ import {
     Home,
     Delete,
     MoreVert,
+    Check as CheckIcon,
 } from '@mui/icons-material/';
 
 import {
@@ -55,6 +56,7 @@ import { useDesigner, useWorkspace } from '@/hooks';
 import { Panel } from '@/components/workspace';
 import { getBlockElement } from '@/stores';
 import DuplicateIcon from '../../../assets/img/Duplicate.svg';
+import Vector from '../../../assets/img/Group.svg';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 
 const customCollisionDetection = (args) => {
@@ -253,6 +255,10 @@ export const LayersPanel = observer((): JSX.Element => {
     const accordionRefs = useRef({});
 
     const [activeNode, setActiveNode] = useState<TreeNode | null>(null);
+    const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
+    const [editBlockId, setEditBlockId] = useState<string | null>(null);
+    const [rename, setRename] = useState(true);
+    const editableAreaRef = useRef<HTMLDivElement | null>(null);
 
     const sensors = useSensors(
         useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -300,6 +306,29 @@ export const LayersPanel = observer((): JSX.Element => {
             clearTimeout(scrollTimeout);
         };
     }, [designer.selected]);
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                editableAreaRef.current &&
+                !editableAreaRef.current.contains(event.target as Node)
+            ) {
+                const target = event.target as HTMLElement;
+
+                // Allow clicks inside the TextField only
+                if (target.closest('.MuiOutlinedInput-root')) {
+                    return; // Ignore clicks inside the TextField
+                }
+
+                setEditingBlockId(null); // Reset editingBlockId when clicking outside
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     useEffect(() => {
         const block = state.blocks[selectedPages];
@@ -440,6 +469,17 @@ export const LayersPanel = observer((): JSX.Element => {
                 {children}
             </div>
         );
+    };
+
+    const handleRename = (id: string) => {
+        state.dispatch({
+            message: ActionMessages.SET_BLOCK_DATA,
+            payload: {
+                id: id,
+                path: 'id',
+                value: editBlockId,
+            },
+        });
     };
 
     const DroppableTreeItem = ({
@@ -617,6 +657,34 @@ export const LayersPanel = observer((): JSX.Element => {
             }, 0);
             handleMenuClose();
         };
+        const handleBlockName = (id: string) => {
+            setEditingBlockId(id);
+            const block = state.blocks[id];
+            setEditBlockId(
+                (block.data.id as string)
+                    ? (block.data.id as string)
+                    : (block.id as string),
+            );
+        };
+        const handlevalidation = (id: string) => {
+            for (let i = 0; i < Object.keys(state.blocks).length; i++) {
+                const block = state.blocks[Object.keys(state.blocks)[i]];
+                if (block.data.id) {
+                    if (block.data.id === id) {
+                        setRename(true);
+                        break;
+                    } else if (block.id === id) {
+                        setRename(true);
+                        break;
+                    }
+                } else if (block.id === id) {
+                    setRename(true);
+                    break;
+                } else {
+                    setRename(false);
+                }
+            }
+        };
 
         const handleDuplicate = (
             event: React.MouseEvent<HTMLElement>,
@@ -629,7 +697,13 @@ export const LayersPanel = observer((): JSX.Element => {
 
                 const blockJson = {
                     widget: toJS(block.widget),
-                    data: toJS(block.data),
+                    data: (() => {
+                        const data = toJS(block.data);
+                        if (data.id) {
+                            delete data.id; // Remove the id property if it exists
+                        }
+                        return data;
+                    })(),
                     listeners: toJS(block.listeners),
                     slots: {},
                 };
@@ -700,9 +774,75 @@ export const LayersPanel = observer((): JSX.Element => {
                             {block.widget.charAt(0).toUpperCase() +
                                 block.widget.slice(1)}
                         </StyledLabelTitle>
-                        <StyledLabelSubtitleText>
-                            {variableName || block.id}
-                        </StyledLabelSubtitleText>
+                        <div ref={editableAreaRef}>
+                            {editingBlockId === block.id ? ( // Check if the current block is being edited
+                                <Stack
+                                    direction="row"
+                                    alignItems="center"
+                                    spacing={1}
+                                    display={'flex'}
+                                    gap={'4px'}
+                                    className="editable-container"
+                                >
+                                    <TextField
+                                        value={editBlockId}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onChange={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setEditBlockId(e.target.value);
+                                            handlevalidation(e.target.value);
+                                        }}
+                                        sx={{
+                                            // target the root of the OutlinedInput
+                                            '& .MuiOutlinedInput-root': {
+                                                borderRadius: '4px',
+                                                width: '170px',
+                                                height: '21px',
+                                                paddingInline: '4px',
+                                                /* background-color: red; */
+                                                border: '1px solid #0471F0', // outer container radius
+                                                fontFamily: 'Inter',
+                                                fontSize: '14px',
+                                                fontWeight: 400,
+                                                fontStyle: 'normal',
+                                                lineHeight: '150%',
+                                                letterSpacing: '0.17px',
+                                                color: '#666666',
+                                                '& fieldset': {
+                                                    borderRadius: '4px', // the actual outline radius
+                                                },
+                                                '& .MuiOutlinedInput-input': {
+                                                    padding: '0px', // remove padding from input
+                                                },
+                                            },
+                                        }}
+                                        size="small"
+                                        variant="outlined"
+                                        autoFocus
+                                    />
+                                    <IconButton
+                                        color="primary"
+                                        disabled={rename}
+                                        onMouseDown={(e) => {
+                                            e.stopPropagation(); // Prevent the mousedown event from propagating
+                                        }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRename(block.id); // Replace with your actual function
+                                            setRename(true);
+                                            setEditingBlockId(null); // Reset editingBlockId after renaming
+                                        }}
+                                    >
+                                        <CheckIcon />
+                                    </IconButton>
+                                </Stack>
+                            ) : (
+                                <StyledLabelSubtitleText>
+                                    {block.data.id ? block.data.id : block.id}
+                                </StyledLabelSubtitleText>
+                            )}
+                        </div>
                     </StyledLabelContainer>
                     {variableName ? (
                         <StyledTreeItemIconButton
@@ -763,6 +903,22 @@ export const LayersPanel = observer((): JSX.Element => {
                         },
                     }}
                 >
+                    <MenuItem
+                        value="rename"
+                        sx={{ display: 'flex' }}
+                        onClick={() => handleBlockName(block.id)}
+                    >
+                        <img
+                            src={Vector}
+                            alt="Rename Icon"
+                            style={{
+                                marginRight: '14px',
+                                position: 'relative',
+                                left: '4px',
+                            }}
+                        />
+                        Rename
+                    </MenuItem>
                     <MenuItem
                         value="duplicate"
                         sx={{ display: 'flex' }}

@@ -335,7 +335,10 @@ export class StateStore {
         Object.entries(this._store.variables).forEach((keyValue) => {
             const variable = keyValue[1];
 
-            if (variable.to === pointer && !cellId) {
+            if(variable.type === "block" && keyValue[0]===pointer) {
+                alias = variable.rename?? keyValue[0];
+                        }
+            else if (variable.to === pointer && !cellId) {
                 alias = keyValue[0];
             } else if (variable.to === pointer && variable.cellId === cellId) {
                 alias = keyValue[0];
@@ -452,7 +455,7 @@ export class StateStore {
 
                 return this.renameVariable(id, alias);
             } else if (ActionMessages.ADD_VARIABLE === action.message) {
-                const { id, to, type, cellId, value, isInput, isOutput } =
+                const { id, to, type, cellId, value, isInput, isOutput, rename } =
                     action.payload;
 
                 return this.addVariable(
@@ -463,6 +466,7 @@ export class StateStore {
                     value,
                     isInput,
                     isOutput,
+                    rename
                 );
             } else if (ActionMessages.EDIT_VARIABLE === action.message) {
                 const { id, from, to } = action.payload;
@@ -474,6 +478,7 @@ export class StateStore {
                 if (to.to) newVariable["to"] = to.to;
                 if (to.cellId) newVariable["cellId"] = to.cellId;
                 if (to.value) newVariable["value"] = to.value;
+                if(to.rename) newVariable["rename"] = to.rename;
 
                 newVariable["isInput"] = to.isInput ? to.isInput : false;
                 newVariable["isOutput"] = to.isOutput ? to.isOutput : false;
@@ -1657,6 +1662,7 @@ export class StateStore {
         value?,
         isInput?,
         isOutput?,
+        rename?:string
     ) => {
         if (id.includes(".")) {
             return false;
@@ -1673,6 +1679,7 @@ export class StateStore {
         if (isInput) token["isInput"] = isInput;
         if (isOutput) token["isOutput"] = isOutput;
         if (value) token["value"] = value;
+        if(rename) token["rename"] = rename;
 
         this._store.variables[id] = token as Variable;
 

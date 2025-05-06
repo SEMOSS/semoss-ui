@@ -220,10 +220,26 @@ export const QueryInputSettings = observer(
          * Sync the data on change
          */
         const onChange = (value: string) => {
-            // set the value
-            setValue(value);
-
-            // clear out the old timeout
+            // Split the input into individual values
+            const sanitizedValues = value
+                .split(" ")
+                .map((val) => val.replace(/{{|}}/g, "").trim());
+        
+            let updatedValue = value;
+        
+            sanitizedValues.forEach((sanitizedValue) => {
+                const block = state.getBlock(sanitizedValue);
+                 if (block && block?.data?.id && !Object.keys(state.variables).includes(sanitizedValue)) {
+                    // Replace with the block's wrapped value
+                    const wrappedValue = `{{${block.data.id}}}`;
+                    updatedValue = updatedValue.replace(`{{${sanitizedValue}}}`, wrappedValue);
+                }
+            });
+        
+            // Update the state with the modified value
+            setValue(updatedValue);
+        
+            // Debounce the data sync
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = null;
@@ -231,7 +247,10 @@ export const QueryInputSettings = observer(
 
             timeoutRef.current = setTimeout(() => {
                 try {
-                    setData(path, value as PathValue<D["data"], typeof path>);
+                    setData(
+                        path,
+                        updatedValue as PathValue<D["data"], typeof path>
+                    );
                 } catch (e) {
                     console.log(e);
                 }
@@ -271,7 +290,7 @@ export const QueryInputSettings = observer(
                         id: alias,
                         path: alias,
                         type: typeof ref,
-                        display: alias,
+                        display: variable.type === "block" ? variable.rename && variable.rename!=""?variable.rename:alias : alias,
                         blockType: variable.type,
                         variabilized: true,
                         groupAlias: groupAliasMapper(variable.type),
@@ -319,6 +338,11 @@ export const QueryInputSettings = observer(
             // iterate over the blocks
             Object.entries(state.blocks).forEach(
                 (keyValue: [string, Block]) => {
+                    let aliasRename = "";
+                    const variableName = state.getAlias(keyValue[0]);
+                    if(variableName !== "") {
+                        aliasRename = variableName
+                    }
                     const alias = keyValue[0];
                     const block = keyValue[1];
                     //filter only valid(variabilizable) blocks
@@ -330,7 +354,7 @@ export const QueryInputSettings = observer(
                             id: alias,
                             path: alias,
                             type: typeof block,
-                            display: alias,
+                            display: aliasRename != "" && aliasRename != undefined ? aliasRename : block.data.id? block.data.id : alias,
                             blockType: "block",
                             variabilized: Object.keys(state.variables).includes(
                                 alias,
@@ -500,6 +524,13 @@ export const QueryInputSettings = observer(
          */
         const handleVariablize = (option: Option) => {
             // add variable
+            let blockName = ""
+            if(option.blockType === "block") {
+                const block = state.getBlock(option.id);
+                if(block && block?.data?.id) {
+                    blockName = block.data.id as string
+                }                
+            }
             const success = state.dispatch({
                 message: ActionMessages.ADD_VARIABLE,
                 payload: {
@@ -516,6 +547,7 @@ export const QueryInputSettings = observer(
                             ? option?.path?.split(".")[1]
                             : null,
                     type: option.blockType as VariableType,
+                    ...(option.blockType === "block" && { rename: blockName }),
                 },
             });
 
@@ -558,8 +590,8 @@ export const QueryInputSettings = observer(
             const suggestion = filteredOptions.length ? filteredOptions[0] : "";
 
             const cursorIndex = inputRef?.current?.selectionStart ?? null;
-            const textBeforeCursor = value.substring(0, cursorIndex);
-            const textAfterCursor = value.substring(cursorIndex);
+            const textBeforeCursor = value?.substring(0, cursorIndex);
+            const textAfterCursor = value?.substring(cursorIndex);
 
             const calculateTextWidth = () => {
                 if (!measureRef.current) return 0;

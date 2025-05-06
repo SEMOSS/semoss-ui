@@ -242,6 +242,7 @@ export interface AddVariableAction extends Action {
         value?: string;
         isInput?: boolean;
         isOutput?: boolean;
+        rename?: string;
     };
 }
 
@@ -257,6 +258,7 @@ export interface EditVariableAction extends Action {
             value?: string;
             isInput?: boolean;
             isOutput?: boolean;
+            rename?: string;
         };
     };
 }

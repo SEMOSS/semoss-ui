@@ -116,6 +116,13 @@ export const HoveredMask = observer((props: HoveredMaskProps) => {
     if (!size) {
         return <></>;
     }
+    const handleRename = (id: string): string => {
+        const block = state.getBlock(id);
+        if (block && block?.data?.id) {
+            return block.data.id as string;
+        }
+        return id;
+    };
 
     return (
         <StyledContainer
@@ -129,7 +136,7 @@ export const HoveredMask = observer((props: HoveredMaskProps) => {
         >
             <StyledTitle>
                 <Typography variant={'body2'}>
-                    {variableName ? variableName : designer.hovered}
+                    {handleRename(designer.hovered)}
                 </Typography>
             </StyledTitle>
         </StyledContainer>

@@ -246,6 +246,13 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
     if (!size) {
         return <></>;
     }
+    const handleRename = (id: string): string => {
+        const block = state.getBlock(id);
+        if (block && block?.data?.id) {
+            return block.data.id as string;
+        }
+        return id;
+    };
 
     return (
         <StyledContainer
@@ -260,7 +267,7 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
             <StyledTitle onMouseDown={handleMouseDown}>
                 <Stack direction={'row'}>
                     <Typography variant={'body2'}>
-                        {variableName ? variableName : designer.selected}
+                        {String(handleRename(designer.selected))}
                     </Typography>
                 </Stack>
                 {isDraggable && (

@@ -301,7 +301,12 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             variant="body1"
                                             fontWeight="medium"
                                         >
-                                            {id}
+                                            {variable.type === 'block'
+                                                ? variable.rename &&
+                                                  variable.rename != ''
+                                                    ? variable.rename
+                                                    : id
+                                                : id}
                                         </Typography>
                                         <StyledCapitalizedTypography variant="body2">
                                             {getVariableTypeDisplay}

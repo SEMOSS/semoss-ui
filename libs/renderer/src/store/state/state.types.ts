@@ -50,6 +50,7 @@ export type Variable =
           value?: any;
           isInput?: boolean;
           isOutput?: boolean;
+          rename?: string;
       }
     | {
           to: string;
@@ -67,6 +68,7 @@ export type VariableWithId =
           isInput?: boolean;
           isOutput?: boolean;
           cellId?: string;
+          rename?: string;
       } & { id: string })
     | ({
           type: "cell";
