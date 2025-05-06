@@ -287,7 +287,11 @@ export const HomePage = observer((): JSX.Element => {
             }
         }
     };
+    let isCreateAppUser = false;
 
+    if(configStore.store.user.admin){
+        isCreateAppUser  = true;
+    }
     return (
         <Page
             header={
@@ -328,6 +332,7 @@ export const HomePage = observer((): JSX.Element => {
                                 }}
                             />
                         </Stack>
+                        { isCreateAppUser && (
                         <Button
                             size={'large'}
                             variant={'contained'}
@@ -338,6 +343,7 @@ export const HomePage = observer((): JSX.Element => {
                         >
                             Create New App
                         </Button>
+                        )}
                     </Stack>
                 </Stack>
             }

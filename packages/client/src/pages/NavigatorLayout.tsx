@@ -13,6 +13,7 @@ import { ErrorBoundary } from '@/components/common';
 import { ENGINE_ROUTES } from '@/pages/engine';
 import { ErrorPage } from './ErrorPage';
 import { PlatformMessages } from './PlatformMessages';
+import { usePixel, useRootStore } from '@/hooks';
 
 const NAV_HEIGHT = '48px';
 const SIDEBAR_WIDTH = '56px';
@@ -82,11 +83,21 @@ const StyledContent = styled('div')(() => ({
 export const NavigatorLayout = observer(() => {
     const { pathname } = useLocation();
 
+   const { configStore} = useRootStore();
+   let isSideMenu  = false
+      
+   if(configStore.store.user.admin){
+     isSideMenu  = true;
+   }
+
     return (
         <ErrorBoundary fallback={<ErrorPage />}>
             <Navbar />
+            { isSideMenu && (
             <StyledSidebar>
+          
                 <Tooltip title={`Open App Library`} placement="right">
+                   
                     <StyledSidebarItem
                         data-tour="nav-app-library"
                         to={'/'}
@@ -102,7 +113,8 @@ export const NavigatorLayout = observer(() => {
                     </StyledSidebarItem>
                 </Tooltip>
                 <StyledSidebarDivider />
-                {ENGINE_ROUTES.map((r) => (
+               
+                {  ENGINE_ROUTES.map((r) => (
                     <Tooltip
                         title={`Open ${r.name}`}
                         key={r.path}
@@ -122,6 +134,7 @@ export const NavigatorLayout = observer(() => {
                         </StyledSidebarItem>
                     </Tooltip>
                 ))}
+           
                 {/* <Tooltip title={`Open Prompt Hub`} placement="right">
                     <StyledSidebarItem
                         to={'/prompt'}
@@ -133,6 +146,7 @@ export const NavigatorLayout = observer(() => {
                         </Icon>
                     </StyledSidebarItem>
                 </Tooltip> */}
+                  
                 <Stack flex={1}>&nbsp;</Stack>
                 <Tooltip title={`Open Settings`} placement="right">
                     <StyledSidebarItem
@@ -146,6 +160,7 @@ export const NavigatorLayout = observer(() => {
                     </StyledSidebarItem>
                 </Tooltip>
             </StyledSidebar>
+            )}
             <StyledContent>
                 <PlatformMessages platformAssist={true}>
                     <Outlet />
