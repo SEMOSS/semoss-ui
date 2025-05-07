@@ -336,16 +336,4 @@ export const createAdminTheme = async (data: {
         },
     });
     return response.data;
-    // Sets an Active theme with material ui properties
-    // const map = JSON.parse(data['theme']['THEME_MAP']);
-    // const material_map = {
-    //     ...map,
-    //     materialTheme: lightTheme,
-    // };
-    // console.log(JSON.stringify(material_map));
-    // monolithStore.createAdminTheme({
-    //     name: 'SEMOSS-TEST-DARK',
-    //     isActive: true,
-    //     json: material_map,
-    // });
 };
