@@ -1,15 +1,17 @@
-import { BlockConfig } from "../../../store";
-import {
-    buildDimensionsSection,
-    buildShowField,
-} from "../block-defaults.shared";
-import { ImageBlockDef, ImageBlock } from "./ImageBlock";
 import { PanoramaOutlined } from "@mui/icons-material";
+import { AspectRatio, FitScreen, ImageAspectRatio } from "@mui/icons-material";
+
+import { BlockConfig } from "../../../store";
+import { ImageBlockDef, ImageBlock } from "./ImageBlock";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
 import { InputSettings } from "../../block-settings";
 import { ButtonGroupSettings, SelectInputSettings } from "../../block-settings";
-import { AspectRatio, FitScreen, ImageAspectRatio } from "@mui/icons-material";
-// export the config for the block
+import {
+    buildDimensionsSection,
+    buildShowField,
+    buildListener,
+} from "../block-defaults.shared";
+
 export const config: BlockConfig<ImageBlockDef> = {
     widget: "image",
     type: BLOCK_TYPE_DISPLAY,
@@ -28,7 +30,9 @@ export const config: BlockConfig<ImageBlockDef> = {
         title: "",
         show: "true",
     },
-    listeners: {},
+    listeners: {
+        preProcess: [],
+    },
     slots: {},
     render: ImageBlock,
     icon: PanoramaOutlined,
@@ -54,6 +58,10 @@ export const config: BlockConfig<ImageBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
     ],
     styleMenu: [
