@@ -34,6 +34,7 @@ import {
     INPUT_BLOCK_TYPES,
     ActionMessages,
     BlockJSON,
+    Block,
 } from '@semoss/renderer';
 import {
     Divider,
@@ -181,7 +182,10 @@ const PAGE_BLOCK = {
         route: '',
     },
     listeners: {
-        onPageLoad: [],
+        onPageLoad: {
+            type: 'sync',
+            order: [],
+        },
     },
     slots: {
         content: [],

@@ -337,7 +337,7 @@ export const ListenerSettings = observer(
                     >
                         New Action
                     </Button>
-                    <ToggleButtonGroup size={"small"} value={type} onChange>
+                    <ToggleButtonGroup size={"small"} value={type}>
                         <ToggleButton
                             value="async"
                             onClick={() => {
