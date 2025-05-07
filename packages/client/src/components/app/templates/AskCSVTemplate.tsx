@@ -80,7 +80,10 @@ export const AskCSVTemplate: Template = {
                     style: PageBlockConfig.data.style,
                 },
                 listeners: {
-                    onPageLoad: [],
+                    onPageLoad: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 slots: {
                     content: {
@@ -172,7 +175,10 @@ export const AskCSVTemplate: Template = {
                     required: true,
                 },
                 listeners: {
-                    onClick: [],
+                    onClick: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 slots: {},
             },
@@ -191,7 +197,10 @@ export const AskCSVTemplate: Template = {
                     required: true,
                 },
                 listeners: {
-                    onClick: [],
+                    onClick: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 slots: {},
             },
@@ -209,14 +218,17 @@ export const AskCSVTemplate: Template = {
                     variant: 'contained',
                 },
                 listeners: {
-                    onClick: [
-                        {
-                            message: ActionMessages.RUN_QUERY,
-                            payload: {
-                                queryId: 'ask-model',
+                    onClick: {
+                        type: 'sync',
+                        order: [
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'ask-model',
+                                },
                             },
-                        },
-                    ],
+                        ],
+                    },
                 },
                 slots: {},
             },
