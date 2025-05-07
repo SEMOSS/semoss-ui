@@ -66,6 +66,10 @@ function getTextFieldInputBlock(
                 type: 'sync',
                 order: [],
             },
+            preProcess: {
+                type: 'sync',
+                order: [],
+            },
         },
         slots: {},
     };
@@ -93,6 +97,10 @@ function getSelectInputBlock(
         },
         listeners: {
             onChange: {
+                type: 'sync',
+                order: [],
+            },
+            preProcess: {
                 type: 'sync',
                 order: [],
             },
@@ -414,7 +422,7 @@ export async function setBlocksAndOpenUIBuilder(
 ) {
     // create the state
     const state: SerializedState = {
-        version: '1.0.0-alpha.4',
+        version: '1.0.0-alpha.6',
         executionOrder: [],
         variables: {
             [PROMPT_QUERY_DEFINITION_ID]: {
@@ -488,7 +496,12 @@ export async function setBlocksAndOpenUIBuilder(
                         gap: '8px',
                     },
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 slots: {
                     children: {
                         name: 'children',
@@ -511,7 +524,12 @@ export async function setBlocksAndOpenUIBuilder(
                     },
                     text: 'My App',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 slots: {},
             },
             [HELP_TEXT_BLOCK_ID]: {
@@ -528,7 +546,12 @@ export async function setBlocksAndOpenUIBuilder(
                     },
                     text: 'Welcome! Below are pre-configured blocks for your prompt inputs to use in your app.',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 slots: {},
             },
             [PROMPT_CONTAINER_BLOCK_ID]: {
@@ -547,7 +570,12 @@ export async function setBlocksAndOpenUIBuilder(
                         gap: '8px',
                     },
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 slots: {
                     children: {
                         name: 'children',
@@ -583,6 +611,10 @@ export async function setBlocksAndOpenUIBuilder(
                             },
                         ],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 slots: {},
             },
@@ -599,7 +631,12 @@ export async function setBlocksAndOpenUIBuilder(
                     },
                     markdown: `{{${PROMPT_QUERY_ID}.output}}`,
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 slots: {},
             },
         },
