@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import { BlocksContext } from "../contexts";
 
-import { usePixel } from "@semoss/sdk";
+import { usePixel } from "@semoss/sdk/react";
 
 /**
  * Use a frame's in an insight

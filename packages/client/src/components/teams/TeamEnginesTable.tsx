@@ -930,99 +930,135 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                                         >
                                             <Box
                                                 sx={{
+                                                    width: '100%',
+                                                    gap: '8px',
+                                                    position: 'relative',
+                                                    paddingBottom: '7px',
+                                                    border: '0px',
                                                     display: 'flex',
-                                                    justifyContent: 'center',
-                                                    marginTop: '6px',
-                                                    marginLeft: '8px',
-                                                    marginRight: '8px',
+                                                    alignItems: 'center',
                                                 }}
                                             >
                                                 <Box
                                                     sx={{
                                                         display: 'flex',
-                                                        height: '80px',
-                                                        width: '80px',
                                                         justifyContent:
                                                             'center',
-                                                        alignItems: 'center',
-                                                        border: '0.5px solid rgba(0, 0, 0, .05)',
-                                                        borderRadius: '50%',
+                                                        marginTop: '6px',
+                                                        marginLeft: '8px',
+                                                        marginRight: '8px',
+                                                        float: 'left',
                                                     }}
                                                 >
-                                                    <Avatar
-                                                        aria-label="avatar"
-                                                        sx={{
-                                                            display: 'flex',
-                                                            width: '60px',
-                                                            height: '60px',
-                                                            fontSize: '24px',
-                                                            backgroundColor:
-                                                                engine.color,
-                                                        }}
-                                                    >
-                                                        {initial}
-                                                    </Avatar>
-                                                </Box>
-                                            </Box>
-                                            <Card.Header
-                                                title={
-                                                    <Typography variant="h5">
-                                                        {engine.engine_name}
-                                                    </Typography>
-                                                }
-                                                sx={{
-                                                    color: '#000',
-                                                    width: '100%',
-                                                }}
-                                                subheader={
                                                     <Box
                                                         sx={{
                                                             display: 'flex',
-                                                            gap: 2,
-                                                            marginTop: '4px',
+                                                            height: '32px',
+                                                            width: '32px',
+                                                            justifyContent:
+                                                                'center',
+                                                            alignItems:
+                                                                'center',
+                                                            border: '0.5px solid rgba(0, 0, 0, .05)',
+                                                            borderRadius: '50%',
                                                         }}
                                                     >
-                                                        <span
-                                                            style={{
-                                                                opacity: 0.9,
+                                                        <Avatar
+                                                            aria-label="avatar"
+                                                            sx={{
+                                                                display: 'flex',
+                                                                width: '32px',
+                                                                height: '32px',
                                                                 fontSize:
-                                                                    '14px',
+                                                                    '24px',
+                                                                backgroundColor:
+                                                                    engine.color,
                                                             }}
                                                         >
-                                                            {`Engine ID: `}
-                                                            <Chip
-                                                                label={
-                                                                    engine.engine_id
-                                                                }
-                                                                size="small"
-                                                            />
-                                                        </span>
-                                                        {`• `}
+                                                            {initial}
+                                                        </Avatar>
                                                     </Box>
-                                                }
-                                                action={
-                                                    <IconButton
-                                                        sx={{
-                                                            mt: '16px',
-                                                            color: 'rgba( 0, 0, 0, .7)',
-                                                            mr: '24px',
-                                                        }}
-                                                        onClick={() => {
-                                                            const filtered =
-                                                                selectedNonCredentialedEngines.filter(
-                                                                    (val) =>
-                                                                        val.engine_id !==
-                                                                        engine.engine_id,
+                                                </Box>
+
+                                                <Card.Header
+                                                    title={
+                                                        <Typography variant="h6">
+                                                            {engine.engine_name}
+                                                        </Typography>
+                                                    }
+                                                    sx={{
+                                                        color: '#000',
+                                                        maxWidth: '85%',
+                                                        width: '100%',
+                                                        float: 'left',
+                                                        gap: '16px',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        paddingBottom: '7px',
+                                                        margin: '0px 0px 0px 0px',
+                                                    }}
+                                                    subheader={
+                                                        <Box
+                                                            sx={{
+                                                                display: 'flex',
+                                                                gap: 2,
+                                                                //margin:'0 0 0 0'
+                                                                //marginTop: '4px',
+                                                            }}
+                                                        >
+                                                            <span
+                                                                style={{
+                                                                    opacity: 0.9,
+                                                                    fontSize:
+                                                                        '11px',
+                                                                    //height:'20px',
+                                                                    width: '301px',
+                                                                    gap: '4px',
+                                                                }}
+                                                            >
+                                                                {`Engine ID: `}
+                                                                <Chip
+                                                                    label={
+                                                                        engine.engine_id
+                                                                    }
+                                                                    size="small"
+                                                                    //sx={{height:'15px'}}
+                                                                />
+                                                            </span>
+                                                            {`• `}
+                                                        </Box>
+                                                    }
+                                                    action={
+                                                        <IconButton
+                                                            sx={{
+                                                                height: '48px',
+                                                                width: '48px',
+                                                                fontSize:
+                                                                    'small',
+                                                                color: 'rgba( 0, 0, 0, .7)',
+                                                                mr: '2px',
+                                                                top: '0px',
+                                                                position:
+                                                                    'absolute',
+                                                                padding: '10px',
+                                                            }}
+                                                            onClick={() => {
+                                                                const filtered =
+                                                                    selectedNonCredentialedEngines.filter(
+                                                                        (val) =>
+                                                                            val.engine_id !==
+                                                                            engine.engine_id,
+                                                                    );
+                                                                setSelectedNonCredentialedEngines(
+                                                                    filtered,
                                                                 );
-                                                            setSelectedNonCredentialedEngines(
-                                                                filtered,
-                                                            );
-                                                        }}
-                                                    >
-                                                        <ClearRounded />
-                                                    </IconButton>
-                                                }
-                                            />
+                                                            }}
+                                                        >
+                                                            <ClearRounded />
+                                                        </IconButton>
+                                                    }
+                                                />
+                                            </Box>
                                         </Box>
                                     );
                                 },
@@ -1162,17 +1198,21 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                                                 >
                                                     <Icon
                                                         sx={{
-                                                            width: '20px',
-                                                            height: '20px',
-                                                            mt: '6px',
+                                                            width: '24px',
+                                                            height: '24px',
+                                                            mt: '0px',
                                                             marginRight: '12px',
-                                                            fontSize: '12px',
+                                                            fontSize: '24px',
                                                             fontWeight: 'bold',
                                                             color: 'rgba(0, 0, 0, .5)',
+                                                            maxWidth: '24px',
+                                                            display: 'flex', // Ensure the icon is displayed properly
+                                                            alignItems:
+                                                                'center', // Center the icon vertically
+                                                            justifyContent:
+                                                                'center',
                                                         }}
                                                     >
-                                                        EditRounded,
-                                                        RemoveRedEyeRounded
                                                         <RemoveRedEyeRounded />
                                                     </Icon>
                                                     Read-Only

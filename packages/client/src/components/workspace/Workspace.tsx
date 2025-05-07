@@ -17,7 +17,7 @@ import {
     Drawer,
     Button,
 } from '@semoss/ui';
-import { Env } from '@semoss/sdk';
+import { Env } from '@semoss/sdk/react';
 
 import { THEME } from '@/constants';
 import { WorkspaceContext } from '@/contexts';

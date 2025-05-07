@@ -88,7 +88,7 @@ export function showBlock(block, state): boolean {
 export const RendererEngine = observer(
     ({ id }: RendererEngineProps): JSX.Element => {
         // get the store and mode
-    const { state, registry } = useBlocks();
+        const { state, registry } = useBlocks();
 
         // get the block
         const block = state.getBlock(id);
