@@ -501,8 +501,7 @@ export class StateStore {
 
     
     /**
-     * TODO: Accidently commited, work to handly sync and async events. John
-     * Used in useBlock
+     * TODO: Needs to get folded into code above --> useBlock.tsx
      * @param action 
      * @returns 
      */
@@ -513,20 +512,10 @@ export class StateStore {
 
                 const run = () => new Promise(async (resolve) => { 
                     await this.runQuery(queryId, type)
-                    debugger
                     resolve(this._store.queries[queryId].output)
-                    setTimeout(() => { 
-                        resolve(queryId); 
-                    }, 3000); 
                 }); 
                     
                 return await run();
-                // debugger
-                // const o = await this.runQuery(queryId);
-                // debugger
-                // Return the promise to resolve to caller
-
-                // return o
             }else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
 

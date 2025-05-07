@@ -189,7 +189,6 @@ export const useBlock = <D extends BlockDef = BlockDef>(
                     return;
                 }
 
-                debugger
                 await state.dispatchEventAction(action, actions.type);
             }
         };
@@ -210,8 +209,6 @@ export const useBlock = <D extends BlockDef = BlockDef>(
         return copy(block.data, (instance) => {
             if (typeof instance === "string") {
                 // try to extract the variable
-
-                // debugger
                 return state.parseVariable(
                     instance,
                     block.widget !== "iteration" ? block.id : null,

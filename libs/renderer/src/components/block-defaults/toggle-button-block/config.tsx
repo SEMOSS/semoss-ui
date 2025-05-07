@@ -38,8 +38,14 @@ export const config: BlockConfig<ToggleButtonBlockDef> = {
         show: "true",
     },
     listeners: {
-        onChange: [],
-        preProcess: [],
+        onChange: {
+            type: "sync",
+            order: [],
+        },
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: ToggleButtonBlock,

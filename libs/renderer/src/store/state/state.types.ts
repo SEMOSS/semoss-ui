@@ -154,7 +154,7 @@ export interface BlockDef<W extends string = string> {
     data: Record<string, unknown>;
 
     /** Listeners associated with the widget */
-    listeners: Record<string, true>;
+    listeners: Record<string, {order: ListenerActions[], type: 'sync' | 'async'}>;
 
     /** Names of the slot associated with the widget */
     slots: Record<string, true>;
@@ -174,7 +174,7 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
     data: D["data"];
 
     /** Listeners associated with the block */
-    listeners: Record<keyof D["listeners"], ListenerActions[]>;
+    listeners: Record<keyof D["listeners"], {order: ListenerActions[], type: 'sync' | 'async'}>;
 
     /** Children associated with the block */
     slots: Record<keyof D["slots"], BlockJSON[]>;
