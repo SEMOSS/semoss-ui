@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { styled } from "@mui/material";
 import Box from "@mui/material/Box";
@@ -36,12 +37,22 @@ export interface RatingsBlockDef extends BlockDef<"ratings"> {
         value: number;
         max: number;
     };
+    listeners: {
+        preProcess: true;
+        onChange: true;
+    };
 }
 
 export const RatingsBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<RatingsBlockDef>(id);
 
     const { size, value, max, type } = data;
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
 
     // Handle ratings button change
     const handleChange = (newValue: number) => {

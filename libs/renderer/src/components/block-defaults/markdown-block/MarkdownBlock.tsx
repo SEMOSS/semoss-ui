@@ -1,4 +1,4 @@
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -14,16 +14,26 @@ export interface MarkdownBlockDef extends BlockDef<"markdown"> {
         show: string;
     };
     slots: never;
+    listeners: {
+        preProcess: true;
+    };
 }
 
 export const MarkdownBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data } = useBlock<MarkdownBlockDef>(id);
+    const { attrs, data, listeners } = useBlock<MarkdownBlockDef>(id);
     const markdownTxt =
         typeof data.markdown == "string"
             ? data.markdown
             : JSON.stringify(data.markdown);
     let displayTxt = useTypeWriter(data.isStreaming ? markdownTxt : "");
+
     if (!data.isStreaming) displayTxt = markdownTxt;
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
 
     return (
         <div

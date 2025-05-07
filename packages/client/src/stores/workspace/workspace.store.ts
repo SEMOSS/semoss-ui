@@ -1,6 +1,6 @@
 import { makeAutoObservable, reaction } from 'mobx';
 
-import { runPixel } from '@semoss/sdk';
+import { runPixel } from '@semoss/sdk/react';
 
 import { Role } from '@/types';
 import { RootStore, WorkspaceOptions } from '@/stores';

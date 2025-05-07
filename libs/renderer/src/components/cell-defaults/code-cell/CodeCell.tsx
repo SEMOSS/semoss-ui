@@ -1,4 +1,4 @@
-import React, { useRef, useState, Suspense, lazy, useEffect } from "react";
+import { useRef, useState, Suspense, lazy, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { Code, KeyboardArrowDown } from "@mui/icons-material";
 

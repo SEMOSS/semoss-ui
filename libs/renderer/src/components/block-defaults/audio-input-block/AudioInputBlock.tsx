@@ -25,6 +25,10 @@ export interface AudioInputBlockDef extends BlockDef<"audio-input"> {
         mode: "transcribe" | "record";
         show: string;
     };
+    listeners: {
+        preProcess: true;
+        onComplete: true;
+    };
 }
 
 const StyledContainer = styled("div")(() => ({
