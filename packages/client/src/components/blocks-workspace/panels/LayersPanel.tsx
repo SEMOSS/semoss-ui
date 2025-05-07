@@ -169,7 +169,7 @@ const StyledPageItem = styled('div', {
     backgroundColor: isselected == 'true' ? 'rgba(25, 118, 210, 0.2)' : '',
 }));
 
-const PAGE_BLOCK = {
+const PAGE_BLOCK: BlockJSON = {
     widget: 'page',
     data: {
         style: {
