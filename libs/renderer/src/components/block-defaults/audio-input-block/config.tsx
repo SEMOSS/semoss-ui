@@ -1,4 +1,9 @@
 import { CSSProperties } from "react";
+import { KeyboardVoice } from "@mui/icons-material";
+
+import { AudioInputBlockDef, AudioInputBlock } from "./AudioInputBlock";
+import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
+import { InputAudioSettings } from "../../block-settings/shared/InputAudioSettings";
 import { BlockConfig } from "../../../store";
 import {
     SelectInputSettings,
@@ -7,12 +12,8 @@ import {
 import {
     buildDimensionsSection,
     buildShowField,
+    buildListener,
 } from "../block-defaults.shared";
-
-import { AudioInputBlockDef, AudioInputBlock } from "./AudioInputBlock";
-import { KeyboardVoice } from "@mui/icons-material";
-import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
-import { InputAudioSettings } from "../../block-settings/shared/InputAudioSettings";
 
 export const DefaultStyles: CSSProperties = {};
 
@@ -32,7 +33,8 @@ export const config: BlockConfig<AudioInputBlockDef> = {
         show: "true",
     },
     listeners: {
-        onClick: [],
+        preProcess: [],
+        onComplete: [],
     },
     slots: {},
     render: AudioInputBlock,
@@ -81,6 +83,14 @@ export const config: BlockConfig<AudioInputBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
+        },
+        {
+            name: "on Complete",
+            children: [...buildListener("onComplete")],
         },
     ],
     styleMenu: [

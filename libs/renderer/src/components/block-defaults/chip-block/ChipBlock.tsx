@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { CSSProperties } from "react";
 import { Face } from "@mui/icons-material";
@@ -30,13 +30,19 @@ export interface ChipBlockDef extends BlockDef<"chip"> {
         show: string;
     };
     listeners: {
-        // onClick: true;
+        preProcess: true;
     };
     slots: never;
 }
 
 export const ChipBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data /*listeners*/ } = useBlock<ChipBlockDef>(id);
+    const { attrs, data, listeners } = useBlock<ChipBlockDef>(id);
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
 
     const getContrastColor = (hexColor: string) => {
         hexColor = hexColor.replace("#", "");
@@ -64,11 +70,17 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
             variant: data.variant,
             clickable: data.clickable,
             sx: {
-                backgroundColor: data.variant !== 'outlined' && color,
-                color: data.variant !== 'outlined' ? data.style.color
-                    ? getContrastColor(data.style.color)
-                    : "black" : color,
-                border: data.variant === 'outlined' && data.style.color && `solid ${color}`
+                backgroundColor: data.variant !== "outlined" && color,
+                color:
+                    data.variant !== "outlined"
+                        ? data.style.color
+                            ? getContrastColor(data.style.color)
+                            : "black"
+                        : color,
+                border:
+                    data.variant === "outlined" &&
+                    data.style.color &&
+                    `solid ${color}`,
             },
         };
 
@@ -83,10 +95,14 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
                             <Avatar
                                 sx={{
                                     "&&": {
-                                        backgroundColor: data.style.color && data.variant === 'outlined'
-                                            ? darken(avatarColor, 0.4)
-                                            : "Default",
-                                        color:  data.variant !== 'outlined' && getContrastColor(color),
+                                        backgroundColor:
+                                            data.style.color &&
+                                            data.variant === "outlined"
+                                                ? darken(avatarColor, 0.4)
+                                                : "Default",
+                                        color:
+                                            data.variant !== "outlined" &&
+                                            getContrastColor(color),
                                     },
                                 }}
                             >
@@ -103,10 +119,14 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
                             <Icon
                                 sx={{
                                     "&&": {
-                                        backgroundColor: data.style.color && data.variant === 'outlined'
-                                            ? darken(avatarColor, 0.4)
-                                            : "Default",
-                                        color:  data.variant !== 'outlined' && getContrastColor(color),
+                                        backgroundColor:
+                                            data.style.color &&
+                                            data.variant === "outlined"
+                                                ? darken(avatarColor, 0.4)
+                                                : "Default",
+                                        color:
+                                            data.variant !== "outlined" &&
+                                            getContrastColor(color),
                                     },
                                 }}
                             />

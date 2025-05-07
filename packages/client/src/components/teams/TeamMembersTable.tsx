@@ -291,7 +291,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
             }
             const timer = setTimeout(() => {
                 if (!offset) {
-                    getUsersNonGroup(false);
+                getUsersNonGroup(true);
                 } else {
                     if (canCollect) {
                         getUsersNonGroup(false);
@@ -366,6 +366,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
         } finally {
             // refresh the members
             setCount(count + 1);
+            setOffset(0);
         }
     };
 
@@ -817,7 +818,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                     <StyledModalContentText>
                         <Autocomplete
                             label="Search"
-                            loading={isLoading || searchLoading}
+                            loading={searchLoading}
                             multiple={true}
                             freeSolo={false}
                             filterOptions={(x) => x}
@@ -853,7 +854,6 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                             onInputChange={(event, newValue) => {
                                 setSearchMemberInput(newValue);
                                 setOffset(0);
-                                setNonCredentialedUsers([]);
                             }}
                         />
 
@@ -882,19 +882,30 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                                     >
                                         <Box
                                             sx={{
-                                                display: 'flex',
-                                                justifyContent: 'center',
-                                                marginTop: '6px',
-                                                marginLeft: '8px',
-                                                marginRight: '8px',
+                                                height: '56px',
+                                                width: '100%',
+                                                gap: '8px',
+                                                position: 'relative',
+                                                border: '5px',
                                             }}
                                         >
                                             <Box
                                                 sx={{
                                                     display: 'flex',
-                                                    height: '80px',
-                                                    width: '80px',
-                                                    justifyContent: 'center',
+                                                    justifyContent: 'left',
+                                                    marginTop: '6px',
+                                                    marginLeft: '8px',
+                                                    marginRight: '8px',
+                                                    float: 'left',
+                                                }}
+                                            >
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        height: '32px',
+                                                        width: '32px',
+                                                        justifyContent:
+                                                            'center',
                                                     alignItems: 'center',
                                                     border: '0.5px solid rgba(0, 0, 0, .05)',
                                                     borderRadius: '50%',
@@ -904,8 +915,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                                                     aria-label="avatar"
                                                     sx={{
                                                         display: 'flex',
-                                                        width: '60px',
-                                                        height: '60px',
+                                                            width: '32px',
+                                                            height: '32px',
                                                         fontSize: '24px',
                                                         backgroundColor:
                                                             user.color,
@@ -917,26 +928,38 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                                         </Box>
                                         <Card.Header
                                             title={
-                                                <Typography variant="h5">
+                                                    <Typography
+                                                        variant="h6"
+                                                        sx={{
+                                                            maxHeight: '24px',
+                                                            height: '90%',
+                                                            marginTop: '5px',
+                                                        }}
+                                                    >
                                                     {user.name}
                                                 </Typography>
                                             }
                                             sx={{
                                                 color: '#000',
+                                                    maxWidth: '466px',
+                                                    height: '15px',
                                                 width: '100%',
+                                                    float: 'left',
+                                                    gap: '16px',
                                             }}
                                             subheader={
                                                 <Box
                                                     sx={{
                                                         display: 'flex',
-                                                        gap: 2,
-                                                        marginTop: '4px',
+                                                            gap: '2px',
+                                                            marginTop: '2px',
                                                     }}
                                                 >
                                                     <span
                                                         style={{
                                                             opacity: 0.9,
-                                                            fontSize: '14px',
+                                                                fontSize:
+                                                                    '11px',
                                                         }}
                                                     >
                                                         {`User ID: `}
@@ -960,9 +983,17 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                                             action={
                                                 <IconButton
                                                     sx={{
+                                                            height: '28px',
+                                                            width: '28px',
+                                                            gap: '30px',
+                                                            fontSize: 'small',
                                                         mt: '16px',
                                                         color: 'rgba( 0, 0, 0, .7)',
-                                                        mr: '24px',
+                                                            mr: '2px',
+                                                            top: '0px',
+                                                            position:
+                                                                'absolute',
+                                                            padding: '10px',
                                                     }}
                                                     onClick={() => {
                                                         const filtered =
@@ -980,6 +1011,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                                                 </IconButton>
                                             }
                                         />
+                                    </Box>
                                     </Box>
                                 );
                             })}

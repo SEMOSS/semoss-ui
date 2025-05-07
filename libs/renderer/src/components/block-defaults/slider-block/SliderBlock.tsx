@@ -1,4 +1,4 @@
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
 import { Box, Slider, styled } from "@semoss/ui";
@@ -29,10 +29,20 @@ export interface SliderBlockDef extends BlockDef<"slider"> {
         size: string;
         marks: Array<{ display: string; value: number }>;
     };
+    listeners: {
+        preProcess: true;
+        onChange: true;
+    };
 }
 
 export const SliderBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs, setData, listeners } = useBlock<SliderBlockDef>(id);
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
 
     const debouncedCallback = debounced(() => {
         listeners.onChange();

@@ -36,6 +36,7 @@ export const config: BlockConfig<SwitchBlockDef> = {
     },
     listeners: {
         onChange: [],
+        preProcess: [],
     },
     slots: {},
     render: SwitchBlock,
@@ -142,6 +143,10 @@ export const config: BlockConfig<SwitchBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
         {
             name: "on Change",

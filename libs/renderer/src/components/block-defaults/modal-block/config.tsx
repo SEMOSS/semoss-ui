@@ -1,14 +1,16 @@
 import { useState, useRef } from "react";
-import { BlockConfig, BlockDef, Block } from "../../../store";
-import { InputSettings } from "../../block-settings";
 import { Schema } from "@mui/icons-material";
 import { Autocomplete } from "@mui/material";
+
+import { TextField } from "@semoss/ui";
+
+import { BlockConfig, BlockDef, Block } from "../../../store";
+import { InputSettings } from "../../block-settings";
 import { buildListener } from "../block-defaults.shared";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import { ModalBlockDef, ModalBlock } from "./ModalBlock";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 import { BaseSettingSection } from "../../block-settings/BaseSettingSection";
-import { TextField } from "@semoss/ui";
 import { useBlockSettings } from "../../../hooks";
 import { Paths, PathValue } from "../../../types";
 import { QueryInputSettings } from "../../block-settings";
@@ -93,7 +95,8 @@ export const config: BlockConfig<ModalBlockDef> = {
         open: "", // Default to closed
     },
     listeners: {
-        onSubmit: [],
+        preProcess: [],
+        onClose: [],
     },
     slots: {
         content: [],
@@ -175,8 +178,12 @@ export const config: BlockConfig<ModalBlockDef> = {
             ],
         },
         {
-            name: "on Submit",
-            children: [...buildListener("onSubmit")],
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
+        },
+        {
+            name: "on Close",
+            children: [...buildListener("onClose")],
         },
     ],
     styleMenu: [],
