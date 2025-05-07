@@ -2512,6 +2512,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     gap: 'px',
                     flexWrap: 'wrap',
                 },
+                type: 'custom',
             },
             listeners: {},
             slots: {
