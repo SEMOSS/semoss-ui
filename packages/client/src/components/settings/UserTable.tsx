@@ -21,7 +21,7 @@ import { LoadingScreen } from '@/components/ui';
 import { UserAddOverlay } from './UserAddOverlay';
 import SearchIcon from '@mui/icons-material/Search';
 import CopyAllIcon from '@mui/icons-material/CopyAll';
-import { UserTablePopover } from './UserTablePopover';
+import { UserPopover } from './UserPopover';
 
 const AvatarWrapper = styled('div')({
     display: 'inline-block',
@@ -777,7 +777,7 @@ export const UserTable = (props: UserTableProps) => {
                                             />
                                         </Table.Row>
                                     </Table.Footer>
-                                    <UserTablePopover
+                                    <UserPopover
                                         hoveredUser={
                                             hoveredUser
                                                 ? {

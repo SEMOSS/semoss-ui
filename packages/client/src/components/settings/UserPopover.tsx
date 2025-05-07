@@ -9,7 +9,7 @@ import {
 } from '@semoss/ui';
 import CopyAllIcon from '@mui/icons-material/CopyAll';
 
-interface UserTablePopoverProps {
+interface UserPopoverProps {
     hoveredUser: { id: string; name: string; email: string } | null;
     isPopoverOpen: boolean;
     anchorEl: HTMLElement | null;
@@ -31,7 +31,7 @@ const StyledInnerGridContainer = styled(Grid)({
 const StyledIconButton = styled(IconButton)({
     size: 'small',
 });
-export const UserTablePopover = (props: UserTablePopoverProps) => {
+export const UserPopover = (props: UserPopoverProps) => {
     const { hoveredUser, isPopoverOpen, anchorEl, handlePopoverClose } = props;
     const notification = useNotification();
     const handleCopy = (text: string) => {

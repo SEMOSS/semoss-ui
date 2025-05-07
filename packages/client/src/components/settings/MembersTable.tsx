@@ -25,7 +25,7 @@ import { useRootStore, useAPI, useSettings, useDebounceValue } from '@/hooks';
 import { SETTINGS_PROVISIONED_USER } from './settings.types';
 import { MembersDeleteOverlay } from './MembersDeleteOverlay';
 import { MembersAddOverlay } from './MembersAddOverlay';
-import { UserTablePopover } from './UserTablePopover';
+import { UserPopover } from './UserPopover';
 const AvatarWrapper = styled('div')({
     display: 'inline-block',
     width: '50px',
@@ -910,7 +910,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                             />
                                         </Table.Row>
                                     </Table.Footer>
-                                    <UserTablePopover
+                                    <UserPopover
                                         hoveredUser={
                                             hoveredUser
                                                 ? {
