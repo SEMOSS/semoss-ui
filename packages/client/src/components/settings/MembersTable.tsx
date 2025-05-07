@@ -160,6 +160,10 @@ const StyledCenteredBox = styled(Box)({
     alignItems: 'center',
     gap: '8px',
 });
+const StyledNameStack = styled(Stack)({
+    alignItems: 'center',
+    flex: 1,
+});
 
 // maps for permissions,
 const permissionMapper = {
@@ -245,7 +249,6 @@ export const MembersTable = (props: MembersTableProps) => {
     /** Utility for Popover */
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [hoveredUser, setHoveredUser] = useState<User | null>(null);
-    const isPopoverOpen = Boolean(anchorEl);
     // debounce the input
     const debouncedSearch = useDebounceValue(search);
 
@@ -764,9 +767,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         </StyledTableCell>
                                                         <Table.Cell>
                                                             <StyledCenteredBox>
-                                                                <Stack
-                                                                    spacing={0}
-                                                                    flex={1}
+                                                                <StyledNameStack
                                                                     direction='row'
                                                                     onMouseEnter={(event) => {
                                                                         setAnchorEl(event.currentTarget);
@@ -777,7 +778,6 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     }
                                                                     aria-owns='mouse-over-popover'
                                                                     aria-haspopup='true'
-                                                                    sx={{ alignItems: 'center' }}
                                                                 >
                                                                     <AvatarWrapper>
                                                                         <Avatar>
@@ -785,7 +785,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                         </Avatar>
                                                                     </AvatarWrapper>
                                                                     {user.name}
-                                                                </Stack>
+                                                                </StyledNameStack>
                                                             </StyledCenteredBox>
                                                         </Table.Cell>
                                                         <Table.Cell size="medium">
