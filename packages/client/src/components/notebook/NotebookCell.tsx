@@ -385,7 +385,11 @@ export const NotebookCell = observer(
                 isExpanded: contentExpanded,
                 defaultModelId: workspace.agentModelEngine,
             });
-        }, [cell.component ? cell.component : null, contentExpanded, workspace.agentModelEngine]);
+        }, [
+            cell.component ? cell.component : null,
+            contentExpanded,
+            workspace.agentModelEngine,
+        ]);
 
         const getExecutionTimeString = (
             timeMilliseconds: number | undefined,
