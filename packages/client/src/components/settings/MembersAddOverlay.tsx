@@ -692,13 +692,17 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                         >
                                             <Icon
                                                 sx={{
-                                                    width: '20px',
-                                                    height: '20px',
+                                                    width: '24px',
+                                                    height: '24px',
                                                     mt: '6px',
                                                     marginRight: '12px',
                                                     fontSize: '12px',
                                                     fontWeight: 'bold',
                                                     color: 'rgba(0, 0, 0, .5)',
+                                                    maxWidth: '24px',
+                                                    display: 'flex', // Ensure the icon is displayed properly
+                                                    alignItems: 'center', // Center the icon vertically
+                                                    justifyContent: 'center',
                                                 }}
                                             >
                                                 <EditRounded />
@@ -742,13 +746,17 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                         >
                                             <Icon
                                                 sx={{
-                                                    width: '20px',
-                                                    height: '20px',
-                                                    mt: '6px',
+                                                    width: '24px',
+                                                    height: '24px',
+                                                    mt: '0px',
                                                     marginRight: '12px',
-                                                    fontSize: '12px',
+                                                    fontSize: '24px',
                                                     fontWeight: 'bold',
                                                     color: 'rgba(0, 0, 0, .5)',
+                                                    maxWidth: '24px',
+                                                    display: 'flex', // Ensure the icon is displayed properly
+                                                    alignItems: 'center', // Center the icon vertically
+                                                    justifyContent: 'center',
                                                 }}
                                             >
                                                 <RemoveRedEyeRounded />
