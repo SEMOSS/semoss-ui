@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { Code, KeyboardArrowDown } from "@mui/icons-material";
 
 import { styled, Button, Stack, Select, useNotification } from "@semoss/ui";
-import { runPixel } from "@semoss/sdk";
+import { runPixel } from "@semoss/sdk/react";
 
 import {
     ActionMessages,
@@ -152,7 +152,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             }
 
             const res = await runPixel(
-                `LLM(engine = "${modelId}", command = "${prompt}", paramValues = [ {} ] );`,
+                `LLM(engine = "${modelId}", command = "${prompt}", paramValues = [ {"max_completion_tokens": 2000, "temperature": 0.3} ] );`,
             );
 
             const LLMResponse = res.pixelReturn[0].output["response"];

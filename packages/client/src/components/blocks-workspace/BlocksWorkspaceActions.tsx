@@ -9,7 +9,7 @@ import { useWorkspace, useRootStore } from '@/hooks';
 import { PreviewOverlay } from '@/components/workspace';
 import { ShareOverlay, ModelOverlay } from '@/components/ui';
 import { ModelBrain } from '@/assets/img/ModelBrain';
-import { runPixel } from '@semoss/sdk';
+import { runPixel } from '@semoss/sdk/react';
 
 export const BlocksWorkspaceActions = observer(() => {
     const { state } = useBlocks();
