@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 import { Env } from '../../env';
 import { Insight } from "../../";
-=======
-import { Env } from '@/env';
-import { Role } from '@/types';
->>>>>>> 6841458ef (refactor(sdk): migrate Monolith to sdk)
 import { get, post, interceptors, UnauthorizedError } from "../../utility";
 
 
@@ -82,7 +77,6 @@ export const run = async <O extends unknown[] | []>(
     };
 };
 
-<<<<<<< HEAD
 export const runQuery = async <O extends any[] | []>(
     pixel: string,
     insightId?: string,
@@ -92,9 +86,6 @@ export const runQuery = async <O extends any[] | []>(
 
 
 export const fileDownload = async (insightID: string, fileKey: string) => {
-=======
-export const download = async (insightID: string, fileKey: string) => {
->>>>>>> 6841458ef (refactor(sdk): migrate Monolith to sdk)
     return new Promise<void>((resolve) => {
         // create the download url
         const url = `${
@@ -115,11 +106,7 @@ export const download = async (insightID: string, fileKey: string) => {
 };
 
 
-<<<<<<< HEAD
 export const monolithLogin = async (
-=======
-export const login = async (
->>>>>>> 6841458ef (refactor(sdk): migrate Monolith to sdk)
     username: string,
     password: string,
 ): Promise<boolean> => {
@@ -258,11 +245,7 @@ export const registerUser = async (
         });
 };
 
-<<<<<<< HEAD
 export const monolithLogout = async (): Promise<boolean> => {
-=======
-export const logout = async (): Promise<boolean> => {
->>>>>>> 6841458ef (refactor(sdk): migrate Monolith to sdk)
     await get(`${Env.MODULE}/api/auth/logout/all`)
         .catch((err) => {
             throw Error(err);
@@ -270,11 +253,7 @@ export const logout = async (): Promise<boolean> => {
     return true;
 };
 
-<<<<<<< HEAD
 export const monolithOauth = async (provider: string): Promise<boolean> => {
-=======
-export const oauth = async (provider: string): Promise<boolean> => {
->>>>>>> 6841458ef (refactor(sdk): migrate Monolith to sdk)
     // check if the user is logged in
     const response = await get<{
             name: string;
@@ -311,11 +290,7 @@ export const oauth = async (provider: string): Promise<boolean> => {
                     // close it
                     popUpWindow.close();
                     // try to get the info again
-<<<<<<< HEAD
                     const response = await monolithOauth(provider);
-=======
-                    const response = await oauth(provider);
->>>>>>> 6841458ef (refactor(sdk): migrate Monolith to sdk)
                     // close it
                     resolve(response);
                 }
@@ -369,7 +344,6 @@ export const createAdminTheme = async (data: {
         },
     });
     return response.data;
-<<<<<<< HEAD
 };
 
 export const getInsights = async () => {
@@ -895,18 +869,4 @@ export const deleteUserAccessKeys = async (accessKey: string) => {
             throw Error(error);
         });
     return response.data;
-=======
-    // Sets an Active theme with material ui properties
-    // const map = JSON.parse(data['theme']['THEME_MAP']);
-    // const material_map = {
-    //     ...map,
-    //     materialTheme: lightTheme,
-    // };
-    // console.log(JSON.stringify(material_map));
-    // monolithStore.createAdminTheme({
-    //     name: 'SEMOSS-TEST-DARK',
-    //     isActive: true,
-    //     json: material_map,
-    // });
->>>>>>> 6841458ef (refactor(sdk): migrate Monolith to sdk)
 };
