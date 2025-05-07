@@ -41,14 +41,13 @@ export const BlocksWorkspaceActions = observer(() => {
                     value: model.database_id,
                 };
             });
-
         }
         workspace.openOverlay(
             () => (
                 <ModelOverlay
                     appId={workspace.appId}
                     modelList={modelList || []}
-                    selectedModel={workspace.agentModelEngine || ""}
+                    selectedModel={workspace.agentModelEngine || ''}
                     onSelect={(id: string) => {
                         workspace.setAgentModelEngine(id);
                     }}
@@ -107,7 +106,8 @@ export const BlocksWorkspaceActions = observer(() => {
         try {
             // save the json
             const { errors } = await monolithStore.runQuery<[true]>(
-                `SaveAppBlocksJson(project=["${workspace.appId
+                `SaveAppBlocksJson(project=["${
+                    workspace.appId
                 }"], json=["<encode>${JSON.stringify(json)}</encode>"]);`,
             );
 
@@ -210,7 +210,13 @@ export const BlocksWorkspaceActions = observer(() => {
                         selectModel();
                     }}
                 >
-                    <ModelBrain width={'18'} height={'18'} color={workspace.agentModelEngine ? '#0471f0' : '#666666'} />
+                    <ModelBrain
+                        width={'18'}
+                        height={'18'}
+                        color={
+                            workspace.agentModelEngine ? '#0471f0' : '#666666'
+                        }
+                    />
                 </IconButton>
             </Tooltip>
             <Tooltip title="Preview App">

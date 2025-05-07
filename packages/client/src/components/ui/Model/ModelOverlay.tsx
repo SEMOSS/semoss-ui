@@ -1,11 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import {
-    IconButton,
-    Modal,
-    Stack,
-    Select,
-    Autocomplete,
-} from '@semoss/ui';
+import { IconButton, Modal, Stack, Select, Autocomplete } from '@semoss/ui';
 import { Clear } from '@mui/icons-material';
 
 interface ModelOverlayProps {
@@ -22,8 +16,14 @@ interface ModelOverlayProps {
 }
 
 export const ModelOverlay = observer((props: ModelOverlayProps) => {
-    const { appId, modelList, selectedModel, onSelect=() => null, onClose = () => null } = props;
-    
+    const {
+        appId,
+        modelList,
+        selectedModel,
+        onSelect = () => null,
+        onClose = () => null,
+    } = props;
+
     return (
         <>
             <Modal.Title>
@@ -47,8 +47,7 @@ export const ModelOverlay = observer((props: ModelOverlayProps) => {
                     onChange={(e) => {
                         onSelect(e.target.value);
                         onClose();
-                    }
-                    }
+                    }}
                 >
                     {modelList.map((model) => (
                         <Select.Item key={model.value} value={model.value}>

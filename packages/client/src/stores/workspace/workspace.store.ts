@@ -507,7 +507,7 @@ export class WorkspaceStore {
     /**
      * Set the agentModelEngine
      */
-    setAgentModelEngine = (id:string) => {
+    setAgentModelEngine = (id: string) => {
         this._store.agentModelEngine = id;
-    }
+    };
 }
