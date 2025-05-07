@@ -42,80 +42,82 @@ export const UserTablePopover = (props: UserTablePopoverProps) => {
         });
     };
     return (
-        <Popover
-            id={hoveredUser?.id}
-            open={isPopoverOpen}
-            anchorEl={anchorEl}
-            onClose={handlePopoverClose}
-            anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'left',
-            }}
-            transformOrigin={{
-                vertical: 'top',
-                horizontal: 'left',
-            }}
-            sx={{ pointerEvents: 'none' }}
-        >
-            <StyledGridContainer container direction="row">
-                {/* avatar icon */}
-                <Grid item>
-                    {hoveredUser?.name && ( // prevents seeing default icon
-                        <AvatarWrapper>
-                            <Avatar>{hoveredUser.name[0].toUpperCase()}</Avatar>
-                        </AvatarWrapper>
-                    )}
-                </Grid>
-                <Grid item>
-                    {hoveredUser && (
-                        <>
-                            <Typography variant="body2">
-                                {hoveredUser?.name}
-                            </Typography>
-                            <StyledInnerGridContainer container direction="row">
-                                <Grid item>
-                                    <Typography
-                                        variant="caption"
-                                        color="secondary"
-                                    >
-                                        ID: {hoveredUser?.id}
-                                    </Typography>
-                                </Grid>
-                                <Grid item>
-                                    <StyledIconButton
-                                        size="small"
-                                        onClick={() => {
-                                            handleCopy(hoveredUser?.id);
-                                        }}
-                                    >
-                                        <CopyAllIcon fontSize="inherit" />
-                                    </StyledIconButton>
-                                </Grid>
-                            </StyledInnerGridContainer>
-                            <StyledInnerGridContainer container direction="row">
-                                <Grid item>
-                                    <Typography
-                                        variant="caption"
-                                        color="secondary"
-                                    >
-                                        Email: {hoveredUser?.email}
-                                    </Typography>
-                                </Grid>
-                                <Grid item>
-                                    <StyledIconButton
-                                        size="small"
-                                        onClick={() => {
-                                            handleCopy(hoveredUser?.email);
-                                        }}
-                                    >
-                                        <CopyAllIcon fontSize="inherit" />
-                                    </StyledIconButton>
-                                </Grid>
-                            </StyledInnerGridContainer>
-                        </>
-                    )}
-                </Grid>
-            </StyledGridContainer>
-        </Popover>
+        <div onMouseLeave={handlePopoverClose}>
+            <Popover
+                id={hoveredUser?.id}
+                open={isPopoverOpen}
+                anchorEl={anchorEl}
+                onClose={handlePopoverClose}
+                anchorOrigin={{
+                    vertical: 'center',
+                    horizontal: 'left',
+                }}
+                transformOrigin={{
+                    vertical: 'center',
+                    horizontal: 'left',
+                }}
+                sx={{ pointerEvents: 'none' }}
+            >
+                <StyledGridContainer container direction="row" sx={{ pointerEvents: 'auto' }}>
+                    {/* avatar icon */}
+                    <Grid item>
+                        {hoveredUser?.name && ( // prevents seeing default icon
+                            <AvatarWrapper>
+                                <Avatar>{hoveredUser.name[0].toUpperCase()}</Avatar>
+                            </AvatarWrapper>
+                        )}
+                    </Grid>
+                    <Grid item>
+                        {hoveredUser && (
+                            <>
+                                <Typography variant="body2">
+                                    {hoveredUser?.name}
+                                </Typography>
+                                <StyledInnerGridContainer container direction="row">
+                                    <Grid item>
+                                        <Typography
+                                            variant="caption"
+                                            color="secondary"
+                                        >
+                                            ID: {hoveredUser?.id}
+                                        </Typography>
+                                    </Grid>
+                                    <Grid item>
+                                        <StyledIconButton
+                                            size="small"
+                                            onClick={() => {
+                                                handleCopy(hoveredUser?.id);
+                                            }}
+                                        >
+                                            <CopyAllIcon fontSize="inherit" />
+                                        </StyledIconButton>
+                                    </Grid>
+                                </StyledInnerGridContainer>
+                                <StyledInnerGridContainer container direction="row">
+                                    <Grid item>
+                                        <Typography
+                                            variant="caption"
+                                            color="secondary"
+                                        >
+                                            Email: {hoveredUser?.email}
+                                        </Typography>
+                                    </Grid>
+                                    <Grid item>
+                                        <StyledIconButton
+                                            size="small"
+                                            onClick={() => {
+                                                handleCopy(hoveredUser?.email);
+                                            }}
+                                        >
+                                            <CopyAllIcon fontSize="inherit" />
+                                        </StyledIconButton>
+                                    </Grid>
+                                </StyledInnerGridContainer>
+                            </>
+                        )}
+                    </Grid>
+                </StyledGridContainer>
+            </Popover>
+        </div>
     );
 };

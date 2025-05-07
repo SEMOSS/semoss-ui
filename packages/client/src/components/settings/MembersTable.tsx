@@ -510,18 +510,11 @@ export const MembersTable = (props: MembersTableProps) => {
         setPermissionOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     };
     /**
-     * Handle user popover open
-     * @param event 
-     * @param user 
+     * Handle user popover close
      */
-    const handlePopoverOpen = (event: React.MouseEvent<HTMLElement>, user: User) => {
-        setAnchorEl(event.currentTarget);
-        setHoveredUser(user);
-    };
     const handlePopoverClose = () => {
         setAnchorEl(null);
-        setHoveredUser(null);
-    }
+    };
     // Avatars rendered
     const Avatars = useMemo(() => {
         if (!renderedMembers.length) {
@@ -775,18 +768,16 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     spacing={0}
                                                                     flex={1}
                                                                     direction='row'
-                                                                    onMouseEnter={(event) =>
-                                                                        handlePopoverOpen(
-                                                                            event,
-                                                                            user,
-                                                                        )
-                                                                    }
+                                                                    onMouseEnter={(event) => {
+                                                                        setAnchorEl(event.currentTarget);
+                                                                        setHoveredUser(user);
+                                                                    }}
                                                                     onMouseLeave={() =>
-                                                                        handlePopoverClose()
+                                                                        handlePopoverClose
                                                                     }
                                                                     aria-owns='mouse-over-popover'
                                                                     aria-haspopup='true'
-                                                                    sx={{alignItems:'center'}}
+                                                                    sx={{ alignItems: 'center' }}
                                                                 >
                                                                     <AvatarWrapper>
                                                                         <Avatar>
@@ -929,7 +920,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 }
                                                 : null
                                         }
-                                        isPopoverOpen={isPopoverOpen}
+                                        isPopoverOpen={Boolean(anchorEl)}
                                         anchorEl={anchorEl}
                                         handlePopoverClose={handlePopoverClose}
                                     />
