@@ -11,6 +11,7 @@ import {
     EditLocation,
     RemoveRedEyeRounded,
     SimCardDownload,
+    ContentCopyOutlined,
 } from '@mui/icons-material';
 
 import {
@@ -25,8 +26,12 @@ import {
     Modal,
     Stack,
     CircularProgress,
+    Tooltip,
+    Markdown,
+    ToggleTabsGroup,
 } from '@semoss/ui';
 import { Env } from '@semoss/sdk';
+import { Section } from '@/components/ui';
 
 import { useRootStore } from '@/hooks';
 import { formatPermission, toTitleCase } from '@/utility';
@@ -53,6 +58,25 @@ import {
     DetailsForm,
     AppDetailsRef,
 } from '@/components/app';
+import { Page } from '@/components/ui';
+
+import { observer } from 'mobx-react-lite';
+import { useEngine } from '@/hooks';
+import { removeUnderscores } from '@/utility';
+
+const StyledPage = styled('div')(() => ({
+    position: 'relative',
+    zIndex: '0',
+}));
+
+const StyledMarkdownContainer = styled(Stack)(() => ({
+    overflow: 'scroll',
+}));
+
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
+    marginTop: '-3px',
+    marginLeft: '2px',
+}));
 
 const OuterContainer = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
@@ -159,6 +183,57 @@ const StyledMenuItem = styled(Menu.Item)(({ theme }) => ({
     height: '48px',
 }));
 
+const StyledDiv = styled('div')(() => ({
+    width: '100%',
+    borderRadius: '12px 12px 0px 0px',
+}));
+
+const StyledToggleTabsGroup = styled(ToggleTabsGroup)(() => ({
+    borderRadius: '12px 12px 0px 0px',
+    height: '42px',
+    alignItems: 'center',
+    padding: '0px 3px',
+}));
+
+const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(() => ({
+    height: '38px',
+}));
+
+const StyledInfo = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing(4),
+    overflow: 'hidden',
+}));
+
+const StyledInfoLeft = styled('div')(({ theme }) => ({
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    gap: theme.spacing(1),
+}));
+
+const StyledInfoDescription = styled(Typography)(({ theme }) => ({
+    maxWidth: '699px',
+    maxHeight: '174px',
+    textOverflow: 'ellipsis',
+    color: 'rgba(0, 0, 0, 0.6)',
+    overflow: 'hidden',
+    whiteSpace: 'normal',
+}));
+const StyledChipContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: theme.spacing(1),
+}));
+const StyledInfoRight = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(1),
+    width: '288px',
+}));
+
 export const AppDetailPage = () => {
     const { control, setValue, getValues, watch, handleSubmit } =
         useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
@@ -171,6 +246,7 @@ export const AppDetailPage = () => {
     const dependencies = watch('dependencies');
     const detailsForm = watch('detailsForm');
 
+    console.log(appInfo, 'APP INFO');
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
     const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
     const [isChangeAccessModalOpen, setIsChangeAccessModalOpen] =
@@ -190,23 +266,49 @@ export const AppDetailPage = () => {
     const memberAccessRef = useRef<HTMLElement>(null);
     const similarAppsRef = useRef<HTMLElement>(null);
 
-    const refs = useMemo<
-        { ref: React.MutableRefObject<HTMLElement>; display: string }[]
-    >(() => {
-        return [
-            { ref: markdownRef, display: 'Main Uses' },
-            { ref: tagsRef, display: 'Tags' },
-            { ref: dependenciesRef, display: 'Dependencies' },
-            { ref: appAccessRef, display: 'App Access' },
-            { ref: memberAccessRef, display: 'Member Access' },
-            { ref: similarAppsRef, display: 'Similar Apps' },
-        ];
-    }, []);
+    // const refs = useMemo<
+    //     { ref: React.MutableRefObject<HTMLElement>; display: string }[]
+    // >(() => {
+    //     return [
+    //         { ref: markdownRef, display: 'Main Uses' },
+    //         { ref: tagsRef, display: 'Tags' },
+    //         { ref: dependenciesRef, display: 'Dependencies' },
+    //         { ref: appAccessRef, display: 'App Access' },
+    //         { ref: memberAccessRef, display: 'Member Access' },
+    //         { ref: similarAppsRef, display: 'Similar Apps' },
+    //     ];
+    // }, []);
 
     const { monolithStore, configStore } = useRootStore();
     const navigate = useNavigate();
     const notification = useNotification();
     const { appId } = useParams();
+
+    // get the tabs based on permission
+    // const tabs = useMemo(() => {
+    //     // must be valid
+    //     if (
+    //         !route ||
+    //         getUserEnginePermission.status !== 'SUCCESS' ||
+    //         !getUserEnginePermission.data
+    //     ) {
+    //         return [];
+    //     }
+
+    //     // check the permission
+    //     const permission = getUserEnginePermission.data.permission;
+
+    //     // get the routes based on permission
+    //     return route.specific.filter((t) =>
+    //         t.restrict ? t.restrict.indexOf(permission) > -1 : true,
+    //     );
+    // }, [
+    //     route,
+    //     getUserEnginePermission.status,
+    //     getUserEnginePermission.data
+    //         ? getUserEnginePermission.data.permission
+    //         : '',
+    // ]);
 
     useEffect(() => {
         setValue('appId', appId);
@@ -340,6 +442,8 @@ export const AppDetailPage = () => {
         );
     };
 
+    console.log(detailsForm, 'details form, this is what youre going to use');
+
     const fetchSimilarApps = () => {
         // TODO
     };
@@ -456,10 +560,10 @@ export const AppDetailPage = () => {
     }, [projectMetaKeys, detailsForm]);
 
     // Merge default/dynamic refs for side bar navigiation
-    const detailRefs = [
-        ...refs,
-        ...createRefs.map((a) => ({ ref: a.ref, display: a.display })),
-    ];
+    // const detailRefs = [
+    //     ...refs,
+    //     ...createRefs.map((a) => ({ ref: a.ref, display: a.display })),
+    // ];
 
     /**
      * @name onSubmit
@@ -524,8 +628,269 @@ export const AppDetailPage = () => {
     });
 
     return (
-        <OuterContainer>
-            <InnerContainer>
+        <Page
+            header={
+                <Stack>
+                    <Breadcrumbs separator="/">
+                        <StyledLink to="../../..">
+                            <StyledCrumb variant="body1">
+                                App Library
+                            </StyledCrumb>
+                        </StyledLink>
+                        <StyledCrumb variant="body1" disabled>
+                            {appInfo?.project_name}
+                        </StyledCrumb>
+                    </Breadcrumbs>
+                    <Stack direction="row" alignItems={'center'} width={'100%'}>
+                        <Typography variant="h4">
+                            {appInfo?.project_name}
+                        </Typography>
+                        <Stack flex={1}> &nbsp;</Stack>
+                        <Stack direction="row">
+                            {permission === 'author' ? (
+                                <Button
+                                    disabled={exportLoading}
+                                    startIcon={
+                                        exportLoading ? (
+                                            <CircularProgress size="1em" />
+                                        ) : (
+                                            <SimCardDownload />
+                                        )
+                                    }
+                                    variant="outlined"
+                                    onClick={() => exportApp()}
+                                >
+                                    Export
+                                </Button>
+                            ) : (
+                                <Button
+                                    startIcon={<Add />}
+                                    variant="outlined"
+                                    onClick={() =>
+                                        setIsChangeAccessModalOpen(true)
+                                    }
+                                    sx={{ fontWeight: 'bold' }}
+                                >
+                                    {permission === 'discoverable' ? (
+                                        <>Request Access</>
+                                    ) : (
+                                        <>Change Access</>
+                                    )}
+                                </Button>
+                            )}
+                        </Stack>
+                    </Stack>
+                    <Stack>
+                        <span>
+                            {appId}
+                            <StyledIconButton
+                                aria-label={`copy App ID`}
+                                size="small"
+                                onClick={(e) => {
+                                    // prevent the default action
+                                    e.preventDefault();
+
+                                    // copy
+                                    try {
+                                        navigator.clipboard.writeText(appId);
+
+                                        notification.add({
+                                            color: 'success',
+                                            message: 'Successfully copied ID',
+                                        });
+                                    } catch (e) {
+                                        console.error(e);
+
+                                        notification.add({
+                                            color: 'error',
+                                            message: 'Error copyng ID',
+                                        });
+                                    }
+                                }}
+                            >
+                                <Tooltip title={`Copy App ID`}>
+                                    <ContentCopyOutlined fontSize="inherit" />
+                                </Tooltip>
+                            </StyledIconButton>
+                        </span>
+                    </Stack>
+                </Stack>
+            }
+        >
+            <StyledInfo>
+                <StyledInfoLeft>
+                    <StyledInfoDescription variant={'subtitle1'}>
+                        {appInfo?.description
+                            ? (appInfo?.description as string)
+                            : `This ${appInfo?.project_name} is currently awaiting a detailed description, which will be provided by the app editor in the near future. As of now, the ${name} contains valuable and relevant information that pertains to its designated subject matter. Please check back later for a comprehensive overview of the contents and scope of this app, as the app editor will be updating it shortly`}
+                    </StyledInfoDescription>
+
+                    <StyledChipContainer>
+                        {tags &&
+                            (tags as string[]).map((tag, i) => {
+                                if (i < 2) return <Chip key={i} label={tag} />;
+                            })}
+                    </StyledChipContainer>
+                </StyledInfoLeft>
+                <StyledInfoRight>
+                    <Stack
+                        alignItems={'flex-end'}
+                        spacing={1}
+                        marginBottom={2}
+                        sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
+                    >
+                        <div
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                flexDirection: 'row',
+                                gap: '8px',
+                            }}
+                        >
+                            <Typography
+                                variant={'body2'}
+                                sx={{
+                                    maxWidth: '35%',
+                                }}
+                            >
+                                Published by:{' '}
+                            </Typography>
+                            <Typography
+                                variant={'body2'}
+                                sx={{
+                                    maxWidth: '65%',
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    overflow: 'hidden',
+                                    whiteSpace: 'nowrap',
+                                    textOverflow: 'ellipsis',
+                                    direction: 'rtl',
+                                    textAlign: 'left',
+                                }}
+                            >
+                                {appInfo?.project_created_by}
+                            </Typography>
+                        </div>
+                        <div
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                flexDirection: 'row',
+                                gap: '8px',
+                            }}
+                        >
+                            <Typography
+                                variant={'body2'}
+                                sx={{
+                                    maxWidth: '35%',
+                                }}
+                            >
+                                Date Created:{' '}
+                            </Typography>
+                            <Typography
+                                variant={'body2'}
+                                sx={{
+                                    maxWidth: '65%',
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    overflow: 'hidden',
+                                    whiteSpace: 'nowrap',
+                                    textOverflow: 'ellipsis',
+                                    direction: 'rtl',
+                                    textAlign: 'left',
+                                }}
+                            >
+                                {appInfo?.project_date_created}
+                            </Typography>
+                        </div>
+                    </Stack>
+                </StyledInfoRight>
+            </StyledInfo>
+            {/* <StyledPage>
+                            <StyledDiv>
+                                        <StyledToggleTabsGroup
+                                            boxSx={{
+                                                borderRadius: '12px 12px 0px 0px',
+                                                width: '100%',
+                                            }}
+                                            value={activeTabIdx}
+                                            onChange={(e: SyntheticEvent, idx: number) => {
+                                                // get the specific route
+                                                const r = tabs[idx];
+                
+                                                // navigate to it
+                                                navigate(`${r.path}`);
+                                            }}
+                                        >
+                                            {tabs.map((t) => {
+                                                return (
+                                                    <StyledToggleTabsGroupItem
+                                                        key={t.path}
+                                                        label={t.name}
+                                                    ></StyledToggleTabsGroupItem>
+                                                );
+                                            })}
+                                        </StyledToggleTabsGroup>
+                                    </StyledDiv>
+             <Section>
+                 <Section.Header>
+                     <Typography variant={'h6'}>Details</Typography>
+                 </Section.Header>
+                 {markdown ? (
+                     <StyledMarkdownContainer>
+                         <Markdown>{markdown as string}</Markdown>
+                     </StyledMarkdownContainer>
+                 ) : (
+                     <div> No Markdown available</div>
+                 )}
+             </Section>
+             {projectMetaKeys.map((k) => {
+                 if (
+                     projectMetaKeys[k.metakey] === undefined ||
+                     !Array.isArray(projectMetaKeys[k.metakey])
+                 ) {
+                     return null;
+                 }
+
+                 return (
+                     <Section key={k.metakey}>
+                         <Section.Header>
+                             <Typography variant={'h6'}>
+                                 {removeUnderscores(k.metakey)}
+                             </Typography>
+                         </Section.Header>
+                         {/* {k.display_options === 'multi-checklist' ||
+                         k.display_options === 'multi-select' ||
+                         k.display_options === 'multi-typeahead' ||
+                         k.display_options === 'select-box' ? (
+                             <Stack
+                                 direction={'row'}
+                                 spacing={1}
+                                 flexWrap={'wrap'}
+                             >
+                                 {(metaVals[k.metakey] as string[]).map(
+                                     (tag) => {
+                                         return (
+                                             <Chip
+                                                 key={tag}
+                                                 label={tag}
+                                                 color={'primary'}
+                                             ></Chip>
+                                         );
+                                     },
+                                 )}
+                             </Stack>
+                         ) : (
+                             <>{metaVals[k.metakey]}</>
+                         )} */}
+            {/* </Section>
+                 );
+             })}
+         </StyledPage> */}
+
+            {/* <InnerContainer>
                 <Breadcrumbs separator="/">
                     <StyledLink to="../../..">
                         <StyledCrumb variant="body1">App Library</StyledCrumb>
@@ -536,8 +901,8 @@ export const AppDetailPage = () => {
                 </Breadcrumbs>
 
                 <div>
-                    <Sidebar permission={permission} refs={detailRefs} />
-                    <PageBody>
+                    {/* <Sidebar permission={permission} refs={detailRefs} /> */}
+            {/* <PageBody>
                         <ActionBar>
                             {permission === 'author' ? (
                                 <Button
@@ -653,7 +1018,102 @@ export const AppDetailPage = () => {
                                 </TitleSectionBody>
                             </TitleSectionBodyWrapper>
                         </TitleSection>
-
+                                    <StyledInfo>
+                                        <StyledInfoLeft>
+                                            <StyledInfoDescription variant={'subtitle1'}>
+                                                {appInfo?.description
+                                                    ? (appInfo?.description as string)
+                                                                                                        : `This ${name} is currently awaiting a detailed description, which will be provided by the engine editor in the near future. As of now, the ${name} contains valuable and relevant information that pertains to its designated subject matter. Please check back later for a comprehensive overview of the contents and scope of this engine, as the editor will be updating it shortly`}
+                                            </StyledInfoDescription>
+                        
+                                            <StyledChipContainer>
+                                                {tags &&
+                                                    (tags as string[]).map((tag, i) => {
+                                                        if (i < 2) return <Chip key={i} label={tag} />;
+                                                    })}
+                                            </StyledChipContainer>
+                                        </StyledInfoLeft>
+                                        <StyledInfoRight>
+                                            <Stack
+                                                alignItems={'flex-end'}
+                                                spacing={1}
+                                                marginBottom={2}
+                                                sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        width: '100%',
+                                                        display: 'flex',
+                                                        justifyContent: 'flex-end',
+                                                        flexDirection: 'row',
+                                                        gap: '8px',
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        variant={'body2'}
+                                                        sx={{
+                                                            maxWidth: '35%',
+                                                        }}
+                                                    >
+                                                        Published by:{' '}
+                                                    </Typography>
+                                                    <Typography
+                                                        variant={'body2'}
+                                                        sx={{
+                                                            maxWidth: '65%',
+                                                            display: 'flex',
+                                                            justifyContent: 'flex-end',
+                                                            overflow: 'hidden',
+                                                            whiteSpace: 'nowrap',
+                                                            textOverflow: 'ellipsis',
+                                                            direction: 'rtl',
+                                                            textAlign: 'left',
+                                                        }}
+                                                    >
+                                                        This 
+                                                        {/* {data.database_created_by
+                                                            ? data.database_created_by
+                                                            : 'N/A'} */}
+            {/* </Typography>
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        width: '100%',
+                                                        display: 'flex',
+                                                        justifyContent: 'flex-end',
+                                                        flexDirection: 'row',
+                                                        gap: '8px',
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        variant={'body2'}
+                                                        sx={{
+                                                            maxWidth: '35%',
+                                                        }}
+                                                    >
+                                                        Updated:{' '}
+                                                    </Typography>
+                                                    <Typography
+                                                        variant={'body2'}
+                                                        sx={{
+                                                            maxWidth: '65%',
+                                                            display: 'flex',
+                                                            justifyContent: 'flex-end',
+                                                            overflow: 'hidden',
+                                                            whiteSpace: 'nowrap',
+                                                            textOverflow: 'ellipsis',
+                                                            direction: 'rtl',
+                                                            textAlign: 'left',
+                                                        }}
+                                                    >
+                                                        this
+                                                        {/* {data.last_updated ? data.last_updated : 'N/A'} */}
+            {/* </Typography>
+                                                </div>
+                                            </Stack>
+                                        </StyledInfoRight>
+                                    </StyledInfo> */}
+            {/* 
                         <StyledSection ref={markdownRef}>
                             <SectionHeading variant="h2">
                                 Main uses
@@ -817,19 +1277,19 @@ export const AppDetailPage = () => {
                                         </Stack>
                                     </SettingsContext.Provider>
                                 </StyledSection>
-                            )}
+                            )} */}
 
-                        {(permission === 'discoverable' ||
-                            permission === 'readOnly') && (
-                            <StyledSection ref={similarAppsRef}>
-                                <SectionHeading variant="h2">
-                                    Similar Apps
-                                </SectionHeading>
-                            </StyledSection>
-                        )}
-                    </PageBody>
-                </div>
-            </InnerContainer>
+            {/* {(permission === 'discoverable' ||
+                permission === 'readOnly') && (
+                    <StyledSection ref={similarAppsRef}>
+                        <SectionHeading variant="h2">
+                            Similar Apps
+                        </SectionHeading>
+                    </StyledSection>
+                )} */}
+            {/* </PageBody> */}
+            {/* // </div> */}
+            {/* // </InnerContainer> */}
 
             <Modal
                 open={isShareOverlayOpen}
@@ -864,119 +1324,218 @@ export const AppDetailPage = () => {
                 setValue={setValue}
                 watch={watch}
             />
-        </OuterContainer>
+        </Page>
     );
 };
 
-const StyledSidebar = styled('div')(({ theme }) => ({
-    width: '145px',
-    borderRight: `1px solid ${theme.palette.secondary.main}`,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing(0.5),
-    position: 'fixed',
-    paddingRight: theme.spacing(1),
-}));
+// const StyledSidebar = styled('div')(({ theme }) => ({
+//     width: '145px',
+//     borderRight: `1px solid ${theme.palette.secondary.main}`,
+//     display: 'flex',
+//     flexDirection: 'column',
+//     gap: theme.spacing(0.5),
+//     position: 'fixed',
+//     paddingRight: theme.spacing(1),
+// }));
 
-const StyledSidebarItem = styled(Button)(({ theme }) => ({
-    justifyContent: 'flex-start',
-    whiteSpace: 'nowrap',
-}));
+// const StyledSidebarItem = styled(Button)(({ theme }) => ({
+//     justifyContent: 'flex-start',
+//     whiteSpace: 'nowrap',
+// }));
 
-interface SidebarProps {
-    permission: string;
-    refs: { ref: React.MutableRefObject<HTMLElement>; display: string }[];
-}
+// interface SidebarProps {
+//     permission: string;
+//     refs: { ref: React.MutableRefObject<HTMLElement>; display: string }[];
+// }
 
-const Sidebar = ({ permission, refs }: SidebarProps) => {
-    const [
-        mainUsesRef,
-        tagsRef,
-        dependenciesRef,
-        appAccessRef,
-        memberAccessRef,
-        similarAppsRef,
-        ...dynamicRefs
-    ] = refs;
+// const Sidebar = ({ permission, refs }: SidebarProps) => {
+//     const [
+//         mainUsesRef,
+//         tagsRef,
+//         dependenciesRef,
+//         appAccessRef,
+//         memberAccessRef,
+//         similarAppsRef,
+//         ...dynamicRefs
+//     ] = refs;
 
-    const scrollIntoView = (ref: React.MutableRefObject<HTMLElement>) => {
-        ref.current.scrollIntoView({ behavior: 'smooth' });
-    };
+//     const scrollIntoView = (ref: React.MutableRefObject<HTMLElement>) => {
+//         ref.current.scrollIntoView({ behavior: 'smooth' });
+//     };
 
-    const canEdit =
-        permission &&
-        permission !== 'discoverable' &&
-        permission !== 'readOnly';
+//     const canEdit =
+//         permission &&
+//         permission !== 'discoverable' &&
+//         permission !== 'readOnly';
 
-    return (
-        <StyledSidebar>
-            <StyledSidebarItem
-                variant="text"
-                color="secondary"
-                onClick={() => scrollIntoView(mainUsesRef.ref)}
-                value={null}
-            >
-                Main Uses
-            </StyledSidebarItem>
-            <StyledSidebarItem
-                variant="text"
-                color="secondary"
-                onClick={() => scrollIntoView(tagsRef.ref)}
-                value={null}
-            >
-                Tags
-            </StyledSidebarItem>
-            {dynamicRefs?.map((ref) => (
-                <StyledSidebarItem
-                    variant="text"
-                    color="secondary"
-                    onClick={() => scrollIntoView(ref.ref)}
-                    value={null}
-                    key={ref.display}
-                >
-                    {ref.display}
-                </StyledSidebarItem>
-            ))}
-            {permission !== 'discoverable' && (
-                <StyledSidebarItem
-                    variant="text"
-                    color="secondary"
-                    onClick={() => scrollIntoView(dependenciesRef.ref)}
-                    value={null}
-                >
-                    Dependencies
-                </StyledSidebarItem>
-            )}
-            {permission === 'author' && (
-                <StyledSidebarItem
-                    variant="text"
-                    color="secondary"
-                    onClick={() => scrollIntoView(appAccessRef.ref)}
-                    value={null}
-                >
-                    App Access
-                </StyledSidebarItem>
-            )}
-            {canEdit && (
-                <StyledSidebarItem
-                    variant="text"
-                    color="secondary"
-                    onClick={() => scrollIntoView(memberAccessRef.ref)}
-                    value={null}
-                >
-                    Member Access
-                </StyledSidebarItem>
-            )}
-            {!canEdit && (
-                <StyledSidebarItem
-                    variant="text"
-                    color="secondary"
-                    onClick={() => scrollIntoView(similarAppsRef.ref)}
-                    value={null}
-                >
-                    Similar Apps
-                </StyledSidebarItem>
-            )}
-        </StyledSidebar>
-    );
-};
+//     return (
+//         <StyledSidebar>
+//             <StyledSidebarItem
+//                 variant="text"
+//                 color="secondary"
+//                 onClick={() => scrollIntoView(mainUsesRef.ref)}
+//                 value={null}
+//             >
+//                 Main Uses
+//             </StyledSidebarItem>
+//             <StyledSidebarItem
+//                 variant="text"
+//                 color="secondary"
+//                 onClick={() => scrollIntoView(tagsRef.ref)}
+//                 value={null}
+//             >
+//                 Tags
+//             </StyledSidebarItem>
+//             {dynamicRefs?.map((ref) => (
+//                 <StyledSidebarItem
+//                     variant="text"
+//                     color="secondary"
+//                     onClick={() => scrollIntoView(ref.ref)}
+//                     value={null}
+//                     key={ref.display}
+//                 >
+//                     {ref.display}
+//                 </StyledSidebarItem>
+//             ))}
+//             {permission !== 'discoverable' && (
+//                 <StyledSidebarItem
+//                     variant="text"
+//                     color="secondary"
+//                     onClick={() => scrollIntoView(dependenciesRef.ref)}
+//                     value={null}
+//                 >
+//                     Dependencies
+//                 </StyledSidebarItem>
+//             )}
+//             {permission === 'author' && (
+//                 <StyledSidebarItem
+//                     variant="text"
+//                     color="secondary"
+//                     onClick={() => scrollIntoView(appAccessRef.ref)}
+//                     value={null}
+//                 >
+//                     App Access
+//                 </StyledSidebarItem>
+//             )}
+//             {canEdit && (
+//                 <StyledSidebarItem
+//                     variant="text"
+//                     color="secondary"
+//                     onClick={() => scrollIntoView(memberAccessRef.ref)}
+//                     value={null}
+//                 >
+//                     Member Access
+//                 </StyledSidebarItem>
+//             )}
+//             {!canEdit && (
+//                 <StyledSidebarItem
+//                     variant="text"
+//                     color="secondary"
+//                     onClick={() => scrollIntoView(similarAppsRef.ref)}
+//                     value={null}
+//                 >
+//                     Similar Apps
+//                 </StyledSidebarItem>
+//             )}
+//         </StyledSidebar>
+//     );
+// };
+
+// import { Chip, Stack, styled, Typography, Markdown } from '@semoss/ui';
+// import { observer } from 'mobx-react-lite';
+// import { Section } from '@/components/ui';
+// import { useEngine, useRootStore } from '@/hooks';
+// import { DatabaseStatistics } from '@/components/database/DatabaseStatistics';
+// import { removeUnderscores } from '@/utility';
+
+// const StyledPage = styled('div')(() => ({
+//     position: 'relative',
+//     zIndex: '0',
+// }));
+
+// const StyledMarkdownContainer = styled(Stack)(() => ({
+//     overflow: 'scroll',
+// }));
+
+// export const EngineIndexPage = observer(() => {
+//     const { type, id, metaVals } = useEngine();
+//     const { configStore } = useRootStore();
+
+//     // filter metakeys to the ones we want
+//     const engineMetaKeys = configStore.store.config.databaseMetaKeys.filter(
+//         (k) => {
+//             return (
+//                 k.metakey !== 'description' &&
+//                 k.metakey !== 'markdown' &&
+//                 k.metakey !== 'tags'
+//             );
+//         },
+//     );
+
+//     return (
+//         <StyledPage>
+//             <Section>
+//                 <Section.Header>
+//                     <Typography variant={'h6'}>Details</Typography>
+//                 </Section.Header>
+//                 {metaVals.markdown ? (
+//                     <StyledMarkdownContainer>
+//                         <Markdown>{metaVals.markdown as string}</Markdown>
+//                     </StyledMarkdownContainer>
+//                 ) : (
+//                     <div> No Markdown available</div>
+//                 )}
+//             </Section>
+//             {engineMetaKeys.map((k) => {
+//                 if (
+//                     metaVals[k.metakey] === undefined ||
+//                     !Array.isArray(metaVals[k.metakey])
+//                 ) {
+//                     return null;
+//                 }
+
+//                 return (
+//                     <Section key={k.metakey}>
+//                         <Section.Header>
+//                             <Typography variant={'h6'}>
+//                                 {removeUnderscores(k.metakey)}
+//                             </Typography>
+//                         </Section.Header>
+//                         {k.display_options === 'multi-checklist' ||
+//                         k.display_options === 'multi-select' ||
+//                         k.display_options === 'multi-typeahead' ||
+//                         k.display_options === 'select-box' ? (
+//                             <Stack
+//                                 direction={'row'}
+//                                 spacing={1}
+//                                 flexWrap={'wrap'}
+//                             >
+//                                 {(metaVals[k.metakey] as string[]).map(
+//                                     (tag) => {
+//                                         return (
+//                                             <Chip
+//                                                 key={tag}
+//                                                 label={tag}
+//                                                 color={'primary'}
+//                                             ></Chip>
+//                                         );
+//                                     },
+//                                 )}
+//                             </Stack>
+//                         ) : (
+//                             <>{metaVals[k.metakey]}</>
+//                         )}
+//                     </Section>
+//                 );
+//             })}
+//             {type === 'DATABASE' && (
+//                 <Section>
+//                     <Section.Header>
+//                         <Typography variant={'h6'}>Statistics</Typography>
+//                     </Section.Header>
+//                     <DatabaseStatistics id={id} />
+//                 </Section>
+//             )}
+//         </StyledPage>
+//     );
+// });
