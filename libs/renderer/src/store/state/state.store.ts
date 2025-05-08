@@ -432,6 +432,10 @@ export class StateStore {
                     action.payload;
 
                 this.newCell(queryId, cellId, config, previousCellId);
+            } else if (ActionMessages.MOVE_CELL === action.message) {
+                const { queryId, activeCellId, overCellId } = action.payload;
+
+                this.moveCell(queryId, activeCellId, overCellId);
             } else if (ActionMessages.DELETE_CELL === action.message) {
                 const { queryId, cellId } = action.payload;
 
@@ -1486,6 +1490,20 @@ export class StateStore {
         // add the cell
         q._addCell(cellId, config, previousCellId);
     };
+
+    /**
+     * Move a cell
+     * @param queryId - id of the updated query
+     * @param activeCellId - id of the active cell
+     * @param overCellId - id of the cell we are moving over
+     */
+    private moveCell = (queryId: string, activeCellId: string, overCellId: string): void => {
+        // get the query
+        const q = this._store.queries[queryId];
+
+        // move the cell
+        q._moveCell(activeCellId, overCellId);
+    }
 
     /**
      * Delete a cell
