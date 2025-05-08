@@ -157,7 +157,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--6320',
             },
@@ -190,7 +193,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--4121',
             },
@@ -208,14 +214,17 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     loading: '{{db-response.isLoading}}',
                 },
                 listeners: {
-                    onClick: [
-                        {
-                            payload: {
-                                queryId: 'update-diabetes-record',
+                    onClick: {
+                        type: 'sync',
+                        order: [
+                            {
+                                payload: {
+                                    queryId: 'update-diabetes-record',
+                                },
+                                message: ActionMessages.RUN_QUERY,
                             },
-                            message: ActionMessages.RUN_QUERY,
-                        },
-                    ],
+                        ],
+                    },
                 },
                 id: 'submit',
             },
@@ -248,7 +257,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--7858',
             },
@@ -300,7 +312,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--3855',
             },
@@ -333,7 +348,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--3118',
             },
@@ -366,7 +384,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--8307',
             },
@@ -399,7 +420,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--6721',
             },
@@ -432,7 +456,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--9538',
             },
@@ -465,7 +492,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--2187',
             },
@@ -498,7 +528,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--1154',
             },
@@ -531,7 +564,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--2903',
             },
@@ -564,7 +600,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--5617',
             },
@@ -611,14 +650,17 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     },
                 },
                 listeners: {
-                    onPageLoad: [
-                        {
-                            payload: {
-                                queryId: 'on-page-load',
+                    onPageLoad: {
+                        type: 'sync',
+                        order: [
+                            {
+                                payload: {
+                                    queryId: 'on-page-load',
+                                },
+                                message: ActionMessages.RUN_QUERY,
                             },
-                            message: ActionMessages.RUN_QUERY,
-                        },
-                    ],
+                        ],
+                    },
                 },
                 id: 'page-1',
             },
@@ -651,7 +693,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--1536',
             },
@@ -684,7 +729,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--8195',
             },
@@ -717,7 +765,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--7685',
             },
@@ -750,7 +801,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--5362',
             },
@@ -783,7 +837,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--4018',
             },
@@ -816,7 +873,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--5206',
             },
@@ -849,7 +909,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--1422',
             },
@@ -882,7 +945,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--437',
             },
@@ -915,7 +981,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: 'true',
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--1200',
             },
@@ -968,7 +1037,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'select--6891',
             },

@@ -44,7 +44,7 @@ jobs:
               run: |
                   apt-get update
                   apt-get install -y maven
-                  npm install -g pnpm@8
+                  npm install -g pnpm@10
                   pnpm install
 
             - name: Build
@@ -105,7 +105,7 @@ jobs:
                   echo "keyserver keyserver.ubuntu.com" > ~/.gnupg/gpg.conf
                   cat ~/.gnupg/gpg.conf
                   gpg2 --refresh-key
-                  npm install -g pnpm@8
+                  npm install -g pnpm@10
                   pnpm install
 
             - name: Build
@@ -183,7 +183,7 @@ jobs:
                   echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg2 --batch --import
                   echo "keyserver keyserver.ubuntu.com" > ~/.gnupg/gpg.conf
                   gpg2 --refresh-key
-                  npm install -g pnpm@8
+                  npm install -g pnpm@10
                   pnpm install
 
             - name: Build

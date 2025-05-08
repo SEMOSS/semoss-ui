@@ -12,6 +12,7 @@ import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 import {
     buildColorSection,
     buildBorderSection,
+    buildListener,
 } from "../block-defaults.shared";
 
 export const config: BlockConfig<SidebarBlockDef> = {
@@ -26,7 +27,16 @@ export const config: BlockConfig<SidebarBlockDef> = {
             height: "100%",
         },
     },
-    listeners: {},
+    listeners: {
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+        postProcess: {
+            type: "sync",
+            order: [],
+        },
+    },
     slots: {
         content: [],
     },
@@ -58,6 +68,14 @@ export const config: BlockConfig<SidebarBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
+        },
+        {
+            name: "Post Process",
+            children: [...buildListener("postProcess")],
         },
     ],
     styleMenu: [

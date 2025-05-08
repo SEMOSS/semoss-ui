@@ -1,26 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { Add, Edit } from "@mui/icons-material";
 
-import {
-    Button,
-    IconButton,
-    LoadingScreen,
-    Modal,
-    Stack,
-    Typography,
-} from "@semoss/ui";
-import { Env, InsightProvider, runPixel } from "@semoss/sdk";
+import { Button, IconButton, Modal, Stack, Typography } from "@semoss/ui";
 
-import {
-    BlockDef,
-    SerializedState,
-    STATE_VERSION,
-    StateStore,
-} from "../../../store";
+import { BlockDef, STATE_VERSION, StateStore } from "../../../store";
 import { useBlock } from "../../../hooks";
-import { DefaultCells } from "../../cell-defaults";
-import { DefaultBlocks } from "../../block-defaults";
-import { Blocks } from "../../blocks";
 
 interface ChildBlockSettingsProps<D extends BlockDef = BlockDef> {
     id: string;
@@ -57,19 +41,19 @@ export const ChildBlockSettings = (props: ChildBlockSettingsProps) => {
     const [state, setState] = useState<StateStore>();
 
     // useEffect(() => {
-        // runPixel<[SerializedState]>(`1+1`, "new").then(
-            // async ({ pixelReturn, errors, insightId }) => {
-                // create a new state store
-                // const s = new StateStore({
-                //     mode: 'static',
-                //     insightId: insightId,
-                //     state: STATE,
-                //     cellRegistry: DefaultCells,
-                // });
-                // set it
-                // setState(s);
-            // },
-        // );
+    // runPixel<[SerializedState]>(`1+1`, "new").then(
+    // async ({ pixelReturn, errors, insightId }) => {
+    // create a new state store
+    // const s = new StateStore({
+    //     mode: 'static',
+    //     insightId: insightId,
+    //     state: STATE,
+    //     cellRegistry: DefaultCells,
+    // });
+    // set it
+    // setState(s);
+    // },
+    // );
     // }, []);
 
     // if (!state) {
@@ -85,9 +69,7 @@ export const ChildBlockSettings = (props: ChildBlockSettingsProps) => {
 
     return (
         <Stack>
-            <Stack
-                direction={"row"}
-            >
+            <Stack direction={"row"}>
                 <Typography align={"center"} variant={"body1"}>
                     Design
                 </Typography>
