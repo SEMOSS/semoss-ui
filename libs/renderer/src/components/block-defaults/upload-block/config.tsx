@@ -59,8 +59,14 @@ export const config: BlockConfig<UploadBlockDef> = {
         show: "true",
     },
     listeners: {
-        onChange: [],
-        preProcess: [],
+        onChange: {
+            type: "sync",
+            order: [],
+        },
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: UploadBlock,

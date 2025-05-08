@@ -9,6 +9,7 @@ import {
     BlockComponent,
     BlockDef,
     BlockJSON,
+    ListenerActions,
 } from "../../../store";
 import { Slot } from "../../blocks";
 
@@ -39,7 +40,10 @@ export interface IterationBlockDef extends BlockDef<"iteration"> {
         children: true;
     };
     listeners: {
-        preProcess: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 

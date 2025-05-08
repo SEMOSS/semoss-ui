@@ -28,8 +28,14 @@ export const config: BlockConfig<SidebarBlockDef> = {
         },
     },
     listeners: {
-        preProcess: [],
-        postProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+        postProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {
         content: [],

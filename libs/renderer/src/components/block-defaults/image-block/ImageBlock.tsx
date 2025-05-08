@@ -2,7 +2,7 @@ import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 // import ImageSkeleton from "../../../assets/ImageSkeleton.png";
 
 export interface ImageBlockDef extends BlockDef<"image"> {
@@ -15,7 +15,10 @@ export interface ImageBlockDef extends BlockDef<"image"> {
     };
     slots: never;
     listeners: {
-        preProcess: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 

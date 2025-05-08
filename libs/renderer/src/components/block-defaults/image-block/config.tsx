@@ -31,7 +31,10 @@ export const config: BlockConfig<ImageBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: ImageBlock,

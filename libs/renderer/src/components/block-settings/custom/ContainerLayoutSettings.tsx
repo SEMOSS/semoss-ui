@@ -179,7 +179,12 @@ export const ContainerLayoutSettings = observer(
                                             border: "solid blue",
                                         },
                                     },
-                                    listeners: {},
+                                    listeners: {
+                                        preProcess: {
+                                            type: "sync",
+                                            order: [],
+                                        },
+                                    },
                                     slots: {
                                         children: [],
                                     },
@@ -217,7 +222,12 @@ export const ContainerLayoutSettings = observer(
                                         border: "solid blue",
                                     },
                                 },
-                                listeners: {},
+                                listeners: {
+                                    preProcess: {
+                                        type: "sync",
+                                        order: [],
+                                    },
+                                },
                                 slots: {
                                     children: [],
                                 },
