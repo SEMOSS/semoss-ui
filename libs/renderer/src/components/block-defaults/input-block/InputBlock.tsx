@@ -2,7 +2,7 @@ import { CSSProperties, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useBlock } from "../../../hooks";
 import { BlockComponent, BlockDef } from "../../../store";
-import { InputLabel, TextField, Typography, styled } from "@mui/material";
+import { TextField, styled } from "@mui/material";
 import { CircularProgress, InputAdornment, Stack } from "@semoss/ui";
 import { debounced } from "../../../utility";
 
@@ -47,12 +47,6 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
 
     return (
         <Stack id={id} {...attrs}>
-            <InputLabel
-                shrink={false}
-                htmlFor={`textfield-${id}`}
-            >
-                <Typography>{data.label ?? 'Label'}</Typography>
-            </InputLabel>
              <StyledTextField
                 size="small"
                 id={`textfield-${id}`}
@@ -61,6 +55,11 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
                         ? data.value
                         : ""
                 }
+                label={
+                    typeof data.label !== "string"
+                        ? JSON.stringify(data.label)
+                        : data.label
+                }
                 rows={data.rows}
                 multiline={data.rows > 1 && data.type === "text"}
                 required={Boolean(data.required)}
@@ -68,7 +67,6 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
                 helperText={data?.hint}
                 style={{
                     ...data.style,
-                    height: "50px"
                 }}
                 InputProps={{
                     startAdornment: (

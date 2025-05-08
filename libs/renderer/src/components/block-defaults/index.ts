@@ -97,8 +97,6 @@ import {
     config as VegaVisualizationBlockConfig,
     VegaVisualizationBlockDef,
 } from "./vega-visualization-block";
-import { config as InputStackedBlockConfig, InputStackedBlockDef } from './input-stacked-block';
-import { config as InputStackedButtonBlockConfig, InputStackedButtonBlockDef } from './input-stacked-button-block';
 
 // import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
 // import { config as BodyBlockConfig, BodyBlockDef } from "./body-block";
@@ -149,9 +147,7 @@ export type DefaultBlockDefinitions =
     | VegaVisualizationBlockDef
     | RadioBlockDef
     | TimePickerBlockDef
-    | ThemeBlockDef
-    | InputStackedBlockDef
-    | InputStackedButtonBlockDef;
+    | ThemeBlockDef;
 // | BodyBlockDef
 // | DividerBlockDef
 // | FooterBlockDef
@@ -201,8 +197,6 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
-    [InputStackedBlockConfig.widget]:InputStackedBlockConfig,
-    [InputStackedButtonBlockConfig.widget]: InputStackedButtonBlockConfig,
     // [StepperBlockConfig.widget]: StepperBlockConfig,
     // [QueryBlockConfig.widget]: QueryBlockConfig,
 };
@@ -245,6 +239,4 @@ export {
     PDFViewerBlockConfig,
     TimePickerBlockConfig,
     FlipCardBlockConfig,
-    InputStackedBlockConfig,
-    InputStackedButtonBlockConfig,
 };
