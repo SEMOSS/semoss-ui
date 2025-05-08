@@ -1,10 +1,10 @@
 import { makeAutoObservable, runInAction, toJS } from "mobx";
 
 import { runPixel, download } from "@semoss/sdk/react";
-import {
-    cancellablePromise,
-    getValueByPath,
-    syncronousPromise,
+import { 
+    cancellablePromise, 
+    getValueByPath, 
+    syncronousPromise, 
 } from "../../utility";
 
 import {
@@ -408,9 +408,9 @@ export class StateStore {
 
                 this.deleteBlockData(id, path);
             } else if (ActionMessages.SET_LISTENER === action.message) {
-                const { id, listener, actions } = action.payload;
+                const { id, listener, actions, type } = action.payload;
 
-                this.setListener(id, listener, actions);
+                this.setListener(id, listener, actions, type);
             } else if (ActionMessages.NEW_QUERY === action.message) {
                 const { queryId, config } = action.payload;
 
@@ -448,10 +448,9 @@ export class StateStore {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
-            } else if (
-                ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
-            ) {
-                this.dispatchOutputsEvent();
+            } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
+
+                this.dispatchOutputsEvent()
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { id, alias } = action.payload;
 
@@ -500,44 +499,35 @@ export class StateStore {
         }
     };
 
+    
     /**
-     * TODO: Accidently commited, work to handly sync and async events. John
-     * Used in useBlock
-     * @param action
-     * @returns
+     * TODO: Needs to get folded into code above --> useBlock.tsx
+     * @param action 
+     * @returns 
      */
-    dispatchEventAction = async (action: Actions) => {
+    dispatchEventAction = async (action: Actions, type: 'sync' | 'async') => {
         try {
             if (ActionMessages.RUN_QUERY === action.message) {
                 const { queryId } = action.payload;
 
-                // const run = async () => {
-                //     setTimeout(() => {
-                //         debugger
-                //         return queryId
-                //     }, 3000)
-                // }
-
-                // return await run()
-                // debugger
-                // const o = await this.runQuery(queryId);
-                // debugger
-                // Return the promise to resolve to caller
-
-                // return o
-            } else if (ActionMessages.DISPATCH_EVENT === action.message) {
+                const run = () => new Promise(async (resolve) => { 
+                    await this.runQuery(queryId, type)
+                    resolve(this._store.queries[queryId].output)
+                }); 
+                    
+                return await run();
+            }else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
-            } else if (
-                ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
-            ) {
-                this.dispatchOutputsEvent();
+            } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
+
+                this.dispatchOutputsEvent()
             }
         } catch (e) {
             console.error(e);
         }
-    };
+    }
 
     /** Variable Methods */
     /**
@@ -612,34 +602,34 @@ export class StateStore {
         const pointer = path[0];
 
         // Special syntax to parse by cell order
-        const isNumber = !isNaN(parseFloat(path[1]));
+        const isNumber = !isNaN(parseFloat(path[1]))
 
         if (isNumber) {
             let q;
 
             // TODO: Problem we want to reference cells by a special syntax
-            // I don't want to change ids to be numbered for cells,
+            // I don't want to change ids to be numbered for cells, 
             // i think we are good with our id generation
-            if (this._store.variables[pointer]) {
+            if(this._store.variables[pointer]) {
                 const variable = this._store.variables[path[0]];
-                if (variable.type === "query") {
-                    q = this._store.queries[variable.to];
+                if(variable.type === "query") {
+                    q = this._store.queries[variable.to]
                 }
             } else if (this._store.queries[pointer]) {
-                q = this._store.queries[pointer];
+                q = this._store.queries[pointer]
             }
 
-            if (q) {
+            if(q) {
                 try {
-                    const c = q.cellList[parseFloat(path[1]) - 1];
-                    const p = path;
-                    p.splice(0, 2);
+                    const c = q.cellList[parseFloat(path[1]) - 1]
+                    const p = path
+                    p.splice(0,2)
 
-                    if (p.length === 0) {
-                        return c.output;
+                    if(p.length === 0) {
+                        return c.output
                     } else {
                         const key = p[0];
-
+                        
                         if (key in c._exposed) {
                             // get the search path
                             const s = p.join(".");
@@ -648,8 +638,9 @@ export class StateStore {
                         }
                     }
                 } catch (e) {
-                    return expression;
+                    return expression
                 }
+
             }
         }
 
@@ -665,6 +656,7 @@ export class StateStore {
                     ? variable.value
                     : null,
             );
+            
 
             // TODO: Check this, protects for false values
             // (query.isLoading tied to a block.label **bad use-case)
@@ -783,7 +775,7 @@ export class StateStore {
         // add the data
         block.data = json.data;
 
-        if (json.widget === "page") {
+        if(json.widget === "page") {
             // Defaulting the route to the block id
             block.data.route = id;
         }
@@ -1329,8 +1321,12 @@ export class StateStore {
         id: string,
         listener: string,
         actions: ListenerActions[],
+        type: "sync" | "async"
     ): void => {
-        this._store.blocks[id].listeners[listener] = actions;
+        this._store.blocks[id].listeners[listener] = {
+            type: type,
+            order: actions
+        }
     };
 
     /**
@@ -1358,25 +1354,26 @@ export class StateStore {
                 id: queryId,
                 type: "query",
                 to: queryId,
-                isOutput: true,
-            },
-        });
+                isOutput: true
+            }
+        })
 
         Object.entries(this._store.queries[queryId].cells).forEach((c) => {
             // Automate variable creation for notebook and new cell
-            const cId = c[0];
+            const cId = c[0]
             this.dispatch({
                 message: ActionMessages.ADD_VARIABLE,
                 payload: {
                     id: `${queryId}--${cId}`,
                     type: "cell",
                     to: queryId,
-                    cellId: cId,
-                },
-            });
-        });
+                    cellId: cId
+                }
+            })
+        })
 
         this._store.executionOrder.push(queryId);
+
 
         return queryId;
     };
@@ -1426,64 +1423,48 @@ export class StateStore {
      * Run a query
      * @param queryId - name of the query that we are running
      */
-    private runQuery = (queryId: string): void => {
+    private runQuery = (queryId: string, type?: 'sync' | 'async'): void => {
         const q = this._store.queries[queryId];
 
         const key = `query--${queryId};`;
 
         // cancel a previous command
         this._utils.queryPromises[key]?.cancel();
+        
+        let p;
+        let sync;
 
-        // setup the promise
-        const p = cancellablePromise(async () => {
-            // run the query
-            await q._run();
-
-            // turn it off
-            return true;
-        });
-
-        p.promise
-            .then(() => {
-                // noop
+        if(!type || type === 'async') {
+            sync = false
+        } else {
+            sync = true
+        }
+        
+        if (sync) {
+            p = syncronousPromise(async () => {
+                await q._run();
+                return true;
             })
-            .catch((e) => {
-                console.error("ERROR:", e);
-            });
+        } else {
+            p = cancellablePromise(async () => {
+                await q._run()
+                return true
+            })
+        }
+        if(sync) {
+            return p.promise
+        } else  {
+            p.promise
+                .then((resp) => {
+                    // noop
+                })
+                .catch((e) => {
+                    console.error("ERROR:", e);
+                });
+        }
 
         // save the promise
         this._utils.queryPromises[key] = p;
-
-        // TODO: John accidentally pushed, need to fix sync and async events on blocks
-        // Wait till whole query resolves
-        //
-        // let p;
-        // let sync = true;
-        // if (sync) {
-        //     p = syncronousPromise(async () => {
-        //         await q._run();
-        //         return true;
-        //     })
-        // } else {
-        //     p = cancellablePromise(async () => {
-        //         await q._run()
-        //         return true
-        //     })
-        // }
-        // if(sync) {
-        //     return p.promise
-        // } else  {
-        //     p.promise
-        //         .then((resp) => {
-        //             // noop
-        //         })
-        //         .catch((e) => {
-        //             console.error("ERROR:", e);
-        //         });
-        // }
-
-        // save the promise
-        // this._utils.queryPromises[key] = p;
     };
 
     /**
@@ -1615,33 +1596,31 @@ export class StateStore {
         const event = new CustomEvent(name, {
             detail: detail,
         });
-
+        
         // dispatch the event to the window
         window.dispatchEvent(event);
     };
 
     /**
-     *
+     * 
      * Dispatch an event
      * @param detail - payload associated with event
      */
     private dispatchOutputsEvent = (): void => {
+
         let outputMap = {};
 
         Object.keys(this._store.variables).forEach((k) => {
-            if (this._store.variables[k].isOutput) {
-                outputMap[k] = this.parseVariable(`{{${k}}}`);
+            if(this._store.variables[k].isOutput) {
+                outputMap[k] = this.parseVariable(`{{${k}}}`)
             }
-        });
+        })
 
         // Communication with Iframe
-        window.parent.postMessage(
-            {
-                type: "DISPATCH_APP_OUTPUTS",
-                data: outputMap,
-            },
-            "*",
-        ); // --> Cross Origin Communications
+        window.parent.postMessage({
+            type: "DISPATCH_APP_OUTPUTS",
+            data: outputMap
+        }, '*') // --> Cross Origin Communications
     };
 
     // -----------------------------------

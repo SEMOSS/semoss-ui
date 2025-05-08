@@ -33,8 +33,14 @@ export const config: BlockConfig<AudioInputBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
-        onComplete: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+        onComplete: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: AudioInputBlock,

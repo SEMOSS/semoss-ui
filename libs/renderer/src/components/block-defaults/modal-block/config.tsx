@@ -95,8 +95,14 @@ export const config: BlockConfig<ModalBlockDef> = {
         open: "", // Default to closed
     },
     listeners: {
-        preProcess: [],
-        onClose: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+        onClose: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {
         content: [],

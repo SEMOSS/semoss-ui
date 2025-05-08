@@ -77,7 +77,10 @@ export const VariablePreview = observer(
                                 },
                             },
                             listeners: {
-                                onPageLoad: [],
+                                onPageLoad: {
+                                    type: 'sync',
+                                    order: [],
+                                },
                             },
                             slots: {
                                 content: {

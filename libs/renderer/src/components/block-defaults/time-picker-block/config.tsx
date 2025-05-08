@@ -44,8 +44,14 @@ export const config: BlockConfig<TimePickerBlockDef> = {
         views: ["hours", "minutes"],
     },
     listeners: {
-        preProcess: [],
-        onChange: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+        onChange: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: TimePickerBlock,

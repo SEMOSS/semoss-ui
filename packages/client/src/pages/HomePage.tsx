@@ -328,7 +328,10 @@ export const HomePage = observer((): JSX.Element => {
                                 }}
                             />
                         </Stack>
-                        {configStore.isEngineOperationAvailable('APP', 'add') && (
+                        {configStore.isEngineOperationAvailable(
+                            'APP',
+                            'add',
+                        ) && (
                             <Button
                                 size={'large'}
                                 variant={'contained'}

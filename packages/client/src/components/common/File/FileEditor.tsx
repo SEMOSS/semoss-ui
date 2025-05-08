@@ -90,8 +90,8 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
         const [LLMActionAdded, setLLMActionAdded] = useState(false);
         // tracks filetype to address bug when prompting LLM - re-address if/when filetype added to LLM pixel
         const wordWrapRef = useRef(false);
-        const editorRef = useRef(null)
-        const [isModified, setIsModified] = useState(false)
+        const editorRef = useRef(null);
+        const [isModified, setIsModified] = useState(false);
 
         // update whenever the content changes
         useImperativeHandle(
@@ -137,23 +137,32 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 
             if (ext === 'ts' || ext === 'tsx') {
                 return 'typescript';
-            }if (ext === 'js' || ext === 'jsx') {
+            }
+            if (ext === 'js' || ext === 'jsx') {
                 return 'javascript';
-            }if (ext === 'html') {
+            }
+            if (ext === 'html') {
                 return 'html';
-            }if (ext === 'css') {
+            }
+            if (ext === 'css') {
                 return 'css';
-            }if (ext === 'scss') {
+            }
+            if (ext === 'scss') {
                 return 'scss';
-            }if (ext === 'py' || ext === 'python') {
+            }
+            if (ext === 'py' || ext === 'python') {
                 return 'python';
-            }if (ext === 'java') {
+            }
+            if (ext === 'java') {
                 return 'java';
-            }if (ext === 'mdx') {
+            }
+            if (ext === 'mdx') {
                 return 'mdx';
-            }if (ext === 'md') {
+            }
+            if (ext === 'md') {
                 return 'markdown';
-            }if (ext === 'txt') {
+            }
+            if (ext === 'txt') {
                 return 'txt';
             }
 
@@ -261,7 +270,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
          * Save the File
          */
         const saveFile = async () => {
-            const content = editorRef.current.getValue()
+            const content = editorRef.current.getValue();
             try {
                 // setIsLoading(true);
 
@@ -293,7 +302,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 
                 // reload the file
                 loadFile();
-                setIsModified(false)
+                setIsModified(false);
             } catch (e) {
                 notification.add({
                     color: 'error',
@@ -349,16 +358,16 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
          * Hanlder for setting content, isModified and onChange
          */
         const handleEditorOnChange = (value) => {
-            setContent(value)
-            setIsModified(value !== initialContent)
-            onChange(value, isModified)
-        }
+            setContent(value);
+            setIsModified(value !== initialContent);
+            onChange(value, isModified);
+        };
 
         /**
          * Handler called when the editor is mounted
          */
         const onEditorMount: OnMount = (editor, monaco) => {
-            editorRef.current = editor
+            editorRef.current = editor;
             if (IS_PRODUCTION) {
                 return;
             }
@@ -366,7 +375,12 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
             // prevents redundant additions of new dropdown action
             if (LLMActionAdded === false) {
                 setLLMActionAdded(true);
-                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {saveFile()}) // use editor's api to use built in keyboard shortcuts to handle differnt OS's save
+                editor.addCommand(
+                    monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
+                    () => {
+                        saveFile();
+                    },
+                ); // use editor's api to use built in keyboard shortcuts to handle differnt OS's save
                 editor.addAction({
                     contextMenuGroupId: '1_modification',
                     contextMenuOrder: 1,
