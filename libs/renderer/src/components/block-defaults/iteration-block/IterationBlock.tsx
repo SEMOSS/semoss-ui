@@ -9,6 +9,7 @@ import {
     BlockComponent,
     BlockDef,
     BlockJSON,
+    ListenerActions,
 } from "../../../store";
 import { Slot } from "../../blocks";
 
@@ -38,30 +39,44 @@ export interface IterationBlockDef extends BlockDef<"iteration"> {
     slots: {
         children: true;
     };
+    listeners: {
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+    };
 }
 
 export const IterationBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots } = useBlock<IterationBlockDef>(id);
+    const { attrs, data, slots, listeners } = useBlock<IterationBlockDef>(id);
     const { state } = useBlocks();
 
     const [blocksToRemove, setBlocksToRemove] = useState([]);
 
-    let list 
-    if (typeof data.source === "string") {
-        try {
-            list = JSON.parse(data.source);
-        } catch {
-            list = data.source
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
         }
-    }
+    }, []);
 
     /**
      * Add Blocks at runtime
      */
     useEffect(() => {
+        let list;
+        if (typeof data.source === "string") {
+            try {
+                list = JSON.parse(data.source);
+            } catch {
+                list = data.source;
+            }
+        } else if (Array.isArray(data.source)) {
+            list = data.source;
+        }
+
         // Only while we are in app using mode
         if (state.mode === "interactive") {
-            if (typeof list === "object") {
+            if (Array.isArray(list)) {
                 console.log(list.length);
                 const newIds = [];
 
@@ -70,10 +85,10 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
                         message: ActionMessages.REMOVE_BLOCK,
                         payload: {
                             id: b,
-                            keep: false
-                        }
-                    })
-                })
+                            keep: false,
+                        },
+                    });
+                });
 
                 list.forEach(async (j, i) => {
                     // Skip the first
@@ -118,14 +133,14 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
                         },
                     });
 
-                    newIds.push(newBlockId)
+                    newIds.push(newBlockId);
                 });
 
-                setBlocksToRemove(newIds)
+                setBlocksToRemove(newIds);
             }
         }
         // TODO: FIx Dependency array
-    }, [JSON.stringify(list), JSON.stringify(data.child)]);
+    }, [JSON.stringify(data.source), JSON.stringify(data.child)]);
 
     return (
         <div

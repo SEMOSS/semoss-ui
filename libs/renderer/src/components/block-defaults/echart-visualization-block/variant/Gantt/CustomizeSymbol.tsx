@@ -11,14 +11,16 @@ import {
     Switch,
     TextField,
 } from "@semoss/ui";
+
 import styled from "@emotion/styled";
-import { getValueByPath } from "@/utility";
 import { PathValue } from "@/types";
+import { getValueByPath } from "../../../../../utility";
 import { useBlockSettings, useBlock } from "../../../../../hooks";
 import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks/VisualizationBlock";
 import { BaseSettingSection } from "../../../../block-settings";
 import { GANTT_CHART } from "../../../echart-visualization-blocks/Visualization.constants";
 import { BlockDef } from "../../../../../store";
+
 //Sub container with column based field setting
 const StyledSubContainer = styled("div")(({}) => ({
     padding: "0.5rem",

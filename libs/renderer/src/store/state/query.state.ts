@@ -258,6 +258,8 @@ export class QueryState {
                 // run the cell
                 await cell._run();
             }
+
+            // debugger
         } catch (e) {
             // if a cell errors out of the runPixel and causes a break/catch here,
             // we're unable to get granular information about which cell caused the error.

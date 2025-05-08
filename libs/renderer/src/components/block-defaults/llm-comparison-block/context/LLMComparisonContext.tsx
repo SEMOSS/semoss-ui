@@ -22,7 +22,10 @@ export type LLMComparisonContextType = {
 
     watch: (str: string) => unknown;
 
-    handleSubmit: UseFormHandleSubmit<TypeLlmComparisonForm, TypeLlmComparisonForm>;
+    handleSubmit: UseFormHandleSubmit<
+        TypeLlmComparisonForm,
+        TypeLlmComparisonForm
+    >;
 
     /** All Models available for configuring variants */
     allModels: TypeLlmConfig[];

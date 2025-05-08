@@ -30,6 +30,11 @@ import {
     EchartVisualizationBlockDef,
 } from "./echart-visualization-block";
 
+import {
+    config as FlipCardBlockConfig,
+    FlipCardBlockDef,
+} from "./flip-card-block";
+
 import { config as GridBlockConfig, GridBlockDef } from "./grid-block";
 
 import { config as HTMLBlockConfig, HTMLBlockDef } from "./html-block";
@@ -38,7 +43,10 @@ import { config as IconBlockConfig, IconBlockDef } from "./Icon_block";
 import { config as IframeBlockConfig, IframeBlockDef } from "./iframe-block";
 import { config as ImageBlockConfig, ImageBlockDef } from "./image-block";
 import { config as InputBlockConfig, InputBlockDef } from "./input-block";
-import { config as IterationBlockConfig, IterationBlockDef } from './iteration-block';
+import {
+    config as IterationBlockConfig,
+    IterationBlockDef,
+} from "./iteration-block";
 
 import { config as LinkBlockConfig, LinkBlockDef } from "./link-block";
 import { config as LogsBlockConfig, LogsBlockDef } from "./logs-block";
@@ -109,6 +117,7 @@ export type DefaultBlockDefinitions =
     | ContainerBlockDef
     | DividerBlockDef
     | EchartVisualizationBlockDef
+    | FlipCardBlockDef
     | GridBlockDef
     | HTMLBlockDef
     | IconBlockDef
@@ -159,6 +168,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [DividerBlockConfig.widget]: DividerBlockConfig,
     [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
+    [FlipCardBlockConfig.widget]: FlipCardBlockConfig,
     [GridBlockConfig.widget]: GridBlockConfig,
     [IconBlockConfig.widget]: IconBlockConfig,
     [IframeBlockConfig.widget]: IframeBlockConfig,
@@ -228,4 +238,5 @@ export {
     RadioBlockConfig,
     PDFViewerBlockConfig,
     TimePickerBlockConfig,
+    FlipCardBlockConfig,
 };

@@ -44,7 +44,14 @@ export const config: BlockConfig<TimePickerBlockDef> = {
         views: ["hours", "minutes"],
     },
     listeners: {
-        onChange: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+        onChange: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: TimePickerBlock,
@@ -188,6 +195,10 @@ export const config: BlockConfig<TimePickerBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
         {
             name: "on Change",

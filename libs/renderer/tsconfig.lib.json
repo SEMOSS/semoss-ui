@@ -4,20 +4,19 @@
         "outDir": "dist",
         "types": [
             "node",
+            "jest",
             "@nx/react/typings/cssmodule.d.ts",
-            "@nx/react/typings/image.d.ts"
+            "@nx/react/typings/image.d.ts",
+            "vitest/globals",
+            "vitest/importMeta",
+            "vite/client",
+            "vitest",
+            "@testing-library/jest-dom",
+            "@testing-library/jest-dom/jest-globals"
         ]
     },
     "exclude": [
-        "jest.config.ts",
-        "src/**/*.spec.ts",
-        "src/**/*.test.ts",
-        "src/**/*.spec.tsx",
-        "src/**/*.test.tsx",
-        "src/**/*.spec.js",
-        "src/**/*.test.js",
-        "src/**/*.spec.jsx",
-        "src/**/*.test.jsx"
+        "jest.config.ts", "dist"
     ],
-    "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"]
+    "typeRoots": ["./node_modules/@types", "./node_modules"]
 }

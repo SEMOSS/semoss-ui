@@ -19,11 +19,13 @@
 
         "build": "npx nx run-many -t build -p @semoss/client @semoss/legacy",
 
-        "test": "vitest --watch=false --passWithNoTests --changed",
         "lint:client": "npx nx lint @semoss/client",
         "lint:ui": "npx nx lint @semoss/ui",
         "lint:renderer": "npx nx lint @semoss/renderer",
-        "lint:all": "echo \"TODO: fix lint script to lint all packages/libs .\""
+        "lint:all": "echo \"TODO: fix lint script to lint all packages/libs .\"",
+
+        "test": "npx vitest --watch=false --passWithNoTests --changed",
+        "test:browser": "vitest --watch --ui --pool=forks"
     },
     "author": "",
     "license": "Apache-2.0",

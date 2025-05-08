@@ -4,7 +4,7 @@ import {
     SxProps,
 } from "@mui/material";
 
-export interface TabsProps<V> extends MuiTabsProps {
+export interface TabsProps<V = string | number> extends MuiTabsProps {
     /**
      * The label for the Tabs as a string.
      */
@@ -39,7 +39,6 @@ export interface TabsProps<V> extends MuiTabsProps {
     value?: V;
 }
 
-export const Tabs = (props: TabsProps<string | number>) => {
-    const { sx } = props;
-    return <MuiTabs sx={sx} {...props} />;
+export const Tabs = <V,>(props: TabsProps<V>) => {
+    return <MuiTabs {...props} />;
 };

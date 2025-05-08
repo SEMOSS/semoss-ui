@@ -1,13 +1,13 @@
 import { useCallback, useMemo } from "react";
 import { computed } from "mobx";
 
+import { upload } from "@semoss/sdk/react";
+
 import { Paths, PathValue } from "../types";
 import { ActionMessages, Block, BlockDef, ListenerActions } from "../store";
 import { copy } from "../utility";
-
 import { useBlocks } from "./useBlocks";
 
-import { upload } from "@semoss/sdk";
 
 /**
  * useBlockReturn
@@ -166,8 +166,8 @@ export const useBlock = <D extends BlockDef = BlockDef>(
          * @param actions - Actions to dispatch
          * @param intercept - Intercept and modify an action
          */
-        const dispatchAction = (
-            actions: ListenerActions[],
+        const dispatchAction = async (
+            actions: {order: ListenerActions[], type: 'sync' | 'async'},
             intercept?: (action: ListenerActions) => ListenerActions | null,
         ) => {
             // ignore if static
@@ -176,7 +176,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
             }
 
             // go through each one and trigger it
-            actions.forEach((a) => {
+            for (const a of actions.order) {
                 // convert back to a normal action
                 let action: ListenerActions | null = a;
 
@@ -189,8 +189,8 @@ export const useBlock = <D extends BlockDef = BlockDef>(
                     return;
                 }
 
-                state.dispatch(action);
-            });
+                await state.dispatchEventAction(action, actions.type);
+            }
         };
 
         // create the listeners
@@ -209,9 +209,10 @@ export const useBlock = <D extends BlockDef = BlockDef>(
         return copy(block.data, (instance) => {
             if (typeof instance === "string") {
                 // try to extract the variable
-
-                // debugger
-                return state.parseVariable(instance, block.widget !== 'iteration' ? block.id : null);
+                return state.parseVariable(
+                    instance,
+                    block.widget !== "iteration" ? block.id : null,
+                );
             }
 
             return instance;

@@ -9,7 +9,7 @@ import {
     getPixelConsole,
     getPixelAsyncResult,
     runPixelAsync,
-} from "@semoss/sdk";
+} from "@semoss/sdk/react";
 
 export interface CellStateStoreInterface<D extends CellDef = CellDef> {
     /** Id of the cell */
@@ -285,7 +285,11 @@ export class CellState<D extends CellDef = CellDef> {
                     });
                 });
                 // Currently console does not get pass STREAMING
-                if (status === "ProgressComplete" || status === "Streaming" || status === "Complete") {
+                if (
+                    status === "ProgressComplete" ||
+                    status === "Streaming" ||
+                    status === "Complete"
+                ) {
                     isPolling = false;
                 } else {
                     // poll
@@ -381,7 +385,6 @@ export class CellState<D extends CellDef = CellDef> {
                     this._store.output = outputs;
                 });
             }
-
 
             // process side effects from running a pixel
             this._state.processSideEffects(this.operation, this.output);

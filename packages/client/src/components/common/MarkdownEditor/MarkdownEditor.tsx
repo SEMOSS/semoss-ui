@@ -5,8 +5,8 @@ import {
     styled,
     ToggleTabsGroup,
     Typography,
+    Markdown,
 } from '@semoss/ui';
-import { Markdown } from '../Markdown';
 
 // Reduce Initial Bundle
 const Editor = lazy(() => import('@monaco-editor/react'));
@@ -90,7 +90,7 @@ export const MarkdownEditor = (props: MarkdownEditorProps) => {
                     </Suspense>
                 ) : (
                     <StyledMarkdownContainer>
-                        <Markdown content={value}></Markdown>
+                        <Markdown>{value}</Markdown>
                     </StyledMarkdownContainer>
                 )}
             </StyledTabPanel>

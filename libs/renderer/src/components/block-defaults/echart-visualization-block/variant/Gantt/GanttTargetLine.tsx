@@ -1,9 +1,11 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { Button, Switch, TextField } from "@semoss/ui";
 import styled from "@emotion/styled";
-import { getValueByPath } from "@/utility";
+
+import { Button, Switch, TextField } from "@semoss/ui";
+
+import { getValueByPath } from "../../../../../utility";
 import { useBlocks, useBlockSettings } from "../../../../../hooks";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { BlockDef } from "../../../../../store";

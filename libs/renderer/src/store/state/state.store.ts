@@ -1,7 +1,11 @@
 import { makeAutoObservable, runInAction, toJS } from "mobx";
 
-import { runPixel, download } from "@semoss/sdk";
-import { cancellablePromise, getValueByPath } from "../../utility";
+import { runPixel, download } from "@semoss/sdk/react";
+import { 
+    cancellablePromise, 
+    getValueByPath, 
+    syncronousPromise, 
+} from "../../utility";
 
 import {
     ActionMessages,
@@ -360,7 +364,9 @@ export class StateStore {
     }
 
     /**
+     * -------------------------------------
      * Actions
+     * -------------------------------------
      */
     /**
      * Dispatch a message to update the state
@@ -402,13 +408,13 @@ export class StateStore {
 
                 this.deleteBlockData(id, path);
             } else if (ActionMessages.SET_LISTENER === action.message) {
-                const { id, listener, actions } = action.payload;
+                const { id, listener, actions, type } = action.payload;
 
-                this.setListener(id, listener, actions);
+                this.setListener(id, listener, actions, type);
             } else if (ActionMessages.NEW_QUERY === action.message) {
                 const { queryId, config } = action.payload;
 
-                return this.newQuery(queryId, config);
+                this.newQuery(queryId, config);
             } else if (ActionMessages.DELETE_QUERY === action.message) {
                 const { queryId } = action.payload;
 
@@ -420,7 +426,7 @@ export class StateStore {
             } else if (ActionMessages.RUN_QUERY === action.message) {
                 const { queryId } = action.payload;
 
-                this.runQuery(queryId);
+                return this.runQuery(queryId);
             } else if (ActionMessages.NEW_CELL === action.message) {
                 const { queryId, cellId, config, previousCellId } =
                     action.payload;
@@ -442,6 +448,9 @@ export class StateStore {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
+            } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
+
+                this.dispatchOutputsEvent()
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { id, alias } = action.payload;
 
@@ -490,6 +499,36 @@ export class StateStore {
         }
     };
 
+    
+    /**
+     * TODO: Needs to get folded into code above --> useBlock.tsx
+     * @param action 
+     * @returns 
+     */
+    dispatchEventAction = async (action: Actions, type: 'sync' | 'async') => {
+        try {
+            if (ActionMessages.RUN_QUERY === action.message) {
+                const { queryId } = action.payload;
+
+                const run = () => new Promise(async (resolve) => { 
+                    await this.runQuery(queryId, type)
+                    resolve(this._store.queries[queryId].output)
+                }); 
+                    
+                return await run();
+            }else if (ActionMessages.DISPATCH_EVENT === action.message) {
+                const { name, detail } = action.payload;
+
+                this.dispatchEvent(name, detail);
+            } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
+
+                this.dispatchOutputsEvent()
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
     /** Variable Methods */
     /**
      * TODO: Clean this fn up (split out iterator parsing?)
@@ -500,52 +539,58 @@ export class StateStore {
         let cleaned = expression.trim();
 
         // Checks if it falls inline with special syntax
-        if (!cleaned.startsWith("{{") && !cleaned.endsWith("}}") && !cleaned.startsWith("$")) {
+        if (
+            !cleaned.startsWith("{{") &&
+            !cleaned.endsWith("}}") &&
+            !cleaned.startsWith("$")
+        ) {
             return expression;
         }
 
         // Special Parsing for Iterators
-        if(cleaned.startsWith("$")) {
+        if (cleaned.startsWith("$")) {
             // See if id is a descendant of an iterator block
-            const iteratorBlock = this.isDescendantOfIterator(id)
+            const iteratorBlock = this.isDescendantOfIterator(id);
 
             if (iteratorBlock) {
                 try {
                     // Go see what index the iterator block children this id is a descendant of
-                    const index = this.findIteratorChildIndex(iteratorBlock, id)
-                    const iteratorList = iteratorBlock.data.source as string
-                    let list = this.parseVariable(iteratorList)
+                    const index = this.findIteratorChildIndex(
+                        iteratorBlock,
+                        id,
+                    );
+                    const iteratorList = iteratorBlock.data.source as string;
+                    let list = this.parseVariable(iteratorList);
 
-                    if(typeof list === 'string') {
+                    if (typeof list === "string") {
                         try {
-                            list = JSON.parse(list)
+                            list = JSON.parse(list);
                         } catch {
-                            return expression
+                            return expression;
                         }
                     }
-                    
+
                     const variable = expression.match(/\$(.*?)\./)[1];
                     const stripped = iteratorList.slice(2, -2);
-                    
-                    // TODO: how do we handle nested loops $array.warehouse.warehouseSections
+
+                    // TODO: how do we handle nested loops $array.warehouse.warehouseSections --> = []
                     // Do we just call this recursively
                     if (variable === stripped) {
-                        const path = expression.split(".").splice(1)
-                        const test = path.join(".")
-                        const val = getValueByPath(list[index], test)
+                        const path = expression.split(".").splice(1);
+                        const test = path.join(".");
+                        const val = getValueByPath(list[index], test);
 
                         // SHOW "" or expression
-                        return val ? val : ''
+                        return val ? val : "";
                     } else {
-                        return expression
+                        return expression;
                     }
-
                 } catch {
-                    return expression
+                    return expression;
                 }
             } else {
-                console.warn(`Unable to find iterator descendant - ${id}: `)
-                return expression
+                console.warn(`Unable to find iterator descendant - ${id}: `);
+                return expression;
             }
         }
 
@@ -554,10 +599,55 @@ export class StateStore {
 
         // get the keys in the path
         const path = cleaned.split(".");
+        const pointer = path[0];
+
+        // Special syntax to parse by cell order
+        const isNumber = !isNaN(parseFloat(path[1]))
+
+        if (isNumber) {
+            let q;
+
+            // TODO: Problem we want to reference cells by a special syntax
+            // I don't want to change ids to be numbered for cells, 
+            // i think we are good with our id generation
+            if(this._store.variables[pointer]) {
+                const variable = this._store.variables[path[0]];
+                if(variable.type === "query") {
+                    q = this._store.queries[variable.to]
+                }
+            } else if (this._store.queries[pointer]) {
+                q = this._store.queries[pointer]
+            }
+
+            if(q) {
+                try {
+                    const c = q.cellList[parseFloat(path[1]) - 1]
+                    const p = path
+                    p.splice(0,2)
+
+                    if(p.length === 0) {
+                        return c.output
+                    } else {
+                        const key = p[0];
+                        
+                        if (key in c._exposed) {
+                            // get the search path
+                            const s = p.join(".");
+
+                            return getValueByPath(c._exposed, s);
+                        }
+                    }
+                } catch (e) {
+                    return expression
+                }
+
+            }
+        }
 
         if (this._store.variables[path[0]]) {
+            // We should be able to interpret by varaible name as we do below
             const variable = this._store.variables[path[0]];
-            const value = this.getVariable(
+            let value = this.getVariable(
                 variable.to,
                 variable.type,
                 path,
@@ -566,6 +656,7 @@ export class StateStore {
                     ? variable.value
                     : null,
             );
+            
 
             // TODO: Check this, protects for false values
             // (query.isLoading tied to a block.label **bad use-case)
@@ -684,6 +775,11 @@ export class StateStore {
         // add the data
         block.data = json.data;
 
+        if(json.widget === "page") {
+            // Defaulting the route to the block id
+            block.data.route = id;
+        }
+
         // add the listeners
         block.listeners = json.listeners;
 
@@ -717,12 +813,12 @@ export class StateStore {
     };
 
     private isDescendantOfIterator = (blockId: string) => {
-        console.warn(`Is ${blockId} a descendant of an iterator` )
+        console.warn(`Is ${blockId} a descendant of an iterator`);
 
         let currentBlock = this._store.blocks[blockId];
 
         while (currentBlock) {
-            if (currentBlock.widget === 'iteration') {
+            if (currentBlock.widget === "iteration") {
                 return currentBlock;
             }
             if (currentBlock.parent && currentBlock.parent.id) {
@@ -731,50 +827,49 @@ export class StateStore {
                 break;
             }
         }
-    
-        return false;
 
-    }
+        return false;
+    };
 
     private isDescendant = (containerId, blockId) => {
         const container = this._store.blocks[containerId];
-        
+
         // TODO: may need to fix
         if (!container || !container.slots || !container.slots.children) {
             return false;
         }
-        
+
         // TODO: will it always be .children? --> Accordion .content and .header
         const children = container.slots.children.children;
         if (children.includes(blockId)) {
             return true;
         }
-    
+
         for (const childId of children) {
             if (this.isDescendant(childId, blockId)) {
                 return true;
             }
         }
-    
+
         return false;
-    }
+    };
 
     private findIteratorChildIndex = (iteratorBlock, blockId) => {
         const children = iteratorBlock.slots.children.children;
-    
+
         for (let i = 0; i < children.length; i++) {
             const iteratorChildId = children[i];
 
             // No need to search tree
-            if(iteratorChildId === blockId) return i
+            if (iteratorChildId === blockId) return i;
 
             if (this.isDescendant(iteratorChildId, blockId)) {
                 return i;
             }
         }
-    
+
         return -1; // Return -1 if not found
-    }
+    };
 
     /**
      * Check if a parent contains the child block
@@ -995,6 +1090,7 @@ export class StateStore {
 
         // try to place it if position
         if (!position) {
+            if (block.widget === "page") return block.id;
             return;
         }
 
@@ -1225,8 +1321,12 @@ export class StateStore {
         id: string,
         listener: string,
         actions: ListenerActions[],
+        type: "sync" | "async"
     ): void => {
-        this._store.blocks[id].listeners[listener] = actions;
+        this._store.blocks[id].listeners[listener] = {
+            type: type,
+            order: actions
+        }
     };
 
     /**
@@ -1245,7 +1345,35 @@ export class StateStore {
             this,
         );
 
+        // TODO: Do we want this to be done here
+
+        // Automate variable creation for notebook and new cell
+        this.dispatch({
+            message: ActionMessages.ADD_VARIABLE,
+            payload: {
+                id: queryId,
+                type: "query",
+                to: queryId,
+                isOutput: true
+            }
+        })
+
+        Object.entries(this._store.queries[queryId].cells).forEach((c) => {
+            // Automate variable creation for notebook and new cell
+            const cId = c[0]
+            this.dispatch({
+                message: ActionMessages.ADD_VARIABLE,
+                payload: {
+                    id: `${queryId}--${cId}`,
+                    type: "cell",
+                    to: queryId,
+                    cellId: cId
+                }
+            })
+        })
+
         this._store.executionOrder.push(queryId);
+
 
         return queryId;
     };
@@ -1295,30 +1423,45 @@ export class StateStore {
      * Run a query
      * @param queryId - name of the query that we are running
      */
-    private runQuery = (queryId: string): void => {
+    private runQuery = (queryId: string, type?: 'sync' | 'async'): void => {
         const q = this._store.queries[queryId];
 
         const key = `query--${queryId};`;
 
         // cancel a previous command
         this._utils.queryPromises[key]?.cancel();
+        
+        let p;
+        let sync;
 
-        // setup the promise
-        const p = cancellablePromise(async () => {
-            // run the query
-            await q._run();
-
-            // turn it off
-            return true;
-        });
-
-        p.promise
-            .then(() => {
-                // noop
+        if(!type || type === 'async') {
+            sync = false
+        } else {
+            sync = true
+        }
+        
+        if (sync) {
+            p = syncronousPromise(async () => {
+                await q._run();
+                return true;
             })
-            .catch((e) => {
-                console.error("ERROR:", e);
-            });
+        } else {
+            p = cancellablePromise(async () => {
+                await q._run()
+                return true
+            })
+        }
+        if(sync) {
+            return p.promise
+        } else  {
+            p.promise
+                .then((resp) => {
+                    // noop
+                })
+                .catch((e) => {
+                    console.error("ERROR:", e);
+                });
+        }
 
         // save the promise
         this._utils.queryPromises[key] = p;
@@ -1453,9 +1596,31 @@ export class StateStore {
         const event = new CustomEvent(name, {
             detail: detail,
         });
-
+        
         // dispatch the event to the window
         window.dispatchEvent(event);
+    };
+
+    /**
+     * 
+     * Dispatch an event
+     * @param detail - payload associated with event
+     */
+    private dispatchOutputsEvent = (): void => {
+
+        let outputMap = {};
+
+        Object.keys(this._store.variables).forEach((k) => {
+            if(this._store.variables[k].isOutput) {
+                outputMap[k] = this.parseVariable(`{{${k}}}`)
+            }
+        })
+
+        // Communication with Iframe
+        window.parent.postMessage({
+            type: "DISPATCH_APP_OUTPUTS",
+            data: outputMap
+        }, '*') // --> Cross Origin Communications
     };
 
     // -----------------------------------

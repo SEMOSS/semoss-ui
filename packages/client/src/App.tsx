@@ -1,13 +1,49 @@
 import { useEffect } from 'react';
 import axios, { isAxiosError } from 'axios';
-import { Env } from '@/env';
+
+import { Env } from '@semoss/sdk/react';
+
 import { RootStore } from '@/stores';
 import { RootStoreContext } from '@/contexts';
 import { AppWrapper } from './AppWrapper';
 
+// set it from the process if it exists
+Env.update({
+    MODULE: process.env.MODULE || '',
+});
+
+const CSRF = {
+    isEnabled: false,
+    token: '',
+};
+
+/**
+ * Get the CSRF Token
+ * @returns token
+ */
+async function getToken(): Promise<string> {
+    try {
+        const response = await axios.get(`${Env.MODULE}/api/config/fetchCsrf`, {
+            headers: {
+                'X-CSRF-Token': 'fetch',
+            },
+        });
+
+        // not sure why the server is sending it as lowercase, preserving headers doesn't fix it
+        const token =
+            response.headers['X-CSRF-Token'] ||
+            response.headers['x-csrf-token'] ||
+            '';
+
+        return token;
+    } catch (error) {
+        return '';
+    }
+}
+
 // add interceptors
 axios.interceptors.request.use(
-    (config) => {
+    async (config) => {
         // Check if the request is a GET request
         if (config.method === 'get' && config.params) {
             config.paramsSerializer = (params) => {
@@ -31,6 +67,17 @@ axios.interceptors.request.use(
                     .join('&');
             };
         }
+
+        // Check if CSRF is enabled and add the token
+        if (CSRF.isEnabled) {
+            if (config.method === 'post') {
+                if (!CSRF.token) {
+                    CSRF.token = await getToken();
+                }
+
+                config.headers['X-CSRF-Token'] = CSRF.token;
+            }
+        }
         return config;
     },
     (error) => {
@@ -44,64 +91,50 @@ axios.interceptors.response.use(
         return response;
     },
     function (error) {
-        if (error.status === 302 && error.headers && error.headers.redirect) {
-            window.location.replace(error.headers.redirect);
-        }
-
-        if (isAxiosError(error)) {
-            const { response } = error;
-            if (
-                response.status === 302 &&
-                response.headers &&
-                response.headers.redirect
-            ) {
-                window.location.replace(response.headers.redirect);
-            }
-        }
-
-        const apiMessage = error.response?.data?.errorMessage;
-        if (apiMessage && typeof apiMessage === 'string') {
-            // Exception for returning the errorMessage provided via the API if available.
-            return Promise.reject(apiMessage);
-        } else if (error.message) {
-            // return the message if it exists
-            return Promise.reject(error.message);
-        } else {
-            // reject with generic error
-            return Promise.reject('Error');
-        }
+        getError(error);
     },
 );
-
-// axios.interceptors.request.use((config) => {
-//     return new Promise((resolve) => setTimeout(() => resolve(config), 3000));
-// });
 
 // create a new root store
 const _store = new RootStore();
 
+//get error from request or response
+function getError(error) {
+    if (error.status === 302 && error.headers && error.headers.redirect) {
+        window.location.replace(error.headers.redirect);
+    }
+
+    if (isAxiosError(error)) {
+        const { response } = error;
+        if (
+            response.status === 302 &&
+            response.headers &&
+            response.headers.redirect
+        ) {
+            window.location.replace(response.headers.redirect);
+        }
+    }
+
+    const apiMessage = error.response?.data?.errorMessage;
+    if (apiMessage && typeof apiMessage === 'string') {
+        // Exception for returning the errorMessage provided via the API if available.
+        return Promise.reject(apiMessage);
+    } else if (error.message) {
+        // return the message if it exists
+        return Promise.reject(error.message);
+    } else {
+        // reject with generic error
+        return Promise.reject('Error');
+    }
+}
+
 export const App = () => {
     useEffect(() => {
-        // load the environment from the document (production)
-        try {
-            const env = JSON.parse(
-                document.getElementById('semoss-env')?.textContent || '',
-            ) as {
-                MODULE: string;
-            };
-
-            // update the enviornment variables with the module
-            if (env) {
-                Env.update({
-                    MODULE: env.MODULE,
-                });
-            }
-        } catch (e) {
-            // noop
-        }
-
         // intialize it
-        _store.configStore.initialize();
+        _store.configStore.initialize().then(() => {
+            // set as enabled
+            CSRF.isEnabled = _store.configStore.store.config.csrf;
+        });
     }, []);
 
     //  NCRT ASK - (https://play.semoss.org/ncrt/SemossWeb/packages/client/dist/#!/)
@@ -111,6 +144,7 @@ export const App = () => {
             '$1#',
         );
     }
+
     return (
         <RootStoreContext.Provider value={_store}>
             <AppWrapper />
