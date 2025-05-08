@@ -7,10 +7,12 @@ import { RootStore } from '@/stores';
 import { RootStoreContext } from '@/contexts';
 import { AppWrapper } from './AppWrapper';
 
-// set it from the process if it exists
-Env.update({
-    MODULE: process.env.MODULE || '',
-});
+// // use the environment variable to set the module if in development
+// if (process.env.NODE_ENV === 'development') {
+//     Env.update({
+//         MODULE: process.env.MODULE || '',
+//     });
+// }
 
 const CSRF = {
     isEnabled: false,
@@ -130,6 +132,28 @@ function getError(error) {
 
 export const App = () => {
     useEffect(() => {
+        // load the environment from the document in (production)
+        try {
+            if (!document) {
+                return;
+            }
+
+            const env = JSON.parse(
+                document.getElementById('semoss-env')?.textContent || '',
+            ) as {
+                MODULE: string;
+            };
+
+            // update the enviornment variables with the module
+            if (env) {
+                Env.update({
+                    MODULE: env.MODULE,
+                });
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
         // intialize it
         _store.configStore.initialize().then(() => {
             // set as enabled

@@ -1,10 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, ChangeEvent } from 'react';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
-import { Button, Select, styled, Typography, MenuItem, Switch } from '@semoss/ui';
-import { ChangeEvent } from 'react';
-import { BlockDef } from '../../../../../store';
-import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
+import { styled, Typography, Switch } from '@semoss/ui';
 import { useBlockSettings } from '../../../../../hooks';
 import { getValueByPath } from '@/utility';
 
