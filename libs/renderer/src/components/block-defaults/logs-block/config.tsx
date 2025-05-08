@@ -15,7 +15,10 @@ export const config: BlockConfig<LogsBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: LogsBlock,
