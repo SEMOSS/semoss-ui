@@ -215,9 +215,41 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
             }));
             const fieldToValues: Record<string, any[]> = {};
             headers.forEach((name, index) => {
-                fieldToValues[name.name] = responseData.values.map(
-                    (row) => row[index],
+                const rawValues = responseData.values.map((row) => row[index]);
+                const numbers: number[] = [];
+                const strings: Set<string> = new Set();
+                let hasNaNString = false;
+                rawValues.forEach((val) => {
+                    if (val === "NaN") {
+                        hasNaNString = true; // Keep only one "NaN"
+                    } else if (
+                        !isNaN(Number(val)) &&
+                        val !== null &&
+                        val !== undefined &&
+                        val !== ""
+                    ) {
+                        numbers.push(Number(val));
+                    } else {
+                        strings.add(String(val));
+                    }
+                });
+                // Remove duplicates from numbers, sort ascending
+                const uniqueSortedNumbers = Array.from(new Set(numbers)).sort(
+                    (a, b) => a - b,
                 );
+                // Sort strings alphabetically
+                const sortedStrings = Array.from(strings).sort((a, b) =>
+                    a.localeCompare(b),
+                );
+                // Add single "NaN" if present
+                if (hasNaNString) {
+                    sortedStrings.unshift("NaN");
+                }
+                // Combine numbers first, then strings
+                fieldToValues[name.name] = [
+                    ...uniqueSortedNumbers,
+                    ...sortedStrings,
+                ];
             });
             setValueOptionsMap(fieldToValues);
             const usedFields = new Set<string>();
@@ -551,38 +583,6 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
         }
         async function handleFrameSelected(frameSelected) {
             setSelectedFrame(frameSelected);
-            
-            const response = await state.runSideEffect(
-                `META | ${frameSelected} | FrameHeaders();`,
-            );
-            if (response) {
-                const headers = response["pixelReturn"][0]["output"][
-                    "headerInfo"
-                ]["headers"].map((element) => ({
-                    name: element["displayName"],
-                    type: element["dataType"],
-                }));
-                setSelectedFrameHeaders(headers);
-            }
-            const querryResponse = await state.runSideEffect(
-                `META | Frame("${frameSelected}") | QueryAll()| Limit(1000) | CollectAll()`,
-            );
-            if(querryResponse){
-                let responseData = querryResponse["pixelReturn"][0]["output"]["data"];
-            const headers = querryResponse["pixelReturn"][0]["output"][
-                "headerInfo"
-            ].map((element) => ({
-                name: element["header"],
-                type: element["dataType"],
-            }));
-            const fieldToValues: Record<string, any[]> = {};
-            headers.forEach((name, index) => {
-                fieldToValues[name.name] = responseData.values.map(
-                    (row) => row[index],
-                );
-            });
-            setValueOptionsMap(fieldToValues);
-            }
             let target = frameSelected.match(/\d+/);
             const targetID = target ? parseInt(target[0], 10) : null;
             state.dispatch({
@@ -608,16 +608,15 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
             });
             resetAllRules();
         }
-            //setRuleGroups([]);
-            const resetAllRules = () => {
-                setRuleGroups(prev => {
-                    if (prev.length === 0) return prev;
-                    // Keep only the top-level group and empty its rules
-                    const rootGroup = { ...prev[0], rules: [] };
-                    return [rootGroup];
-                });
-                setQuery(""); // Reset the query string
-            };
+        const resetAllRules = () => {
+            setRuleGroups((prev) => {
+                if (prev.length === 0) return prev;
+                // Keep only the top-level group and empty its rules
+                const rootGroup = { ...prev[0], rules: [] };
+                return [rootGroup];
+            });
+            setQuery(""); // Reset the query string
+        };
         const helpText =
             !doesFrameExist && cell.parameters.targetCell.id
                 ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying filter.`
