@@ -283,6 +283,9 @@ export const MembersTable = (props: MembersTableProps) => {
             : null;
 
     const getMembers = useAPI(getMembersApi);
+    useEffect(() => {
+        setPage(0);
+    }, [debouncedSearch]);
 
     /**
      * Sets the user details based on the current user in the members array.
