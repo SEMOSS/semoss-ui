@@ -297,7 +297,7 @@ export const DeleteDuplicateMask = observer(
                       block.widget === 'iteration' &&
                       block.slots.children.children?.length > 0
                   ) {
-                      block.slots.children.children.forEach((child) => {
+                      [...block.slots.children.children].forEach((child) => {
                           state.dispatch({
                               message: ActionMessages.REMOVE_BLOCK,
                               payload: {

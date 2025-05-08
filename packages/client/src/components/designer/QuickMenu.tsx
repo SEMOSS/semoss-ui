@@ -41,9 +41,7 @@ export const QuickMenu: React.FC<QuickMenuProps> = ({
     iconSize = 'small',
 }) => {
     const handleOnSelect = (item) => {
-        if (onSelect) {
-            onSelect(item);
-        }
+        onSelect(item);
     };
     return (
         <StyledQuickMenu
