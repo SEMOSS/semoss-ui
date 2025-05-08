@@ -39,7 +39,10 @@ export const config: BlockConfig<EchartVisualizationBlockDef> = {
         },
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: 'sync',
+            order: []
+        },
     },
     slots: {},
     render: VisualizationBlock,
