@@ -4,7 +4,7 @@ import { observer } from "mobx-react-lite";
 import { Box, Slider, styled } from "@semoss/ui";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { debounced } from "../../../utility";
 
 const StyledSliderBox = styled(Box, {
@@ -30,8 +30,14 @@ export interface SliderBlockDef extends BlockDef<"slider"> {
         marks: Array<{ display: string; value: number }>;
     };
     listeners: {
-        preProcess: true;
-        onChange: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+        onChange: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 

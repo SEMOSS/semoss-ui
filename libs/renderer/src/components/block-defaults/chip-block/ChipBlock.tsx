@@ -8,7 +8,7 @@ import { Chip, styled } from "@mui/material";
 import { Avatar } from "@semoss/ui";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { iconMap } from "../../../constants";
 
 export interface ChipBlockDef extends BlockDef<"chip"> {
@@ -30,7 +30,10 @@ export interface ChipBlockDef extends BlockDef<"chip"> {
         show: string;
     };
     listeners: {
-        preProcess: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
     slots: never;
 }
