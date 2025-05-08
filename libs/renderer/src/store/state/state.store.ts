@@ -1,7 +1,11 @@
 import { makeAutoObservable, runInAction, toJS } from "mobx";
 
-import { runPixel, download } from "@semoss/sdk";
-import { cancellablePromise, getValueByPath, syncronousPromise } from "../../utility";
+import { runPixel, download } from "@semoss/sdk/react";
+import { 
+    cancellablePromise, 
+    getValueByPath, 
+    syncronousPromise, 
+} from "../../utility";
 
 import {
     ActionMessages,
@@ -404,9 +408,9 @@ export class StateStore {
 
                 this.deleteBlockData(id, path);
             } else if (ActionMessages.SET_LISTENER === action.message) {
-                const { id, listener, actions } = action.payload;
+                const { id, listener, actions, type } = action.payload;
 
-                this.setListener(id, listener, actions);
+                this.setListener(id, listener, actions, type);
             } else if (ActionMessages.NEW_QUERY === action.message) {
                 const { queryId, config } = action.payload;
 
@@ -497,30 +501,21 @@ export class StateStore {
 
     
     /**
-     * TODO: Accidently commited, work to handly sync and async events. John
-     * Used in useBlock
+     * TODO: Needs to get folded into code above --> useBlock.tsx
      * @param action 
      * @returns 
      */
-    dispatchEventAction = async (action: Actions) => {
+    dispatchEventAction = async (action: Actions, type: 'sync' | 'async') => {
         try {
             if (ActionMessages.RUN_QUERY === action.message) {
                 const { queryId } = action.payload;
 
-                // const run = async () => {
-                //     setTimeout(() => {
-                //         debugger
-                //         return queryId
-                //     }, 3000)
-                // }
-
-                // return await run()
-                // debugger
-                // const o = await this.runQuery(queryId);
-                // debugger
-                // Return the promise to resolve to caller
-
-                // return o
+                const run = () => new Promise(async (resolve) => { 
+                    await this.runQuery(queryId, type)
+                    resolve(this._store.queries[queryId].output)
+                }); 
+                    
+                return await run();
             }else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
 
@@ -578,7 +573,7 @@ export class StateStore {
                     const variable = expression.match(/\$(.*?)\./)[1];
                     const stripped = iteratorList.slice(2, -2);
 
-                    // TODO: how do we handle nested loops $array.warehouse.warehouseSections
+                    // TODO: how do we handle nested loops $array.warehouse.warehouseSections --> = []
                     // Do we just call this recursively
                     if (variable === stripped) {
                         const path = expression.split(".").splice(1);
@@ -604,10 +599,55 @@ export class StateStore {
 
         // get the keys in the path
         const path = cleaned.split(".");
+        const pointer = path[0];
+
+        // Special syntax to parse by cell order
+        const isNumber = !isNaN(parseFloat(path[1]))
+
+        if (isNumber) {
+            let q;
+
+            // TODO: Problem we want to reference cells by a special syntax
+            // I don't want to change ids to be numbered for cells, 
+            // i think we are good with our id generation
+            if(this._store.variables[pointer]) {
+                const variable = this._store.variables[path[0]];
+                if(variable.type === "query") {
+                    q = this._store.queries[variable.to]
+                }
+            } else if (this._store.queries[pointer]) {
+                q = this._store.queries[pointer]
+            }
+
+            if(q) {
+                try {
+                    const c = q.cellList[parseFloat(path[1]) - 1]
+                    const p = path
+                    p.splice(0,2)
+
+                    if(p.length === 0) {
+                        return c.output
+                    } else {
+                        const key = p[0];
+                        
+                        if (key in c._exposed) {
+                            // get the search path
+                            const s = p.join(".");
+
+                            return getValueByPath(c._exposed, s);
+                        }
+                    }
+                } catch (e) {
+                    return expression
+                }
+
+            }
+        }
 
         if (this._store.variables[path[0]]) {
+            // We should be able to interpret by varaible name as we do below
             const variable = this._store.variables[path[0]];
-            const value = this.getVariable(
+            let value = this.getVariable(
                 variable.to,
                 variable.type,
                 path,
@@ -616,6 +656,7 @@ export class StateStore {
                     ? variable.value
                     : null,
             );
+            
 
             // TODO: Check this, protects for false values
             // (query.isLoading tied to a block.label **bad use-case)
@@ -1280,8 +1321,12 @@ export class StateStore {
         id: string,
         listener: string,
         actions: ListenerActions[],
+        type: "sync" | "async"
     ): void => {
-        this._store.blocks[id].listeners[listener] = actions;
+        this._store.blocks[id].listeners[listener] = {
+            type: type,
+            order: actions
+        }
     };
 
     /**
@@ -1378,64 +1423,48 @@ export class StateStore {
      * Run a query
      * @param queryId - name of the query that we are running
      */
-    private runQuery = (queryId: string): void => {
+    private runQuery = (queryId: string, type?: 'sync' | 'async'): void => {
         const q = this._store.queries[queryId];
 
         const key = `query--${queryId};`;
 
         // cancel a previous command
         this._utils.queryPromises[key]?.cancel();
+        
+        let p;
+        let sync;
 
-        // setup the promise
-        const p = cancellablePromise(async () => {
-            // run the query
-            await q._run();
-
-            // turn it off
-            return true;
-        });
-
-        p.promise
-            .then(() => {
-                // noop
+        if(!type || type === 'async') {
+            sync = false
+        } else {
+            sync = true
+        }
+        
+        if (sync) {
+            p = syncronousPromise(async () => {
+                await q._run();
+                return true;
             })
-            .catch((e) => {
-                console.error("ERROR:", e);
-            });
+        } else {
+            p = cancellablePromise(async () => {
+                await q._run()
+                return true
+            })
+        }
+        if(sync) {
+            return p.promise
+        } else  {
+            p.promise
+                .then((resp) => {
+                    // noop
+                })
+                .catch((e) => {
+                    console.error("ERROR:", e);
+                });
+        }
 
         // save the promise
         this._utils.queryPromises[key] = p;
-        
-        // TODO: John accidentally pushed, need to fix sync and async events on blocks
-        // Wait till whole query resolves
-        //
-        // let p;
-        // let sync = true;
-        // if (sync) {
-        //     p = syncronousPromise(async () => {
-        //         await q._run();
-        //         return true;
-        //     })
-        // } else {
-        //     p = cancellablePromise(async () => {
-        //         await q._run()
-        //         return true
-        //     })
-        // }
-        // if(sync) {
-        //     return p.promise
-        // } else  {
-        //     p.promise
-        //         .then((resp) => {
-        //             // noop
-        //         })
-        //         .catch((e) => {
-        //             console.error("ERROR:", e);
-        //         });
-        // }
-
-        // save the promise
-        // this._utils.queryPromises[key] = p;
     };
 
     /**

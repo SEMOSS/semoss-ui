@@ -1,14 +1,15 @@
 import { CSSProperties } from "react";
-import { BlockConfig } from "../../../store";
-
-import { UploadBlockDef, UploadBlock } from "./UploadBlock";
 import { Upload } from "@mui/icons-material";
+
+import { BlockConfig } from "../../../store";
+import { UploadBlockDef, UploadBlock } from "./UploadBlock";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { buildListener, buildShowField } from "../block-defaults.shared";
 import { InputSettings, QuerySelectionSettings } from "../../block-settings";
 import { UploadSettings } from "../../block-settings/shared/UploadSettings";
 import { SelectSettings } from "../../block-settings/shared/SelectSettings";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
+
 export const DefaultStyles: CSSProperties = {
     width: "100%",
     padding: "4px",
@@ -58,7 +59,14 @@ export const config: BlockConfig<UploadBlockDef> = {
         show: "true",
     },
     listeners: {
-        onChange: [],
+        onChange: {
+            type: "sync",
+            order: [],
+        },
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: UploadBlock,
@@ -124,6 +132,10 @@ export const config: BlockConfig<UploadBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
         {
             name: "on Change",

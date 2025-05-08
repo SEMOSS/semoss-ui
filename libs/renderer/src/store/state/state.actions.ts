@@ -153,6 +153,7 @@ export interface SetListenerAction extends Action {
         id: string;
         listener: string;
         actions: ListenerActions[];
+        type: "sync" | "async"
     };
 }
 
