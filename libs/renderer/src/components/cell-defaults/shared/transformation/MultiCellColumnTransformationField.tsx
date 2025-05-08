@@ -3,7 +3,6 @@ import { observer } from "mobx-react-lite";
 import { computed } from "mobx";
 import { TextField } from "@semoss/ui";
 import { Autocomplete } from "@mui/material";
-import { runPixel } from "@semoss/sdk";
 import { CellState } from "../../../../store";
 import { TransformationTargetCell, ColumnInfo } from "./transformation.types";
 import { useBlocksPixel } from "../../../../hooks/useBlocksPixel";

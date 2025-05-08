@@ -25,7 +25,10 @@ export const config: BlockConfig<IframeBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: IframeBlock,

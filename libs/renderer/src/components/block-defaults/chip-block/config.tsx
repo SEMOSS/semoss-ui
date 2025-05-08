@@ -35,7 +35,10 @@ export const config: BlockConfig<ChipBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: ChipBlock,

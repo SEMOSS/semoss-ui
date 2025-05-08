@@ -3,10 +3,11 @@ import {
     LoadingScreenTrigger,
     LoadingScreenTriggerProps,
 } from "./LoadingScreenTrigger";
+import { useLoadingScreen } from "./useLoadingScreen";
 
 const LoadingScreenNameSpace = Object.assign(LoadingScreen, {
     Trigger: LoadingScreenTrigger,
 });
 
 export type { LoadingScreenProps, LoadingScreenTriggerProps };
-export { LoadingScreenNameSpace as LoadingScreen };
+export { LoadingScreenNameSpace as LoadingScreen, useLoadingScreen };

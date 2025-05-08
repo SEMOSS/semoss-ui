@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 
 import { useBlock } from "../../../hooks";
-import { BlockComponent, BlockDef } from "../../../store";
+import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
 export interface RadioBlockDef extends BlockDef<"radio"> {
     widget: "radio";
@@ -35,8 +35,14 @@ export interface RadioBlockDef extends BlockDef<"radio"> {
         show: string;
     };
     listeners: {
-        onChange: true;
-        preProcess: true;
+        onChange: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
