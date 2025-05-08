@@ -77,7 +77,8 @@ export const ListenerSettings = observer(
         const { state } = useBlocks();
         const { listeners, setListener } = useBlockSettings(id);
         const notification = useNotification();
-        const blockListeners: ListenerActions[] = toJS(listeners)[listener];
+        const blockListeners: ListenerActions[] = toJS(listeners)[listener].order;
+        const type = toJS(listeners)[listener].type
 
         const [actionIndex, setActionIndex] = useState(-1);
         const [openModal, setOpenModal] = useState(false);
@@ -137,12 +138,14 @@ export const ListenerSettings = observer(
          */
         const deleteListener = (actionIdx: number) => {
             // copy it
-            const updated = [...listeners[listener]];
+            const updated = [...listeners[listener].order];
+
+            debugger
 
             // remove it
             updated.splice(actionIdx, 1);
 
-            setListener(listener, updated);
+            setListener(listener, updated, type);
         };
 
         /**
@@ -161,14 +164,22 @@ export const ListenerSettings = observer(
                 const newIndex = Number(over.id);
 
                 // copy it
-                const updated = [...listeners[listener]];
+                const updated = [...listeners[listener].order];
                 // remove it
                 const [removed] = updated.splice(oldIndex, 1);
                 // add it at the new location
                 updated.splice(newIndex, 0, removed);
                 // update the data
-                setListener(listener, updated);
+                setListener(listener, updated, type);
             }
+        };
+
+        /**
+         * Handle drag end
+         * @param event - event object from dnd context
+         */
+        const updateExecutionType = (t: "sync" | "async") => {
+            setListener(listener, listeners[listener].order, t);
         };
 
         // Sortable encapsulation elements based on the sortable context
@@ -326,29 +337,29 @@ export const ListenerSettings = observer(
                     >
                         New Action
                     </Button>
-                    {/* TODO: John Accidentally pushed WIP */}
-                    {/* <ToggleButtonGroup size={"small"} value={"Sync"}>
+                    <ToggleButtonGroup size={"small"} value={type}>
                         <ToggleButton
-                            value="Async"
+                            value="async"
                             onClick={() => {
-                                console.log("bind property to event");
+                                updateExecutionType("async")
                             }}
                         >
                             Async
                         </ToggleButton>
                         <ToggleButton
-                            value="Sync"
+                            value="sync"
                             onClick={() => {
-                                console.log("bind property to event");
+                                updateExecutionType("sync")
                             }}
                         >
                             Sync
                         </ToggleButton>
-                    </ToggleButtonGroup> */}
+                    </ToggleButtonGroup>
                 </Stack>
                 <Modal open={openModal} fullWidth={true}>
                     <ListenerActionOverlay
                         id={id}
+                        type={type}
                         listener={listener}
                         actionIdx={actionIndex}
                         onClose={() => setOpenModal(false)}

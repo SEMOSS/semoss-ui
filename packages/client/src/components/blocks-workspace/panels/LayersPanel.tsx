@@ -34,6 +34,7 @@ import {
     INPUT_BLOCK_TYPES,
     ActionMessages,
     BlockJSON,
+    Block,
 } from '@semoss/renderer';
 import {
     Divider,
@@ -168,7 +169,7 @@ const StyledPageItem = styled('div', {
     backgroundColor: isselected == 'true' ? 'rgba(25, 118, 210, 0.2)' : '',
 }));
 
-const PAGE_BLOCK = {
+const PAGE_BLOCK: BlockJSON = {
     widget: 'page',
     data: {
         style: {
@@ -181,7 +182,10 @@ const PAGE_BLOCK = {
         route: '',
     },
     listeners: {
-        onPageLoad: [],
+        onPageLoad: {
+            type: 'sync',
+            order: [],
+        },
     },
     slots: {
         content: [],

@@ -5,6 +5,7 @@ import {
     buildShowField,
     buildTextAlignSection,
     buildTypographySection,
+    buildListener,
 } from "../block-defaults.shared";
 
 import { LinkBlockDef, LinkBlock } from "./LinkBlock";
@@ -25,7 +26,12 @@ export const config: BlockConfig<LinkBlockDef> = {
         text: "Insert text",
         show: "true",
     },
-    listeners: {},
+    listeners: {
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+    },
     slots: {},
     render: LinkBlock,
     icon: Link,
@@ -51,6 +57,10 @@ export const config: BlockConfig<LinkBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
     ],
     styleMenu: [buildTypographySection(), buildTextAlignSection()],

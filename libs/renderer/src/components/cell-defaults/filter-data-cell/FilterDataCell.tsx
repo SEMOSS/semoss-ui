@@ -20,7 +20,7 @@ import {
     Checkbox,
     Typography,
 } from "@semoss/ui";
-import { usePixel } from "@semoss/sdk";
+import { usePixel } from "@semoss/sdk/react";
 import {
     ActionMessages,
     CellComponent,

@@ -33,6 +33,7 @@ import {
     DataImportFormModal,
     NewCellAction,
 } from '@semoss/renderer';
+import { MoreHoriz } from '@mui/icons-material';
 
 import { ModelBrain } from '@/assets/img/ModelBrain';
 
@@ -104,6 +105,13 @@ const DataImportDropdownOptions = [
     {
         display: `From CSV`,
         defaultCellType: null,
+    },
+];
+
+const OtherOptions = [
+    {
+        display: `Send Email`,
+        defaultCellType: 'send-email',
     },
 ];
 
@@ -214,6 +222,11 @@ const AddCellOptions: Record<string, AddCellOption> = {
         display: 'LLM',
         defaultCellType: 'llm',
         icon: <ModelBrain color={'#666666'} width={'20'} height={'20'} />,
+    },
+    others: {
+        display: 'Others',
+        icon: <MoreHoriz />,
+        options: OtherOptions,
     },
 };
 
@@ -343,6 +356,24 @@ export const NotebookAddCell = observer(
                         }}
                     >
                         {selectedAddCell === 'transformation' &&
+                            Array.from(
+                                AddCellOptions[selectedAddCell]?.options || [],
+                                ({ display, defaultCellType }, index) => {
+                                    return (
+                                        <StyledMenuItem
+                                            key={index}
+                                            value={display}
+                                            onClick={() => {
+                                                appendCell(defaultCellType);
+                                                setAnchorEl(null);
+                                            }}
+                                        >
+                                            {display}
+                                        </StyledMenuItem>
+                                    );
+                                },
+                            )}
+                        {selectedAddCell === 'others' &&
                             Array.from(
                                 AddCellOptions[selectedAddCell]?.options || [],
                                 ({ display, defaultCellType }, index) => {

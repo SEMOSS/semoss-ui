@@ -1189,7 +1189,12 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 // accordionContentStyles:
                 // -------------------------------------------
             },
-            listeners: {},
+            listeners: {
+                preProcess: {
+                    type: 'sync',
+                    order: [],
+                },
+            },
             slots: {
                 header: [],
                 content: [],
@@ -1213,7 +1218,14 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 contentBgColor: '',
             },
             listeners: {
-                onClick: [],
+                onOpen: {
+                    type: 'sync',
+                    order: [],
+                },
+                onClose: {
+                    type: 'sync',
+                    order: [],
+                },
             },
             slots: {
                 header: [],
@@ -1254,7 +1266,12 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 source: '',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: {
+                    type: 'sync',
+                    order: [],
+                },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1280,7 +1297,12 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 showText: false,
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: {
+                    type: 'sync',
+                    order: [],
+                },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1298,7 +1320,14 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 max: 5,
             },
             listeners: {
-                onChange: [],
+                onChange: {
+                    type: 'sync',
+                    order: [],
+                },
+                preProcess: {
+                    type: 'sync',
+                    order: [],
+                },
             },
             slots: {
                 children: [],
@@ -1325,7 +1354,16 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 required: false,
                 labelPlacement: 'end',
             },
-            listeners: {},
+            listeners: {
+                preProcess: {
+                    type: 'sync',
+                    order: [],
+                },
+                onChange: {
+                    type: 'sync',
+                    order: [],
+                },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1354,7 +1392,14 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 views: ['hours', 'minutes'],
             },
             listeners: {
-                onChange: [],
+                preProcess: {
+                    type: 'sync',
+                    order: [],
+                },
+                onChange: {
+                    type: 'sync',
+                    order: [],
+                },
             },
             slots: {} as BlockJSON['slots'],
         },
@@ -1377,7 +1422,11 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 show: true,
             },
             listeners: {
-                onClick: [],
+                onClick: {
+                    type: 'sync',
+                    order: [],
+                },
+                preProcess: { type: 'sync', order: [] },
             },
             slots: {} as BlockJSON['slots'],
         },
@@ -1401,7 +1450,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 show: 'true',
             },
             listeners: {
-                onChange: [],
+                onChange: { type: 'sync', order: [] },
+                preProcess: { type: 'sync', order: [] },
             },
             slots: {} as BlockJSON['slots'],
         },
@@ -1431,7 +1481,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 show: 'true',
             },
             listeners: {
-                onChange: [],
+                onChange: { type: 'sync', order: [] },
+                preProcess: { type: 'sync', order: [] },
             },
             slots: {} as BlockJSON['slots'],
         },
@@ -1454,7 +1505,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 designMode: true,
             },
             listeners: {
-                onSubmit: [],
+                preProcess: { type: 'sync', order: [] },
+                onSubmit: { type: 'sync', order: [] },
             },
             slots: {
                 content: [],
@@ -1487,7 +1539,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 show: 'true',
             },
             listeners: {
-                onChange: [],
+                preProcess: { type: 'sync', order: [] },
+                onChange: { type: 'sync', order: [] },
             },
             slots: {
                 content: [],
@@ -1516,7 +1569,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 show: 'true',
             },
             listeners: {
-                onClick: [],
+                preProcess: { type: 'sync', order: [] },
+                onComplete: { type: 'sync', order: [] },
             },
             slots: {} as BlockJSON['slots'],
         },
@@ -1543,7 +1597,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 show: 'true',
             },
             listeners: {
-                onChange: [],
+                preProcess: { type: 'sync', order: [] },
+                onChange: { type: 'sync', order: [] },
             },
             slots: {
                 content: [],
@@ -1572,7 +1627,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 show: 'true',
             },
             listeners: {
-                onChange: [],
+                preProcess: { type: 'sync', order: [] },
+                onChange: { type: 'sync', order: [] },
             },
             slots: {
                 content: [],
@@ -1597,7 +1653,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {
                 children: [],
             },
@@ -1623,7 +1681,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 isFlipped: false,
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {
                 front: [],
                 back: [],
@@ -1645,7 +1705,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 size: '300px',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1664,7 +1726,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 enableFrameInteractions: true,
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1685,7 +1749,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 selectedPdf: null,
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1712,7 +1778,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 title: '',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1757,7 +1825,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 queryId: '',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1779,7 +1849,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 child: null,
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {
                 children: [],
             },
@@ -1804,7 +1876,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 title: '',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1835,7 +1909,10 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 multiple: false,
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+                onChange: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1857,7 +1934,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 text: 'Insert text',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {},
         },
     },
@@ -1876,7 +1955,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 markdown: '**Hello world**',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1918,7 +1999,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'h1',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1940,7 +2023,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'h2',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1962,7 +2047,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'h3',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1984,7 +2071,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'h4',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -2006,7 +2095,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'h5',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -2028,7 +2119,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'h6',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -2050,7 +2143,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'p',
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -2393,7 +2488,10 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 anchor: 'left',
                 designMode: true,
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+                postProcess: { type: 'sync', order: [] },
+            },
             slots: {
                 content: [],
             },
@@ -2420,7 +2518,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 size: '300px',
             },
             listeners: {
-                onChange: [],
+                preProcess: { type: 'sync', order: [] },
+                onChange: { type: 'sync', order: [] },
             },
             slots: {} as BlockJSON['slots'],
         },
@@ -2534,7 +2633,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -2579,7 +2681,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -2644,7 +2749,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -2689,7 +2797,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -2754,7 +2865,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -2800,7 +2914,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -2865,7 +2982,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -2910,7 +3030,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -2954,7 +3077,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -3492,7 +3618,7 @@ export const CLIENT_BLOCKS_MENU = [
                             loading: false,
                         },
                         listeners: {
-                            onChange: [],
+                            onChange: { type: 'sync', order: [] },
                         },
                         slots: {
                             content: [],
@@ -3517,7 +3643,7 @@ export const CLIENT_BLOCKS_MENU = [
                             mode: 'transcribe',
                         },
                         listeners: {
-                            onClick: [],
+                            onClick: { type: 'sync', order: [] },
                         },
                         slots: {},
                     },

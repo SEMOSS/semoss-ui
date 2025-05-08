@@ -18,7 +18,7 @@ import { DatabaseTables } from "./DatabaseTables";
 
 import { ActionMessages, CellComponent, CellDef } from "../../../store";
 import { useBlocks } from "../../../hooks";
-import { usePixel } from "@semoss/sdk";
+import { usePixel } from "@semoss/sdk/react";
 
 const StyledSelect = styled(Select)(({ theme }) => ({
     "& .MuiSelect-select": {

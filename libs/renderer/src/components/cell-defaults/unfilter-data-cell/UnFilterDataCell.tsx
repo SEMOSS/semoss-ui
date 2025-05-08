@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { computed } from "mobx";
 import { styled, TextField, Stack, Autocomplete, Typography } from "@semoss/ui";
-import { usePixel } from "@semoss/sdk";
+import { usePixel } from "@semoss/sdk/react";
 import { QueryImportCellDef } from "../query-import-cell";
 import { TransformationTargetCell } from "../shared";
 import { BaseSettingSection } from "../../../components/block-settings/BaseSettingSection";
