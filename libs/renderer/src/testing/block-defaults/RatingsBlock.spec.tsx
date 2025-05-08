@@ -27,7 +27,7 @@ const blocks = {
             value: 3,
             max: 5,
         },
-        id: "ratings",
+        id: "ratings-hearts",
         widget: "ratings",
         listeners: {
             onChange: [],
