@@ -77,7 +77,6 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
         // Only while we are in app using mode
         if (state.mode === "interactive") {
             if (Array.isArray(list)) {
-                console.log(list.length);
                 const newIds = [];
 
                 blocksToRemove.forEach(async (b) => {

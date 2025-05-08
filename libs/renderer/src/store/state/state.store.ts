@@ -555,8 +555,10 @@ export class StateStore {
 
         // Special Parsing for Iterators
         if (cleaned.startsWith("$")) {
+            
             // See if id is a descendant of an iterator block
             const iteratorBlock = this.isDescendantOfIterator(id);
+
 
             if (iteratorBlock) {
                 try {
@@ -576,7 +578,15 @@ export class StateStore {
                         }
                     }
 
-                    const variable = expression.match(/\$(.*?)\./)[1];
+                    let variable;
+
+                    if(expression.includes(".")) {
+                        variable = expression.match(/\$(.*?)\./)[1];
+                    } else {
+                        debugger
+                        variable = expression.match(/^\$(\w+)/)?.[1]
+                    }
+
                     const stripped = iteratorList.slice(2, -2);
 
                     // TODO: how do we handle nested loops $array.warehouse.warehouseSections --> = []
