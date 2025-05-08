@@ -37,6 +37,7 @@ Application will be accesible at: `http://localhost:9090/semoss-ui/packages/clie
 Legacy application will be accesible at: `http://localhost:9090/semoss-ui/#!/`
 
 ## Common Errors
+ 1. The following issue may error may appear if nx does not build correctly: Cannot find module '@semoss/sdk/react' or its corresponding type declarations. To fix, cd directly into .\libs\sdk and run `pnpm run build`.
  2. `404` on REST calls to the BE, usually points to an issue with the MODULE you have specified in your `.env.local` and/or `.packages/legacy/app.constants` file.  Ask your client project lead what endpoint you hit to ensure you have the right pointer specified for MODULE.
 
  ### Must be on a version of Node 18

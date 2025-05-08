@@ -29,7 +29,10 @@ export const config: BlockConfig<MarkdownBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: MarkdownBlock,
