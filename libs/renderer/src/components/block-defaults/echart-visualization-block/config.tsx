@@ -38,7 +38,12 @@ export const config: BlockConfig<EchartVisualizationBlockDef> = {
             facetSelected: [],
         },
     },
-    listeners: {},
+    listeners: {
+        preProcess: {
+            type: 'sync',
+            order: []
+        },
+    },
     slots: {},
     render: VisualizationBlock,
     icon: Insights,
