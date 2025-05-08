@@ -6,7 +6,7 @@ import { Accordion, Stack, styled } from "@semoss/ui";
 
 import { Slot } from "../../blocks";
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
     padding: 0,
@@ -53,7 +53,10 @@ export interface AccordionBlockDef extends BlockDef<"accordion"> {
         content: true;
     };
     listeners: {
-        preProcess: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 

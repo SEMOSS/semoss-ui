@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { Link } from "react-router-dom";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
 
 export interface LinkBlockDef extends BlockDef<"link"> {
@@ -15,7 +15,10 @@ export interface LinkBlockDef extends BlockDef<"link"> {
         show: string;
     };
     listeners: {
-        preProcess: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
