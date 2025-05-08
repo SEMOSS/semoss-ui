@@ -7,13 +7,13 @@ import { Pie } from "./variant/pie-chart/Pie";
 import { BAR_CHART_DATA } from "./Visualization.constants";
 import { ScatterPlotBlock } from "./variant/scatter-plot/ScatterPlot";
 import { useBlock, useBlocks, useBlockSettings } from "../../../hooks";
-import { BlockComponent, BlockDef } from "../../../store";
+import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { PathValue } from "../../../types";
 import { Map } from "./variant/map-chart/Map";
 import { Line } from "./variant/line-chart/Line";
 import { StackChart } from "./variant/stack-chart/StackChart";
 import { Gantt } from "./variant/Gantt/Gantt";
-import { Dendrogram } from './variant/dendrogram/Dendrogram';
+import { Dendrogram } from "./variant/dendrogram/Dendrogram";
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -38,7 +38,7 @@ export interface VisualizationColumns {
     width: string;
 }
 
-export interface FacetColumns{
+export interface FacetColumns {
     name: string;
     selector: string;
     value: string | number;
@@ -70,22 +70,33 @@ export interface EchartVisualizationBlockDef {
         show: boolean;
         facet: {
             facetList: string[] | number[];
-            facetSelected:FacetColumns[];
-        }
+            facetSelected: FacetColumns[];
+        };
     };
-    listeners: {};
+    listeners: {
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+    };
     slots: never;
 }
 
 export const VisualizationBlock: BlockComponent = observer(
     <D extends BlockDef = BlockDef>({ id }) => {
-        const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
+        const { data, attrs, listeners } =
+            useBlock<EchartVisualizationBlockDef>(id);
         const { setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
         const { state } = useBlocks();
 
         const elementRef = useRef<HTMLDivElement>(null);
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
+        useEffect(() => {
+            if (listeners.preProcess) {
+                listeners.preProcess();
+            }
+        }, []);
         /**
          *
          * @param data
@@ -169,11 +180,9 @@ export const VisualizationBlock: BlockComponent = observer(
                         {data.variation === "echart-gantt-chart" && (
                             <Gantt id={id} updateChart={updateChartJson} />
                         )}
-                        {
-                            data.variation === 'echart-dendrogram-chart' && (
-                                <Dendrogram id={id} updateJson={updateChartJson} />
-                            )
-                        }
+                        {data.variation === "echart-dendrogram-chart" && (
+                            <Dendrogram id={id} updateJson={updateChartJson} />
+                        )}
                     </StyledNoDataContainer>
                 );
             } catch (e) {
@@ -207,11 +216,9 @@ export const VisualizationBlock: BlockComponent = observer(
                 {data.variation === "echart-gantt-chart" && (
                     <Gantt id={id} updateChart={updateChartJson} />
                 )}
-                {
-                data.variation === 'echart-dendrogram-chart' && (
+                {data.variation === "echart-dendrogram-chart" && (
                     <Dendrogram id={id} updateJson={updateChartJson} />
-                )
-                }
+                )}
             </StyledDataContainer>
         );
     },

@@ -183,7 +183,9 @@ if (process.env.NODE_ENV === 'development') {
                 ),
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     });
@@ -292,7 +294,9 @@ if (process.env.NODE_ENV === 'development') {
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     });
@@ -470,7 +474,9 @@ if (process.env.NODE_ENV === 'development') {
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     });
@@ -652,7 +658,9 @@ if (process.env.NODE_ENV === 'development') {
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     });
@@ -865,7 +873,9 @@ if (process.env.NODE_ENV === 'development') {
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     });
@@ -971,7 +981,9 @@ if (process.env.NODE_ENV === 'development') {
                     name: '',
                 },
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     });
@@ -1052,7 +1064,9 @@ if (process.env.NODE_ENV === 'development') {
                     },
                 },
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     });
@@ -1151,7 +1165,9 @@ if (process.env.NODE_ENV === 'development') {
                     facetList: [],
                 },
             },
-            listeners: {},
+            listeners: {
+                preProcess: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     });
