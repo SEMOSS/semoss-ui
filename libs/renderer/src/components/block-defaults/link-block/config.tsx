@@ -27,7 +27,10 @@ export const config: BlockConfig<LinkBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: LinkBlock,

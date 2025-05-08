@@ -35,7 +35,10 @@ export const config: BlockConfig<PageBlockDef> = {
         loading: false,
     },
     listeners: {
-        onPageLoad: [],
+        onPageLoad: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {
         content: [],
