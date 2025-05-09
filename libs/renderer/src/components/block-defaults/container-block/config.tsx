@@ -42,10 +42,10 @@ export const config: BlockConfig<ContainerBlockDef> = {
     render: ContainerBlock,
     icon: HighlightAlt,
     contentMenu: [
-        {
-            name: "Pre Process",
-            children: [...buildListener("preProcess")],
-        },
+        // {
+        //     name: "Pre Process",
+        //     children: [...buildListener("preProcess")],
+        // },
     ],
     styleMenu: [
         {

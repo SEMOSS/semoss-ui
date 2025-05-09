@@ -68,11 +68,11 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
     },
 }));
 
-const calculateItemWidth = (containerWidth, numItems, gap): string => {
+const calculateItemWidth = (containerWidth, numItems, gap, unit): string => {
     const totalGapSpace = (numItems - 1) * gap;
     const availableSpace = containerWidth - totalGapSpace;
     const itemWidth = availableSpace / numItems;
-    return `${itemWidth}`;
+    return `${itemWidth + unit}`;
 };
 
 interface ContainerLayoutSettingsProps<D extends BlockDef = BlockDef> {
@@ -273,14 +273,13 @@ export const ContainerLayoutSettings = observer(
         };
 
         const modifyGrid = (val: string, gap?: string) => {
-            console.log("modify grid");
-
             const b: Block = state.getBlock(id);
 
             const width = calculateItemWidth(
                 100,
                 val,
                 gap ? gap : gapSpacing.value,
+                gapSpacing.unit,
             ) as string;
 
             const elsCount = parseInt(val as string);
@@ -293,7 +292,7 @@ export const ContainerLayoutSettings = observer(
                         payload: {
                             id: cId,
                             path: "style.width",
-                            value: `${width}%`,
+                            value: `${width}`,
                         },
                     });
                 });
@@ -326,7 +325,7 @@ export const ContainerLayoutSettings = observer(
                                             flexDirection: "column",
                                             gap: "8px",
                                             flexWrap: "wrap",
-                                            width: `${width}%`,
+                                            width: `${width}`,
                                             border: "solid blue",
                                         },
                                     },
@@ -369,7 +368,7 @@ export const ContainerLayoutSettings = observer(
                                         flexDirection: "column",
                                         gap: "8px",
                                         flexWrap: "wrap",
-                                        width: `${width}%`,
+                                        width: `${width}`,
                                         border: "solid blue",
                                     },
                                 },
