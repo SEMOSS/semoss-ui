@@ -1,9 +1,10 @@
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, createElement, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { Sync, Search } from "@mui/icons-material";
 import { computed } from "mobx";
+import { Sync, Search } from "@mui/icons-material";
 import { Tooltip, Checkbox } from "@mui/material";
-import { Autocomplete, Button, Select, styled, TextField, InputAdornment, IconButton, Stack } from "@semoss/ui";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { Autocomplete, Button, Select, styled, TextField, InputAdornment, IconButton, Stack, Accordion, Typography } from "@semoss/ui";
 import {
     useBlockSettings,
     useBlocksPixel,
@@ -16,9 +17,11 @@ import { getValueByPath } from "../../../../../utility";
 import { BAR_CHART_DATA } from "../../Visualization.constants";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { DataTabStyling } from "./DataTabStyling";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import StringIcon from '../../../../../assets/img/StringIcon.svg';
 import NumberIcon from '../../../../../assets/img/NumberIcon.svg';
+import { buildListener } from "../../../block-defaults.shared";
+import { ListenerSettings } from "../../../../block-settings";
+import { ExpandMore } from '@mui/icons-material';
 
 //frame operations component props structure
 export interface FrameOperationsProps {
@@ -70,6 +73,13 @@ const COLOUR_PALATTE_DATA = [
     "#ea7ccc",
 ];
 
+interface AccordionSection {
+    [key :string]: {
+        expanded: boolean;
+        title: string;
+    }
+};
+
 export const FrameOperations = observer(
     <D extends BlockDef = BlockDef>({ id, updateFrame, path, chart, storedColumns, handleStoreData }) => {
         const { data, setData } =
@@ -80,6 +90,13 @@ export const FrameOperations = observer(
         const [addedColumnName, setAddedColumnName] = useState("");
         const [droppedColumns, setDroppedColumns] = useState<Record<string, string[]>>({});
         const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
+        const [accordionSection, setAccordionSection] = useState<AccordionSection[]>([{
+            ["preProcess"]:{
+                expanded: true,
+                title: "PRE PROCESS"
+            }
+        }]);
+        const accordionList = ["preProcess"];
         const [value, setValue] = useState("");
         // get all of the frames
         const getFrames = useBlocksPixel<string[]>("GetFrames();", {
@@ -919,6 +936,55 @@ export const FrameOperations = observer(
             setIsAdd(value);
             setAddedColumnName(id);
         }
+        let renderElement = [...buildListener("preProcess")];
+
+        const renderAccordion = (
+            <>
+                {
+                    accordionSection.map((item,index)=>(
+                        <Accordion
+                        expanded={item[accordionList[index]].expanded}
+                        onChange={(e) =>{
+                            let accordionSectionToUp = accordionSection;
+                            let indexToUpdate = accordionSectionToUp.findIndex((accordItem)=>accordItem.hasOwnProperty(accordionList[index]));
+                            accordionSectionToUp[indexToUpdate][accordionList[index]] = {
+                                ...accordionSectionToUp[indexToUpdate][accordionList[index]],
+                                expanded: !accordionSectionToUp[indexToUpdate][accordionList[index]].expanded,
+                            };
+                            setAccordionSection((prevAccordionSection)=>{
+                                return [...accordionSectionToUp];
+                            })
+                        }
+                        }
+                        sx={{
+                            width:'100%',
+                        }}
+                        >
+                            <Accordion.Trigger
+                                expandIcon={<ExpandMore />}
+                            >
+                                <Typography variant="body2">
+                                    {item[accordionList[index]].title}
+                                </Typography>
+                            </Accordion.Trigger>
+
+                            <Accordion.Content>
+                                    <Stack direction="column" spacing={1}>
+                                        {renderElement.map((c, cIdx) => {
+                                            return createElement(c.render, {
+                                                key: cIdx,
+                                                id: id,
+                                            });
+                                        })}
+                                    </Stack>
+                            </Accordion.Content>
+                        </Accordion>
+                    ))
+                }
+                 
+            </>
+        );
+
         return (
             <>
                 <DragDropContext onDragEnd={handleDragEnd}>
@@ -1055,6 +1121,11 @@ export const FrameOperations = observer(
                             </DataTabStyling>
                         </StyledSubSection>
 
+                    </StyledDropDownSection>
+                    <StyledDropDownSection>
+                            {
+                                renderAccordion
+                            }
                     </StyledDropDownSection>
                 </DragDropContext>
             </>
