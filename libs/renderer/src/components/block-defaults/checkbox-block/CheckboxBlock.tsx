@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { Checkbox, styled } from "@mui/material";
 
 import { useBlock } from "../../../hooks";
-import { BlockComponent, BlockDef } from "../../../store";
+import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { debounced } from "../../../utility";
 
 export interface CheckboxBlockDef extends BlockDef<"checkbox"> {
@@ -17,8 +17,14 @@ export interface CheckboxBlockDef extends BlockDef<"checkbox"> {
         show: string;
     };
     listeners: {
-        onChange: true;
-        preProcess: true;
+        onChange: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 

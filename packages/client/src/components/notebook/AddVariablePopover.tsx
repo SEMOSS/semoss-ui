@@ -428,7 +428,10 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                                     },
                                 },
                                 listeners: {
-                                    onPageLoad: [],
+                                    onPageLoad: {
+                                        type: 'sync',
+                                        order: [],
+                                    },
                                 },
                                 slots: {
                                     content: {
