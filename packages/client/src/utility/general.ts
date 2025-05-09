@@ -226,3 +226,33 @@ export const isOutputJSON = (output: unknown) => {
     }
     return null;
 };
+
+export const permissionPriorityMapper = (permission: string | number) => {
+    if (!permission) {
+        console.warn('No permission');
+        return;
+    }
+
+    switch (permission) {
+        case 1:
+        case 'OWNER':
+            return { permission: 'Author', priority: 1 };
+        case 'Author':
+            return { permission: 'OWNER', priority: 1 };
+
+        case 2:
+        case 'EDIT':
+            return { permission: 'Editor', priority: 2 };
+        case 'Editor':
+            return { permission: 'EDIT', priority: 2 };
+
+        case 3:
+        case 'READ_ONLY':
+            return { permission: 'Read-Only', priority: 3 };
+        case 'Read-Only':
+            return { permission: 'READ_ONLY', priority: 3 };
+
+        default:
+            return { permission: '', priority: 0 };
+    }
+};

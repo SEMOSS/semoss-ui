@@ -34,8 +34,14 @@ export const config: BlockConfig<SelectBlockDef> = {
         show: true,
     },
     listeners: {
-        onChange: [],
-        preProcess: [],
+        onChange: {
+            type: "sync",
+            order: [],
+        },
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {
         content: [],

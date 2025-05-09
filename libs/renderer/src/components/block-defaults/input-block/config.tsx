@@ -32,8 +32,14 @@ export const config: BlockConfig<InputBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
-        onChange: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+        onChange: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {
         content: [],

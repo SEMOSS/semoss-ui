@@ -40,7 +40,10 @@ export const config: BlockConfig<FlipCardBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {
         front: [],

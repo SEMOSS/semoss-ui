@@ -23,7 +23,10 @@ export const config: BlockConfig<ProgressBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: ProgressBlock,

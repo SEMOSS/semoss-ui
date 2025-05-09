@@ -30,7 +30,10 @@ export const config: BlockConfig<DividerBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: DividerBlock,

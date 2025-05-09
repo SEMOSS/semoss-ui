@@ -24,7 +24,10 @@ export const config: BlockConfig<AccordionBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {
         header: [],

@@ -3,7 +3,7 @@ import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { Stack, Typography } from "@mui/material";
 import { useBlock, useBlocks } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 
 export interface LogsBlockDef extends BlockDef<"logs"> {
     widget: "logs";
@@ -13,7 +13,10 @@ export interface LogsBlockDef extends BlockDef<"logs"> {
         show: string;
     };
     listeners: {
-        preProcess: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 

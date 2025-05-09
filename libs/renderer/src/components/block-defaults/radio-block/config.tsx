@@ -170,8 +170,14 @@ export const config: BlockConfig<RadioBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
-        onChange: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+        onChange: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {
         content: [],

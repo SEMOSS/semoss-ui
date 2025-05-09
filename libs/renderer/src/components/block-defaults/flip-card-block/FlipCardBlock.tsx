@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { Card, styled } from "@semoss/ui";
 
 import { useBlock, useBlocks } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
 
 const CardContainer = styled("div")<{ cssStyle: CSSProperties }>(
@@ -59,7 +59,10 @@ export interface FlipCardBlockDef extends BlockDef<"flip-card"> {
         back: true;
     };
     listeners: {
-        preProcess: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 

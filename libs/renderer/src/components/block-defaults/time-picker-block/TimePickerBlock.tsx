@@ -9,7 +9,7 @@ import { DigitalClock } from "@mui/x-date-pickers/DigitalClock";
 import dayjs from "dayjs";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 
 const StyledContainer = styled("div")(({ theme }) => ({
     padding: "4px",
@@ -41,8 +41,14 @@ export interface TimePickerBlockDef extends BlockDef<"timepicker"> {
         views: ("hours" | "minutes" | "seconds")[];
     };
     listeners: {
-        preProcess: true;
-        onChange: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+        onChange: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 

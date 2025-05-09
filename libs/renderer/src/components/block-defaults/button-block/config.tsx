@@ -33,8 +33,14 @@ export const config: BlockConfig<ButtonBlockDef> = {
         show: "true",
     },
     listeners: {
-        onClick: [],
-        preProcess: [],
+        onClick: {
+            type: "sync",
+            order: [],
+        },
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: ButtonBlock,

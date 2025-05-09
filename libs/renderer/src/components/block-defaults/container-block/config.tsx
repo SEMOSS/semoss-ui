@@ -31,7 +31,10 @@ export const config: BlockConfig<ContainerBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {
         children: [],

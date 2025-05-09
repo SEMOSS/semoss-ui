@@ -18,7 +18,10 @@ export const config: BlockConfig<PDFViewerBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: PDFViewerBlock,

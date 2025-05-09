@@ -17,8 +17,14 @@ export const config: BlockConfig<RatingsBlockDef> = {
         value: 2,
     },
     listeners: {
-        onChange: [],
-        preProcess: [],
+        onChange: {
+            type: "sync",
+            order: [],
+        },
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {
         content: [],
