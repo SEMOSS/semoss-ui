@@ -634,36 +634,36 @@ export const MembersTable = (props: MembersTableProps) => {
                             'access',
                         ) && (
                             <>
-                        <StyledDeleteSelectedContainer>
-                            {selectedMembers.length > 0 && (
-                                <Button
-                                    disabled={isLoading}
-                                    variant={'outlined'}
-                                    color="error"
-                                    onClick={() =>
+                                <StyledDeleteSelectedContainer>
+                                    {selectedMembers.length > 0 && (
+                                        <Button
+                                            disabled={isLoading}
+                                            variant={'outlined'}
+                                            color="error"
+                                            onClick={() =>
                                                 openDeleteMembersModal(
                                                     selectedMembers,
                                                 )
-                                    }
-                                >
-                                    Delete Selected
-                                </Button>
-                            )}
-                        </StyledDeleteSelectedContainer>
-                        <StyledAddMemberContainer>
-                            <Button
-                                disabled={isLoading}
-                                variant={'contained'}
-                                onClick={() => {
-                                    openAddMembersModal();
-                                }}
-                            >
-                                <StyledCenteredBox>
-                                    <Add />
-                                    Add Members
-                                </StyledCenteredBox>
-                            </Button>
-                        </StyledAddMemberContainer>
+                                            }
+                                        >
+                                            Delete Selected
+                                        </Button>
+                                    )}
+                                </StyledDeleteSelectedContainer>
+                                <StyledAddMemberContainer>
+                                    <Button
+                                        disabled={isLoading}
+                                        variant={'contained'}
+                                        onClick={() => {
+                                            openAddMembersModal();
+                                        }}
+                                    >
+                                        <StyledCenteredBox>
+                                            <Add />
+                                            Add Members
+                                        </StyledCenteredBox>
+                                    </Button>
+                                </StyledAddMemberContainer>
                             </>
                         )}
                     </StyledTableTitleContainer>
@@ -1024,16 +1024,16 @@ export const MembersTable = (props: MembersTableProps) => {
                                         type,
                                         'access',
                                     ) && (
-                                    <Button
-                                        disabled={isLoading}
-                                        variant={'contained'}
-                                        onClick={() => {
-                                            setAddModalUser(null);
-                                            openAddMembersModal();
-                                        }}
-                                    >
-                                        Add Members
-                                    </Button>
+                                        <Button
+                                            disabled={isLoading}
+                                            variant={'contained'}
+                                            onClick={() => {
+                                                setAddModalUser(null);
+                                                openAddMembersModal();
+                                            }}
+                                        >
+                                            Add Members
+                                        </Button>
                                     )}
                                 </StyledNoMembersDiv>
                             )}

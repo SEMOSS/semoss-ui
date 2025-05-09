@@ -965,7 +965,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                         float: 'left',
                                                     }}
                                                 >
-                                                     <Box
+                                                    <Box
                                                         sx={{
                                                             display: 'flex',
                                                             height: '32px',
@@ -978,30 +978,32 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                             borderRadius: '50%',
                                                         }}
                                                     >
-                                                    <Avatar
-                                                        aria-label="avatar"
-                                                        sx={{
-                                                            display: 'flex',
+                                                        <Avatar
+                                                            aria-label="avatar"
+                                                            sx={{
+                                                                display: 'flex',
                                                                 width: '50px',
                                                                 height: '50px',
                                                                 fontSize:
                                                                     '24px',
-                                                            backgroundColor:
-                                                                project.color,
-                                                        }}
-                                                    >
-                                                        {initial}
-                                                    </Avatar>
+                                                                backgroundColor:
+                                                                    project.color,
+                                                            }}
+                                                        >
+                                                            {initial}
+                                                        </Avatar>
+                                                    </Box>
                                                 </Box>
-                                            </Box>
-                                            <Card.Header
-                                                title={
-                                                    <Typography variant="h6">
-                                                        {project.project_name}
-                                                    </Typography>
-                                                }
-                                                sx={{
-                                                    color: '#000',
+                                                <Card.Header
+                                                    title={
+                                                        <Typography variant="h6">
+                                                            {
+                                                                project.project_name
+                                                            }
+                                                        </Typography>
+                                                    }
+                                                    sx={{
+                                                        color: '#000',
                                                         maxWidth: '85%',
                                                         width: '100%',
                                                         float: 'left',
@@ -1010,39 +1012,39 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                         alignItems: 'center',
                                                         paddingBottom: '7px',
                                                         margin: '0px 0px 0px 0px',
-                                                }}
-                                                subheader={
-                                                    <Box
-                                                        sx={{
-                                                            display: 'flex',
-                                                            gap: 2,
-                                                        }}
-                                                    >
-                                                        <span
-                                                            style={{
-                                                                opacity: 0.9,
-                                                                fontSize:
-                                                                    '11px',
-                                                                //height:'20px',
-                                                                width: '70%',
-                                                                gap: '4px',
+                                                    }}
+                                                    subheader={
+                                                        <Box
+                                                            sx={{
+                                                                display: 'flex',
+                                                                gap: 2,
                                                             }}
                                                         >
-                                                            {`Project ID: `}
-                                                            <Chip
-                                                                label={
-                                                                    project.project_id
-                                                                }
-                                                                size="small"
-                                                            />
-                                                        </span>
-                                                        {`• `}
-                                                    </Box>
-                                                }
-                                                action={
-                                                    <IconButton
-                                                        sx={{
-                                                            height: '48px',
+                                                            <span
+                                                                style={{
+                                                                    opacity: 0.9,
+                                                                    fontSize:
+                                                                        '11px',
+                                                                    //height:'20px',
+                                                                    width: '70%',
+                                                                    gap: '4px',
+                                                                }}
+                                                            >
+                                                                {`Project ID: `}
+                                                                <Chip
+                                                                    label={
+                                                                        project.project_id
+                                                                    }
+                                                                    size="small"
+                                                                />
+                                                            </span>
+                                                            {`• `}
+                                                        </Box>
+                                                    }
+                                                    action={
+                                                        <IconButton
+                                                            sx={{
+                                                                height: '48px',
                                                                 width: '48px',
                                                                 fontSize:
                                                                     'small',
@@ -1052,24 +1054,24 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                                 position:
                                                                     'absolute',
                                                                 padding: '10px',
-                                                        }}
-                                                        onClick={() => {
-                                                            const filtered =
-                                                                selectedNonCredentialedProjects.filter(
-                                                                    (val) =>
-                                                                        val.project_id !==
-                                                                        project.project_id,
+                                                            }}
+                                                            onClick={() => {
+                                                                const filtered =
+                                                                    selectedNonCredentialedProjects.filter(
+                                                                        (val) =>
+                                                                            val.project_id !==
+                                                                            project.project_id,
+                                                                    );
+                                                                setSelectedNonCredentialedProjects(
+                                                                    filtered,
                                                                 );
-                                                            setSelectedNonCredentialedProjects(
-                                                                filtered,
-                                                            );
-                                                        }}
-                                                    >
-                                                        <ClearRounded />
-                                                    </IconButton>
-                                                }
-                                            />
-                                        </Box>
+                                                            }}
+                                                        >
+                                                            <ClearRounded />
+                                                        </IconButton>
+                                                    }
+                                                />
+                                            </Box>
                                         </Box>
                                     );
                                 },

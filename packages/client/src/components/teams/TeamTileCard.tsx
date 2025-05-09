@@ -284,13 +284,13 @@ export const TeamTileCard = (props: TeamCardProps) => {
             }
 
             for (let i = 0; i < requests.length; i++) {
-                let response: AxiosResponse<{ success: boolean }> | null = null;
-                response = await monolithStore.addTeamUser(
-                    id,
-                    requests[i].type,
-                    requests[i].userid,
-                    true,
-                );
+                const response: AxiosResponse<{ success: boolean }> | null =
+                    await monolithStore.addTeamUser(
+                        id,
+                        requests[i].type,
+                        requests[i].userid,
+                        true,
+                    );
 
                 if (!response) {
                     return;
@@ -333,8 +333,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
         setIsLoading(true);
         if (isCustomGroup) {
             try {
-                let response;
-                response = await monolithStore.getNonTeamUsers(
+                const response = await monolithStore.getNonTeamUsers(
                     id,
                     AUTOCOMPLETE_LIMIT,
                     offset,
@@ -474,7 +473,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                                     </Stack>
                                 </MenuItemTwo>
                             )}
-                            <MenuItemTwo
+                            {/* <MenuItemTwo
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleClose(e);
@@ -485,7 +484,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                                     <EditIcon />
                                     <div>Edit team</div>
                                 </Stack>
-                            </MenuItemTwo>
+                            </MenuItemTwo> */}
                             <MenuItemTwo
                                 onClick={(e) => {
                                     e.stopPropagation();

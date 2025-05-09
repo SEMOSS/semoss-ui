@@ -291,7 +291,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
             }
             const timer = setTimeout(() => {
                 if (!offset) {
-                getUsersNonGroup(true);
+                    getUsersNonGroup(true);
                 } else {
                     if (canCollect) {
                         getUsersNonGroup(false);
@@ -906,28 +906,28 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                                                         width: '32px',
                                                         justifyContent:
                                                             'center',
-                                                    alignItems: 'center',
-                                                    border: '0.5px solid rgba(0, 0, 0, .05)',
-                                                    borderRadius: '50%',
-                                                }}
-                                            >
-                                                <Avatar
-                                                    aria-label="avatar"
-                                                    sx={{
-                                                        display: 'flex',
-                                                            width: '32px',
-                                                            height: '32px',
-                                                        fontSize: '24px',
-                                                        backgroundColor:
-                                                            user.color,
+                                                        alignItems: 'center',
+                                                        border: '0.5px solid rgba(0, 0, 0, .05)',
+                                                        borderRadius: '50%',
                                                     }}
                                                 >
-                                                    {initial}
-                                                </Avatar>
+                                                    <Avatar
+                                                        aria-label="avatar"
+                                                        sx={{
+                                                            display: 'flex',
+                                                            width: '32px',
+                                                            height: '32px',
+                                                            fontSize: '24px',
+                                                            backgroundColor:
+                                                                user.color,
+                                                        }}
+                                                    >
+                                                        {initial}
+                                                    </Avatar>
+                                                </Box>
                                             </Box>
-                                        </Box>
-                                        <Card.Header
-                                            title={
+                                            <Card.Header
+                                                title={
                                                     <Typography
                                                         variant="h6"
                                                         sx={{
@@ -936,82 +936,82 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                                                             marginTop: '5px',
                                                         }}
                                                     >
-                                                    {user.name}
-                                                </Typography>
-                                            }
-                                            sx={{
-                                                color: '#000',
+                                                        {user.name}
+                                                    </Typography>
+                                                }
+                                                sx={{
+                                                    color: '#000',
                                                     maxWidth: '466px',
                                                     height: '15px',
-                                                width: '100%',
+                                                    width: '100%',
                                                     float: 'left',
                                                     gap: '16px',
-                                            }}
-                                            subheader={
-                                                <Box
-                                                    sx={{
-                                                        display: 'flex',
+                                                }}
+                                                subheader={
+                                                    <Box
+                                                        sx={{
+                                                            display: 'flex',
                                                             gap: '2px',
                                                             marginTop: '2px',
-                                                    }}
-                                                >
-                                                    <span
-                                                        style={{
-                                                            opacity: 0.9,
-                                                                fontSize:
-                                                                    '11px',
                                                         }}
                                                     >
-                                                        {`User ID: `}
-                                                        <Chip
-                                                            label={user.id}
-                                                            size="small"
-                                                        />
-                                                    </span>
-                                                    {`• `}
-                                                    <span>
-                                                        {`Email: `}
-                                                        <Link
-                                                            href={`mailto:${user.email}`}
-                                                            underline="none"
+                                                        <span
+                                                            style={{
+                                                                opacity: 0.9,
+                                                                fontSize:
+                                                                    '11px',
+                                                            }}
                                                         >
-                                                            {user.email}
-                                                        </Link>
-                                                    </span>
-                                                </Box>
-                                            }
-                                            action={
-                                                <IconButton
-                                                    sx={{
+                                                            {`User ID: `}
+                                                            <Chip
+                                                                label={user.id}
+                                                                size="small"
+                                                            />
+                                                        </span>
+                                                        {`• `}
+                                                        <span>
+                                                            {`Email: `}
+                                                            <Link
+                                                                href={`mailto:${user.email}`}
+                                                                underline="none"
+                                                            >
+                                                                {user.email}
+                                                            </Link>
+                                                        </span>
+                                                    </Box>
+                                                }
+                                                action={
+                                                    <IconButton
+                                                        sx={{
                                                             height: '28px',
                                                             width: '28px',
                                                             gap: '30px',
                                                             fontSize: 'small',
-                                                        mt: '16px',
-                                                        color: 'rgba( 0, 0, 0, .7)',
+                                                            mt: '16px',
+                                                            color: 'rgba( 0, 0, 0, .7)',
                                                             mr: '2px',
                                                             top: '0px',
                                                             position:
                                                                 'absolute',
                                                             padding: '10px',
-                                                    }}
-                                                    onClick={() => {
-                                                        const filtered =
-                                                            selectedNonCredentialedUsers.filter(
-                                                                (val) =>
-                                                                    val.id !==
-                                                                    user.id,
+                                                        }}
+                                                        onClick={() => {
+                                                            const filtered =
+                                                                selectedNonCredentialedUsers.filter(
+                                                                    (val) =>
+                                                                        val.id !==
+                                                                        user.id,
+                                                                );
+                                                            setSelectedNonCredentialedUsers(
+                                                                filtered,
                                                             );
-                                                        setSelectedNonCredentialedUsers(
-                                                            filtered,
-                                                        );
-                                                    }}
-                                                >
-                                                    <ClearRounded />
-                                                </IconButton>
-                                            }
-                                        />
-                                    </Box>
+                                                        }}
+                                                    >
+                                                        <ClearRounded />
+                                                    </IconButton>
+                                                }
+                                            />
+                                        </Box>
                                     </Box>
                                 );
                             })}

@@ -119,11 +119,6 @@ export const EngineShell = (props: EngineShellProps) => {
         database_type?: string;
     }>(`GetEngineMetadata(engine=["${id}"], metaKeys=[]); `);
 
-    const { status: authorStatus, data: authorData } = usePixel<{
-        DATEADDED?: string;
-        PERMISSIONGRANTEDBY?: string;
-    }>(`GetAuthorLatestUpdated(engine=["${id}"]); `);
-
     /**
      * @name exportDB
      * @desc export DB pixel
@@ -268,26 +263,74 @@ export const EngineShell = (props: EngineShellProps) => {
                         marginBottom={2}
                         sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
                     >
-                        {authorData?.DATEADDED &&
-                        authorData?.PERMISSIONGRANTEDBY ? (
-                            <div>
-                                <Typography variant={'body2'}>
-                                    {`Updated by ${authorData.PERMISSIONGRANTEDBY}`}
-                                </Typography>
-
-                                <div>
-                                    <Typography variant={'body2'}>
-                                        {`at ${authorData.DATEADDED}`}
-                                    </Typography>
-                                </div>
-                            </div>
-                        ) : (
-                            <div>
-                                <Typography variant={'body2'}>
-                                    No updates since creation
-                                </Typography>
-                            </div>
-                        )}
+                        <div
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                flexDirection: 'row',
+                                gap: '8px',
+                            }}
+                        >
+                            <Typography
+                                variant={'body2'}
+                                sx={{
+                                    maxWidth: '35%',
+                                }}
+                            >
+                                Published by:{' '}
+                            </Typography>
+                            <Typography
+                                variant={'body2'}
+                                sx={{
+                                    maxWidth: '65%',
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    overflow: 'hidden',
+                                    whiteSpace: 'nowrap',
+                                    textOverflow: 'ellipsis',
+                                    direction: 'rtl',
+                                    textAlign: 'left',
+                                }}
+                            >
+                                {data.database_created_by
+                                    ? data.database_created_by
+                                    : 'N/A'}
+                            </Typography>
+                        </div>
+                        <div
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                flexDirection: 'row',
+                                gap: '8px',
+                            }}
+                        >
+                            <Typography
+                                variant={'body2'}
+                                sx={{
+                                    maxWidth: '35%',
+                                }}
+                            >
+                                Updated:{' '}
+                            </Typography>
+                            <Typography
+                                variant={'body2'}
+                                sx={{
+                                    maxWidth: '65%',
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    overflow: 'hidden',
+                                    whiteSpace: 'nowrap',
+                                    textOverflow: 'ellipsis',
+                                    direction: 'rtl',
+                                    textAlign: 'left',
+                                }}
+                            >
+                                {data.last_updated ? data.last_updated : 'N/A'}
+                            </Typography>
+                        </div>
                     </Stack>
                 </StyledInfoRight>
             </StyledInfo>
