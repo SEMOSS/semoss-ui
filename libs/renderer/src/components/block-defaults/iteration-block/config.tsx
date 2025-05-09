@@ -21,7 +21,10 @@ export const config: BlockConfig<IterationBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {
         children: [],

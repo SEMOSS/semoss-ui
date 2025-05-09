@@ -35,8 +35,14 @@ export const config: BlockConfig<SwitchBlockDef> = {
         labelPlacement: "end",
     },
     listeners: {
-        onChange: [],
-        preProcess: [],
+        onChange: {
+            type: "sync",
+            order: [],
+        },
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: SwitchBlock,

@@ -22,7 +22,10 @@ export const config: BlockConfig<AudioBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: AudioBlock,

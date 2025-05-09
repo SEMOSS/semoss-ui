@@ -12,7 +12,7 @@ import {
 import { CircularProgress, InputAdornment } from "@semoss/ui";
 
 import { useBlock, useDebounce } from "../../../hooks";
-import { BlockComponent, BlockDef } from "../../../store";
+import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { debounced } from "../../../utility";
 
 const StyledLoading = styled(CircularProgress)(({ theme }) => ({
@@ -37,8 +37,14 @@ export interface SelectBlockDef extends BlockDef<"select"> {
         show: boolean;
     };
     listeners: {
-        preProcess: true;
-        onChange: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+        onChange: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
