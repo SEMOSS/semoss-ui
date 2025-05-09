@@ -1,14 +1,14 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { useBlock, useBlockSettings, useFrame } from "../../../../../hooks";
-import { BlockComponent } from "../../../../../store";
 import { styled } from "@mui/material";
+import EChartsReact from "echarts-for-react";
 import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";
 import { CanvasRenderer } from "echarts/renderers";
 import { TooltipComponent } from "echarts/components";
-import EChartsReact from "echarts-for-react";
+import { useBlock, useBlockSettings, useFrame } from "../../../../../hooks";
+import { BlockComponent } from "../../../../../store";
 import fetchWorldMap from "./map-utility";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { getSelector } from "./MapSelector";
 import { processData } from "./MapChartProcessData";
 import { formatdatapoints } from "./MapChartTooltipData";
