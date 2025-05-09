@@ -98,20 +98,136 @@ export const ContainerLayoutSettings = observer(
             data,
             "style.flexDirection",
         ) as unknown as string;
-        let gap = getValueByPath(data, "style.gap") as unknown as string;
-        let rowSpacing = getValueByPath(
-            data,
-            "rowSpacing",
-        ) as unknown as string;
 
-        if (rowSpacing) rowSpacing = rowSpacing.slice(0, -2);
-        if (gap) gap = gap.slice(0, -1);
+        // track the gap spacing with unit
+        const [gapSpacing, setGapSpacing] = useState<{
+            unit: "%" | "px" | "em" | "";
+            value: string;
+        }>({
+            unit: "",
+            value: "",
+        });
+
+        // track the row spacing with unit
+        const [rowSpacing, setRowSpacing] = useState<{
+            unit: "%" | "px" | "em" | "";
+            value: string;
+        }>({
+            unit: "",
+            value: "",
+        });
+
+        //get the row spacing value from the block
+        const computedRowValue = useMemo(() => {
+            return computed(() => {
+                if (!data) {
+                    return "";
+                }
+
+                const v = getValueByPath(data, "rowSpacing");
+                if (typeof v === "undefined") {
+                    return "";
+                } else if (typeof v === "string") {
+                    return v;
+                }
+
+                return JSON.stringify(v);
+            });
+        }, [data]).get();
+
+        //get the gap spacing value from the block
+        const computedGapValue = useMemo(() => {
+            return computed(() => {
+                if (!data) {
+                    return "";
+                }
+
+                const v = getValueByPath(data, "style.gap");
+                if (typeof v === "undefined") {
+                    return "";
+                } else if (typeof v === "string") {
+                    return v;
+                }
+
+                return JSON.stringify(v);
+            });
+        }, [data]).get();
+
+        //set the value of the row spacing input
+        useEffect(() => {
+            const r: typeof rowSpacing = {
+                unit: "",
+                value: "",
+            };
+
+            // get the unit
+            if (computedRowValue.includes("%")) {
+                r.unit = "%";
+            } else if (computedRowValue.includes("px")) {
+                r.unit = "px";
+            } else if (computedRowValue.includes("em")) {
+                r.unit = "em";
+            }
+
+            //remove the units from the computed value
+            const amount = JSON.stringify(computedRowValue).replace(
+                /[^0-9]/g,
+                "",
+            );
+
+            if (r.unit) {
+                r.value = amount;
+            } else {
+                r.value = computedRowValue;
+            }
+
+            setRowSpacing(r);
+        }, [computedRowValue]);
+
+        //set the value of the gap spacing input
+        useEffect(() => {
+            const r: typeof gapSpacing = {
+                unit: "",
+                value: "",
+            };
+
+            // get the unit
+            if (computedGapValue.includes("%")) {
+                r.unit = "%";
+            } else if (computedGapValue.includes("px")) {
+                r.unit = "px";
+            } else if (computedGapValue.includes("em")) {
+                r.unit = "em";
+            }
+
+            //remove the units from the computed value
+            const amount = JSON.stringify(computedGapValue).replace(
+                /[^0-9]/g,
+                "",
+            );
+
+            if (r.unit) {
+                r.value = amount;
+            } else {
+                r.value = computedGapValue;
+            }
+
+            setGapSpacing(r);
+        }, [computedGapValue]);
 
         /**
          * Sync the data on change
          */
-        const changeRowSpacing = (amount: string) => {
-            setData("rowSpacing", `${amount}px`);
+        const changeRowSpacing = (
+            amount: string,
+            unit: "%" | "px" | "em" | "",
+        ) => {
+            setRowSpacing({
+                value: amount,
+                unit: unit,
+            });
+
+            setData("rowSpacing", amount + unit);
 
             const b = state.getBlock(id);
 
@@ -122,18 +238,53 @@ export const ContainerLayoutSettings = observer(
                         payload: {
                             id: cId,
                             path: "style.marginBottom",
-                            value: `${amount}px`,
+                            value: amount + unit,
                         },
                     });
                 });
             }
         };
 
-        const modifyGrid = (val: string, g?: string) => {
+        const changeGapSpacing = (
+            amount: string,
+            unit: "%" | "px" | "em" | "",
+        ) => {
+            setGapSpacing({
+                value: amount,
+                unit: unit,
+            });
+
+            setData("style.gap", (amount + unit) as never);
+
             const b = state.getBlock(id);
-            const width = calculateItemWidth(100, val, g ? g : gap) as string;
+
+            if (b.slots.children.children.length) {
+                b.slots.children.children.forEach(async (cId) => {
+                    state.dispatch({
+                        message: ActionMessages.SET_BLOCK_DATA,
+                        payload: {
+                            id: cId,
+                            path: "style.gap",
+                            value: amount + unit,
+                        },
+                    });
+                });
+            }
+        };
+
+        const modifyGrid = (val: string, gap?: string) => {
+            console.log("modify grid");
+
+            const b: Block = state.getBlock(id);
+
+            const width = calculateItemWidth(
+                100,
+                val,
+                gap ? gap : gapSpacing.value,
+            ) as string;
 
             const elsCount = parseInt(val as string);
+
             // Modify width of existing blocks in container
             if (b.slots.children.children.length) {
                 b.slots.children.children.forEach(async (cId) => {
@@ -295,10 +446,13 @@ export const ContainerLayoutSettings = observer(
                         <BaseSettingSection label={"Row Spacing"} wide>
                             <TextField
                                 fullWidth
-                                value={rowSpacing}
+                                value={rowSpacing.value}
                                 onChange={(e) => {
                                     // sync the data on change
-                                    changeRowSpacing(e.target.value);
+                                    changeRowSpacing(
+                                        e.target.value,
+                                        rowSpacing.unit,
+                                    );
                                 }}
                                 size="small"
                                 variant="outlined"
@@ -312,30 +466,55 @@ export const ContainerLayoutSettings = observer(
                                 }}
                             />
                             <ToggleButtonGroup
-                                value={"px"}
+                                value={rowSpacing.unit}
                                 exclusive
                                 size="small"
                             >
                                 <ToggleButton
                                     key={"em"}
                                     value={"em"}
-                                    disabled
-                                    color={undefined}
+                                    color={
+                                        rowSpacing.unit === "em"
+                                            ? "primary"
+                                            : undefined
+                                    }
+                                    onClick={() => {
+                                        changeRowSpacing(
+                                            rowSpacing.value,
+                                            "em",
+                                        );
+                                    }}
                                 >
                                     em
                                 </ToggleButton>
                                 <ToggleButton
                                     key={"px"}
                                     value={"px"}
-                                    color={"primary"}
+                                    color={
+                                        rowSpacing.unit === "px"
+                                            ? "primary"
+                                            : undefined
+                                    }
+                                    onClick={() => {
+                                        changeRowSpacing(
+                                            rowSpacing.value,
+                                            "px",
+                                        );
+                                    }}
                                 >
                                     px
                                 </ToggleButton>
                                 <ToggleButton
                                     key={"%"}
                                     value={"%"}
-                                    disabled
-                                    color={undefined}
+                                    color={
+                                        rowSpacing.unit === "%"
+                                            ? "primary"
+                                            : undefined
+                                    }
+                                    onClick={() => {
+                                        changeRowSpacing(rowSpacing.value, "%");
+                                    }}
                                 >
                                     %
                                 </ToggleButton>
@@ -344,15 +523,13 @@ export const ContainerLayoutSettings = observer(
                         <BaseSettingSection label={"Gap"} wide>
                             <TextField
                                 fullWidth
-                                value={gap}
+                                value={gapSpacing.value}
                                 onChange={(e) => {
                                     // sync the data on change
-                                    setData(
-                                        "style.gap",
-                                        `${e.target.value}%` as never,
+                                    changeGapSpacing(
+                                        e.target.value,
+                                        gapSpacing.unit,
                                     );
-
-                                    modifyGrid(gridDimension, e.target.value);
                                 }}
                                 size="small"
                                 variant="outlined"
@@ -366,30 +543,55 @@ export const ContainerLayoutSettings = observer(
                                 }}
                             />
                             <ToggleButtonGroup
-                                value={"%"}
+                                value={gapSpacing.unit}
                                 exclusive
                                 size="small"
                             >
                                 <ToggleButton
                                     key={"em"}
                                     value={"em"}
-                                    disabled
-                                    color={undefined}
+                                    color={
+                                        gapSpacing.unit === "em"
+                                            ? "primary"
+                                            : undefined
+                                    }
+                                    onClick={() => {
+                                        changeGapSpacing(
+                                            gapSpacing.value,
+                                            "em",
+                                        );
+                                    }}
                                 >
                                     em
                                 </ToggleButton>
                                 <ToggleButton
                                     key={"px"}
                                     value={"px"}
-                                    disabled
-                                    color={undefined}
+                                    color={
+                                        gapSpacing.unit === "px"
+                                            ? "primary"
+                                            : undefined
+                                    }
+                                    onClick={() => {
+                                        changeGapSpacing(
+                                            gapSpacing.value,
+                                            "px",
+                                        );
+                                    }}
                                 >
                                     px
                                 </ToggleButton>
                                 <ToggleButton
                                     key={"%"}
                                     value={"%"}
-                                    color={"primary"}
+                                    color={
+                                        gapSpacing.unit === "%"
+                                            ? "primary"
+                                            : undefined
+                                    }
+                                    onClick={() => {
+                                        changeGapSpacing(gapSpacing.value, "%");
+                                    }}
                                 >
                                     %
                                 </ToggleButton>
