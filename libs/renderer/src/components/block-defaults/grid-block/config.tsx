@@ -5,6 +5,7 @@ import { BLOCK_TYPE_DATA } from "../block-defaults.constants";
 import { GridBlock, GridBlockDef } from "./GridBlock";
 import { GridBlockColumnSettings } from "./GridBlockColumnSettings";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
+import { buildShowField } from "../block-defaults.shared";
 
 // export the config for the block
 export const config: BlockConfig<GridBlockDef> = {
@@ -25,6 +26,10 @@ export const config: BlockConfig<GridBlockDef> = {
     render: GridBlock,
     icon: TableChart,
     contentMenu: [
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
         {
             name: "General",
             children: [
