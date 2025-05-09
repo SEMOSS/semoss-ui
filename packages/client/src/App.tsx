@@ -144,8 +144,6 @@ export const App = () => {
                 MODULE: string;
             };
 
-            console.log({ env });
-
             // update the enviornment variables with the module
             if (env) {
                 Env.update({

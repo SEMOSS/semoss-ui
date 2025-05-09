@@ -15,14 +15,13 @@ import { useBlockSettings, useBlocks } from "../../../hooks";
 import { ActionMessages, Block, BlockDef } from "../../../store";
 import { getValueByPath } from "../../../utility";
 import { BaseSettingSection } from "../BaseSettingSection";
-import {
-    BOTTOM_PADDING,
-    HORIZONTAL_PADDING,
-    LEFT_PADDING,
-    RIGHT_PADDING,
-    TOP_PADDING,
-    VERTICAL_PADDING,
-} from "../../../assets/containerBlock/index";
+import VeritcalPaddingIcon from "../../../assets/containerBlock/VerticalPaddingIcon.svg";
+import HorizontalPaddingIcon from "../../../assets/containerBlock/HorizontalPaddingIcon.svg";
+import BottomPaddingIcon from "../../../assets/containerBlock/BottomPaddingIcon.svg";
+import TopPaddingIcon from "../../../assets/containerBlock/TopPaddingIcon.svg";
+import LeftPaddingIcon from "../../../assets/containerBlock/LeftPaddingIcon.svg";
+import RightPaddingIcon from "../../../assets/containerBlock/RightPaddingIcon.svg";
+import PaddingButton from "../../../assets/containerBlock/PaddingButton.svg";
 
 /**
  * Used for Margin and Padding style settings that utilize a size number, ex width and height
@@ -359,28 +358,7 @@ export const SizeSpacingSettings = observer(
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
-                                        <SvgIcon>
-                                            <svg
-                                                width="20"
-                                                height="20"
-                                                viewBox="0 0 20 20"
-                                                fill="none"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <line
-                                                    x1="5"
-                                                    y1="5"
-                                                    x2="5"
-                                                    y2="19"
-                                                    stroke="black"
-                                                    strokeWidth="2"
-                                                />
-                                                <path
-                                                    d="M12 9.5C13.3807 9.5 14.5 10.6193 14.5 12C14.5 13.3807 13.3807 14.5 12 14.5C10.6193 14.5 9.5 13.3807 9.5 12C9.5 10.6193 10.6193 9.5 12 9.5Z"
-                                                    fill="black"
-                                                />
-                                            </svg>
-                                        </SvgIcon>
+                                        <img src={LeftPaddingIcon.toString()} />
                                     </InputAdornment>
                                 ),
                             }}
@@ -399,11 +377,7 @@ export const SizeSpacingSettings = observer(
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
-                                        <SvgIcon>
-                                            {/* <img
-                                                src={require("@/assets/containerBlock/Top Padding Icon.svg")}
-                                            /> */}
-                                        </SvgIcon>
+                                        <img src={TopPaddingIcon.toString()} />
                                     </InputAdornment>
                                 ),
                             }}
@@ -422,28 +396,9 @@ export const SizeSpacingSettings = observer(
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
-                                        <SvgIcon>
-                                            <svg
-                                                width="20"
-                                                height="20"
-                                                viewBox="0 0 20 20"
-                                                fill="none"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <path
-                                                    d="M12 9.5C13.3807 9.5 14.5 10.6193 14.5 12C14.5 13.3807 13.3807 14.5 12 14.5C10.6193 14.5 9.5 13.3807 9.5 12C9.5 10.6193 10.6193 9.5 12 9.5Z"
-                                                    fill="black"
-                                                />
-                                                <line
-                                                    x1="19"
-                                                    y1="5"
-                                                    x2="19"
-                                                    y2="19"
-                                                    stroke="black"
-                                                    strokeWidth="2"
-                                                />
-                                            </svg>
-                                        </SvgIcon>
+                                        <img
+                                            src={RightPaddingIcon.toString()}
+                                        />
                                     </InputAdornment>
                                 ),
                             }}
@@ -462,9 +417,9 @@ export const SizeSpacingSettings = observer(
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
-                                        <SvgIcon>
-                                            {/* <img src={BOTTOM_PADDING} /> */}
-                                        </SvgIcon>
+                                        <img
+                                            src={BottomPaddingIcon.toString()}
+                                        />
                                     </InputAdornment>
                                 ),
                             }}
@@ -486,9 +441,9 @@ export const SizeSpacingSettings = observer(
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
-                                        {/* <SvgIcon
-                                            component={HORIZONTAL_PADDING}
-                                        /> */}
+                                        <img
+                                            src={HorizontalPaddingIcon.toString()}
+                                        />
                                     </InputAdornment>
                                 ),
                             }}
@@ -507,36 +462,9 @@ export const SizeSpacingSettings = observer(
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
-                                        <SvgIcon>
-                                            <svg
-                                                width="20"
-                                                height="20"
-                                                viewBox="0 0 20 20"
-                                                fill="none"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <line
-                                                    x1="5"
-                                                    y1="5"
-                                                    x2="19"
-                                                    y2="5"
-                                                    stroke="black"
-                                                    strokeWidth="2"
-                                                />
-                                                <path
-                                                    d="M12 9.5C13.3807 9.5 14.5 10.6193 14.5 12C14.5 13.3807 13.3807 14.5 12 14.5C10.6193 14.5 9.5 13.3807 9.5 12C9.5 10.6193 10.6193 9.5 12 9.5Z"
-                                                    fill="black"
-                                                />
-                                                <line
-                                                    x1="5"
-                                                    y1="19"
-                                                    x2="19"
-                                                    y2="19"
-                                                    stroke="black"
-                                                    strokeWidth="2"
-                                                />
-                                            </svg>
-                                        </SvgIcon>
+                                        <img
+                                            src={VeritcalPaddingIcon.toString()}
+                                        />
                                     </InputAdornment>
                                 ),
                             }}
@@ -566,7 +494,7 @@ export const SizeSpacingSettings = observer(
                     color={customView ? "primary" : "default"}
                     data-testid={"sizeSpacingSetting-button-allSides"}
                 >
-                    <SelectAll />
+                    <img src={PaddingButton.toString()} />
                 </IconButton>
             </BaseSettingSection>
         );
