@@ -60,7 +60,7 @@ export const TextFieldStack = (props: TextFieldStackProps) => {
 
     return (
         <>
-            <StyledInputLabel shrink={false} htmlFor={`textfield-${props.id}`}>
+            <StyledInputLabel shrink={false} htmlFor={componentId}>
                 <StyledTypography variant="body2">
                     {props.label ?? "Label"}
                 </StyledTypography>
