@@ -6,7 +6,7 @@ import { Popover, Box, Stack, styled, Typography } from "@mui/material";
 
 import { Slot } from "../../blocks";
 import { useBlock, useBlocks } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 
 export interface PopoverBlockDef extends BlockDef<"popover"> {
     widget: "popover";
@@ -20,6 +20,16 @@ export interface PopoverBlockDef extends BlockDef<"popover"> {
     slots: {
         header: true;
         content: true;
+    };
+    listeners: {
+        onOpen: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+        onClose: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
