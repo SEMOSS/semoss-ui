@@ -652,7 +652,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                 </StyledDeleteSelectedContainer>
                                 <StyledAddMemberContainer>
                                     <Button
-                                        disabled={isLoading}
+                                        disabled={
+                                            isLoading ||
+                                            userPermission === 'Read-Only'
+                                        }
                                         variant={'contained'}
                                         onClick={() => {
                                             openAddMembersModal();
@@ -685,6 +688,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 padding="checkbox"
                                             >
                                                 <Checkbox
+                                                    disabled={
+                                                        userPermission ===
+                                                        'Read-Only'
+                                                    }
                                                     checked={
                                                         selectedMembers.length ===
                                                             renderedMembers.length &&
@@ -773,6 +780,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                             padding="checkbox"
                                                         >
                                                             <StyledCheckbox
+                                                                disabled={
+                                                                    userPermission ===
+                                                                    'Read-Only'
+                                                                }
                                                                 checked={
                                                                     isSelected
                                                                 }
@@ -896,7 +907,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                         permissionPriorityMapper(
                                                                             userPermission,
                                                                         )
-                                                                            ?.priority >
+                                                                            ?.priority >=
                                                                             3 ||
                                                                         readOnlyRestricted(
                                                                             user,
@@ -951,7 +962,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     !configStore.isEngineOperationAvailable(
                                                                         type,
                                                                         'access',
-                                                                    )
+                                                                    ) ||
+                                                                    userPermission ===
+                                                                        'Read-Only'
                                                                 }
                                                             >
                                                                 <Edit />
@@ -966,7 +979,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     !configStore.isEngineOperationAvailable(
                                                                         type,
                                                                         'access',
-                                                                    )
+                                                                    ) ||
+                                                                    userPermission ===
+                                                                        'Read-Only'
                                                                 }
                                                             >
                                                                 <Delete></Delete>
