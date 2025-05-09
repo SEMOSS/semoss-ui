@@ -271,8 +271,6 @@ export const ProjectSettingsPage = () => {
                         color="primary"
                     >
                         <ToggleButton
-                            // onClick={() => dispatch({type:'sort',sortBy:sort,sortType:'DESC'})}
-                            //onClick={(e, v) => setSortOrder(v)}
                             onClick={(e, v) => {
                                 dispatch({
                                     type: 'sort',
@@ -289,8 +287,6 @@ export const ProjectSettingsPage = () => {
                             </Tooltip>
                         </ToggleButton>
                         <ToggleButton
-                            //onClick={() => dispatch({type:'sort',sortBy:sort,sortType:'ASC'})}
-                            //onClick={(e, v) => setSortOrder(v)}
                             onClick={(e, v) => {
                                 dispatch({
                                     type: 'sort',
