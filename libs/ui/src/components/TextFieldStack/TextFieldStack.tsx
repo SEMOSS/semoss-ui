@@ -39,6 +39,7 @@ const StyledMuiTextField = styled(MuiTextField)(({}) => ({
     "&.MuiFormControl-root > .MuiInputBase-root > input": {
         padding: "8.5px 12px",
         border: "1px solid #C4C4C4",
+        borderRadius: "8px",
     },
     "&.MuiFormControl-root > .MuiInputBase-root :focus": {
         border: "1px solid #0471F0",
