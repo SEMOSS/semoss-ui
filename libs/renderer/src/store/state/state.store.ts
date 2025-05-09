@@ -432,6 +432,10 @@ export class StateStore {
                     action.payload;
 
                 this.newCell(queryId, cellId, config, previousCellId);
+            } else if (ActionMessages.MOVE_CELL === action.message) {
+                const { queryId, activeCellId, overCellId } = action.payload;
+
+                this.moveCell(queryId, activeCellId, overCellId);
             } else if (ActionMessages.DELETE_CELL === action.message) {
                 const { queryId, cellId } = action.payload;
 
@@ -534,7 +538,13 @@ export class StateStore {
      * TODO: Clean this fn up (split out iterator parsing?)
      * Parse a variables and return the value if it exists (otherwise return the expression)
      */
-    parseVariable = (expression: string, id?: string): unknown => {
+    parseVariable = (expression: string, id?: string, _depth: number = 0, _seen: Set<string> = new Set()): unknown => {
+
+        if(_depth > 10) return expression;
+        if(_seen.has(expression)) return expression
+        
+        _seen.add(expression)
+
         // trim the whitespace
         let cleaned = expression.trim();
 
@@ -549,8 +559,10 @@ export class StateStore {
 
         // Special Parsing for Iterators
         if (cleaned.startsWith("$")) {
+            
             // See if id is a descendant of an iterator block
             const iteratorBlock = this.isDescendantOfIterator(id);
+
 
             if (iteratorBlock) {
                 try {
@@ -570,7 +582,15 @@ export class StateStore {
                         }
                     }
 
-                    const variable = expression.match(/\$(.*?)\./)[1];
+                    let variable;
+
+                    if(expression.includes(".")) {
+                        variable = expression.match(/\$(.*?)\./)[1];
+                    } else {
+                        debugger
+                        variable = expression.match(/^\$(\w+)/)?.[1]
+                    }
+
                     const stripped = iteratorList.slice(2, -2);
 
                     // TODO: how do we handle nested loops $array.warehouse.warehouseSections --> = []
@@ -658,9 +678,12 @@ export class StateStore {
             );
             
 
-            // TODO: Check this, protects for false values
-            // (query.isLoading tied to a block.label **bad use-case)
+            // TODO: Check this, protects for false values -- (query.isLoading tied to a block.label **bad use-case)
             if (value !== undefined && value !== null) {
+                // RECURSIVE: If value is another {{var}}, resolve again
+                if(typeof value === "string" && value.trim().match(/^{{.*}}$/)) {
+                    return this.parseVariable(value, id, _depth + 1, _seen)
+                }
                 return value;
             }
 
@@ -681,6 +704,8 @@ export class StateStore {
         return expression.replace(/{{(.*?)}}/g, (match) => {
             // try to extract the variable
             const v = this.parseVariable(match);
+
+            debugger
 
             // if it is not a string, convert to a string
             if (typeof v !== "string") {
@@ -1486,6 +1511,20 @@ export class StateStore {
         // add the cell
         q._addCell(cellId, config, previousCellId);
     };
+
+    /**
+     * Move a cell
+     * @param queryId - id of the updated query
+     * @param activeCellId - id of the active cell
+     * @param overCellId - id of the cell we are moving over
+     */
+    private moveCell = (queryId: string, activeCellId: string, overCellId: string): void => {
+        // get the query
+        const q = this._store.queries[queryId];
+
+        // move the cell
+        q._moveCell(activeCellId, overCellId);
+    }
 
     /**
      * Delete a cell
