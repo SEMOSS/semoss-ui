@@ -19,6 +19,7 @@ export enum ActionMessages {
     SET_QUERY = "SET_QUERY",
     NEW_QUERY = "NEW_QUERY",
     NEW_CELL = "NEW_CELL",
+    MOVE_CELL = "MOVE_CELL",
     DELETE_QUERY = "DELETE_QUERY",
     DELETE_CELL = "DELETE_CELL",
     UPDATE_QUERY = "UPDATE_QUERY",
@@ -50,6 +51,7 @@ export type Actions =
     | UpdateQueryAction
     | RunQueryAction
     | NewCellAction
+    | MoveCellAction
     | DeleteCellAction
     | UpdateCellAction
     | RunCellAction
@@ -203,6 +205,15 @@ export interface NewCellAction extends Action {
         cellId: string;
         previousCellId: string;
         config: Omit<CellStateConfig, "id">;
+    };
+}
+
+export interface MoveCellAction extends Action {
+    message: ActionMessages.MOVE_CELL;
+    payload: {
+        queryId: string;
+        activeCellId: string;
+        overCellId: string;
     };
 }
 

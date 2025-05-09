@@ -4,11 +4,11 @@ import { observer } from "mobx-react-lite";
 import { styled } from "@mui/material";
 import * as echarts from "echarts/core";
 import EChartsReact from "echarts-for-react";
+import { color, EChartsOption } from "echarts";
 
 import { getValueByPath } from "../../../../../utility";
 import { useBlockSettings, useFrame } from "../../../../../hooks";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
-import { color, EChartsOption } from "echarts";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 import { DendrogramChartField } from "./DendrogramChartField";
 
