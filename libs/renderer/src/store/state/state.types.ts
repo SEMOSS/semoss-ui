@@ -1,5 +1,5 @@
 import React from "react";
-import { RunQueryAction, DispatchEventAction, DispatchOutputsEventAction } from "./state.actions";
+import { RunQueryAction, DispatchEventAction, DispatchOutputsEventAction, RunCellAction } from "./state.actions";
 import { CellState } from "./cell.state";
 import { QueryStateConfig } from "./query.state";
 
@@ -267,7 +267,7 @@ export type RegistryUnwrap<R extends Registry<BlockDef>> = R extends Registry<
 /**
  * Listener Actions
  */
-export type ListenerActions = RunQueryAction | DispatchEventAction | DispatchOutputsEventAction;
+export type ListenerActions = RunQueryAction | DispatchEventAction | DispatchOutputsEventAction | RunCellAction;
 
 /**
  * Cell Definition

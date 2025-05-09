@@ -102,3 +102,5 @@ export { default as STACK_CHART_ACTIVE } from './Bar_Chart_Stacked_Active.png';
 export { default as STACK_CHART_HOVER } from './Bar_Chart_Stacked_Hover.png';
 export { default as GANTT_CHART_ACTIVE } from './Gantt_Chart_Active.png';
 export { default as GANTT_CHART_HOVER } from './Gantt_Chart_Hover.png';
+export { default as DENDROGRAM_CHART_ACTIVE } from './Dendrogram_Active.png';
+export { default as DENDROGRAM_CHART_HOVER } from './Dendrogram_Hover.png';

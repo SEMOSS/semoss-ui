@@ -1,5 +1,4 @@
 import { createContext, useState, useEffect, useMemo } from "react";
-import { unstable_batchedUpdates } from "react-dom";
 
 import { Insight } from "../..";
 
@@ -52,14 +51,12 @@ export const InsightProvider = (props: InsightProviderProps) => {
      * Sync the insight with react
      */
     const syncInsight = async () => {
-        unstable_batchedUpdates(() => {
-            setError(insight.error);
-            setSystem(insight.system);
-            setIsAuthorized(insight.isAuthorized);
-            setIsInitialized(insight.isInitialized);
-            setIsReady(insight.isReady);
-            setInsightId(insight.insightId);
-        });
+        setError(insight.error);
+        setSystem(insight.system);
+        setIsAuthorized(insight.isAuthorized);
+        setIsInitialized(insight.isInitialized);
+        setIsReady(insight.isReady);
+        setInsightId(insight.insightId);
     };
 
     const wrappedActions = useMemo(() => {

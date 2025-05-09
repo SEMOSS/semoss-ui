@@ -1,5 +1,4 @@
-// RadioBlock.tsx
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import {
     Radio,
@@ -9,6 +8,7 @@ import {
     FormLabel,
     Box,
 } from "@mui/material";
+
 import { useBlock } from "../../../hooks";
 import { BlockComponent, BlockDef } from "../../../store";
 
@@ -36,11 +36,18 @@ export interface RadioBlockDef extends BlockDef<"radio"> {
     };
     listeners: {
         onChange: true;
+        preProcess: true;
     };
 }
 
 export const RadioBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<RadioBlockDef>(id);
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
 
     // Handle radio button change
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {

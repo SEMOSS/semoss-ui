@@ -27,6 +27,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import EditIcon from '@mui/icons-material/Edit';
 import { useRootStore } from '@/hooks';
 import { AxiosResponse } from 'axios';
+import { AddTeamModal } from './AddTeamModal';
 
 const colors = [
     'rgba(111, 212, 203, 1)',
@@ -181,6 +182,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
     const [addMembersModal, setAddMembersModal] = useState<boolean>(false);
     const [count, setCount] = useState(0);
     const [canCollect, setCanCollect] = useState<boolean>(true);
+    const [editTeam, setEditTeam] = useState(false);
 
     const randomColor = useMemo(() => {
         return colors[Math.floor(Math.random() * colors.length)];
@@ -195,22 +197,24 @@ export const TeamTileCard = (props: TeamCardProps) => {
     }, [isScrollBottom]);
 
     useEffect(() => {
-        if (searchMemberInput) {
-            setSearchLoading(true);
-        }
-        const timer = setTimeout(() => {
-            if (!offset) {
-                getUsersNonGroup(false);
-            } else {
-                if (canCollect) {
+        if (addMembersModal) {
+            if (searchMemberInput) {
+                setSearchLoading(true);
+            }
+            const timer = setTimeout(() => {
+                if (!offset) {
                     getUsersNonGroup(false);
                 } else {
-                    getUsersNonGroup(true);
+                    if (canCollect) {
+                        getUsersNonGroup(false);
+                    } else {
+                        getUsersNonGroup(true);
+                    }
                 }
-            }
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [offset, searchMemberInput, isCustomGroup]);
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [addMembersModal, offset, searchMemberInput]);
 
     const nearBottom = (
         target: {
@@ -330,8 +334,6 @@ export const TeamTileCard = (props: TeamCardProps) => {
         if (isCustomGroup) {
             try {
                 let response;
-                // possibly add more db table columns / keys here to get id type for display under username
-                // eslint-disable-next-line prefer-const
                 response = await monolithStore.getNonTeamUsers(
                     id,
                     AUTOCOMPLETE_LIMIT,
@@ -476,7 +478,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleClose(e);
-                                    // need to implement edit team
+                                    setEditTeam(true);
                                 }}
                             >
                                 <Stack direction="row" gap={2}>
@@ -751,6 +753,33 @@ export const TeamTileCard = (props: TeamCardProps) => {
                     </Button>
                 </Modal.Actions>
             </Modal>
+
+            <AddTeamModal
+                open={editTeam}
+                isEdit={true}
+                type={type?.toLocaleLowerCase()}
+                id={id}
+                description={description}
+                onClose={(team) => {
+                    if (team) {
+                        const obj = {
+                            id: team.id,
+                            description: team.description,
+                        };
+
+                        if (team.type != 'Custom') {
+                            obj['type'] = team.type;
+                        }
+
+                        dispatch({
+                            type: 'field',
+                            field: 'teams',
+                            value: [...teams, obj],
+                        });
+                    }
+                    setEditTeam(false);
+                }}
+            />
         </React.Fragment>
     );
 };

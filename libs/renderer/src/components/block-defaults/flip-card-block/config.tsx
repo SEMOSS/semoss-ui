@@ -6,6 +6,7 @@ import {
     buildDimensionsSection,
     buildBorderSection,
     buildPositionSection,
+    buildListener,
 } from "../block-defaults.shared";
 
 import { FlipCardBlockDef, FlipCardBlock } from "./FlipCardBlock";
@@ -37,7 +38,9 @@ export const config: BlockConfig<FlipCardBlockDef> = {
         isFlipped: false,
         show: "true",
     },
-    listeners: {},
+    listeners: {
+        preProcess: [],
+    },
     slots: {
         front: [],
         back: [],
@@ -80,6 +83,10 @@ export const config: BlockConfig<FlipCardBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
     ],
     styleMenu: [

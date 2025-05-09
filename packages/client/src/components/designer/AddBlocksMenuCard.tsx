@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { ReportRounded } from '@mui/icons-material';
 
-import { ActionMessages, useBlocks } from '@semoss/renderer';
+import { ActionMessages, INPUT_BLOCK_TYPES, useBlocks } from '@semoss/renderer';
 import {
     styled,
     Card,
@@ -180,6 +180,20 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                     });
                 }
             }
+        }
+
+        // TODO: REFACTOR
+        // Add variables for all blocks that are inputs from user
+        if (INPUT_BLOCK_TYPES.indexOf(item.json.widget) > -1) {
+            state.dispatch({
+                message: ActionMessages.ADD_VARIABLE,
+                payload: {
+                    id: id,
+                    type: 'block',
+                    to: id,
+                    isInput: true,
+                },
+            });
         }
 
         // clear the drag

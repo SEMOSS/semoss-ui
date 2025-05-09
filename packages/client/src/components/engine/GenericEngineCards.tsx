@@ -24,7 +24,7 @@ import {
     Menu,
     useNotification,
 } from '@semoss/ui';
-import { Env } from '@semoss/sdk';
+import { Env } from '@semoss/sdk/react';
 
 import BRAIN from '@/assets/img/BRAIN.png';
 import GOOGLE from '@/assets/img/google.png';
