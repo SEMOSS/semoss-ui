@@ -186,12 +186,14 @@ export const config: BlockConfig<RadioBlockDef> = {
     icon: RadioButtonCheckedOutlinedIcon,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
+                {
+                    description: "Label",
+                    render: ({ id }) => (
+                        <InputSettings id={id} label="Label" path="label" />
+                    ),
+                },
                 {
                     description: "Options Management",
                     render: ({ id }) => {
@@ -431,6 +433,45 @@ export const config: BlockConfig<RadioBlockDef> = {
                     },
                 },
                 {
+                    description: "Required",
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label="Required"
+                            path="required"
+                        />
+                    ),
+                },
+                {
+                    description: "Disabled",
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label="Disabled"
+                            path="disabled"
+                        />
+                    ),
+                },
+            ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
+        },
+        {
+            name: "On Change",
+            children: [...buildListener("onChange")],
+        },
+    ],
+    styleMenu: [
+        {
+            name: "Dimensions",
+            children: [
+                {
                     description: "Size",
                     render: ({ id }) => {
                         return (
@@ -441,6 +482,27 @@ export const config: BlockConfig<RadioBlockDef> = {
                                     options={SIZE_OPTIONS}
                                     label="Size"
                                     initialValue="medium"
+                                />
+                            </BaseSettingSection>
+                        );
+                    },
+                },
+            ],
+        },
+        {
+            name: "Layout",
+            children: [
+                {
+                    description: "Label Placement",
+                    render: ({ id }) => {
+                        return (
+                            <BaseSettingSection label="Label Placement">
+                                <SettingAutocomplete
+                                    id={id}
+                                    path="labelPlacement"
+                                    options={LABEL_PLACEMENT_OPTIONS}
+                                    label="Label Placement"
+                                    initialValue="end"
                                 />
                             </BaseSettingSection>
                         );
@@ -462,6 +524,11 @@ export const config: BlockConfig<RadioBlockDef> = {
                         );
                     },
                 },
+            ],
+        },
+        {
+            name: "Color",
+            children: [
                 {
                     description: "Color",
                     render: ({ id }) => {
@@ -478,58 +545,7 @@ export const config: BlockConfig<RadioBlockDef> = {
                         );
                     },
                 },
-                {
-                    description: "Label Placement",
-                    render: ({ id }) => {
-                        return (
-                            <BaseSettingSection label="Label Placement">
-                                <SettingAutocomplete
-                                    id={id}
-                                    path="labelPlacement"
-                                    options={LABEL_PLACEMENT_OPTIONS}
-                                    label="Label Placement"
-                                    initialValue="end"
-                                />
-                            </BaseSettingSection>
-                        );
-                    },
-                },
-                {
-                    description: "Required",
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Required"
-                            path="required"
-                        />
-                    ),
-                },
-                {
-                    description: "Disabled",
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Disabled"
-                            path="disabled"
-                        />
-                    ),
-                },
-                {
-                    description: "Label",
-                    render: ({ id }) => (
-                        <InputSettings id={id} label="Label" path="label" />
-                    ),
-                },
             ],
         },
-        {
-            name: "Pre Process",
-            children: [...buildListener("preProcess")],
-        },
-        {
-            name: "on Change",
-            children: [...buildListener("onChange")],
-        },
     ],
-    styleMenu: [],
 };

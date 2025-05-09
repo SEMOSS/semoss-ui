@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { fireEvent, waitFor, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
-import { IconBlock } from "../../components/block-defaults/Icon_block";
+import { IconBlock } from "../../components/block-defaults/icon-block";
 
 const blocks = {
     icon: {

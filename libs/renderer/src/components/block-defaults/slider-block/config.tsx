@@ -46,14 +46,10 @@ export const config: BlockConfig<SliderBlockDef> = {
     icon: BlurLinear,
     contentMenu: [
         {
-             name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
-            name: "Slider Type",
+            name: "General",
             children: [
                 {
-                    description: "Slider Type",
+                    description: "Type",
                     render: observer(({ id }) => {
                         const { data, setData } = useBlockSettings(id);
 
@@ -72,6 +68,7 @@ export const config: BlockConfig<SliderBlockDef> = {
                         };
                         return (
                             <Select
+                                label="Type"
                                 fullWidth
                                 size="small"
                                 value={data.type}
@@ -90,11 +87,6 @@ export const config: BlockConfig<SliderBlockDef> = {
                         );
                     }),
                 },
-            ],
-        },
-        {
-            name: "General",
-            children: [
                 {
                     description: "Marks",
                     render: observer(({ id }) => {
@@ -134,17 +126,6 @@ export const config: BlockConfig<SliderBlockDef> = {
                     }),
                 },
                 {
-                    description: "Value",
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Value"
-                            path="value"
-                            type="value"
-                        />
-                    ),
-                },
-                {
                     description: "Minimum Value",
                     render: ({ id }) => (
                         <InputSettings
@@ -166,14 +147,29 @@ export const config: BlockConfig<SliderBlockDef> = {
                         />
                     ),
                 },
+                {
+                    description: "Value",
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="Value"
+                            path="value"
+                            type="value"
+                        />
+                    ),
+                },
             ],
+        },
+        {
+             name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
         {
-            name: "on Change",
+            name: "On Change",
             children: [...buildListener("onChange")],
         },
     ],

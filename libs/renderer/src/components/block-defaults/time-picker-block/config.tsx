@@ -59,12 +59,23 @@ export const config: BlockConfig<TimePickerBlockDef> = {
     icon: AccessTime,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
+                {
+                    description: "Type",
+                    render: ({ id }) => (
+                        <SelectInputSettings
+                            id={id}
+                            label="Type"
+                            path="variant"
+                            options={[
+                                { value: "picker", display: "Time Picker" },
+                                { value: "field", display: "Time Field" },
+                                { value: "digital", display: "Digital Clock" },
+                            ]}
+                        />
+                    ),
+                },
                 {
                     description: "Label",
                     render: ({ id }) => (
@@ -72,28 +83,12 @@ export const config: BlockConfig<TimePickerBlockDef> = {
                     ),
                 },
                 {
-                    description: "Value",
+                    description: "Placeholder",
                     render: ({ id }) => (
                         <InputSettings
                             id={id}
-                            label="Value"
-                            path="value"
-                            description="ISO time string or empty for no default"
-                        />
-                    ),
-                },
-                {
-                    description: "Variant",
-                    render: ({ id }) => (
-                        <SelectInputSettings
-                            id={id}
-                            label="Variant"
-                            path="variant"
-                            options={[
-                                { value: "picker", display: "Time Picker" },
-                                { value: "field", display: "Time Field" },
-                                { value: "digital", display: "Digital Clock" },
-                            ]}
+                            label="Placeholder"
+                            path="placeholder"
                         />
                     ),
                 },
@@ -120,26 +115,25 @@ export const config: BlockConfig<TimePickerBlockDef> = {
                     ),
                 },
                 {
-                    description: "Placeholder",
+                    description: "Views",
                     render: ({ id }) => (
                         <InputSettings
                             id={id}
-                            label="Placeholder"
-                            path="placeholder"
+                            label="Views (comma-separated)"
+                            path="views"
+                            description="Comma-separated list of: hours, minutes, seconds"
+                            valueAsObject={true}
                         />
                     ),
                 },
                 {
-                    description: "Size",
+                    description: "Value",
                     render: ({ id }) => (
-                        <SelectInputSettings
+                        <InputSettings
                             id={id}
-                            label="Size"
-                            path="size"
-                            options={[
-                                { value: "small", display: "Small" },
-                                { value: "medium", display: "Medium" },
-                            ]}
+                            label="Value"
+                            path="value"
+                            description="ISO time string or empty for no default"
                         />
                     ),
                 },
@@ -166,17 +160,6 @@ export const config: BlockConfig<TimePickerBlockDef> = {
                     ),
                 },
                 {
-                    description: "Full Width",
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Full Width"
-                            path="fullWidth"
-                            description="Expand to fill container width"
-                        />
-                    ),
-                },
-                {
                     description: "Clearable",
                     render: ({ id }) => (
                         <SwitchSettings
@@ -187,29 +170,52 @@ export const config: BlockConfig<TimePickerBlockDef> = {
                         />
                     ),
                 },
-                {
-                    description: "Views",
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Views (comma-separated)"
-                            path="views"
-                            description="Comma-separated list of: hours, minutes, seconds"
-                            valueAsObject={true}
-                        />
-                    ),
-                },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
         {
-            name: "on Change",
+            name: "On Change",
             children: [...buildListener("onChange")],
         },
-        buildDimensionsSection(),
     ],
-    styleMenu: [],
+    styleMenu: [
+        {
+            name: "Size",
+            children: [
+                {
+                    description: "Size",
+                    render: ({ id }) => (
+                        <SelectInputSettings
+                            id={id}
+                            label="Size"
+                            path="size"
+                            options={[
+                                { value: "small", display: "Small" },
+                                { value: "medium", display: "Medium" },
+                            ]}
+                        />
+                    ),
+                },
+                {
+                    description: "Full Width",
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label="Full Width"
+                            path="fullWidth"
+                            description="Expand to fill container width"
+                        />
+                    ),
+                },
+            ]
+        },
+        buildDimensionsSection()
+    ],
 };

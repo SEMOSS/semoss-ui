@@ -33,10 +33,6 @@ export const config: BlockConfig<RatingsBlockDef> = {
     icon: Star,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
                 {
@@ -77,11 +73,15 @@ export const config: BlockConfig<RatingsBlockDef> = {
             ],
         },
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
         {
-            name: "on Change",
+            name: "On Change",
             children: [...buildListener("onChange")],
         },
     ],

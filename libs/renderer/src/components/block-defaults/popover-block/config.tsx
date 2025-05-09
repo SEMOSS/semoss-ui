@@ -148,10 +148,6 @@ export const config: BlockConfig<PopoverBlockDef> = {
 
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
                 {
@@ -184,6 +180,10 @@ export const config: BlockConfig<PopoverBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

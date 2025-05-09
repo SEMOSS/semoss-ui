@@ -28,10 +28,6 @@ export const config: BlockConfig<PDFViewerBlockDef> = {
     icon: PictureAsPdf,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
                 {
@@ -41,6 +37,10 @@ export const config: BlockConfig<PDFViewerBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

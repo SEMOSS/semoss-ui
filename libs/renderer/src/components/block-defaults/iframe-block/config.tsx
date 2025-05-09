@@ -35,10 +35,6 @@ export const config: BlockConfig<IframeBlockDef> = {
     icon: AspectRatio,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
                 {
@@ -69,6 +65,10 @@ export const config: BlockConfig<IframeBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

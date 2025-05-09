@@ -41,10 +41,6 @@ export const config: BlockConfig<ImageBlockDef> = {
     icon: PanoramaOutlined,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
                 {
@@ -66,13 +62,17 @@ export const config: BlockConfig<ImageBlockDef> = {
             ],
         },
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
     ],
     styleMenu: [
         {
-            name: "",
+            name: "Layout",
             children: [
                 {
                     description: "Ratio",

@@ -39,10 +39,6 @@ export const config: BlockConfig<TextBlockDef> = {
     icon: TextFields,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
                 {
@@ -63,6 +59,10 @@ export const config: BlockConfig<TextBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

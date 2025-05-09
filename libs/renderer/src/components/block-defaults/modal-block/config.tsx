@@ -112,10 +112,6 @@ export const config: BlockConfig<ModalBlockDef> = {
     icon: Schema,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
                 {
@@ -139,6 +135,12 @@ export const config: BlockConfig<ModalBlockDef> = {
                         />
                     ),
                 },
+            ],
+        },
+        {
+            name: "Conditional",
+            children: [
+                ...buildShowField(),
                 {
                     description: "Open",
                     render: ({ id }) => (
@@ -149,6 +151,21 @@ export const config: BlockConfig<ModalBlockDef> = {
                         />
                     ),
                 },
+            ],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
+        },
+        {
+            name: "On Close",
+            children: [...buildListener("onClose")],
+        },
+    ],
+    styleMenu: [
+        {
+            name: "Dimensions",
+            children: [
                 {
                     description: "Full Width",
                     render: ({ id }) => (
@@ -187,14 +204,5 @@ export const config: BlockConfig<ModalBlockDef> = {
                 },
             ],
         },
-        {
-            name: "Pre Process",
-            children: [...buildListener("preProcess")],
-        },
-        {
-            name: "on Close",
-            children: [...buildListener("onClose")],
-        },
     ],
-    styleMenu: [],
 };

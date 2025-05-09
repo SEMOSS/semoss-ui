@@ -48,34 +48,8 @@ export const config: BlockConfig<InputBlockDef> = {
     icon: FormatShapes,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
-                {
-                    description: "Value",
-                    render: ({ id }) => (
-                        <InputModalSettings
-                            id={id}
-                            label="Value"
-                            path="value"
-                        />
-                    ),
-                },
-                {
-                    description: "Label",
-                    render: ({ id }) => (
-                        <InputSettings id={id} label="Label" path="label" />
-                    ),
-                },
-                {
-                    description: "Hint",
-                    render: ({ id }) => (
-                        <InputSettings id={id} label="Hint" path="hint" />
-                    ),
-                },
                 {
                     description: "Input Type",
                     render: ({ id }) => {
@@ -103,14 +77,24 @@ export const config: BlockConfig<InputBlockDef> = {
                     },
                 },
                 {
-                    description: "Rows",
+                    description: "Label",
                     render: ({ id }) => (
-                        <InputSettings
+                        <InputSettings id={id} label="Label" path="label" />
+                    ),
+                },
+                {
+                    description: "Hint",
+                    render: ({ id }) => (
+                        <InputSettings id={id} label="Hint" path="hint" />
+                    ),
+                },
+                {
+                    description: "Value",
+                    render: ({ id }) => (
+                        <InputModalSettings
                             id={id}
-                            label="Rows"
-                            path="rows"
-                            type="number"
-                            description="This will determine how many rows are displayed on text input"
+                            label="Value"
+                            path="value"
                         />
                     ),
                 },
@@ -130,7 +114,7 @@ export const config: BlockConfig<InputBlockDef> = {
                     render: ({ id }) => (
                         <InputSettings
                             id={id}
-                            label="disabled"
+                            label="Disabled"
                             path="disabled"
                         />
                     ),
@@ -148,13 +132,35 @@ export const config: BlockConfig<InputBlockDef> = {
             ],
         },
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
         {
-            name: "on Change",
+            name: "On Change",
             children: [...buildListener("onChange")],
         },
     ],
-    styleMenu: [],
+    styleMenu: [
+        {
+            name: "Miscellaneous",
+            children: [
+                {
+                    description: "Rows",
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="Rows"
+                            path="rows"
+                            type="number"
+                            description="This will determine how many rows are displayed on text input"
+                        />
+                    ),
+                },
+            ]
+        }
+    ],
 };

@@ -45,23 +45,26 @@ export const config: BlockConfig<SidebarBlockDef> = {
     icon: Schema,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
                 {
                     description: "Design Mode",
                     render: ({ id }) => (
                         <SwitchSettings
-                            id={id}
+                        id={id}
                             label="Design Mode"
                             path="designMode"
                             description="Enable this in order to edit sidebar content without interference from app interactions."
                         />
                     ),
                 },
+                
+            ],
+        },
+        {
+            name: "Conditional",
+            children: [
+                ...buildShowField(),
                 {
                     description: "Open State",
                     render: ({ id }) => (

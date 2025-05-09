@@ -47,10 +47,6 @@ export const config: BlockConfig<AudioInputBlockDef> = {
     icon: KeyboardVoice,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
                 {
@@ -94,11 +90,15 @@ export const config: BlockConfig<AudioInputBlockDef> = {
             ],
         },
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
         {
-            name: "on Complete",
+            name: "On Complete",
             children: [...buildListener("onComplete")],
         },
     ],

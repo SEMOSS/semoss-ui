@@ -37,29 +37,29 @@ export const config: BlockConfig<LinkBlockDef> = {
     icon: Link,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
-                {
-                    description: "Destination",
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Destination"
-                            path="href"
-                        />
-                    ),
-                },
                 {
                     description: "Text",
                     render: ({ id }) => (
                         <InputSettings id={id} label="Text" path="text" />
                     ),
                 },
+                {
+                    description: "Destination",
+                    render: ({ id }) => (
+                        <InputSettings
+                        id={id}
+                        label="Destination"
+                        path="href"
+                        />
+                    ),
+                },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

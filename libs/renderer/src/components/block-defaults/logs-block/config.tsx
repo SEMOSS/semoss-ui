@@ -25,10 +25,6 @@ export const config: BlockConfig<LogsBlockDef> = {
     icon: HighlightAlt,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
                 {
@@ -42,6 +38,10 @@ export const config: BlockConfig<LogsBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

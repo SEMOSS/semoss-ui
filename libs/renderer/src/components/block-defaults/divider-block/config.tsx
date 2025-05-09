@@ -40,11 +40,54 @@ export const config: BlockConfig<DividerBlockDef> = {
     icon: HorizontalRule,
     contentMenu: [
         {
+            name: "General",
+            children: [
+                {
+                    description: "Show Text",
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label="Show Text"
+                            path="showText"
+                            description="Add text to the divider"
+                        />
+                    ),
+                },
+                {
+                    description: "Divider Text",
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="Divider Text"
+                            path="text"
+                        />
+                    ),
+                },
+                {
+                    description: "Light Variant",
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label="Light Variant"
+                            path="light"
+                            description="Use a lighter color for the divider"
+                        />
+                    ),
+                },
+            ],
+        },
+        {
             name: "Conditional",
             children: [...buildShowField()],
         },
         {
-            name: "General",
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
+        },
+    ],
+    styleMenu: [
+        {
+            name: "Layout",
             children: [
                 {
                     description: "Variant",
@@ -91,38 +134,6 @@ export const config: BlockConfig<DividerBlockDef> = {
                     ),
                 },
                 {
-                    description: "Show Text",
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Show Text"
-                            path="showText"
-                            description="Add text to the divider"
-                        />
-                    ),
-                },
-                {
-                    description: "Divider Text",
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Divider Text"
-                            path="text"
-                        />
-                    ),
-                },
-                {
-                    description: "Light Variant",
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Light Variant"
-                            path="light"
-                            description="Use a lighter color for the divider"
-                        />
-                    ),
-                },
-                {
                     description: "Flex Item",
                     render: ({ id }) => (
                         <SwitchSettings
@@ -133,13 +144,8 @@ export const config: BlockConfig<DividerBlockDef> = {
                         />
                     ),
                 },
-            ],
-        },
-        {
-            name: "Pre Process",
-            children: [...buildListener("preProcess")],
+            ]
         },
         buildDimensionsSection(),
     ],
-    styleMenu: [],
 };

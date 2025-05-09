@@ -39,10 +39,6 @@ export const config: BlockConfig<MarkdownBlockDef> = {
     icon: FormatListBulleted,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
                 {
@@ -66,6 +62,10 @@ export const config: BlockConfig<MarkdownBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

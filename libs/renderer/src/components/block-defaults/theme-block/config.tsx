@@ -67,10 +67,6 @@ export const config: BlockConfig<ThemeBlockDef> = {
     icon: FileCopyOutlined,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "Theme Type",
             children: [
                 {

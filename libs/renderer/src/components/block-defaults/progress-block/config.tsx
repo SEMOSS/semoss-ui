@@ -33,10 +33,6 @@ export const config: BlockConfig<ProgressBlockDef> = {
     icon: BlurLinear,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
                 {
@@ -63,6 +59,16 @@ export const config: BlockConfig<ProgressBlockDef> = {
                     },
                 },
                 {
+                    description: "Include Label",
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label="Include Label"
+                            path="includeLabel"
+                        />
+                    ),
+                },
+                {
                     description: "Value",
                     render: ({ id }) => (
                         <InputSettings
@@ -73,17 +79,11 @@ export const config: BlockConfig<ProgressBlockDef> = {
                         />
                     ),
                 },
-                {
-                    description: "Include Label",
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Include Label"
-                            path="includeLabel"
-                        />
-                    ),
-                },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

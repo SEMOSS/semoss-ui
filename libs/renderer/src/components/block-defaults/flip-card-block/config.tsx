@@ -53,10 +53,6 @@ export const config: BlockConfig<FlipCardBlockDef> = {
     icon: HighlightAlt,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
                 {
@@ -70,6 +66,26 @@ export const config: BlockConfig<FlipCardBlockDef> = {
                         />
                     ),
                 },
+            ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
+        },
+    ],
+    styleMenu: [
+        buildLayoutSection(),
+        buildPositionSection(),
+        buildSpacingSection(),
+        buildDimensionsSection(),
+        buildBorderSection(),
+        {
+            name: "Color",
+            children: [
                 {
                     description: "Front Background Color",
                     render: ({ id }) => (
@@ -92,16 +108,5 @@ export const config: BlockConfig<FlipCardBlockDef> = {
                 },
             ],
         },
-        {
-            name: "Pre Process",
-            children: [...buildListener("preProcess")],
-        },
-    ],
-    styleMenu: [
-        buildLayoutSection(),
-        buildPositionSection(),
-        buildSpacingSection(),
-        buildDimensionsSection(),
-        buildBorderSection(),
     ],
 };

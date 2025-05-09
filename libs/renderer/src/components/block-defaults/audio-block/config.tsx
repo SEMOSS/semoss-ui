@@ -32,10 +32,6 @@ export const config: BlockConfig<AudioBlockDef> = {
     icon: HeadsetIcon,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "General",
             children: [
                 {
@@ -88,6 +84,10 @@ export const config: BlockConfig<AudioBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",
