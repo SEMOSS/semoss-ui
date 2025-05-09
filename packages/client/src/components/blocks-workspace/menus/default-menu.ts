@@ -2525,6 +2525,35 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
+    {
+        section: SECTION_LAYOUT,
+        name: 'Loader',
+        activeImage: BLOCK_IMAGES['LOADING_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['LOADING_HOVER'],
+        helperText: 'Display a spinner or indicator while loading content',
+        json: {
+            widget: 'loader',
+            data: {
+                style: {
+                    width: 'fit-content',
+                    padding: '4px',
+                },
+                type: 'circular',
+                color: 'inherit',
+                size: 40,
+                thickness: 3.6,
+                show: 'true',
+                variant: 'indeterminate',
+                width: '',
+                height: '',
+                animation: 'pulse',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
 ];
 
 // TODO: Move to the backend
