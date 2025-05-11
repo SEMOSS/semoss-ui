@@ -1,7 +1,7 @@
 import { Star } from "@mui/icons-material";
 
 import { BlockConfig } from "../../../store";
-import { buildListener } from "../block-defaults.shared";
+import { buildListener, buildShowField } from "../block-defaults.shared";
 import { RatingsBlock, RatingsBlockDef } from "./RatingsBlock";
 import { BLOCK_TYPE_ACTION } from "../block-defaults.constants";
 import { SelectInputSettings, InputSettings } from "../../block-settings";
@@ -73,11 +73,15 @@ export const config: BlockConfig<RatingsBlockDef> = {
             ],
         },
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
         {
-            name: "on Change",
+            name: "On Change",
             children: [...buildListener("onChange")],
         },
     ],

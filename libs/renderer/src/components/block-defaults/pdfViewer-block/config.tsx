@@ -30,7 +30,6 @@ export const config: BlockConfig<PDFViewerBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Files",
                     render: ({ id }) => (
@@ -38,6 +37,10 @@ export const config: BlockConfig<PDFViewerBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

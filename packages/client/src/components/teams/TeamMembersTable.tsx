@@ -285,22 +285,24 @@ export const TeamMembersTable = (props: MembersTableProps) => {
     }, [isScrollBottom]);
 
     useEffect(() => {
-        if (searchMemberInput) {
-            setSearchLoading(true);
-        }
-        const timer = setTimeout(() => {
-            if (!offset) {
-                getUsersNonGroup(true);
-            } else {
-                if (canCollect) {
-                    getUsersNonGroup(false);
-                } else {
-                    getUsersNonGroup(true);
-                }
+        if (addMembersModal) {
+            if (searchMemberInput) {
+                setSearchLoading(true);
             }
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [offset, searchMemberInput]);
+            const timer = setTimeout(() => {
+                if (!offset) {
+                    getUsersNonGroup(true);
+                } else {
+                    if (canCollect) {
+                        getUsersNonGroup(false);
+                    } else {
+                        getUsersNonGroup(true);
+                    }
+                }
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [addMembersModal, offset, searchMemberInput]);
 
     /**
      * @name submitNonGroupUsers

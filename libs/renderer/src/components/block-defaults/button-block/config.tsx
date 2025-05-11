@@ -66,15 +66,18 @@ export const config: BlockConfig<ButtonBlockDef> = {
                         />
                     ),
                 },
-                ...buildShowField(),
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
         {
-            name: "on Click",
+            name: "On Click",
             children: [...buildListener("onClick")],
         },
     ],

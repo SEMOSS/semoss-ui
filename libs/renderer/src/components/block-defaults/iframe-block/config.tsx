@@ -37,7 +37,6 @@ export const config: BlockConfig<IframeBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Source",
                     render: ({ id }) => (
@@ -66,6 +65,10 @@ export const config: BlockConfig<IframeBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",
