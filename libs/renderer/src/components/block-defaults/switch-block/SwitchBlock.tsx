@@ -1,4 +1,4 @@
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import {
     styled,
@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 
 const StyledContainer = styled("div")(({ theme }) => ({
     padding: "4px",
@@ -45,16 +45,32 @@ export interface SwitchBlockDef extends BlockDef<"switch"> {
         labelPlacement: "start" | "end" | "top" | "bottom";
     };
     listeners: {
-        onChange: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+        onChange: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
 export const SwitchBlock: BlockComponent = observer(({ id }) => {
     try {
-        const { attrs, data, setData } = useBlock<SwitchBlockDef>(id);
+        const { attrs, data, setData, listeners } =
+            useBlock<SwitchBlockDef>(id);
+
+        useEffect(() => {
+            if (listeners.preProcess) {
+                listeners.preProcess();
+            }
+        }, []);
 
         const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
             setData("value", event.target.checked);
+
+            listeners.onChange();
         };
 
         const showLabel = data.label && data.label.trim() !== "";

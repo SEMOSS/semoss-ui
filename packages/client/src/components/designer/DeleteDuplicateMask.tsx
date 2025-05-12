@@ -1,14 +1,25 @@
 import { useLayoutEffect, useState } from 'react';
 import { toJS } from 'mobx';
 import { observer } from 'mobx-react-lite';
-
-import { styled, ButtonGroup, Button, IconButton, Tooltip } from '@semoss/ui';
 import { ContentCopy, Delete, DeleteOutline } from '@mui/icons-material';
 
-import { getRelativeSize, getBlockElement } from '@/stores';
+import {
+    styled,
+    ButtonGroup,
+    Button,
+    IconButton,
+    Tooltip,
+    useNotification,
+} from '@semoss/ui';
+import {
+    BlockJSON,
+    ActionMessages,
+    useBlocks,
+    INPUT_BLOCK_TYPES,
+} from '@semoss/renderer';
 
+import { getRelativeSize, getBlockElement } from '@/stores';
 import { useDesigner } from '@/hooks';
-import { BlockJSON, ActionMessages, useBlocks } from '@semoss/renderer';
 
 const STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH = 48;
 const STYLED_BUTTON_GROUP_ICON_BUTTON_HEIGHT = 32;
@@ -53,6 +64,8 @@ export const DeleteDuplicateMask = observer(
             height: number;
             width: number;
         } | null>(null);
+
+        const notification = useNotification();
 
         // get the store
         const { registry, state } = useBlocks();
@@ -109,6 +122,7 @@ export const DeleteDuplicateMask = observer(
             const screenElementSize = screenEle.getBoundingClientRect();
             // get position of selected block element
             const selectedElement = getBlockElement(designer.selected);
+            if (!selectedElement) return;
             const selectedElementSize = selectedElement.getBoundingClientRect();
 
             // check for overflow
@@ -218,6 +232,15 @@ export const DeleteDuplicateMask = observer(
                 return blockJson;
             };
 
+            const parentBlock = state.getBlock(block.parent.id);
+            if (parentBlock.widget === 'iteration') {
+                notification.add({
+                    color: 'error',
+                    message: `Unable to duplicate ${block.widget} within an Iterator Block`,
+                });
+                return;
+            }
+
             const position = block?.parent?.id
                 ? {
                       parent: block.parent.id,
@@ -234,6 +257,21 @@ export const DeleteDuplicateMask = observer(
                     position: position,
                 },
             });
+
+            // TODO: REFACTOR
+            // Add variables for all blocks that are inputs from user
+            // TODO: What about grouping of inputs
+            if (INPUT_BLOCK_TYPES.indexOf(block.widget) > -1) {
+                state.dispatch({
+                    message: ActionMessages.ADD_VARIABLE,
+                    payload: {
+                        id: id as string,
+                        type: 'block',
+                        to: id as string,
+                        isInput: true,
+                    },
+                });
+            }
 
             designer.setSelected(id ? (id as string) : '');
         };
