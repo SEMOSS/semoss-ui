@@ -39,7 +39,7 @@ import { config as GridBlockConfig, GridBlockDef } from "./grid-block";
 
 import { config as HTMLBlockConfig, HTMLBlockDef } from "./html-block";
 
-import { config as IconBlockConfig, IconBlockDef } from "./Icon_block";
+import { config as IconBlockConfig, IconBlockDef } from "./icon-block";
 import { config as IframeBlockConfig, IframeBlockDef } from "./iframe-block";
 import { config as ImageBlockConfig, ImageBlockDef } from "./image-block";
 import { config as InputBlockConfig, InputBlockDef } from "./input-block";

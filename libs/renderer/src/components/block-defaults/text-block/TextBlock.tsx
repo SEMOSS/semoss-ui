@@ -46,13 +46,21 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
         ? React.createElement(
               data.variant ? data.variant : "p",
               {
-                  style: { ...data.style },
+                  style: {
+                      ...data.style,
+                      marginBlockStart: "0px",
+                      marginBlockEnd: "0px",
+                  },
                   ...attrs,
               },
               displayTxt,
           )
         : React.createElement("p", {
-              style: { ...data.style },
+              style: {
+                  ...data.style,
+                  marginBlockStart: "0px",
+                  marginBlockEnd: "0px",
+              },
               ["data-block"]: id,
           });
 });
