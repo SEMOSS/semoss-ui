@@ -1094,6 +1094,41 @@ export class MonolithStore {
     }
 
     /**
+     * @name editTeam
+     * @param groupId
+     * @param description
+     * @param type
+     * @param isCustomGroup
+     * @returns
+     */
+    async editTeam(
+        groupId: string,
+        description: string,
+        isCustomGroup: boolean,
+        type?: string,
+    ) {
+        let url = `${Env.MODULE}/api/auth/admin/`,
+            postData = '';
+
+        url += 'group/editGroup';
+
+        postData += 'groupId=' + encodeURIComponent(groupId);
+        postData += '&description=' + encodeURIComponent(description);
+        postData += '&isCustomGroup=' + encodeURIComponent(isCustomGroup);
+        if (type) {
+            postData += '&type=' + encodeURIComponent(type);
+        }
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    /**
      * @name deleteTeam
      * @param groupId
      * @param description

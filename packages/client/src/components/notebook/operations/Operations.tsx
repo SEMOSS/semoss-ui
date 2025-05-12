@@ -44,6 +44,17 @@ export const Operation = observer((props: OperationProps): JSX.Element => {
                 }
             />
         );
+    } else if (operation === 'FRAME_FILTER_CHANGE') {
+        return (
+            <FrameOperation
+                output={
+                    output as {
+                        name: string;
+                        type: 'NATIVE' | 'PY' | 'GRID' | 'R';
+                    }
+                }
+            />
+        );
     }
 
     return <DefaultOperation output={output} />;

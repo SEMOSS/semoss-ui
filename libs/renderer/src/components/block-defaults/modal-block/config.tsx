@@ -6,7 +6,7 @@ import { TextField } from "@semoss/ui";
 
 import { BlockConfig, BlockDef, Block } from "../../../store";
 import { InputSettings } from "../../block-settings";
-import { buildListener } from "../block-defaults.shared";
+import { buildListener, buildShowField } from "../block-defaults.shared";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import { ModalBlockDef, ModalBlock } from "./ModalBlock";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
@@ -135,6 +135,12 @@ export const config: BlockConfig<ModalBlockDef> = {
                         />
                     ),
                 },
+            ],
+        },
+        {
+            name: "Conditional",
+            children: [
+                ...buildShowField(),
                 {
                     description: "Open",
                     render: ({ id }) => (
@@ -145,6 +151,21 @@ export const config: BlockConfig<ModalBlockDef> = {
                         />
                     ),
                 },
+            ],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
+        },
+        {
+            name: "On Close",
+            children: [...buildListener("onClose")],
+        },
+    ],
+    styleMenu: [
+        {
+            name: "Dimensions",
+            children: [
                 {
                     description: "Full Width",
                     render: ({ id }) => (
@@ -183,14 +204,5 @@ export const config: BlockConfig<ModalBlockDef> = {
                 },
             ],
         },
-        {
-            name: "Pre Process",
-            children: [...buildListener("preProcess")],
-        },
-        {
-            name: "on Close",
-            children: [...buildListener("onClose")],
-        },
     ],
-    styleMenu: [],
 };
