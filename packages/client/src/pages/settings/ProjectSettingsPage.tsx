@@ -16,11 +16,14 @@ import {
     CircularProgress,
     Stack,
     Typography,
+    Tooltip,
 } from '@semoss/ui';
 
 import {
     SpaceDashboardOutlined,
     FormatListBulletedOutlined,
+    ArrowUpward,
+    ArrowDownward,
 } from '@mui/icons-material';
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -63,6 +66,32 @@ const reducer = (state, action) => {
                 [action.field]: action.value,
             };
         }
+        case 'sort': {
+            const sortedProjects = [...state.projects];
+            if (action.sortBy === 'Name') {
+                sortedProjects.sort((a, b) => {
+                    return action.sortType === 'ASC'
+                        ? a.project_name
+                              .toLowerCase()
+                              .localeCompare(b.project_name.toLowerCase())
+                        : b.project_name
+                              .toLowerCase()
+                              .localeCompare(a.project_name.toLowerCase());
+                });
+            } else if (action.sortBy === 'Date Created') {
+                sortedProjects.sort((a, b) => {
+                    return action.sortType === 'ASC'
+                        ? new Date(a.project_date_created).getTime() -
+                              new Date(b.project_date_created).getTime()
+                        : new Date(b.project_date_created).getTime() -
+                              new Date(a.project_date_created).getTime();
+                });
+            }
+            return {
+                ...state,
+                projects: sortedProjects,
+            };
+        }
     }
     return state;
 };
@@ -83,6 +112,7 @@ export const ProjectSettingsPage = () => {
     const [view, setView] = useState('tile');
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState('Name');
+    const [sortOrder, setSortOrder] = useState('ASC');
     const [canCollect, setCanCollect] = useState(true);
     const [offset, setOffset] = useState(0);
 
@@ -234,18 +264,65 @@ export const ProjectSettingsPage = () => {
                         <MenuItem value="Upvotes">Upvotes</MenuItem>
                     </StyledSort>
 
-                    <ToggleButtonGroup size={'small'} value={view}>
-                        <ToggleButton<string>
+                    <ToggleButtonGroup
+                        size={'small'}
+                        value={sortOrder}
+                        color="primary"
+                    >
+                        <ToggleButton
+                            onClick={(e, v) => {
+                                dispatch({
+                                    type: 'sort',
+                                    sortBy: sort,
+                                    sortType: 'DESC',
+                                });
+                                setSortOrder(v);
+                            }}
+                            value={'DESC'}
+                            aria-label={'Descending Order'}
+                        >
+                            <Tooltip title={'Descending Order'}>
+                                <ArrowDownward />
+                            </Tooltip>
+                        </ToggleButton>
+                        <ToggleButton
+                            onClick={(e, v) => {
+                                dispatch({
+                                    type: 'sort',
+                                    sortBy: sort,
+                                    sortType: 'ASC',
+                                });
+                                setSortOrder(v);
+                            }}
+                            value={'ASC'}
+                            aria-label={'Ascending Order'}
+                        >
+                            <Tooltip title={'Ascending Order'}>
+                                <ArrowUpward />
+                            </Tooltip>
+                        </ToggleButton>
+                    </ToggleButtonGroup>
+
+                    <ToggleButtonGroup
+                        size={'small'}
+                        value={view}
+                        color="primary"
+                    >
+                        <ToggleButton
                             onClick={(e, v) => setView(v)}
                             value={'tile'}
                         >
-                            <SpaceDashboardOutlined />
+                            <Tooltip title={'Tile View'}>
+                                <SpaceDashboardOutlined />
+                            </Tooltip>
                         </ToggleButton>
                         <ToggleButton
                             onClick={(e, v) => setView(v)}
                             value={'list'}
                         >
-                            <FormatListBulletedOutlined />
+                            <Tooltip title={'List View'}>
+                                <FormatListBulletedOutlined />
+                            </Tooltip>
                         </ToggleButton>
                     </ToggleButtonGroup>
                 </StyledSearchbarContainer>
