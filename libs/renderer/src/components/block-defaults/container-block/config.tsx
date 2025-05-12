@@ -10,6 +10,7 @@ import {
     buildBorderSection,
     buildColorSection,
     buildListener,
+    buildShowField,
 } from "../block-defaults.shared";
 import { SelectInputSettings } from "../../block-settings/shared/SelectInputSettings";
 import { SizeSettings } from "../../block-settings/shared/SizeSettings";
@@ -42,10 +43,14 @@ export const config: BlockConfig<ContainerBlockDef> = {
     render: ContainerBlock,
     icon: HighlightAlt,
     contentMenu: [
-        // {
-        //     name: "Pre Process",
-        //     children: [...buildListener("preProcess")],
-        // },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
+        },
     ],
     styleMenu: [
         {
@@ -57,7 +62,6 @@ export const config: BlockConfig<ContainerBlockDef> = {
                 },
             ],
         },
-        // buildLayoutSection(),
         {
             name: "Position",
             children: [

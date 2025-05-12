@@ -326,7 +326,10 @@ export const ContainerLayoutSettings = observer(
                                             gap: "8px",
                                             flexWrap: "wrap",
                                             width: `${width}`,
-                                            border: "solid blue",
+                                            border: "1px solid #e0e0e0",
+                                            borderRadius: "12px",
+                                            backgroundColor: "#ffffff",
+                                            height: "120px",
                                         },
                                     },
                                     listeners: {
@@ -369,7 +372,10 @@ export const ContainerLayoutSettings = observer(
                                         gap: "8px",
                                         flexWrap: "wrap",
                                         width: `${width}`,
-                                        border: "solid blue",
+                                        border: "1px solid #e0e0e0",
+                                        borderRadius: "12px",
+                                        backgroundColor: "#ffffff",
+                                        height: "120px",
                                     },
                                 },
                                 listeners: {
@@ -391,13 +397,6 @@ export const ContainerLayoutSettings = observer(
             }
         };
 
-        // console.log(layoutType);
-        // console.log("gd", gridDimension);
-        // console.log("fd", flexDirection);
-        // console.log("gap", gap);
-        // console.log("rs", rowSpacing);
-        // console.log(data);
-
         return (
             <Stack gap={1}>
                 <BaseSettingSection label="">
@@ -412,6 +411,23 @@ export const ContainerLayoutSettings = observer(
                                     "style.flexDirection",
                                     "column" as never,
                                 );
+                                setData(
+                                    "style.gap",
+                                    "0px" as never,
+                                );
+
+                                const b: Block = state.getBlock(id);
+                                // Go through each child and put marginBottom to 0px
+                                b.slots.children.children.forEach((c) => {
+                                    state.dispatch({
+                                        message: ActionMessages.SET_BLOCK_DATA,
+                                        payload: {
+                                            id: c,
+                                            path: "style.marginBottom",
+                                            value: "0px",
+                                        },
+                                    });
+                                });
                             } else {
                                 setData("style.flexDirection", "row" as never);
                                 setData("style.gap", "2%" as never);
