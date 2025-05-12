@@ -8,10 +8,12 @@ import {
 } from "@mui/material";
 import { InfoOutlined } from "@mui/icons-material";
 import styled from "@emotion/styled";
+import { lightTheme } from "../../theme";
 
 export type TextFieldStackProps = MuiTextFieldProps & {
     /** custom style object */
     sx?: SxProps;
+    hint?: string;
 };
 
 const StyledInputLabel = styled(InputLabel)(({}) => ({
@@ -20,15 +22,14 @@ const StyledInputLabel = styled(InputLabel)(({}) => ({
     gap: "4px",
     marginBottom: "8px",
 }));
-
 const StyledTypography = styled(Typography)(({}) => ({
-    color: "#666666",
-    fontFamily: "Inter",
-    fontSize: "14px",
-    fontStyle: "normal",
-    fontWeight: "400",
-    lineHeight: "143%" /* 20.02px */,
-    letterSpacing: "0.17px",
+    color: lightTheme.palette.text.secondary,
+    fontFamily: lightTheme.typography.fontFamily,
+    fontSize: lightTheme.typography.body2.fontSize,
+    fontStyle: lightTheme.typography.body2.fontStyle,
+    fontWeight: lightTheme.typography.body2.fontWeight,
+    lineHeight: lightTheme.typography.body2.lineHeight,
+    letterSpacing: lightTheme.typography.body2.letterSpacing,
 }));
 
 const StyledMuiTextField = styled(MuiTextField)(({}) => ({
@@ -42,13 +43,13 @@ const StyledMuiTextField = styled(MuiTextField)(({}) => ({
         borderRadius: "8px",
     },
     "&.MuiFormControl-root > .MuiInputBase-root :focus": {
-        border: "1px solid #0471F0",
+        border: `1px solid ${lightTheme.palette.primary.main}`,
         borderRadius: "8px",
     },
 }));
 
 export const TextFieldStack = (props: TextFieldStackProps) => {
-    const { sx } = props;
+    const { sx, hint } = props;
     const [componentId, setComponentId] = useState(props.id);
 
     useEffect(() => {
@@ -64,7 +65,15 @@ export const TextFieldStack = (props: TextFieldStackProps) => {
                 <StyledTypography variant="body2">
                     {props.label ?? "Label"}
                 </StyledTypography>
-                <InfoOutlined fontSize="small" color="action" />
+                {hint ? (
+                    <InfoOutlined
+                        fontSize="small"
+                        color="action"
+                        titleAccess="Test"
+                    />
+                ) : (
+                    <></>
+                )}
             </StyledInputLabel>
             {/* Keeping label empty to show labels on top */}
             <StyledMuiTextField
