@@ -2525,6 +2525,199 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
+    // -----------------------------------------------
+    // Grouped Components
+    // -----------------------------------------------
+    {
+        section: SECTION_LAYOUT,
+        name: '3x3 Grid',
+        helperText: 'A pre-built 3x3 grid container',
+        json: {
+            widget: 'container',
+            parent: {
+                // can be null
+                id: 'page-1',
+                slot: 'content',
+            },
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: 'px',
+                    gap: 'px',
+                    flexWrap: 'wrap',
+                },
+                type: 'custom',
+            },
+            listeners: {},
+            slots: {
+                children: [
+                    {
+                        widget: 'container',
+                        data: {
+                            style: {
+                                display: 'flex',
+                                padding: '8px',
+                                gap: '8px',
+                                flexWrap: 'wrap',
+                                justifyContent: 'space-around',
+                                border: '2px dotted #4a4a4a',
+                            },
+                        },
+                        listeners: {},
+                        slots: {
+                            children: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+    },
 ];
 
 // TODO: Move to the backend
