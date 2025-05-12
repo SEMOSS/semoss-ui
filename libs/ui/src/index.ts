@@ -65,6 +65,7 @@ export * from "./components/ThemeProvider";
 export * from "./components/TextArea";
 export * from "./components/TextField";
 export * from "./components/TreeView";
+export * from "./components/SelectStack";
 
 // TODO: fix miscellaneous mui components/functions
 import {
