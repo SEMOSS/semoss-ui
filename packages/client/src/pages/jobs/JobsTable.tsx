@@ -55,24 +55,24 @@ export const JobsTable = (props: {
     const { monolithStore } = useRootStore();
     const runJob = async (job: Job) => {
         setRunJobLoading(true);
-        if (job.jobType === JobTypeRunNotebook) {
-            try {
-                const response = await monolithStore.runQuery(
-                    `ExecuteAppNotebook(id = "${job.id}");`,
-                )
-                if (response.pixelReturn[0].operationType[0] === 'ERROR') {
-                    notification.add({
-                        color: 'error',
-                        message: 'Notebook could not be executed: ' + response.pixelReturn[0].output, 
-                    });
-                }
-            } catch (e) {
-                notification.add({
-                    color: 'error',
-                    message: 'Job could not be executed.',
-                });
-            }
-        }
+        // if (job.jobType === JobTypeRunNotebook) {
+        //     try {
+        //         const response = await monolithStore.runQuery(
+        //             `ExecuteAppNotebook(id = "${job.id}");`,
+        //         )
+        //         if (response.pixelReturn[0].operationType[0] === 'ERROR') {
+        //             notification.add({
+        //                 color: 'error',
+        //                 message: 'Notebook could not be executed: ' + response.pixelReturn[0].output, 
+        //             });
+        //         }
+        //     } catch (e) {
+        //         notification.add({
+        //             color: 'error',
+        //             message: 'Job could not be executed.',
+        //         });
+        //     }
+        // }
         try {
             await runPixelTwo(
                 `META | ExecuteScheduledJob ( jobId = [ "${job.id}" ] , jobGroup = [ "${job.group}" ] ) ;`,
