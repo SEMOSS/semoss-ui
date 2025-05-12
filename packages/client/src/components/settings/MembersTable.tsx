@@ -736,6 +736,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                     Permission
                                                 </Table.Sort>
                                             </Table.Cell>
+                                            <Table.Cell size="small">
+                                                Permission Date
+                                            </Table.Cell>
                                             {type === 'MODEL' && (
                                                 <>
                                                     <Table.Cell size="small">
@@ -852,6 +855,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     )
                                                                         ?.permission
                                                                 }
+                                                                sx={{
+                                                                    flexWrap:
+                                                                        'nowrap',
+                                                                }}
                                                                 onChange={(
                                                                     e,
                                                                 ) => {
@@ -915,6 +922,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     }
                                                                 />
                                                             </RadioGroup>
+                                                        </Table.Cell>
+                                                        <Table.Cell>
+                                                            {user?.date_added ??
+                                                                'Not Available'}
                                                         </Table.Cell>
                                                         {type === 'MODEL' && (
                                                             <>
