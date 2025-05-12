@@ -33,10 +33,6 @@ export const config: BlockConfig<IterationBlockDef> = {
     icon: FormatShapes,
     contentMenu: [
         {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
             name: "Data Source",
             children: [
                 {
@@ -50,6 +46,10 @@ export const config: BlockConfig<IterationBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

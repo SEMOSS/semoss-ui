@@ -8,6 +8,7 @@ import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 import {
     buildDimensionsSection,
     buildListener,
+    buildShowField
 } from "../block-defaults.shared";
 import {
     InputSettings,
@@ -68,61 +69,12 @@ export const config: BlockConfig<SwitchBlockDef> = {
                     ),
                 },
                 {
-                    description: "Label Placement",
-                    render: ({ id }) => (
-                        <SelectInputSettings
-                            id={id}
-                            label="Label Placement"
-                            path="labelPlacement"
-                            options={[
-                                { value: "end", display: "Right" },
-                                { value: "start", display: "Left" },
-                                { value: "top", display: "Top" },
-                                { value: "bottom", display: "Bottom" },
-                            ]}
-                        />
-                    ),
-                },
-                {
                     description: "Value",
                     render: ({ id }) => (
                         <QueryInputSettings
                             id={id}
                             label="Value"
                             path="value"
-                        />
-                    ),
-                },
-                {
-                    description: "Color",
-                    render: ({ id }) => (
-                        <SelectInputSettings
-                            id={id}
-                            label="Color"
-                            path="color"
-                            options={[
-                                { value: "primary", display: "Primary" },
-                                { value: "secondary", display: "Secondary" },
-                                { value: "default", display: "Default" },
-                                { value: "error", display: "Error" },
-                                { value: "info", display: "Info" },
-                                { value: "success", display: "Success" },
-                                { value: "warning", display: "Warning" },
-                            ]}
-                        />
-                    ),
-                },
-                {
-                    description: "Size",
-                    render: ({ id }) => (
-                        <SelectInputSettings
-                            id={id}
-                            label="Size"
-                            path="size"
-                            options={[
-                                { value: "small", display: "Small" },
-                                { value: "medium", display: "Medium" },
-                            ]}
                         />
                     ),
                 },
@@ -151,14 +103,83 @@ export const config: BlockConfig<SwitchBlockDef> = {
             ],
         },
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
         {
-            name: "on Change",
+            name: "On Change",
             children: [...buildListener("onChange")],
+        },
+    ],
+    styleMenu: [
+        {
+            name: "Layout",
+            children: [
+                {
+                    description: "Label Placement",
+                    render: ({ id }) => (
+                        <SelectInputSettings
+                            id={id}
+                            label="Label Placement"
+                            path="labelPlacement"
+                            options={[
+                                { value: "end", display: "Right" },
+                                { value: "start", display: "Left" },
+                                { value: "top", display: "Top" },
+                                { value: "bottom", display: "Bottom" },
+                            ]}
+                        />
+                    ),
+                },
+            ],
+        },
+        {
+            name: "Color",
+            children: [
+                {
+                    description: "Color",
+                    render: ({ id }) => (
+                        <SelectInputSettings
+                            id={id}
+                            label="Color"
+                            path="color"
+                            options={[
+                                { value: "primary", display: "Primary" },
+                                { value: "secondary", display: "Secondary" },
+                                { value: "default", display: "Default" },
+                                { value: "error", display: "Error" },
+                                { value: "info", display: "Info" },
+                                { value: "success", display: "Success" },
+                                { value: "warning", display: "Warning" },
+                            ]}
+                        />
+                    ),
+                },
+            ],
+        },
+        {
+            name: "Size",
+            children: [
+                {
+                    description: "Size",
+                    render: ({ id }) => (
+                        <SelectInputSettings
+                            id={id}
+                            label="Size"
+                            path="size"
+                            options={[
+                                { value: "small", display: "Small" },
+                                { value: "medium", display: "Medium" },
+                            ]}
+                        />
+                    ),
+                },
+            ]
         },
         buildDimensionsSection(),
     ],
-    styleMenu: [],
 };
