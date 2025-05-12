@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 
 const StyledContainer = styled("div")(({ theme }) => ({
     padding: "4px",
@@ -45,8 +45,14 @@ export interface SwitchBlockDef extends BlockDef<"switch"> {
         labelPlacement: "start" | "end" | "top" | "bottom";
     };
     listeners: {
-        preProcess: true;
-        onChange: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+        onChange: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 

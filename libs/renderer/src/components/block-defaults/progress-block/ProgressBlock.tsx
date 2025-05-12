@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 
 const StyledCircularBox = styled(Box)(() => ({
     position: "relative",
@@ -53,7 +53,10 @@ export interface ProgressBlockDef extends BlockDef<"progress"> {
         show: string;
     };
     listeners: {
-        preProcess: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
     slots: never;
 }

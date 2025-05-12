@@ -59,8 +59,14 @@ export const config: BlockConfig<UploadBlockDef> = {
         show: "true",
     },
     listeners: {
-        onChange: [],
-        preProcess: [],
+        onChange: {
+            type: "sync",
+            order: [],
+        },
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: UploadBlock,
@@ -69,7 +75,6 @@ export const config: BlockConfig<UploadBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Value",
                     render: ({ id }) => (
@@ -128,11 +133,15 @@ export const config: BlockConfig<UploadBlockDef> = {
             ],
         },
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
         {
-            name: "on Change",
+            name: "On Change",
             children: [...buildListener("onChange")],
         },
     ],

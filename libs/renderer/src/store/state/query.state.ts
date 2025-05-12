@@ -331,6 +331,19 @@ export class QueryState {
         }
     };
 
+    _moveCell = (active: string, over: string) => {
+        //null safety
+        if (!active || !over) {
+            return;
+        }
+        // move the cell
+        const activeIdx = this._store.list.indexOf(active);
+        const overIdx = this._store.list.indexOf(over);
+        this._store.list.splice(activeIdx, 1);
+        this._store.list.splice(overIdx, 0, active);
+    };
+       
+
     /**
      * Remove a cell
      * @param id - id of the cell to delete

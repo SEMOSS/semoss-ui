@@ -29,7 +29,10 @@ export const config: BlockConfig<MarkdownBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: MarkdownBlock,
@@ -38,7 +41,6 @@ export const config: BlockConfig<MarkdownBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Markdown",
                     render: ({ id }) => (
@@ -60,6 +62,10 @@ export const config: BlockConfig<MarkdownBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

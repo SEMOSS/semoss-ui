@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { styled, ToggleButtonGroup, ToggleButton } from "@mui/material";
 
 import { useBlock, useDebounce } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { debounced } from "../../../utility";
 
 const StyledContainer = styled("div")(() => ({
@@ -24,8 +24,14 @@ export interface ToggleButtonBlockDef extends BlockDef<"toggle-button"> {
         show: string;
     };
     listeners: {
-        preProcess: true;
-        onChange: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+        onChange: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
