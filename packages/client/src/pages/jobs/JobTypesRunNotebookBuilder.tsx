@@ -45,9 +45,10 @@ export const JobTypesRunNotebookBuilder = (props: {
             <TextField
                 select
                 label="Select Notebook"
-                value={builder.notebook}
+                value={builder.pixel || builder.notebook}
                 onChange={(e) => {
                     setBuilderField('notebook', e.target.value);
+                    setBuilderField('pixel', e.target.value);
                 }}
             >
                 {userNotebooks.map((notebook) => (

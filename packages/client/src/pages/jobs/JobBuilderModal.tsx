@@ -181,7 +181,7 @@ export const JobBuilderModal = (props: {
             case JobTypeCustomJob:
                 return !!builder.name && !!builder.pixel && !!builder.cronTz;
             case JobTypeRunNotebook:
-                return !!builder.name && !!builder.notebook && !!builder.cronTz;
+                return !!builder.name && !!builder.cronTz && !!builder.pixel;
         }
     }, [
         builder.name,

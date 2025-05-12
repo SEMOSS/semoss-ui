@@ -1,6 +1,7 @@
 import {
     DaysOfWeek,
     JobTypeCustomJob,
+    JobTypeRunNotebook,
     JobTypeSendEmail,
     Months,
 } from './job.constants';
@@ -168,5 +169,7 @@ export function getEncodeByJobType(builder: JobBuilder) {
             return builder.pixel;
         case JobTypeSendEmail:
             return `SendEmail(smtpHost=['${builder.smtpHost}'], smtpPort=['${builder.smtpPort}'], subject=['${builder.subject}'], to=['${builder.to}'], cc=['${builder.cc}'], bcc=['${builder.bcc}'], from=['${builder.from}'], message=['${builder.message}'], username=['${builder.username}'], password=['${builder.password}']);`;
-    }
+        case JobTypeRunNotebook:
+            return builder.pixel;
+        }
 }
