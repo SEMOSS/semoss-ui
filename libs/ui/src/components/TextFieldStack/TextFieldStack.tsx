@@ -49,7 +49,7 @@ const StyledMuiTextField = styled(MuiTextField)(({}) => ({
 }));
 
 export const TextFieldStack = (props: TextFieldStackProps) => {
-    const { sx, hint } = props;
+    const { sx, hint = "" } = props;
     const [componentId, setComponentId] = useState(props.id);
 
     useEffect(() => {
@@ -69,7 +69,7 @@ export const TextFieldStack = (props: TextFieldStackProps) => {
                     <InfoOutlined
                         fontSize="small"
                         color="action"
-                        titleAccess="Test"
+                        titleAccess={hint}
                     />
                 ) : (
                     <></>
