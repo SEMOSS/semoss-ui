@@ -58,7 +58,6 @@ export const Router = observer(() => {
                 <Route path="*" element={<NavigatorLayout />}>
                     <Route index element={<HomePage />} />
                     <Route path="import" element={<ImportRouter />} />
-
                     <Route path="settings/*" element={<SettingsRouter />} />
                     <Route path="engine/*" element={<EngineRouter />} />
                     <Route path="app/*" element={<AppRouter />} />

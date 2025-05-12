@@ -48,20 +48,12 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
             let pixel = '';
             let path = '';
             if (type === 'app') {
-                path = uploadPath;
-
-                // add a slash if there is none
-                if (path.slice(-1) !== '/') {
-                    path = `${path}/`;
-                }
-
-                // append the name
-                path = `${path}${name}`;
+                path = `${uploadPath}${name}`;
 
                 if (mode === 'file') {
                     pixel = `SaveAsset(fileName=["${path}"], content=["<encode></encode>"], space=["${space}"]);CommitAsset(filePath=["${path}"], comment=["Creating file"], space=["${space}"]);`;
                 } else if (mode === 'directory') {
-                    // add in the / to make it a directory
+                    // add in the /
                     if (path.slice(-1) !== '/') {
                         path = `${path}/`;
                     }

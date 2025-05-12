@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { styled, Button, Stack, Typography } from '@semoss/ui';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FileUploadOutlined } from '@mui/icons-material';
-import { STATE_VERSION } from '@semoss/renderer';
 
-import { useRootStore } from '@/hooks';
+import { STATE_VERSION } from '@semoss/renderer';
 import {
     NewAppStep,
     AddAppModal,
@@ -95,7 +94,6 @@ const StyledBoxImage = styled('img', {
 export const NewAppPage = () => {
     const navigate = useNavigate();
 
-    const { configStore } = useRootStore();
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [newAppOptions, setNewAppOptions] = useState<
         React.ComponentProps<typeof NewAppModal>['options'] | null
@@ -115,11 +113,6 @@ export const NewAppPage = () => {
 
         navigate(`/workspace/${appId}`);
     };
-
-    const isRestricted = !configStore.isEngineOperationAvailable('APP', 'add');
-    if (isRestricted) {
-        return <Navigate to="/" replace />;
-    }
 
     return (
         <NewAppStep

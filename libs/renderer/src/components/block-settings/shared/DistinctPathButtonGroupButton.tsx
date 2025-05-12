@@ -3,7 +3,7 @@ import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { IconButton } from "@semoss/ui";
 import { Paths, PathValue } from "../../../types";
-import { useBlock, useBlockSettings } from "../../../hooks";
+import { useBlockSettings } from "../../../hooks";
 import { Block, BlockDef } from "../../../store";
 import { getValueByPath } from "../../../utility";
 
@@ -53,7 +53,6 @@ export const DistinctPathButtonGroupButton = observer(
         isDefault,
     }: DistinctPathButtonGroupButtonProps<D>) => {
         const { data, setData } = useBlockSettings(id);
-        const { data: blockData } = useBlock(id);
 
         // track the value
         const [value, setValue] = useState("");
@@ -110,17 +109,6 @@ export const DistinctPathButtonGroupButton = observer(
             }, 300);
         };
 
-        const isDisabled = useMemo(() => {
-            return !!(
-                (blockData?.hasOwnProperty("href") && title === "Underlined") ||
-                (blockData?.hasOwnProperty("variant") &&
-                    ["h1", "h2", "h3", "h4", "h5", "h6"].includes(
-                        blockData.variant as string,
-                    ) &&
-                    title === "Bold")
-            );
-        }, [blockData, id, title]);
-
         return (
             <IconButton
                 color={
@@ -131,7 +119,6 @@ export const DistinctPathButtonGroupButton = observer(
                 size="small"
                 onClick={onClick}
                 title={title}
-                disabled={isDisabled}
             >
                 <ButtonIcon />
             </IconButton>

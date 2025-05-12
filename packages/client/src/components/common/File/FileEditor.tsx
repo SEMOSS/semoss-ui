@@ -8,7 +8,7 @@ import {
     forwardRef,
     useImperativeHandle,
 } from 'react';
-import type { OnMount } from '@monaco-editor/react';
+import { OnMount } from '@monaco-editor/react';
 import parserBabel from 'prettier/parser-babel';
 import parserCss from 'prettier/parser-postcss';
 import parserHtml from 'prettier/parser-html';
@@ -90,8 +90,8 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
         const [LLMActionAdded, setLLMActionAdded] = useState(false);
         // tracks filetype to address bug when prompting LLM - re-address if/when filetype added to LLM pixel
         const wordWrapRef = useRef(false);
-        const editorRef = useRef(null);
-        const [isModified, setIsModified] = useState(false);
+
+        const isModified = initialContent !== content;
 
         // update whenever the content changes
         useImperativeHandle(
@@ -118,7 +118,27 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
          */
         useEffect(() => {
             onChange(content, isModified);
-        }, [isModified]);
+        }, [content, isModified]);
+
+        /**
+         * Listen for Keyboard Shortcuts, save and --> etc down the road
+         */
+        useEffect(() => {
+            const handleKeyPress = async (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault(); // Prevent the default browser save dialog
+                    console.log('Ctrl + S pressed');
+                    saveFile();
+                }
+            };
+
+            window.addEventListener('keydown', handleKeyPress);
+
+            return () => {
+                // Cleanup: Remove the event listener when the component unmounts
+                window.removeEventListener('keydown', handleKeyPress);
+            };
+        });
 
         const fileLanguage = useMemo<
             | 'typescript'
@@ -137,32 +157,23 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 
             if (ext === 'ts' || ext === 'tsx') {
                 return 'typescript';
-            }
-            if (ext === 'js' || ext === 'jsx') {
+            } else if (ext === 'js' || ext === 'jsx') {
                 return 'javascript';
-            }
-            if (ext === 'html') {
+            } else if (ext === 'html') {
                 return 'html';
-            }
-            if (ext === 'css') {
+            } else if (ext === 'css') {
                 return 'css';
-            }
-            if (ext === 'scss') {
+            } else if (ext === 'scss') {
                 return 'scss';
-            }
-            if (ext === 'py' || ext === 'python') {
+            } else if (ext === 'py' || ext === 'python') {
                 return 'python';
-            }
-            if (ext === 'java') {
+            } else if (ext === 'java') {
                 return 'java';
-            }
-            if (ext === 'mdx') {
+            } else if (ext === 'mdx') {
                 return 'mdx';
-            }
-            if (ext === 'md') {
+            } else if (ext === 'md') {
                 return 'markdown';
-            }
-            if (ext === 'txt') {
+            } else if (ext === 'txt') {
                 return 'txt';
             }
 
@@ -201,7 +212,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
             } catch (e) {
                 notification.add({
                     color: 'error',
-                    message: e.message,
+                    message: e,
                 });
 
                 console.error(e);
@@ -257,7 +268,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
             } catch (e) {
                 notification.add({
                     color: 'error',
-                    message: e.message,
+                    message: e,
                 });
 
                 console.error(e);
@@ -270,9 +281,8 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
          * Save the File
          */
         const saveFile = async () => {
-            const content = editorRef.current.getValue();
             try {
-                // setIsLoading(true);
+                setIsLoading(true);
 
                 let pixel = '';
                 if (type === 'app') {
@@ -302,11 +312,10 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 
                 // reload the file
                 loadFile();
-                setIsModified(false);
             } catch (e) {
                 notification.add({
                     color: 'error',
-                    message: e.message,
+                    message: e,
                 });
 
                 console.error(e);
@@ -355,32 +364,16 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
         };
 
         /**
-         * Hanlder for setting content, isModified and onChange
-         */
-        const handleEditorOnChange = (value) => {
-            setContent(value);
-            setIsModified(value !== initialContent);
-            onChange(value, isModified);
-        };
-
-        /**
          * Handler called when the editor is mounted
          */
         const onEditorMount: OnMount = (editor, monaco) => {
-            editorRef.current = editor;
             if (IS_PRODUCTION) {
                 return;
             }
 
             // prevents redundant additions of new dropdown action
-            if (LLMActionAdded === false) {
+            if (LLMActionAdded == false) {
                 setLLMActionAdded(true);
-                editor.addCommand(
-                    monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
-                    () => {
-                        saveFile();
-                    },
-                ); // use editor's api to use built in keyboard shortcuts to handle differnt OS's save
                 editor.addAction({
                     contextMenuGroupId: '1_modification',
                     contextMenuOrder: 1,
@@ -461,9 +454,11 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                             options={{
                                 readOnly: false,
                             }}
-                            onChange={handleEditorOnChange}
+                            onChange={(newValue) => {
+                                setContent(newValue);
+                            }}
                             onMount={onEditorMount}
-                        />
+                        ></Editor>
                     )}
                 </Suspense>
             </StyledContainer>

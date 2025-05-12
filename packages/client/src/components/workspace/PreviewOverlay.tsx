@@ -2,6 +2,7 @@ import { observer } from 'mobx-react-lite';
 import { Button, Modal, styled } from '@semoss/ui';
 
 import { Renderer, SerializedState } from '@semoss/renderer';
+import { InsightProvider } from '@semoss/sdk';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     height: '60vh',

@@ -129,14 +129,8 @@ export const config: BlockConfig<PopoverBlockDef> = {
         openTrigger: "click",
     },
     listeners: {
-        onOpen: {
-            type: "sync",
-            order: [],
-        },
-        onClose: {
-            type: "sync",
-            order: [],
-        },
+        onOpen: [],
+        onClose: [],
     },
     slots: {
         header: [],
@@ -181,11 +175,11 @@ export const config: BlockConfig<PopoverBlockDef> = {
             ],
         },
         {
-            name: "Pre Process",
+            name: "on Open",
             children: [...buildListener("onOpen")],
         },
         {
-            name: "Post Process",
+            name: "on Close",
             children: [...buildListener("onClose")],
         },
     ],

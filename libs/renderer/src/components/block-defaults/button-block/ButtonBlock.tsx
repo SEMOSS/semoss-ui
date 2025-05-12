@@ -1,8 +1,8 @@
-import { CSSProperties, useEffect } from "react";
+import { CSSProperties } from "react";
 import { observer } from "mobx-react-lite";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
+import { BlockDef, BlockComponent } from "../../../store";
 
 import { CircularProgress, Button, styled } from "@mui/material";
 
@@ -40,14 +40,7 @@ export interface ButtonBlockDef extends BlockDef<"button"> {
         show: string;
     };
     listeners: {
-        onClick: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
-        preProcess: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
+        onClick: true;
     };
 }
 
@@ -57,12 +50,6 @@ const StyledContainer = styled("div")(({ theme }) => ({
 
 export const ButtonBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, listeners } = useBlock<ButtonBlockDef>(id);
-
-    useEffect(() => {
-        if (listeners.preProcess) {
-            listeners.preProcess();
-        }
-    }, []);
     return (
         <StyledContainer {...attrs}>
             <StyledButton

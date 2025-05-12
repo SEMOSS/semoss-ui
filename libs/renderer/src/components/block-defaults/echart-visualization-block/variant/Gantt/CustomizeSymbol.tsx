@@ -1,7 +1,6 @@
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import styled from "@emotion/styled";
 import {
     Autocomplete,
     Button,
@@ -13,12 +12,13 @@ import {
     TextField,
 } from "@semoss/ui";
 
+import styled from "@emotion/styled";
 import { PathValue } from "@/types";
 import { getValueByPath } from "../../../../../utility";
 import { useBlockSettings, useBlock } from "../../../../../hooks";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks/VisualizationBlock";
 import { BaseSettingSection } from "../../../../block-settings";
-import { GANTT_CHART } from "../../Visualization.constants";
+import { GANTT_CHART } from "../../../echart-visualization-blocks/Visualization.constants";
 import { BlockDef } from "../../../../../store";
 
 //Sub container with column based field setting

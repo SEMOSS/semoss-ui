@@ -1,5 +1,5 @@
 import React from "react";
-import { RunQueryAction, DispatchEventAction, DispatchOutputsEventAction, RunCellAction } from "./state.actions";
+import { RunQueryAction, DispatchEventAction, DispatchOutputsEventAction } from "./state.actions";
 import { CellState } from "./cell.state";
 import { QueryStateConfig } from "./query.state";
 
@@ -128,7 +128,7 @@ export type Block<D extends BlockDef = BlockDef> = D extends D
           data: D["data"];
 
           /** Event listeners associated with the block */
-          listeners: Record<keyof D["listeners"], {order: ListenerActions[], type: "sync"| "async"}>;
+          listeners: Record<keyof D["listeners"], ListenerActions[]>;
 
           /** Slots associated with the block */
           slots: Record<
@@ -154,7 +154,7 @@ export interface BlockDef<W extends string = string> {
     data: Record<string, unknown>;
 
     /** Listeners associated with the widget */
-    listeners: Record<string, {order: ListenerActions[], type: 'sync' | 'async'}>;
+    listeners: Record<string, true>;
 
     /** Names of the slot associated with the widget */
     slots: Record<string, true>;
@@ -174,7 +174,7 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
     data: D["data"];
 
     /** Listeners associated with the block */
-    listeners: Record<keyof D["listeners"], {order: ListenerActions[], type: 'sync' | 'async'}>;
+    listeners: Record<keyof D["listeners"], ListenerActions[]>;
 
     /** Children associated with the block */
     slots: Record<keyof D["slots"], BlockJSON[]>;
@@ -240,7 +240,7 @@ export type BlockJSON<
           data: T["data"];
 
           /** Event listeners associated with the widget */
-          listeners: Record<keyof T["listeners"], {order: ListenerActions[], type: "sync" | "async"}>;
+          listeners: Record<keyof T["listeners"], ListenerActions[]>;
 
           /** Slot information */
 
@@ -267,7 +267,7 @@ export type RegistryUnwrap<R extends Registry<BlockDef>> = R extends Registry<
 /**
  * Listener Actions
  */
-export type ListenerActions = RunQueryAction | DispatchEventAction | DispatchOutputsEventAction | RunCellAction;
+export type ListenerActions = RunQueryAction | DispatchEventAction | DispatchOutputsEventAction;
 
 /**
  * Cell Definition

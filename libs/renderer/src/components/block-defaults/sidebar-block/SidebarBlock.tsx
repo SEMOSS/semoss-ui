@@ -1,10 +1,10 @@
-import { CSSProperties, useMemo, useEffect } from "react";
+import { CSSProperties, useMemo } from "react";
 import { observer } from "mobx-react-lite";
 
 import { Drawer, Stack } from "@semoss/ui";
 
 import { useBlock, useBlocks } from "../../../hooks";
-import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
+import { BlockDef, BlockComponent } from "../../../store";
 import { Slot } from "../../blocks";
 
 export interface SidebarBlockDef extends BlockDef<"sidebar"> {
@@ -18,40 +18,13 @@ export interface SidebarBlockDef extends BlockDef<"sidebar"> {
     slots: {
         content: true;
     };
-    listeners: {
-        preProcess: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
-        postProcess: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
-    };
 }
 
 export const SidebarBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots, listeners } = useBlock<SidebarBlockDef>(id);
+    const { attrs, data, slots } = useBlock<SidebarBlockDef>(id);
     const { state } = useBlocks();
     const isStatic = state.mode === "static";
 
-    useEffect(() => {
-        if (
-            data.open === true ||
-            data.open === "true" ||
-            data.open === "True" ||
-            data.open === 1 ||
-            data.open === "1"
-        ) {
-            if (listeners.preProcess) {
-                listeners.preProcess();
-            }
-        } else {
-            if (listeners.postProcess) {
-                listeners.postProcess();
-            }
-        }
-    }, [data.open]);
     const open = useMemo(() => {
         let o = false;
         // Interpret Python

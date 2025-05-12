@@ -1,10 +1,9 @@
-import { HighlightAlt } from "@mui/icons-material";
-
 import { BlockConfig } from "../../../store";
 import { LogsBlockDef, LogsBlock } from "./LogsBlock";
+import { HighlightAlt } from "@mui/icons-material";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import { QueryNameDropdownSettings } from "../../block-settings/custom/QueryNameDropdownSettings";
-import { buildShowField, buildListener } from "../block-defaults.shared";
+import { buildShowField } from "../block-defaults.shared";
 
 export const config: BlockConfig<LogsBlockDef> = {
     widget: "logs",
@@ -14,12 +13,7 @@ export const config: BlockConfig<LogsBlockDef> = {
         queryId: "",
         show: "true",
     },
-    listeners: {
-        preProcess: {
-            type: "sync",
-            order: [],
-        },
-    },
+    listeners: {},
     slots: {},
     render: LogsBlock,
     icon: HighlightAlt,
@@ -39,10 +33,6 @@ export const config: BlockConfig<LogsBlockDef> = {
                     ),
                 },
             ],
-        },
-        {
-            name: "Pre Process",
-            children: [...buildListener("preProcess")],
         },
     ],
     styleMenu: [],

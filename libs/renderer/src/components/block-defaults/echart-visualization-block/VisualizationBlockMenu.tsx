@@ -12,11 +12,10 @@ import { ScatterPlotBlockSettings } from "./variant/scatter-plot/ScatterPlotBloc
 import { MapChartBlockSettings } from "./variant/map-chart/MapChartBlockSettings";
 import { FrameOperationsLine } from "./variant/line-chart/FrameOperationsLine";
 import { StackChartBlockSettings } from "./variant/stack-chart/StackChartBlockSettings";
-import { Bar, Pie, ScatterPlot, StackChart, Line, WorldMap, Gantt, Dendrogram } from "./variant/Constant";
 import { GanttFrameSection } from "./variant/Gantt/GanttFrameSection";
 
 const StyledContainer = styled("div")(() => ({
-    height: "100%",
+    maxHeight: "50vh",
 }));
 const StyledSubSection = styled("div")(() => ({
     display: "flex",
@@ -28,7 +27,6 @@ const StyledJsonSection = styled("div")(() => ({
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
-    height: "100%",
 }));
 const StyledToolsSection = styled("div")(() => ({
     display: "flex",
@@ -57,13 +55,7 @@ const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
         ".MuiTabs-flexContainer": {
             flex: 1,
         },
-
-        ">.MuiTabs-flexContainer": {
-            width: "100%",
-            justifyContent: "space-around",
-        },
     },
-
 }));
 const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
     height: "38px",
@@ -71,8 +63,6 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
 
     "&.MuiTab-root": {
         borderRadius: theme.shape.borderRadius,
-        width: "30%",
-        padding: "4px 8px",
     },
     "&.Mui-selected": {
         boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
@@ -82,15 +72,7 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
 export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
     const { data } = useBlock(id);
     const [selectedTab, setSelectedTab] = useState("Tools");
-    const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
-    function updateFrame() { }
-
-    function handleStoreData(storeData: any[]) {
-        const hasValues = storeData.some(item => item?.values && item?.values.length > 0);
-        if (hasValues) {
-            setSelectedColumn(storeData);
-        }
-    }
+    function updateFrame() {}
     return (
         <StyledStack>
             {/* CodeEditorSettings is a dup of JsonSettings with LLM prompting and wordwrap added to the editor and ability to work with HTML as well as JSON */}
@@ -119,81 +101,34 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                                 id={id}
                                 updateFrame={updateFrame}
                                 path="option"
-                                chart={Bar}
-                                storedColumns={selectedColumn}
-                                handleStoreData={handleStoreData}
                             />
                         )}
                         {data.variation === "echart-line-graph" && (
-                            <FrameOperations
-                                id={id}
-                                updateFrame={updateFrame}
-                                path="option"
-                                chart={Line}
-                                storedColumns={selectedColumn}
-                                handleStoreData={handleStoreData}
-                            />
+                            <FrameOperationsLine id={id} path="option" />
                         )}
                         {data.variation === "echart-pie-chart" && (
-                            <FrameOperations
-                                id={id}
-                                updateFrame={updateFrame}
-                                path="option"
-                                chart={Pie}
-                                storedColumns={selectedColumn}
-                                handleStoreData={handleStoreData}
-                            />
+                            <FrameOperationsPie id={id} path={"option"} />
                         )}
+
+                        {/* Render ScatterPlotBlockSettings component when 'Data' tab is selected */}
                         {data.variation === "echart-scatter-plots" && (
-                            <FrameOperations
+                            <ScatterPlotBlockSettings
                                 id={id}
-                                updateFrame={updateFrame}
-                                path="option"
-                                chart={ScatterPlot}
-                                storedColumns={selectedColumn}
-                                handleStoreData={handleStoreData}
-                            />
+                                path={"option"}
+                            ></ScatterPlotBlockSettings>
                         )}
                         {data.variation === "echart-world-map-chart" && (
-                            <FrameOperations
-                                id={id}
-                                updateFrame={updateFrame}
-                                path="option"
-                                chart={WorldMap}
-                                storedColumns={selectedColumn}
-                                handleStoreData={handleStoreData}
-                            />
+                            <MapChartBlockSettings id={id} path={"option"} />
                         )}
                         {/* Render StackChartBlockSettings component when 'Data' tab is selected */}
                         {data.variation === "echart-stack-chart" && (
-                            <FrameOperations
+                            <StackChartBlockSettings
                                 id={id}
-                                updateFrame={updateFrame}
-                                path="option"
-                                chart={StackChart}
-                                storedColumns={selectedColumn}
-                                handleStoreData={handleStoreData}
-                            />
+                                path={"option"}
+                            ></StackChartBlockSettings>
                         )}
                         {data.variation === "echart-gantt-chart" && (
-                            <FrameOperations
-                                id={id}
-                                updateFrame={updateFrame}
-                                path="option"
-                                chart={Gantt}
-                                storedColumns={selectedColumn}
-                                handleStoreData={handleStoreData}
-                            />
-                        )}
-                        {data.variation === "echart-dendrogram-chart" && (
-                            <FrameOperations
-                                id={id}
-                                updateFrame={updateFrame}
-                                path="option"
-                                chart={Dendrogram}
-                                storedColumns={selectedColumn}
-                                handleStoreData={handleStoreData}
-                            />
+                            <GanttFrameSection id={id} path={"option"} />
                         )}
                     </StyledSubSection>
                 )}

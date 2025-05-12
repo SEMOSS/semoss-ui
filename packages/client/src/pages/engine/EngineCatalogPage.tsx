@@ -507,35 +507,30 @@ export const EngineCatalogPage = observer(
                                     }}
                                 />
                             </Stack>
-                            {configStore.isEngineOperationAvailable(
-                                route.type,
-                                'add',
-                            ) && (
-                                <Stack
-                                    direction="row"
-                                    alignItems={'center'}
-                                    spacing={3}
+                            <Stack
+                                direction="row"
+                                alignItems={'center'}
+                                spacing={3}
+                            >
+                                <Button
+                                    size={'large'}
+                                    variant={'contained'}
+                                    onClick={() => {
+                                        if (!route) {
+                                            navigate('/import');
+                                        } else if (route.type) {
+                                            navigate(
+                                                `/import?type=${route.type.toLowerCase()}`,
+                                            );
+                                        }
+                                    }}
+                                    aria-label={`Navigate to import ${
+                                        route ? route.name : 'Engine'
+                                    }`}
                                 >
-                                    <Button
-                                        size={'large'}
-                                        variant={'contained'}
-                                        onClick={() => {
-                                            if (!route) {
-                                                navigate('/import');
-                                            } else if (route.type) {
-                                                navigate(
-                                                    `/import?type=${route.type.toLowerCase()}`,
-                                                );
-                                            }
-                                        }}
-                                        aria-label={`Navigate to import ${
-                                            route ? route.name : 'Engine'
-                                        }`}
-                                    >
-                                        Add {route ? route.name : 'Engine'}
-                                    </Button>
-                                </Stack>
-                            )}
+                                    Add {route ? route.name : 'Engine'}
+                                </Button>
+                            </Stack>
                         </Stack>
                         <Stack
                             direction="row"

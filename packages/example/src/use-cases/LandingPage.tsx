@@ -1,4 +1,6 @@
-import { Env } from '@semoss/sdk/react';
+import React from 'react';
+
+import { Env, InsightProvider } from '@semoss/sdk';
 import { Renderer, SerializedState } from '@semoss/renderer';
 
 const state: SerializedState = {
@@ -890,7 +892,7 @@ export const LandingPage = () => {
     return (
         <div style={{ width: '100%' }}>
             {/* <InsightProvider> */}
-            <Renderer state={state} />
+                <Renderer state={state} />
             {/* </InsightProvider> */}
         </div>
     );

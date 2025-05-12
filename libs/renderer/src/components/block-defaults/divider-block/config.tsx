@@ -5,7 +5,6 @@ import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 import {
     buildDimensionsSection,
     buildShowField,
-    buildListener,
 } from "../block-defaults.shared";
 
 import { DividerBlockDef, DividerBlock } from "./DividerBlock";
@@ -30,10 +29,7 @@ export const config: BlockConfig<DividerBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: {
-            type: "sync",
-            order: [],
-        },
+        onClick: [],
     },
     slots: {},
     render: DividerBlock,
@@ -131,10 +127,6 @@ export const config: BlockConfig<DividerBlockDef> = {
                     ),
                 },
             ],
-        },
-        {
-            name: "Pre Process",
-            children: [...buildListener("preProcess")],
         },
         buildDimensionsSection(),
     ],

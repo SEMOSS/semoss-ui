@@ -100,8 +100,7 @@ export const BLOCKS = {
 
 ```
 import { Renderer, ActionMessages, SerializedState } from '@semoss/renderer';
-import { Env, InsightProvider } from '@semoss/sdk/react';
-
+import { Env, InsightProvider } from '@semoss/sdk';
 import { BLOCKS } from './constants.ts
 ```
 

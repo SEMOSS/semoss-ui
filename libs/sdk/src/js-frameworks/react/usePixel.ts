@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { runPixel } from "../../api";
 
+// import { useNotification } from "@semoss/ui";
+
 interface PixelState<D> {
     /** Status of the pixel call */
     status: "INITIAL" | "LOADING" | "SUCCESS" | "ERROR";

@@ -1,5 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useState, useEffect } from "react";
+import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks/VisualizationBlock";
+import { useBlockSettings } from "../../../../../hooks";
 import {
     ListItem,
     ListItemButton,
@@ -10,8 +12,6 @@ import styled from "@emotion/styled";
 import { List, Switch } from "@semoss/ui";
 import { GrainTwoTone, InfoOutlined } from "@mui/icons-material";
 import ImageIcon from "@mui/icons-material/Image";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
-import { useBlockSettings } from "../../../../../hooks";
 import { GanttTargetLine } from "./GanttTargetLine";
 import { CustomizeSymbol } from "./CustomizeSymbol";
 import { GanttLegend } from "./GanttLegend";

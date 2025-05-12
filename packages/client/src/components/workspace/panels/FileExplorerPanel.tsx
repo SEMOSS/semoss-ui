@@ -1,18 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Actions, DockLocation, Layout, TabNode } from 'flexlayout-react';
-import { useNotification, IconButton, Stack, Tooltip } from '@semoss/ui';
+import { useNotification, IconButton, Stack } from '@semoss/ui';
 import {
-    CloudSyncOutlined,
     CreateNewFolderOutlined,
     NoteAddOutlined,
     FileUpload,
     Refresh,
-    PublishedWithChangesOutlined,
-    CoffeeRounded,
-    CoffeeOutlined,
 } from '@mui/icons-material';
 
-import { useRootStore, useWorkspace } from '@/hooks';
+import { useWorkspace } from '@/hooks';
 import {
     FileExplorer,
     AddFileOverlay,
@@ -32,7 +28,6 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
     const { layout } = props;
 
     const { workspace } = useWorkspace();
-    const { monolithStore } = useRootStore();
 
     const notification = useNotification();
 
@@ -66,85 +61,6 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
     const refreshFiles = () => {
         // increment the counter
         setCounter(counter + 1);
-    };
-
-    /**
-     * Publish the app
-     */
-    const publishApp = async () => {
-        try {
-            // turn on loading
-            workspace.setLoading(true);
-
-            const response = await monolithStore.runQuery(
-                `PublishProject(project='${workspace.appId}', release=true);`,
-            );
-
-            const output = response.pixelReturn[0].output,
-                type = response.pixelReturn[0].operationType[0];
-
-            if (type.indexOf('ERROR') > -1) {
-                notification.add({
-                    color: 'error',
-                    message: output,
-                });
-
-                throw new Error(output.join(''));
-            }
-
-            notification.add({
-                color: 'success',
-                message: 'Successfully published',
-            });
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: e.message,
-            });
-        } finally {
-            // turn off loading
-            workspace.setLoading(false);
-        }
-    };
-
-    /**
-     * Recompile the app
-     */
-    const recompileApp = async () => {
-        try {
-            // turn on loading
-            workspace.setLoading(true);
-
-            const response = await monolithStore.runQuery(
-                `ReloadInsightClasses(project='${workspace.appId}', release=false);`,
-            );
-
-            const output = response.pixelReturn[0].output,
-                type = response.pixelReturn[0].operationType[0];
-
-            if (type.indexOf('ERROR') > -1) {
-                notification.add({
-                    color: 'error',
-                    message: output,
-                });
-
-                throw new Error(output.join(''));
-            }
-
-            notification.add({
-                color: 'success',
-                message:
-                    'Successfully recompiled reactors. Remember to publish changes.',
-            });
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: e.message,
-            });
-        } finally {
-            // turn off loading
-            workspace.setLoading(false);
-        }
     };
 
     /**
@@ -479,67 +395,39 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
                         <Refresh fontSize="inherit" />
                     </IconButton>
                     <Stack flex={1}>&nbsp;</Stack>
-                    <Tooltip title={`Publish files`}>
-                        <IconButton
-                            size={'small'}
-                            color={'default'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                publishApp();
-                            }}
-                        >
-                            <PublishedWithChangesOutlined fontSize="inherit" />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title={`Recompile reactors`}>
-                        <IconButton
-                            size={'small'}
-                            color={'default'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                recompileApp();
-                            }}
-                        >
-                            <CoffeeOutlined fontSize="inherit" />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title={`Upload file(s) to ${fileUploadPath}`}>
-                        <IconButton
-                            size={'small'}
-                            color={'default'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenAddFile();
-                            }}
-                        >
-                            <FileUpload fontSize="inherit" />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title={`Create new file at ${fileUploadPath}`}>
-                        <IconButton
-                            title={`Create new file at ${fileUploadPath}`}
-                            size={'small'}
-                            color={'default'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenCreateFile('file');
-                            }}
-                        >
-                            <NoteAddOutlined fontSize="inherit" />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title={`Create new folder at ${fileUploadPath}`}>
-                        <IconButton
-                            size={'small'}
-                            color={'default'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenCreateFile('directory');
-                            }}
-                        >
-                            <CreateNewFolderOutlined fontSize="inherit" />
-                        </IconButton>
-                    </Tooltip>
+                    <IconButton
+                        title={`Upload file(s) to ${fileUploadPath}`}
+                        size={'small'}
+                        color={'default'}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenAddFile();
+                        }}
+                    >
+                        <FileUpload fontSize="inherit" />
+                    </IconButton>
+                    <IconButton
+                        title={`Create new file at ${fileUploadPath}`}
+                        size={'small'}
+                        color={'default'}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenCreateFile('file');
+                        }}
+                    >
+                        <NoteAddOutlined fontSize="inherit" />
+                    </IconButton>
+                    <IconButton
+                        title={`Create new folder at ${fileUploadPath}`}
+                        size={'small'}
+                        color={'default'}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenCreateFile('directory');
+                        }}
+                    >
+                        <CreateNewFolderOutlined fontSize="inherit" />
+                    </IconButton>
                 </>
             }
         >

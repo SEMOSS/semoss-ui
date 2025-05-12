@@ -358,10 +358,7 @@ export const BlocksGuideTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--2178',
             },
@@ -546,29 +543,26 @@ export const BlocksGuideTemplate: Template = {
                     },
                 },
                 listeners: {
-                    onPageLoad: {
-                        type: 'sync',
-                        order: [
-                            {
-                                message: ActionMessages.RUN_QUERY,
-                                payload: {
-                                    queryId: 'python_code',
-                                },
+                    onPageLoad: [
+                        {
+                            message: ActionMessages.RUN_QUERY,
+                            payload: {
+                                queryId: 'python_code',
                             },
-                            {
-                                message: ActionMessages.RUN_QUERY,
-                                payload: {
-                                    queryId: 'py-code',
-                                },
+                        },
+                        {
+                            message: ActionMessages.RUN_QUERY,
+                            payload: {
+                                queryId: 'py-code',
                             },
-                            {
-                                message: ActionMessages.RUN_QUERY,
-                                payload: {
-                                    queryId: 'default',
-                                },
+                        },
+                        {
+                            message: ActionMessages.RUN_QUERY,
+                            payload: {
+                                queryId: 'default',
                             },
-                        ],
-                    },
+                        },
+                    ],
                 },
                 id: 'page-1',
             },

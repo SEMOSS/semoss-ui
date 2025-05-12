@@ -9,14 +9,15 @@
         "baseUrl": "src",
         "rootDir": "src",
         "module": "esnext",
-        "moduleResolution": "bundler",
+        "moduleResolution": "node",
         "allowSyntheticDefaultImports": true,
         "resolveJsonModule": true,
 
         /* Emit */
         "declaration": true,
-        "declarationDir": "./dist/types",
+        "declarationDir": ".",
         "emitDeclarationOnly": true,
+        "outDir": "dist",
 
         /* Skip */
         "skipLibCheck": true,
@@ -29,6 +30,7 @@
 
         "paths": {
             "@/*": ["*"],
+            "@semoss/ui": ["../ui/src/index.ts"]
         }
     },
     "include": ["src"],

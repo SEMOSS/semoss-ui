@@ -2,7 +2,6 @@ import { CellRegistry } from "../../store";
 
 import { CodeCellConfig, CodeCellDef } from "./code-cell";
 import { QueryImportCellConfig, QueryImportCellDef } from "./query-import-cell";
-import { SendEmailCellConfig, SendEmailCellDef } from "./send-email-cell";
 // import { DataImportCellConfig, DataImportCellDef } from "./data-import-cell";
 import {
     UppercaseTransformationCellConfig,
@@ -64,8 +63,7 @@ export type DefaultCellDefinitions =
     | JoinTransformationCellDef
     | CumulativeSumTransformationCellDef
     | EncodeColumnTransformationCellDef
-    | CollapseTransformationCellDef
-    | SendEmailCellDef;
+    | CollapseTransformationCellDef;
 
 export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     [CodeCellConfig.widget]: CodeCellConfig,
@@ -88,13 +86,11 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
         EncodeColumnTransformationCellConfig,
     [CollapseTransformationCellConfig.widget]: CollapseTransformationCellConfig,
     [LLMCellConfig.widget]: LLMCellConfig,
-    [SendEmailCellConfig.widget]: SendEmailCellConfig,
 } as const;
 
 const filteredTransformations: Partial<CellRegistry<DefaultCellDefinitions>> =
     {};
 
-const filteredOtherCells: Partial<CellRegistry<DefaultCellDefinitions>> = {};
 // Iterate through the data object and filter out the cell types that have 'transformation' key
 Object.entries(DefaultCells).forEach(([key, value]) => {
     const val = value;
@@ -104,14 +100,4 @@ Object.entries(DefaultCells).forEach(([key, value]) => {
     }
 });
 
-Object.entries(DefaultCells).forEach(([key, value]) => {
-    const val = value;
-
-    if (val.parameters && val.parameters.others) {
-        filteredTransformations[key] = value;
-    }
-});
-
 export const TransformationCells = filteredTransformations;
-
-export const OtherCells = filteredOtherCells;

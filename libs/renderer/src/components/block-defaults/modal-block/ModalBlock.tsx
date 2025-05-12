@@ -1,4 +1,4 @@
-import { CSSProperties, FC, useMemo, useEffect } from "react";
+import { CSSProperties, FC, useMemo } from "react";
 import { observer } from "mobx-react-lite";
 import {
     Modal as MuiModal,
@@ -8,9 +8,8 @@ import {
     styled,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-
 import { useBlock, useBlocks } from "../../../hooks";
-import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
+import { BlockDef, BlockComponent } from "../../../store";
 import { Slot } from "../../blocks";
 
 export interface ModalBlockDef extends BlockDef<"modal"> {
@@ -27,16 +26,6 @@ export interface ModalBlockDef extends BlockDef<"modal"> {
     slots: {
         content: true;
         footer: true;
-    };
-    listeners: {
-        preProcess: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
-        onClose: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
     };
 }
 
@@ -160,31 +149,15 @@ const ModalContent: FC<{
 });
 
 export const ModalBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots, setData, listeners } =
-        useBlock<ModalBlockDef>(id);
+    const { attrs, data, slots, setData } = useBlock<ModalBlockDef>(id);
     const { state } = useBlocks();
     const isStatic = state.mode === "static";
-
-    useEffect(() => {
-        if (
-            data.open === true ||
-            data.open === "true" ||
-            data.open === "True" ||
-            data.open === 1 ||
-            data.open === "1"
-        ) {
-            if (listeners.preProcess) {
-                listeners.preProcess();
-            }
-        }
-    }, [data.open]);
 
     const open = useMemo(() => {
         let o = false;
         // Interpret Python
         if (
             data.open === true ||
-            data.open === "true" ||
             data.open === "True" ||
             data.open === 1 ||
             data.open === "1"
@@ -237,7 +210,6 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
                 <MuiModal
                     open={shouldShowModal}
                     onClose={handleClose}
-                    // TODO: Switch to parent page
                     container={() => document.getElementById("page-1")}
                     sx={{
                         display: "flex",

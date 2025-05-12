@@ -124,10 +124,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--6320',
             },
@@ -160,10 +157,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--4121',
             },
@@ -181,17 +175,14 @@ export const CreateDiabetesRecordTemplate: Template = {
                     loading: '{{db-response.isLoading}}',
                 },
                 listeners: {
-                    onClick: {
-                        type: 'sync',
-                        order: [
-                            {
-                                payload: {
-                                    queryId: 'insert-diabetes-record',
-                                },
-                                message: ActionMessages.RUN_QUERY,
+                    onClick: [
+                        {
+                            payload: {
+                                queryId: 'insert-diabetes-record',
                             },
-                        ],
-                    },
+                            message: ActionMessages.RUN_QUERY,
+                        },
+                    ],
                 },
                 id: 'submit',
             },
@@ -224,10 +215,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--7858',
             },
@@ -279,10 +267,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--3855',
             },
@@ -315,10 +300,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--3118',
             },
@@ -351,10 +333,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--8307',
             },
@@ -387,10 +366,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--6721',
             },
@@ -423,10 +399,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--9538',
             },
@@ -459,10 +432,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--2187',
             },
@@ -495,10 +465,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--1154',
             },
@@ -531,10 +498,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--2903',
             },
@@ -567,10 +531,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--5617',
             },
@@ -617,10 +578,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     },
                 },
                 listeners: {
-                    onPageLoad: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onPageLoad: [],
                 },
                 id: 'page-1',
             },
@@ -653,10 +611,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--1536',
             },
@@ -689,10 +644,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--8195',
             },
@@ -725,10 +677,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--7685',
             },
@@ -761,10 +710,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--5362',
             },
@@ -797,10 +743,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--4018',
             },
@@ -833,10 +776,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--5206',
             },
@@ -869,10 +809,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--1422',
             },
@@ -905,10 +842,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--437',
             },
@@ -941,10 +875,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                     required: 'true',
                 },
                 listeners: {
-                    onChange: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onChange: [],
                 },
                 id: 'input--1200',
             },

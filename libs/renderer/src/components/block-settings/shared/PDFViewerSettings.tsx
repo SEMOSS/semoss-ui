@@ -1,12 +1,15 @@
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { BaseSettingSection } from "../BaseSettingSection";
 import { useParams } from "react-router-dom";
+import { Autocomplete } from "@mui/material";
+import { TextField } from "@semoss/ui";
 
 import { useBlock } from "../../../hooks";
 import { Block, BlockDef } from "../../../store";
 import { Paths, PathValue } from "../../../types";
 import { PDFViewerBlockDef } from "../../block-defaults/pdfViewer-block/PDFViewerBlock";
+import { runPixel } from "@semoss/sdk";
 
 interface AssetFile {
     path: string;
@@ -70,8 +73,7 @@ export const PDFViewerSettings = observer(
 
         return (
             <BaseSettingSection label="Files">
-                <div>Please contact admin on usage</div>
-                {/* <div>Fix Autocomplete</div> */}
+                <div>Fix Autocomplete</div>
                 {/* <Autocomplete
                     options={pdfFiles}
                     value={

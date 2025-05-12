@@ -9,7 +9,6 @@ import {
     BlockComponent,
     BlockDef,
     BlockJSON,
-    ListenerActions,
 } from "../../../store";
 import { Slot } from "../../blocks";
 
@@ -39,44 +38,31 @@ export interface IterationBlockDef extends BlockDef<"iteration"> {
     slots: {
         children: true;
     };
-    listeners: {
-        preProcess: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
-    };
 }
 
 export const IterationBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots, listeners } = useBlock<IterationBlockDef>(id);
+    const { attrs, data, slots } = useBlock<IterationBlockDef>(id);
     const { state } = useBlocks();
 
     const [blocksToRemove, setBlocksToRemove] = useState([]);
 
-    useEffect(() => {
-        if (listeners.preProcess) {
-            listeners.preProcess();
+    let list;
+    if (typeof data.source === "string") {
+        try {
+            list = JSON.parse(data.source);
+        } catch {
+            list = data.source;
         }
-    }, []);
+    }
 
     /**
      * Add Blocks at runtime
      */
     useEffect(() => {
-        let list;
-        if (typeof data.source === "string") {
-            try {
-                list = JSON.parse(data.source);
-            } catch {
-                list = data.source;
-            }
-        } else if (Array.isArray(data.source)) {
-            list = data.source;
-        }
-
         // Only while we are in app using mode
         if (state.mode === "interactive") {
-            if (Array.isArray(list)) {
+            if (typeof list === "object") {
+                console.log(list.length);
                 const newIds = [];
 
                 blocksToRemove.forEach(async (b) => {
@@ -139,7 +125,7 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
             }
         }
         // TODO: FIx Dependency array
-    }, [JSON.stringify(data.source), JSON.stringify(data.child)]);
+    }, [JSON.stringify(list), JSON.stringify(data.child)]);
 
     return (
         <div

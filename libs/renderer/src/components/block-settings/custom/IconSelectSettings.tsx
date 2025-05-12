@@ -128,9 +128,7 @@ export const IconSelectSettings = observer(
                                 }}
                             >
                                 {displayIcon(option)}
-                                {options.find(
-                                    (element) => element.value === option,
-                                )?.display ?? option}
+                                {/* {options.find(element => element.value===option)?.display ?? option} */}
                             </div>
                         </li>
                     )}

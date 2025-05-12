@@ -38,7 +38,6 @@ interface useBlockSettingsReturn<D extends BlockDef = BlockDef> {
     setListener: (
         listener: keyof Block<D>["listeners"],
         actions: ListenerActions[],
-        type?: "sync" | "async"
     ) => void;
 }
 
@@ -108,7 +107,6 @@ export const useBlockSettings = <D extends BlockDef = BlockDef>(
         (
             listener: keyof Block<D>["listeners"],
             actions: ListenerActions[],
-            type: "sync" | "async"
         ): void => {
             state.dispatch({
                 message: ActionMessages.SET_LISTENER,
@@ -116,7 +114,6 @@ export const useBlockSettings = <D extends BlockDef = BlockDef>(
                     id: id,
                     listener: listener as string,
                     actions: actions,
-                    type: type
                 },
             });
         },

@@ -1,17 +1,15 @@
-import { AspectRatio } from "@mui/icons-material";
-
 import { BlockConfig } from "../../../store";
-import { IframeBlockDef, IframeBlock } from "./IframeBlock";
-import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
-import { InputModalSettings } from "../../block-settings/shared/InputModalSettings";
-import { BorderSettings, InputSettings } from "../../block-settings";
-import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 import {
     buildSpacingSection,
     buildDimensionsSection,
     buildShowField,
-    buildListener,
 } from "../block-defaults.shared";
+import { IframeBlockDef, IframeBlock } from "./IframeBlock";
+import { AspectRatio } from "@mui/icons-material";
+import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
+import { InputModalSettings } from "../../block-settings/shared/InputModalSettings";
+import { BorderSettings, InputSettings } from "../../block-settings";
+import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 
 // export the config for the block
 export const config: BlockConfig<IframeBlockDef> = {
@@ -24,12 +22,7 @@ export const config: BlockConfig<IframeBlockDef> = {
         enableFrameInteractions: true,
         show: "true",
     },
-    listeners: {
-        preProcess: {
-            type: "sync",
-            order: [],
-        },
-    },
+    listeners: {},
     slots: {},
     render: IframeBlock,
     icon: AspectRatio,
@@ -66,10 +59,6 @@ export const config: BlockConfig<IframeBlockDef> = {
                     ),
                 },
             ],
-        },
-        {
-            name: "Pre Process",
-            children: [...buildListener("preProcess")],
         },
     ],
     styleMenu: [

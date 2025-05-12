@@ -8,7 +8,6 @@ import {
     buildBorderSection,
     buildColorSection,
     buildPositionSection,
-    buildListener,
 } from "../block-defaults.shared";
 
 import { ContainerBlockDef, ContainerBlock } from "./ContainerBlock";
@@ -29,23 +28,13 @@ export const config: BlockConfig<ContainerBlockDef> = {
         },
         show: "true",
     },
-    listeners: {
-        preProcess: {
-            type: "sync",
-            order: [],
-        },
-    },
+    listeners: {},
     slots: {
         children: [],
     },
     render: ContainerBlock,
     icon: HighlightAlt,
-    contentMenu: [
-        {
-            name: "Pre Process",
-            children: [...buildListener("preProcess")],
-        },
-    ],
+    contentMenu: [],
     styleMenu: [
         buildLayoutSection(),
         buildPositionSection(),

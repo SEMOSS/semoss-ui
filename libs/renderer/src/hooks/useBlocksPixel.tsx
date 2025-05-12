@@ -1,7 +1,7 @@
 import { useContext } from "react";
 
 import { BlocksContext } from "../contexts";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk";
 
 /**
  * Run pixel within blocks context

@@ -21,14 +21,7 @@ export const config: BlockConfig<CheckboxBlockDef> = {
         show: "true",
     },
     listeners: {
-        onChange: {
-            type: "sync",
-            order: [],
-        },
-        preProcess: {
-            type: "sync",
-            order: [],
-        },
+        onChange: [],
     },
     slots: {},
     render: CheckboxBlock,
@@ -45,10 +38,6 @@ export const config: BlockConfig<CheckboxBlockDef> = {
                     ),
                 },
             ],
-        },
-        {
-            name: "Pre Process",
-            children: [...buildListener("preProcess")],
         },
         {
             name: "on Change",

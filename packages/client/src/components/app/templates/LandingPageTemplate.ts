@@ -206,10 +206,7 @@ export const LandingPageTemplate: Template = {
                     },
                 },
                 listeners: {
-                    onPageLoad: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onPageLoad: [],
                 },
                 id: 'page-1',
             },

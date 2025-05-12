@@ -1,9 +1,8 @@
-import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
-import { Divider, styled } from "@mui/material";
-
+import { CSSProperties } from "react";
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
+import { BlockDef, BlockComponent } from "../../../store";
+import { Divider, styled } from "@mui/material";
 
 const StyledContainer = styled("div")(({ theme }) => ({
     padding: "4px",
@@ -27,22 +26,13 @@ export interface DividerBlockDef extends BlockDef<"divider"> {
     };
     slots: never;
     listeners: {
-        preProcess: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
+        onClick: true;
     };
 }
 
 export const DividerBlock: BlockComponent = observer(({ id }) => {
     try {
-        const { attrs, data, listeners } = useBlock<DividerBlockDef>(id);
-
-        useEffect(() => {
-            if (listeners.preProcess) {
-                listeners.preProcess();
-            }
-        }, []);
+        const { attrs, data } = useBlock<DividerBlockDef>(id);
 
         // Determine if we should show text
         const hasText = data.showText && data.text?.trim().length > 0;

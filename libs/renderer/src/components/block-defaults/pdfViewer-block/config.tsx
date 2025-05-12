@@ -1,9 +1,8 @@
-import { PictureAsPdf } from "@mui/icons-material";
-
 import { BlockConfig } from "../../../store";
 import { PDFViewerBlock, PDFViewerBlockDef } from "./PDFViewerBlock";
 import { PDFViewerSettings } from "../../block-settings/shared/PDFViewerSettings";
-import { buildShowField, buildListener } from "../block-defaults.shared";
+import { PictureAsPdf } from "@mui/icons-material";
+import { buildShowField } from "../block-defaults.shared";
 
 export const config: BlockConfig<PDFViewerBlockDef> = {
     widget: "pdfViewer",
@@ -17,13 +16,6 @@ export const config: BlockConfig<PDFViewerBlockDef> = {
         selectedPdf: null,
         show: "true",
     },
-    listeners: {
-        preProcess: {
-            type: "sync",
-            order: [],
-        },
-    },
-    slots: {},
     render: PDFViewerBlock,
     icon: PictureAsPdf,
     contentMenu: [
@@ -39,9 +31,9 @@ export const config: BlockConfig<PDFViewerBlockDef> = {
                 },
             ],
         },
-        {
-            name: "Pre Process",
-            children: [...buildListener("preProcess")],
-        },
     ],
+    listeners: {
+        onClick: [],
+    },
+    slots: {},
 };

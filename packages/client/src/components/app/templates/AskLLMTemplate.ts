@@ -94,10 +94,7 @@ export const AskLLMTemplate: Template = {
                     value: '',
                 },
                 listeners: {
-                    onClick: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onClick: [],
                 },
                 id: 'question',
             },
@@ -115,17 +112,14 @@ export const AskLLMTemplate: Template = {
                     loading: '{{ask-llm.isLoading}}',
                 },
                 listeners: {
-                    onClick: {
-                        type: 'sync',
-                        order: [
-                            {
-                                payload: {
-                                    queryId: 'ask-llm',
-                                },
-                                message: ActionMessages.RUN_QUERY,
+                    onClick: [
+                        {
+                            payload: {
+                                queryId: 'ask-llm',
                             },
-                        ],
-                    },
+                            message: ActionMessages.RUN_QUERY,
+                        },
+                    ],
                 },
                 id: 'submit',
             },
@@ -149,10 +143,7 @@ export const AskLLMTemplate: Template = {
                     },
                 },
                 listeners: {
-                    onPageLoad: {
-                        type: 'sync',
-                        order: [],
-                    },
+                    onPageLoad: [],
                 },
                 id: 'page-1',
             },

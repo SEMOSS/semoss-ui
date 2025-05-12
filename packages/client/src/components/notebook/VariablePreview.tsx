@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Box, Divider, styled, Typography, Stack } from '@semoss/ui';
 
@@ -11,6 +11,7 @@ import {
     Renderer,
     Variable,
 } from '@semoss/renderer';
+import { InsightProvider } from '@semoss/sdk';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     border: `${theme.spacing(0.25)} solid ${theme.palette.primary.main}`,
@@ -77,10 +78,7 @@ export const VariablePreview = observer(
                                 },
                             },
                             listeners: {
-                                onPageLoad: {
-                                    type: 'sync',
-                                    order: [],
-                                },
+                                onPageLoad: [],
                             },
                             slots: {
                                 content: {

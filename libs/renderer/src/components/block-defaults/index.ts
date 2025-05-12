@@ -30,11 +30,6 @@ import {
     EchartVisualizationBlockDef,
 } from "./echart-visualization-block";
 
-import {
-    config as FlipCardBlockConfig,
-    FlipCardBlockDef,
-} from "./flip-card-block";
-
 import { config as GridBlockConfig, GridBlockDef } from "./grid-block";
 
 import { config as HTMLBlockConfig, HTMLBlockDef } from "./html-block";
@@ -117,7 +112,6 @@ export type DefaultBlockDefinitions =
     | ContainerBlockDef
     | DividerBlockDef
     | EchartVisualizationBlockDef
-    | FlipCardBlockDef
     | GridBlockDef
     | HTMLBlockDef
     | IconBlockDef
@@ -168,7 +162,6 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [DividerBlockConfig.widget]: DividerBlockConfig,
     [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
-    [FlipCardBlockConfig.widget]: FlipCardBlockConfig,
     [GridBlockConfig.widget]: GridBlockConfig,
     [IconBlockConfig.widget]: IconBlockConfig,
     [IframeBlockConfig.widget]: IframeBlockConfig,
@@ -238,5 +231,4 @@ export {
     RadioBlockConfig,
     PDFViewerBlockConfig,
     TimePickerBlockConfig,
-    FlipCardBlockConfig,
 };

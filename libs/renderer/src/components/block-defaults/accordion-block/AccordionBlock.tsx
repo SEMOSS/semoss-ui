@@ -1,4 +1,4 @@
-import { CSSProperties, useEffect } from "react";
+import { CSSProperties } from "react";
 import { observer } from "mobx-react-lite";
 import { ExpandMore } from "@mui/icons-material";
 
@@ -6,7 +6,7 @@ import { Accordion, Stack, styled } from "@semoss/ui";
 
 import { Slot } from "../../blocks";
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
+import { BlockDef, BlockComponent } from "../../../store";
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
     padding: 0,
@@ -52,22 +52,10 @@ export interface AccordionBlockDef extends BlockDef<"accordion"> {
         header: true;
         content: true;
     };
-    listeners: {
-        preProcess: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
-    };
 }
 
 export const AccordionBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots, listeners } = useBlock<AccordionBlockDef>(id);
-
-    useEffect(() => {
-        if (listeners.preProcess) {
-            listeners.preProcess();
-        }
-    }, []);
+    const { attrs, data, slots } = useBlock<AccordionBlockDef>(id);
 
     return (
         <StyledAccordion

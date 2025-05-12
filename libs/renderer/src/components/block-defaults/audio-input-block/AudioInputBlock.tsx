@@ -2,7 +2,7 @@ import { CSSProperties, useState, useRef, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
+import { BlockDef, BlockComponent } from "../../../store";
 
 import { Button, styled } from "@mui/material";
 import MicIcon from "@mui/icons-material/Mic";
@@ -24,16 +24,6 @@ export interface AudioInputBlockDef extends BlockDef<"audio-input"> {
         value: string;
         mode: "transcribe" | "record";
         show: string;
-    };
-    listeners: {
-        preProcess: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
-        onComplete: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
     };
 }
 

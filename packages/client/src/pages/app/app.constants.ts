@@ -1,6 +1,4 @@
-import { Block } from '@semoss/renderer';
-
-export const BASE_PAGE_BLOCKS: Record<string, Block> = {
+export const BASE_PAGE_BLOCKS = {
     'page-1': {
         id: 'page-1',
         widget: 'page',
@@ -16,10 +14,7 @@ export const BASE_PAGE_BLOCKS: Record<string, Block> = {
             route: '',
         },
         listeners: {
-            onPageLoad: {
-                type: 'sync',
-                order: [],
-            },
+            onPageLoad: [],
         },
         slots: {
             content: {

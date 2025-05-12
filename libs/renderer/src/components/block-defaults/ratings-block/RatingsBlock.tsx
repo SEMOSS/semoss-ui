@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { styled } from "@mui/material";
 import Box from "@mui/material/Box";
@@ -7,7 +6,7 @@ import StarIcon from "@mui/icons-material/Star";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 
-import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
+import { BlockDef, BlockComponent } from "../../../store";
 import { useBlock } from "../../../hooks";
 
 const StyledRating = styled(Rating)({
@@ -37,28 +36,12 @@ export interface RatingsBlockDef extends BlockDef<"ratings"> {
         value: number;
         max: number;
     };
-    listeners: {
-        preProcess: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
-        onChange: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
-    };
 }
 
 export const RatingsBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<RatingsBlockDef>(id);
 
     const { size, value, max, type } = data;
-
-    useEffect(() => {
-        if (listeners.preProcess) {
-            listeners.preProcess();
-        }
-    }, []);
 
     // Handle ratings button change
     const handleChange = (newValue: number) => {

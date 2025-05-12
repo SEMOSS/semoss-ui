@@ -35,10 +35,7 @@ export const config: BlockConfig<PageBlockDef> = {
         loading: false,
     },
     listeners: {
-        onPageLoad: {
-            type: "sync",
-            order: [],
-        },
+        onPageLoad: [],
     },
     slots: {
         content: [],
@@ -50,7 +47,7 @@ export const config: BlockConfig<PageBlockDef> = {
             name: "General",
             children: [
                 {
-                    description: "Route",
+                    description: 'Route',
                     render: ({ id }) => (
                         <InputSettings id={id} label="Route" path="route" />
                     ),

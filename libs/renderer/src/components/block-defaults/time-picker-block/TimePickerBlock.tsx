@@ -1,4 +1,4 @@
-import { CSSProperties, useEffect } from "react";
+import { CSSProperties } from "react";
 import { observer } from "mobx-react-lite";
 import { TextField, Typography, styled } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -9,7 +9,7 @@ import { DigitalClock } from "@mui/x-date-pickers/DigitalClock";
 import dayjs from "dayjs";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
+import { BlockDef, BlockComponent } from "../../../store";
 
 const StyledContainer = styled("div")(({ theme }) => ({
     padding: "4px",
@@ -41,14 +41,7 @@ export interface TimePickerBlockDef extends BlockDef<"timepicker"> {
         views: ("hours" | "minutes" | "seconds")[];
     };
     listeners: {
-        preProcess: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
-        onChange: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
+        onChange: true;
     };
 }
 
@@ -56,12 +49,6 @@ export const TimePickerBlock: BlockComponent = observer(({ id }) => {
     try {
         const { attrs, data, setData, listeners } =
             useBlock<TimePickerBlockDef>(id);
-
-        useEffect(() => {
-            if (listeners.preProcess) {
-                listeners.preProcess();
-            }
-        }, []);
 
         // Parse the value string to a dayjs object, default to null if invalid
         const timeValue = data.value ? dayjs(data.value) : null;

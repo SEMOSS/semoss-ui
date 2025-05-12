@@ -30,7 +30,6 @@ import { PERMISSION_DESCRIPTION_MAP } from '@/constants';
 import { useAPI, useDebounceValue, useRootStore, useSettings } from '@/hooks';
 import { MembersAddOverlayUser } from './MembersAddOverlayUser';
 import { SETTINGS_ROLE } from './settings.types';
-import { permissionPriorityMapper } from '@/utility/general';
 
 const StyledModal = styled(Modal.Content)(({ theme }) => ({
     maxWidth: '50rem',
@@ -69,6 +68,19 @@ const validSetting = (value: unknown) => {
     return Setting_Role_Values.includes(value as SETTINGS_ROLE);
 };
 
+// maps for permissions,
+const permissionMapper = {
+    1: 'Author', // BE: 'DISPLAY'
+    OWNER: 'Author', // BE: 'DISPLAY'
+    Author: 'OWNER', // DISPLAY: BE
+    2: 'Editor', // BE: 'DISPLAY'
+    EDIT: 'Editor', // BE: 'DISPLAY'
+    Editor: 'EDIT', // DISPLAY: BE
+    3: 'Read-Only', // BE: 'DISPLAY'
+    READ_ONLY: 'Read-Only', // BE: 'DISPLAY'
+    'Read-Only': 'READ_ONLY', // DISPLAY: BE
+};
+
 const AUTOCOMPLETE_OFFSET = 0;
 const AUTOCOMPLETE_LIMIT = 10;
 
@@ -98,11 +110,6 @@ interface MembersAddOverlayProps {
      *
      */
     setAddModalUser?: React.Dispatch<React.SetStateAction<User>>;
-
-    /**
-     * User permission of the app or engine being edited
-     */
-    userPermission: SETTINGS_ROLE;
 
     /**
      * Called on close
@@ -139,7 +146,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
         type,
         id,
         open = false,
-        userPermission,
         onClose = () => null,
         user,
         setAddModalUser,
@@ -182,12 +188,8 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
     const unitTypes: string[] = ['milliseconds'];
 
     useEffect(() => {
-        setSelectedRole('Read-Only');
         if (user) {
-            setSelectedRole(
-                permissionPriorityMapper(user?.permission)
-                    ?.permission as SETTINGS_ROLE,
-            );
+            setSelectedRole(user?.permission as SETTINGS_ROLE);
             setRestriction(
                 user?.usage_restriction !== undefined
                     ? user?.usage_restriction
@@ -270,7 +272,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 const json = {
                     userid: m.id,
                     permission: validSetting(selectedRole)
-                        ? permissionPriorityMapper(selectedRole)?.permission
+                        ? permissionMapper[selectedRole]
                         : selectedRole,
                 };
 
@@ -382,8 +384,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 requests = selectedMembers.map((m) => {
                     return {
                         userid: m.id,
-                        permission:
-                            permissionPriorityMapper(selectedRole)?.permission,
+                        permission: permissionMapper[selectedRole],
                         email: m.email,
                         name: m.name,
                         type: m.type,
@@ -403,8 +404,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 requests = selectedMembers.map((m) => {
                     return {
                         userid: m.id,
-                        permission:
-                            permissionPriorityMapper(selectedRole)?.permission,
+                        permission: permissionMapper[selectedRole],
                         email: m.email,
                         name: m.name,
                         type: m.type,
@@ -621,7 +621,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 <StyledSelection>
                     <RadioGroup
                         label={''}
-                        value={selectedRole}
+                        defaultValue={permissionMapper[user?.permission]}
                         onChange={(e) => {
                             const val = e.target.value;
                             if (val) {
@@ -672,11 +672,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                         <RadioGroup.Item
                                             value="Author"
                                             label=""
-                                            disabled={
-                                                permissionPriorityMapper(
-                                                    userPermission,
-                                                )?.priority > 1
-                                            }
                                         />
                                     }
                                 />
@@ -692,17 +687,13 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                         >
                                             <Icon
                                                 sx={{
-                                                    width: '24px',
-                                                    height: '24px',
+                                                    width: '20px',
+                                                    height: '20px',
                                                     mt: '6px',
                                                     marginRight: '12px',
                                                     fontSize: '12px',
                                                     fontWeight: 'bold',
                                                     color: 'rgba(0, 0, 0, .5)',
-                                                    maxWidth: '24px',
-                                                    display: 'flex', // Ensure the icon is displayed properly
-                                                    alignItems: 'center', // Center the icon vertically
-                                                    justifyContent: 'center',
                                                 }}
                                             >
                                                 <EditRounded />
@@ -726,11 +717,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                         <RadioGroup.Item
                                             value="Editor"
                                             label=""
-                                            disabled={
-                                                permissionPriorityMapper(
-                                                    userPermission,
-                                                )?.priority > 2
-                                            }
                                         />
                                     }
                                 />
@@ -746,17 +732,13 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                         >
                                             <Icon
                                                 sx={{
-                                                    width: '24px',
-                                                    height: '24px',
-                                                    mt: '0px',
+                                                    width: '20px',
+                                                    height: '20px',
+                                                    mt: '6px',
                                                     marginRight: '12px',
-                                                    fontSize: '24px',
+                                                    fontSize: '12px',
                                                     fontWeight: 'bold',
                                                     color: 'rgba(0, 0, 0, .5)',
-                                                    maxWidth: '24px',
-                                                    display: 'flex', // Ensure the icon is displayed properly
-                                                    alignItems: 'center', // Center the icon vertically
-                                                    justifyContent: 'center',
                                                 }}
                                             >
                                                 <RemoveRedEyeRounded />
@@ -780,11 +762,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                         <RadioGroup.Item
                                             value="Read-Only"
                                             label=""
-                                            disabled={
-                                                permissionPriorityMapper(
-                                                    userPermission,
-                                                )?.priority > 3
-                                            }
                                         />
                                     }
                                 />

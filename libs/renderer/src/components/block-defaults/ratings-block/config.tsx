@@ -17,14 +17,7 @@ export const config: BlockConfig<RatingsBlockDef> = {
         value: 2,
     },
     listeners: {
-        onChange: {
-            type: "sync",
-            order: [],
-        },
-        preProcess: {
-            type: "sync",
-            order: [],
-        },
+        onChange: [],
     },
     slots: {
         content: [],
@@ -71,10 +64,6 @@ export const config: BlockConfig<RatingsBlockDef> = {
                     ),
                 },
             ],
-        },
-        {
-            name: "Pre Process",
-            children: [...buildListener("preProcess")],
         },
         {
             name: "on Change",

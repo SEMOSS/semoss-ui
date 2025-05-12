@@ -1,7 +1,7 @@
 import { useContext, useEffect } from "react";
 import { BlocksContext } from "../contexts";
 
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk";
 
 /**
  * Use a frame's header's in an insight

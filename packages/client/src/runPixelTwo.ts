@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { Env } from '@semoss/sdk/react';
+import { Env } from '@semoss/sdk';
 
 /**
  * Run a pixel string

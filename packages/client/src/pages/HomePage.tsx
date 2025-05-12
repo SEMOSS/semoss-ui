@@ -328,21 +328,16 @@ export const HomePage = observer((): JSX.Element => {
                                 }}
                             />
                         </Stack>
-                        {configStore.isEngineOperationAvailable(
-                            'APP',
-                            'add',
-                        ) && (
-                            <Button
-                                size={'large'}
-                                variant={'contained'}
-                                onClick={() => {
-                                    navigate('/app/new');
-                                }}
-                                aria-label={`Open the App Model`}
-                            >
-                                Create New App
-                            </Button>
-                        )}
+                        <Button
+                            size={'large'}
+                            variant={'contained'}
+                            onClick={() => {
+                                navigate('/app/new');
+                            }}
+                            aria-label={`Open the App Model`}
+                        >
+                            Create New App
+                        </Button>
                     </Stack>
                 </Stack>
             }
@@ -402,22 +397,10 @@ export const HomePage = observer((): JSX.Element => {
                                         key={i}
                                         app={app}
                                         systemApp={false}
-                                        href={
-                                            mode === 'Discoverable'
-                                                ? `#/app/${app.project_id}/detail`
-                                                : `#/app/${app.project_id}`
+                                        href={`#/app/${app.project_id}`}
+                                        onAction={() =>
+                                            navigate(`/app/${app.project_id}`)
                                         }
-                                        onAction={() => {
-                                            if (mode === 'Discoverable') {
-                                                navigate(
-                                                    `/app/${app.project_id}/detail`,
-                                                );
-                                            } else {
-                                                navigate(
-                                                    `/app/${app.project_id}`,
-                                                );
-                                            }
-                                        }}
                                         appType={app.project_type}
                                         isFavorite={isFavorited(app.project_id)}
                                         favorite={() => {
@@ -483,22 +466,12 @@ export const HomePage = observer((): JSX.Element => {
                                             key={i}
                                             app={app}
                                             systemApp={false}
-                                            href={
-                                                mode === 'Discoverable'
-                                                    ? `#/app/${app.project_id}/detail`
-                                                    : `#/app/${app.project_id}`
+                                            href={`#/app/${app.project_id}`}
+                                            onAction={() =>
+                                                navigate(
+                                                    `/app/${app.project_id}`,
+                                                )
                                             }
-                                            onAction={() => {
-                                                if (mode === 'Discoverable') {
-                                                    navigate(
-                                                        `/app/${app.project_id}/detail`,
-                                                    );
-                                                } else {
-                                                    navigate(
-                                                        `/app/${app.project_id}`,
-                                                    );
-                                                }
-                                            }}
                                             appType={app.project_type}
                                             isFavorite={isFavorited(
                                                 app.project_id,

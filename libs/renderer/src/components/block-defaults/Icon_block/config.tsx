@@ -26,7 +26,7 @@ export const config: BlockConfig<IconBlockDef> = {
             height: "200px",
             color: "black",
         },
-        icon: "Icon",
+        icon: "Default",
 
         src: "",
         title: "",

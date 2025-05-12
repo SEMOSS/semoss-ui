@@ -1,7 +1,6 @@
 import { useState, useEffect, ChangeEvent, useMemo, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { computed } from "mobx";
-import { Style } from "@mui/icons-material";
 
 import {
     Button,
@@ -18,6 +17,7 @@ import { getValueByPath } from "../../../../../utility";
 import { useBlockSettings } from "../../../../../hooks";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { EchartVisualizationBlockConfig } from "../../../../block-defaults";
+import { Style } from "@mui/icons-material";
 
 // Axis div styling for switch type fields, to show labels and fields in a row
 const StyledAxisDiv = styled("div")<{

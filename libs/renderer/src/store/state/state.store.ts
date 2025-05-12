@@ -1,11 +1,7 @@
 import { makeAutoObservable, runInAction, toJS } from "mobx";
 
-import { runPixel, download } from "@semoss/sdk/react";
-import { 
-    cancellablePromise, 
-    getValueByPath, 
-    syncronousPromise, 
-} from "../../utility";
+import { runPixel, download } from "@semoss/sdk";
+import { cancellablePromise, getValueByPath, syncronousPromise } from "../../utility";
 
 import {
     ActionMessages,
@@ -364,9 +360,7 @@ export class StateStore {
     }
 
     /**
-     * -------------------------------------
      * Actions
-     * -------------------------------------
      */
     /**
      * Dispatch a message to update the state
@@ -408,9 +402,9 @@ export class StateStore {
 
                 this.deleteBlockData(id, path);
             } else if (ActionMessages.SET_LISTENER === action.message) {
-                const { id, listener, actions, type } = action.payload;
+                const { id, listener, actions } = action.payload;
 
-                this.setListener(id, listener, actions, type);
+                this.setListener(id, listener, actions);
             } else if (ActionMessages.NEW_QUERY === action.message) {
                 const { queryId, config } = action.payload;
 
@@ -432,10 +426,6 @@ export class StateStore {
                     action.payload;
 
                 this.newCell(queryId, cellId, config, previousCellId);
-            } else if (ActionMessages.MOVE_CELL === action.message) {
-                const { queryId, activeCellId, overCellId } = action.payload;
-
-                this.moveCell(queryId, activeCellId, overCellId);
             } else if (ActionMessages.DELETE_CELL === action.message) {
                 const { queryId, cellId } = action.payload;
 
@@ -505,21 +495,30 @@ export class StateStore {
 
     
     /**
-     * TODO: Needs to get folded into code above --> useBlock.tsx
+     * TODO: Accidently commited, work to handly sync and async events. John
+     * Used in useBlock
      * @param action 
      * @returns 
      */
-    dispatchEventAction = async (action: Actions, type: 'sync' | 'async') => {
+    dispatchEventAction = async (action: Actions) => {
         try {
             if (ActionMessages.RUN_QUERY === action.message) {
                 const { queryId } = action.payload;
 
-                const run = () => new Promise(async (resolve) => { 
-                    await this.runQuery(queryId, type)
-                    resolve(this._store.queries[queryId].output)
-                }); 
-                    
-                return await run();
+                // const run = async () => {
+                //     setTimeout(() => {
+                //         debugger
+                //         return queryId
+                //     }, 3000)
+                // }
+
+                // return await run()
+                // debugger
+                // const o = await this.runQuery(queryId);
+                // debugger
+                // Return the promise to resolve to caller
+
+                // return o
             }else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
 
@@ -538,13 +537,7 @@ export class StateStore {
      * TODO: Clean this fn up (split out iterator parsing?)
      * Parse a variables and return the value if it exists (otherwise return the expression)
      */
-    parseVariable = (expression: string, id?: string, _depth: number = 0, _seen: Set<string> = new Set()): unknown => {
-
-        if(_depth > 10) return expression;
-        if(_seen.has(expression)) return expression
-        
-        _seen.add(expression)
-
+    parseVariable = (expression: string, id?: string): unknown => {
         // trim the whitespace
         let cleaned = expression.trim();
 
@@ -559,10 +552,8 @@ export class StateStore {
 
         // Special Parsing for Iterators
         if (cleaned.startsWith("$")) {
-            
             // See if id is a descendant of an iterator block
             const iteratorBlock = this.isDescendantOfIterator(id);
-
 
             if (iteratorBlock) {
                 try {
@@ -582,18 +573,10 @@ export class StateStore {
                         }
                     }
 
-                    let variable;
-
-                    if(expression.includes(".")) {
-                        variable = expression.match(/\$(.*?)\./)[1];
-                    } else {
-                        debugger
-                        variable = expression.match(/^\$(\w+)/)?.[1]
-                    }
-
+                    const variable = expression.match(/\$(.*?)\./)[1];
                     const stripped = iteratorList.slice(2, -2);
 
-                    // TODO: how do we handle nested loops $array.warehouse.warehouseSections --> = []
+                    // TODO: how do we handle nested loops $array.warehouse.warehouseSections
                     // Do we just call this recursively
                     if (variable === stripped) {
                         const path = expression.split(".").splice(1);
@@ -619,55 +602,10 @@ export class StateStore {
 
         // get the keys in the path
         const path = cleaned.split(".");
-        const pointer = path[0];
-
-        // Special syntax to parse by cell order
-        const isNumber = !isNaN(parseFloat(path[1]))
-
-        if (isNumber) {
-            let q;
-
-            // TODO: Problem we want to reference cells by a special syntax
-            // I don't want to change ids to be numbered for cells, 
-            // i think we are good with our id generation
-            if(this._store.variables[pointer]) {
-                const variable = this._store.variables[path[0]];
-                if(variable.type === "query") {
-                    q = this._store.queries[variable.to]
-                }
-            } else if (this._store.queries[pointer]) {
-                q = this._store.queries[pointer]
-            }
-
-            if(q) {
-                try {
-                    const c = q.cellList[parseFloat(path[1]) - 1]
-                    const p = path
-                    p.splice(0,2)
-
-                    if(p.length === 0) {
-                        return c.output
-                    } else {
-                        const key = p[0];
-                        
-                        if (key in c._exposed) {
-                            // get the search path
-                            const s = p.join(".");
-
-                            return getValueByPath(c._exposed, s);
-                        }
-                    }
-                } catch (e) {
-                    return expression
-                }
-
-            }
-        }
 
         if (this._store.variables[path[0]]) {
-            // We should be able to interpret by varaible name as we do below
             const variable = this._store.variables[path[0]];
-            let value = this.getVariable(
+            const value = this.getVariable(
                 variable.to,
                 variable.type,
                 path,
@@ -676,14 +614,10 @@ export class StateStore {
                     ? variable.value
                     : null,
             );
-            
 
-            // TODO: Check this, protects for false values -- (query.isLoading tied to a block.label **bad use-case)
+            // TODO: Check this, protects for false values
+            // (query.isLoading tied to a block.label **bad use-case)
             if (value !== undefined && value !== null) {
-                // RECURSIVE: If value is another {{var}}, resolve again
-                if(typeof value === "string" && value.trim().match(/^{{.*}}$/)) {
-                    return this.parseVariable(value, id, _depth + 1, _seen)
-                }
                 return value;
             }
 
@@ -704,8 +638,6 @@ export class StateStore {
         return expression.replace(/{{(.*?)}}/g, (match) => {
             // try to extract the variable
             const v = this.parseVariable(match);
-
-            debugger
 
             // if it is not a string, convert to a string
             if (typeof v !== "string") {
@@ -1346,12 +1278,8 @@ export class StateStore {
         id: string,
         listener: string,
         actions: ListenerActions[],
-        type: "sync" | "async"
     ): void => {
-        this._store.blocks[id].listeners[listener] = {
-            type: type,
-            order: actions
-        }
+        this._store.blocks[id].listeners[listener] = actions;
     };
 
     /**
@@ -1370,35 +1298,7 @@ export class StateStore {
             this,
         );
 
-        // TODO: Do we want this to be done here
-
-        // Automate variable creation for notebook and new cell
-        this.dispatch({
-            message: ActionMessages.ADD_VARIABLE,
-            payload: {
-                id: queryId,
-                type: "query",
-                to: queryId,
-                isOutput: true
-            }
-        })
-
-        Object.entries(this._store.queries[queryId].cells).forEach((c) => {
-            // Automate variable creation for notebook and new cell
-            const cId = c[0]
-            this.dispatch({
-                message: ActionMessages.ADD_VARIABLE,
-                payload: {
-                    id: `${queryId}--${cId}`,
-                    type: "cell",
-                    to: queryId,
-                    cellId: cId
-                }
-            })
-        })
-
         this._store.executionOrder.push(queryId);
-
 
         return queryId;
     };
@@ -1448,48 +1348,64 @@ export class StateStore {
      * Run a query
      * @param queryId - name of the query that we are running
      */
-    private runQuery = (queryId: string, type?: 'sync' | 'async'): void => {
+    private runQuery = (queryId: string): void => {
         const q = this._store.queries[queryId];
 
         const key = `query--${queryId};`;
 
         // cancel a previous command
         this._utils.queryPromises[key]?.cancel();
-        
-        let p;
-        let sync;
 
-        if(!type || type === 'async') {
-            sync = false
-        } else {
-            sync = true
-        }
-        
-        if (sync) {
-            p = syncronousPromise(async () => {
-                await q._run();
-                return true;
+        // setup the promise
+        const p = cancellablePromise(async () => {
+            // run the query
+            await q._run();
+
+            // turn it off
+            return true;
+        });
+
+        p.promise
+            .then(() => {
+                // noop
             })
-        } else {
-            p = cancellablePromise(async () => {
-                await q._run()
-                return true
-            })
-        }
-        if(sync) {
-            return p.promise
-        } else  {
-            p.promise
-                .then((resp) => {
-                    // noop
-                })
-                .catch((e) => {
-                    console.error("ERROR:", e);
-                });
-        }
+            .catch((e) => {
+                console.error("ERROR:", e);
+            });
 
         // save the promise
         this._utils.queryPromises[key] = p;
+        
+        // TODO: John accidentally pushed, need to fix sync and async events on blocks
+        // Wait till whole query resolves
+        //
+        // let p;
+        // let sync = true;
+        // if (sync) {
+        //     p = syncronousPromise(async () => {
+        //         await q._run();
+        //         return true;
+        //     })
+        // } else {
+        //     p = cancellablePromise(async () => {
+        //         await q._run()
+        //         return true
+        //     })
+        // }
+        // if(sync) {
+        //     return p.promise
+        // } else  {
+        //     p.promise
+        //         .then((resp) => {
+        //             // noop
+        //         })
+        //         .catch((e) => {
+        //             console.error("ERROR:", e);
+        //         });
+        // }
+
+        // save the promise
+        // this._utils.queryPromises[key] = p;
     };
 
     /**
@@ -1511,20 +1427,6 @@ export class StateStore {
         // add the cell
         q._addCell(cellId, config, previousCellId);
     };
-
-    /**
-     * Move a cell
-     * @param queryId - id of the updated query
-     * @param activeCellId - id of the active cell
-     * @param overCellId - id of the cell we are moving over
-     */
-    private moveCell = (queryId: string, activeCellId: string, overCellId: string): void => {
-        // get the query
-        const q = this._store.queries[queryId];
-
-        // move the cell
-        q._moveCell(activeCellId, overCellId);
-    }
 
     /**
      * Delete a cell
