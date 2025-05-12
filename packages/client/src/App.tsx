@@ -8,11 +8,9 @@ import { RootStoreContext } from '@/contexts';
 import { AppWrapper } from './AppWrapper';
 
 // use the environment variable to set the module if in development
-if (process.env.NODE_ENV === 'development') {
-    Env.update({
-        MODULE: process.env.MODULE || '',
-    });
-}
+Env.update({
+    MODULE: process.env.MODULE || '',
+});
 
 const CSRF = {
     isEnabled: false,

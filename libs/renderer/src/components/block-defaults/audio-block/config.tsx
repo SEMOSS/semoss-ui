@@ -34,7 +34,6 @@ export const config: BlockConfig<AudioBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Label",
                     render: ({ id }) => (
@@ -85,6 +84,10 @@ export const config: BlockConfig<AudioBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",
