@@ -18,7 +18,10 @@ export const config: BlockConfig<PDFViewerBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: PDFViewerBlock,
@@ -27,7 +30,6 @@ export const config: BlockConfig<PDFViewerBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Files",
                     render: ({ id }) => (
@@ -35,6 +37,10 @@ export const config: BlockConfig<PDFViewerBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

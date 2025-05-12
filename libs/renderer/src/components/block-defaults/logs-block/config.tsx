@@ -15,7 +15,10 @@ export const config: BlockConfig<LogsBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: LogsBlock,
@@ -24,7 +27,6 @@ export const config: BlockConfig<LogsBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Sheet",
                     render: ({ id }) => (
@@ -36,6 +38,10 @@ export const config: BlockConfig<LogsBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

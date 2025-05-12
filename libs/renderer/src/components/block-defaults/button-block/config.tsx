@@ -33,8 +33,14 @@ export const config: BlockConfig<ButtonBlockDef> = {
         show: "true",
     },
     listeners: {
-        onClick: [],
-        preProcess: [],
+        onClick: {
+            type: "sync",
+            order: [],
+        },
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: ButtonBlock,
@@ -60,15 +66,18 @@ export const config: BlockConfig<ButtonBlockDef> = {
                         />
                     ),
                 },
-                ...buildShowField(),
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
         {
-            name: "on Click",
+            name: "On Click",
             children: [...buildListener("onClick")],
         },
     ],

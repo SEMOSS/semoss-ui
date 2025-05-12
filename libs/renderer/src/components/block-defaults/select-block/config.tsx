@@ -34,8 +34,14 @@ export const config: BlockConfig<SelectBlockDef> = {
         show: true,
     },
     listeners: {
-        onChange: [],
-        preProcess: [],
+        onChange: {
+            type: "sync",
+            order: [],
+        },
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {
         content: [],
@@ -46,7 +52,18 @@ export const config: BlockConfig<SelectBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
+                {
+                    description: "Label",
+                    render: ({ id }) => (
+                        <InputSettings id={id} label="Label" path="label" />
+                    ),
+                },
+                {
+                    description: "Hint",
+                    render: ({ id }) => (
+                        <InputSettings id={id} label="Hint" path="hint" />
+                    ),
+                },
                 {
                     description: "Multi Select",
                     render: ({ id }) => (
@@ -56,12 +73,6 @@ export const config: BlockConfig<SelectBlockDef> = {
                             path="multiple"
                             description="This setting will enable the multi-select feature on the select input"
                         />
-                    ),
-                },
-                {
-                    description: "Value",
-                    render: ({ id }) => (
-                        <SelectInputValueSettings id={id} path="value" />
                     ),
                 },
                 {
@@ -87,15 +98,9 @@ export const config: BlockConfig<SelectBlockDef> = {
                     },
                 },
                 {
-                    description: "Label",
+                    description: "Value",
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Label" path="label" />
-                    ),
-                },
-                {
-                    description: "Hint",
-                    render: ({ id }) => (
-                        <InputSettings id={id} label="Hint" path="hint" />
+                        <SelectInputValueSettings id={id} path="value" />
                     ),
                 },
                 {
@@ -112,11 +117,15 @@ export const config: BlockConfig<SelectBlockDef> = {
             ],
         },
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
         {
-            name: "on Change",
+            name: "On Change",
             children: [...buildListener("onChange")],
         },
     ],

@@ -1,8 +1,8 @@
-import { Button, styled, TextField } from "@semoss/ui";
-import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
+import { observer } from "mobx-react-lite";
 import * as echarts from "echarts";
 import { Label } from "@mui/icons-material";
+import { Button, styled, TextField } from "@semoss/ui";
 
 const StyledDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",

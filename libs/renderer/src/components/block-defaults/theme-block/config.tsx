@@ -26,6 +26,7 @@ import {
 
 import { ThemeBlockDef, ThemeBlock } from "./ThemeBlock";
 import { BLOCK_TYPE_THEME } from "../block-defaults.constants";
+import { buildShowField} from "../block-defaults.shared";
 
 export const DefaultStyles: CSSProperties = {
     display: "flex",

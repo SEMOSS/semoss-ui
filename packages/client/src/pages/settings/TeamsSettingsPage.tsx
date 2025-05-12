@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useReducer, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-
+import { Add, ExpandMore, ArrowForward, ArrowBack } from '@mui/icons-material';
 import {
     Grid,
     Search,
@@ -12,13 +12,14 @@ import {
     Typography,
     Box,
     Button,
+    IconButton,
+    Menu,
+    MenuItemTwo,
 } from '@semoss/ui';
-
 import { useRootStore, useAPI } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 import { TeamTileCard } from '@/components/teams/TeamTileCard';
 import { AddTeamModal } from '@/components/teams/AddTeamModal';
-import { Add } from '@mui/icons-material';
 
 export interface DBMember {
     ID: string;
@@ -47,7 +48,7 @@ export interface Database {
 
 const StyledContainer = styled('div')({
     display: 'flex',
-    width: 'auto',
+    width: '100%',
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: '24px',
@@ -97,6 +98,13 @@ const reducer = (state, action) => {
     return state;
 };
 
+const StyledGrid = styled('div')({
+    display: 'grid',
+    width: '100%',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: '24px',
+});
+
 export const TeamsSettingsPage = observer(() => {
     const { adminMode } = useSettings();
     const { monolithStore } = useRootStore();
@@ -106,6 +114,7 @@ export const TeamsSettingsPage = observer(() => {
     const [filteredTeams, setFilteredTeams] = useState([]);
     const [state, dispatch] = useReducer(reducer, initialState);
     const { teams } = state;
+    const [anchorEl, setAnchorEl] = useState(null);
 
     const [search, setSearch] = useState('');
 
@@ -140,14 +149,48 @@ export const TeamsSettingsPage = observer(() => {
     useDebounce(
         () => {
             setFilteredTeams(
-                teams.filter((d) =>
-                    d.id.toLowerCase().includes(search.toLowerCase()),
-                ),
+                teams
+                    .filter((d) =>
+                        d.id.toLowerCase().includes(search.toLowerCase()),
+                    )
+                    .sort((a, b) => a.id.localeCompare(b.id)),
             );
         },
         [teams, search],
         150,
     );
+
+    const handleMenuClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
+    const handleSort = (order) => {
+        const sorted = [...filteredTeams].sort((a, b) => {
+            if (order === 'asc') {
+                return a.id.localeCompare(b.id);
+            } else {
+                return b.id.localeCompare(a.id);
+            }
+        });
+        setFilteredTeams(sorted);
+        handleMenuClose();
+    };
+
+    const isAsc = () => {
+        const sorted = [...filteredTeams].sort((a, b) => {
+            return a.id.localeCompare(b.id);
+        });
+        return JSON.stringify(filteredTeams) === JSON.stringify(sorted);
+    };
+
+    const isDesc = () => {
+        const sorted = [...filteredTeams].sort((a, b) => {
+            return b.id.localeCompare(a.id);
+        });
+        return JSON.stringify(filteredTeams) === JSON.stringify(sorted);
+    };
 
     return (
         <>
@@ -186,17 +229,58 @@ export const TeamsSettingsPage = observer(() => {
                         </StyledAddButton>
                     </StyledSearchbarDiv>
                 </StyledSearchbarContainer>
-                <Grid container spacing={3}>
+                {/* <Grid container spacing={3}> */}
+                <div
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        width: '100%',
+                    }}
+                >
+                    <IconButton onClick={handleMenuClick}>
+                        <Typography
+                            sx={{ color: '#212121', borderRadius: '0px' }}
+                            variant="body2"
+                        >
+                            Sort By
+                        </Typography>
+                        <ExpandMore />
+                    </IconButton>
+                </div>
+                <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={handleMenuClose}
+                >
+                    <MenuItemTwo
+                        onClick={() => handleSort('asc')}
+                        sx={{
+                            backgroundColor: isAsc() ? '#EBF3F8' : 'inherit',
+                        }}
+                    >
+                        A<ArrowForward fontSize="small" />Z
+                    </MenuItemTwo>
+                    <MenuItemTwo
+                        onClick={() => handleSort('desc')}
+                        sx={{
+                            backgroundColor: isDesc() ? '#EBF3F8' : 'inherit',
+                        }}
+                    >
+                        Z<ArrowBack fontSize="small" />A
+                    </MenuItemTwo>
+                </Menu>
+                {/* <Grid container spacing={3}>  */}
+                <StyledGrid>
                     {filteredTeams.length
                         ? filteredTeams.map((team, i) => {
                               return (
-                                  <Grid
-                                      item
-                                      key={i}
-                                      sm={12}
-                                      md={6}
-                                      lg={4}
-                                      xl={3}
+                                  <div
+                                  //   item
+                                  //   key={i}
+                                  //   sm={12}
+                                  //   md={6}
+                                  //   lg={4}
+                                  //   xl={3}
                                   >
                                       <TeamTileCard
                                           id={team.id}
@@ -204,6 +288,7 @@ export const TeamsSettingsPage = observer(() => {
                                           description={team.description}
                                           dispatch={dispatch}
                                           teams={teams}
+                                          isCustomGroup={team.is_custom_group}
                                           onClick={() => {
                                               navigate(
                                                   `${team.id
@@ -229,11 +314,11 @@ export const TeamsSettingsPage = observer(() => {
                                               //   );
                                           }}
                                       />
-                                  </Grid>
+                                  </div>
                               );
                           })
                         : null}
-                </Grid>
+                </StyledGrid>
 
                 <AddTeamModal
                     open={addModal}

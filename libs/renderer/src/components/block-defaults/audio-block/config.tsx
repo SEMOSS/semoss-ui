@@ -22,7 +22,10 @@ export const config: BlockConfig<AudioBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: AudioBlock,
@@ -31,7 +34,6 @@ export const config: BlockConfig<AudioBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Label",
                     render: ({ id }) => (
@@ -82,6 +84,10 @@ export const config: BlockConfig<AudioBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

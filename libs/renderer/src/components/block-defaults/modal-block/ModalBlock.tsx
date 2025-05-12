@@ -10,7 +10,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 
 import { useBlock, useBlocks } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
 
 export interface ModalBlockDef extends BlockDef<"modal"> {
@@ -29,8 +29,14 @@ export interface ModalBlockDef extends BlockDef<"modal"> {
         footer: true;
     };
     listeners: {
-        preProcess: true;
-        onClose: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+        onClose: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
