@@ -531,6 +531,7 @@ export const EngineCatalogPage = observer(
                                         aria-label={`Navigate to import ${
                                             route ? route.name : 'Engine'
                                         }`}
+                                        data-testid={'engine-catalog-add-btn'}
                                     >
                                         Add {route ? route.name : 'Engine'}
                                     </Button>

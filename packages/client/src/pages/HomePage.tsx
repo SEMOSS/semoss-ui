@@ -339,6 +339,7 @@ export const HomePage = observer((): JSX.Element => {
                                     navigate('/app/new');
                                 }}
                                 aria-label={`Open the App Model`}
+                                data-testid={'home-create-app-btn'}
                             >
                                 Create New App
                             </Button>

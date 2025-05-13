@@ -220,6 +220,7 @@ export const EngineMetadataPage = observer(() => {
                             startIcon={<ArrowCircleDown />}
                             variant="outlined"
                             onClick={() => printMeta()}
+                            data-testid={'engine-metadata-print-btn'}
                         >
                             Print Metadata
                         </Button>
@@ -326,7 +327,12 @@ export const EngineMetadataPage = observer(() => {
                                     return (
                                         <Table.Row key={idx}>
                                             <Table.Cell>
-                                                <IconButton disabled={true}>
+                                                <IconButton
+                                                    disabled={true}
+                                                    data-testid={
+                                                        'engine-metadata-create-btn'
+                                                    }
+                                                >
                                                     <Create />
                                                 </IconButton>
                                             </Table.Cell>
