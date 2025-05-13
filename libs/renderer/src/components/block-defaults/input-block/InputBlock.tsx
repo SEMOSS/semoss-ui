@@ -1,9 +1,9 @@
-import { CSSProperties, useState } from "react";
+import { CSSProperties } from "react";
 import { observer } from "mobx-react-lite";
 import { useBlock } from "../../../hooks";
 import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { TextField, styled } from "@mui/material";
-import { CircularProgress, InputAdornment, Stack } from "@semoss/ui";
+import { CircularProgress, InputAdornment } from "@semoss/ui";
 import { debounced } from "../../../utility";
 
 const StyledTextField = styled(TextField)({
@@ -45,14 +45,12 @@ export interface InputBlockDef extends BlockDef<"input"> {
 
 export const InputBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<InputBlockDef>(id);
-    const [inputId, setInputId] = useState<string>(id);
 
     const debouncedCallback = debounced(() => {
         listeners.onChange();
     }, 200);
 
     return (
-        <Stack id={id} {...attrs}>
              <StyledTextField
                 size="small"
                 id={`textfield-${id}`}
@@ -88,7 +86,7 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
                     setData("value", value);
                     debouncedCallback();
                 }}
-            /> 
-        </Stack>
+                {...attrs}
+            />
     );
 });
