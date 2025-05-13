@@ -21,7 +21,8 @@ const blocks = {
         widget: "input",
         slots: {},
         listeners: {
-            onChange: [],
+            // preProcess: {},
+            // onChange: {},
         },
     },
 
@@ -40,9 +41,7 @@ const blocks = {
         id: "multiLine-input",
         widget: "input",
         slots: {},
-        listeners: {
-            onChange: [],
-        },
+        listeners: {},
     },
 
     "rowValue-input": {
@@ -60,9 +59,7 @@ const blocks = {
         id: "rowValue-input",
         widget: "input",
         slots: {},
-        listeners: {
-            onChange: [],
-        },
+        listeners: {},
     },
 
     "number-input": {
@@ -80,9 +77,7 @@ const blocks = {
         id: "number-input",
         widget: "input",
         slots: {},
-        listeners: {
-            onChange: [],
-        },
+        listeners: {},
     },
     "valueType-input": {
         data: {
@@ -99,9 +94,7 @@ const blocks = {
         id: "valueType-input",
         widget: "input",
         slots: {},
-        listeners: {
-            onChange: [],
-        },
+        listeners: {},
     },
 };
 
