@@ -6,7 +6,7 @@ import { Autocomplete } from "@mui/material";
 import { CellState } from "../../../../store";
 import { TransformationTargetCell, ColumnInfo } from "./transformation.types";
 import { useBlocksPixel } from "../../../../hooks/useBlocksPixel";
-import { runPixel } from "@semoss/sdk";
+
 interface FrameHeaderInfo {
     headers: {
         alias: string;

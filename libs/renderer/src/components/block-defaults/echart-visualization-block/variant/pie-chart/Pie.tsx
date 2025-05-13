@@ -70,7 +70,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
             if (data.option["_state"]["fields"]["Label"].length >0 && data.option["_state"]["fields"]["Value"].length >0){
             //get the options JSON of the selected block
             //let blockJSON = this._store.blocks[id].data.option;
-            const blockJSON = data.option;
+            const blockJSON = data?.option;
             //initialize the selector string
             let selector = "Select(";
 

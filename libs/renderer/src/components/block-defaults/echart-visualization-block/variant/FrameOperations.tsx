@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createElement, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { Search } from "@mui/icons-material";
+import { Sync, Search } from "@mui/icons-material";
 import { computed } from "mobx";
 import { Tooltip, Checkbox } from "@mui/material";
-import { styled, TextField, InputAdornment, IconButton, Stack } from "@semoss/ui";
+import { Autocomplete, Button, Select, styled, TextField, InputAdornment, IconButton, Stack, Accordion, Typography } from "@semoss/ui";
 import {
     useBlockSettings,
     useBlocksPixel,
@@ -18,6 +18,9 @@ import { DataTabStyling } from "./bar-chart/DataTabStyling";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import StringIcon from "../../../../assets/img/StringIcon.svg";
 import NumberIcon from "../../../../assets/img/NumberIcon.svg";
+import { buildListener } from "../../block-defaults.shared";
+import { ListenerSettings } from "../../../block-settings";
+import { ExpandMore } from '@mui/icons-material';
 
 //frame operations component props structure
 export interface FrameOperationsProps {
@@ -69,6 +72,13 @@ const COLOUR_PALATTE_DATA = [
     "#ea7ccc",
 ];
 
+interface AccordionSection {
+    [key :string]: {
+        expanded: boolean;
+        title: string;
+    }
+};
+
 //data tab left section to show the data tab and the drag area for the selected columns
 export const FrameOperations = observer(
     <D extends BlockDef = BlockDef>({ id, updateFrame, path, chart, storedColumns, handleStoreData, selectedItem }) => {
@@ -80,6 +90,13 @@ export const FrameOperations = observer(
         const [addedColumnName, setAddedColumnName] = useState("");
         const [droppedColumns, setDroppedColumns] = useState<Record<string, string[]>>({});
         const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
+        const [accordionSection, setAccordionSection] = useState<AccordionSection[]>([{
+            ["preProcess"]:{
+                expanded: true,
+                title: "PRE PROCESS"
+            }
+        }]);
+        const accordionList = ["preProcess"];
         const [value, setValue] = useState("");
         // get all of the frames
         const getFrames = useBlocksPixel<string[]>("GetFrames();", {
@@ -528,34 +545,44 @@ export const FrameOperations = observer(
 
                 tempValue["_state"] = {};
                 tempValue["_state"]["fields"] = {};
-
+                let tempSeries = tempValue['series'] || [];
                 tempValue["_state"]["fields"] = {
                     ...tempValue["_state"]["fields"],
                     xAxis: firstColumn?.values,
                     yAxis: secondColumn?.values,
                     tooltip: columnsDrop[2]?.values ? columnsDrop[2]?.values : [],
                 };
-
-                for (let i = 0; i < secondColumn?.values.length; i++) {
-                    tempValue["series"][i] = {
-                        ...tempValue["series"][i],
-                        name: secondColumn?.values[i],
-                        type: "line",
-                        data: tempValue["series"][i]?.data ?? [],
-                        lineStyle: {
-                            type: "solid",
-                            width: 1,
-                        },
-                        label: {
-                            show: true,
-                            position: "top",
-                            rotate: 45,
-                            fontSize: 12,
-                            color: "#000000",
-                        },
-                    };  
+                if(secondColumn?.values.length > 1){
+                    let seriesListToAdd = [];
+                    //Adding newly added field to the state
+                    for(let i=0;i<secondColumn.values.length;i++){
+                        seriesListToAdd[i] = {
+                            ...tempSeries[i],
+                            name: secondColumn.values[i],
+                            type: "line",
+                            data: tempSeries[i]?.data ?? [],
+                            lineStyle: {
+                                ...tempSeries[i]?.lineStyle,
+                                type: tempSeries[i]?.lineStyle?.type ?? "solid",
+                                width: tempSeries[i]?.lineStyle?.width ?? 1,
+                            },
+                            label: {
+                                ...tempSeries[i]?.label,
+                                show: tempSeries[i]?.label?.show ?? true,
+                                position: tempSeries[i]?.label?.position ?? "top",
+                                rotate: tempSeries[i]?.label?.rotate ?? 45,
+                                fontSize: tempSeries[i]?.label?.fontSize ?? 12,
+                                color: tempSeries[i]?.label?.color ?? "#000000",
+                            },
+                        };
+                    }
+                    tempSeries = seriesListToAdd;
                 }
-
+                else{
+                    //Removing the field from the state if it is not selected
+                    tempSeries = tempSeries.slice(0,1);
+                }
+                tempValue["series"] = tempSeries;
                 // set the value
                 setValue(JSON.stringify(tempValue));
                 setData("option", tempValue);
@@ -909,6 +936,55 @@ export const FrameOperations = observer(
             setIsAdd(value);
             setAddedColumnName(id);
         }
+        let renderElement = [...buildListener("preProcess")];
+
+        const renderAccordion = (
+            <>
+                {
+                    accordionSection.map((item,index)=>(
+                        <Accordion
+                        expanded={item[accordionList[index]].expanded}
+                        onChange={(e) =>{
+                            let accordionSectionToUp = accordionSection;
+                            let indexToUpdate = accordionSectionToUp.findIndex((accordItem)=>accordItem.hasOwnProperty(accordionList[index]));
+                            accordionSectionToUp[indexToUpdate][accordionList[index]] = {
+                                ...accordionSectionToUp[indexToUpdate][accordionList[index]],
+                                expanded: !accordionSectionToUp[indexToUpdate][accordionList[index]].expanded,
+                            };
+                            setAccordionSection((prevAccordionSection)=>{
+                                return [...accordionSectionToUp];
+                            })
+                        }
+                        }
+                        sx={{
+                            width:'100%',
+                        }}
+                        >
+                            <Accordion.Trigger
+                                expandIcon={<ExpandMore />}
+                            >
+                                <Typography variant="body2">
+                                    {item[accordionList[index]].title}
+                                </Typography>
+                            </Accordion.Trigger>
+
+                            <Accordion.Content>
+                                    <Stack direction="column" spacing={1}>
+                                        {renderElement.map((c, cIdx) => {
+                                            return createElement(c.render, {
+                                                key: cIdx,
+                                                id: id,
+                                            });
+                                        })}
+                                    </Stack>
+                            </Accordion.Content>
+                        </Accordion>
+                    ))
+                }
+                 
+            </>
+        );
+
         const handleChangeVisual = (value: boolean) => {
             const tempValue = JSON.parse(computedValue);
 
@@ -1064,6 +1140,11 @@ export const FrameOperations = observer(
                             </DataTabStyling>
                         </StyledSubSection>
 
+                    </StyledDropDownSection>
+                    <StyledDropDownSection>
+                            {
+                                renderAccordion
+                            }
                     </StyledDropDownSection>
                 </DragDropContext>
             </>

@@ -4,6 +4,7 @@ import {
     buildTypographySection,
     buildTextAlignSection,
     buildShowField,
+    buildListener,
 } from "../block-defaults.shared";
 import { TextBlockDef, TextBlock } from "./TextBlock";
 import { TextFields } from "@mui/icons-material";
@@ -27,7 +28,12 @@ export const config: BlockConfig<TextBlockDef> = {
         isStreaming: false,
         show: "true",
     },
-    listeners: {},
+    listeners: {
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+    },
     slots: {},
     render: TextBlock,
     icon: TextFields,
@@ -35,7 +41,6 @@ export const config: BlockConfig<TextBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Text",
                     render: ({ id }) => (
@@ -54,6 +59,14 @@ export const config: BlockConfig<TextBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
     ],
     styleMenu: [buildTypographySection(), buildTextAlignSection()],

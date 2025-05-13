@@ -389,9 +389,10 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 }
                                 checked={global}
                                 disabled={
-                                    configStore.store.config[
-                                        'adminOnlyProjectSetPublic'
-                                    ] && !configStore.store.user.admin
+                                    !configStore.isEngineOperationAvailable(
+                                        type,
+                                        'public',
+                                    )
                                 }
                                 onChange={() => {
                                     changeGlobal();
@@ -420,7 +421,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                                 ? `Make ${name} non-discoverable`
                                                 : `Make ${name} discoverable`
                                         }
-                                        disabled={global}
+                                        disabled={
+                                            global ||
+                                            !configStore.isEngineOperationAvailable(
+                                                type,
+                                                'discoverable',
+                                            )
+                                        }
                                         checked={discoverable}
                                         onChange={() => {
                                             changeDiscoverable();
@@ -456,7 +463,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                             ? `Make ${name} non-discoverable`
                                             : `Make ${name} discoverable`
                                     }
-                                    disabled={global}
+                                    disabled={
+                                        global ||
+                                        !configStore.isEngineOperationAvailable(
+                                            type,
+                                            'discoverable',
+                                        )
+                                    }
                                     checked={discoverable}
                                     onChange={() => {
                                         changeDiscoverable();
@@ -489,9 +502,10 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 variant="contained"
                                 color="error"
                                 disabled={
-                                    configStore.store.config[
-                                        'adminOnlyProjectDelete'
-                                    ] && !configStore.store.user.admin
+                                    !configStore.isEngineOperationAvailable(
+                                        type,
+                                        'delete',
+                                    )
                                 }
                                 onClick={() => setDeleteModal(true)}
                             >
@@ -583,9 +597,10 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 }
                                 checked={global}
                                 disabled={
-                                    configStore.store.config[
-                                        'adminOnlyProjectSetPublic'
-                                    ] && !configStore.store.user.admin
+                                    !configStore.isEngineOperationAvailable(
+                                        type,
+                                        'public',
+                                    )
                                 }
                                 onChange={() => {
                                     changeGlobal();
@@ -612,7 +627,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 icon={false}
                                 action={
                                     <Switch
-                                        disabled={global}
+                                        disabled={
+                                            global ||
+                                            !configStore.isEngineOperationAvailable(
+                                                type,
+                                                'discoverable',
+                                            )
+                                        }
                                         title={
                                             discoverable
                                                 ? `Make ${name} non-discoverable`
@@ -649,7 +670,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             icon={false}
                             action={
                                 <Switch
-                                    disabled={global}
+                                    disabled={
+                                        global ||
+                                        !configStore.isEngineOperationAvailable(
+                                            type,
+                                            'discoverable',
+                                        )
+                                    }
                                     title={
                                         discoverable
                                             ? `Make ${name} non-discoverable`
@@ -689,6 +716,12 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                     variant="contained"
                                     color="error"
                                     onClick={() => setDeleteModal(true)}
+                                    disabled={
+                                        !configStore.isEngineOperationAvailable(
+                                            type,
+                                            'delete',
+                                        )
+                                    }
                                 >
                                     Delete
                                 </Button>

@@ -1,9 +1,9 @@
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { Link } from "react-router-dom";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
 
 export interface LinkBlockDef extends BlockDef<"link"> {
@@ -14,13 +14,24 @@ export interface LinkBlockDef extends BlockDef<"link"> {
         text: string;
         show: string;
     };
+    listeners: {
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+    };
 }
 
 /*
 TODO: If this is a link to somewhere internally on app switch to a Link (react-router)
 */
 export const LinkBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data } = useBlock<LinkBlockDef>(id);
+    const { attrs, data, listeners } = useBlock<LinkBlockDef>(id);
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
     return (
         <a
             href={data.href}
