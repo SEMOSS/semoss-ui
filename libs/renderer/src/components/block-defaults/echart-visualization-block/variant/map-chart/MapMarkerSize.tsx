@@ -1,7 +1,6 @@
-import { useBlockSettings } from "../../../../../hooks";
-import { Block, BlockDef } from "../../../../../store";
-import { Paths, PathValue } from "../../../../../types";
-import { getValueByPath } from "../../../../../utility";
+import { useEffect, useMemo, useState } from "react";
+import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
 import {
     MenuItem,
     Select,
@@ -10,9 +9,11 @@ import {
     TextField,
     Typography,
 } from "@semoss/ui";
-import { computed } from "mobx";
-import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { useBlockSettings } from "../../../../../hooks";
+import { Block, BlockDef } from "../../../../../store";
+import { Paths, PathValue } from "../../../../../types";
+import { getValueByPath } from "../../../../../utility";
+
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with

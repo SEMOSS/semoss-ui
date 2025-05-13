@@ -6,14 +6,17 @@
         "preinstall": "npx only-allow pnpm",
         "prepare": "husky install",
         "fix": "pnpm run --filter=@semoss/legacy --filter=@semoss/ui --filter=@semoss/client fix",
+        
         "dev": "npx nx run-many -t dev -p @semoss/ui @semoss/sdk @semoss/renderer @semoss/client @semoss/legacy",
         "dev:client": "nx run @semoss/client:dev",
         "dev:legacy": "nx run @semoss/legacy:dev",
         "dev:example": "nx run @semoss/example:dev",
         "dev:ui": "echo \"TODO: start script to run component library, so we don't have to cd to ./libs/ui\"",
+
         "nx:dep-graph": "nx dep-graph",
         "nx:reset": "nx reset",
         "nx:generate-react-lib": "echo \"TODO: create a nx generator for react rollup/webpack library\"",
+
         "build": "npx nx run-many -t build -p @semoss/client @semoss/legacy",
 
         "lint:client": "npx nx lint @semoss/client",
@@ -21,7 +24,7 @@
         "lint:renderer": "npx nx lint @semoss/renderer",
         "lint:all": "echo \"TODO: fix lint script to lint all packages/libs .\"",
 
-        "test": "vitest --watch=false --passWithNoTests --changed",
+        "test": "npx vitest --watch=false --passWithNoTests --changed",
         "test:browser": "vitest --watch --ui --pool=forks"
     },
     "author": "",
@@ -74,11 +77,10 @@
         "webpack-cli": "^5.1.4"
     },
     "dependencies": {
-        "@mui/x-date-pickers": "6.8.0",
         "@storybook/addon-interactions": "8.4.6",
-        "@testing-library/react": "^16.2.0",
-        "canvas": "^3.1.0",
+        "@mui/x-date-pickers": "6.8.0",
         "dayjs": "^1.11.13",
+        "@testing-library/react": "^16.2.0",
         "mermaid": "^10.9.1",
         "react": "18.3.1",
         "react-color": "^2.19.3",

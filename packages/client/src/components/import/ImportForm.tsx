@@ -791,6 +791,9 @@ export const ImportForm = (props) => {
                                                             : val.helperText
                                                     }
                                                     error={invalid}
+                                                    inputProps={{
+                                                        'data-testid': `importForm-textField-${val.fieldName}`,
+                                                    }}
                                                     {...field}
                                                 ></TextField>
                                             );
@@ -815,6 +818,9 @@ export const ImportForm = (props) => {
                                                     onChange={(value) =>
                                                         field.onChange(value)
                                                     }
+                                                    inputProps={{
+                                                        'data-testid': `importForm-textField-${val.fieldName}`,
+                                                    }}
                                                     helperText={val.helperText}
                                                 ></TextField>
                                             );
@@ -841,6 +847,9 @@ export const ImportForm = (props) => {
                                                             value.target.value,
                                                         );
                                                     }}
+                                                    InputProps={{
+                                                        'data-testid': `importForm-selectField-${val.fieldName}`,
+                                                    }}
                                                     helperText={val.helperText}
                                                 >
                                                     {val.options.options.map(
@@ -850,6 +859,9 @@ export const ImportForm = (props) => {
                                                                     key={i}
                                                                     value={
                                                                         opt.value
+                                                                    }
+                                                                    data-testid={
+                                                                        opt.display
                                                                     }
                                                                 >
                                                                     {
@@ -883,6 +895,9 @@ export const ImportForm = (props) => {
                                                         field.onChange(value)
                                                     }
                                                     helperText={val.helperText}
+                                                    inputProps={{
+                                                        'data-testid': `importForm-textField-${val.fieldName}`,
+                                                    }}
                                                 ></TextField>
                                             );
                                         } else if (
@@ -986,6 +1001,9 @@ export const ImportForm = (props) => {
                                                                 helperText={
                                                                     val.helperText
                                                                 }
+                                                                inputProps={{
+                                                                    'data-testid': `importForm-textField-${val.fieldName}`,
+                                                                }}
                                                             ></TextField>
                                                         );
                                                     } else if (
@@ -1023,6 +1041,9 @@ export const ImportForm = (props) => {
                                                                 helperText={
                                                                     val.helperText
                                                                 }
+                                                                inputProps={{
+                                                                    'data-testid': `importForm-textField-${val.fieldName}`,
+                                                                }}
                                                             ></TextField>
                                                         );
                                                     } else if (
@@ -1060,6 +1081,9 @@ export const ImportForm = (props) => {
                                                                 helperText={
                                                                     val.helperText
                                                                 }
+                                                                inputProps={{
+                                                                    'data-testid': `importForm-textField-${val.fieldName}`,
+                                                                }}
                                                             ></TextField>
                                                         );
                                                     } else if (

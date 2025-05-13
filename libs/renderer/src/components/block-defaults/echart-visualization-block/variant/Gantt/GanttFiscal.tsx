@@ -2,11 +2,13 @@ import { useState, useEffect, ChangeEvent, useMemo, useRef } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { Button, Select, styled, Switch, TextField } from "@semoss/ui";
-import { getValueByPath } from "@/utility";
+
+import { getValueByPath } from "../../../../../utility";
 import { PathValue } from "@/types";
 import { useBlock, useBlockSettings } from "../../../../../hooks";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { BlockDef } from "../../../../../store";
+
 //Main container with padding and border
 const StyledMainContainer = styled("div")(() => ({
     padding: "0.75rem",

@@ -13,7 +13,7 @@ import {
     useNotification,
 } from '@semoss/ui';
 
-import { runPixel } from '@/api';
+import { runPixelTwo } from '../../runPixelTwo';
 import { JobBuilder } from './job.types';
 import { getEncodeByJobType } from './job.utils';
 import { JobTypesBuilder } from './JobTypesBuilder';
@@ -241,7 +241,7 @@ export const JobBuilderModal = (props: {
         setIsLoading(true);
         try {
             const encode = getEncodeByJobType(builder);
-            const response = await runPixel(
+            const response = await runPixelTwo(
                 `META|ScheduleJob(jobName=["${builder.name}"],${
                     builder.tags.length
                         ? ` jobTags=${JSON.stringify(builder.tags)},`
@@ -278,7 +278,7 @@ export const JobBuilderModal = (props: {
     const updateJob = async () => {
         setIsLoading(true);
         const encode = getEncodeByJobType(builder);
-        await runPixel(
+        await runPixelTwo(
             `META|EditScheduledJob(jobId="${builder.id}",jobName="${
                 builder.name
             }",${

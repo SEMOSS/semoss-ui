@@ -1,7 +1,8 @@
+import { useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 
 import { styled } from "@semoss/ui";
 
@@ -25,7 +26,10 @@ export interface AudioBlockDef extends BlockDef<"audio-player"> {
         show: string;
     };
     listeners: {
-        onClick: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
@@ -34,7 +38,13 @@ const StyledContainer = styled("div")(({ theme }) => ({
 }));
 
 export const AudioBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data } = useBlock<AudioBlockDef>(id);
+    const { attrs, data, listeners } = useBlock<AudioBlockDef>(id);
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
 
     return (
         <StyledContainer {...attrs}>
