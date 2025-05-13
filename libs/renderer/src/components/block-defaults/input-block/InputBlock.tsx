@@ -1,5 +1,6 @@
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
+
 import { useBlock } from "../../../hooks";
 import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { TextField, styled } from "@mui/material";
@@ -46,47 +47,52 @@ export interface InputBlockDef extends BlockDef<"input"> {
 export const InputBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<InputBlockDef>(id);
 
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
+
     const debouncedCallback = debounced(() => {
         listeners.onChange();
     }, 200);
 
     return (
-             <StyledTextField
-                size="small"
-                id={`textfield-${id}`}
-                value={
-                    data.value !== null && data.value !== undefined
-                        ? data.value
-                        : ""
-                }
-                label={
-                    typeof data.label !== "string"
-                        ? JSON.stringify(data.label)
-                        : data.label
-                }
-                rows={data.rows}
-                multiline={data.rows > 1 && data.type === "text"}
-                required={Boolean(data.required)}
-                disabled={Boolean(data?.disabled || data?.loading)}
-                helperText={data?.hint}
-                style={{
-                    ...data.style,
-                }}
-                InputProps={{
-                    startAdornment: (
-                        <InputAdornment position="end">
-                            {data?.loading ? <StyledLoading size={20} /> : <></>}
-                        </InputAdornment>
-                    ),
-                }}
-                type={data.type}
-                onChange={(e) => {
-                    const value = e.target.value;
-                    // update the value
-                    setData("value", value);
-                    debouncedCallback();
-                }}
-                {...attrs}
-            />
+        <StyledTextField
+            size="small"
+            value={
+                data.value !== null && data.value !== undefined
+                    ? data.value
+                    : ""
+            }
+            label={
+                typeof data.label !== "string"
+                    ? JSON.stringify(data.label)
+                    : data.label
+            }
+            rows={data.rows}
+            multiline={data.rows > 1 && data.type === "text"}
+            required={Boolean(data.required)}
+            disabled={Boolean(data?.disabled || data?.loading)}
+            helperText={data?.hint}
+            style={{
+                ...data.style,
+            }}
+            InputProps={{
+                startAdornment: (
+                    <InputAdornment position="end">
+                        {data?.loading ? <StyledLoading size={20} /> : <></>}
+                    </InputAdornment>
+                ),
+            }}
+            type={data.type}
+            onChange={(e) => {
+                const value = e.target.value;
+                // update the value
+                setData("value", value);
+                debouncedCallback();
+            }}
+            {...attrs}
+        />
     );
 });
