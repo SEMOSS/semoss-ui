@@ -2,7 +2,7 @@ import React, { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
 import { useBlock, useTypeWriter, useBlocks } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { showBlock } from "../../blocks/RendererEngine";
 
 export interface TextBlockDef extends BlockDef<"text"> {
@@ -16,7 +16,10 @@ export interface TextBlockDef extends BlockDef<"text"> {
     };
     slots: never;
     listeners: {
-        preProcess: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
@@ -43,13 +46,21 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
         ? React.createElement(
               data.variant ? data.variant : "p",
               {
-                  style: { ...data.style },
+                  style: {
+                      ...data.style,
+                      marginBlockStart: "0px",
+                      marginBlockEnd: "0px",
+                  },
                   ...attrs,
               },
               displayTxt,
           )
         : React.createElement("p", {
-              style: { ...data.style },
+              style: {
+                  ...data.style,
+                  marginBlockStart: "0px",
+                  marginBlockEnd: "0px",
+              },
               ["data-block"]: id,
           });
 });

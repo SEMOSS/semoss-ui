@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Paper, Table } from "@mui/material";
+import { Table } from "@mui/material";
 import { TableHead } from "@mui/material";
-import { styled, TableContainer } from "@mui/material";
+import { styled } from "@mui/material";
 import { TableRow, TableCell, TableBody } from "@mui/material";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import ReactECharts from "echarts-for-react";
 
-import { useBlock, useBlockSettings, useFrame } from "../../../../../hooks";
+import { useBlockSettings, useFrame } from "../../../../../hooks";
 import { BlockDef } from "../../../../../store";
 import { getValueByPath } from "../../../../../utility";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";

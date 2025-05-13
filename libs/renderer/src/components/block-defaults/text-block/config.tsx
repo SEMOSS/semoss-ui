@@ -29,7 +29,10 @@ export const config: BlockConfig<TextBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: TextBlock,
@@ -38,7 +41,6 @@ export const config: BlockConfig<TextBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Text",
                     render: ({ id }) => (
@@ -57,6 +59,10 @@ export const config: BlockConfig<TextBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

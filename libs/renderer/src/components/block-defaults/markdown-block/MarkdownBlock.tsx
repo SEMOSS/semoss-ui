@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useBlock, useTypeWriter } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 
 export interface MarkdownBlockDef extends BlockDef<"markdown"> {
     widget: "markdown";
@@ -15,7 +15,10 @@ export interface MarkdownBlockDef extends BlockDef<"markdown"> {
     };
     slots: never;
     listeners: {
-        preProcess: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
