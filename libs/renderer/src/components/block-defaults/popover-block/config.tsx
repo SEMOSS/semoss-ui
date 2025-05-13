@@ -18,6 +18,7 @@ import {
     buildBorderSection,
     buildColorSection,
     buildListener,
+    buildShowField,
 } from "../block-defaults.shared";
 
 const TRIGGER_OPTIONS = [
@@ -179,6 +180,10 @@ export const config: BlockConfig<PopoverBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

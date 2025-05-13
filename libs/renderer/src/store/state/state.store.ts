@@ -56,6 +56,9 @@ interface StateStoreInterface {
 
     /** Order of how we consume app as API */
     executionOrder: string[];
+
+    /** Graph to track nodes and edges based on {{}} */
+    dependencyGraph: Record<string, unknown>;
 }
 
 export class StateStoreConfig {
@@ -89,6 +92,7 @@ export class StateStore {
         cellRegistry: {},
         variables: {},
         executionOrder: [],
+        dependencyGraph: {}
     };
 
     /**
@@ -121,6 +125,10 @@ export class StateStore {
 
         // set the initial state after reactive to invoke it
         this.setState(config.state, config.initialParams);
+
+        // console.log(this.toJSON())
+        // const r = this.buildDependencyGraph(this._store, {}, [])
+        // console.log(r);
     }
 
     /**
@@ -432,6 +440,10 @@ export class StateStore {
                     action.payload;
 
                 this.newCell(queryId, cellId, config, previousCellId);
+            } else if (ActionMessages.MOVE_CELL === action.message) {
+                const { queryId, activeCellId, overCellId } = action.payload;
+
+                this.moveCell(queryId, activeCellId, overCellId);
             } else if (ActionMessages.DELETE_CELL === action.message) {
                 const { queryId, cellId } = action.payload;
 
@@ -534,7 +546,13 @@ export class StateStore {
      * TODO: Clean this fn up (split out iterator parsing?)
      * Parse a variables and return the value if it exists (otherwise return the expression)
      */
-    parseVariable = (expression: string, id?: string): unknown => {
+    parseVariable = (expression: string, id?: string, _depth: number = 0, _seen: Set<string> = new Set()): unknown => {
+
+        if(_depth > 10) return expression;
+        if(_seen.has(expression)) return expression
+        
+        _seen.add(expression)
+
         // trim the whitespace
         let cleaned = expression.trim();
 
@@ -549,8 +567,10 @@ export class StateStore {
 
         // Special Parsing for Iterators
         if (cleaned.startsWith("$")) {
+            
             // See if id is a descendant of an iterator block
             const iteratorBlock = this.isDescendantOfIterator(id);
+
 
             if (iteratorBlock) {
                 try {
@@ -570,7 +590,15 @@ export class StateStore {
                         }
                     }
 
-                    const variable = expression.match(/\$(.*?)\./)[1];
+                    let variable;
+
+                    if(expression.includes(".")) {
+                        variable = expression.match(/\$(.*?)\./)[1];
+                    } else {
+                        debugger
+                        variable = expression.match(/^\$(\w+)/)?.[1]
+                    }
+
                     const stripped = iteratorList.slice(2, -2);
 
                     // TODO: how do we handle nested loops $array.warehouse.warehouseSections --> = []
@@ -658,9 +686,12 @@ export class StateStore {
             );
             
 
-            // TODO: Check this, protects for false values
-            // (query.isLoading tied to a block.label **bad use-case)
+            // TODO: Check this, protects for false values -- (query.isLoading tied to a block.label **bad use-case)
             if (value !== undefined && value !== null) {
+                // RECURSIVE: If value is another {{var}}, resolve again
+                if(typeof value === "string" && value.trim().match(/^{{.*}}$/)) {
+                    return this.parseVariable(value, id, _depth + 1, _seen)
+                }
                 return value;
             }
 
@@ -681,6 +712,8 @@ export class StateStore {
         return expression.replace(/{{(.*?)}}/g, (match) => {
             // try to extract the variable
             const v = this.parseVariable(match);
+
+            debugger
 
             // if it is not a string, convert to a string
             if (typeof v !== "string") {
@@ -898,6 +931,16 @@ export class StateStore {
         return false;
     };
 
+    extractDependenciesFromString = (str) => {
+        const regex = /{{\s*([\w_]+)\s*}}/g;
+        let match, deps = [];
+        while ((match = regex.exec(str)) !== null) {
+          deps.push(match[1]);
+        }
+    
+        return deps;
+    }
+
     /**
      * Attach a block to the parent block's slot. At this point, we assume that everything can be attached correctly.
      * @param parent - id of the block that we are attaching to
@@ -1074,6 +1117,39 @@ export class StateStore {
         // store the version or the one we currently are on
         this._store.version = state.version ? state.version : STATE_VERSION;
     };
+
+    private buildDependencyGraph = (json, nodes = {}, edges = []) => {
+        if (typeof json === 'object' && json !== null) {
+            for (const [key, value] of Object.entries(json)) {
+              // If the key is 'id', treat it as a node
+              if (key === 'id' && typeof value === 'string') {
+                if (!nodes[value]) {
+                  nodes[value] = { id: value, data: { label: value }, position: { x: Math.random() * 400, y: Math.random() * 400 } };
+                }
+              }
+              // If value is a string, look for dependencies
+              if (typeof value === 'string') {
+                const deps = this.extractDependenciesFromString(value);
+                if (json.id && deps.length) {
+                  deps.forEach(dep => {
+                    if (!nodes[dep]) {
+                      nodes[dep] = { id: dep, data: { label: dep }, position: { x: Math.random() * 400, y: Math.random() * 400 } };
+                    }
+                    edges.push({ id: `e${json.id}-${dep}`, source: json.id, target: dep });
+                  });
+                }
+              }
+              // Recurse into objects/arrays
+              if (typeof value === 'object') {
+                this.buildDependencyGraph(value, nodes, edges);
+              }
+            }
+        } else if (Array.isArray(json)) {
+          json.forEach(item => this.buildDependencyGraph(item, nodes, edges));
+        }
+
+        return { nodes: Object.values(nodes), edges };
+    }
 
     /**
      * Create a block and add it to the tree
@@ -1486,6 +1562,20 @@ export class StateStore {
         // add the cell
         q._addCell(cellId, config, previousCellId);
     };
+
+    /**
+     * Move a cell
+     * @param queryId - id of the updated query
+     * @param activeCellId - id of the active cell
+     * @param overCellId - id of the cell we are moving over
+     */
+    private moveCell = (queryId: string, activeCellId: string, overCellId: string): void => {
+        // get the query
+        const q = this._store.queries[queryId];
+
+        // move the cell
+        q._moveCell(activeCellId, overCellId);
+    }
 
     /**
      * Delete a cell

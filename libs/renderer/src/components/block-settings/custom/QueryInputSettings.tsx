@@ -684,6 +684,7 @@ export const QueryInputSettings = observer(
                         disableClearable={value === ""}
                         size="small"
                         freeSolo
+                        style={{marginTop: "10px"}}
                         value={value}
                         inputValue={inputValue}
                         onInputChange={handleInputChange}

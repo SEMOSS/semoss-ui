@@ -1,8 +1,7 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, ChangeEvent } from 'react';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 import { Button, Select, styled, Typography, MenuItem, Switch, TextField } from '@semoss/ui';
-import { ChangeEvent } from 'react';
 import { BlockDef } from '../../../../../store';
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 import { useBlockSettings } from '../../../../../hooks';
