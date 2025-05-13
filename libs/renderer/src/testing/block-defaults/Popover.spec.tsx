@@ -7,8 +7,8 @@ import { ContainerBlock } from "../../components/block-defaults/container-block/
 import { PopoverBlock } from "../../components/block-defaults/popover-block/PopoverBlock";
 
 const blocks = {
-    "hello-text": {
-        id: "hello-text",
+    helloText: {
+        id: "helloText",
         widget: "text",
         parent: {
             id: "popover",
@@ -40,8 +40,8 @@ const blocks = {
         widget: "container",
         slots: {
             children: {
-                children: ["popover"],
-                name: "children",
+                children: [],
+                name: "",
             },
         },
         listeners: {
@@ -49,14 +49,17 @@ const blocks = {
         },
     },
     popover: {
+        parent: {
+            id: "target-container",
+            slot: "children",
+        },
         data: {
             style: {},
             open: false,
-            // makes popover visible for editing
             designMode: true,
             openTrigger: "click",
             contentBgColor: "",
-            targetId: null,
+            targetId: "target-container",
         },
         id: "popover",
         widget: "popover",
@@ -71,44 +74,29 @@ const blocks = {
         },
     },
     styledPopover: {
+        parent: {
+            id: "target-container",
+            slot: "children",
+        },
         data: {
             style: {
                 height: "100px",
                 width: "200px",
+                backgroundColor: "#6c4747",
+                border: "1px solid #000000",
             },
             open: false,
             designMode: true,
             openTrigger: "click",
             contentBgColor: "",
-            targetId: "container",
+            targetId: "target-container",
         },
         id: "styledPopover",
         widget: "popover",
         slots: {
             content: {
                 name: "content",
-                children: ["hello-text"],
-            },
-        },
-        listeners: {
-            onChange: [],
-        },
-    },
-    notVisiblePopover: {
-        data: {
-            style: {},
-            open: false,
-            designMode: false,
-            openTrigger: "click",
-            contentBgColor: "",
-            targetId: "container",
-        },
-        id: "notVisiblePopover",
-        widget: "popover",
-        slots: {
-            content: {
-                name: "content",
-                children: [],
+                children: ["helloText"],
             },
         },
         listeners: {
@@ -118,14 +106,38 @@ const blocks = {
 };
 
 describe("Popover Block", () => {
-    beforeAll(() => {
+    beforeEach(() => {
         const { container } = render(<ContainerBlock id="target-container" />, {
             blocks: {
                 "target-container": {
-                    ...blocks["target-container"],
+                    data: {
+                        style: {
+                            display: "flex",
+                            flexDirection: "column",
+                            padding: "4px",
+                            gap: "8px",
+                            flexWrap: "wrap",
+                        },
+                    },
+                    id: "target-container",
+                    widget: "container",
+                    slots: {
+                        children: {
+                            children: ["popover", "styledPopover"],
+                            name: "children",
+                        },
+                    },
+                    listeners: {
+                        onChange: [],
+                    },
                 },
             },
         });
+
+        //parent container
+        const target = container.querySelector(
+            "[data-block='target-container']",
+        );
     });
 
     it("renders correctly", async () => {
@@ -133,63 +145,45 @@ describe("Popover Block", () => {
             blocks: {
                 popover: {
                     ...blocks["popover"],
-                    parent: {
-                        id: "target-container",
-                        slot: "children",
-                    },
                 },
             },
         });
 
-        const target = container.querySelector("[data-block=target-container");
+        //parent container
+        const target = container.querySelector(
+            "[data-block='target-container']",
+        );
 
-        console.log(target);
-
+        // click to trigger popover
         fireEvent.click(target);
 
-        screen.debug();
-
         const element = container.querySelector("[data-block='popover']");
-
-        console.log(container.innerHTML);
 
         expect(element).toBeInTheDocument();
         expect(screen.getByText("Add Content")).toBeInTheDocument();
     });
 
-    // it("renders popover with correct dimension, color, and content", async () => {
-    //     const { container } = render(<PopoverBlock id="styledPopover" />, {
-    //         blocks: blocks,
-    //     });
+    it("renders popover with correct styles and content", async () => {
+        const { container } = render(<PopoverBlock id="styledPopover" />, {
+            blocks: {
+                styledPopover: {
+                    ...blocks["styledPopover"],
+                },
+                helloText: {
+                    ...blocks["helloText"],
+                },
+            },
+        });
 
-    //     // add color
-    //     const element = container.querySelector("popover");
-    //     expect(element).toBeInTheDocument();
-    //     expect(element).toHaveStyle({ width: "200px", height: "100px" });
-    //     expect(screen.getByText("Hello world")).toBeInTheDocument();
-    // });
+        fireEvent.click(target);
 
-    // it("does not render in ui when designermode = false", async () => {
-    //     const { container } = render(<PopoverBlock id="notVisiblePopover" />, {
-    //         blocks: blocks,
-    //     });
+        const element = container.querySelector("[data-block='styledPopover']");
 
-    //     const element = container.querySelector("popover");
-    //     expect(element).not.toBeVisible();
-    // });
+        expect(element).toHaveStyle({ width: "200px", height: "100px" });
 
-    // it("renders on onClick", async () => {
-    //     const { container } = render(<PopoverBlock id="popover" />, {
-    //         blocks: blocks,
-    //     });
+        expect(element).toHaveStyle("backgroundColor: rgb(108, 71, 71)");
+        expect(element).toHaveStyle("border: 1px solid #000000");
 
-    //     const element = container.querySelector("popover");
-    //     const target = container.querySelector("parent-container");
-
-    //     expect(element).not.toBeVisible();
-
-    //     fireEvent.click(target);
-
-    //     expect(element).toBeVisible();
-    // });
+        expect(screen.getByText("Hello world")).toBeInTheDocument();
+    });
 });
