@@ -69,10 +69,6 @@ const SelectStackComponent = (args) => {
     return (
         <Stack spacing={2}>
             <div style={{}}>
-                {/* <div style={{ width: "70%" }}>Hey</div> */}
-                {/* <Typography variant={"body2"}>
-                    { args.label ?? "Label"}
-                </Typography> */}
                 <SelectStack
                     {...args}
                     sx={{ width: "100%" }}
