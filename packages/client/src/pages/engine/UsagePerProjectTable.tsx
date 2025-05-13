@@ -24,9 +24,18 @@ const StyledFilter = styled('div')({
 });
 
 const MAPPINGS = {
-    TOTAL_NUMBER_OF_REQUEST: 'Requests',
-    TOTAL_NUMBER_OF_TOKENS: 'Tokens',
+    PROJECT_NAME: 'Project Name',
+    PROJECT_ID: 'App Id',
+    'Total Requests': 'Requests',
+    'Total Tokens': 'Tokens',
 };
+
+const HEADER_ORDER = [
+    'PROJECT_NAME',
+    'PROJECT_ID',
+    'Total Requests',
+    'Total Tokens',
+];
 
 export const UsagePerProjectTable = () => {
     const [search, setSearch] = useState<string>('');
@@ -35,6 +44,8 @@ export const UsagePerProjectTable = () => {
     const [rowsPerPage, setRowsPerPage] = useState<number>(5);
     const [isSearch, setIsSearch] = useState<boolean>(false);
     const [isFilter, setIsFilter] = useState<boolean>(false);
+    const [sortColumn, setSortColumn] = useState<string | null>(null);
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
     useEffect(() => {
         UsagePerProjectSearchRef.current?.focus();
@@ -53,14 +64,28 @@ export const UsagePerProjectTable = () => {
             ? usagePerProject.data
             : [];
 
-    const headers = outputData.length > 0 ? Object.keys(outputData[0]) : [];
+    const headers = HEADER_ORDER.filter(
+        (header) => outputData.length > 0 && header in outputData[1],
+    );
     const rows = outputData.length > 0 ? outputData : [];
 
-    const filteredRows = rows.filter((row) =>
-        Object.values(row).some((value) =>
-            value?.toString().toLowerCase().includes(search.toLowerCase()),
-        ),
-    );
+    const filteredRows = rows
+        .filter((row) =>
+            Object.values(row).some((value) =>
+                value?.toString().toLowerCase().includes(search.toLowerCase()),
+            ),
+        )
+        .sort((a, b) =>
+            sortColumn
+                ? sortOrder === 'asc'
+                    ? a[sortColumn]
+                          ?.toString()
+                          .localeCompare(b[sortColumn]?.toString())
+                    : b[sortColumn]
+                          ?.toString()
+                          .localeCompare(a[sortColumn]?.toString())
+                : 0,
+        );
 
     const paginatedRows = filteredRows.slice(
         page * rowsPerPage,
@@ -81,6 +106,7 @@ export const UsagePerProjectTable = () => {
                     <StyledFilter>
                         {isSearch ? (
                             <Search
+                                autoFocus={true}
                                 inputRef={UsagePerProjectSearchRef}
                                 placeholder="Search"
                                 size="small"
@@ -97,22 +123,15 @@ export const UsagePerProjectTable = () => {
                         )}
                     </StyledFilter>
                     <StyledFilter>
-                        {isFilter ? (
-                            <Search
-                                inputRef={UsagePerProjectSearchRef}
-                                placeholder="Search"
-                                size="small"
-                                value={search}
-                                onChange={(e) => {
-                                    setSearch(e.target.value);
-                                    setPage(0);
-                                }}
-                            />
-                        ) : (
-                            <IconButton onClick={() => setIsFilter(!isFilter)}>
-                                <FilterAltSharp />
-                            </IconButton>
-                        )}
+                        <IconButton
+                            onClick={() => {
+                                setIsFilter(!isFilter);
+                                setSortColumn(isFilter ? null : 'PROJECT_NAME');
+                                setSortOrder(isFilter ? 'asc' : 'asc');
+                            }}
+                        >
+                            <FilterAltSharp />
+                        </IconButton>
                     </StyledFilter>
                 </StyledSearchFilter>
             </Grid>
