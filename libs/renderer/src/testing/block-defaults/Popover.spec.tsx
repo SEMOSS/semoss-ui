@@ -106,6 +106,7 @@ const blocks = {
 };
 
 describe("Popover Block", () => {
+    let target;
     beforeEach(() => {
         const { container } = render(<ContainerBlock id="target-container" />, {
             blocks: {
@@ -135,9 +136,7 @@ describe("Popover Block", () => {
         });
 
         //parent container
-        const target = container.querySelector(
-            "[data-block='target-container']",
-        );
+        target = container.querySelector("[data-block='target-container']");
     });
 
     it("renders correctly", async () => {
@@ -148,11 +147,6 @@ describe("Popover Block", () => {
                 },
             },
         });
-
-        //parent container
-        const target = container.querySelector(
-            "[data-block='target-container']",
-        );
 
         // click to trigger popover
         fireEvent.click(target);
