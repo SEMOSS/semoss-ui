@@ -40,8 +40,11 @@ const StyledDiv = styled('div')({
 const MAPPINGS = {
     USER_NAME: 'User',
     USER_ID: 'UserId',
-    TOTAL_NUMBER_OF_TOKENS: 'Tokens',
+    'Total Tokens': 'Tokens',
+    'Total Messages': 'Messages',
 };
+
+const HEADER_ORDER = ['USER_NAME', 'USER_ID', 'Total Messages', 'Total Tokens'];
 
 export const UsagePerUserTable = () => {
     const [search, setSearch] = useState<string>('');
@@ -50,6 +53,8 @@ export const UsagePerUserTable = () => {
     const [rowsPerPage, setRowsPerPage] = useState<number>(5);
     const [isSearch, setIsSearch] = useState<boolean>(false);
     const [isFilter, setIsFilter] = useState<boolean>(false);
+    const [sortColumn, setSortColumn] = useState<string | null>(null);
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
     useEffect(() => {
         searchRef.current?.focus();
@@ -68,7 +73,9 @@ export const UsagePerUserTable = () => {
             ? usagePerUsers.data
             : [];
 
-    const headers = outputData.length > 0 ? Object.keys(outputData[0]) : [];
+    const headers = HEADER_ORDER.filter(
+        (header) => outputData.length > 0 && header in outputData[0],
+    );
     const rows = outputData.length > 0 ? outputData : [];
 
     const getAvatarsForRow = (userName: string) => {
@@ -80,11 +87,23 @@ export const UsagePerUserTable = () => {
             ));
     };
 
-    const filteredRows = rows.filter((row) =>
-        Object.values(row).some((value) =>
-            value?.toString().toLowerCase().includes(search.toLowerCase()),
-        ),
-    );
+    const filteredRows = rows
+        .filter((row) =>
+            Object.values(row).some((value) =>
+                value?.toString().toLowerCase().includes(search.toLowerCase()),
+            ),
+        )
+        .sort((a, b) =>
+            sortColumn
+                ? sortOrder === 'asc'
+                    ? a[sortColumn]
+                          ?.toString()
+                          .localeCompare(b[sortColumn]?.toString())
+                    : b[sortColumn]
+                          ?.toString()
+                          .localeCompare(a[sortColumn]?.toString())
+                : 0,
+        );
     const paginatedRows = filteredRows.slice(
         page * rowsPerPage,
         page * rowsPerPage + rowsPerPage,
@@ -104,6 +123,7 @@ export const UsagePerUserTable = () => {
                     <StyledFilter>
                         {isSearch ? (
                             <Search
+                                autoFocus={true}
                                 inputRef={searchRef}
                                 placeholder="Search"
                                 size="small"
@@ -120,22 +140,15 @@ export const UsagePerUserTable = () => {
                         )}
                     </StyledFilter>
                     <StyledFilter>
-                        {isFilter ? (
-                            <Search
-                                inputRef={searchRef}
-                                placeholder="Search"
-                                size="small"
-                                value={search}
-                                onChange={(e) => {
-                                    setSearch(e.target.value);
-                                    setPage(0);
-                                }}
-                            />
-                        ) : (
-                            <IconButton onClick={() => setIsFilter(!isFilter)}>
-                                <FilterAltSharp />
-                            </IconButton>
-                        )}
+                        <IconButton
+                            onClick={() => {
+                                setIsFilter(!isFilter);
+                                setSortColumn(isFilter ? null : 'USER_NAME');
+                                setSortOrder(isFilter ? 'asc' : 'asc');
+                            }}
+                        >
+                            <FilterAltSharp />
+                        </IconButton>
                     </StyledFilter>
                 </StyledSearchFilter>
             </Grid>
