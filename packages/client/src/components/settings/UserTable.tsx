@@ -390,8 +390,8 @@ export const UserTable = (props: UserTableProps) => {
         }
     };
     /**
-         * Handle user popover close
-         */
+     * Handle user popover close
+     */
     const handlePopoverClose = () => {
         setAnchorEl(null);
     };
@@ -514,9 +514,9 @@ export const UserTable = (props: UserTableProps) => {
                                                 <Checkbox
                                                     checked={
                                                         selectedMembers.length ===
-                                                        renderedMembers.length &&
+                                                            renderedMembers.length &&
                                                         renderedMembers.length >
-                                                        0
+                                                            0
                                                     }
                                                     onChange={() => {
                                                         if (
@@ -616,16 +616,22 @@ export const UserTable = (props: UserTableProps) => {
                                                         <Table.Cell>
                                                             <StyledCenteredBox>
                                                                 <StyledNameStack
-                                                                    direction='row'
-                                                                    onMouseEnter={(event) => {
-                                                                        setAnchorEl(event.currentTarget);
-                                                                        setHoveredUser(user);
+                                                                    direction="row"
+                                                                    onMouseEnter={(
+                                                                        event,
+                                                                    ) => {
+                                                                        setAnchorEl(
+                                                                            event.currentTarget,
+                                                                        );
+                                                                        setHoveredUser(
+                                                                            user,
+                                                                        );
                                                                     }}
                                                                     onMouseLeave={() =>
                                                                         handlePopoverClose
                                                                     }
-                                                                    aria-owns='mouse-over-popover'
-                                                                    aria-haspopup='true'
+                                                                    aria-owns="mouse-over-popover"
+                                                                    aria-haspopup="true"
                                                                 >
                                                                     <AvatarWrapper>
                                                                         <Avatar>
@@ -781,14 +787,14 @@ export const UserTable = (props: UserTableProps) => {
                                         hoveredUser={
                                             hoveredUser
                                                 ? {
-                                                    id: hoveredUser.id,
-                                                    name:
-                                                        hoveredUser.name ||
-                                                        'Unknown',
-                                                    email:
-                                                        hoveredUser.email ||
-                                                        '',
-                                                }
+                                                      id: hoveredUser.id,
+                                                      name:
+                                                          hoveredUser.name ||
+                                                          'Unknown',
+                                                      email:
+                                                          hoveredUser.email ||
+                                                          '',
+                                                  }
                                                 : null
                                         }
                                         isPopoverOpen={isPopoverOpen}

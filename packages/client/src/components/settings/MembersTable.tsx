@@ -264,10 +264,10 @@ export const MembersTable = (props: MembersTableProps) => {
     // get the api
     const getMembersApi: Parameters<typeof useAPI>[0] =
         type === 'DATABASE' ||
-            type === 'STORAGE' ||
-            type === 'MODEL' ||
-            type === 'VECTOR' ||
-            type === 'FUNCTION'
+        type === 'STORAGE' ||
+        type === 'MODEL' ||
+        type === 'VECTOR' ||
+        type === 'FUNCTION'
             ? [
                   'getEngineUsers',
                   adminMode,
@@ -710,9 +710,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                     }
                                                     checked={
                                                         selectedMembers.length ===
-                                                        renderedMembers.length &&
+                                                            renderedMembers.length &&
                                                         renderedMembers.length >
-                                                        0
+                                                            0
                                                     }
                                                     onChange={() => {
                                                         if (
@@ -842,16 +842,22 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         <Table.Cell>
                                                             <StyledCenteredBox>
                                                                 <StyledNameStack
-                                                                    direction='row'
-                                                                    onMouseEnter={(event) => {
-                                                                        setAnchorEl(event.currentTarget);
-                                                                        setHoveredUser(user);
+                                                                    direction="row"
+                                                                    onMouseEnter={(
+                                                                        event,
+                                                                    ) => {
+                                                                        setAnchorEl(
+                                                                            event.currentTarget,
+                                                                        );
+                                                                        setHoveredUser(
+                                                                            user,
+                                                                        );
                                                                     }}
                                                                     onMouseLeave={() =>
                                                                         handlePopoverClose
                                                                     }
-                                                                    aria-owns='mouse-over-popover'
-                                                                    aria-haspopup='true'
+                                                                    aria-owns="mouse-over-popover"
+                                                                    aria-haspopup="true"
                                                                 >
                                                                     <AvatarWrapper>
                                                                         <Avatar>
@@ -947,13 +953,13 @@ export const MembersTable = (props: MembersTableProps) => {
                                                             <>
                                                                 <Table.Cell>
                                                                     {user.usage_restriction !==
-                                                                        undefined
+                                                                    undefined
                                                                         ? formatValue(
-                                                                            user.usage_restriction,
-                                                                        )
+                                                                              user.usage_restriction,
+                                                                          )
                                                                         : formatValue(
-                                                                            'null',
-                                                                        )}
+                                                                              'null',
+                                                                          )}
                                                                 </Table.Cell>
                                                                 <Table.Cell>
                                                                     {user?.usage_restriction ===
@@ -1049,10 +1055,14 @@ export const MembersTable = (props: MembersTableProps) => {
                                         hoveredUser={
                                             hoveredUser
                                                 ? {
-                                                    id: hoveredUser.id,
-                                                    name: hoveredUser.name || 'Unknown',
-                                                    email: hoveredUser.email || '',
-                                                }
+                                                      id: hoveredUser.id,
+                                                      name:
+                                                          hoveredUser.name ||
+                                                          'Unknown',
+                                                      email:
+                                                          hoveredUser.email ||
+                                                          '',
+                                                  }
                                                 : null
                                         }
                                         isPopoverOpen={Boolean(anchorEl)}
