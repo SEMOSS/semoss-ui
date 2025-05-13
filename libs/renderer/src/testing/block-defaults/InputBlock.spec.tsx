@@ -190,7 +190,7 @@ describe("input block", () => {
         expect(element).toHaveAttribute("type", "number");
         expect(element).toHaveAttribute("value", "Example");
 
-        // ui should not display value if type is mismatched
+        // should not display value if type is mismatched
         expect(input).toHaveValue(null);
     });
 });
