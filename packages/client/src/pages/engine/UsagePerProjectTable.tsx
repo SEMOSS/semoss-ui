@@ -65,7 +65,7 @@ export const UsagePerProjectTable = () => {
             : [];
 
     const headers = HEADER_ORDER.filter(
-        (header) => outputData.length > 0 && header in outputData[1],
+        (header) => outputData.length > 0 && header in outputData[0],
     );
     const rows = outputData.length > 0 ? outputData : [];
 
