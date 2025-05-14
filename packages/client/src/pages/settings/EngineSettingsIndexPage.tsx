@@ -27,6 +27,7 @@ import { ALL_TYPES } from '@/types';
 import { useRootStore, usePixel, useAPI, useSettings } from '@/hooks';
 import { EngineLandscapeCard, EngineTileCard } from '@/components/engine';
 import { removeUnderscores } from '@/utility';
+import SkeletonCard from './SkeletonCard';
 
 export interface DBMember {
     ID: string;
@@ -76,6 +77,11 @@ const StyledSort = styled(Select)({
     width: '20%',
 });
 
+const StyledSkeletonContainer = styled('div')({
+    width: '100%',
+    height: '100%',
+});
+
 const initialState = {
     favoritedDbs: [],
     databases: [],
@@ -119,6 +125,7 @@ export const EngineSettingsIndexPage = (
     const [sortOrder, setSortOrder] = useState('ASC');
     const [canCollect, setCanCollect] = useState(true);
     const [offset, setOffset] = useState(0);
+    const [loadingMore, setLoadingMore] = useState(false);
 
     //** amount of items to be loaded */
     const limit = 15;
@@ -218,7 +225,7 @@ export const EngineSettingsIndexPage = (
             field: 'databases',
             value: mutateListWithVotes,
         });
-
+        setLoadingMore(true);
         searchbarRef.current?.focus();
     }, [getEngines.status, getEngines.data]);
 
@@ -365,14 +372,13 @@ export const EngineSettingsIndexPage = (
             }
 
             scrollTimeout = setTimeout(() => {
-                if (!canCollectRef.current) {
-                    return;
-                }
-
-                setOffset(offsetRef.current + limit);
-            }, 500);
+                if (!canCollectRef.current) return;
+                setLoadingMore(false);
+                setTimeout(() => {
+                    setOffset(offsetRef.current + limit);
+                }, 3000);
+            }, 200);
         }
-
         previousScroll = currentScroll;
     };
 
@@ -396,7 +402,7 @@ export const EngineSettingsIndexPage = (
                     zIndex: 1501,
                 }}
             >
-                <Stack
+                {/* <Stack
                     direction={'column'}
                     alignItems={'center'}
                     justifyContent={'center'}
@@ -405,7 +411,7 @@ export const EngineSettingsIndexPage = (
                     <CircularProgress />
                     <Typography variant="body2">Loading</Typography>
                     <Typography variant="caption">Databases</Typography>
-                </Stack>
+                </Stack> */}
             </Backdrop>
             <StyledContainer>
                 <StyledSearchbarContainer>
@@ -576,6 +582,14 @@ export const EngineSettingsIndexPage = (
                               );
                           })
                         : null}
+                    {loadingMore &&
+                        Array.from({ length: 4 }).map((_, index) => (
+                            <Grid item key={index} sm={12} md={6} lg={4} xl={3}>
+                                <StyledSkeletonContainer>
+                                    <SkeletonCard />
+                                </StyledSkeletonContainer>
+                            </Grid>
+                        ))}
                 </Grid>
             </StyledContainer>
         </>
