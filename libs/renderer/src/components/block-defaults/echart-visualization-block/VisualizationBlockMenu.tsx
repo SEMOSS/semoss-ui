@@ -1,14 +1,24 @@
-import { useState , useEffect} from "react";
+import { useState, useEffect } from "react";
 
 import { Stack, styled, ToggleTabsGroup } from "@semoss/ui";
-import { useBlock, useBlockSettings } from "../../../hooks";
-import { EchartVisualizationBlockDef } from "./VisualizationBlock";
+
 import { BlockComponent } from "../../../store";
+import { useBlock, useBlockSettings } from "../../../hooks";
+import { FrameOperations } from "./variant/FrameOperations";
+import { EchartVisualizationBlockDef } from "./VisualizationBlock";
+import { GanttFrameSection } from "./variant/Gantt/GanttFrameSection";
 import { AIGenerationSettings, JsonSettings } from "../../block-settings";
 import { UpgradedVisualizationTool } from "./variant/bar-chart/UpgradedVisualizationTool";
-import { FrameOperations } from "./variant/FrameOperations";
-import { Bar, Pie, ScatterPlot, StackChart, Line, WorldMap, Gantt , Dendrogram} from "./variant/Constant";
-import { GanttFrameSection } from "./variant/Gantt/GanttFrameSection";
+import {
+    Bar,
+    Pie,
+    ScatterPlot,
+    StackChart,
+    Line,
+    WorldMap,
+    Gantt,
+    Dendrogram,
+} from "./variant/Constant";
 
 const StyledContainer = styled("div")(() => ({
     height: "100%",
@@ -58,7 +68,6 @@ const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
             justifyContent: "space-around",
         },
     },
-
 }));
 const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
     height: "38px",
@@ -75,15 +84,16 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
 }));
 
 export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
-    const { data, setData } =
-        useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
     const [selectedTab, setSelectedTab] = useState("Tools");
     const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
     const [forceRender, setForceRender] = useState(false);
-    function updateFrame() { }
+    function updateFrame() {}
 
     function handleStoreData(storeData: any[]) {
-        const hasValues = storeData.some(item => item?.values && item?.values.length > 0);
+        const hasValues = storeData.some(
+            (item) => item?.values && item?.values.length > 0,
+        );
         if (hasValues) {
             setSelectedColumn(storeData);
         }
@@ -92,11 +102,11 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
         if (item.title && item.option) {
             data.variation = item.title;
             data.option = item.option;
-            setForceRender(prev => !prev); // Force re-render to update the chart with the new data
+            setForceRender((prev) => !prev); // Force re-render to update the chart with the new data
         }
     };
     useEffect(() => {
-        setSelectedColumn([]); 
+        setSelectedColumn([]);
     }, [data.variation]);
     return (
         <StyledStack>
