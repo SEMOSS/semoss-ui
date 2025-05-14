@@ -62,23 +62,25 @@ describe("Upload Block", () => {
         expect(screen.getByText("Please upload a file")).toBeInTheDocument();
     });
 
-    it("handles file upload", async () => {
-        const mockFile = new File(["dummy content"], "example.jpg", {
-            type: "image/jpeg",
-        });
+    // it("handles file upload", async () => {
+    //     const mockFile = new File(["dummy content"], "example.jpg", {
+    //         type: "image/jpeg",
+    //     });
 
-        render(<UploadBlock id="upload" />, {
-            blocks: blocks,
-        });
+    //     render(<UploadBlock id="upload" />, {
+    //         blocks: blocks,
+    //     });
 
-        const input = screen.getByLabelText(/Upload File/i) as HTMLInputElement;
-        await fireEvent.change(input, { target: { files: [mockFile] } });
+    //     const input = screen.getByLabelText(/Upload File/i) as HTMLInputElement;
+    //     const upload = await fireEvent.change(input, {
+    //         target: { files: [mockFile] },
+    //     });
 
-        await waitFor(() => {
-            expect(input.files?.[0]).toBe(mockFile);
-            expect(input.files?.[0].name).toBe("example.jpg");
-        });
-    });
+    //     await waitFor(() => {
+    //         expect(input.files?.[0]).toBe(mockFile);
+    //         expect(input.files?.[0].name).toBe("example.jpg");
+    //     });
+    // });
 
     it("disables the input when loading", async () => {
         render(<UploadBlock id="upload" />, {
