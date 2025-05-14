@@ -35,6 +35,7 @@ export const getSelector = (data) => {
     };
     const selectors = getSelectors();
     let selector = "";
+
     if (data.option.hasOwnProperty("_state")) {
         if (data.option["_state"].hasOwnProperty("fields")) {
             if (label && xAxis && yAxis && size && color && tooltip) {
