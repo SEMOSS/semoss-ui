@@ -1,9 +1,8 @@
-import { render } from "../utils";
-import { expect, test } from "vitest";
-import { fireEvent, waitFor, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { expect } from "vitest";
+import { screen } from "@testing-library/react";
 
-import { IconBlock } from "../../components/block-defaults/icon-block";
+import { IconBlock } from "@/components/block-defaults/icon-block/IconBlock";
+import { render } from "../utils";
 
 const blocks = {
     icon: {
@@ -37,7 +36,7 @@ describe("icon block", () => {
         const icon = container.querySelector("[data-block='icon']");
         expect(icon).toBeInTheDocument();
 
-        screen.debug();
+        // screen.debug();
     });
 
     it("shows default icon", async () => {
@@ -46,7 +45,9 @@ describe("icon block", () => {
         });
 
         const icon = container.querySelector("[data-block='icon']");
-        const iconType = icon.querySelector("[data-testid='InsertEmoticonOutlinedIcon']");
+        const iconType = icon.querySelector(
+            "[data-testid='InsertEmoticonOutlinedIcon']",
+        );
 
         expect(iconType).toBeInTheDocument();
     });

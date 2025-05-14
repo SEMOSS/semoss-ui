@@ -1,5 +1,4 @@
 import { expect } from "vitest";
-import "@testing-library/jest-dom";
 
 import { render } from "../utils";
 import { HTMLBlock } from "@/components/block-defaults/html-block/HTMLBlock";

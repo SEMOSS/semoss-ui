@@ -8,7 +8,7 @@
 
         /* Modules */
         "baseUrl": "src",
-        "rootDir": "src",
+        "rootDirs": ["src", "testing"],        
         "module": "esnext",
         "moduleResolution": "bundler",
         "allowSyntheticDefaultImports": true,
@@ -36,6 +36,6 @@
             "@semoss/sdk": ["../sdk/src/index.ts"]
         }
     },
-    "include": ["src", "global.d.ts", "example", "src/testing", "src/**/*"],
+    "include": ["src", "global.d.ts", "example", "testing", "src/**/*"],
     "exclude": ["dist", "node_modules"]
 }

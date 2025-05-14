@@ -1,7 +1,6 @@
 import { expect } from "vitest";
-import "@testing-library/jest-dom";
 
-import { fireEvent, render, screen } from "../utils";
+import { render, screen } from "../utils";
 import { SliderBlock } from "@/components/block-defaults/slider-block/SliderBlock";
 
 const blocks = {
@@ -27,7 +26,14 @@ const blocks = {
             },
         },
         listeners: {
-            onChange: [],
+            preProcess: {
+                type: "sync",
+                order: [],
+            },
+            onChange: {
+                type: "sync",
+                order: [],
+            },
         },
     },
     slider2: {
@@ -52,7 +58,14 @@ const blocks = {
             },
         },
         listeners: {
-            onChange: [],
+            preProcess: {
+                type: "sync",
+                order: [],
+            },
+            onChange: {
+                type: "sync",
+                order: [],
+            },
         },
     },
 };

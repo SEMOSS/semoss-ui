@@ -1,7 +1,5 @@
+import { render, screen } from "../utils";
 import { ContainerBlock } from "@/components/block-defaults/container-block/ContainerBlock";
-import { config } from "@/components/block-defaults/container-block/config";
-import { cleanup, render, screen } from "../utils";
-import { useBlock } from "@/hooks";
 
 const blocks = {
     "test-container": {
@@ -13,6 +11,10 @@ const blocks = {
                 gap: "8px",
                 flexWrap: "wrap",
             },
+            icon: "Icon",
+            src: "",
+            title: "",
+            show: "true",
         },
         id: "test-container",
         widget: "container",
@@ -23,7 +25,14 @@ const blocks = {
             },
         },
         listeners: {
-            onChange: [],
+            preProcess: {
+                type: "sync",
+                order: [],
+            },
+            onChange: {
+                type: "sync",
+                order: [],
+            },
         },
     },
 };
@@ -52,7 +61,14 @@ const nestedContainerBlock = {
             },
         },
         listeners: {
-            onChange: [],
+            preProcess: {
+                type: "sync",
+                order: [],
+            },
+            onChange: {
+                type: "sync",
+                order: [],
+            },
         },
     },
     "parent-container": {
@@ -74,13 +90,20 @@ const nestedContainerBlock = {
             },
         },
         listeners: {
-            onChange: [],
+            preProcess: {
+                type: "sync",
+                order: [],
+            },
+            onChange: {
+                type: "sync",
+                order: [],
+            },
         },
     },
 };
 
 describe("Container Block", () => {
-    it(" Should render the Container Block", async () => {
+    it("Should render the Container Block", async () => {
         const { container } = render(
             // passing the data-testid property does not work; use the querySelector instead since data-block is a custom attribute
             <ContainerBlock data-testid="containerID" id="test-container" />,
@@ -93,13 +116,9 @@ describe("Container Block", () => {
     });
 
     it("Should render the Container's default Slot text", async () => {
-        render(
-            // passing the data-testid property does not work; use the querySelector instead since data-block is a custom attribute
-            <ContainerBlock data-testid="containerID" id="test-container" />,
-            {
-                blocks: blocks,
-            },
-        );
+        render(<ContainerBlock id="test-container" />, {
+            blocks: blocks,
+        });
         expect(screen.getByText("Add Content")).toBeInTheDocument();
     });
 
@@ -156,7 +175,7 @@ describe("Container Block", () => {
     });
 
     it("Should render a P tag with hello world as its content", async () => {
-        const { container } = render(<ContainerBlock id="test-container" />, {
+        render(<ContainerBlock id="test-container" />, {
             blocks: {
                 "test-container": {
                     ...blocks["test-container"],

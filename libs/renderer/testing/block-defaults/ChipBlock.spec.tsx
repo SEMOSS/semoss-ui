@@ -1,12 +1,11 @@
-import { render } from "../utils/index";
-import { describe, expect, test } from "vitest";
-import { fireEvent, waitFor, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { describe, expect } from "vitest";
+import { screen } from "@testing-library/react";
+import { render } from "../utils";
 
-import { ChipBlock } from "../../components/block-defaults/chip-block/ChipBlock";
+import { ChipBlock } from "@/components/block-defaults/chip-block/ChipBlock";
 
 const blocks = {
-    "chip": {
+    chip: {
         data: {
             style: {
                 display: "flex",
@@ -22,7 +21,16 @@ const blocks = {
         id: "chip",
         widget: "chip",
         slots: {},
-        listeners: {},
+        listeners: {
+            preProcess: {
+                type: "sync",
+                order: [],
+            },
+            onChange: {
+                type: "sync",
+                order: [],
+            },
+        },
     },
     "icon-chip": {
         data: {
@@ -41,7 +49,16 @@ const blocks = {
         id: "icon-chip",
         widget: "chip",
         slots: {},
-        listeners: {},
+        listeners: {
+            preProcess: {
+                type: "sync",
+                order: [],
+            },
+            onChange: {
+                type: "sync",
+                order: [],
+            },
+        },
     },
     "appearance-chip": {
         data: {
@@ -60,10 +77,18 @@ const blocks = {
         id: "appearance-chip",
         widget: "chip",
         slots: {},
-        listeners: {},
+        listeners: {
+            preProcess: {
+                type: "sync",
+                order: [],
+            },
+            onChange: {
+                type: "sync",
+                order: [],
+            },
+        },
     },
 };
-
 
 describe("chip block", () => {
     it("should render correctly with mocked provider", async () => {
@@ -76,7 +101,7 @@ describe("chip block", () => {
     });
 
     it("should show correct variant", async () => {
-        const { container } = render(<ChipBlock id="icon-chip" />, {
+        render(<ChipBlock id="icon-chip" />, {
             blocks: blocks,
         });
 

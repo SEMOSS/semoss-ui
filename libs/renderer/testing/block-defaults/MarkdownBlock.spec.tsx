@@ -1,8 +1,7 @@
-import { render, screen, waitFor } from "../utils";
 import { expect } from "vitest";
-import "@testing-library/jest-dom";
 
 import { MarkdownBlock } from "@/components/block-defaults/markdown-block/MarkdownBlock";
+import { render, screen, waitFor } from "../utils";
 
 const blocks = {
     markdown: {

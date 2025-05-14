@@ -1,9 +1,8 @@
-import { render, screen } from "../utils";
 import { expect } from "vitest";
-import "@testing-library/jest-dom";
 
 import { LogsBlock } from "@/components/block-defaults/logs-block/LogsBlock";
 import { QueryStateConfig } from "@/store";
+import { render, screen } from "../utils";
 
 const blocks = {
     logs: {
@@ -26,7 +25,14 @@ const blocks = {
             },
         },
         listeners: {
-            onChange: [],
+            preProcess: {
+                type: "sync",
+                order: [],
+            },
+            onChange: {
+                type: "sync",
+                order: [],
+            },
         },
     },
 };
@@ -49,7 +55,6 @@ describe("logs block", () => {
         });
 
         const element = container.querySelector("[data-block='logs']");
-        console.log({ element });
 
         expect(element).toBeInTheDocument();
         expect(element.tagName).equal("DIV", "element is type div");
@@ -63,7 +68,6 @@ describe("logs block", () => {
         });
 
         const element = container.querySelector("[data-block='logs']");
-        console.log({ element });
 
         expect(element).toBeInTheDocument();
         expect(element.tagName).equal("DIV", "element is type div");

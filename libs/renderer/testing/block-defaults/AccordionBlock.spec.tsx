@@ -1,20 +1,17 @@
-import { render } from "../utils/index";
-import { expect, test } from "vitest";
+import { expect, it } from "vitest";
 import { fireEvent, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render } from "../utils";
 
-import { AccordionBlock } from "../../components/block-defaults/accordion-block/AccordionBlock";
+import { AccordionBlock } from "@/components/block-defaults/accordion-block/AccordionBlock";
 
 const blocks = {
     accordion: {
         data: {
-            style: {
-                display: "flex",
-                flexDirection: "column",
-                padding: "4px",
-                gap: "8px",
-                flexWrap: "wrap",
-            },
+            style: {},
+            triggerBgColor: "",
+            contentBgColor: "",
+            showExpandIcon: true,
+            show: "true",
         },
         id: "accordion",
         widget: "accordion",
@@ -29,13 +26,20 @@ const blocks = {
             },
         },
         listeners: {
-            onChange: [],
+            preProcess: {
+                type: "sync",
+                order: [],
+            },
+            onChange: {
+                type: "sync",
+                order: [],
+            },
         },
     },
 };
 
 describe("accordion block", () => {
-    test("renders correctly with mocked provider", async () => {
+    it("renders correctly with mocked provider", async () => {
         const { container } = render(<AccordionBlock id="accordion" />, {
             blocks: blocks,
         });
@@ -44,7 +48,7 @@ describe("accordion block", () => {
         expect(accordion).toBeInTheDocument();
     });
 
-    test("renders header properly", async () => {
+    it("renders header properly", async () => {
         const { container } = render(<AccordionBlock id="accordion" />, {
             blocks: blocks,
         });
@@ -58,7 +62,7 @@ describe("accordion block", () => {
         expect(content).not.toBeInTheDocument();
     });
 
-    test("toggles content on click", async () => {
+    it("toggles content on click", async () => {
         const { container } = render(<AccordionBlock id="accordion" />, {
             blocks: blocks,
         });
