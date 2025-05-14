@@ -69,7 +69,6 @@ const blocks = {
             },
         },
         listeners: {
-            // onChange: [],
             onOpen: [],
         },
     },
@@ -100,7 +99,6 @@ const blocks = {
             },
         },
         listeners: {
-            //     onChange: []
             onOpen: [],
         },
     },
@@ -157,8 +155,6 @@ describe("Popover Block", () => {
         expect(element).toBeInTheDocument();
         expect(screen.getByText("Add Content")).toBeInTheDocument();
     });
-
-    // hello
 
     it("renders popover with correct styles and content", async () => {
         const { container } = render(<PopoverBlock id="styledPopover" />, {
