@@ -1,8 +1,7 @@
-import { render, screen } from "../utils";
 import { expect } from "vitest";
 import { fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
-
+import { render, screen } from "../utils";
 import { ContainerBlock } from "../../components/block-defaults/container-block/ContainerBlock";
 import { PopoverBlock } from "../../components/block-defaults/popover-block/PopoverBlock";
 
@@ -70,7 +69,8 @@ const blocks = {
             },
         },
         listeners: {
-            onChange: [],
+            // onChange: [],
+            onOpen: [],
         },
     },
     styledPopover: {
@@ -100,7 +100,8 @@ const blocks = {
             },
         },
         listeners: {
-            onChange: [],
+            //     onChange: []
+            onOpen: [],
         },
     },
 };
@@ -156,6 +157,8 @@ describe("Popover Block", () => {
         expect(element).toBeInTheDocument();
         expect(screen.getByText("Add Content")).toBeInTheDocument();
     });
+
+    // hello
 
     it("renders popover with correct styles and content", async () => {
         const { container } = render(<PopoverBlock id="styledPopover" />, {
