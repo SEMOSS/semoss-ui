@@ -58,7 +58,7 @@ interface StateStoreInterface {
     executionOrder: string[];
 
     /** Graph to track nodes and edges based on {{}} */
-    dependencyGraph: Record<string, unknown>;
+    dependencyGraph: {nodes: Record<string, unknown>[], nodes_two: Record<string, unknown>[], edges: []};
 }
 
 export class StateStoreConfig {
@@ -92,7 +92,11 @@ export class StateStore {
         cellRegistry: {},
         variables: {},
         executionOrder: [],
-        dependencyGraph: {}
+        dependencyGraph: {
+            nodes: [],
+            nodes_two: [],
+            edges: []
+        }
     };
 
     /**
@@ -127,8 +131,9 @@ export class StateStore {
         this.setState(config.state, config.initialParams);
 
         // console.log(this.toJSON())
-        // const r = this.buildDependencyGraph(this._store, {}, [])
-        // console.log(r);
+        const r = this.buildDependencyGraph(this._store)
+    
+        console.log('depGraph', r);
     }
 
     /**
@@ -172,6 +177,14 @@ export class StateStore {
      */
     get variables() {
         return this._store.variables;
+    }
+
+    /**
+     * 
+     * @returns
+     */
+    get dependencyGraph() {
+        return this._store.dependencyGraph;
     }
 
     /**
@@ -713,8 +726,6 @@ export class StateStore {
             // try to extract the variable
             const v = this.parseVariable(match);
 
-            debugger
-
             // if it is not a string, convert to a string
             if (typeof v !== "string") {
                 return JSON.stringify(v);
@@ -931,6 +942,11 @@ export class StateStore {
         return false;
     };
 
+    /**
+     * 
+     * @param str 
+     * @returns 
+     */
     extractDependenciesFromString = (str) => {
         const regex = /{{\s*([\w_]+)\s*}}/g;
         let match, deps = [];
@@ -1118,37 +1134,141 @@ export class StateStore {
         this._store.version = state.version ? state.version : STATE_VERSION;
     };
 
-    private buildDependencyGraph = (json, nodes = {}, edges = []) => {
-        if (typeof json === 'object' && json !== null) {
-            for (const [key, value] of Object.entries(json)) {
-              // If the key is 'id', treat it as a node
-              if (key === 'id' && typeof value === 'string') {
-                if (!nodes[value]) {
-                  nodes[value] = { id: value, data: { label: value }, position: { x: Math.random() * 400, y: Math.random() * 400 } };
-                }
-              }
-              // If value is a string, look for dependencies
-              if (typeof value === 'string') {
-                const deps = this.extractDependenciesFromString(value);
-                if (json.id && deps.length) {
-                  deps.forEach(dep => {
-                    if (!nodes[dep]) {
-                      nodes[dep] = { id: dep, data: { label: dep }, position: { x: Math.random() * 400, y: Math.random() * 400 } };
-                    }
-                    edges.push({ id: `e${json.id}-${dep}`, source: json.id, target: dep });
-                  });
-                }
-              }
-              // Recurse into objects/arrays
-              if (typeof value === 'object') {
-                this.buildDependencyGraph(value, nodes, edges);
-              }
-            }
-        } else if (Array.isArray(json)) {
-          json.forEach(item => this.buildDependencyGraph(item, nodes, edges));
-        }
+    /**
+     * 
+     * @param state
+     * @param nodes 
+     * @param edges 
+     * @returns 
+     */
+    private buildDependencyGraph = (state) => {
 
-        return { nodes: Object.values(nodes), edges };
+        let nodes = [];
+        let edges = []
+        let prevPositionX = 0
+
+        Object.entries(state.blocks).forEach((keyVal) => {
+            const node = {
+                id: `block--${keyVal[0]}`,
+                data: {
+                    label: keyVal[0],
+                    data: keyVal[1]
+                },
+                position: {
+                    x: prevPositionX,
+                    y: 0
+                }
+                
+            }
+
+            // TODO: search json for {{}} and create edge
+            console.log(keyVal[1])
+
+            prevPositionX += 200
+            nodes.push(node)
+        })
+
+        prevPositionX = 0
+        // Construct nodes for variables.  In order to have a starting point for all edges
+        Object.entries(state.variables).forEach((keyVal) => {
+            console.log(keyVal[1])
+            const node = {
+                id: `variable--${keyVal[0]}`,
+                data: {
+                    label: keyVal[0],
+                    data: keyVal[1]
+                },
+                position: {
+                    x: prevPositionX,
+                    y: 150
+                }
+                
+            }
+            prevPositionX += 200
+            nodes.push(node)
+        })
+
+        prevPositionX = 0
+
+        // Construct nodes for notebooks and cells.
+        Object.entries(state.queries).forEach((keyVal) => {
+            let q = keyVal[1] as QueryState
+            const node = {
+                id: `notebook--${keyVal[0]}`,
+                data: {
+                    label: keyVal[0],
+                    data: q
+                },
+                position: {
+                    x: prevPositionX,
+                    y: 300
+                }
+                
+            }
+
+            //TODO: create nodes for cells
+            let cellPosY = 450
+
+            q.cellList.forEach((c) => {
+                console.log(c.id)
+
+                const node = {
+                    id: `notebook--cell--${c.id}`,
+                    data: {
+                        label: c.id,
+                        data: c
+                    },
+                    position: {
+                        x: prevPositionX,
+                        y: cellPosY
+                    }
+                }
+
+                nodes.push(node)
+
+                cellPosY += 150
+            })
+
+            prevPositionX += 200
+            
+            nodes.push(node)
+        })
+
+        // TODO: Consoldiate
+        // Construct edges
+        Object.entries(state.blocks).forEach((keyValue, i) => {
+            const block = keyValue[1] as Block
+            // TODO: check if {{}}
+
+            const edge = {
+                id: `edge--${i}`,
+                source: `block--${block.id}`,
+                target: ``,
+                animated: true
+            }
+            edges.push(edge)
+        })
+
+        this._store.dependencyGraph =  {
+            nodes_two: nodes,
+            nodes: [
+                // Blocks section (top)
+                { id: 'block-1', data: { label: 'Block 1' }, position: { x: 0,   y: 0 } },
+                { id: 'block-2', data: { label: 'Block 2' }, position: { x: 200, y: 0 } },
+                { id: 'block-3', data: { label: 'Block 3' }, position: { x: 400, y: 0 } },
+
+                // Variables section (middle)
+                { id: 'var-1', data: { label: 'Variable 1' }, position: { x: 0,   y: 150 } },
+                { id: 'var-2', data: { label: 'Variable 2' }, position: { x: 200, y: 150 } },
+                { id: 'var-3', data: { label: 'Variable 3' }, position: { x: 400, y: 150 } },
+
+                // Data section (bottom)
+                { id: 'data-1', data: { label: 'Data 1' }, position: { x: 0,   y: 300 } },
+                { id: 'data-2', data: { label: 'Data 2' }, position: { x: 200, y: 300 } },
+                { id: 'data-3', data: { label: 'Data 3' }, position: { x: 400, y: 300 } },
+            ],
+            edges: []
+        }
     }
 
     /**
