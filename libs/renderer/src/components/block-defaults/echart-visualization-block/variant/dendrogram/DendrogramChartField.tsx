@@ -1,14 +1,14 @@
 import {useState, useEffect, useMemo} from 'react';
 import {observer} from 'mobx-react-lite';
+import { computed } from 'mobx';
 import {IconButton, styled} from '@mui/material';
-import {useBlock, useBlocks, useBlockSettings} from '../../../../../hooks';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { MenuItem, Select } from '@semoss/ui';
+import {useBlock, useBlocks, useBlockSettings} from '../../../../../hooks';
 import { BlockDef } from '../../../../../store';
 import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 import { getValueByPath } from '@/utility';
-import { computed } from 'mobx';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 const StyledMainContainer = styled('div')(({theme})=>({
         display: 'flex',

@@ -2,12 +2,12 @@ export const Bar = [
     {
         name: "X Axis",
         multiLabel: false,
-        label: "xaxis",
+        label: "xAxis",
     },
     {
         name: "Y Axis",
         multiLabel: true,
-        label: "yaxis",
+        label: "yAxis",
     },
 ]
 

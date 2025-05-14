@@ -2,13 +2,8 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useSearchParams, useLocation } from "react-router-dom";
 
-import { runPixel, useInsight } from "@semoss/sdk";
-import {
-    Backdrop,
-    Notification,
-    Typography,
-    useNotification,
-} from "@semoss/ui";
+import { runPixel } from "@semoss/sdk/react";
+import { Backdrop, Notification, Typography } from "@semoss/ui";
 
 import { Blocks, RendererEngine } from "./components/blocks";
 import { DefaultBlocks } from "./components/block-defaults";
@@ -26,7 +21,7 @@ import { CircularProgress, Stack } from "@mui/material";
 export interface RendererProps {
     /** App to render */
     appId?: string;
-    
+
     /** Insight to tie all pixels that are ran to */
     insightId?: string;
 
@@ -38,7 +33,6 @@ export interface RendererProps {
      * Do we want to see load screen. Ex: preview on tooltip
      * */
     preview?: boolean;
-
 }
 
 /**
@@ -116,7 +110,8 @@ export const Renderer = observer((props: RendererProps) => {
                     const migration = new MigrationManager();
                     s = await migration.run(s);
                 }
-                const activePage = wrapper(s);
+
+                const activePage = getCurrentPageId(s);
                 setHomePage(activePage);
 
                 // Replace variable values with query params
@@ -170,7 +165,7 @@ export const Renderer = observer((props: RendererProps) => {
                         zIndex: 1501,
                         position: "relative",
                         width: "100%",
-                        height: "100%"
+                        height: "100%",
                     }}
                 >
                     <Stack
@@ -199,14 +194,17 @@ export const Renderer = observer((props: RendererProps) => {
     );
 });
 
-const wrapper = (state:SerializedState) => {
+const getCurrentPageId = (state: SerializedState) => {
     const URLroute = window.location.href;
-    const match = URLroute.match(/#\/s\/[^/]+\/(.+)/);
+    const match = URLroute.match(/#\/[^/]+\/[^/]+\/(.+)/);
     const currentRoute = match ? match[1] : "";
+
     let activePageID = "";
     const blocks = state?.blocks;
-    if(!blocks) {
-        return}
+
+    if (!blocks) {
+        return;
+    }
     Object?.entries(blocks).forEach(([_, block]) => {
         if (block?.widget === "page") {
             if (currentRoute === block?.data.route) {
@@ -218,4 +216,4 @@ const wrapper = (state:SerializedState) => {
         activePageID = "page-1";
     }
     return activePageID;
-}
+};

@@ -1,8 +1,8 @@
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
 
 export interface ContainerBlockDef extends BlockDef<"container"> {
@@ -10,14 +10,29 @@ export interface ContainerBlockDef extends BlockDef<"container"> {
     data: {
         style: CSSProperties;
         show: string;
+        type: "custom" | "grid";
+        dimension?: null | string;
+        rowSpacing?: null | string;
     };
     slots: {
         children: true;
     };
+    listeners: {
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+    };
 }
 
 export const ContainerBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots } = useBlock<ContainerBlockDef>(id);
+    const { attrs, data, slots, listeners } = useBlock<ContainerBlockDef>(id);
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
 
     return (
         <div

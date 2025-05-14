@@ -23,6 +23,11 @@ interface ActionOverlayProps<D extends BlockDef = BlockDef> {
     id: string;
 
     /**
+     * Sync or Async
+     */
+    type: "sync" | "async";
+
+    /**
      * Lisetner to update
      */
     listener: Extract<keyof D["listeners"], string>;
@@ -40,7 +45,7 @@ type ListenerActionForm = ListenerActions;
 
 export const ListenerActionOverlay = observer(
     <D extends BlockDef = BlockDef>(props: ActionOverlayProps<D>) => {
-        const { id, listener, actionIdx = -1, onClose = () => null } = props;
+        const { id, type, listener, actionIdx = -1, onClose = () => null } = props;
 
         const { state } = useBlocks();
         const { listeners, setListener } = useBlockSettings(id);
@@ -129,20 +134,20 @@ export const ListenerActionOverlay = observer(
          * Allow user to submit the data
          */
         const onSubmit = handleSubmit((a: ListenerActionForm) => {
-            const updated = listeners[listener] ? [...listeners[listener]] : [];
+            const updated = listeners[listener] ? [...listeners[listener].order] : [];
 
             if (actionIdx === -1) {
                 // add the new one
                 updated.push(a);
 
                 // set it the listener
-                setListener(listener, updated);
+                setListener(listener, updated, type);
             } else {
                 // add the new one
                 updated[actionIdx] = a;
 
                 // set it the listener
-                setListener(listener, updated);
+                setListener(listener, updated, type);
             }
 
             onClose();
