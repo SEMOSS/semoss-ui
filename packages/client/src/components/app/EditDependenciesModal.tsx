@@ -14,7 +14,7 @@ import {
     useNotification,
 } from '@semoss/ui';
 
-import { Env } from '@semoss/sdk';
+import { Env } from '@semoss/sdk/react';
 
 import { usePixel, useRootStore } from '@/hooks';
 import {

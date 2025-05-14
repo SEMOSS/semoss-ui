@@ -322,7 +322,11 @@ export const NotebookCell = observer(
             });
 
             return matchIndex + 1;
-        }, [cell.id, cell.query.cellList.length]);
+        }, [
+            cell.id,
+            cell.query.list.indexOf(cell.id),
+            cell.query.cellList.length,
+        ]);
 
         /**
          * Create a duplicate cell

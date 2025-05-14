@@ -4,7 +4,7 @@ import { observer } from "mobx-react-lite";
 import { LoadingScreen, Button } from "@semoss/ui";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { Slot } from "../../../components/blocks";
 
 export interface PageBlockDef extends BlockDef<"page"> {
@@ -17,7 +17,10 @@ export interface PageBlockDef extends BlockDef<"page"> {
         content: true;
     };
     listeners: {
-        onPageLoad: true;
+        onPageLoad: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
