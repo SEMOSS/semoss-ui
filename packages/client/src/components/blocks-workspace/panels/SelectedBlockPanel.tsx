@@ -72,6 +72,15 @@ const StyledMessage = styled('div')(({ theme }) => ({
     alignItems: 'center',
     justifyContent: 'center',
 }));
+const StyledMultiBlockMessage = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '22px',
+}));
 //Tab group with custom style with width and margin
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
     minHeight: '42px',
@@ -277,6 +286,18 @@ export const SelectedBlockPanel = observer(() => {
             return '';
         }
     };
+    if (designer.multiselectedIds.length > 1) {
+        return (
+            <Panel>
+                <StyledMultiBlockMessage>
+                    <Typography variant="caption">
+                        Multiple Blocks has been Selected. Please select single
+                        block to see Block Settings
+                    </Typography>
+                </StyledMultiBlockMessage>
+            </Panel>
+        );
+    }
 
     // ignore if there is no menu
     if (!block) {

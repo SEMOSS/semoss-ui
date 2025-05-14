@@ -104,6 +104,26 @@ export const Screen = observer((props: ScreenProps) => {
         designer.setSelected(designer.hovered);
     };
 
+    const handleMultipleSelection = (event) => {
+        if (!designer.hovered || designer.hovered === designer.selected) {
+            return;
+        }
+        const id = getNearestBlock(event.target as Element);
+
+        // prevent events for elements until selected
+        event.stopPropagation();
+        event.preventDefault();
+        if (designer.multiselectedIds.includes(id)) {
+            return; // Do nothing if the id is already selected
+        }
+
+        designer.setSelected(id);
+        designer.setMultiSelectedIds(id);
+        if (designer.multiselectedIds.length > 1) {
+            designer.setSelected('');
+        }
+    };
+
     /**
      * Handle the mouseover on the page. This will hover the nearest block.
      *
@@ -256,7 +276,8 @@ export const Screen = observer((props: ScreenProps) => {
         <StyledContainer ref={eleRef}>
             {eleRef.current ? (
                 <>
-                    {designer.selected && (
+                    {(designer.selected ||
+                        designer.multiselectedIds.length > 1) && (
                         <SelectedMask screenEle={eleRef.current} />
                     )}
                     {designer.hovered && (
@@ -279,7 +300,16 @@ export const Screen = observer((props: ScreenProps) => {
                     <StyledContentInner
                         onMouseOver={handleMouseOver}
                         isHoveredOverSelectedBlock={isHoveredOverSelectedBlock}
-                        onClickCapture={handleClickCapture}
+                        onClickCapture={(e) => {
+                            if (e.ctrlKey || e.metaKey || e.shiftKey) {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                handleMultipleSelection(e);
+                            } else {
+                                designer.setMultiSelectedIds('clear');
+                                handleClickCapture(e);
+                            }
+                        }}
                     >
                         {children}
                     </StyledContentInner>

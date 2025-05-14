@@ -72,34 +72,70 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
     const isDraggable =
         block && registry[block.widget] && block.widget !== 'page';
 
+    // check if all blocks are draggable
+    const areAllBlocksDraggable = (): boolean => {
+        return designer.multiselectedIds.every((id) => {
+            const block = state.getBlock(id);
+            return block && registry[block.widget] && block.widget !== 'page';
+        });
+    };
+
     /**
      * Handle the mousedown on the block.
      */
     const handleMouseDown = () => {
-        if (!isDraggable) {
-            return;
+        if (designer.multiselectedIds.length > 1) {
+            if (!areAllBlocksDraggable()) {
+                return;
+            }
+            // Handle drag for multiple selected blocks
+            designer.activateDrag(
+                designer.multiselectedIds
+                    .map((id) => state.getBlock(id).widget)
+                    .join(','),
+                (parent) => {
+                    // Ensure none of the selected blocks are children of the parent
+                    return !designer.multiselectedIds.some((id) =>
+                        state.containsBlock(id, parent),
+                    );
+                },
+                designer.multiselectedIds.join(','),
+                designer.multiselectedIds.map(
+                    (id) => registry[state.getBlock(id).widget].icon,
+                ),
+            );
+
+            // Clear the hovered block
+            designer.setHovered('');
+
+            // Set as inactive
+            setLocal(true);
+        } else {
+            // Existing logic for single block drag
+            if (!isDraggable) {
+                return;
+            }
+            // set the dragged
+            designer.activateDrag(
+                block.widget,
+                (parent) => {
+                    // if the parent block is a child of the selected, we cannot add
+                    if (state.containsBlock(designer.selected, parent)) {
+                        return false;
+                    }
+
+                    return true;
+                },
+                block.id,
+                registry[block.widget].icon,
+            );
+
+            // Clear the hovered block
+            designer.setHovered('');
+
+            // Set as inactive
+            setLocal(true);
         }
-
-        // set the dragged
-        designer.activateDrag(
-            block.widget,
-            (parent) => {
-                // if the parent block is a child of the selected, we cannot add
-                if (state.containsBlock(designer.selected, parent)) {
-                    return false;
-                }
-
-                return true;
-            },
-            block.id,
-            registry[block.widget].icon,
-        );
-
-        // clear the hovered
-        designer.setHovered('');
-
-        // set as inactive
-        setLocal(true);
     };
 
     /**
@@ -109,79 +145,152 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
         if (!designer.drag.active) {
             return;
         }
-
         // apply the action
         const placeholderAction = designer.drag.placeholderAction;
-        const sw = state.getBlock(placeholderAction.id);
 
         if (placeholderAction) {
-            if (
-                placeholderAction.type === 'before' ||
-                placeholderAction.type === 'after'
-            ) {
-                const siblingWidget = state.getBlock(placeholderAction.id);
+            if (designer.multiselectedIds.length > 1) {
+                // Handle multiple block movements
+                let lastSiblingId = placeholderAction.id; // Start with the placeholder ID
+                designer.multiselectedIds.forEach((id) => {
+                    const sw = state.getBlock(placeholderAction.id);
 
-                if (siblingWidget.parent) {
-                    const parent = state.getBlock(sw.parent.id);
-                    if (parent.widget === 'iteration') {
-                        if (parent.slots.children.children.length) {
-                            notification.add({
-                                color: 'error',
-                                message:
-                                    'Please delete block within iterator before adding another child',
+                    if (
+                        placeholderAction.type === 'before' ||
+                        placeholderAction.type === 'after'
+                    ) {
+                        const siblingWidget = state.getBlock(lastSiblingId); // Use the last sibling ID
+
+                        if (siblingWidget.parent) {
+                            const parent = state.getBlock(sw.parent.id);
+                            if (parent.widget === 'iteration') {
+                                if (parent.slots.children.children.length) {
+                                    notification.add({
+                                        color: 'error',
+                                        message:
+                                            'Please delete block within iterator before adding another child',
+                                    });
+                                    designer.deactivateDrag();
+                                    return;
+                                }
+                            }
+                            state.dispatch({
+                                message: ActionMessages.MOVE_BLOCK,
+                                payload: {
+                                    id,
+                                    position: {
+                                        parent: siblingWidget.parent.id,
+                                        slot: siblingWidget.parent.slot,
+                                        sibling:
+                                            placeholderAction.type === 'before'
+                                                ? siblingWidget.id
+                                                : lastSiblingId,
+                                        type: placeholderAction.type,
+                                    },
+                                },
                             });
-                            designer.deactivateDrag();
-                            return;
+
+                            // Update the lastSiblingId to the current block
+                            lastSiblingId = id;
+                        }
+                    } else if (placeholderAction.type === 'replace') {
+                        if (sw.widget !== 'iteration') {
+                            state.dispatch({
+                                message: ActionMessages.SET_BLOCK_DATA,
+                                payload: {
+                                    id: placeholderAction.id,
+                                    path: 'child',
+                                    value: state.getBlock(id),
+                                },
+                            });
+                        }
+                        if (sw.widget !== 'iteration') {
+                            state.dispatch({
+                                message: ActionMessages.MOVE_BLOCK,
+                                payload: {
+                                    id,
+                                    position: {
+                                        parent: placeholderAction.id,
+                                        slot: placeholderAction.slot,
+                                    },
+                                },
+                            });
                         }
                     }
+                });
+            } else {
+                // Existing logic for single block movement
+                const sw = state.getBlock(placeholderAction.id);
+
+                if (
+                    placeholderAction.type === 'before' ||
+                    placeholderAction.type === 'after'
+                ) {
+                    const siblingWidget = state.getBlock(placeholderAction.id);
+
+                    if (siblingWidget.parent) {
+                        const parent = state.getBlock(sw.parent.id);
+                        if (parent.widget === 'iteration') {
+                            if (parent.slots.children.children.length) {
+                                notification.add({
+                                    color: 'error',
+                                    message:
+                                        'Please delete block within iterator before adding another child',
+                                });
+                                designer.deactivateDrag();
+                                return;
+                            }
+                        }
+                        state.dispatch({
+                            message: ActionMessages.MOVE_BLOCK,
+                            payload: {
+                                id: designer.selected,
+                                position: {
+                                    parent: siblingWidget.parent.id,
+                                    slot: siblingWidget.parent.slot,
+                                    sibling: siblingWidget.id,
+                                    type: placeholderAction.type,
+                                },
+                            },
+                        });
+                    }
+                } else if (placeholderAction.type === 'replace') {
+                    if (sw.widget === 'iteration') {
+                        state.dispatch({
+                            message: ActionMessages.SET_BLOCK_DATA,
+                            payload: {
+                                id: placeholderAction.id,
+                                path: 'child',
+                                value: state.getBlock(designer.selected),
+                            },
+                        });
+                    }
+
                     state.dispatch({
                         message: ActionMessages.MOVE_BLOCK,
                         payload: {
                             id: designer.selected,
                             position: {
-                                parent: siblingWidget.parent.id,
-                                slot: siblingWidget.parent.slot,
-                                sibling: siblingWidget.id,
-                                type: placeholderAction.type,
+                                parent: placeholderAction.id,
+                                slot: placeholderAction.slot,
                             },
                         },
                     });
                 }
-            } else if (placeholderAction.type === 'replace') {
-                if (sw.widget === 'iteration') {
-                    state.dispatch({
-                        message: ActionMessages.SET_BLOCK_DATA,
-                        payload: {
-                            id: placeholderAction.id,
-                            path: 'child',
-                            value: state.getBlock(designer.selected),
-                        },
-                    });
-                }
-
-                state.dispatch({
-                    message: ActionMessages.MOVE_BLOCK,
-                    payload: {
-                        id: designer.selected,
-                        position: {
-                            parent: placeholderAction.id,
-                            slot: placeholderAction.slot,
-                        },
-                    },
-                });
             }
         }
 
-        // clear the drag
+        // Clear the drag
         designer.deactivateDrag();
 
-        // clear the hovered
+        // Clear the hovered block
         designer.setHovered('');
 
-        // set as active
+        // Set as active
         setLocal(false);
     }, [
         designer.selected,
+        designer.multiselectedIds,
         designer.drag.active,
         designer.drag.placeholderAction,
         state,
@@ -190,14 +299,19 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 
     // reposition the mask
     const repositionMask = () => {
-        // get the block elemenent
-        const blockEle = getBlockElement(designer.selected);
+        // Use designer.selected or fallback to the first ID in designer.selectedIds
+        const selectedId = designer.selected || designer.multiselectedIds[0];
+        if (!selectedId) {
+            return;
+        }
+
+        const blockEle = getBlockElement(selectedId);
 
         if (!blockEle) {
             return;
         }
 
-        // calculate and set the side
+        // Calculate and set the size
         const updated = getRelativeSize(blockEle, screenEle);
         setSize(updated);
     };
@@ -247,29 +361,69 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
         return <></>;
     }
 
-    return (
-        <StyledContainer
-            style={{
-                top: `${size.top}px`,
-                left: `${size.left}px`,
-                height: `${size.height}px`,
-                width: `${size.width}px`,
-                opacity: designer.drag.active ? 0 : 1,
-            }}
-        >
-            <StyledTitle onMouseDown={handleMouseDown}>
-                <Stack direction={'row'}>
-                    <Typography variant={'body2'}>
-                        {variableName ? variableName : designer.selected}
-                    </Typography>
-                </Stack>
-                {isDraggable && (
-                    <DragIndicator
-                        fontSize="inherit"
-                        sx={{ marginLeft: '2px' }}
-                    />
-                )}
-            </StyledTitle>
-        </StyledContainer>
-    );
+    if (designer.multiselectedIds.length > 1) {
+        return (
+            <>
+                {designer.multiselectedIds.map((id, index) => {
+                    const blockElement = getBlockElement(id);
+                    if (!blockElement) return null;
+
+                    const blockSize = getRelativeSize(blockElement, screenEle);
+
+                    return (
+                        <StyledContainer
+                            key={id}
+                            style={{
+                                top: `${blockSize.top}px`,
+                                left: `${blockSize.left}px`,
+                                height: `${blockSize.height}px`,
+                                width: `${blockSize.width}px`,
+                                opacity: designer.drag.active ? 0 : 1,
+                            }}
+                        >
+                            <StyledTitle onMouseDown={handleMouseDown}>
+                                <Stack direction={'row'}>
+                                    <Typography variant={'body2'}>
+                                        {variableName ? variableName : id}
+                                    </Typography>
+                                </Stack>
+                                {areAllBlocksDraggable() && (
+                                    <DragIndicator
+                                        fontSize="inherit"
+                                        sx={{ marginLeft: '2px' }}
+                                    />
+                                )}
+                            </StyledTitle>
+                        </StyledContainer>
+                    );
+                })}
+            </>
+        );
+    } else {
+        return (
+            <StyledContainer
+                style={{
+                    top: `${size.top}px`,
+                    left: `${size.left}px`,
+                    height: `${size.height}px`,
+                    width: `${size.width}px`,
+                    opacity: designer.drag.active ? 0 : 1,
+                }}
+            >
+                <StyledTitle onMouseDown={handleMouseDown}>
+                    <Stack direction={'row'}>
+                        <Typography variant={'body2'}>
+                            {variableName ? variableName : designer.selected}
+                        </Typography>
+                    </Stack>
+                    {isDraggable && (
+                        <DragIndicator
+                            fontSize="inherit"
+                            sx={{ marginLeft: '2px' }}
+                        />
+                    )}
+                </StyledTitle>
+            </StyledContainer>
+        );
+    }
 });
