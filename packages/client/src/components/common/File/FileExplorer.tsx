@@ -18,6 +18,8 @@ const StyledTreeView = styled(TreeView)(({ theme }) => ({
 }));
 
 interface FileExplorerProps {
+    expandedPaths: string[];
+    onToggleExpand: (path: string) => void;
     /** Type of file opened */
     type: 'app' | 'insight';
 
@@ -52,6 +54,8 @@ export const FileExplorer = (props: FileExplorerProps) => {
         onDragStart = () => null,
         onDragEnd = () => null,
         onTrashClick = () => null,
+        expandedPaths,
+        onToggleExpand,
     } = props;
 
     const getAssets = usePixel<
@@ -71,7 +75,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
 
     const initLoadComplete = getAssets.status === 'SUCCESS';
 
-    const [expanded, setExpanded] = React.useState<string[]>([]);
+    //const [expanded, setExpanded] = React.useState<string[]>([]);
     const [selected, setSelected] = React.useState<string[]>([]);
 
     /**
@@ -90,10 +94,6 @@ export const FileExplorer = (props: FileExplorerProps) => {
      * Triggered when a item is toggled
      * @param expanded - newly expanded values
      */
-    const handleOnNodeToggle = (expanded: string[]) => {
-        // set the expanded values
-        setExpanded(expanded);
-    };
 
     if (!initLoadComplete) {
         return (
@@ -104,10 +104,15 @@ export const FileExplorer = (props: FileExplorerProps) => {
     return (
         <StyledTreeView
             multiSelect
-            expanded={expanded}
+            expanded={expandedPaths}
             selected={selected}
-            onNodeToggle={(e, v) => {
-                handleOnNodeToggle(v);
+            onNodeToggle={(e, nodeIds) => {
+                const lastToggled =
+                    nodeIds.find((id) => !expandedPaths.includes(id)) ||
+                    expandedPaths.find((id) => !nodeIds.includes(id));
+                if (lastToggled) {
+                    onToggleExpand(lastToggled);
+                }
             }}
             onNodeSelect={(e, v) => {
                 handleOnNodeSelect(v);
@@ -138,7 +143,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
                                 path={n.path}
                                 isDirectory={n.type === 'directory'}
                                 lastModified={n.lastModified}
-                                expanded={expanded}
+                                expanded={expandedPaths}
                                 selected={selected}
                                 onDragStart={(e, path) => {
                                     onDragStart(e, path);

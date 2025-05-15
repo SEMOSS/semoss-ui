@@ -36,6 +36,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 
     const notification = useNotification();
 
+    const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
     // files to add
     const [selectedPath, setSelectedPath] = useState<string>('');
     const [fileUploadPath, setFileUploadPath] = useState<string>('');
@@ -67,7 +68,13 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
         // increment the counter
         setCounter(counter + 1);
     };
-
+    const handleToggleExpand = (path: string) => {
+        setExpandedPaths((prev) =>
+            prev.includes(path)
+                ? prev.filter((p) => p !== path)
+                : [...prev, path],
+        );
+    };
     /**
      * Publish the app
      */
@@ -557,6 +564,8 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
                 onDragStart={(e, path) => {
                     handleOnItemDragStart(e, path);
                 }}
+                expandedPaths={expandedPaths}
+                onToggleExpand={handleToggleExpand}
             />
         </Panel>
     );
