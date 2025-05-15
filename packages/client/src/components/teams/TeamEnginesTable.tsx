@@ -789,8 +789,6 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                                                                     {
                                                                         engine_id:
                                                                             engine.engine_id,
-                                                                        engine_type:
-                                                                            engine.engine_type,
                                                                         permission:
                                                                             e
                                                                                 .target

@@ -1555,7 +1555,15 @@ export class MonolithStore {
      * @param endDate
      * @returns
      */
-    async editEnginePermission(groupId: string, engine) {
+    async editEnginePermission(
+        groupId: string,
+        engine: {
+            engine_id: string;
+            permission: string;
+            engine_type?: string;
+            endDate?: string;
+        },
+    ) {
         let url = `${Env.MODULE}/api/auth/admin/`,
             postData = '';
 
