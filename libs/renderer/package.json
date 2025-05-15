@@ -20,7 +20,8 @@
         "format:fix": "prettier . --write --plugin-search-dir=.",
         "fix": "run-s format:fix lint:fix",
         "test": "vitest --watch=false --passWithNoTests --changed",
-        "test:browser": "vitest --watch --ui --pool=forks --project renderer"
+        "test:browser": "vitest --watch --ui --pool=forks --project renderer",
+        "test:coverage": "vitest --coverage"
     },
     "keywords": [],
     "author": "",
@@ -87,9 +88,12 @@
         "echarts": "^5.5.1",
         "echarts-for-react": "^3.0.2",
         "react-color": "^2.19.3",
+        "vitest": "^1.3.1",
         "@testing-library/jest-dom": "^6.6.3",
         "@testing-library/react": "^16.2.0",
-        "@vitejs/plugin-react": "^4.3.4"
+        "@vitejs/plugin-react": "^4.3.4",
+        "@vitest/coverage-v8": "^1.3.4",
+        "@vitest/ui": "^1.3.1"
     },
     "peerDependencies": {
         "@mui/material": "5.13.5",
