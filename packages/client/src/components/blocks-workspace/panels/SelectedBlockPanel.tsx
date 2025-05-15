@@ -369,7 +369,7 @@ export const SelectedBlockPanel = observer(() => {
                                 No Block Selected
                             </StyledAlertTitle>
                             <StyledTypography variant="body2">
-                                Select a single block to view its setting
+                                Select a block to view its setting
                             </StyledTypography>
                         </StyledMessage>
                     </StyledDiv>
