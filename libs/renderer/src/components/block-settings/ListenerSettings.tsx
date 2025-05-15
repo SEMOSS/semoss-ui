@@ -140,7 +140,7 @@ export const ListenerSettings = observer(
             // copy it
             const updated = [...listeners[listener].order];
 
-            debugger
+            // debugger
 
             // remove it
             updated.splice(actionIdx, 1);
