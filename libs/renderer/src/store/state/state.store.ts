@@ -825,7 +825,7 @@ export class StateStore {
             if (json.slots[slot]) {
                 block.slots[slot] = {
                     name: slot,
-                    children: json.slots[slot].map((child) => {
+                    children: (Array.isArray(json.slots[slot]) ? json.slots[slot] : json.slots[slot]['children']).map((child) => {
                         // form the parent object
                         const parent = { id: id, slot: slot };
 

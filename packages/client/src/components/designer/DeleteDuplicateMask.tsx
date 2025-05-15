@@ -1,7 +1,7 @@
 import { useLayoutEffect, useState } from 'react';
 import { toJS } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { ContentCopy, Delete, DeleteOutline } from '@mui/icons-material';
+import { ContentCopy, Delete, DeleteOutline, Add } from '@mui/icons-material';
 
 import {
     styled,
@@ -17,6 +17,7 @@ import {
     useBlocks,
     INPUT_BLOCK_TYPES,
 } from '@semoss/renderer';
+import { AddClientBlockModal } from './AddClientBlockModal';
 
 import { getRelativeSize, getBlockElement } from '@/stores';
 import { useDesigner } from '@/hooks';
@@ -65,11 +66,12 @@ export const DeleteDuplicateMask = observer(
             width: number;
         } | null>(null);
 
-        const notification = useNotification();
+        const [openModal, setOpenModal] = useState<boolean>(false);
 
         // get the store
         const { registry, state } = useBlocks();
         const { designer } = useDesigner();
+        const notification = useNotification();
 
         // get the block
         const block = state.getBlock(designer.selected);
@@ -138,7 +140,7 @@ export const DeleteDuplicateMask = observer(
             const leftValue =
                 size.left +
                 size.width -
-                STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH * 2 -
+                STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH * 3 -
                 12;
 
             let left: string;
@@ -281,6 +283,15 @@ export const DeleteDuplicateMask = observer(
         return (
             <StyledContainer id="delete-duplicate-mask" style={getStyle()}>
                 <StyledButtonGroup>
+                    <Tooltip title="Add to client">
+                        <StyledButtonGroupIconButton
+                            sx={{ color: '#757575' }}
+                            size="small"
+                            onClick={() => setOpenModal(true)}
+                        >
+                            <Add />
+                        </StyledButtonGroupIconButton>
+                    </Tooltip>
                     <Tooltip title="Duplicate">
                         <StyledButtonGroupIconButton
                             sx={{ color: '#757575' }}
@@ -303,6 +314,11 @@ export const DeleteDuplicateMask = observer(
                         </StyledButtonGroupIconButton>
                     </Tooltip>
                 </StyledButtonGroup>
+                <AddClientBlockModal
+                    isOpen={openModal}
+                    onClose={() => setOpenModal(false)}
+                    selected={designer.selected}
+                />
             </StyledContainer>
         );
     },

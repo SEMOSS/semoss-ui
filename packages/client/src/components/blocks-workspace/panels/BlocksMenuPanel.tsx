@@ -13,6 +13,7 @@ import {
     Divider,
     InputAdornment,
     IconButton,
+    useNotification,
 } from '@semoss/ui';
 
 import { runPixelTwo } from '../../../runPixelTwo';
@@ -101,6 +102,7 @@ const defaultSection = 'Miscellaneous';
  */
 export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
     const { title, items } = props;
+    const notification = useNotification();
 
     const [search, setSearch] = useState('');
     const [clientBlock, setClientBlock] = useState([]);
@@ -123,37 +125,50 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
      * TODO: REPLACE WITH A CALL TO THE BACKEND
      */
     const getClientBlocks = async () => {
-        // runPixelTwo('1+1').then((res) => {
-        setClientBlock(CLIENT_BLOCKS_MENU);
-        // });
+        runPixelTwo('GetClientBlocks()').then((res) => {
+            const { pixelReturn, errors } = res;
+            if (errors.length) {
+                notification.add({
+                    color: 'error',
+                    message: errors.join(''),
+                });
+            } else {
+                const { output } = pixelReturn[0];
+                const res = (output as DesignerMenuItem[]).map((item) => {
+                    return {
+                        ...item,
+                        json: JSON.parse(JSON.stringify(item.json)),
+                    };
+                });
+                setClientBlock(output as DesignerMenuItem[]);
+            }
+        });
     };
-
-    useEffect(() => {
-        if (mode === 'CLIENT') {
-            getClientBlocks();
-        }
-    }, [mode]);
 
     const sortedItems = useMemo(() => {
         // Use Client Block when mode is CLIENT otherwise use items from the props
         const dataToProcess = mode === 'CLIENT' ? clientBlock : items;
         const sectionRecord: Record<string, DesignerMenuItem[]> = {};
-
+        const newSectionOrder: string[] = [...SECTION_ORDER];
         // Group items by section
         dataToProcess.forEach((item) => {
             const currentSection = item.section ?? defaultSection;
+            if (newSectionOrder.indexOf(currentSection) === -1)
+                newSectionOrder.push(currentSection);
             if (!sectionRecord[currentSection])
                 sectionRecord[currentSection] = [];
             sectionRecord[currentSection].push(item);
         });
 
         // Sort sections based on sectionOrder
-        return SECTION_ORDER.map((section) => {
-            const sectionItems = sectionRecord[section] || [];
-            return sectionItems.sort((a, b) =>
-                a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
-            );
-        }).filter((section) => section.length > 0);
+        return newSectionOrder
+            .map((section) => {
+                const sectionItems = sectionRecord[section] || [];
+                return sectionItems.sort((a, b) =>
+                    a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
+                );
+            })
+            .filter((section) => section.length > 0);
     }, [items, mode, clientBlock, SECTION_ORDER]);
 
     // get the rendered items
