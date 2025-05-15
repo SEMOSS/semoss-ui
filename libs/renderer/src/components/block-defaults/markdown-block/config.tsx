@@ -41,7 +41,6 @@ export const config: BlockConfig<MarkdownBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Markdown",
                     render: ({ id }) => (
@@ -63,6 +62,10 @@ export const config: BlockConfig<MarkdownBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

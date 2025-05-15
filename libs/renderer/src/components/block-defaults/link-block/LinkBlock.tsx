@@ -32,12 +32,39 @@ export const LinkBlock: BlockComponent = observer(({ id }) => {
             listeners.preProcess();
         }
     }, []);
+
+    const isFullUrl = (href:string) => {
+        return /^(https?:)?\/\//.test(data.href)
+    }
+
+    const navigate = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        if(!data.href) return;
+        if(isFullUrl(data.href)){
+            return
+        } else if (data.href.startsWith("/")) {
+            e.preventDefault()
+
+            const hash = window.location.hash 
+            const match = hash.match(/^#\/[^/]+\/[^/]+/)
+            debugger
+
+            if(match) {
+                const base  = match[0]
+
+                const newHash = base + (data.href.startsWith("/") ? data.href : "/")
+
+                window.location.hash = newHash
+            }
+        }
+
+    }
     return (
         <a
             href={data.href}
             style={{
                 ...data.style,
             }}
+            onClick={navigate}
             {...attrs}
         >
             {data.text}

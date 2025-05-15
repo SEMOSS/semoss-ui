@@ -381,7 +381,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
-                onSubmit: { type: 'sync', order: [] },
+                onClose: { type: 'sync', order: [] },
             },
             slots: {
                 content: [],
@@ -1212,7 +1212,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 ),
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1321,7 +1323,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1499,7 +1503,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1681,7 +1687,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1894,7 +1902,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -2000,7 +2010,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     name: '',
                 },
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -2081,7 +2093,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     },
                 },
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -2180,7 +2194,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     facetList: [],
                 },
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -2530,6 +2546,199 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 onChange: { type: 'sync', order: [] },
             },
             slots: {} as BlockJSON['slots'],
+        },
+    },
+    // -----------------------------------------------
+    // Grouped Components
+    // -----------------------------------------------
+    {
+        section: SECTION_LAYOUT,
+        name: '3x3 Grid',
+        helperText: 'A pre-built 3x3 grid container',
+        json: {
+            widget: 'container',
+            parent: {
+                // can be null
+                id: 'page-1',
+                slot: 'content',
+            },
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: 'px',
+                    gap: 'px',
+                    flexWrap: 'wrap',
+                },
+                type: 'custom',
+            },
+            listeners: {},
+            slots: {
+                children: [
+                    {
+                        widget: 'container',
+                        data: {
+                            style: {
+                                display: 'flex',
+                                padding: '8px',
+                                gap: '8px',
+                                flexWrap: 'wrap',
+                                justifyContent: 'space-around',
+                                border: '2px dotted #4a4a4a',
+                            },
+                        },
+                        listeners: {},
+                        slots: {
+                            children: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
         },
     },
 ];
