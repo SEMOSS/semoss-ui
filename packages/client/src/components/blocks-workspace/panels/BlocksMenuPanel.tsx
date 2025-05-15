@@ -263,6 +263,10 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
         });
     }, [items]);
 
+    const isClient = mode === 'CLIENT';
+
+    console.log('Client Block', isClient);
+
     return (
         <Panel>
             <Stack height="100%">
@@ -354,6 +358,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                                             <Grid item key={block.name}>
                                                 <AddBlocksMenuCard
                                                     item={block}
+                                                    isClient={isClient}
                                                 />
                                             </Grid>
                                         ))}

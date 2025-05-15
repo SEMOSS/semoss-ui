@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { ReportRounded } from '@mui/icons-material';
+import html2canvas from 'html2canvas';
 
 import { ActionMessages, INPUT_BLOCK_TYPES, useBlocks } from '@semoss/renderer';
 import {
@@ -11,6 +12,7 @@ import {
     Typography,
     useNotification,
     Icon,
+    Button,
 } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
@@ -37,16 +39,22 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
 export interface AddBlocksMenuItemProps {
     /** Item that can be dragged onto the block */
     item: DesignerMenuItem;
+
+    /** Determined for snapshot code */
+    isClient: boolean;
 }
 
 /**
  * Individaul block that can be dragged onto the UI
  */
 export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
-    const { item } = props;
+    const { item, isClient } = props;
     const { state } = useBlocks();
     const { designer } = useDesigner();
     const notification = useNotification();
+
+    const ref = useRef(null);
+    const [imageSrc, setImageSrc] = useState(null);
 
     // track if it is this one that is dragging
     const [local, setLocal] = useState(false);
@@ -257,6 +265,16 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         };
     }, [designer.drag.active, local, handleDocumentMouseUp]);
 
+    useEffect(() => {
+        if (isClient) {
+            if (ref.current) {
+                html2canvas(ref.current).then((canvas) => {
+                    setImageSrc(canvas.toDataURL('image/png'));
+                });
+            }
+        }
+    }, [isClient]);
+
     return (
         <Stack
             spacing={1}
@@ -264,6 +282,21 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
             height="100%"
             justifyContent="flex-end"
         >
+            {/* So we can snapshot picture for client */}
+            {isClient && (
+                <div
+                    ref={ref}
+                    style={{ position: 'absolute', left: '-9999px', top: 0 }}
+                >
+                    <Stack style={{ width: '50%', height: '50%' }}>
+                        <Typography
+                            variant={'caption'}
+                        >{`Show snapshot for ${item.name}`}</Typography>
+                        <Button variant={'contained'}>{item.name}</Button>
+                    </Stack>
+                </div>
+            )}
+
             <StyledTypography
                 variant="body2"
                 fontWeight="medium"
@@ -298,7 +331,14 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 >
                     <div>
                         <BlockCardContent
-                            image={hovered ? item.hoverImage : item.activeImage}
+                            // image={hovered ? item.hoverImage : item.activeImage}
+                            image={
+                                isClient
+                                    ? imageSrc
+                                    : hovered
+                                    ? item.hoverImage
+                                    : item.activeImage
+                            }
                             name={item.name}
                         />
                     </div>
