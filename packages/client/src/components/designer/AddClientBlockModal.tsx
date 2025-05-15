@@ -60,27 +60,58 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
     const { monolithStore, configStore } = useRootStore();
     const { registry, state } = useBlocks();
     const notification = useNotification();
+    const allowedKeys = ['widget', 'data', 'listeners', 'slots'];
 
-    const collectChildBlocks = (
-        slots: Record<string, any>,
-        accumulatedSlots: Record<string, any>,
-    ): Record<string, any> => {
-        Object.entries(slots).forEach(([slotName, slotValue]) => {
-            if (slotName === 'children' && Array.isArray(slotValue)) {
-                accumulatedSlots[slotName] = slotValue.map((childId) => {
-                    const childBlock = state.blocks[childId];
-                    if (childBlock && childBlock.slots) {
-                        collectChildBlocks(childBlock.slots, {});
-                    }
-                    const { parent, ...newClientBlock } = childBlock;
-                    return newClientBlock ?? {};
-                });
-            } else if (typeof slotValue === 'object' && slotValue !== null) {
-                accumulatedSlots[slotName] = collectChildBlocks(slotValue, {});
-            }
-        });
-        return accumulatedSlots;
+    /**
+     * Recursively processes the slots of a block to retain only the allowed keys.
+     *
+     * @param {any} value - The slots or part of slots to process.
+     * @param {Record<string, any>} blocks - The entire blocks object for reference.
+     * @returns {any} Processed slots with only allowed keys retained.
+     */
+    const processSlots = (value: any, blocks: Record<string, any>): any => {
+        // Check if the current value is an array
+        if (Array.isArray(value)) {
+            return value.map(
+                (item) =>
+                    // If the item is a string and exists in blocks, process it
+                    typeof item === 'string' && item in blocks
+                        ? Object.fromEntries(
+                              allowedKeys
+                                  .filter((key) => key in blocks[item]) // Filter allowed keys
+                                  .map((key) => [
+                                      key,
+                                      processSlots(blocks[item][key], blocks),
+                                  ]), // Process each key recursively
+                          )
+                        : processSlots(item, blocks), // Recursively process item if not a string or not in blocks
+            );
+            // Check if the current value is an object
+        } else if (typeof value === 'object' && value !== null) {
+            return Object.fromEntries(
+                Object.entries(value).map(([key, val]) => [
+                    key,
+                    processSlots(val, blocks), // Recursively process each entry
+                ]),
+            );
+        } else {
+            // Return value if it's neither an array nor an object
+            return value;
+        }
     };
+
+    /**
+     * This function is a wrapper around the useForm's handleSubmit function.
+     * It processes the block's slots to remove any unnecessary keys and
+     * recursively calls itself until all the slots are processed.
+     *
+     * Once the slots are processed, it calls the monolith's AddBlock query to
+     * add the block to the monolith's database.
+     *
+     * @param {AddAsClientBlockTypes} data - The data to be sent to the monolith.
+     *
+     * @returns {Promise<void>}
+     */
     const handleAddAsClientBlock = handleSubmit(
         async (data: AddAsClientBlockTypes) => {
             const block = state.blocks[selected];
@@ -88,7 +119,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
                 widget: block.widget,
                 data: block.data,
                 listeners: block.listeners,
-                slots: collectChildBlocks(block.slots, {}),
+                slots: processSlots(block.slots, state.blocks),
             };
 
             const response = await monolithStore.runQuery<[true]>(
