@@ -39,4 +39,6 @@ export const iconMap: { [key: string]: React.ComponentType<SvgIconProps> } = {
     "Camera": Icons.CameraAltOutlined,
     "Cancel": Icons.CancelOutlined,
     "Cloud": Icons.CloudOutlined,
+    "Shopping Cart": Icons.ShoppingCartOutlined,
+    "Bell": Icons.NotificationsOutlined,
 };
