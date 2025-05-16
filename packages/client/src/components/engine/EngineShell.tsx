@@ -117,12 +117,9 @@ export const EngineShell = (props: EngineShellProps) => {
         last_updated?: string;
         description?: string;
         database_type?: string;
-    }>(`GetEngineMetadata(engine=["${id}"], metaKeys=[]); `);
-
-    const { status: authorStatus, data: authorData } = usePixel<{
         DATEADDED?: string;
         PERMISSIONGRANTEDBY?: string;
-    }>(`GetAuthorLatestUpdated(engine=["${id}"]); `);
+    }>(`GetEngineMetadata(engine=["${id}"], metaKeys=[]); `);
 
     /**
      * @name exportDB
@@ -268,16 +265,15 @@ export const EngineShell = (props: EngineShellProps) => {
                         marginBottom={2}
                         sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
                     >
-                        {authorData?.DATEADDED &&
-                        authorData?.PERMISSIONGRANTEDBY ? (
+                        {data?.DATEADDED && data?.PERMISSIONGRANTEDBY ? (
                             <div>
                                 <Typography variant={'body2'}>
-                                    {`Updated by ${authorData.PERMISSIONGRANTEDBY}`}
+                                    {`Updated by ${data.PERMISSIONGRANTEDBY}`}
                                 </Typography>
 
                                 <div>
                                     <Typography variant={'body2'}>
-                                        {`at ${authorData.DATEADDED}`}
+                                        {`at ${data.DATEADDED}`}
                                     </Typography>
                                 </div>
                             </div>
