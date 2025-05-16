@@ -21,7 +21,7 @@ import { LoadingScreen } from '@/components/ui';
 import { UserAddOverlay } from './UserAddOverlay';
 import SearchIcon from '@mui/icons-material/Search';
 import CopyAllIcon from '@mui/icons-material/CopyAll';
-import { UserTablePopover } from './UserTablePopover';
+import { UserPopover } from './UserPopover';
 
 const AvatarWrapper = styled('div')({
     display: 'inline-block',
@@ -179,7 +179,10 @@ const formatValue = (input: string) => {
     }
     return '';
 };
-
+const StyledNameStack = styled(Stack)({
+    alignItems: 'center',
+    flex: 1,
+});
 interface User {
     id: string;
     type: string;
@@ -387,28 +390,10 @@ export const UserTable = (props: UserTableProps) => {
         }
     };
     /**
-     * Handle user popover open
-     * @param event
-     * @param user
+     * Handle user popover close
      */
-    const handlePopoverOpen = (
-        event: React.MouseEvent<HTMLElement>,
-        user: User,
-    ) => {
-        setAnchorEl(event.currentTarget);
-        setHoveredUser(user);
-    };
     const handlePopoverClose = () => {
         setAnchorEl(null);
-
-        setHoveredUser(null);
-    };
-    const handleCopy = (text: string) => {
-        navigator.clipboard.writeText(text);
-        notification.add({
-            color: 'success',
-            message: 'Copied to clipboard',
-        });
     };
     // Avatars rendered
     const Avatars = useMemo(() => {
@@ -630,29 +615,30 @@ export const UserTable = (props: UserTableProps) => {
                                                         </StyledTableCell>
                                                         <Table.Cell>
                                                             <StyledCenteredBox>
-                                                                <AvatarWrapper>
-                                                                    <Avatar>
-                                                                        {user.name[0].toUpperCase()}
-                                                                    </Avatar>
-                                                                </AvatarWrapper>
-                                                                <Stack
-                                                                    direction={
-                                                                        'column'
-                                                                    }
-                                                                    spacing={0}
-                                                                    flex={1}
+                                                                <StyledNameStack
+                                                                    direction="row"
                                                                     onMouseEnter={(
                                                                         event,
-                                                                    ) =>
-                                                                        handlePopoverOpen(
-                                                                            event,
+                                                                    ) => {
+                                                                        setAnchorEl(
+                                                                            event.currentTarget,
+                                                                        );
+                                                                        setHoveredUser(
                                                                             user,
-                                                                        )
-                                                                    }
+                                                                        );
+                                                                    }}
                                                                     onMouseLeave={() =>
-                                                                        handlePopoverClose()
+                                                                        handlePopoverClose
                                                                     }
+                                                                    aria-owns="mouse-over-popover"
+                                                                    aria-haspopup="true"
                                                                 >
+                                                                    <AvatarWrapper>
+                                                                        <Avatar>
+                                                                            {user.name[0].toUpperCase()}
+                                                                        </Avatar>
+                                                                    </AvatarWrapper>
+
                                                                     <StyledPrimaryText
                                                                         variant="body1"
                                                                         noWrap={
@@ -666,7 +652,7 @@ export const UserTable = (props: UserTableProps) => {
                                                                             </>
                                                                         )}
                                                                     </StyledPrimaryText>
-                                                                </Stack>
+                                                                </StyledNameStack>
                                                             </StyledCenteredBox>
                                                         </Table.Cell>
                                                         <Table.Cell>
@@ -797,7 +783,7 @@ export const UserTable = (props: UserTableProps) => {
                                             />
                                         </Table.Row>
                                     </Table.Footer>
-                                    <UserTablePopover
+                                    <UserPopover
                                         hoveredUser={
                                             hoveredUser
                                                 ? {
