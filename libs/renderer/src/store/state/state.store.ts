@@ -595,7 +595,7 @@ export class StateStore {
                     if(expression.includes(".")) {
                         variable = expression.match(/\$(.*?)\./)[1];
                     } else {
-                        debugger
+                        // debugger
                         variable = expression.match(/^\$(\w+)/)?.[1]
                     }
 
@@ -713,7 +713,7 @@ export class StateStore {
             // try to extract the variable
             const v = this.parseVariable(match);
 
-            debugger
+            // debugger
 
             // if it is not a string, convert to a string
             if (typeof v !== "string") {
