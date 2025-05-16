@@ -264,10 +264,10 @@ export const MembersTable = (props: MembersTableProps) => {
     // get the api
     const getMembersApi: Parameters<typeof useAPI>[0] =
         type === 'DATABASE' ||
-            type === 'STORAGE' ||
-            type === 'MODEL' ||
-            type === 'VECTOR' ||
-            type === 'FUNCTION'
+        type === 'STORAGE' ||
+        type === 'MODEL' ||
+        type === 'VECTOR' ||
+        type === 'FUNCTION'
             ? [
                   'getEngineUsers',
                   adminMode,
@@ -321,7 +321,7 @@ export const MembersTable = (props: MembersTableProps) => {
                             ?.permission as SETTINGS_ROLE,
                     );
                 }
-            }else{
+            } else {
                 if (adminMode) {
                     // if logged in admin, need to provide all Author option previledges
                     const adminPermissionPriority = 'Author';
@@ -679,7 +679,8 @@ export const MembersTable = (props: MembersTableProps) => {
                                     <Button
                                         disabled={
                                             isLoading ||
-                                            (!adminMode &&userPermission === 'Read-Only')
+                                            (!adminMode &&
+                                                userPermission === 'Read-Only')
                                         }
                                         variant={'contained'}
                                         onClick={() => {
@@ -719,9 +720,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                     }
                                                     checked={
                                                         selectedMembers.length ===
-                                                        renderedMembers.length &&
+                                                            renderedMembers.length &&
                                                         renderedMembers.length >
-                                                        0
+                                                            0
                                                     }
                                                     onChange={() => {
                                                         if (
@@ -810,7 +811,8 @@ export const MembersTable = (props: MembersTableProps) => {
                                                             <StyledCheckbox
                                                                 disabled={
                                                                     userPermission ===
-                                                                    'Read-Only' && !adminMode
+                                                                        'Read-Only' &&
+                                                                    !adminMode
                                                                 }
                                                                 checked={
                                                                     isSelected
@@ -911,13 +913,13 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                         !configStore.isEngineOperationAvailable(
                                                                             type,
                                                                             'access',
-                                                                        ) ||(!adminMode &&
-                                                                        permissionPriorityMapper(
-                                                                            userPermission,
-                                                                        )
-                                                                            .priority >
-                                                                            1
-                                                                    )
+                                                                        ) ||
+                                                                        (!adminMode &&
+                                                                            permissionPriorityMapper(
+                                                                                userPermission,
+                                                                            )
+                                                                                .priority >
+                                                                                1)
                                                                     }
                                                                 />
                                                                 <RadioGroup.Item
@@ -928,11 +930,12 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                             type,
                                                                             'access',
                                                                         ) ||
-                                                                        (!adminMode && permissionPriorityMapper(
-                                                                            userPermission,
-                                                                        )
-                                                                            ?.priority > 
-                                                                            2)
+                                                                        (!adminMode &&
+                                                                            permissionPriorityMapper(
+                                                                                userPermission,
+                                                                            )
+                                                                                ?.priority >
+                                                                                2)
                                                                     }
                                                                 />
                                                                 <RadioGroup.Item
@@ -942,15 +945,16 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                         !configStore.isEngineOperationAvailable(
                                                                             type,
                                                                             'access',
-                                                                        ) ||(!adminMode &&(
-                                                                        permissionPriorityMapper(
-                                                                            userPermission,
-                                                                        )
-                                                                            ?.priority >=
-                                                                            3 ||
-                                                                        readOnlyRestricted(
-                                                                            user,
-                                                                        )))
+                                                                        ) ||
+                                                                        (!adminMode &&
+                                                                            (permissionPriorityMapper(
+                                                                                userPermission,
+                                                                            )
+                                                                                ?.priority >=
+                                                                                3 ||
+                                                                                readOnlyRestricted(
+                                                                                    user,
+                                                                                )))
                                                                     }
                                                                 />
                                                             </RadioGroup>
@@ -963,13 +967,13 @@ export const MembersTable = (props: MembersTableProps) => {
                                                             <>
                                                                 <Table.Cell>
                                                                     {user.usage_restriction !==
-                                                                        undefined
+                                                                    undefined
                                                                         ? formatValue(
-                                                                            user.usage_restriction,
-                                                                        )
+                                                                              user.usage_restriction,
+                                                                          )
                                                                         : formatValue(
-                                                                            'null',
-                                                                        )}
+                                                                              'null',
+                                                                          )}
                                                                 </Table.Cell>
                                                                 <Table.Cell>
                                                                     {user?.usage_restriction ===
@@ -1065,14 +1069,14 @@ export const MembersTable = (props: MembersTableProps) => {
                                         hoveredUser={
                                             hoveredUser
                                                 ? {
-                                                    id: hoveredUser.id,
-                                                    name: 
-                                                        hoveredUser.name || 
-                                                        'Unknown',
-                                                    email: 
-                                                        hoveredUser.email || 
-                                                        '',
-                                                }
+                                                      id: hoveredUser.id,
+                                                      name:
+                                                          hoveredUser.name ||
+                                                          'Unknown',
+                                                      email:
+                                                          hoveredUser.email ||
+                                                          '',
+                                                  }
                                                 : null
                                         }
                                         isPopoverOpen={Boolean(anchorEl)}
