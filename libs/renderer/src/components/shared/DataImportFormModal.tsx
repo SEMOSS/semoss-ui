@@ -1516,9 +1516,7 @@ export const DataImportFormModal = observer(
                                                                                         checkedColumnsCount >
                                                                                             0 &&
                                                                                         checkedColumnsCount <
-                                                                                            dataImportwatch(
-                                                                                                "tables",
-                                                                                            )[
+                                                                                            watchedTables[
                                                                                                 tableIndex
                                                                                             ]
                                                                                                 .columns
