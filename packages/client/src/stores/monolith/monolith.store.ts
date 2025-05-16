@@ -325,7 +325,7 @@ export class MonolithStore {
             '&email=' +
             encodeURIComponent(email) +
             '&password=' +
-            encodeURIComponent(password);
+            encodeURIComponent(password)+
         '&phone=' +
             encodeURIComponent(phone) +
             '&phoneextension=' +
