@@ -67,7 +67,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
         if (id) {
             //get the options JSON of the selected block
             //let blockJSON = this._store.blocks[id].data.option;
-            const blockJSON = data.option;
+            const blockJSON = data?.option;
             //initialize the selector string
             let selector = "Select(";
 
@@ -87,7 +87,6 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
             const dynamicYAndTooltipSet = Array.from(
                 new Set([
                     ...selectorFields["Value"],
-                    ...selectorFields["tooltip"],
                 ]),
             );
 

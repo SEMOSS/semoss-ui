@@ -8,7 +8,6 @@ import { Backdrop, Notification, Typography } from "@semoss/ui";
 import { Blocks, RendererEngine } from "./components/blocks";
 import { DefaultBlocks } from "./components/block-defaults";
 import { DefaultCells } from "./components/cell-defaults";
-import { getHomePage } from "./utility";
 import {
     MigrationManager,
     SerializedState,
@@ -49,6 +48,8 @@ export const Renderer = observer((props: RendererProps) => {
     const queryStringParams = new URLSearchParams(useLocation().search);
 
     const [homePage, setHomePage] = useState("");
+
+    const URLroute = window.location.href;
 
     useEffect(() => {
         // if (isAuthorized) {
@@ -110,8 +111,8 @@ export const Renderer = observer((props: RendererProps) => {
                     s = await migration.run(s);
                 }
 
-                const active = await getHomePage(s);
-                setHomePage(active);
+                const activePage = getCurrentPageId(s);
+                setHomePage(activePage);
 
                 // Replace variable values with query params
                 const params = {};
@@ -152,7 +153,7 @@ export const Renderer = observer((props: RendererProps) => {
                 setIsLoading(false);
             });
         // }
-    }, [state, appId, insightId]);
+    }, [state, appId, insightId, URLroute]);
 
     if (!stateStore || (isLoading && !preview)) {
         if (!preview) {
@@ -192,3 +193,27 @@ export const Renderer = observer((props: RendererProps) => {
         </Notification>
     );
 });
+
+const getCurrentPageId = (state: SerializedState) => {
+    const URLroute = window.location.href;
+    const match = URLroute.match(/#\/[^/]+\/[^/]+\/(.+)/);
+    const currentRoute = match ? match[1] : "";
+
+    let activePageID = "";
+    const blocks = state?.blocks;
+
+    if (!blocks) {
+        return;
+    }
+    Object?.entries(blocks).forEach(([_, block]) => {
+        if (block?.widget === "page") {
+            if (currentRoute === block?.data.route) {
+                activePageID = block?.id;
+            }
+        }
+    });
+    if (activePageID === "") {
+        activePageID = "page-1";
+    }
+    return activePageID;
+};
