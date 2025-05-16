@@ -54,8 +54,9 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
     }, []);
 
     const debouncedCallback = debounced(() => {
+        // debugger
         listeners.onChange();
-    }, 200);
+    }, 500);
 
     return (
         <StyledTextField
