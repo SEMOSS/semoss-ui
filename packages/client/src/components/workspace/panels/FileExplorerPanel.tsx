@@ -68,6 +68,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
         // increment the counter
         setCounter(counter + 1);
     };
+
     const handleToggleExpand = (path: string) => {
         setExpandedPaths((prev) =>
             prev.includes(path)

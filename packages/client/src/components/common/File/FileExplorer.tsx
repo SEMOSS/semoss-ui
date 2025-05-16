@@ -74,8 +74,6 @@ export const FileExplorer = (props: FileExplorerProps) => {
     );
 
     const initLoadComplete = getAssets.status === 'SUCCESS';
-
-    //const [expanded, setExpanded] = React.useState<string[]>([]);
     const [selected, setSelected] = React.useState<string[]>([]);
 
     /**
