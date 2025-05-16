@@ -2734,6 +2734,33 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             },
         },
     },
+
+    {
+        section: SECTION_CHARTS,
+        name: 'Visualization Filter',
+        helperText: 'Filter data based on set criteria',
+        activeImage: BLOCK_IMAGES['VISUALIZATION_FILTER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['VISUALIZATION_FILTER_HOVER'],
+        json: {
+            widget: 'visualization-filter',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                displayType: '',
+                frame: '',
+                column: '',
+                filterType: '',
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {},
+        },
+    },
 ];
 
 // TODO: Move to the backend
