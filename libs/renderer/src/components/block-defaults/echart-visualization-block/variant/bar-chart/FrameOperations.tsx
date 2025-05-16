@@ -531,14 +531,44 @@ export const FrameOperations = observer(
 
                 tempValue["_state"] = {};
                 tempValue["_state"]["fields"] = {};
-
+                let tempSeries = tempValue['series'] || [];
                 tempValue["_state"]["fields"] = {
                     ...tempValue["_state"]["fields"],
                     xAxis: firstColumn?.values,
                     yAxis: secondColumn?.values,
                     tooltip: columnsDrop[2]?.values ? columnsDrop[2]?.values : [],
                 };
-
+                if(secondColumn?.values.length > 1){
+                    let seriesListToAdd = [];
+                    //Adding newly added field to the state
+                    for(let i=0;i<secondColumn.values.length;i++){
+                        seriesListToAdd[i] = {
+                            ...tempSeries[i],
+                            name: secondColumn.values[i],
+                            type: "line",
+                            data: tempSeries[i]?.data ?? [],
+                            lineStyle: {
+                                ...tempSeries[i]?.lineStyle,
+                                type: tempSeries[i]?.lineStyle?.type ?? "solid",
+                                width: tempSeries[i]?.lineStyle?.width ?? 1,
+                            },
+                            label: {
+                                ...tempSeries[i]?.label,
+                                show: tempSeries[i]?.label?.show ?? true,
+                                position: tempSeries[i]?.label?.position ?? "top",
+                                rotate: tempSeries[i]?.label?.rotate ?? 45,
+                                fontSize: tempSeries[i]?.label?.fontSize ?? 12,
+                                color: tempSeries[i]?.label?.color ?? "#000000",
+                            },
+                        };
+                    }
+                    tempSeries = seriesListToAdd;
+                }
+                else{
+                    //Removing the field from the state if it is not selected
+                    tempSeries = tempSeries.slice(0,1);
+                }
+                tempValue["series"] = tempSeries;
                 // set the value
                 setValue(JSON.stringify(tempValue));
                 setData("option", tempValue);
