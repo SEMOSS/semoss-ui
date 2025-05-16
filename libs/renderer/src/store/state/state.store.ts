@@ -518,6 +518,7 @@ export class StateStore {
      * @returns 
      */
     dispatchEventAction = async (action: Actions, type: 'sync' | 'async') => {
+        debugger
         try {
             if (ActionMessages.RUN_QUERY === action.message) {
                 const { queryId } = action.payload;
@@ -528,7 +529,11 @@ export class StateStore {
                 }); 
                     
                 return await run();
-            }else if (ActionMessages.DISPATCH_EVENT === action.message) {
+            } else if (ActionMessages.RUN_CELL === action.message) {
+                const { queryId, cellId } = action.payload;
+
+                this.runCell(queryId, cellId);
+            } else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
