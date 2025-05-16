@@ -377,7 +377,8 @@ export const DataImportFormModal = observer(
         });
 
         const notification = useNotification();
-
+        /** Select all the rows from a Table */
+        const [isAllSelected, setIsAllSelected] = useState<boolean>(false);
         useEffect(() => {
             if (editMode)
                 retrieveDatabaseTablesAndEdges(cell.parameters.databaseId);
@@ -518,13 +519,19 @@ export const DataImportFormModal = observer(
             }
         };
 
-        /** Add all the columns from a Table */
-        const [isAllSelected, setIsAllSelected] = useState(false);
+     
+        /**
+         * Handles the event when a user clicks the "Select All" button in the Data Import Form Modal.
+         * If the user clicks the button when all columns are already selected, it unselects all columns.
+         * If the user clicks the button when no columns are selected, it selects all columns.
+         * @param {number} tableIndex The index of the table in the watchedTables array.
+         */
         const addAllTableColumnsHandler = (tableIndex: number) => {
-              setShownTables(new Set(tableNames));
-              setRootTable(watchedTables[tableIndex].name);
+            setShownTables(new Set(tableNames));
+            setRootTable(watchedTables[tableIndex].name);
+            // Check if all columns are currently selected. If they are, set allChecked to false.
+            // If not, set allChecked to true.
             const allChecked = !isAllSelected;
-
             const updatedColumns = watchedTables[tableIndex].columns.map((column) => ({
                 ...column,
                 checked: allChecked,
@@ -533,6 +540,7 @@ export const DataImportFormModal = observer(
             const freshAliasCountObj = {};
             updatedColumns.forEach((column) => {
                 if (allChecked) {
+                    // If all columns are being selected, increment the alias count for this column's alias.
                     const alias = column.userAlias;
                     if (alias in freshAliasCountObj) {
                         freshAliasCountObj[alias] += 1;
@@ -542,9 +550,11 @@ export const DataImportFormModal = observer(
                 }
             });
 
+            // Update the aliasesCountObj state variable with the new alias count object.
             setAliasesCountObj(freshAliasCountObj);
             aliasesCountObjRef.current = { ...freshAliasCountObj };
 
+            // Update the form value for the columns of the table at the given index with the updated columns array.
             formSetValue(`tables.${tableIndex}.columns`, updatedColumns, {
                 shouldDirty: true,
                 shouldValidate: true,
@@ -1236,10 +1246,13 @@ export const DataImportFormModal = observer(
                             },
                         );
                     }
-                    if (
-                        totalCheckedColumns === totalColumnsToCheck &&
-                        totalColumnsToCheck > 0
-                    ) {
+                    // If all columns in the table are checked, set isAllSelected to true.
+                    // Otherwise, set isAllSelected to false.
+                    // We do this by comparing the total number of columns in the table
+                    // (totalColumnsToCheck) to the total number of columns that are checked
+                    // (totalCheckedColumns). If the two values are equal, then all columns
+                    // are checked. If not, then some columns are not checked.
+                    if (totalCheckedColumns === totalColumnsToCheck && totalColumnsToCheck > 0) {
                         setIsAllSelected(true);
                     } else {
                         setIsAllSelected(false);
