@@ -518,7 +518,6 @@ export class StateStore {
      * @returns 
      */
     dispatchEventAction = async (action: Actions, type: 'sync' | 'async') => {
-        debugger
         try {
             if (ActionMessages.RUN_QUERY === action.message) {
                 const { queryId } = action.payload;
@@ -600,7 +599,6 @@ export class StateStore {
                     if(expression.includes(".")) {
                         variable = expression.match(/\$(.*?)\./)[1];
                     } else {
-                        // debugger
                         variable = expression.match(/^\$(\w+)/)?.[1]
                     }
 
@@ -717,8 +715,6 @@ export class StateStore {
         return expression.replace(/{{(.*?)}}/g, (match) => {
             // try to extract the variable
             const v = this.parseVariable(match);
-
-            // debugger
 
             // if it is not a string, convert to a string
             if (typeof v !== "string") {
