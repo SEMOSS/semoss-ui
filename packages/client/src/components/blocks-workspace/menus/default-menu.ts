@@ -2002,6 +2002,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 frame: {
                     name: '',
                 },
+                show: 'true',
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
@@ -2085,6 +2086,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                         columnDetails: {},
                     },
                 },
+                show: 'true',
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
