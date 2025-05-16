@@ -92,10 +92,115 @@ const StyledItem = styled("div")(() => ({
     padding: "0.5rem",
 }));
 
+const ResizingTool = (({id})=>{
+    const [resizeSelection, setResizeSelection] = useState('');
+    const { data, setData } =
+            useBlockSettings<EchartVisualizationBlockDef>(id);
+    return (
+        <>
+            <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setResizeSelection((prevList) =>
+                            prevList === "resizing" ? "" : "resizing",
+                        )
+                    }
+                    selected={resizeSelection === "resizing"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                resizeSelection === "resizing"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Resizing" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {resizeSelection === "resizing" && (
+                    <Stack>
+                        <ResizeSetting
+                            id={id}
+                            label={"Height"}
+                            path={"style.height"}
+                        ></ResizeSetting>
+                        <ResizeSetting
+                            id={id}
+                            label={"Width"}
+                            path={"style.width"}
+                        ></ResizeSetting>
+                    </Stack>
+                )}
+            </StyledListItem>
+        </>
+    );
+});
+
+const ColorpalatteTool = (({id})=>{
+    const [colorPalatteSelection, setColorPalatteSelection] = useState('');
+    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+
+    return (
+        <>
+            <ListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setColorPalatteSelection((prevList) =>
+                            prevList === "colourpalette"
+                                ? ""
+                                : "colourpalette",
+                        )
+                    }
+                    selected={colorPalatteSelection === "colourpalette"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                colorPalatteSelection === "colourpalette"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Color Palette" />
+                    <InfoOutlined />
+                </ListItemButton>
+            </ListItem>
+        {colorPalatteSelection === "colourpalette" && (
+                <ColorPalatteSettings
+                    id={id}
+                    path="option.color"
+                    onColorPalatteSelected={(option, color) => {
+                        if (data.variation === "echart-bar-graph") {
+                            const optionToSend =
+                                typeof option === "string"
+                                    ? JSON.parse(option)
+                                    : option;
+                            const colorParent = "itemStyle";
+                            const updatedOption = updateSeriesColor(
+                                optionToSend,
+                                color,
+                                colorParent,
+                            );
+                            setData("option", updatedOption);
+                        }
+                    }}
+                />
+            )}
+        </>
+    );
+});
+
 const DendrogramToolsList = (({id}) => {
     const [dendrogramSelection, setDendrogramSelection] = useState('');
    return (
        <>
+           <ResizingTool id={id} />
+           <ColorpalatteTool id={id} />
            <StyledListItem disablePadding>
                 <ListItemButton
                     onClick={(e) =>
@@ -212,109 +317,6 @@ const DendrogramToolsList = (({id}) => {
    ) 
 });
 
-const ResizingTool = (({id})=>{
-    const [resizeSelection, setResizeSelection] = useState('');
-    const { data, setData } =
-            useBlockSettings<EchartVisualizationBlockDef>(id);
-    return (
-        <>
-            <StyledListItem disablePadding>
-                <ListItemButton
-                    onClick={(e) =>
-                        setResizeSelection((prevList) =>
-                            prevList === "resizing" ? "" : "resizing",
-                        )
-                    }
-                    selected={resizeSelection === "resizing"}
-                >
-                    <ListItemIcon>
-                        <ImageIcon
-                            fontSize="large"
-                            color={
-                                resizeSelection === "resizing"
-                                    ? "primary"
-                                    : "disabled"
-                            }
-                        />
-                    </ListItemIcon>
-                    <ListItemText primary="Resizing" />
-                    <InfoOutlined />
-                </ListItemButton>
-                {resizeSelection === "resizing" && (
-                    <Stack>
-                        <ResizeSetting
-                            id={id}
-                            label={"Height"}
-                            path={"style.height"}
-                        ></ResizeSetting>
-                        <ResizeSetting
-                            id={id}
-                            label={"Width"}
-                            path={"style.width"}
-                        ></ResizeSetting>
-                    </Stack>
-                )}
-            </StyledListItem>
-        </>
-    );
-});
-
-const ColorpalatteTool = (({id})=>{
-    const [colorPalatteSelection, setColorPalatteSelection] = useState('');
-    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
-
-    return (
-        <>
-            <ListItem disablePadding>
-                <ListItemButton
-                    onClick={(e) =>
-                        setColorPalatteSelection((prevList) =>
-                            prevList === "colourpalette"
-                                ? ""
-                                : "colourpalette",
-                        )
-                    }
-                    selected={colorPalatteSelection === "colourpalette"}
-                >
-                    <ListItemIcon>
-                        <ImageIcon
-                            fontSize="large"
-                            color={
-                                colorPalatteSelection === "colourpalette"
-                                    ? "primary"
-                                    : "disabled"
-                            }
-                        />
-                    </ListItemIcon>
-                    <ListItemText primary="Color Palette" />
-                    <InfoOutlined />
-                </ListItemButton>
-            </ListItem>
-        {colorPalatteSelection === "colourpalette" && (
-                <ColorPalatteSettings
-                    id={id}
-                    path="option.color"
-                    onColorPalatteSelected={(option, color) => {
-                        if (data.variation === "echart-bar-graph") {
-                            const optionToSend =
-                                typeof option === "string"
-                                    ? JSON.parse(option)
-                                    : option;
-                            const colorParent = "itemStyle";
-                            const updatedOption = updateSeriesColor(
-                                optionToSend,
-                                color,
-                                colorParent,
-                            );
-                            setData("option", updatedOption);
-                        }
-                    }}
-                />
-            )}
-        </>
-    );
-});
-
 const GanttToolsList = (({id})=>{
     const [ganttSelection, setGanttSelection] = useState('');
     return (
@@ -342,7 +344,6 @@ const GanttToolsList = (({id})=>{
                     </ListItemIcon>
                     <ListItemText
                         primary="Fiscal Axis"
-                        style={{ flex: "0.5 1 auto" }}
                     />
                     <InfoOutlined />
                 </ListItemButton>
@@ -373,7 +374,6 @@ const GanttToolsList = (({id})=>{
                     </ListItemIcon>
                     <ListItemText
                         primary="Target Date"
-                        style={{ flex: "0.5 1 auto" }}
                     />
                     <InfoOutlined />
                 </ListItemButton>
@@ -381,38 +381,37 @@ const GanttToolsList = (({id})=>{
             {ganttSelection === "targetdate" && (
                 <GanttTargetLine id={id} path={"option"} />
             )}
-                    <StyledListItem disablePadding>
-            <ListItemButton
-                onClick={(e) =>
-                    setGanttSelection((prevList) =>
-                        prevList === "customizesymbol"
-                            ? ""
-                            : "customizesymbol",
-                    )
-                }
-                selected={ganttSelection === "customizesymbol"}
-            >
-                <ListItemIcon>
-                    <ImageIcon
-                        fontSize="large"
-                        color={
-                            ganttSelection === "customizesymbol"
-                                ? "primary"
-                                : "disabled"
-                        }
+            <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setGanttSelection((prevList) =>
+                            prevList === "customizesymbol"
+                                ? ""
+                                : "customizesymbol",
+                        )
+                    }
+                    selected={ganttSelection === "customizesymbol"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                ganttSelection === "customizesymbol"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText
+                        primary="Customize Symbol"
                     />
-                </ListItemIcon>
-                <ListItemText
-                    primary="Customize Symbol"
-                    style={{ flex: "0.5 1 auto" }}
-                />
-                <InfoOutlined />
-            </ListItemButton>
-        </StyledListItem>
-        {ganttSelection === "customizesymbol" && (
-            <CustomizeSymbol id={id} path={"option"} />
-        )}
-                    <StyledListItem disablePadding>
+                    <InfoOutlined />
+                </ListItemButton>
+            </StyledListItem>
+            {ganttSelection === "customizesymbol" && (
+                <CustomizeSymbol id={id} path={"option"} />
+            )}
+            <StyledListItem disablePadding>
                 <ListItemButton
                     onClick={(e) =>
                         setGanttSelection((prevList) =>
@@ -435,7 +434,6 @@ const GanttToolsList = (({id})=>{
                     </ListItemIcon>
                     <ListItemText
                         primary="Legend"
-                        style={{ flex: "0.5 1 auto" }}
                     />
                     <InfoOutlined />
                 </ListItemButton>
@@ -466,7 +464,6 @@ const GanttToolsList = (({id})=>{
                     </ListItemIcon>
                     <ListItemText
                         primary="Group View"
-                        style={{ flex: "0.5 1 auto" }}
                     />
                     <InfoOutlined />
                 </ListItemButton>
@@ -500,7 +497,6 @@ const GanttToolsList = (({id})=>{
                     </ListItemIcon>
                     <ListItemText
                         primary="Display Value Labels"
-                        style={{ flex: "0.5 1 auto" }}
                     />
                     <InfoOutlined />
                 </ListItemButton>
@@ -703,6 +699,40 @@ const StackChartTool = (({id})=>{
                                 <LegendStackChart id={id} path={"option"} />
                             )}
                     </StyledListItem>
+                    <StyledListItem disablePadding>
+                        <ListItemButton
+                            onClick={(e) =>
+                                setStackChartSelection((prevList) =>
+                                    prevList === "stack-chart-title"
+                                        ? ""
+                                        : "stack-chart-title",
+                                )
+                            }
+                            selected={
+                                stackChartSelection === "stack-chart-title"
+                            }
+                        >
+                            <ListItemIcon>
+                                <ImageIcon
+                                    fontSize="large"
+                                    color={
+                                        stackChartSelection ===
+                                        "stack-chart-title"
+                                            ? "primary"
+                                            : "disabled"
+                                    }
+                                />
+                            </ListItemIcon>
+                            <ListItemText primary="Chart Title" />
+                            <InfoOutlined />
+                        </ListItemButton>
+                    {stackChartSelection === "stack-chart-title" && (
+                        <ScatterPlotChartTitle
+                            id={id}
+                            path={"option"}
+                        ></ScatterPlotChartTitle>
+                    )}
+            </StyledListItem>
         </>
     );
 });
@@ -1390,56 +1420,150 @@ const LineChartTools = (({id})=>{
             </StyledListItem>            
         </>
         );
-    });
+});
 
-    const MapChartTools = (({id})=>{
-        const [mapSelection, setMapSelection] = useState('');
-        return (
-            <>
-                <ColorpalatteTool id={id} />
-                <StyledListItem disablePadding>
+const MapChartTools = (({id})=>{
+    const [mapSelection, setMapSelection] = useState('');
+    return (
+        <>
+            <ColorpalatteTool id={id} />
+            <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setMapSelection((prevList) =>
+                            prevList === "tooltips"
+                                ? ""
+                                : "tooltips",
+                        )
+                    }
+                    selected={mapSelection === "tooltips"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                mapSelection === "tooltips"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Tooltips" />
+                    <InfoOutlined />
+                </ListItemButton>
+                { mapSelection === "tooltips" && (
+                        <TooltipMapChart id={id} path={"option"} />
+                    )}
+            </StyledListItem>
+            <ResizingTool id={id} />
+            <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setMapSelection((prevList) =>
+                            prevList === "legend" ? "" : "legend",
+                        )
+                    }
+                    selected={mapSelection === "legend"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                mapSelection === "legend"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Legend" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {mapSelection === "legend" && (
+                                <LegendToggleMapChart id={id} path={"option"} />
+                            )}
+            </StyledListItem>
+            <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setMapSelection((prevList) =>
+                            prevList === "symbol" ? "" : "symbol",
+                        )
+                    }
+                    selected={mapSelection === "symbol"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                mapSelection === "symbol"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        ></ImageIcon>
+                    </ListItemIcon>
+
+                    <ListItemText primary="Map Marker Size" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {mapSelection === "symbol" && (
+                    <MapMarkerSize
+                        id={id}
+                        path={"option"}
+                    ></MapMarkerSize>
+                )}
+            </StyledListItem>
+        </>
+    );
+});
+    
+const PieChartTools = (({id})=>{
+    const [pieSelection, setPieSelection] = useState('');
+    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+
+    return (
+        <>
+            <ColorpalatteTool id={id} />
+            <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setPieSelection((prevList) =>
+                            prevList === "tooltip" ? "" : "tooltip",
+                        )
+                    }
+                    selected={pieSelection === "tooltip"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                pieSelection === "tooltip"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Tooltip" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {pieSelection === "tooltip" && (
+                    <CustomTooltip id={id} path={"option"} />
+                )}
+            </StyledListItem>
+            <ResizingTool id={id} />
+            <StyledListItem disablePadding>
                     <ListItemButton
                         onClick={(e) =>
-                            setMapSelection((prevList) =>
-                                prevList === "tooltips"
-                                    ? ""
-                                    : "tooltips",
-                            )
-                        }
-                        selected={mapSelection === "tooltips"}
-                    >
-                        <ListItemIcon>
-                            <ImageIcon
-                                fontSize="large"
-                                color={
-                                    mapSelection === "tooltips"
-                                        ? "primary"
-                                        : "disabled"
-                                }
-                            />
-                        </ListItemIcon>
-                        <ListItemText primary="Tooltips" />
-                        <InfoOutlined />
-                    </ListItemButton>
-                    { mapSelection === "tooltips" && (
-                            <TooltipMapChart id={id} path={"option"} />
-                        )}
-                </StyledListItem>
-                <ResizingTool id={id} />
-                <StyledListItem disablePadding>
-                    <ListItemButton
-                        onClick={(e) =>
-                            setMapSelection((prevList) =>
+                            setPieSelection((prevList) =>
                                 prevList === "legend" ? "" : "legend",
                             )
                         }
-                        selected={mapSelection === "legend"}
+                        selected={pieSelection === "legend"}
                     >
                         <ListItemIcon>
                             <ImageIcon
                                 fontSize="large"
                                 color={
-                                    mapSelection === "legend"
+                                    pieSelection === "legend"
                                         ? "primary"
                                         : "disabled"
                                 }
@@ -1448,189 +1572,95 @@ const LineChartTools = (({id})=>{
                         <ListItemText primary="Legend" />
                         <InfoOutlined />
                     </ListItemButton>
-                    {mapSelection === "legend" && (
-                                    <LegendToggleMapChart id={id} path={"option"} />
-                                )}
-                </StyledListItem>
-                <StyledListItem disablePadding>
-                    <ListItemButton
-                        onClick={(e) =>
-                            setMapSelection((prevList) =>
-                                prevList === "symbol" ? "" : "symbol",
-                            )
-                        }
-                        selected={mapSelection === "symbol"}
-                    >
-                        <ListItemIcon>
-                            <ImageIcon
-                                fontSize="large"
-                                color={
-                                    mapSelection === "symbol"
-                                        ? "primary"
-                                        : "disabled"
-                                }
-                            ></ImageIcon>
-                        </ListItemIcon>
-    
-                        <ListItemText primary="Map Marker Size" />
-                        <InfoOutlined />
-                    </ListItemButton>
-                    {mapSelection === "symbol" && (
-                        <MapMarkerSize
-                            id={id}
-                            path={"option"}
-                        ></MapMarkerSize>
+                { pieSelection === "legend" && (
+                        <PieLegend id={id} path={"option"} />
                     )}
-                </StyledListItem>
-            </>
-        );
-    });
-    
-    const PieChartTools = (({id})=>{
-        const [pieSelection, setPieSelection] = useState('');
-        const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
-    
-        return (
-            <>
-                <ColorpalatteTool id={id} />
-                <StyledListItem disablePadding>
+            </StyledListItem>
+            <StyledListItem disablePadding>
                     <ListItemButton
                         onClick={(e) =>
                             setPieSelection((prevList) =>
-                                prevList === "tooltip" ? "" : "tooltip",
+                                prevList === "donutToggle"
+                                    ? ""
+                                    : "donutToggle",
                             )
                         }
-                        selected={pieSelection === "tooltip"}
+                        selected={pieSelection === "donutToggle"}
                     >
                         <ListItemIcon>
                             <ImageIcon
                                 fontSize="large"
                                 color={
-                                    pieSelection === "tooltip"
+                                    pieSelection === "donutToggle"
                                         ? "primary"
                                         : "disabled"
                                 }
                             />
                         </ListItemIcon>
-                        <ListItemText primary="Tooltip" />
+                        <ListItemText primary="Donut - Toggle" />
                         <InfoOutlined />
                     </ListItemButton>
-                    {pieSelection === "tooltip" && (
-                        <CustomTooltip id={id} path={"option"} />
-                    )}
-                </StyledListItem>
-                <ResizingTool id={id} />
-                <StyledListItem disablePadding>
-                        <ListItemButton
-                            onClick={(e) =>
-                                setPieSelection((prevList) =>
-                                    prevList === "legend" ? "" : "legend",
-                                )
-                            }
-                            selected={pieSelection === "legend"}
-                        >
-                            <ListItemIcon>
-                                <ImageIcon
-                                    fontSize="large"
-                                    color={
-                                        pieSelection === "legend"
-                                            ? "primary"
-                                            : "disabled"
-                                    }
-                                />
-                            </ListItemIcon>
-                            <ListItemText primary="Legend" />
-                            <InfoOutlined />
-                        </ListItemButton>
-                    { pieSelection === "legend" && (
-                            <PieLegend id={id} path={"option"} />
-                        )}
-                </StyledListItem>
-                <StyledListItem disablePadding>
-                        <ListItemButton
-                            onClick={(e) =>
-                                setPieSelection((prevList) =>
-                                    prevList === "donutToggle"
-                                        ? ""
-                                        : "donutToggle",
-                                )
-                            }
-                            selected={pieSelection === "donutToggle"}
-                        >
-                            <ListItemIcon>
-                                <ImageIcon
-                                    fontSize="large"
-                                    color={
-                                        pieSelection === "donutToggle"
-                                            ? "primary"
-                                            : "disabled"
-                                    }
-                                />
-                            </ListItemIcon>
-                            <ListItemText primary="Donut - Toggle" />
-                            <InfoOutlined />
-                        </ListItemButton>
-                    {pieSelection === "donutToggle" && (
-                        <ToogleDonut id={id} path={"option"} />
-                    )}
-                </StyledListItem>
-                <StyledListItem disablePadding>
-                        <ListItemButton
-                            onClick={(e) =>
-                                setPieSelection((prevList) =>
-                                    prevList === "title" ? "" : "title",
-                                )
-                            }
-                            selected={pieSelection === "title"}
-                        >
-                            <ListItemIcon>
-                                <ImageIcon
-                                    fontSize="large"
-                                    color={
-                                        pieSelection === "title"
-                                            ? "primary"
-                                            : "disabled"
-                                    }
-                                />
-                            </ListItemIcon>
-                            <ListItemText primary="Chart Title" />
-                            <InfoOutlined />
-                        </ListItemButton>
-                    {pieSelection === "title" && (
-                        <PieTitle id={id} path={"option"} />
-                    )}
-                </StyledListItem>
-                <StyledListItem disablePadding>
-                        <ListItemButton
-                            onClick={(e) =>
-                                setPieSelection((prevList) =>
-                                    prevList === "valueLabel"
-                                        ? ""
-                                        : "valueLabel",
-                                )
-                            }
-                            selected={pieSelection === "valueLabel"}
-                        >
-                            <ListItemIcon>
-                                <ImageIcon
-                                    fontSize="large"
-                                    color={
-                                        pieSelection === "valueLabel"
-                                            ? "primary"
-                                            : "disabled"
-                                    }
-                                />
-                            </ListItemIcon>
-                            <ListItemText primary="Value Label" />
-                            <InfoOutlined />
-                        </ListItemButton>
-                    {pieSelection === "valueLabel" && (
-                        <PieValueLabel id={id} path={"option"} />
-                    )}
-                </StyledListItem>
-            </>
-        );
-    });
+                {pieSelection === "donutToggle" && (
+                    <ToogleDonut id={id} path={"option"} />
+                )}
+            </StyledListItem>
+            <StyledListItem disablePadding>
+                    <ListItemButton
+                        onClick={(e) =>
+                            setPieSelection((prevList) =>
+                                prevList === "title" ? "" : "title",
+                            )
+                        }
+                        selected={pieSelection === "title"}
+                    >
+                        <ListItemIcon>
+                            <ImageIcon
+                                fontSize="large"
+                                color={
+                                    pieSelection === "title"
+                                        ? "primary"
+                                        : "disabled"
+                                }
+                            />
+                        </ListItemIcon>
+                        <ListItemText primary="Chart Title" />
+                        <InfoOutlined />
+                    </ListItemButton>
+                {pieSelection === "title" && (
+                    <PieTitle id={id} path={"option"} />
+                )}
+            </StyledListItem>
+            <StyledListItem disablePadding>
+                    <ListItemButton
+                        onClick={(e) =>
+                            setPieSelection((prevList) =>
+                                prevList === "valueLabel"
+                                    ? ""
+                                    : "valueLabel",
+                            )
+                        }
+                        selected={pieSelection === "valueLabel"}
+                    >
+                        <ListItemIcon>
+                            <ImageIcon
+                                fontSize="large"
+                                color={
+                                    pieSelection === "valueLabel"
+                                        ? "primary"
+                                        : "disabled"
+                                }
+                            />
+                        </ListItemIcon>
+                        <ListItemText primary="Value Label" />
+                        <InfoOutlined />
+                    </ListItemButton>
+                {pieSelection === "valueLabel" && (
+                    <PieValueLabel id={id} path={"option"} />
+                )}
+            </StyledListItem>
+        </>
+    );
+});
     
     export const UpgradedVisualizationTool =
         observer<UpgradedVisualizationToolProps>(({ id }) => {
