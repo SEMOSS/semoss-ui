@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
-import { ReportRounded } from '@mui/icons-material';
+import { DeleteOutline, ReportRounded } from '@mui/icons-material';
 import html2canvas from 'html2canvas';
 
 import { ActionMessages, INPUT_BLOCK_TYPES, useBlocks } from '@semoss/renderer';
@@ -13,6 +13,8 @@ import {
     useNotification,
     Icon,
     Button,
+    IconButton,
+    Box,
 } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
@@ -42,13 +44,16 @@ export interface AddBlocksMenuItemProps {
 
     /** Determined for snapshot code */
     isClient: boolean;
+
+    /** Handle the trash click */
+    handleOnTrashClick: (blockId: string, blockName: string) => void;
 }
 
 /**
  * Individaul block that can be dragged onto the UI
  */
 export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
-    const { item, isClient } = props;
+    const { item, isClient, handleOnTrashClick } = props;
     const { state } = useBlocks();
     const { designer } = useDesigner();
     const notification = useNotification();
@@ -265,15 +270,19 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         };
     }, [designer.drag.active, local, handleDocumentMouseUp]);
 
-    useEffect(() => {
-        if (isClient) {
-            if (ref.current) {
-                html2canvas(ref.current).then((canvas) => {
-                    setImageSrc(canvas.toDataURL('image/png'));
-                });
-            }
-        }
-    }, [isClient]);
+    // useEffect(() => {
+    //     if (isClient) {
+    //         if (ref.current) {
+    //             html2canvas(ref.current).then((canvas) => {
+    //                 setImageSrc(canvas.toDataURL('image/png'));
+    //             });
+    //         }
+    //     }
+    // }, [isClient]);
+
+    // const randomColor = () => {
+    //     return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+    // };
 
     return (
         <Stack
@@ -283,19 +292,26 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
             justifyContent="flex-end"
         >
             {/* So we can snapshot picture for client */}
-            {isClient && (
+            {/* {isClient && (
                 <div
                     ref={ref}
                     style={{ position: 'absolute', left: '-9999px', top: 0 }}
                 >
-                    <Stack style={{ width: '50%', height: '50%' }}>
-                        <Typography
-                            variant={'caption'}
-                        >{`Show snapshot for ${item.name}`}</Typography>
-                        <Button variant={'contained'}>{item.name}</Button>
+                    <Stack padding={4}>
+                        <StyledTypography variant="body2">
+                            Show snapshot
+                        </StyledTypography>
+                        <button
+                            style={{
+                                backgroundColor: randomColor(),
+                                color: '#fff',
+                            }}
+                        >
+                            {item.name}
+                        </button>
                     </Stack>
                 </div>
-            )}
+            )} */}
 
             <StyledTypography
                 variant="body2"
@@ -329,9 +345,8 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                     onOpen={() => setHovered(true)}
                     onClose={() => setHovered(false)}
                 >
-                    <div>
+                    <div style={{ position: 'relative' }}>
                         <BlockCardContent
-                            // image={hovered ? item.hoverImage : item.activeImage}
                             image={
                                 isClient
                                     ? imageSrc
@@ -341,6 +356,30 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                             }
                             name={item.name}
                         />
+                        {hovered && isClient && (
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    top: '-5px',
+                                    right: '-5px',
+                                    zIndex: 1000,
+                                }}
+                            >
+                                <IconButton
+                                    size="small"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOnTrashClick(
+                                            item['id'],
+                                            item.name,
+                                        );
+                                    }}
+                                    color="error"
+                                >
+                                    <DeleteOutline />
+                                </IconButton>
+                            </Box>
+                        )}
                     </div>
                 </Tooltip>
             </StyledCard>
