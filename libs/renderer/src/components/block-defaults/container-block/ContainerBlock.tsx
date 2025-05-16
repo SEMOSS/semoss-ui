@@ -10,6 +10,9 @@ export interface ContainerBlockDef extends BlockDef<"container"> {
     data: {
         style: CSSProperties;
         show: string;
+        type: "custom" | "grid";
+        dimension?: null | string;
+        rowSpacing?: null | string;
     };
     slots: {
         children: true;

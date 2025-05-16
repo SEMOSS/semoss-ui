@@ -1671,7 +1671,7 @@ const LineChartTools = (({id})=>{
                                         }
                                     />
                                 </ListItemIcon>
-                                <ListItemText primary="General" />
+                                <ListItemText primary="Conditional" />
                                 <InfoOutlined />
                             </ListItemButton>
                             {selectedList === "generalchartsettings" && (

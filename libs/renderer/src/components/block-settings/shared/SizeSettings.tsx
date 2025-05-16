@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { TextField, ToggleButton, ToggleButtonGroup } from "@semoss/ui";
+import {
+    TextField,
+    ToggleButton,
+    ToggleButtonGroup,
+    InputAdornment,
+} from "@semoss/ui";
+import { SpaceBar } from "@mui/icons-material";
 import { Paths, PathValue } from "../../../types";
 import { useBlockSettings, useBlocks } from "../../../hooks";
 import { ActionMessages, Block, BlockDef } from "../../../store";
@@ -145,6 +151,17 @@ export const SizeSettings = observer(
                     size="small"
                     variant="outlined"
                     autoComplete="off"
+                    InputProps={{
+                        startAdornment: (
+                            <>
+                                {label == "Gap" && (
+                                    <InputAdornment position="start">
+                                        <SpaceBar />
+                                    </InputAdornment>
+                                )}
+                            </>
+                        ),
+                    }}
                 />
                 <ToggleButtonGroup value={parsed.unit} exclusive size="small">
                     {SIZE_VALUE_TYPES.map((unit) => {
