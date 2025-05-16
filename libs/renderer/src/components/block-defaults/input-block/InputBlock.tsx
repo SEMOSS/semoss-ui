@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 
 import { useBlock } from "../../../hooks";
 import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-import { LinearProgress, TextField, styled } from "@mui/material";
+import { TextField, styled } from "@mui/material";
 import { CircularProgress, InputAdornment } from "@semoss/ui";
 import { debounced } from "../../../utility";
 
