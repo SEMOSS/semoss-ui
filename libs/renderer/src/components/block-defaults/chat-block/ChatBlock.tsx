@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import {
     styled,
@@ -9,11 +9,17 @@ import {
     IconButton,
     CircularProgress,
 } from "@mui/material";
-import { Lightbulb, Send } from "@mui/icons-material";
+import {
+    Send,
+    ContentCopy,
+    ThumbUpOffAlt,
+    ThumbDownOffAlt,
+} from "@mui/icons-material";
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { Divider } from "@semoss/ui";
 import { MARKDOWN_COMPONENTS } from "./chat.constants";
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
@@ -41,13 +47,9 @@ const StyledScroll = styled("div")(() => ({
     flexDirection: "column",
     overflowX: "hidden",
     overflowY: "auto",
-    direction: "rtl",
-    transform: "rotate(180deg)",
 }));
 
 const StyledScrollInner = styled("div")(({ theme }) => ({
-    direction: "ltr",
-    transform: "rotate(180deg)",
     paddingBottom: theme.spacing(1),
 }));
 
@@ -61,15 +63,10 @@ const StyledMessage = styled("div", {
     display: "flex",
     justifyContent: agent ? "flex-start" : "flex-end",
     width: "100%",
+    marginBottom: agent ? "10px" : theme.spacing(0),
     paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(1),
     paddingRight: theme.spacing(1),
-}));
-
-const StyledAvatar = styled(Avatar)(({ theme }) => ({
-    marginTop: -theme.spacing(0.75),
-    width: 32,
-    height: 32,
 }));
 
 const StyledContent = styled("div", {
@@ -78,17 +75,35 @@ const StyledContent = styled("div", {
     /** Track if the it is an agent */
     agent: boolean;
 }>(({ theme, agent }) => ({
-    maxWidth: "100%", // 70%
-    padding: theme.spacing(1),
+    width: "100%", // 70%
+    padding: agent ? theme.spacing(1) : "16px",
     color: agent ? theme.palette.common.black : theme.palette.text.primary,
     backgroundColor: agent
-        ? "#FAFAFA" //theme.palette.primary.light
+        ? theme.palette.common.white //theme.palette.primary.light // #FAFAFA
         : theme.palette.grey["200"],
     borderRadius: theme.shape.borderRadius,
 }));
 
 const StyledTextField = styled(TextField)(() => ({
     flex: "1",
+}));
+
+const ActionIcons = styled("div")(() => ({
+    position: "absolute",
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginRight: "5px",
+    right: "0",
+}));
+
+const StyledIcon = styled(Avatar)(() => ({
+    width: "30px",
+    height: "30px",
+    backgroundColor: "transparent",
+    color: "#9a9a9a",
+    cursor: "pointer",
 }));
 
 export interface ChatBlockDef extends BlockDef<"chat"> {
@@ -136,9 +151,11 @@ export const ChatBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, listeners, setData } = useBlock<ChatBlockDef>(id);
     // track if the chat is initialized
     const [isInitialized, setIsInitialized] = useState(false);
+    const [history, setHistory] = useState<ChatMessage[]>([]);
+    const endRef = useRef<HTMLDivElement>(null);
+    const copyRefs = useRef([]);
     // track if the loading screen is on
     const isLoading = data.loading; // !isInitialized
-    const [history, setHistory] = useState<ChatMessage[]>([]);
     let updateHistory: { agent: string; user: string }[] = [];
     if (!isLoading && data.history) {
         try {
@@ -175,8 +192,17 @@ export const ChatBlock: BlockComponent = observer(({ id }) => {
         if (updateHistory.length > 0) {
             setData("ask", "");
             setHistory(updateHistory);
+            if (endRef.current) {
+                endRef.current.scrollIntoView({ behavior: "smooth" });
+            }
         }
     }, [updateHistory.length]);
+
+    useEffect(() => {
+        if (history.length > 0 && endRef.current) {
+            endRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [history.length]);
 
     // method called when the component is initialized
     useEffect(() => {
@@ -193,6 +219,31 @@ export const ChatBlock: BlockComponent = observer(({ id }) => {
     const onAsk = () => {
         // trigger it
         listeners.onAsk();
+    };
+
+    const handleCopy = async (idx: number) => {
+        try {
+            // Retrieve the DOM node from the copyRefs array using the provided index
+            const node = copyRefs.current[idx];
+            if (node) {
+                // Extract the inner HTML content of the node
+                const htmlContent = node.innerHTML;
+
+                // Create a Blob containing the HTML content
+                const blob = new Blob([htmlContent], { type: "text/html" });
+
+                // Create a ClipboardItem with the HTML Blob
+                const clipboardItem = new window.ClipboardItem({
+                    "text/html": blob,
+                });
+
+                // Write the ClipboardItem to the clipboard
+                await navigator.clipboard.write([clipboardItem]);
+            }
+        } catch (err) {
+            // Log an error if the copy operation fails
+            console.error("Failed to copy: ", err);
+        }
     };
 
     return (
@@ -221,11 +272,17 @@ export const ChatBlock: BlockComponent = observer(({ id }) => {
                                                     direction={"row"}
                                                     spacing={2}
                                                     overflow={"hidden"}
+                                                    width={"100%"}
+                                                    marginBottom={"15px"}
                                                 >
-                                                    <StyledAvatar alt="message icon">
-                                                        <Lightbulb />
-                                                    </StyledAvatar>
-                                                    <StyledContent agent={true}>
+                                                    <StyledContent
+                                                        agent={true}
+                                                        ref={(el) =>
+                                                            (copyRefs.current[
+                                                                idx
+                                                            ] = el)
+                                                        }
+                                                    >
                                                         <ReactMarkdown
                                                             components={
                                                                 MARKDOWN_COMPONENTS
@@ -238,8 +295,33 @@ export const ChatBlock: BlockComponent = observer(({ id }) => {
                                                                 m.agent,
                                                             )}
                                                         </ReactMarkdown>
+                                                        <Divider
+                                                            style={{
+                                                                borderColor:
+                                                                    "#E6E6E6",
+                                                                backgroundColor:
+                                                                    "transparent",
+                                                            }}
+                                                        />
+                                                        <ActionIcons>
+                                                            <StyledIcon>
+                                                                <ContentCopy
+                                                                    fontSize="small"
+                                                                    onClick={() =>
+                                                                        handleCopy(
+                                                                            idx,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </StyledIcon>
+                                                            <StyledIcon>
+                                                                <ThumbUpOffAlt fontSize="small" />
+                                                            </StyledIcon>
+                                                            <StyledIcon>
+                                                                <ThumbDownOffAlt fontSize="small" />
+                                                            </StyledIcon>
+                                                        </ActionIcons>
                                                     </StyledContent>
-                                                    {/* <ContentCopy /> */}
                                                 </Stack>
                                             </StyledMessage>
                                         ) : (
@@ -251,6 +333,7 @@ export const ChatBlock: BlockComponent = observer(({ id }) => {
                         ) : (
                             <></>
                         )}
+                        <div ref={endRef}></div>
                     </StyledScrollInner>
                 </StyledScroll>
                 <Stack direction={"row"} alignItems={"center"} spacing={1}>
@@ -262,8 +345,6 @@ export const ChatBlock: BlockComponent = observer(({ id }) => {
                         type={"text"}
                         onChange={(e) => {
                             const value = e.target.value;
-
-                            // update the value
                             setData("ask", value);
                         }}
                         onKeyDown={(e) => {
