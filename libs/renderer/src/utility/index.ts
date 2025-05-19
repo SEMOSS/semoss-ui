@@ -136,6 +136,7 @@ export const syncronousPromise = <R>(
                 return reject(err);
             }
         }),
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         cancel: () => {},
     };
 };
@@ -292,4 +293,20 @@ export const getHomePage = (state: SerializedState) => {
     }
 
     return "page-1";
+};
+
+/**
+ * Unescapes a Python-style JSON string for rendering in the UI as Markdown.
+ * - Removes outer quotes if the string is wrapped in double quotes.
+ * - Replaces escaped newline characters (`\n`) with actual newlines.
+ * @param str - The input string to unescape.
+ * @returns The unescaped string, ready for Markdown rendering.
+ */
+export const unescapeMarkdown = (str: string) => {
+    // Remove outer quotes if present
+    if (str.startsWith('"') && str.endsWith('"')) {
+        str = str.slice(1, -1);
+    }
+    // Replace \n with actual newlines
+    return str.replace(/\\n/g, "\n");
 };

@@ -12,6 +12,7 @@ export const INPUT_BLOCK_TYPES = [
     "ratings",
     "switch",
     "timepicker",
+    "chat",
 ];
 
 export const VARIABLE_TYPES = [

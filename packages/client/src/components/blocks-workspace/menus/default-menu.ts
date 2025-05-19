@@ -587,6 +587,32 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
+        section: SECTION_LAYOUT,
+        activeImage: BLOCK_IMAGES['CHAT_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['CHAT_HOVER'],
+        name: 'Chat',
+        json: {
+            widget: 'chat',
+            data: {
+                loading: false,
+                ask: '',
+                history: [],
+            },
+            listeners: {
+                // preProcess: { type: 'sync', order: [] },
+                onLoad: {
+                    type: 'sync',
+                    order: [],
+                },
+                onAsk: {
+                    type: 'sync',
+                    order: [],
+                },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
         section: SECTION_ELEMENT,
         name: 'Iframe',
         helperText: 'Embed a webpage using a source link',

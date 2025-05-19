@@ -76,6 +76,8 @@ export { default as DIVIDER_ACTIVE } from './Divider_Active.png';
 export { default as DIVIDER_HOVER } from './Divider_Hover.png';
 export { default as SLIDER_ACTIVE } from './Slider_Active.png';
 export { default as SLIDER_HOVER } from './Slider_Hover.png';
+export { default as CHAT_ACTIVE } from './Chat_Active.png';
+export { default as CHAT_HOVER } from './Chat_Hover.png';
 
 // CHARTS
 export { default as AREA_CHART_ACTIVE } from './Area_Chart_Active.png';

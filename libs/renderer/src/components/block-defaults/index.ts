@@ -97,6 +97,7 @@ import {
     config as VegaVisualizationBlockConfig,
     VegaVisualizationBlockDef,
 } from "./vega-visualization-block";
+import { config as ChatBlockConfig, ChatBlockDef } from "./chat-block";
 
 // import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
 // import { config as BodyBlockConfig, BodyBlockDef } from "./body-block";
@@ -147,7 +148,9 @@ export type DefaultBlockDefinitions =
     | VegaVisualizationBlockDef
     | RadioBlockDef
     | TimePickerBlockDef
-    | ThemeBlockDef;
+    | ThemeBlockDef
+    | ModalBlockDef
+    | ChatBlockDef;
 // | BodyBlockDef
 // | DividerBlockDef
 // | FooterBlockDef
@@ -197,6 +200,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
+    [ChatBlockConfig.widget]: ChatBlockConfig,
     // [StepperBlockConfig.widget]: StepperBlockConfig,
     // [QueryBlockConfig.widget]: QueryBlockConfig,
 };
@@ -239,4 +243,5 @@ export {
     PDFViewerBlockConfig,
     TimePickerBlockConfig,
     FlipCardBlockConfig,
+    ChatBlockConfig,
 };
