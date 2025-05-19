@@ -30,7 +30,7 @@ import ButtonIcon from "../../../assets/img/Button.svg";
 import FilterIcon from "../../../assets/img/filter.svg";
 import UnFilterIcon from "../../../assets/img/filter-off.svg";
 import CodeIcon from "../../../assets/img/HTML.svg";
-import DendrogramIcon from "../../../assets/img/Dendrogram.svg";
+import DendrogramIcon from "../../../assets/img/dendrogram.svg";
 import GraphIcon from "../../../assets/img/Graph.svg";
 import ParallelCoordinatorIcon from "../../../assets/img/Parallel Cordinate.svg";
 import VivaGraphIcon from "../../../assets/img/Viva Graph.svg";
