@@ -77,8 +77,9 @@ export const ListenerSettings = observer(
         const { state } = useBlocks();
         const { listeners, setListener } = useBlockSettings(id);
         const notification = useNotification();
-        const blockListeners: ListenerActions[] = toJS(listeners)[listener].order;
-        const type = toJS(listeners)[listener].type
+        const blockListeners: ListenerActions[] =
+            toJS(listeners)[listener].order;
+        const type = toJS(listeners)[listener].type;
 
         const [actionIndex, setActionIndex] = useState(-1);
         const [openModal, setOpenModal] = useState(false);
@@ -121,6 +122,17 @@ export const ListenerSettings = observer(
             }
         };
 
+        const getCellNumber = (qId, cId) => {
+            try {
+                const query = state.getQuery(qId);
+                if (query) {
+                    return query.list.indexOf(cId) + 1;
+                }
+            } catch (e) {
+                return "unknown";
+            }
+        };
+
         /**
          * Open the overlay to create a edit action
          *
@@ -139,8 +151,6 @@ export const ListenerSettings = observer(
         const deleteListener = (actionIdx: number) => {
             // copy it
             const updated = [...listeners[listener].order];
-
-            debugger
 
             // remove it
             updated.splice(actionIdx, 1);
@@ -220,7 +230,13 @@ export const ListenerSettings = observer(
                 (item, index) => ({
                     id: index.toString(),
                     content: item.payload["queryId"]
-                        ? item.payload["queryId"]
+                        ? `${item.payload["queryId"]}${
+                              "." +
+                              getCellNumber(
+                                  item.payload["queryId"],
+                                  item.payload["cellId"],
+                              )
+                          }`
                         : item.payload["name"],
                     original: item, // Keep reference to the original item
                 }),
@@ -341,7 +357,7 @@ export const ListenerSettings = observer(
                         <ToggleButton
                             value="async"
                             onClick={() => {
-                                updateExecutionType("async")
+                                updateExecutionType("async");
                             }}
                         >
                             Async
@@ -349,7 +365,7 @@ export const ListenerSettings = observer(
                         <ToggleButton
                             value="sync"
                             onClick={() => {
-                                updateExecutionType("sync")
+                                updateExecutionType("sync");
                             }}
                         >
                             Sync

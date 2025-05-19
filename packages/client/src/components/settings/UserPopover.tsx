@@ -58,12 +58,18 @@ export const UserPopover = (props: UserPopoverProps) => {
                 }}
                 sx={{ pointerEvents: 'none' }}
             >
-                <StyledGridContainer container direction="row" sx={{ pointerEvents: 'auto' }}>
+                <StyledGridContainer
+                    container
+                    direction="row"
+                    sx={{ pointerEvents: 'auto' }}
+                >
                     {/* avatar icon */}
                     <Grid item>
                         {hoveredUser?.name && ( // prevents seeing default icon
                             <AvatarWrapper>
-                                <Avatar>{hoveredUser.name[0].toUpperCase()}</Avatar>
+                                <Avatar>
+                                    {hoveredUser.name[0].toUpperCase()}
+                                </Avatar>
                             </AvatarWrapper>
                         )}
                     </Grid>
@@ -73,7 +79,10 @@ export const UserPopover = (props: UserPopoverProps) => {
                                 <Typography variant="body2">
                                     {hoveredUser?.name}
                                 </Typography>
-                                <StyledInnerGridContainer container direction="row">
+                                <StyledInnerGridContainer
+                                    container
+                                    direction="row"
+                                >
                                     <Grid item>
                                         <Typography
                                             variant="caption"
@@ -93,7 +102,10 @@ export const UserPopover = (props: UserPopoverProps) => {
                                         </StyledIconButton>
                                     </Grid>
                                 </StyledInnerGridContainer>
-                                <StyledInnerGridContainer container direction="row">
+                                <StyledInnerGridContainer
+                                    container
+                                    direction="row"
+                                >
                                     <Grid item>
                                         <Typography
                                             variant="caption"
