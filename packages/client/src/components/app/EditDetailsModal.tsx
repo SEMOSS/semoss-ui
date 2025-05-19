@@ -222,11 +222,7 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
                                     const value = (e.target as HTMLInputElement)
                                         .files;
                                     if (value && value.length > 0) {
-                                        const reader = new FileReader();
-                                        reader.readAsDataURL(value[0]);
-                                        reader.onload = () => {
-                                            field.onChange(reader.result);
-                                        };
+                                        field.onChange(value[0]);
                                     }
                                 }}
                             />

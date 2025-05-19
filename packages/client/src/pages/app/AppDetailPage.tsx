@@ -492,7 +492,7 @@ export const AppDetailPage = () => {
                     meta,
                 )}], jsonCleanup=[true])`,
             )
-            .then((response) => {
+            .then(async (response) => {
                 const { output, additionalOutput, operationType } =
                     response.pixelReturn[0];
 
@@ -504,6 +504,22 @@ export const AppDetailPage = () => {
                     });
 
                     return;
+                }
+
+                // upload the image
+                if (meta['appImage'] && appId) {
+                    const upload = await monolithStore.uploadImage(
+                        meta['appImage'] as File[],
+                        appId,
+                    );
+
+                    if (upload) {
+                        const { app_name, message } = upload[0];
+                        notification.add({
+                            color: 'success',
+                            message: `${message} - ${app_name}`,
+                        });
+                    }
                 }
 
                 // close it, refresh and succesfully message

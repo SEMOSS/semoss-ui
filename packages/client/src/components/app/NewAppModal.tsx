@@ -28,7 +28,7 @@ type NewAppForm = {
     APP_NAME: string;
     APP_DESCRIPTION: string;
     APP_TAGS: string[];
-    APP_IMG: string;
+    APP_IMG: File[] | null;
 };
 
 interface NewAppModalProps {
@@ -55,7 +55,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
             APP_NAME: '',
             APP_DESCRIPTION: '',
             APP_TAGS: [],
-            APP_IMG: '',
+            APP_IMG: null,
         },
     });
 
@@ -97,6 +97,21 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
                 appId = pixelReturn[0].output.project_id;
 
+                // upload the image
+                if (data.APP_IMG && appId) {
+                    const upload = await monolithStore.uploadImage(
+                        data.APP_IMG,
+                        appId,
+                    );
+
+                    if (upload) {
+                        const { app_name, message } = upload[0];
+                        notification.add({
+                            color: 'success',
+                            message: `${message} - ${app_name}`,
+                        });
+                    }
+                }
                 // after the project is created check for metadata. If true, run SetProjectMeta
                 if (data['APP_TAGS'].length || data['APP_DESCRIPTION']) {
                     const setProjectMetadataResponse =
@@ -138,6 +153,22 @@ export const NewAppModal = (props: NewAppModalProps) => {
                 }
 
                 appId = pixelReturn[0].output.project_id;
+
+                // upload the image
+                if (data.APP_IMG && appId) {
+                    const upload = await monolithStore.uploadImage(
+                        data.APP_IMG,
+                        appId,
+                    );
+
+                    if (upload) {
+                        const { app_name, message } = upload[0];
+                        notification.add({
+                            color: 'success',
+                            message: `${message} - ${app_name}`,
+                        });
+                    }
+                }
 
                 // after the project is created run a pixel to create a new portals/index.html file
                 // use the returned projectId
@@ -317,13 +348,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
                                                 e.target as HTMLInputElement
                                             ).files;
                                             if (value && value.length > 0) {
-                                                const reader = new FileReader();
-                                                reader.readAsDataURL(value[0]);
-                                                reader.onload = () => {
-                                                    field.onChange(
-                                                        reader.result,
-                                                    );
-                                                };
+                                                field.onChange(value[0]);
                                             }
                                         }}
                                     />
