@@ -1,7 +1,6 @@
 import { useState, useEffect, ChangeEvent, useMemo, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { computed } from "mobx";
-import { Style } from "@mui/icons-material";
 
 import {
     Button,
@@ -74,6 +73,7 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
 //Initial xaxis state used for restoring
 const INITIAL_XAXIS_STATE = {
     showAxis: true,
+    showAxisTitle: true,
     xaxistitle: "",
     xaxisTitleFontSize: 18,
     showXAxisLineTicks: false,
@@ -119,6 +119,7 @@ export const EditXAxis = observer(
             const axis = "xAxis";
             const xAxisStateData = {
                 showAxis: true,
+                showAxisTitle: true,
                 xaxistitle: "",
                 xaxisTitleFontSize: 18,
                 showXAxisLineTicks: false,
@@ -190,6 +191,7 @@ export const EditXAxis = observer(
         function updateChartData() {
             const axisData = {
                 showAxis: xaxisState.showAxis,
+                showAxisTitle: xaxisState.showAxisTitle,
                 xaxistitle: xaxisState.xaxistitle,
                 xaxisTitleFontSize: xaxisState.xaxisTitleFontSize,
                 showXAxisLabels: xaxisState.showXAxisLabels,
@@ -202,27 +204,28 @@ export const EditXAxis = observer(
             //update the chart data based on the changes in the x axis fields
             let optionUpdated = option;
             if (option.hasOwnProperty("xAxis") && option["xAxis"]) {
-                if (axisData.hasOwnProperty("showAxis")) {
+                if (axisData.showAxisTitle) {
+                    if (axisData.hasOwnProperty("xaxistitle")) {
+                        option["xAxis"] = {
+                            ...option["xAxis"],
+                            ["name"]: axisData.xaxistitle,
+                        };
+                    }
+                    if (axisData.hasOwnProperty("xaxisTitleFontSize")) {
+                        option["xAxis"] = {
+                            ...option["xAxis"],
+                            ["nameTextStyle"]: {
+                                ...option["xAxis"]["nameTextStyle"],
+                                ["fontSize"]:
+                                    Number(axisData.xaxisTitleFontSize) ||
+                                    undefined,
+                            },
+                        };
+                    }
+                } else {
                     option["xAxis"] = {
                         ...option["xAxis"],
-                        ["show"]: axisData.showAxis,
-                    };
-                }
-                if (axisData.hasOwnProperty("xaxistitle")) {
-                    option["xAxis"] = {
-                        ...option["xAxis"],
-                        ["name"]: axisData.xaxistitle,
-                    };
-                }
-                if (axisData.hasOwnProperty("xaxisTitleFontSize")) {
-                    option["xAxis"] = {
-                        ...option["xAxis"],
-                        ["nameTextStyle"]: {
-                            ...option["xAxis"]["nameTextStyle"],
-                            ["fontSize"]:
-                                Number(axisData.xaxisTitleFontSize) ||
-                                undefined,
-                        },
+                        ["name"]: "",
                     };
                 }
 
@@ -338,9 +341,13 @@ export const EditXAxis = observer(
                 >
                     <Switch
                         size="small"
-                        defaultChecked={xaxisState.showAxis ?? undefined}
+                        defaultChecked={xaxisState.showAxisTitle ?? undefined}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            handleInputChange(e, "showAxis", e.target.checked)
+                            handleInputChange(
+                                e,
+                                "showAxisTitle",
+                                e.target.checked,
+                            )
                         }
                         title="Show Axis Title"
                     />
@@ -348,7 +355,7 @@ export const EditXAxis = observer(
                         Show Axis Title
                     </StyledTypography>
                 </StyledAxisDiv>
-                {xaxisState.showAxis && (
+                {xaxisState.showAxisTitle && (
                     <StyledAxisColDiv
                         display="flex"
                         justifyContent="space-around"
@@ -364,7 +371,7 @@ export const EditXAxis = observer(
                         />
                     </StyledAxisColDiv>
                 )}
-                {xaxisState.showAxis && (
+                {xaxisState.showAxisTitle && (
                     <StyledAxisColDiv
                         display="flex"
                         justifyContent="space-around"

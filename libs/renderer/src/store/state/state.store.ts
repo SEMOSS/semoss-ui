@@ -541,7 +541,11 @@ export class StateStore {
                 }); 
                     
                 return await run();
-            }else if (ActionMessages.DISPATCH_EVENT === action.message) {
+            } else if (ActionMessages.RUN_CELL === action.message) {
+                const { queryId, cellId } = action.payload;
+
+                this.runCell(queryId, cellId);
+            } else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
@@ -608,7 +612,6 @@ export class StateStore {
                     if(expression.includes(".")) {
                         variable = expression.match(/\$(.*?)\./)[1];
                     } else {
-                        debugger
                         variable = expression.match(/^\$(\w+)/)?.[1]
                     }
 

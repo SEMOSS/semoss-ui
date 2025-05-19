@@ -1,5 +1,12 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
-import { styled, useNotification, Button, Paper, Typography } from '@semoss/ui';
+import {
+    styled,
+    useNotification,
+    Button,
+    Paper,
+    Typography,
+    Box,
+} from '@semoss/ui';
 
 import { ALL_TYPES } from '@/types';
 import { useRootStore, usePixel, useSettings } from '@/hooks';
@@ -129,7 +136,46 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
                     </Button>
                 )}
             </StyledTopDiv>
-            <StyledPaper elevation={1}>
+            <StyledPaper
+                elevation={1}
+                sx={{
+                    position: 'relative',
+                    border: '1px solid #90caf9',
+                    borderRadius: '8px',
+                    paddingTop: readOnly ? '20px' : '50px',
+                    '& .monaco-editor': {
+                        outline: 'none !important',
+                        border: 'none !important',
+                        boxShadow: 'none !important',
+                        borderRadius: '8px',
+                    },
+                    '& .monaco-editor .overflow-guard': {
+                        borderRadius: '8px',
+                    },
+                }}
+            >
+                {!readOnly && (
+                    <Box
+                        sx={{
+                            width: '100%',
+                            position: 'absolute',
+                            top: '0',
+                            left: '50%',
+                            right: '50%',
+                            transform: 'translateX(-50%)',
+                            backgroundColor: '#e3f2fd',
+                            padding: '8px 12px',
+                            borderRadius: '8px 8px 0 0',
+                            textAlign: 'center',
+                            fontSize: '14px',
+                            fontWeight: 600,
+                            color: '#1976d2',
+                            zIndex: 1,
+                        }}
+                    >
+                        Edit Mode
+                    </Box>
+                )}
                 <Suspense fallback={<>...</>}>
                     <Editor
                         defaultValue={''}
