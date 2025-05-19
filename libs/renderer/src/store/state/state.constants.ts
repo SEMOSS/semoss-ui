@@ -33,6 +33,7 @@ export const VARIABLE_TYPES = [
 
 export const ACTIONS_DISPLAY = {
     [ActionMessages.RUN_QUERY]: "Run Query",
+    [ActionMessages.RUN_CELL]: "Run Cell",
     [ActionMessages.DISPATCH_EVENT]: "Dispatch Event",
-    [ActionMessages.DISPATCH_OUTPUTS_EVENT]: "Dispatch App Outputs"
+    [ActionMessages.DISPATCH_OUTPUTS_EVENT]: "Dispatch App Outputs",
 };

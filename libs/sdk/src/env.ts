@@ -10,11 +10,6 @@ export class Env {
         MODULE: "",
         ACCESS_KEY: "",
         SECRET_KEY: "",
-        // Added to show on SDK docs
-        ORIGIN: window.location.origin || '',
-        PATH: window.location.pathname.includes('SemossWeb')
-            ? window.location.pathname.split('SemossWeb')[0].replace(/\/$/, '')
-            : '',
     };
 
     /**
@@ -46,37 +41,23 @@ export class Env {
     }
 
     /**
-     * Ready only getter
-     */
-    static get ORIGIN() {
-        return this._store.ORIGIN;
-    }
-
-    /**
-     * Ready only getter
-     */
-    static get PATH() {
-        return this._store.PATH;
-    }
-
-    /**
      *
      * @param updated - updated variables
      */
     static update = (updated: Partial<(typeof Env)["_store"]> = {}) => {
-        if (updated.APP) {
+        if (updated.hasOwnProperty("APP")) {
             this._store.APP = updated.APP;
         }
 
-        if (updated.MODULE) {
+        if (updated.hasOwnProperty("MODULE")) {
             this._store.MODULE = updated.MODULE;
         }
 
-        if (updated.ACCESS_KEY) {
+        if (updated.hasOwnProperty("ACCESS_KEY")) {
             this._store.ACCESS_KEY = updated.ACCESS_KEY;
         }
 
-        if (updated.SECRET_KEY) {
+        if (updated.hasOwnProperty("SECRET_KEY")) {
             this._store.SECRET_KEY = updated.SECRET_KEY;
         }
     };

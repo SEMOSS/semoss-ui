@@ -1,7 +1,15 @@
 import { useEffect } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { styled, Stack, TextField, Modal, Button, Select } from "@semoss/ui";
+import {
+    styled,
+    Stack,
+    TextField,
+    Modal,
+    Button,
+    Select,
+    Typography,
+} from "@semoss/ui";
 import { Controller, useForm } from "react-hook-form";
 
 import { useBlockSettings, useBlocks } from "../../hooks";
@@ -23,6 +31,11 @@ interface ActionOverlayProps<D extends BlockDef = BlockDef> {
     id: string;
 
     /**
+     * Sync or Async
+     */
+    type: "sync" | "async";
+
+    /**
      * Lisetner to update
      */
     listener: Extract<keyof D["listeners"], string>;
@@ -40,7 +53,13 @@ type ListenerActionForm = ListenerActions;
 
 export const ListenerActionOverlay = observer(
     <D extends BlockDef = BlockDef>(props: ActionOverlayProps<D>) => {
-        const { id, listener, actionIdx = -1, onClose = () => null } = props;
+        const {
+            id,
+            type,
+            listener,
+            actionIdx = -1,
+            onClose = () => null,
+        } = props;
 
         const { state } = useBlocks();
         const { listeners, setListener } = useBlockSettings(id);
@@ -64,38 +83,87 @@ export const ListenerActionOverlay = observer(
         // track if it is a new query
         const isNew = actionIdx === -1;
 
+        // TODO: Refactor Code
+        // Each listener have its own useForm
+        const lis = listeners[listener].order[actionIdx];
+
+        console.log(lis);
         // create a new form
         const { control, handleSubmit, reset, watch, setValue } =
-            useForm<ListenerActionForm>({
-                defaultValues: {
-                    message: ActionMessages.RUN_QUERY,
-                    payload: {
-                        queryId: "",
-                    },
-                },
-            });
+            useForm<ListenerActionForm>(
+                lis
+                    ? lis.message === ActionMessages.RUN_CELL
+                        ? {
+                              defaultValues: {
+                                  message: ActionMessages.RUN_CELL,
+                                  payload: {
+                                      queryId: "",
+                                      cellId: "",
+                                  },
+                              },
+                          }
+                        : {
+                              defaultValues: {
+                                  message: ActionMessages.RUN_QUERY,
+                                  payload: {
+                                      queryId: "",
+                                  },
+                              },
+                          }
+                    : {
+                          defaultValues: {
+                              message: ActionMessages.RUN_QUERY,
+                              payload: {
+                                  queryId: "",
+                              },
+                          },
+                      },
+            );
 
         // the type
         const message = watch("message");
+
+        // TODO: can we make each action type its own component.  So we don't have to do this
+        const queryId = watch("payload.queryId");
+
+        console.log(state.queries[queryId])
+        // get the queries as an array
+        const cells = computed(() => {
+            if (queryId) {
+                const li = []
+
+                state.queries[queryId].list.forEach((iD) => {
+                    li.push(state.queries[queryId].cells[iD])
+                })
+
+                return li
+
+
+                return Object.values(state.queries[queryId].cells)
+            }
+            return [];
+        }).get();
 
         /**
          * Allow user to submit the data
          */
         const onSubmit = handleSubmit((a: ListenerActionForm) => {
-            const updated = listeners[listener] ? [...listeners[listener]] : [];
+            const updated = listeners[listener].order
+                ? [...listeners[listener].order]
+                : [];
 
             if (actionIdx === -1) {
                 // add the new one
                 updated.push(a);
 
                 // set it the listener
-                setListener(listener, updated);
+                setListener(listener, updated, type);
             } else {
                 // add the new one
                 updated[actionIdx] = a;
 
                 // set it the listener
-                setListener(listener, updated);
+                setListener(listener, updated, type);
             }
 
             onClose();
@@ -111,18 +179,27 @@ export const ListenerActionOverlay = observer(
             };
 
             if (actionIdx !== -1) {
-                form = listeners[listener][actionIdx];
+                form = listeners[listener].order[actionIdx];
             }
 
             reset(form);
         }, [actionIdx]);
 
+        // TODO: Refactor
         // reset whenever the message changes
         useEffect(() => {
             if (message === ActionMessages.RUN_QUERY) {
-                setValue("payload", {
-                    queryId: "",
-                });
+                if (listeners[listener].order[actionIdx]) {
+                    if (
+                        listeners[listener].order[actionIdx].message !==
+                        ActionMessages.RUN_QUERY
+                    ) {
+                        setValue("payload", {
+                            queryId: "",
+                        });
+                    }
+                    setValue("message", ActionMessages.RUN_QUERY);
+                }
             } else if (message === ActionMessages.DISPATCH_EVENT) {
                 setValue("payload", {
                     name: "",
@@ -130,9 +207,23 @@ export const ListenerActionOverlay = observer(
                 });
             } else if (message === ActionMessages.DISPATCH_OUTPUTS_EVENT) {
                 setValue("payload", {});
+            } else if (message === ActionMessages.RUN_CELL) {
+                if (listeners[listener].order[actionIdx]) {
+                    if (
+                        listeners[listener].order[actionIdx].message !==
+                        ActionMessages.RUN_CELL
+                    ) {
+                        setValue("payload", {
+                            queryId: "",
+                            cellId: "",
+                        });
+                    }
+                    setValue("message", ActionMessages.RUN_CELL);
+                }
             }
         }, [message]);
 
+        console.log(cells)
         return (
             <>
                 <Modal.Title>
@@ -154,6 +245,7 @@ export const ListenerActionOverlay = observer(
                                     >
                                         {[
                                             ActionMessages.RUN_QUERY,
+                                            ActionMessages.RUN_CELL,
                                             ActionMessages.DISPATCH_EVENT,
                                             ActionMessages.DISPATCH_OUTPUTS_EVENT,
                                         ].map((a, aIdx) => (
@@ -191,6 +283,87 @@ export const ListenerActionOverlay = observer(
                                                         {q.id}
                                                     </Select.Item>
                                                 ))}
+                                            </Select>
+                                        );
+                                    }}
+                                />
+                            </>
+                        ) : null}
+
+                        {message === ActionMessages.RUN_CELL ? (
+                            <>
+                                <Controller
+                                    name={"payload.queryId"}
+                                    control={control}
+                                    render={({ field }) => {
+                                        return (
+                                            <Select
+                                                label="Notebook"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ""
+                                                }
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                            >
+                                                {queries.map((q) => (
+                                                    <Select.Item
+                                                        key={q.id}
+                                                        value={q.id}
+                                                    >
+                                                        {q.id}
+                                                    </Select.Item>
+                                                ))}
+                                            </Select>
+                                        );
+                                    }}
+                                />
+                                <Controller
+                                    name={"payload.cellId"}
+                                    control={control}
+                                    render={({ field }) => {
+                                        return (
+                                            <Select
+                                                label="Cell"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ""
+                                                }
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                            >
+                                                {cells.map((c) => {
+                                                     let matchIndex = 0;
+                                                    c.query.cellList.forEach((cell, i) => {
+                                                        if (c.id === cell.id) matchIndex = i;
+                                                    });
+                                                
+                                                    return (
+                                                        <Select.Item
+                                                            key={c.id}
+                                                            value={c.id}
+                                                        >
+                                                                <Typography
+                                                                    variant={
+                                                                        "body2"
+                                                                    }
+                                                                >
+                                                                    #{" "}{matchIndex + 1}
+                                                                </Typography>
+                                                                {/* <Typography
+                                                                    variant={
+                                                                        "caption"
+                                                                    }
+                                                                >
+                                                                    id: {q.id}
+                                                                </Typography> */}
+                                                        </Select.Item>
+                                                    );
+                                                })}
                                             </Select>
                                         );
                                     }}

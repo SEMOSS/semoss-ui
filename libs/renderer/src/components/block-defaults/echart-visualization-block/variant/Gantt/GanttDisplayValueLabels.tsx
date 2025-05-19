@@ -7,7 +7,7 @@ import { styled, Switch } from "@semoss/ui";
 import { getValueByPath } from "../../../../../utility";
 import { PathValue } from "@/types";
 import { useBlockSettings } from "../../../../../hooks";
-import { EchartVisualizationBlockDef } from "../../../echart-visualization-blocks/VisualizationBlock";
+import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { BlockDef } from "../../../../../store";
 //main container with default padding and border
 const StyledMainContainer = styled("div")(({}) => ({

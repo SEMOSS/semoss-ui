@@ -4,7 +4,11 @@ import { LabelRounded } from "@mui/icons-material";
 import { Avatar } from "@semoss/ui";
 
 import { BlockConfig } from "../../../store";
-import { InputSettings, SelectInputSettings } from "../../block-settings";
+import {
+    ColorSettings,
+    InputSettings,
+    SelectInputSettings,
+} from "../../block-settings";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 import { ChipSettings } from "../../block-settings/custom/ChipSettings";
 import { buildListener, buildShowField } from "../block-defaults.shared";
@@ -17,8 +21,10 @@ export const config: BlockConfig<ChipBlockDef> = {
     widget: "chip",
     type: BLOCK_TYPE_DISPLAY,
     data: {
-        style: DefaultStyles,
-        color: "default",
+        style: {
+            color: "grey",
+            ...DefaultStyles,
+        },
         size: "small",
         avatar: <Avatar>A</Avatar>,
         type: "Chip",
@@ -29,22 +35,20 @@ export const config: BlockConfig<ChipBlockDef> = {
         show: "true",
     },
     listeners: {
-        //onClick: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: ChipBlock,
     icon: LabelRounded,
-
     contentMenu: [
         {
             name: "General",
-            children: [...buildShowField()],
-        },
-        {
-            name: "Select Chip",
             children: [
                 {
-                    description: " Chip Type",
+                    description: "Chip Type",
                     render: ({ id }) => (
                         <ChipSettings
                             id={id}
@@ -90,13 +94,17 @@ export const config: BlockConfig<ChipBlockDef> = {
             ],
         },
         {
-            name: "on Click",
-            children: [...buildListener("onClick")],
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
     ],
     styleMenu: [
         {
-            name: "",
+            name: "General",
             children: [
                 {
                     description: "Variant",
@@ -118,42 +126,26 @@ export const config: BlockConfig<ChipBlockDef> = {
                         />
                     ),
                 },
+            ],
+        },
+        {
+            name: "Color",
+            children: [
                 {
                     description: "Color",
                     render: ({ id }) => (
-                        <SelectInputSettings
+                        <ColorSettings
                             id={id}
                             label="Color"
-                            path="color"
-                            options={[
-                                {
-                                    value: "default",
-                                    display: "default",
-                                },
-                                {
-                                    value: "primary",
-                                    display: "primary",
-                                },
-                                {
-                                    value: "secondary",
-                                    display: "secondary",
-                                },
-                                {
-                                    value: "success",
-                                    display: "success",
-                                },
-                                {
-                                    value: "warning",
-                                    display: "warning",
-                                },
-                                {
-                                    value: "error",
-                                    display: "error",
-                                },
-                            ]}
+                            path="style.color"
                         />
                     ),
                 },
+            ]
+        },
+        {
+            name: "Dimensions",
+            children: [
                 {
                     description: "Size",
                     render: ({ id }) => (
@@ -164,17 +156,17 @@ export const config: BlockConfig<ChipBlockDef> = {
                             options={[
                                 {
                                     value: "small",
-                                    display: "small",
+                                    display: "Small",
                                 },
                                 {
                                     value: "medium",
-                                    display: "medium",
+                                    display: "Medium",
                                 },
                             ]}
                         />
                     ),
                 },
-            ],
-        },
+            ]
+        }
     ],
 };

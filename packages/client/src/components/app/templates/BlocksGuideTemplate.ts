@@ -358,7 +358,10 @@ export const BlocksGuideTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--2178',
             },
@@ -543,26 +546,29 @@ export const BlocksGuideTemplate: Template = {
                     },
                 },
                 listeners: {
-                    onPageLoad: [
-                        {
-                            message: ActionMessages.RUN_QUERY,
-                            payload: {
-                                queryId: 'python_code',
+                    onPageLoad: {
+                        type: 'sync',
+                        order: [
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'python_code',
+                                },
                             },
-                        },
-                        {
-                            message: ActionMessages.RUN_QUERY,
-                            payload: {
-                                queryId: 'py-code',
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'py-code',
+                                },
                             },
-                        },
-                        {
-                            message: ActionMessages.RUN_QUERY,
-                            payload: {
-                                queryId: 'default',
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'default',
+                                },
                             },
-                        },
-                    ],
+                        ],
+                    },
                 },
                 id: 'page-1',
             },

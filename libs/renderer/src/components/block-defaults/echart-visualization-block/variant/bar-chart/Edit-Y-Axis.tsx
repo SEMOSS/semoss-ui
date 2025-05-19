@@ -76,6 +76,7 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
 const INITIAL_YAXIS_STATE = {
     showAxis: true, //yaxis show/hide
     yaxistitle: "", //y axis title value
+    showAxisTitle: true, // yaxis title hide/show
     yaxisTitleFontSize: 18, // yaxis title fontsize
     showYAxisLineTicks: false, // show/hide y axis ticks
     showYAxisLabels: true, // show/hide y axis labels
@@ -121,6 +122,7 @@ export const EditYAxis = observer(
             const axis = "yAxis";
             const yAxisStateData = {
                 showAxis: true,
+                showAxisTitle: true,
                 yaxistitle: "",
                 yaxisTitleFontSize: 18,
                 showYAxisLineTicks: false,
@@ -197,6 +199,7 @@ export const EditYAxis = observer(
             const axis = "yAxis"; //an axis pointer, either x or y axis
             const axisData = {
                 showAxis: yaxisState.showAxis,
+                showAxisTitle: yaxisState.showAxisTitle,
                 yaxistitle: yaxisState.yaxistitle,
                 yaxisTitleFontSize: yaxisState.yaxisTitleFontSize,
                 showYAxisLabels: yaxisState.showYAxisLabels,
@@ -209,29 +212,31 @@ export const EditYAxis = observer(
             let optionUpdated = option;
             //when a property is available, the respective values in the option is updated and state is also updated
             if (option.hasOwnProperty(axis) && option[axis]) {
-                if (axisData.hasOwnProperty("showAxis")) {
-                    option[axis] = {
-                        ...option[axis],
-                        ["show"]: axisData.showAxis,
+                if (axisData.showAxisTitle) {
+                    if (axisData.hasOwnProperty("yaxistitle")) {
+                        option[axis] = {
+                            ...option[axis],
+                            ["name"]: axisData.yaxistitle,
+                        };
+                    }
+                    if (axisData.hasOwnProperty("yaxisTitleFontSize")) {
+                        option[axis] = {
+                            ...option[axis],
+                            ["nameTextStyle"]: {
+                                ...option[axis]["nameTextStyle"],
+                                ["fontSize"]:
+                                    Number(axisData.yaxisTitleFontSize) ||
+                                    undefined,
+                            },
+                        };
+                    }
+                } else {
+                    option["yAxis"] = {
+                        ...option["yAxis"],
+                        ["name"]: "",
                     };
                 }
-                if (axisData.hasOwnProperty("yaxistitle")) {
-                    option[axis] = {
-                        ...option[axis],
-                        ["name"]: axisData.yaxistitle,
-                    };
-                }
-                if (axisData.hasOwnProperty("yaxisTitleFontSize")) {
-                    option[axis] = {
-                        ...option[axis],
-                        ["nameTextStyle"]: {
-                            ...option[axis]["nameTextStyle"],
-                            ["fontSize"]:
-                                Number(axisData.yaxisTitleFontSize) ||
-                                undefined,
-                        },
-                    };
-                }
+
                 if (axisData.hasOwnProperty("showYAxisLineTicks")) {
                     option[axis] = {
                         ...option[axis],
@@ -359,9 +364,13 @@ export const EditYAxis = observer(
                 >
                     <Switch
                         size="small"
-                        defaultChecked={yaxisState.showAxis ?? undefined}
+                        defaultChecked={yaxisState.showAxisTitle ?? undefined}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            handleInputChange(e, "showAxis", e.target.checked)
+                            handleInputChange(
+                                e,
+                                "showAxisTitle",
+                                e.target.checked,
+                            )
                         }
                         title="Show Axis Title"
                     />
@@ -369,7 +378,7 @@ export const EditYAxis = observer(
                         Show Axis Title
                     </StyledTypography>
                 </StyledAxisDiv>
-                {yaxisState.showAxis && (
+                {yaxisState.showAxisTitle && (
                     <StyledAxisColDiv
                         display="flex"
                         justifyContent="flex-start"
@@ -385,7 +394,7 @@ export const EditYAxis = observer(
                         />
                     </StyledAxisColDiv>
                 )}
-                {yaxisState.showAxis && (
+                {yaxisState.showAxisTitle && (
                     <StyledAxisColDiv
                         display="flex"
                         justifyContent="space-around"
