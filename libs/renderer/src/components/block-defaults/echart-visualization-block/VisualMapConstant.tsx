@@ -1002,6 +1002,83 @@ export const VisualMapConstant = {
                 icon: <img src={String(DendrogramIcon)} alt="Dendrogram Icon" />,
                 name: "dendrogram",
                 label: "Dendrogram",
+                title: "echart-dendrogram-chart",
+                option: {
+                    tooltip: {
+                        trigger: 'item',
+                        triggerOn: 'mousemove',
+                    },
+                    toolbox: {
+                        show: true,
+                        feature: {
+                            dataZoom: {
+                                show: true,
+                            },
+                        },
+                        brush: {
+                            toolbox: ['rect', 'polygon'],
+                        },
+                    },
+                    series: [
+                        {
+                            type: 'tree',
+                            data: [
+                                {
+                                    name: 'Root',
+                                    children: [
+                                        {
+                                            name: 'Child A',
+                                            children: [
+                                                { name: 'Leaf A1' },
+                                                { name: 'Leaf A2' },
+                                            ],
+                                        },
+                                        {
+                                            name: 'Child B',
+                                            children: [
+                                                { name: 'Leaf B1' },
+                                                { name: 'Leaf B2' },
+                                            ],
+                                        },
+                                    ],
+                                },
+                            ],
+                            top: '5%',
+                            left: '10%',
+                            bottom: '5%',
+                            right: '10%',
+                            symbolSize: 10,
+                            label: {
+                                position: 'left',
+                                verticalAlign: 'middle',
+                                align: 'right',
+                                color: '#000000',
+                                fontSize: '12',
+                                show: true,
+                                formatter: '{c}',
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'right',
+                                    verticalAlign: 'middle',
+                                    align: 'left',
+                                },
+                            },
+                            expandAndCollapse: true,
+                            animationDuration: 750,
+                            animationDurationUpdate: 750,
+                            initialTreeDepth: -1,
+                        },
+                    ],
+                    ['_state']: {
+                        dimensions: [],
+                        facet: [],
+                    },
+                },
+                facet: {
+                    facetSelected: [],
+                    facetList: [],
+                },
             },
             {
                 icon: <img src={String(GraphIcon)} alt="Graph Icon" />,

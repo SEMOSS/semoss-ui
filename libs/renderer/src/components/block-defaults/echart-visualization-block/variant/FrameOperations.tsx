@@ -877,6 +877,50 @@ export const FrameOperations = observer(
                     setData("option", tempValue);
                 }
             }
+            if(variation == "echart-dendrogram-chart"){
+                let columnsToPush = [];
+                let dimensionElement = columnsValue.find((element) => element.label === 'dimensions');
+                let facetElement = columnsValue.find((element) => element.label === 'facet');
+                if(dimensionElement.label === 'dimensions' && dimensionElement.values.length){
+                    dimensionElement.selectors.forEach((item, index)=>{
+                        if(!item || !dimensionElement.values[index]) return;
+                        columnsToPush = [
+                            ...columnsToPush,
+                            {
+                                name: dimensionElement.values[index],
+                                selector: item,
+                            },
+                        ];
+                    });
+                    setData("columns", columnsToPush);
+                }
+                else{
+                    setData("columns", []);
+                }
+                if(facetElement.label === 'facet' && facetElement.values.length){
+                    if(!facetElement.values[0] || !facetElement.selectors[0]) return;
+
+                    setData("facet.facetSelected", [{
+                        name: facetElement.values[0],
+                        selector: facetElement.selectors[0],
+                        value: 0,
+                      }]);
+                    
+                    columnsToPush = [
+                          ...columnsToPush,
+                          {
+                            name: facetElement.values[0],
+                            selector: facetElement.selectors[0],
+                            value: 0,
+                            isFacet: true,
+                          }   
+                    ];
+                    setData("columns", columnsToPush);
+                }
+                else{
+                    setData("facet.facetSelected", []);
+                }
+            }
         }
         function dispatchData(option) {
             if (timeoutRef.current) {

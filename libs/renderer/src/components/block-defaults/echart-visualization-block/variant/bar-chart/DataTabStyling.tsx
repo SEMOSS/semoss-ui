@@ -138,8 +138,10 @@ export const DataTabStyling = observer(
                     updatedColumns[key] = item.values;
                 }
             });
-            if (JSON.stringify(updatedColumns) !== JSON.stringify(selectedColumns)) {
-                setSelectedColumns(updatedColumns);
+            if (Object.keys(updatedColumns).length > 0) {
+                if (JSON.stringify(updatedColumns) !== JSON.stringify(selectedColumns)) {
+                    setSelectedColumns({ ...updatedColumns });
+                }
             }
         }, [JSON.stringify(storedColumns)]);
 
@@ -154,7 +156,9 @@ export const DataTabStyling = observer(
                 }
             });
 
-            setSelectedColumns(updatedColumns);
+            if (Object.keys(updatedColumns).length > 0) {
+                setSelectedColumns({ ...updatedColumns });
+            }
         }, [dragdropColumns]);
 
         useEffect(() => {
@@ -162,11 +166,11 @@ export const DataTabStyling = observer(
                 return;
             }
             const formattedArray = chart.map((item, index) => {
-                let value ;
+                let value;
                 if (data.variation === "echart-bar-graph") {
                     value = data.option[chart[index].label]?.name;
                 }
-                else if(data.variation === "echart-gantt-chart") {
+                else if (data.variation === "echart-gantt-chart") {
                     value = data.option["customSettings"]?.["columnDetails"]?.[chart[index].label]?.name;
                 }
                 else {

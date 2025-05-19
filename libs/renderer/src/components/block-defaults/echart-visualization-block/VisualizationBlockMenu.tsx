@@ -88,10 +88,14 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
             setSelectedColumn(storeData);
         }
     }
+
     const handleSelectedItem = (item: any) => {
         if (item.title && item.option) {
             data.variation = item.title;
             data.option = item.option;
+            if(item?.facet){
+                data.facet = item.facet;
+            }
             setForceRender(prev => !prev); // Force re-render to update the chart with the new data
         }
     };
@@ -194,6 +198,17 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                                 updateFrame={updateFrame}
                                 path="option"
                                 chart={Gantt}
+                                storedColumns={selectedColumn}
+                                handleStoreData={handleStoreData}
+                                selectedItem={handleSelectedItem}
+                            />
+                        )}
+                         {data.variation === "echart-dendrogram-chart" && (
+                            <FrameOperations
+                                id={id}
+                                updateFrame={updateFrame}
+                                path="option"
+                                chart={Dendrogram}
                                 storedColumns={selectedColumn}
                                 handleStoreData={handleStoreData}
                                 selectedItem={handleSelectedItem}
