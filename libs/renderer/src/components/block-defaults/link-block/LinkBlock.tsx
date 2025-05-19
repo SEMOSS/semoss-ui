@@ -46,7 +46,6 @@ export const LinkBlock: BlockComponent = observer(({ id }) => {
 
             const hash = window.location.hash 
             const match = hash.match(/^#\/[^/]+\/[^/]+/)
-            // debugger
 
             if(match) {
                 const base  = match[0]
