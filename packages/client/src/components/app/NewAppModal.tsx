@@ -99,18 +99,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
                 // upload the image
                 if (data.APP_IMG && appId) {
-                    const upload = await monolithStore.uploadImage(
-                        data.APP_IMG,
-                        appId,
-                    );
-
-                    if (upload) {
-                        const { app_name, message } = upload[0];
-                        notification.add({
-                            color: 'success',
-                            message: `${message} - ${app_name}`,
-                        });
-                    }
+                    await monolithStore.uploadImage(data.APP_IMG, appId);
                 }
                 // after the project is created check for metadata. If true, run SetProjectMeta
                 if (data['APP_TAGS'].length || data['APP_DESCRIPTION']) {
@@ -156,18 +145,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
                 // upload the image
                 if (data.APP_IMG && appId) {
-                    const upload = await monolithStore.uploadImage(
-                        data.APP_IMG,
-                        appId,
-                    );
-
-                    if (upload) {
-                        const { app_name, message } = upload[0];
-                        notification.add({
-                            color: 'success',
-                            message: `${message} - ${app_name}`,
-                        });
-                    }
+                    await monolithStore.uploadImage(data.APP_IMG, appId);
                 }
 
                 // after the project is created run a pixel to create a new portals/index.html file
