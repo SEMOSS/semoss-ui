@@ -514,7 +514,7 @@ export const NotebookCell = observer(
                             variant="subtitle2"
                             title={'Copy reference id'}
                         >
-                            {cellOrderNumber}
+                            # {cellOrderNumber}
                         </StyledName>
                     </StyledStackTwo>
 
