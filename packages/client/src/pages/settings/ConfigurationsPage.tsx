@@ -7,7 +7,6 @@ import React, {
     Suspense,
     lazy,
 } from 'react';
-import { useForm } from 'react-hook-form';
 
 import { useAPI, useRootStore, useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
@@ -30,7 +29,7 @@ import github from '../../assets/img/github.png';
 import other from '../../assets/img/other.png';
 
 import { useNavigate } from 'react-router-dom';
-import { KeyboardArrowDown, SearchOutlined } from '@mui/icons-material';
+import { KeyboardArrowDown } from '@mui/icons-material';
 
 const Editor = lazy(() => import('@monaco-editor/react'));
 
@@ -57,27 +56,23 @@ const SOCIAL = {
     },
 };
 
-const StyledConfigurationsOptionsAccordion = styled('div')(({ theme }) => ({
+const StyledConfigurationsOptionsAccordion = styled('div')({
     display: 'flex',
-}));
+});
 
-const StyledAccordion = styled(Accordion)(({ theme }) => ({
+const StyledAccordion = styled(Accordion)({
     width: '291px',
-}));
+});
 
-const StyledBox = styled(Box)(({ theme }) => ({
+const StyledBox = styled(Box)({
     padding: '0px 12px 12px 12px',
-}));
+});
 
-const StyledSearchIcon = styled(SearchOutlined)(({ theme }) => ({
-    color: '#5c5c5c',
-}));
-
-const StyledAccordionContent = styled(Accordion.Content)(({ theme }) => ({
+const StyledAccordionContent = styled(Accordion.Content)({
     fontSize: '14px',
     margin: 0,
     padding: '12px 16px 16px 16px',
-}));
+});
 
 const StyledListButton = styled(Button)(({ theme }) => ({
     textTransform: 'none',
@@ -85,9 +80,9 @@ const StyledListButton = styled(Button)(({ theme }) => ({
     justifyContent: 'left',
 }));
 
-const StyledDivider = styled(Divider)(({ theme }) => ({
+const StyledDivider = styled(Divider)({
     marginBottom: '8px',
-}));
+});
 
 const StyledImage = styled('img')({
     objectFit: 'cover',
@@ -134,13 +129,13 @@ const StyledPropContainer = styled('div')(({ theme }) => ({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
 }));
 
-const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
+const StyledToggleTabsGroup = styled(ToggleTabsGroup)({
     marginBottom: '16px',
-}));
+});
 
-const StyledTextField = styled(TextField)(({ theme }) => ({
+const StyledTextField = styled(TextField)({
     marginRight: '12px',
-}));
+});
 
 const initialState = {
     socialProps: {},
@@ -175,7 +170,6 @@ export const ConfigurationsPage = () => {
     const [authentication, setAuthentication] = useState(
         Object.keys(socialProps),
     );
-    const [authExpanded, setAuthExpanded] = useState(true);
 
     const [tabValue, setTabValue] = useState(0);
 
@@ -215,7 +209,9 @@ export const ConfigurationsPage = () => {
             value: formattedProperties,
         });
 
-        setAccordionValue(Object.keys(formattedProperties)[0]);
+        if (!accordionValue) {
+            setAccordionValue(Object.keys(formattedProperties)[0]);
+        }
         setAuthentication(Object.keys(formattedProperties));
         authSearchBarRef.current?.focus();
     }, [loginProperties.status, loginProperties.data]);
@@ -247,9 +243,14 @@ export const ConfigurationsPage = () => {
         setTabValue(newValue);
     };
 
-    const changeSocialProps = (fieldName, value) => {
+    const updateSocialProps = (
+        fieldName: string,
+        value: string,
+        label: string,
+        index,
+    ) => {
         const socialPropsCopy = socialProps;
-        socialPropsCopy[fieldName] = value;
+        socialPropsCopy[fieldName][index]['value'] = value;
 
         dispatch({
             type: 'field',
@@ -257,6 +258,14 @@ export const ConfigurationsPage = () => {
             value: socialPropsCopy,
         });
         // setSocialProps(socialPropsCopy);
+    };
+
+    /**
+     * @name resetLoginProperties
+     * @desc refreshes getLoginProperties
+     */
+    const resetLoginProperties = () => {
+        loginProperties.refresh();
     };
 
     const settingsPage = () => {
@@ -307,7 +316,8 @@ export const ConfigurationsPage = () => {
                         key={authentication.indexOf(accordionValue)}
                         fieldName={accordionValue}
                         fields={socialProps[accordionValue]}
-                        onChange={changeSocialProps}
+                        updateSocialProps={updateSocialProps}
+                        resetLoginProperties={resetLoginProperties}
                     ></SocialProperty>
                 )}
             </StyledConfigurationsOptionsAccordion>
@@ -366,13 +376,11 @@ export const ConfigurationsPage = () => {
     );
 };
 
-const mapDefaultValues = (vals) => {
-    const value: unknown = {};
+const mapDefaultValues = (vals: FieldProps[]) => {
+    const value = {};
 
-    vals.map((f: FieldProps) => {
-        if (!value[f.label]) {
-            value[f.label] = f.value;
-        }
+    vals.forEach((f: FieldProps) => {
+        value[f.label] = f.value || '';
     });
 
     return value;
@@ -389,47 +397,26 @@ interface FieldProps {
 // }
 
 const SocialProperty = (props) => {
-    const { fieldName, fields, onChange } = props;
+    const { fieldName, fields, resetLoginProperties, updateSocialProps } =
+        props;
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
-
-    // used for reset
-    const [defaultValues, setDefaultValues] = useState<FieldProps[]>();
-
-    const { handleSubmit, reset } = useForm({
-        defaultValues: mapDefaultValues(fields),
-    });
 
     /**
      * @name onSubmit
      * @desc changes properties based on updates to social props
      * @param data - form data
      */
-    const onSubmit = handleSubmit((data) => {
-        monolithStore.modifyLoginProperties(fieldName, data).then(() => {
+    const onSubmit = () => {
+        const values = mapDefaultValues(fields);
+        monolithStore.modifyLoginProperties(fieldName, values).then(() => {
             notification.add({
                 color: 'success',
                 message: `Succesfully modified ${fieldName} properties`,
             });
-
-            const valueCopy = [];
-            // structure values to pass to parent and defaultValues
-            Object.entries(data).map((k) => {
-                const objCopy = {
-                    label: k[0],
-                    value: k[1],
-                };
-                valueCopy.push(objCopy);
-            });
-
-            // pass to the parent that holds state of all properties
-            onChange(fieldName, valueCopy);
-
-            // set new default values for reset
-            setDefaultValues(valueCopy);
         });
-    });
+    };
 
     return (
         <StyledForm>
@@ -442,11 +429,7 @@ const SocialProperty = (props) => {
                     <StyledButton
                         variant="outlined"
                         onClick={() => {
-                            if (!defaultValues) {
-                                reset();
-                            } else {
-                                reset(mapDefaultValues(defaultValues));
-                            }
+                            resetLoginProperties(fieldName);
                         }}
                     >
                         Reset
@@ -466,17 +449,25 @@ const SocialProperty = (props) => {
                         <StyledKeyValue>
                             <StyledTextField
                                 label="key"
-                                defaultValue={f.label}
+                                value={f.label}
                                 variant="outlined"
                                 fullWidth
+                                disabled={true}
                             />
                             <TextField
                                 label="value"
-                                defaultValue={f.value}
+                                value={f.value}
                                 fullWidth
+                                onChange={(e) => {
+                                    updateSocialProps(
+                                        fieldName,
+                                        e.target.value,
+                                        f.label,
+                                        i,
+                                    );
+                                }}
                             />
                         </StyledKeyValue>
-                        <TextField placeholder="Description"></TextField>
                     </StyledPropContainer>
                 );
             })}

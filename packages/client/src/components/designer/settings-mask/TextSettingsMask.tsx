@@ -6,9 +6,6 @@ import { ActionMessages, useBlocks } from '@semoss/renderer';
 
 import { useDesigner } from '@/hooks';
 
-const STYLED_FONT_STYLE_INPUT_WIDTH = 232;
-const STYLED_FONT_SIZE_INPUT_WIDTH = 168;
-
 const StyledInputContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
@@ -18,10 +15,6 @@ const StyledInputContainer = styled('div')(({ theme }) => ({
     backgroundColor: 'white',
     padding: theme.spacing(1),
     borderRadius: theme.shape.borderRadius,
-    maxWidth: `${
-        STYLED_FONT_STYLE_INPUT_WIDTH + STYLED_FONT_SIZE_INPUT_WIDTH
-    }px`,
-    minWidth: 'fit-content',
 }));
 
 const FontStyleOptions = [

@@ -117,6 +117,8 @@ export const EngineShell = (props: EngineShellProps) => {
         last_updated?: string;
         description?: string;
         database_type?: string;
+        DATEADDED?: string;
+        PERMISSIONGRANTEDBY?: string;
     }>(`GetEngineMetadata(engine=["${id}"], metaKeys=[]); `);
 
     /**
@@ -263,74 +265,25 @@ export const EngineShell = (props: EngineShellProps) => {
                         marginBottom={2}
                         sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
                     >
-                        <div
-                            style={{
-                                width: '100%',
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                flexDirection: 'row',
-                                gap: '8px',
-                            }}
-                        >
-                            <Typography
-                                variant={'body2'}
-                                sx={{
-                                    maxWidth: '35%',
-                                }}
-                            >
-                                Published by:{' '}
-                            </Typography>
-                            <Typography
-                                variant={'body2'}
-                                sx={{
-                                    maxWidth: '65%',
-                                    display: 'flex',
-                                    justifyContent: 'flex-end',
-                                    overflow: 'hidden',
-                                    whiteSpace: 'nowrap',
-                                    textOverflow: 'ellipsis',
-                                    direction: 'rtl',
-                                    textAlign: 'left',
-                                }}
-                            >
-                                {data.database_created_by
-                                    ? data.database_created_by
-                                    : 'N/A'}
-                            </Typography>
-                        </div>
-                        <div
-                            style={{
-                                width: '100%',
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                flexDirection: 'row',
-                                gap: '8px',
-                            }}
-                        >
-                            <Typography
-                                variant={'body2'}
-                                sx={{
-                                    maxWidth: '35%',
-                                }}
-                            >
-                                Updated:{' '}
-                            </Typography>
-                            <Typography
-                                variant={'body2'}
-                                sx={{
-                                    maxWidth: '65%',
-                                    display: 'flex',
-                                    justifyContent: 'flex-end',
-                                    overflow: 'hidden',
-                                    whiteSpace: 'nowrap',
-                                    textOverflow: 'ellipsis',
-                                    direction: 'rtl',
-                                    textAlign: 'left',
-                                }}
-                            >
-                                {data.last_updated ? data.last_updated : 'N/A'}
-                            </Typography>
-                        </div>
+                        {data?.DATEADDED && data?.PERMISSIONGRANTEDBY ? (
+                            <div>
+                                <Typography variant={'body2'}>
+                                    {`Updated by ${data.PERMISSIONGRANTEDBY}`}
+                                </Typography>
+
+                                <div>
+                                    <Typography variant={'body2'}>
+                                        {`at ${data.DATEADDED}`}
+                                    </Typography>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <Typography variant={'body2'}>
+                                    No updates since creation
+                                </Typography>
+                            </div>
+                        )}
                     </Stack>
                 </StyledInfoRight>
             </StyledInfo>
