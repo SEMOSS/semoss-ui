@@ -4,7 +4,7 @@ import { Typography, useNotification } from '@semoss/ui';
 import { Panel } from './Panel';
 import { ReactFlow } from '@xyflow/react';
 import { useBlocks } from '@semoss/renderer';
-import { Node } from '@xyflow/react';
+import { Node, Edge } from '@xyflow/react';
 
 export const GraphPanel: React.FC = observer(() => {
     const notification = useNotification();
@@ -18,7 +18,7 @@ export const GraphPanel: React.FC = observer(() => {
             <ReactFlow
                 // width={'100%'}
                 nodes={state.dependencyGraph.nodes_two as Node[]}
-                edges={[]}
+                edges={state.dependencyGraph.edges as Edge[]}
                 fitView
             />
         </Panel>

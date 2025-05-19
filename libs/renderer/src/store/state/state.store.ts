@@ -58,7 +58,7 @@ interface StateStoreInterface {
     executionOrder: string[];
 
     /** Graph to track nodes and edges based on {{}} */
-    dependencyGraph: {nodes: Record<string, unknown>[], nodes_two: Record<string, unknown>[], edges: []};
+    dependencyGraph: {nodes: Record<string, unknown>[], nodes_two: Record<string, unknown>[], edges: Record<string, unknown>[]};
 }
 
 export class StateStoreConfig {
@@ -1154,18 +1154,17 @@ export class StateStore {
             const node = {
                 id: `block--${keyVal[0]}`,
                 data: {
-                    label: keyVal[0],
+                    label: `This is a block node: ${keyVal[0]}`,
                     data: keyVal[1]
                 },
                 position: {
                     x: prevPositionX,
                     y: 0
-                }
-                
+                } 
             }
 
             // TODO: search json for {{}} and create edge
-            console.log(keyVal[1])
+            // console.log(keyVal[1])
 
             prevPositionX += 200
             nodes.push(node)
@@ -1174,11 +1173,11 @@ export class StateStore {
         prevPositionX = 0
         // Construct nodes for variables.  In order to have a starting point for all edges
         Object.entries(state.variables).forEach((keyVal) => {
-            console.log(keyVal[1])
+            // console.log(keyVal[1])
             const node = {
                 id: `variable--${keyVal[0]}`,
                 data: {
-                    label: keyVal[0],
+                    label: `This is a variable node: ${keyVal[0]}`,
                     data: keyVal[1]
                 },
                 position: {
@@ -1199,7 +1198,7 @@ export class StateStore {
             const node = {
                 id: `notebook--${keyVal[0]}`,
                 data: {
-                    label: keyVal[0],
+                    label: `This is a notebook node: ${keyVal[0]}`,
                     data: q
                 },
                 position: {
@@ -1209,16 +1208,16 @@ export class StateStore {
                 
             }
 
-            //TODO: create nodes for cells
+            // create nodes for cells
             let cellPosY = 450
 
             q.cellList.forEach((c) => {
-                console.log(c.id)
+                // console.log(c.id)
 
                 const node = {
-                    id: `notebook--cell--${c.id}`,
+                    id: `notebook--${keyVal[0]}--cell--${c.id}`,
                     data: {
-                        label: c.id,
+                        label: `This is a cell node: ${c.id}`,
                         data: c
                     },
                     position: {
@@ -1238,19 +1237,150 @@ export class StateStore {
         })
 
         // TODO: Consoldiate
-        // Construct edges
+
+
+        // TODO: Construct edges 
+        // 1. Blocks to variables and 
+        // 2. Variables to its pointer
         Object.entries(state.blocks).forEach((keyValue, i) => {
             const block = keyValue[1] as Block
-            // TODO: check if {{}}
 
-            const edge = {
-                id: `edge--${i}`,
-                source: `block--${block.id}`,
-                target: ``,
-                animated: true
+            // brute force
+            const stringified = JSON.stringify(block)
+
+            const matches = stringified.match(/{{(.*?)}}/g)
+
+            // console.log(`matches for ${block.id}`, matches)
+
+            if(matches) {
+                console.log("Block with variables: ", block)
+                matches.forEach(((v, j) => {
+                    // trim the whitespace
+                    let cleaned = v.trim();
+                
+                    if (
+                        !cleaned.startsWith("{{") &&
+                        !cleaned.endsWith("}}")
+                    ) {
+                        return
+                    }
+
+                    // remove the brackets
+                    cleaned = cleaned.slice(2, -2);
+                    const path = cleaned.split(".");
+
+                    if (!this._store.variables[path[0]]) return
+
+                    const variable = this._store.variables[path[0]]
+
+                    let edge = {
+                        id: `edge--${i}--${j}`,
+                        source: `block--${block.id}`,
+                        target: `variable--${path[0]}`,
+                        animated: true
+                    }
+
+                    edges.push(edge)
+
+                    let prefix = ''
+                    let targetId = ''
+
+
+                    // console.log("Variable: ", variable)
+                    if(variable.type === 'query') {
+                        prefix = 'notebook'
+                        targetId = variable.to;
+                    }
+
+                    if(variable.type === 'cell') {
+                        prefix = `notebook--${variable.to}--cell--`
+                        targetId = variable.cellId;
+                    }
+
+                    if(variable.type === 'block') {
+                        prefix = 'block--'
+                        targetId = variable.to;
+                    }
+
+                    edge = {
+                        id: `edge--${i}--${j}--variable`,
+                        source: `variable--${path[0]}`,
+                        target: `${prefix}--${targetId}`,
+                        animated: true
+                    }
+                    edges.push(edge)
+
+
+                }))
             }
-            edges.push(edge)
         })
+
+        // // Construct edges Notebooks
+        // Object.entries(state.queries).forEach((keyValue, i) => {
+        //     const block = keyValue[1] as Block
+        //     // TODO: check if {{}}
+        //     // debugger
+
+        //     // brute force
+        //     const stringified = JSON.stringify(block)
+
+        //     const matches = stringified.match(/{{(.*?)}}/g)
+
+        //     // console.log(`matches for ${block.id}`, matches)
+
+        //     if(matches) {
+        //         matches.forEach((v => {
+        //             // trim the whitespace
+        //             let cleaned = v.trim();
+                
+        //             if (
+        //                 !cleaned.startsWith("{{") &&
+        //                 !cleaned.endsWith("}}")
+        //             ) {
+        //                 return
+        //             }
+
+        //             // remove the brackets
+        //             cleaned = cleaned.slice(2, -2);
+        //             const path = cleaned.split(".");
+        //             console.log(v)
+
+        //             if (!this._store.variables[path[0]]) return
+
+        //             const variable = this._store.variables[path[0]]
+        //             let prefix = ''
+        //             let targetId = ''
+
+        //             if(variable.type === 'query') {
+        //                 prefix = 'notebook'
+        //                 targetId = variable.to;
+        //             }
+
+        //             if(variable.type === 'cell') {
+        //                 prefix = `notebook--${variable.to}--cell--`
+        //                 targetId = variable.cellId;
+        //             }
+
+        //             if(variable.type === 'block') {
+        //                 prefix = 'block'
+        //                 targetId = variable.to;
+        //             }
+
+
+        //             const edge = {
+        //                 id: `edge--${i}`,
+        //                 source: `block--${block.id}`,
+        //                 target: `${prefix}--${block.id}`,
+        //                 animated: true
+        //             }
+        //             edges.push(edge)
+
+
+        //         }))
+        //     }
+        // })
+
+        // Construct edges cells
 
         this._store.dependencyGraph =  {
             nodes_two: nodes,
@@ -1270,7 +1400,8 @@ export class StateStore {
                 { id: 'data-2', data: { label: 'Data 2' }, position: { x: 200, y: 300 } },
                 { id: 'data-3', data: { label: 'Data 3' }, position: { x: 400, y: 300 } },
             ],
-            edges: []
+            edges: edges,
+            // edges: []
         }
     }
 
