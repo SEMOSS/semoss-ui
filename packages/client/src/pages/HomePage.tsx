@@ -328,7 +328,7 @@ export const HomePage = observer((): JSX.Element => {
                                 }}
                             />
                         </Stack>
-                        {configStore.isEngineOperationAvailable(
+                        {configStore.store.config.adminOnlyViewMenuBarFlag && configStore.isEngineOperationAvailable(
                             'APP',
                             'add',
                         ) && (

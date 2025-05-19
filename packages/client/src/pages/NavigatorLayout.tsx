@@ -13,6 +13,8 @@ import { ErrorBoundary } from '@/components/common';
 import { ENGINE_ROUTES } from '@/pages/engine';
 import { ErrorPage } from './ErrorPage';
 import { PlatformMessages } from './PlatformMessages';
+import { useRootStore } from '@/hooks';
+import { useEffect, useState } from "react";
 
 const NAV_HEIGHT = '48px';
 const SIDEBAR_WIDTH = '56px';
@@ -81,10 +83,19 @@ const StyledContent = styled('div')(() => ({
  */
 export const NavigatorLayout = observer(() => {
     const { pathname } = useLocation();
+    const  { configStore } = useRootStore();
+    const [admingOnlyFlag ,setAdmingOnlyFlag ] = useState(false);
+    const [coreApiFlag ,setCoreApiFlag ] = useState(configStore.store.config.adminOnlyViewMenuBarFlag);
+
+     if(configStore.store.user.admin && coreApiFlag){
+        setAdmingOnlyFlag(true);
+    }
 
     return (
         <ErrorBoundary fallback={<ErrorPage />}>
+          
             <Navbar />
+            { admingOnlyFlag &&(
             <StyledSidebar>
                 <Tooltip title={`Open App Library`} placement="right">
                     <StyledSidebarItem
@@ -146,6 +157,7 @@ export const NavigatorLayout = observer(() => {
                     </StyledSidebarItem>
                 </Tooltip>
             </StyledSidebar>
+          )}
             <StyledContent>
                 <PlatformMessages platformAssist={true}>
                     <Outlet />
