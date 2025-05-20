@@ -92,7 +92,7 @@ interface ConfigStoreInterface {
          */
         csrf: boolean;
         /*
-        * CoreAI flag is enabled
+        * sidemenubar if adminOnlyViewMenuBarFlag is enabled
         */
          adminOnlyViewMenuBarFlag: boolean;
         /**
