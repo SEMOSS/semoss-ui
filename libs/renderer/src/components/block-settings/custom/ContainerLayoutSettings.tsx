@@ -692,7 +692,7 @@ export const ContainerLayoutSettings = observer(
                             }
                             options={[
                                 {
-                                    value: "left",
+                                    value: "flex-start",
                                     icon:
                                         flexDirection === "row"
                                             ? AlignHorizontalLeft
@@ -710,12 +710,12 @@ export const ContainerLayoutSettings = observer(
                                     isDefault: false,
                                 },
                                 {
-                                    value: "right",
+                                    value: "flex-end",
                                     icon:
                                         flexDirection === "row"
                                             ? AlignHorizontalRight
                                             : VerticalAlignBottom,
-                                    title: "Right",
+                                    title: "Bottom",
                                     isDefault: false,
                                 },
                             ]}
