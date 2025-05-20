@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useNotification } from '@semoss/ui';
-import { Env, InsightProvider } from '@semoss/sdk';
 import {
     StateStore,
     Blocks,
@@ -36,6 +35,7 @@ import {
     NotebookViewerPanel,
 } from './panels';
 import { DEFAULT_MENU } from './menus/default-menu';
+import { GraphPanel } from '../workspace/panels/GraphPanel';
 
 const DEFAULT_BORDER_SIZE = 300;
 
@@ -150,6 +150,13 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                         },
                                         enableClose: true,
                                     },
+                                    // {
+                                    //     type: 'tab',
+                                    //     name: 'Dependency Graph',
+                                    //     component: 'graph',
+                                    //     config: {},
+                                    //     helpText: 'How your app is connected',
+                                    // },
                                 ],
                             },
                         ],
@@ -217,6 +224,8 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
         return <NotebookViewerPanel id={config.id} />;
     } else if (component === 'terminal') {
         return <TerminalPanel />;
+    } else if (component === 'graph') {
+        return <GraphPanel />;
     }
 
     return <>{component}</>;

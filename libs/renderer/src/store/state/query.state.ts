@@ -259,7 +259,6 @@ export class QueryState {
                 await cell._run();
             }
 
-            // debugger
         } catch (e) {
             // if a cell errors out of the runPixel and causes a break/catch here,
             // we're unable to get granular information about which cell caused the error.
@@ -330,6 +329,19 @@ export class QueryState {
             this._store.list.splice(previousCellIdx + 1, 0, cellId);
         }
     };
+
+    _moveCell = (active: string, over: string) => {
+        //null safety
+        if (!active || !over) {
+            return;
+        }
+        // move the cell
+        const activeIdx = this._store.list.indexOf(active);
+        const overIdx = this._store.list.indexOf(over);
+        this._store.list.splice(activeIdx, 1);
+        this._store.list.splice(overIdx, 0, active);
+    };
+       
 
     /**
      * Remove a cell

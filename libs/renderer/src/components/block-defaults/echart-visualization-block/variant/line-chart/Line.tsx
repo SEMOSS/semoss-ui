@@ -111,7 +111,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
                 resultData["xAxis"]["data"] = valuesDataSet.map((x) => x[0]);
                 valuesDataSet.map((x) => x.shift());
                 headersDataSet.shift();
-                const yAxisListLength = resultData["yAxis"]["name"].length;
+                const yAxisListLength = resultData["_state"]["fields"]["yAxis"].length;
                 for (let index = 0; index < yAxisListLength; index++) {
                     resultData["series"][index]["data"] = valuesDataSet.map(
                         (x) => {
@@ -120,7 +120,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
                     );
                     resultData["series"][index]["name"] = headersDataSet[index];
                 }
-                resultData["series"].length = yAxisListLength;
+                // resultData["series"].length = yAxisListLength;
                 resultData["series"].slice(0, yAxisListLength);
                 valuesDataSet.map((x) => x.splice(0, yAxisListLength));
                 headersDataSet.splice(0, yAxisListLength);

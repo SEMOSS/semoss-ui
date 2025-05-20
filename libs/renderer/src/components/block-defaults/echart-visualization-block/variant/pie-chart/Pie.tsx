@@ -64,10 +64,13 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
      * @description
      */
     function getVisualizationBlockSelector(id: string) {
-        if (id) {
+
+        if (id && data.option.hasOwnProperty("_state") && data.option["_state"].hasOwnProperty("fields") && 
+        data.option["_state"]["fields"].hasOwnProperty("Label") && data.option["_state"]["fields"].hasOwnProperty("Value")){
+            if (data.option["_state"]["fields"]["Label"].length >0 && data.option["_state"]["fields"]["Value"].length >0){
             //get the options JSON of the selected block
             //let blockJSON = this._store.blocks[id].data.option;
-            const blockJSON = data.option;
+            const blockJSON = data?.option;
             //initialize the selector string
             let selector = "Select(";
 
@@ -87,7 +90,6 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
             const dynamicYAndTooltipSet = Array.from(
                 new Set([
                     ...selectorFields["Value"],
-                    ...selectorFields["tooltip"],
                 ]),
             );
 
@@ -103,6 +105,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 
             selector += `).as([${selectorFields["Label"][0]}${averageCollection}])|Group(${selectorFields["Label"][0]})|Sort(${selectorFields["Label"][0]})`;
             return selector;
+        }
         }
         return null;
     }
