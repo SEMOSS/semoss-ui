@@ -92,9 +92,9 @@ interface ConfigStoreInterface {
          */
         csrf: boolean;
         /*
-        * sidemenubar if adminOnlyViewMenuBarFlag is enabled
-        */
-         adminOnlyViewMenuBarFlag: boolean;
+         * sidemenubar if adminOnlyViewMenuBarFlag is enabled
+         */
+        adminOnlyViewMenuBarFlag: boolean;
         /**
          * Flags
          */
