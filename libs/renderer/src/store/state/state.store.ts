@@ -1293,12 +1293,12 @@ export class StateStore {
                     }
 
                     if(variable.type === 'cell') {
-                        prefix = `notebook--${variable.to}--cell--`
+                        prefix = `notebook--${variable.to}--cell`
                         targetId = variable.cellId;
                     }
 
                     if(variable.type === 'block') {
-                        prefix = 'block--'
+                        prefix = 'block'
                         targetId = variable.to;
                     }
 
@@ -1313,6 +1313,76 @@ export class StateStore {
 
                 }))
             }
+        })
+
+        Object.entries(state.queries).forEach((keyValue, i) => {
+            let q = keyValue[1] as QueryState
+
+            q.cellList.forEach((c) => {
+                let cell = q.getCell(c.id)
+
+                if(cell.parameters) {
+                     // brute force
+                    const stringified = JSON.stringify(cell.parameters)
+                    const matches = stringified.match(/{{(.*?)}}/g);
+
+                    if(matches) {
+                        matches.forEach(((v, j) => {
+                            // trim the whitespace
+                            let cleaned = v.trim();
+                        
+                            if (
+                                !cleaned.startsWith("{{") &&
+                                !cleaned.endsWith("}}")
+                            ) {
+                                return
+                            }
+                        
+                            // remove the brackets
+                            cleaned = cleaned.slice(2, -2);
+                            const path = cleaned.split(".");
+
+                            console.log(path)
+
+                            if (!this._store.variables[path[0]]) return
+
+                            const variable = this._store.variables[path[0]]
+
+                            let prefix = ''
+                            let targetId = ''
+
+                            // debugger
+                            if(variable.type === 'block') {
+                                prefix = 'block'
+                                targetId = variable.to;
+                            }
+
+
+                            let edge = {
+                                type: 'animatedNode',
+                                id: `edge--${i}--${j}--notebook--${q.id}-cell--${c.id}`,
+                                source: `notebook--${q.id}--cell--${c.id}`,
+                                target: `${prefix}--${targetId}`,
+                                data: {
+                                    node: `variable--${path[0]}`
+                                },
+                                // animated: true
+                            }
+
+                            console.log(edge)
+
+                            edges.push(edge)
+                        
+                    
+                        }))
+                    }
+                }
+
+                
+
+            })
+
+
         })
 
         // // Construct edges Notebooks
