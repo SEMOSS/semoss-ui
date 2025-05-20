@@ -19,7 +19,7 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { Divider } from "@semoss/ui";
+import { Divider, Tooltip } from "@semoss/ui";
 import { MARKDOWN_COMPONENTS } from "./chat.constants";
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
@@ -152,8 +152,10 @@ export const ChatBlock: BlockComponent = observer(({ id }) => {
     // track if the chat is initialized
     const [isInitialized, setIsInitialized] = useState(false);
     const [history, setHistory] = useState<ChatMessage[]>([]);
+    const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
     const endRef = useRef<HTMLDivElement>(null);
     const copyRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const copiedTimeout = useRef<NodeJS.Timeout | null>(null);
     // track if the loading screen is on
     const isLoading = data.loading; // !isInitialized
     let updateHistory: { agent: string; user: string }[] = [];
@@ -189,6 +191,12 @@ export const ChatBlock: BlockComponent = observer(({ id }) => {
 
         // update the state
         setIsInitialized(true);
+        return () => {
+            // clear the timeout if it exists
+            if (copiedTimeout.current) {
+                clearTimeout(copiedTimeout.current);
+            }
+        };
     }, []);
 
     /**
@@ -226,6 +234,10 @@ export const ChatBlock: BlockComponent = observer(({ id }) => {
                 // Write the ClipboardItems to the clipboard
                 const clipboardItem = new window.ClipboardItem(clipboardItems);
                 await navigator.clipboard.write([clipboardItem]);
+                setCopiedIndex(idx); // Set the copied index to trigger a re-render
+                copiedTimeout.current = setTimeout(() => {
+                    setCopiedIndex(null); // Reset the copied index after a delay
+                }, 1500);
             }
         } catch (err) {
             // Log an error if the copy operation fails
@@ -292,14 +304,24 @@ export const ChatBlock: BlockComponent = observer(({ id }) => {
                                                         />
                                                         <ActionIcons>
                                                             <StyledIcon>
-                                                                <ContentCopy
-                                                                    fontSize="small"
-                                                                    onClick={() =>
-                                                                        handleCopy(
-                                                                            idx,
-                                                                        )
+                                                                <Tooltip
+                                                                    title={
+                                                                        copiedIndex ===
+                                                                        idx
+                                                                            ? "Copied"
+                                                                            : "Copy"
                                                                     }
-                                                                />
+                                                                    arrow
+                                                                >
+                                                                    <ContentCopy
+                                                                        fontSize="small"
+                                                                        onClick={() =>
+                                                                            handleCopy(
+                                                                                idx,
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                </Tooltip>
                                                             </StyledIcon>
                                                             <StyledIcon>
                                                                 <ThumbUpOffAlt fontSize="small" />
