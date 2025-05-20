@@ -153,7 +153,7 @@ export const ChatBlock: BlockComponent = observer(({ id }) => {
     const [isInitialized, setIsInitialized] = useState(false);
     const [history, setHistory] = useState<ChatMessage[]>([]);
     const endRef = useRef<HTMLDivElement>(null);
-    const copyRefs = useRef([]);
+    const copyRefs = useRef<(HTMLDivElement | null)[]>([]);
     // track if the loading screen is on
     const isLoading = data.loading; // !isInitialized
     let updateHistory: { agent: string; user: string }[] = [];
@@ -167,34 +167,12 @@ export const ChatBlock: BlockComponent = observer(({ id }) => {
         }
     }
 
-    // const history: ChatMessage[] = useMemo(() => {
-    //     return computed(() => {
-    //         if (!isInitialized) {
-    //             return [];
-    //         }
-
-    //         try {
-    //             return JSON.parse(
-    //                 data.history as unknown as string,
-    //             ) as ChatMessage[];
-    //         } catch (e) {
-    //             console.log(e);
-    //         }
-
-    //         return []
-
-    //     });
-    // }, [isInitialized]).get();
-
     // reset the ask when the history changes
     useEffect(() => {
         // reset the ask
         if (updateHistory.length > 0) {
             setData("ask", "");
             setHistory(updateHistory);
-            if (endRef.current) {
-                endRef.current.scrollIntoView({ behavior: "smooth" });
-            }
         }
     }, [updateHistory.length]);
 
@@ -229,20 +207,29 @@ export const ChatBlock: BlockComponent = observer(({ id }) => {
                 // Extract the inner HTML content of the node
                 const htmlContent = node.innerHTML;
 
-                // Create a Blob containing the HTML content
-                const blob = new Blob([htmlContent], { type: "text/html" });
+                // Extract the plain text content of the node
+                const textContent = node.innerText || node.textContent;
 
-                // Create a ClipboardItem with the HTML Blob
-                const clipboardItem = new window.ClipboardItem({
-                    "text/html": blob,
-                });
+                // Create ClipboardItems for both plain text and HTML
+                const clipboardItems: Record<string, Blob> = {};
+                if (textContent) {
+                    clipboardItems["text/plain"] = new Blob([textContent], {
+                        type: "text/plain",
+                    });
+                }
+                if (htmlContent) {
+                    clipboardItems["text/html"] = new Blob([htmlContent], {
+                        type: "text/html",
+                    });
+                }
 
-                // Write the ClipboardItem to the clipboard
+                // Write the ClipboardItems to the clipboard
+                const clipboardItem = new window.ClipboardItem(clipboardItems);
                 await navigator.clipboard.write([clipboardItem]);
             }
         } catch (err) {
             // Log an error if the copy operation fails
-            console.error("Failed to copy: ", err);
+            console.error("Failed to copy content: ", err);
         }
     };
 

@@ -109,7 +109,7 @@ export const MARKDOWN_COMPONENTS: Components = {
             <Link
                 ref={ref as React.MutableRefObject<HTMLAnchorElement>}
                 rel={"noreferrer"}
-                target={"_black"}
+                target={"_blank"}
                 {...rest}
             />
         );
