@@ -1,10 +1,10 @@
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
 import { Box, Slider, styled } from "@semoss/ui";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { debounced } from "../../../utility";
 
 const StyledSliderBox = styled(Box, {
@@ -29,10 +29,26 @@ export interface SliderBlockDef extends BlockDef<"slider"> {
         size: string;
         marks: Array<{ display: string; value: number }>;
     };
+    listeners: {
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+        onChange: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+    };
 }
 
 export const SliderBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs, setData, listeners } = useBlock<SliderBlockDef>(id);
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
 
     const debouncedCallback = debounced(() => {
         listeners.onChange();

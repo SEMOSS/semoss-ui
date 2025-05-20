@@ -6,6 +6,8 @@ import {
     buildDimensionsSection,
     buildBorderSection,
     buildPositionSection,
+    buildListener,
+    buildShowField,
 } from "../block-defaults.shared";
 
 import { FlipCardBlockDef, FlipCardBlock } from "./FlipCardBlock";
@@ -37,7 +39,12 @@ export const config: BlockConfig<FlipCardBlockDef> = {
         isFlipped: false,
         show: "true",
     },
-    listeners: {},
+    listeners: {
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+    },
     slots: {
         front: [],
         back: [],
@@ -59,6 +66,26 @@ export const config: BlockConfig<FlipCardBlockDef> = {
                         />
                     ),
                 },
+            ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
+        },
+    ],
+    styleMenu: [
+        buildLayoutSection(),
+        buildPositionSection(),
+        buildSpacingSection(),
+        buildDimensionsSection(),
+        buildBorderSection(),
+        {
+            name: "Color",
+            children: [
                 {
                     description: "Front Background Color",
                     render: ({ id }) => (
@@ -81,12 +108,5 @@ export const config: BlockConfig<FlipCardBlockDef> = {
                 },
             ],
         },
-    ],
-    styleMenu: [
-        buildLayoutSection(),
-        buildPositionSection(),
-        buildSpacingSection(),
-        buildDimensionsSection(),
-        buildBorderSection(),
     ],
 };

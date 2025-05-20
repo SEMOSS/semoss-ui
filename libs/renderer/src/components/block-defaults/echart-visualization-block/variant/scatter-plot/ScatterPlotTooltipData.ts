@@ -16,7 +16,8 @@ export const formatdatapoints = (apiData, data) => {
         tooltip = fields["tooltip"];
     }
     const getSelectorType = (type) => {
-        return fields[type] === "NUMBER" ? "Average of" : "Count of";
+        if (!fields[type]) return "";
+        return fields[type][0] === "NUMBER" ? "Average of" : "Count of";
     };
     const getSelectors = () => {
         return {
