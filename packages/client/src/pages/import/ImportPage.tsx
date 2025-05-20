@@ -43,7 +43,7 @@ import { ConnectStorage } from '@/assets/img/ConnectStorage';
 import { useStepper } from '@/hooks';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import { CONNECTION_OPTIONS } from './import.constants';
+import { CONNECTION_OPTIONS ,CONNECTION_OPTIONS_CORE_AI} from './import.constants';
 import { EstablishConnectionPage, ImportConnectionPage } from './';
 import { Help } from '@/components/help';
 
@@ -190,8 +190,10 @@ export const ImportPage = () => {
     const [importSearch, setImportSearch] = React.useState('');
     const [search, setSearch] = React.useState('');
 
-    const [connectionOptions, setConnectionOptions] =
-        React.useState(CONNECTION_OPTIONS);
+   const [connectionOptions, setConnectionOptions] =
+        React.useState(configStore.config.adminOnlyNonApprovedFlag === true ? CONNECTION_OPTIONS_CORE_AI : CONNECTION_OPTIONS);
+  
+
 
     const scrollToTopRef = useRef(null);
 

@@ -91,6 +91,11 @@ interface ConfigStoreInterface {
          * Track if csrf is enabled
          */
         csrf: boolean;
+        /*
+        * CoreAI Non Approved flag 
+        */
+        adminOnlyNonApprovedFlag: boolean;
+
 
         /**
          * Flags
@@ -162,6 +167,7 @@ export class ConfigStore {
             r: true,
             python: true,
             csrf: false,
+            adminOnlyNonApprovedFlag:false,
             adminOnlyDbAdd: false,
             adminOnlyDbAddAccess: false,
             adminOnlyDbDelete: false,
