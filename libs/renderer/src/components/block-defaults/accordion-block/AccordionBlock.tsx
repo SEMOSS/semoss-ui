@@ -1,6 +1,6 @@
 import { CSSProperties } from "react";
 import { observer } from "mobx-react-lite";
-import { ExpandMore } from "@mui/icons-material";
+import { ArrowDropDown } from "@mui/icons-material";
 
 import { Accordion, Stack, styled } from "@semoss/ui";
 
@@ -11,6 +11,7 @@ import { BlockDef, BlockComponent } from "../../../store";
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
     padding: 0,
     margin: 0,
+    borderRadius: "12px",
     "&.MuiAccordion-root:before": {
         backgroundColor: "white",
     },
@@ -68,7 +69,7 @@ export const AccordionBlock: BlockComponent = observer(({ id }) => {
                 sx={{
                     backgroundColor: data.triggerBgColor,
                 }}
-                expandIcon={data.showExpandIcon && <ExpandMore />}
+                expandIcon={<ArrowDropDown />}
             >
                 <Stack sx={{ width: "100%" }}>
                     <Slot slot={slots.header} />

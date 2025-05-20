@@ -1199,6 +1199,320 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 
     {
         section: SECTION_LAYOUT,
+        name: 'Multi-Accordion Block',
+        activeImage: BLOCK_IMAGES['ACCORDION_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['ACCORDION_HOVER'],
+        helperText: 'Click to expand and collapse sections for more details',
+        json: {
+            widget: 'container',
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                },
+            },
+            listeners: {},
+            slots: {
+                children: [
+                    {
+                        widget: 'accordion',
+                        data: {
+                            style: {
+                                borderBottom: '1px solid #ccc',
+                                borderRadius: '0', 
+                            },
+                            triggerBgColor: '',
+                            contentBgColor: '',
+                            showExpandIcon: false,
+                            show: 'true',
+                        },
+                        listeners: {},
+                        slots: {
+                            header: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            gap: '30%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '20px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow: 'ellipsis',
+                                                    },
+                                                    text: 'Accordion 1',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {},
+                                                slots: {},
+                                            },
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow: 'ellipsis',
+                                                        color: '#9c9696',
+                                                        fontWeight: 'normal',
+                                                    },
+                                                    text: 'I am an accordion',
+                                                    variant: 'h4',
+                                                    show: 'true',
+                                                },
+                                                listeners: {},
+                                                slots: {},
+                                            },
+                                        ],
+                                    }
+                                }
+                            ],
+                            content: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            gap: '18px',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '20px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow: 'ellipsis',
+                                                    },
+                                                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {},
+                                                slots: {},
+                                            },
+                                        ],
+                                    }
+
+                                }
+                            ],
+                        },
+                    },
+                    {
+                        widget: 'accordion',
+                        data: {
+                            style: {
+                                borderBottom: '1px solid #ccc',
+                            },
+                            triggerBgColor: '',
+                            contentBgColor: '',
+                            showExpandIcon: false,
+                            show: 'true',
+                        },
+                        listeners: {},
+                        slots: {
+                            header: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            gap: '30%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '20px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow: 'ellipsis',
+                                                    },
+                                                    text: 'Accordion 2',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {},
+                                                slots: {},
+                                            },
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow: 'ellipsis',
+                                                        color: '#9c9696',
+                                                        fontWeight: 'normal',
+                                                    },
+                                                    text: 'I am an accordion',
+                                                    variant: 'h4',
+                                                    show: 'true',
+                                                },
+                                                listeners: {},
+                                                slots: {},
+                                            },
+                                        ],
+                                    }
+                                }
+                            ],
+                            content: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            gap: '18px',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '20px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow: 'ellipsis',
+                                                    },
+                                                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {},
+                                                slots: {},
+                                            },
+                                        ],
+                                    }
+
+                                }
+                            ],
+                        },
+                    },
+                    {
+                        widget: 'accordion',
+                        data: {
+                            style: {
+                                borderBottom: '1px solid #ccc',
+                            },
+                            triggerBgColor: '',
+                            contentBgColor: '',
+                            showExpandIcon: false,
+                            show: 'true',
+                        },
+                        listeners: {},
+                        slots: {
+                            header: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            gap: '30%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '20px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow: 'ellipsis',
+                                                    },
+                                                    text: 'Accordion 3',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {},
+                                                slots: {},
+                                            },
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow: 'ellipsis',
+                                                        color: '#9c9696',
+                                                        fontWeight: 'normal',
+                                                    },
+                                                    text: 'I am an accordion',
+                                                    variant: 'h4',
+                                                    show: 'true',
+                                                },
+                                                listeners: {},
+                                                slots: {},
+                                            },
+                                        ],
+                                    }
+                                }
+                            ],
+                            content: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            gap: '18px',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '20px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow: 'ellipsis',
+                                                    },
+                                                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {},
+                                                slots: {},
+                                            },
+                                        ],
+                                    }
+
+                                }
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+    },
+
+    {
+        section: SECTION_LAYOUT,
         name: 'Popover',
         activeImage: BLOCK_IMAGES['POPOVER_ACTIVE'],
         hoverImage: BLOCK_IMAGES['POPOVER_HOVER'],
