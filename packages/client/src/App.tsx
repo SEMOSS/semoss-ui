@@ -68,8 +68,8 @@ axios.interceptors.request.use(
             };
         }
 
-        // Check if CSRF is enabled and add the token
-        if (CSRF.isEnabled) {
+        // Check the CSRF before login or after the configStore is set, then add the token
+        if (CSRF.isEnabled || _store.configStore.store.config.csrf) {
             if (config.method === 'post') {
                 if (!CSRF.token) {
                     CSRF.token = await getToken();

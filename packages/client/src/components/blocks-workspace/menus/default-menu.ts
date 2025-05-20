@@ -27,7 +27,7 @@ export const SECTION_ORDER = [
 
 // Development Environment Blocks
 const DEV_BLOCKS = [];
-
+// update the json structure also in VisualMapConstant.tsx
 if (process.env.NODE_ENV === 'development') {
     console.warn('PUSH DEV ENV BLOCKS');
 }
@@ -2009,6 +2009,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 frame: {
                     name: '',
                 },
+                show: 'true',
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
@@ -2092,6 +2093,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                         columnDetails: {},
                     },
                 },
+                show: 'true',
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
