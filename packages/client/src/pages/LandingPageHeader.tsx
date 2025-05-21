@@ -7,8 +7,17 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
-import { InputAdornment, lightTheme, Switch, TextField } from '@semoss/ui';
+import {
+    Button,
+    InputAdornment,
+    lightTheme,
+    Switch,
+    TextField,
+} from '@semoss/ui';
 import SearchIcon from '@mui/icons-material/Search';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { UserLandingPage } from './UserlandingPage';
+import DevBanner from '@/assets/img/DevBanner.png';
 
 const StyledBox = styled(Box)(({ theme }) => ({
     display: 'flex',
@@ -104,10 +113,12 @@ const StyledSwitch = styled(Switch)(({ theme }) => ({
     gap: '10px',
 }));
 
-const StyledTitleAndSearchSection = styled('div')(({ theme }) => ({
+const StyledSearchSection = styled('div')(({ theme }) => ({
     display: 'flex',
     gap: '18rem',
     alignItems: 'center',
+    flex: '2 0.5 10%',
+    minWidth: '0px',
 }));
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
@@ -126,6 +137,45 @@ const StyledComponent = styled('div')(({ theme }) => ({
     gap: '24px',
     flex: '1 0 0',
     alignSelf: 'stretch',
+    width: '100%',
+}));
+
+const StyledLeftSection = styled('div')(({ theme }) => ({
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    flex: '1.5 0.5 5%',
+}));
+const StyledRightSection = styled('div')(({ theme }) => ({
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    flex: '1 0.5 15%',
+}));
+
+const StyledBannerTitle = styled(Typography)(({ theme }) => ({
+    color: '#212121',
+    fontFeatureSettings: "'liga' off, 'clig' off",
+    fontFamily: 'Inter',
+    fontSize: '24px',
+    fontStyle: 'normal',
+    fontWeight: '700',
+    lineHeight: '133.4%',
+}));
+
+const StyledBannerText = styled(Typography)(({ theme }) => ({
+    color: '#212121',
+    fontFeatureSettings: "'liga' off, 'clig' off",
+    fontFamily: 'Inter',
+    fontSize: '16px',
+    fontStyle: 'normal',
+    fontWeight: '500',
+    lineHeight: '150%' /* 24px */,
+    letterSpacing: '0.15px',
+    padding: '24px 0px',
+    width: '35%',
 }));
 
 const SvgLogoComponent = () => {
@@ -153,62 +203,120 @@ const SvgLogoComponent = () => {
     );
 };
 
-export const LandingPageHeader = observer(() => {
-    const [showAppBuilder, setShowAppBuilder] = useState(false);
-
+const BannerComponent = () => {
     return (
         <>
-            <StyledBox>
-                <StyledAppBar position="static">
-                    <Toolbar>
-                        <StyledIconButton
-                            size="medium"
-                            edge="start"
-                            color="inherit"
-                            aria-label="menu"
-                        >
-                            <MenuIcon />
-                        </StyledIconButton>
-                        <SvgLogoComponent />
-                        <StyledTitleAndSearchSection>
-                            <StyledTypography variant="h6">
-                                GovConnect.AI
-                            </StyledTypography>
-                            <StyledTextField
-                                variant="outlined"
-                                size="small"
-                                placeholder="Search"
-                                label=""
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <SearchIcon />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                            ></StyledTextField>
-                        </StyledTitleAndSearchSection>
-                        <StyledAppBuilderSection>
-                            <StyledAppBuilder variant="h6">
-                                App Builder
-                            </StyledAppBuilder>
-                            <StyledSwitch
-                                checked={showAppBuilder}
-                                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                                    setShowAppBuilder(e.target.checked)
-                                }
-                            ></StyledSwitch>
-                        </StyledAppBuilderSection>
-                    </Toolbar>
-                </StyledAppBar>
-            </StyledBox>
-            <StyledComponent>
-                {showAppBuilder ? (
-                    <Typography>Dev Person View</Typography>
-                ) : (
-                    <Typography>Business Person View</Typography>
-                )}
-            </StyledComponent>
+            <div
+                style={{
+                    padding: '53px 21px',
+                    backgroundImage: `url(${DevBanner})`,
+                    height: '35dvh',
+                    width: '100%',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    borderRadius: '24px',
+                }}
+            >
+                <StyledBannerTitle variant="h5">
+                    Empower your ideas with AI Core
+                </StyledBannerTitle>
+                <StyledBannerText variant="body1">
+                    Build, automate, and innovate—all without coding. Harness
+                    the power of AI to transform your projects and workflows
+                </StyledBannerText>
+                <Button
+                    variant="contained"
+                    size="large"
+                    style={{
+                        marginTop: 'auto',
+                        borderRadius: '12px',
+                        background: '#000',
+                    }}
+                    endIcon={<ArrowForwardIcon style={{ color: '#fff' }} />}
+                >
+                    Browse Templates
+                </Button>
+            </div>
         </>
     );
-});
+};
+
+interface LandingPageHeaderProps {
+    subTitle?: string;
+}
+
+export const LandingPageHeader = observer(
+    ({ subTitle }: LandingPageHeaderProps) => {
+        const [showAppBuilder, setShowAppBuilder] = useState(false);
+
+        return (
+            <>
+                <StyledBox>
+                    <StyledAppBar position="static">
+                        <Toolbar>
+                            <StyledLeftSection>
+                                <StyledIconButton
+                                    size="medium"
+                                    edge="start"
+                                    color="inherit"
+                                    aria-label="menu"
+                                >
+                                    <MenuIcon />
+                                </StyledIconButton>
+                                <SvgLogoComponent />
+                                <StyledTypography variant="h6">
+                                    GovConnect.AI
+                                </StyledTypography>
+                            </StyledLeftSection>
+                            {showAppBuilder ? (
+                                <StyledSearchSection>
+                                    <StyledTextField
+                                        variant="outlined"
+                                        size="small"
+                                        placeholder="Search"
+                                        label=""
+                                        InputProps={{
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <SearchIcon />
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                    ></StyledTextField>
+                                </StyledSearchSection>
+                            ) : (
+                                <></>
+                            )}
+                            <StyledRightSection>
+                                <StyledAppBuilderSection>
+                                    <StyledAppBuilder variant="h6">
+                                        App Builder
+                                    </StyledAppBuilder>
+                                    <StyledSwitch
+                                        checked={showAppBuilder}
+                                        onChange={(
+                                            e: ChangeEvent<HTMLInputElement>,
+                                        ) =>
+                                            setShowAppBuilder(e.target.checked)
+                                        }
+                                    ></StyledSwitch>
+                                </StyledAppBuilderSection>
+                            </StyledRightSection>
+                        </Toolbar>
+                    </StyledAppBar>
+                </StyledBox>
+                <StyledComponent>
+                    {showAppBuilder ? (
+                        <BannerComponent />
+                    ) : (
+                        <UserLandingPage subTitle={subTitle} />
+                    )}
+                </StyledComponent>
+            </>
+        );
+    },
+);

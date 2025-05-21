@@ -25,8 +25,6 @@ import { WorkspacePage } from './WorkspacePage';
 import { PlatformMessages } from './PlatformMessages';
 import { LandingPageHeader } from './LandingPageHeader';
 
-import { UserLandingPage } from './UserlandingPage';
-
 export const Router = observer(() => {
     const { configStore } = useRootStore();
 
@@ -72,15 +70,17 @@ export const Router = observer(() => {
                 {/* These are separate routes for design purposes but can be consolidated in the future */}
                 <Route
                     path="businessUserlanding"
-                    element={<UserLandingPage subTitle="business apps" />}
+                    element={<LandingPageHeader subTitle="business apps" />}
                 />
                 <Route
                     path="modelUserlanding"
-                    element={<UserLandingPage subTitle="the power of models" />}
+                    element={
+                        <LandingPageHeader subTitle="the power of models" />
+                    }
                 />
                 <Route
                     path="knowledgeUserlanding"
-                    element={<UserLandingPage subTitle="knowledge repos" />}
+                    element={<LandingPageHeader subTitle="knowledge repos" />}
                 />
                 <Route
                     path="workspace/:appId/*"
@@ -107,10 +107,6 @@ export const Router = observer(() => {
                 <Route path="/privacy-notice" element={<PrivacyNotice />} />
             )}
             <Route path="/login" element={<LoginPage />}></Route>
-            <Route
-                path="/custom-login-page"
-                element={<LandingPageHeader />}
-            ></Route>
         </Routes>
     );
 });

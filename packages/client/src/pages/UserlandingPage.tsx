@@ -31,6 +31,7 @@ const BackgroundContainer = styled(Box)(({ theme }) => ({
     flexDirection: 'column',
     padding: theme.spacing(6, 9),
     gap: theme.spacing(4),
+    width: '100%',
 }));
 
 const ContentContainer = styled(Box)(({ theme }) => ({
