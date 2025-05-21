@@ -24,7 +24,7 @@ interceptors.request = async (options) => {
     }
 
     // only set if enabled
-    if (!CSRF.isEnabled) {
+    if (CSRF.isEnabled || Env.CSRF) {
         if (options.method === "POST") {
             // use the token if it is there
             if (!CSRF.token) {
@@ -91,11 +91,11 @@ export const getSystemConfig = async (): Promise<{
     }>(`${Env.MODULE}/api/config`);
 
     if (response.data && response.data.csrf) {
-        // const token = response.data["X-CSRF-Token"] as string;
-
+        const token = response.data["X-CSRF-Token"] as string;
+        
         // enable and store the token
         CSRF.isEnabled = true;
-        // CSRF.token = token;
+        CSRF.token = token;
     }
 
     // save the config data
