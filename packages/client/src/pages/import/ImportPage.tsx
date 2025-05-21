@@ -298,11 +298,6 @@ export const ImportPage = () => {
                             <StyledTypographyText variant="body1">
                                 Coming Soon
                             </StyledTypographyText>
-                            {/* <StyledComingSoonText>
-                                <Typography variant="body1">
-                                    Coming Soon
-                                </Typography>
-                            </StyledComingSoonText> */}
                         </Stack>
                     ) : (
                         <StyledCardImage isModel={true} src={model.icon} />
@@ -310,12 +305,6 @@ export const ImportPage = () => {
 
                     <StyledCardModelText ref={textRef}>
                         {model.name}
-                        {/* <Typography
-                            variant="body2"
-                            sx={{ fontWeight: '500', color: '#212121' }}
-                        >
-                            {model.name}
-                        </Typography> */}
                     </StyledCardModelText>
                 </StyledInnerBox>
             </StyledFormTypeModelBox>
