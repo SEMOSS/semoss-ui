@@ -328,21 +328,22 @@ export const HomePage = observer((): JSX.Element => {
                                 }}
                             />
                         </Stack>
-                        {configStore.isEngineOperationAvailable(
-                            'APP',
-                            'add',
-                        ) && (
-                            <Button
-                                size={'large'}
-                                variant={'contained'}
-                                onClick={() => {
-                                    navigate('/app/new');
-                                }}
-                                aria-label={`Open the App Model`}
-                            >
-                                Create New App
-                            </Button>
-                        )}
+                        {configStore.store.config.adminOnlyViewMenuBarFlag &&
+                            configStore.isEngineOperationAvailable(
+                                'APP',
+                                'add',
+                            ) && (
+                                <Button
+                                    size={'large'}
+                                    variant={'contained'}
+                                    onClick={() => {
+                                        navigate('/app/new');
+                                    }}
+                                    aria-label={`Open the App Model`}
+                                >
+                                    Create New App
+                                </Button>
+                            )}
                     </Stack>
                 </Stack>
             }
