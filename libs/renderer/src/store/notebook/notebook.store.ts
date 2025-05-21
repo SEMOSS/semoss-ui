@@ -82,6 +82,10 @@ export class NotebookStore {
         return selectedCell;
     }
 
+    get selectedCells() {
+        return this._store.selectedCells
+    }
+
     /**
      * Actions
      */

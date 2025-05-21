@@ -739,8 +739,11 @@ export const NotebookCell = observer(
                         </Stack>
                     </StyledSidebar>
                     <StyledCard
+                        // isCardCellSelected={
+                        //     (notebook?.selectedCell?.id ?? '') == cell.id
+                        // }
                         isCardCellSelected={
-                            (notebook?.selectedCell?.id ?? '') == cell.id
+                            notebook.selectedCells[cell.query.id] === cell.id
                         }
                         onClick={() => {
                             notebook.selectCell(cell.query.id, cell.id);

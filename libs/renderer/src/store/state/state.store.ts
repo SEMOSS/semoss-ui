@@ -1137,7 +1137,345 @@ export class StateStore {
         this._store.version = state.version ? state.version : STATE_VERSION;
     };
 
-    /**
+    // /**
+    //  * 
+    //  * @param state
+    //  * @param nodes 
+    //  * @param edges 
+    //  * @returns 
+    //  */
+    // private buildDependencyGraph = (state) => {
+
+    //     let nodes = [];
+    //     let edges = []
+    //     let prevPositionX = 0
+
+    //     Object.entries(state.blocks).forEach((keyVal) => {
+    //         const node = {
+    //             id: `block--${keyVal[0]}`,
+    //             data: {
+    //                 label: `This is a block node: ${keyVal[0]}`,
+    //                 data: keyVal[1]
+    //             },
+    //             position: {
+    //                 x: prevPositionX,
+    //                 y: 0
+    //             } 
+    //         }
+
+    //         // TODO: search json for {{}} and create edge
+    //         // console.log(keyVal[1])
+
+    //         prevPositionX += 200
+    //         nodes.push(node)
+    //     })
+
+    //     prevPositionX = 0
+    //     // Construct nodes for variables.  In order to have a starting point for all edges
+    //     Object.entries(state.variables).forEach((keyVal) => {
+    //         // console.log(keyVal[1])
+    //         const node = {
+    //             id: `variable--${keyVal[0]}`,
+    //             data: {
+    //                 label: `This is a variable node: ${keyVal[0]}`,
+    //                 data: keyVal[1]
+    //             },
+    //             position: {
+    //                 x: prevPositionX,
+    //                 y: 150
+    //             }
+                
+    //         }
+    //         prevPositionX += 200
+    //         nodes.push(node)
+    //     })
+
+    //     prevPositionX = 0
+
+    //     // Construct nodes for notebooks and cells.
+    //     Object.entries(state.queries).forEach((keyVal) => {
+    //         let q = keyVal[1] as QueryState
+    //         const node = {
+    //             id: `notebook--${keyVal[0]}`,
+    //             data: {
+    //                 label: `This is a notebook node: ${keyVal[0]}`,
+    //                 data: q
+    //             },
+    //             position: {
+    //                 x: prevPositionX,
+    //                 y: 300
+    //             }
+                
+    //         }
+
+    //         // create nodes for cells
+    //         let cellPosY = 450
+
+    //         q.cellList.forEach((c) => {
+    //             // console.log(c.id)
+
+    //             const node = {
+    //                 id: `notebook--${keyVal[0]}--cell--${c.id}`,
+    //                 data: {
+    //                     label: `This is a cell node: ${c.id}`,
+    //                     data: c
+    //                 },
+    //                 position: {
+    //                     x: prevPositionX,
+    //                     y: cellPosY
+    //                 }
+    //             }
+
+    //             nodes.push(node)
+
+    //             cellPosY += 150
+    //         })
+
+    //         prevPositionX += 200
+            
+    //         nodes.push(node)
+    //     })
+
+    //     // TODO: Consoldiate
+
+
+    //     // TODO: Construct edges 
+    //     // 1. Blocks to variables and 
+    //     // 2. Variables to its pointer
+    //     Object.entries(state.blocks).forEach((keyValue, i) => {
+    //         const block = keyValue[1] as Block
+
+    //         // brute force
+    //         const stringified = JSON.stringify(block)
+
+    //         const matches = stringified.match(/{{(.*?)}}/g)
+
+    //         // console.log(`matches for ${block.id}`, matches)
+
+    //         if(matches) {
+    //             console.log("Block with variables: ", block)
+    //             matches.forEach(((v, j) => {
+    //                 // trim the whitespace
+    //                 let cleaned = v.trim();
+                
+    //                 if (
+    //                     !cleaned.startsWith("{{") &&
+    //                     !cleaned.endsWith("}}")
+    //                 ) {
+    //                     return
+    //                 }
+
+    //                 // remove the brackets
+    //                 cleaned = cleaned.slice(2, -2);
+    //                 const path = cleaned.split(".");
+
+    //                 if (!this._store.variables[path[0]]) return
+
+    //                 const variable = this._store.variables[path[0]]
+
+    //                 let edge = {
+    //                     id: `edge--${i}--${j}`,
+    //                     source: `block--${block.id}`,
+    //                     target: `variable--${path[0]}`,
+    //                     animated: true
+    //                 }
+
+    //                 edges.push(edge)
+
+    //                 let prefix = ''
+    //                 let targetId = ''
+
+
+    //                 // console.log("Variable: ", variable)
+    //                 if(variable.type === 'query') {
+    //                     prefix = 'notebook'
+    //                     targetId = variable.to;
+    //                 }
+
+    //                 if(variable.type === 'cell') {
+    //                     prefix = `notebook--${variable.to}--cell`
+    //                     targetId = variable.cellId;
+    //                 }
+
+    //                 if(variable.type === 'block') {
+    //                     prefix = 'block'
+    //                     targetId = variable.to;
+    //                 }
+
+    //                 edge = {
+    //                     id: `edge--${i}--${j}--variable`,
+    //                     source: `variable--${path[0]}`,
+    //                     target: `${prefix}--${targetId}`,
+    //                     animated: true
+    //                 }
+    //                 edges.push(edge)
+
+
+    //             }))
+    //         }
+    //     })
+
+    //     Object.entries(state.queries).forEach((keyValue, i) => {
+    //         let q = keyValue[1] as QueryState
+
+    //         q.cellList.forEach((c) => {
+    //             let cell = q.getCell(c.id)
+
+    //             if(cell.parameters) {
+    //                  // brute force
+    //                 const stringified = JSON.stringify(cell.parameters)
+    //                 const matches = stringified.match(/{{(.*?)}}/g);
+
+    //                 if(matches) {
+    //                     matches.forEach(((v, j) => {
+    //                         // trim the whitespace
+    //                         let cleaned = v.trim();
+                        
+    //                         if (
+    //                             !cleaned.startsWith("{{") &&
+    //                             !cleaned.endsWith("}}")
+    //                         ) {
+    //                             return
+    //                         }
+                        
+    //                         // remove the brackets
+    //                         cleaned = cleaned.slice(2, -2);
+    //                         const path = cleaned.split(".");
+
+    //                         console.log(path)
+
+    //                         if (!this._store.variables[path[0]]) return
+
+    //                         const variable = this._store.variables[path[0]]
+
+    //                         let prefix = ''
+    //                         let targetId = ''
+
+    //                         // debugger
+    //                         if(variable.type === 'block') {
+    //                             prefix = 'block'
+    //                             targetId = variable.to;
+    //                         }
+
+
+    //                         let edge = {
+    //                             type: 'animatedNode',
+    //                             id: `edge--${i}--${j}--notebook--${q.id}-cell--${c.id}`,
+    //                             source: `notebook--${q.id}--cell--${c.id}`,
+    //                             target: `${prefix}--${targetId}`,
+    //                             data: {
+    //                                 node: `variable--${path[0]}`
+    //                             },
+    //                             // animated: true
+    //                         }
+
+    //                         console.log(edge)
+
+    //                         edges.push(edge)
+                        
+                    
+    //                     }))
+    //                 }
+    //             }
+
+                
+
+    //         })
+
+
+    //     })
+
+    //     // // Construct edges Notebooks
+    //     // Object.entries(state.queries).forEach((keyValue, i) => {
+    //     //     const block = keyValue[1] as Block
+    //     //     // TODO: check if {{}}
+    //     //     // debugger
+
+    //     //     // brute force
+    //     //     const stringified = JSON.stringify(block)
+
+    //     //     const matches = stringified.match(/{{(.*?)}}/g)
+
+    //     //     // console.log(`matches for ${block.id}`, matches)
+
+    //     //     if(matches) {
+    //     //         matches.forEach((v => {
+    //     //             // trim the whitespace
+    //     //             let cleaned = v.trim();
+                
+    //     //             if (
+    //     //                 !cleaned.startsWith("{{") &&
+    //     //                 !cleaned.endsWith("}}")
+    //     //             ) {
+    //     //                 return
+    //     //             }
+
+    //     //             // remove the brackets
+    //     //             cleaned = cleaned.slice(2, -2);
+    //     //             const path = cleaned.split(".");
+    //     //             console.log(v)
+
+    //     //             if (!this._store.variables[path[0]]) return
+
+    //     //             const variable = this._store.variables[path[0]]
+    //     //             let prefix = ''
+    //     //             let targetId = ''
+
+    //     //             if(variable.type === 'query') {
+    //     //                 prefix = 'notebook'
+    //     //                 targetId = variable.to;
+    //     //             }
+
+    //     //             if(variable.type === 'cell') {
+    //     //                 prefix = `notebook--${variable.to}--cell--`
+    //     //                 targetId = variable.cellId;
+    //     //             }
+
+    //     //             if(variable.type === 'block') {
+    //     //                 prefix = 'block'
+    //     //                 targetId = variable.to;
+    //     //             }
+
+
+    //     //             const edge = {
+    //     //                 id: `edge--${i}`,
+    //     //                 source: `block--${block.id}`,
+    //     //                 target: `${prefix}--${block.id}`,
+    //     //                 animated: true
+    //     //             }
+    //     //             edges.push(edge)
+
+
+    //     //         }))
+    //     //     }
+    //     // })
+
+    //     // Construct edges cells
+
+    //     this._store.dependencyGraph =  {
+    //         nodes_two: nodes,
+    //         nodes: [
+    //             // Blocks section (top)
+    //             { id: 'block-1', data: { label: 'Block 1' }, position: { x: 0,   y: 0 } },
+    //             { id: 'block-2', data: { label: 'Block 2' }, position: { x: 200, y: 0 } },
+    //             { id: 'block-3', data: { label: 'Block 3' }, position: { x: 400, y: 0 } },
+
+    //             // Variables section (middle)
+    //             { id: 'var-1', data: { label: 'Variable 1' }, position: { x: 0,   y: 150 } },
+    //             { id: 'var-2', data: { label: 'Variable 2' }, position: { x: 200, y: 150 } },
+    //             { id: 'var-3', data: { label: 'Variable 3' }, position: { x: 400, y: 150 } },
+
+    //             // Data section (bottom)
+    //             { id: 'data-1', data: { label: 'Data 1' }, position: { x: 0,   y: 300 } },
+    //             { id: 'data-2', data: { label: 'Data 2' }, position: { x: 200, y: 300 } },
+    //             { id: 'data-3', data: { label: 'Data 3' }, position: { x: 400, y: 300 } },
+    //         ],
+    //         edges: edges,
+    //         // edges: []
+    //     }
+    // }
+
+     /**
      * 
      * @param state
      * @param nodes 
@@ -1151,9 +1489,13 @@ export class StateStore {
         let prevPositionX = 0
 
         Object.entries(state.blocks).forEach((keyVal) => {
+            const block = keyVal[1] as Block;
+            
             const node = {
                 id: `block--${keyVal[0]}`,
+                type: "blockNode",
                 data: {
+                    id: keyVal[0],
                     label: `This is a block node: ${keyVal[0]}`,
                     data: keyVal[1]
                 },
@@ -1162,61 +1504,125 @@ export class StateStore {
                     y: 0
                 } 
             }
+            
+            console.log(keyVal[1])
+            const stringified = JSON.stringify(keyVal[1])
+            const matches = stringified.match(/{{(.*?)}}/g)
+            if(matches){
+                matches.forEach((v) => {
+                    const varName = v.slice(2, -2).split('.')[0];
+                    const variable = state.variables[varName];
 
-            // TODO: search json for {{}} and create edge
-            // console.log(keyVal[1])
+                    if(!variable) return
 
-            prevPositionX += 200
-            nodes.push(node)
+                    let targetNodeId = null;
+
+                    if(variable.type === "cell") {
+                        targetNodeId = `notebook--${variable.to}--cell--${variable.cellId}`;
+                    } else if (variable.type === "block") {
+                        targetNodeId = `block--${variable.to}`;
+                    } else if (variable.type === "query") {
+                        const q = this.getQuery(variable.to)
+                        if(q) {
+                            let path = v.slice(2, -2).split(".")
+                            // If its a number create edge for that in cellList order
+                            if(!isNaN(Number(path[1]))){
+                                const index = Number(path[1]) - 1
+                                const cId = q.list[index]
+
+                                targetNodeId = `notebook--${variable.to}--cell--${cId}`;
+
+                            }
+                            
+                            // TODO: if its a path or nothing create edge for last cell
+
+
+    
+                        }
+                    }
+
+                    if(targetNodeId) {
+                        edges.push({
+                            id: `edge--${block.id}--depends-on--${targetNodeId}`,
+                            source: `block--${block.id}`,
+                            target: targetNodeId,
+                            type: "animatedEdge"
+                            // animated: true,
+                            // type: "smoothstep",
+                            // label: `${block.id} depends on <----`,
+                            // markerStart: {
+                            //     type: "arrowclosed"
+                            // }
+                            // style: {
+                            //     stroke: "#007bff",
+                            //     strokeWidth: 2
+                            // }
+                        })
+                    }
+                })
+                
+                prevPositionX += 200
+                nodes.push(node)
+                // TODO: search json for {{}} and create edge
+            } 
         })
 
         prevPositionX = 0
         // Construct nodes for variables.  In order to have a starting point for all edges
-        Object.entries(state.variables).forEach((keyVal) => {
-            // console.log(keyVal[1])
-            const node = {
-                id: `variable--${keyVal[0]}`,
-                data: {
-                    label: `This is a variable node: ${keyVal[0]}`,
-                    data: keyVal[1]
-                },
-                position: {
-                    x: prevPositionX,
-                    y: 150
-                }
+        // Object.entries(state.variables).forEach((keyVal) => {
+        //     // console.log(keyVal[1])
+        //     const node = {
+        //         id: `variable--${keyVal[0]}`,
+        //         data: {
+        //             label: `This is a variable node: ${keyVal[0]}`,
+        //             data: keyVal[1]
+        //         },
+        //         position: {
+        //             x: prevPositionX,
+        //             y: 150
+        //         }
                 
-            }
-            prevPositionX += 200
-            nodes.push(node)
-        })
-
-        prevPositionX = 0
-
+        //     }
+        //     prevPositionX += 200
+        //     nodes.push(node)
+        // })
+        
+        // prevPositionX = 0
+        
         // Construct nodes for notebooks and cells.
         Object.entries(state.queries).forEach((keyVal) => {
             let q = keyVal[1] as QueryState
-            const node = {
-                id: `notebook--${keyVal[0]}`,
-                data: {
-                    label: `This is a notebook node: ${keyVal[0]}`,
-                    data: q
-                },
-                position: {
-                    x: prevPositionX,
-                    y: 300
-                }
+            // const node = {
+            //     id: `notebook--${keyVal[0]}`,
+            //     data: {
+            //         label: `This is a notebook node: ${keyVal[0]}`,
+            //         data: q
+            //     },
+            //     position: {
+            //         x: prevPositionX,
+            //         y: 300
+            //     }
                 
-            }
+            // }
+
+            // prevPositionX += 200
+            
+            // nodes.push(node)
 
             // create nodes for cells
             let cellPosY = 450
 
             q.cellList.forEach((c) => {
+                let cell = q.getCell(c.id)
+
                 // console.log(c.id)
 
                 const node = {
                     id: `notebook--${keyVal[0]}--cell--${c.id}`,
+                    type: 'cellNode',
                     data: {
+                        id: c.id,
+                        queryId: keyVal[0],
                         label: `This is a cell node: ${c.id}`,
                         data: c
                     },
@@ -1229,106 +1635,13 @@ export class StateStore {
                 nodes.push(node)
 
                 cellPosY += 150
-            })
-
-            prevPositionX += 200
-            
-            nodes.push(node)
-        })
-
-        // TODO: Consoldiate
-
-
-        // TODO: Construct edges 
-        // 1. Blocks to variables and 
-        // 2. Variables to its pointer
-        Object.entries(state.blocks).forEach((keyValue, i) => {
-            const block = keyValue[1] as Block
-
-            // brute force
-            const stringified = JSON.stringify(block)
-
-            const matches = stringified.match(/{{(.*?)}}/g)
-
-            // console.log(`matches for ${block.id}`, matches)
-
-            if(matches) {
-                console.log("Block with variables: ", block)
-                matches.forEach(((v, j) => {
-                    // trim the whitespace
-                    let cleaned = v.trim();
-                
-                    if (
-                        !cleaned.startsWith("{{") &&
-                        !cleaned.endsWith("}}")
-                    ) {
-                        return
-                    }
-
-                    // remove the brackets
-                    cleaned = cleaned.slice(2, -2);
-                    const path = cleaned.split(".");
-
-                    if (!this._store.variables[path[0]]) return
-
-                    const variable = this._store.variables[path[0]]
-
-                    let edge = {
-                        id: `edge--${i}--${j}`,
-                        source: `block--${block.id}`,
-                        target: `variable--${path[0]}`,
-                        animated: true
-                    }
-
-                    edges.push(edge)
-
-                    let prefix = ''
-                    let targetId = ''
-
-
-                    // console.log("Variable: ", variable)
-                    if(variable.type === 'query') {
-                        prefix = 'notebook'
-                        targetId = variable.to;
-                    }
-
-                    if(variable.type === 'cell') {
-                        prefix = `notebook--${variable.to}--cell`
-                        targetId = variable.cellId;
-                    }
-
-                    if(variable.type === 'block') {
-                        prefix = 'block'
-                        targetId = variable.to;
-                    }
-
-                    edge = {
-                        id: `edge--${i}--${j}--variable`,
-                        source: `variable--${path[0]}`,
-                        target: `${prefix}--${targetId}`,
-                        animated: true
-                    }
-                    edges.push(edge)
-
-
-                }))
-            }
-        })
-
-        Object.entries(state.queries).forEach((keyValue, i) => {
-            let q = keyValue[1] as QueryState
-
-            q.cellList.forEach((c) => {
-                let cell = q.getCell(c.id)
 
                 if(cell.parameters) {
-                     // brute force
                     const stringified = JSON.stringify(cell.parameters)
                     const matches = stringified.match(/{{(.*?)}}/g);
 
                     if(matches) {
                         matches.forEach(((v, j) => {
-                            // trim the whitespace
                             let cleaned = v.trim();
                         
                             if (
@@ -1337,53 +1650,210 @@ export class StateStore {
                             ) {
                                 return
                             }
-                        
+
                             // remove the brackets
                             cleaned = cleaned.slice(2, -2);
                             const path = cleaned.split(".");
-
-                            console.log(path)
-
+                        
                             if (!this._store.variables[path[0]]) return
-
                             const variable = this._store.variables[path[0]]
 
-                            let prefix = ''
-                            let targetId = ''
-
                             // debugger
+                            let targetNodeId = null
+                            let nodeToAdd = null
                             if(variable.type === 'block') {
-                                prefix = 'block'
-                                targetId = variable.to;
+                                targetNodeId = `block--${variable.to}`
+
+                                nodeToAdd = {
+                                    id: `block--${variable.to}`,
+                                    type: "blockNode",
+                                    data: {
+                                        id: variable.to,
+                                        label: `This is a block node: ${variable.to}`,
+                                        data: this.getBlock(variable.to)
+                                    },
+                                    position: {
+                                        x: 0,
+                                        y: 0
+                                    } 
+                                }
+                            
                             }
 
-
-                            let edge = {
-                                type: 'animatedNode',
-                                id: `edge--${i}--${j}--notebook--${q.id}-cell--${c.id}`,
-                                source: `notebook--${q.id}--cell--${c.id}`,
-                                target: `${prefix}--${targetId}`,
-                                data: {
-                                    node: `variable--${path[0]}`
-                                },
-                                // animated: true
-                            }
-
-                            console.log(edge)
-
-                            edges.push(edge)
+                            if(targetNodeId ) {
                         
-                    
+
+                                let edge = {
+                                    id: `edge--notebook--${q.id}-cell--${c.id}--depends-on--${targetNodeId}`,
+                                    source: `notebook--${q.id}--cell--${c.id}`,
+                                    target: targetNodeId,
+                                    type: 'animatedSvgEdge'
+                                    // animated: true
+                                }
+    
+                                edges.push(edge)
+                            }
+
+                            if(nodeToAdd){
+                                nodes.push(nodeToAdd)
+                            }
+                            
                         }))
                     }
+                        
                 }
+            })
+
+        })
+
+        // TODO: Consoldiate
+
+
+        // TODO: Construct edges 
+        // 1. Blocks to variables and 
+        // 2. Variables to its pointer
+        // Object.entries(state.blocks).forEach((keyValue, i) => {
+        //     const block = keyValue[1] as Block
+
+        //     // brute force
+        //     const stringified = JSON.stringify(block)
+
+        //     const matches = stringified.match(/{{(.*?)}}/g)
+
+        //     // console.log(`matches for ${block.id}`, matches)
+
+        //     if(matches) {
+        //         console.log("Block with variables: ", block)
+        //         matches.forEach(((v, j) => {
+        //             // trim the whitespace
+        //             let cleaned = v.trim();
+                
+        //             if (
+        //                 !cleaned.startsWith("{{") &&
+        //                 !cleaned.endsWith("}}")
+        //             ) {
+        //                 return
+        //             }
+
+        //             // remove the brackets
+        //             cleaned = cleaned.slice(2, -2);
+        //             const path = cleaned.split(".");
+
+        //             if (!this._store.variables[path[0]]) return
+
+        //             const variable = this._store.variables[path[0]]
+
+        //             let edge = {
+        //                 id: `edge--${i}--${j}`,
+        //                 source: `block--${block.id}`,
+        //                 target: `variable--${path[0]}`,
+        //                 animated: true
+        //             }
+
+        //             edges.push(edge)
+
+        //             let prefix = ''
+        //             let targetId = ''
+
+
+        //             // console.log("Variable: ", variable)
+        //             if(variable.type === 'query') {
+        //                 prefix = 'notebook'
+        //                 targetId = variable.to;
+        //             }
+
+        //             if(variable.type === 'cell') {
+        //                 prefix = `notebook--${variable.to}--cell`
+        //                 targetId = variable.cellId;
+        //             }
+
+        //             if(variable.type === 'block') {
+        //                 prefix = 'block'
+        //                 targetId = variable.to;
+        //             }
+
+        //             edge = {
+        //                 id: `edge--${i}--${j}--variable`,
+        //                 source: `variable--${path[0]}`,
+        //                 target: `${prefix}--${targetId}`,
+        //                 animated: true
+        //             }
+        //             edges.push(edge)
+
+
+        //         }))
+        //     }
+        // })
+
+        // Object.entries(state.queries).forEach((keyValue, i) => {
+        //     let q = keyValue[1] as QueryState
+
+        //     q.cellList.forEach((c) => {
+        //         let cell = q.getCell(c.id)
+
+        //         if(cell.parameters) {
+        //              // brute force
+        //             const stringified = JSON.stringify(cell.parameters)
+        //             const matches = stringified.match(/{{(.*?)}}/g);
+
+        //             if(matches) {
+        //                 matches.forEach(((v, j) => {
+        //                     // trim the whitespace
+        //                     let cleaned = v.trim();
+                        
+        //                     if (
+        //                         !cleaned.startsWith("{{") &&
+        //                         !cleaned.endsWith("}}")
+        //                     ) {
+        //                         return
+        //                     }
+                        
+        //                     // remove the brackets
+        //                     cleaned = cleaned.slice(2, -2);
+        //                     const path = cleaned.split(".");
+
+        //                     console.log(path)
+
+        //                     if (!this._store.variables[path[0]]) return
+
+        //                     const variable = this._store.variables[path[0]]
+
+        //                     let prefix = ''
+        //                     let targetId = ''
+
+        //                     // debugger
+        //                     if(variable.type === 'block') {
+        //                         prefix = 'block'
+        //                         targetId = variable.to;
+        //                     }
+
+
+        //                     let edge = {
+        //                         type: 'animatedNode',
+        //                         id: `edge--${i}--${j}--notebook--${q.id}-cell--${c.id}`,
+        //                         source: `notebook--${q.id}--cell--${c.id}`,
+        //                         target: `${prefix}--${targetId}`,
+        //                         data: {
+        //                             node: `variable--${path[0]}`
+        //                         },
+        //                         // animated: true
+        //                     }
+
+        //                     console.log(edge)
+
+        //                     edges.push(edge)
+                        
+                    
+        //                 }))
+        //             }
+        //         }
 
                 
 
-            })
+        //     })
 
 
-        })
+        // })
 
         // // Construct edges Notebooks
         // Object.entries(state.queries).forEach((keyValue, i) => {
