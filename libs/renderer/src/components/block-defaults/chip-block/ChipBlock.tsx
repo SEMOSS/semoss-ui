@@ -141,7 +141,7 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
                     <a href={link}>
                         <Chip
                             {...chipProps}
-                            onClick={(e) => {e.preventDefault();window.open(data.link, '_blank','noopener,noreferrer')}}
+                            onClick={(e) => {e.preventDefault();window.open(link, '_blank','noopener,noreferrer')}}
                         />
                     </a>
                 );
