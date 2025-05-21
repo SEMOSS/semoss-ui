@@ -23,6 +23,7 @@ import { PrivacyNotice } from './legal/PrivacyNotice';
 import { WorkspacePage } from './WorkspacePage';
 
 import { PlatformMessages } from './PlatformMessages';
+import { LandingPageHeader } from './LandingPageHeader';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
@@ -89,6 +90,10 @@ export const Router = observer(() => {
                 <Route path="/privacy-notice" element={<PrivacyNotice />} />
             )}
             <Route path="/login" element={<LoginPage />}></Route>
+            <Route
+                path="/custom-login-page"
+                element={<LandingPageHeader />}
+            ></Route>
         </Routes>
     );
 });
