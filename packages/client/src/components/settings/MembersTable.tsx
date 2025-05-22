@@ -347,37 +347,6 @@ export const MembersTable = (props: MembersTableProps) => {
                 )?.permission as SETTINGS_ROLE,
             );
         }
-
-        // if (members.length > 0) {
-        //     const data = members.filter(
-        //         (member) => member.name === configStore.store.user.name,
-        //     );
-        //     if (data.length > 0) {
-        //         setUserData(data[0]);
-        //         if (adminMode || role === 'OWNER') {
-        //             // if logged in admin, need to provide all Author option previledges
-        //             const adminPermissionPriority = 'Author';
-        //             setUserPermission(
-        //                 permissionPriorityMapper(adminPermissionPriority)
-        //                     ?.permission as SETTINGS_ROLE,
-        //             );
-        //         } else {
-        //             setUserPermission(
-        //                 permissionPriorityMapper(data[0].permission)
-        //                     ?.permission as SETTINGS_ROLE,
-        //             );
-        //         }
-        //     } else {
-        //         if (adminMode || role === 'OWNER') {
-        //             // if logged in admin, need to provide all Author option previledges
-        //             const adminPermissionPriority = 'Author';
-        //             setUserPermission(
-        //                 permissionPriorityMapper(adminPermissionPriority)
-        //                     ?.permission as SETTINGS_ROLE,
-        //             );
-        //         }
-        //     }
-        // }
     };
 
     /**
@@ -389,10 +358,6 @@ export const MembersTable = (props: MembersTableProps) => {
         }
         setUserDetails();
     }, [userDetails.status, userDetails.data]);
-    // useLayoutEffect(() => {
-    //     if (getMembers.status !== 'SUCCESS' || !getMembers.data) {
-    //         return;
-    //     }
 
     //     // select the member when done mounting
     //     memberSearchRef.current?.focus();
