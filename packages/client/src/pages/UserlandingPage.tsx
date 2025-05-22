@@ -9,9 +9,10 @@ import {
 } from '@semoss/ui';
 import SearchIcon from '@mui/icons-material/Search';
 import BusinessUserImage from '../assets/img/BusinessUserLanding.svg';
+import businessUsercheckgrid from '../assets/img/businessUsercheckgrid.svg';
 
 // Styled components for better reusability and cleaner JSX
-const GradientText = styled(Typography)(({ theme }) => ({
+const GradientText = styled(Typography)(() => ({
     background: 'linear-gradient(90deg, #6C53FF 0%, #86ECFF 100%)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
@@ -22,10 +23,10 @@ const GradientText = styled(Typography)(({ theme }) => ({
 
 const BackgroundContainer = styled(Box)(({ theme }) => ({
     minHeight: '100vh',
-    backgroundImage: `url(${BusinessUserImage})`,
+    backgroundImage: ` url(${BusinessUserImage}), linear-gradient(rgba(255,255,255,0.5), rgba(255,255,255,0.5)), url(${businessUsercheckgrid})`,
     backgroundRepeat: 'no-repeat',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
+    backgroundSize: '47%, 100%, 100%',
+    backgroundPosition: 'right bottom, center',
     display: 'flex',
     alignItems: 'flex-start',
     flexDirection: 'column',
