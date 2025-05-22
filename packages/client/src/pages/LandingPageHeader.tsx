@@ -19,6 +19,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { UserLandingPage } from './UserlandingPage';
 import DevBanner from '@/assets/img/DevBanner.png';
 import { SideNav } from '@/components/ui';
+import { Logo } from '@/assets/img/Logo';
 
 const StyledBox = styled(Box)(({ theme }) => ({
     display: 'flex',
@@ -179,31 +180,6 @@ const StyledBannerText = styled(Typography)(({ theme }) => ({
     width: '35%',
 }));
 
-const SvgLogoComponent = () => {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="26"
-            viewBox="0 0 24 26"
-            fill="none"
-        >
-            <path
-                d="M3.97336 10.0404V14.5387H6.53422V10.0404C8.81394 9.48384 10.5076 7.47885 10.5076 5.09662C10.5076 2.28655 8.15077 0 5.25322 0C2.35568 0 0 2.28655 0 5.09662C0 7.47885 1.69364 9.48384 3.97336 10.0404Z"
-                fill="#212121"
-            />
-            <path
-                d="M12.4517 15.3379L9.15403 17.4903C8.19158 16.4564 6.80062 15.8053 5.25436 15.8053C2.35681 15.8053 0 18.0919 0 20.903C0 23.7131 2.35681 25.9997 5.25322 25.9997C8.14964 25.9997 10.5064 23.7131 10.5064 20.903C10.5064 20.4884 10.4543 20.0859 10.3568 19.6987L13.8892 17.3935L12.4517 15.3379Z"
-                fill="#212121"
-            />
-            <path
-                d="M18.7469 7.82083C17.3401 7.82083 16.0614 8.36195 15.1171 9.23851L11.4917 7.11914L10.1699 9.24731L13.7522 11.3414C13.5855 11.8385 13.4937 12.3675 13.4937 12.9174C13.4937 15.7275 15.8505 18.0141 18.7469 18.0141C21.6434 18.0141 24.0002 15.7275 24.0002 12.9174C24.0002 10.1074 21.6434 7.82083 18.7469 7.82083Z"
-                fill="#212121"
-            />
-        </svg>
-    );
-};
-
 const BannerComponent = observer(() => {
     return (
         <>
@@ -281,7 +257,7 @@ export const LandingPageHeader = () => {
                             >
                                 <MenuIcon />
                             </StyledIconButton>
-                            <SvgLogoComponent />
+                            <Logo />
                             <StyledTypography variant="h6">
                                 GovConnect.AI
                             </StyledTypography>

@@ -6,11 +6,14 @@ import {
     Settings as SettingsIcon,
     Functions as FunctionsIcon,
     Close as CloseIcon,
+    Person as PersonIcon,
     TokenRounded,
 } from '@mui/icons-material';
 import { ModelBrain } from '@/assets/img/ModelBrain';
 import { Database } from '@/assets/img/Database';
 import { observer } from 'mobx-react-lite';
+import { useRootStore } from '@/hooks';
+import { Logo } from '@/assets/img/Logo';
 
 const drawerWidth = 312;
 
@@ -80,7 +83,22 @@ interface SideNavProps {
     onClose: () => void;
 }
 
+const bottomSectionStyles = {
+    borderTop: '1px solid #E0E0E0',
+    padding: 0,
+};
+
+const personIconStyles = {
+    width: 24,
+    height: 24,
+    border: '1px solid #BDBDBD',
+    borderRadius: '50%',
+    backgroundColor: '#BDBDBD',
+    fill: '#FFFFFF',
+};
+
 const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
+    const { configStore } = useRootStore();
     return (
         <Drawer
             open={isOpen}
@@ -88,83 +106,121 @@ const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
             anchor="left"
             sx={drawerStyles}
         >
-            {/* Drawer Heading */}
-            <Box sx={headingStyles}>
-                <Typography variant="h6" sx={sectionTitleStyles(700)}>
-                    GovConnect.AI
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%', // Ensures the Drawer takes full height
+                }}
+            >
+                {/* Drawer Heading */}
+                <Box sx={{ ...headingStyles, padding: '12px 16px' }}>
+                    <Typography
+                        variant="body1"
+                        sx={{
+                            ...sectionTitleStyles(700),
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            margin: 0,
+                            padding: 0,
+                        }}
+                    >
+                        <Logo />
+                        <Typography variant="h6">GovConnect.AI</Typography>
+                    </Typography>
+                    <CloseIcon
+                        sx={{
+                            cursor: 'pointer',
+                            color: 'text.secondary',
+                        }}
+                        onClick={() => {
+                            onClose();
+                        }}
+                    />
+                </Box>
+                <Divider />
+
+                {/* Main Menu */}
+                <List sx={{ padding: 0 }}>
+                    {menuItems.map((item, index) => (
+                        <List.Item key={index} sx={listStyles}>
+                            <List.ItemButton sx={{ gap: 2 }}>
+                                <List.Icon sx={{ minWidth: '24px' }}>
+                                    {item.icon}
+                                </List.Icon>
+                                <List.ItemText primary={item.text} />
+                            </List.ItemButton>
+                        </List.Item>
+                    ))}
+                </List>
+                <Divider />
+
+                {/* Catalog Section */}
+                <Typography variant="subtitle1" sx={sectionTitleStyles()}>
+                    Catalogs
                 </Typography>
-                <CloseIcon
-                    sx={{
-                        cursor: 'pointer',
-                        color: 'text.secondary',
-                    }}
-                    onClick={() => {
-                        console.log('Close button clicked');
-                        onClose();
-                    }}
-                />
-            </Box>
-            <Divider />
+                <List sx={{ padding: 0 }}>
+                    {catalogItems.map((item, index) => (
+                        <List.Item key={index} sx={listStyles}>
+                            <List.ItemButton sx={{ gap: 2 }}>
+                                <List.Icon sx={{ minWidth: '24px' }}>
+                                    {item.icon}
+                                </List.Icon>
+                                <List.ItemText primary={item.text} />
+                            </List.ItemButton>
+                        </List.Item>
+                    ))}
+                </List>
+                <Divider />
 
-            {/* Main Menu */}
-            <List sx={{ padding: 0 }}>
-                {menuItems.map((item, index) => (
-                    <List.Item key={index} sx={listStyles}>
-                        <List.ItemButton>
-                            <List.Icon>{item.icon}</List.Icon>
-                            <List.ItemText primary={item.text} />
-                        </List.ItemButton>
-                    </List.Item>
-                ))}
-            </List>
-            <Divider />
+                {/* Teams Section */}
+                <Typography variant="subtitle1" sx={sectionTitleStyles()}>
+                    Teams
+                </Typography>
+                <List sx={{ padding: 0 }}>
+                    {teamItems.map((item, index) => (
+                        <List.Item key={index} sx={listStyles}>
+                            <List.ItemButton sx={{ gap: 2 }}>
+                                <List.Icon sx={{ minWidth: '24px' }}>
+                                    <Box sx={teamIconStyles(item.color)} />
+                                </List.Icon>
+                                <List.ItemText primary={item.text} />
+                            </List.ItemButton>
+                        </List.Item>
+                    ))}
+                </List>
+                <Divider />
 
-            {/* Catalog Section */}
-            <Typography variant="subtitle1" sx={sectionTitleStyles()}>
-                Catalogs
-            </Typography>
-            <List sx={{ padding: 0 }}>
-                {catalogItems.map((item, index) => (
-                    <List.Item key={index} sx={listStyles}>
-                        <List.ItemButton>
-                            <List.Icon>{item.icon}</List.Icon>
-                            <List.ItemText primary={item.text} />
-                        </List.ItemButton>
-                    </List.Item>
-                ))}
-            </List>
-            <Divider />
-
-            {/* Teams Section */}
-            <Typography variant="subtitle1" sx={sectionTitleStyles()}>
-                Teams
-            </Typography>
-            <List sx={{ padding: 0 }}>
-                {teamItems.map((item, index) => (
-                    <List.Item key={index} sx={listStyles}>
-                        <List.ItemButton>
-                            <List.Icon>
-                                <Box sx={teamIconStyles(item.color)} />
+                {/* Settings */}
+                <List sx={{ padding: 0 }}>
+                    <List.Item sx={listStyles}>
+                        <List.ItemButton sx={{ gap: 2 }}>
+                            <List.Icon sx={{ minWidth: '24px' }}>
+                                <SettingsIcon />
                             </List.Icon>
-                            <List.ItemText primary={item.text} />
+                            <List.ItemText primary="Settings" />
                         </List.ItemButton>
                     </List.Item>
-                ))}
-            </List>
-            <Divider />
-
-            {/* Settings */}
-            <List sx={{ padding: 0 }}>
-                <List.Item sx={listStyles}>
-                    <List.ItemButton>
-                        <List.Icon>
-                            <SettingsIcon />
-                        </List.Icon>
-                        <List.ItemText primary="Settings" />
-                    </List.ItemButton>
-                </List.Item>
-            </List>
-            {/* <Divider /> */}
+                </List>
+                {/* Bottom Section */}
+                <Box sx={bottomSectionStyles}>
+                    <List sx={{ padding: 0 }}>
+                        <List.Item sx={listStyles}>
+                            <List.ItemButton sx={{ gap: 2 }}>
+                                <List.Icon sx={{ minWidth: '24px' }}>
+                                    <PersonIcon sx={personIconStyles} />
+                                </List.Icon>
+                                {configStore.store.user.name && (
+                                    <List.ItemText
+                                        primary={configStore.store.user.name}
+                                    />
+                                )}
+                            </List.ItemButton>
+                        </List.Item>
+                    </List>
+                </Box>
+            </Box>
         </Drawer>
     );
 });
