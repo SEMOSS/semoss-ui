@@ -1,3 +1,3 @@
 import { Navbar } from './Navbar';
-
-export { Navbar };
+import { SideNav } from './SideNav';
+export { Navbar, SideNav };

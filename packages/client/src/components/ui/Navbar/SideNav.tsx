@@ -10,6 +10,7 @@ import {
 } from '@mui/icons-material';
 import { ModelBrain } from '@/assets/img/ModelBrain';
 import { Database } from '@/assets/img/Database';
+import { observer } from 'mobx-react-lite';
 
 const drawerWidth = 312;
 
@@ -74,13 +75,23 @@ const teamIconStyles = (color: string) => ({
     borderRadius: '4px',
 });
 
-const SideNav = () => {
+interface SideNavProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
     return (
-        <Drawer variant="permanent" anchor="left" sx={drawerStyles}>
+        <Drawer
+            open={isOpen}
+            variant="temporary"
+            anchor="left"
+            sx={drawerStyles}
+        >
             {/* Drawer Heading */}
             <Box sx={headingStyles}>
                 <Typography variant="h6" sx={sectionTitleStyles(700)}>
-                    GovConnect.AI
+                    GovConnect.AI {isOpen ? 'true' : 'false'}
                 </Typography>
                 <CloseIcon
                     sx={{
@@ -89,6 +100,7 @@ const SideNav = () => {
                     }}
                     onClick={() => {
                         console.log('Close button clicked');
+                        onClose();
                     }}
                 />
             </Box>
@@ -155,6 +167,6 @@ const SideNav = () => {
             {/* <Divider /> */}
         </Drawer>
     );
-};
+});
 
 export { SideNav };

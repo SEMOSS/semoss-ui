@@ -18,6 +18,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { UserLandingPage } from './UserlandingPage';
 import DevBanner from '@/assets/img/DevBanner.png';
+import { SideNav } from '@/components/ui';
 
 const StyledBox = styled(Box)(({ theme }) => ({
     display: 'flex',
@@ -203,7 +204,7 @@ const SvgLogoComponent = () => {
     );
 };
 
-const BannerComponent = () => {
+const BannerComponent = observer(() => {
     return (
         <>
             <div
@@ -243,7 +244,23 @@ const BannerComponent = () => {
             </div>
         </>
     );
-};
+});
+
+const PlayGroundContainer = observer(() => {
+    return (
+        <div style={{ display: 'flex', flex: '1 1.5 50%' }}>
+            <Typography>Experiment in our Playground</Typography>
+        </div>
+    );
+});
+
+const AIConductorContainer = observer(() => {
+    return (
+        <div style={{ display: 'flex', flex: '1 1.5 50%' }}>
+            <Typography>Simplify tasks with AI Conductor</Typography>
+        </div>
+    );
+});
 
 interface LandingPageHeaderProps {
     subTitle?: string;
@@ -252,6 +269,7 @@ interface LandingPageHeaderProps {
 export const LandingPageHeader = observer(
     ({ subTitle }: LandingPageHeaderProps) => {
         const [showAppBuilder, setShowAppBuilder] = useState(false);
+        const [showSideNav, setShowSideNav] = useState(false);
 
         return (
             <>
@@ -264,6 +282,7 @@ export const LandingPageHeader = observer(
                                     edge="start"
                                     color="inherit"
                                     aria-label="menu"
+                                    onClick={() => setShowSideNav(true)}
                                 >
                                     <MenuIcon />
                                 </StyledIconButton>
@@ -309,9 +328,21 @@ export const LandingPageHeader = observer(
                         </Toolbar>
                     </StyledAppBar>
                 </StyledBox>
+                <SideNav
+                    isOpen={showSideNav}
+                    onClose={() =>
+                        setShowSideNav((prevShowSideNav) => !prevShowSideNav)
+                    }
+                />
                 <StyledComponent>
                     {showAppBuilder ? (
-                        <BannerComponent />
+                        <>
+                            <BannerComponent />
+                            <div style={{ display: 'flex', width: '100%' }}>
+                                <PlayGroundContainer />
+                                <AIConductorContainer />
+                            </div>
+                        </>
                     ) : (
                         <UserLandingPage subTitle={subTitle} />
                     )}
