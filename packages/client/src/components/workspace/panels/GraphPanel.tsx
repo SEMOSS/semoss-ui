@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { addEdge, ReactFlow } from '@xyflow/react';
 import { Node, Edge } from '@xyflow/react';
 import { useNodesState, useEdgesState } from '@xyflow/react';
@@ -63,12 +63,14 @@ export const GraphPanel: React.FC = observer(() => {
     const { designer } = useDesigner();
     const { state, notebook } = useBlocks();
 
-    const [nodes, setNodes, onNodesChange] = useNodesState(
-        state.dependencyGraph.nodes_two as Node[],
-    );
-    const [edges, setEdges, onEdgesChange] = useEdgesState(
-        state.dependencyGraph.edges as Edge[],
-    );
+    const [nodes, setNodes, onNodesChange] = useNodesState([] as Node[]);
+    const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
+    // const [nodes, setNodes, onNodesChange] = useNodesState(
+    //     state.depGraff.nodes_two as Node[],
+    // );
+    // const [edges, setEdges, onEdgesChange] = useEdgesState(
+    //     state.depGraff.edges as Edge[],
+    // );
 
     const onConnect = useCallback(
         (params) => setEdges((eds) => addEdge(params, eds)),
@@ -85,12 +87,30 @@ export const GraphPanel: React.FC = observer(() => {
         },
         [nodes, edges, setNodes, setEdges],
     );
+    useEffect(() => {
+        console.log('state.blocks');
+        console.log('state.queries');
+        setEdges(state.depGraff.edges);
+        setNodes(state.depGraff.nodes_two);
+    }, []);
+
+    // console.log("get new nodes", state.blocks)
+    // console.log("get new edges", state.queries)
+    // console.log(state.depGraff.edges)
 
     return (
         <Panel>
-            <Stack>
+            <Stack direction={'row'}>
                 <Button onClick={() => onLayout('LR')}>Horizontal</Button>
                 <Button onClick={() => onLayout('TB')}>Vertical</Button>
+                <Button
+                    onClick={() => {
+                        setEdges(state.depGraff.edges);
+                        setNodes(state.depGraff.nodes_two);
+                    }}
+                >
+                    Reload Edges and Nodes -- duplicate block on canvas
+                </Button>
             </Stack>
             <ReactFlow
                 // width={'100%'}

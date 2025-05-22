@@ -34,8 +34,26 @@ export function AnimatedEdge({
         return sourceNode.selected || targetNode.selected;
     }, [nodes, source, target]);
 
-    console.log('is animated', isAnimated);
-
+    // {isAnimated ? (
+    // Stop animation on circle and show variable name in tooltip
+    //             hovered ? (
+    //                 <></>
+    //             ) : (
+    //                 <circle
+    //                     r="10"
+    //                     stroke="#22A4FF"
+    //                     fill="white"
+    //                     strokeWidth={2}
+    //                     onMouseEnter={() => setHovered(true)}
+    //                     onMouseLeav={() => setHovered(false)}
+    //                 >
+    //                     <animateMotion
+    //                         dur="4s"
+    //                         repeatCount="indefinite"
+    //                         path={edgePath}
+    //                     />
+    //                 </circle>
+    // )
     return (
         <>
             <BaseEdge id={id} path={edgePath} />
