@@ -91,7 +91,7 @@ const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
             {/* Drawer Heading */}
             <Box sx={headingStyles}>
                 <Typography variant="h6" sx={sectionTitleStyles(700)}>
-                    GovConnect.AI {isOpen ? 'true' : 'false'}
+                    GovConnect.AI
                 </Typography>
                 <CloseIcon
                     sx={{

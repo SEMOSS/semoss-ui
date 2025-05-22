@@ -262,92 +262,84 @@ const AIConductorContainer = observer(() => {
     );
 });
 
-interface LandingPageHeaderProps {
-    subTitle?: string;
-}
+export const LandingPageHeader = () => {
+    const [showAppBuilder, setShowAppBuilder] = useState(false);
+    const [showSideNav, setShowSideNav] = useState(false);
 
-export const LandingPageHeader = observer(
-    ({ subTitle }: LandingPageHeaderProps) => {
-        const [showAppBuilder, setShowAppBuilder] = useState(false);
-        const [showSideNav, setShowSideNav] = useState(false);
-
-        return (
-            <>
-                <StyledBox>
-                    <StyledAppBar position="static">
-                        <Toolbar>
-                            <StyledLeftSection>
-                                <StyledIconButton
-                                    size="medium"
-                                    edge="start"
-                                    color="inherit"
-                                    aria-label="menu"
-                                    onClick={() => setShowSideNav(true)}
-                                >
-                                    <MenuIcon />
-                                </StyledIconButton>
-                                <SvgLogoComponent />
-                                <StyledTypography variant="h6">
-                                    GovConnect.AI
-                                </StyledTypography>
-                            </StyledLeftSection>
-                            {showAppBuilder ? (
-                                <StyledSearchSection>
-                                    <StyledTextField
-                                        variant="outlined"
-                                        size="small"
-                                        placeholder="Search"
-                                        label=""
-                                        InputProps={{
-                                            startAdornment: (
-                                                <InputAdornment position="start">
-                                                    <SearchIcon />
-                                                </InputAdornment>
-                                            ),
-                                        }}
-                                    ></StyledTextField>
-                                </StyledSearchSection>
-                            ) : (
-                                <></>
-                            )}
-                            <StyledRightSection>
-                                <StyledAppBuilderSection>
-                                    <StyledAppBuilder variant="h6">
-                                        App Builder
-                                    </StyledAppBuilder>
-                                    <StyledSwitch
-                                        checked={showAppBuilder}
-                                        onChange={(
-                                            e: ChangeEvent<HTMLInputElement>,
-                                        ) =>
-                                            setShowAppBuilder(e.target.checked)
-                                        }
-                                    ></StyledSwitch>
-                                </StyledAppBuilderSection>
-                            </StyledRightSection>
-                        </Toolbar>
-                    </StyledAppBar>
-                </StyledBox>
-                <SideNav
-                    isOpen={showSideNav}
-                    onClose={() =>
-                        setShowSideNav((prevShowSideNav) => !prevShowSideNav)
-                    }
-                />
-                <StyledComponent>
-                    {showAppBuilder ? (
-                        <>
-                            <BannerComponent />
-                            <div style={{ display: 'flex', width: '100%' }}>
-                                <PlayGroundContainer />
-                                <AIConductorContainer />
-                            </div>
-                        </>
-                    ) : (
-                        <UserLandingPage subTitle={subTitle} />
-                    )}
-                </StyledComponent>
-            </>
-        );
-    },
-);
+    return (
+        <>
+            <StyledBox>
+                <StyledAppBar position="static">
+                    <Toolbar>
+                        <StyledLeftSection>
+                            <StyledIconButton
+                                size="medium"
+                                edge="start"
+                                color="inherit"
+                                aria-label="menu"
+                                onClick={() => setShowSideNav(true)}
+                            >
+                                <MenuIcon />
+                            </StyledIconButton>
+                            <SvgLogoComponent />
+                            <StyledTypography variant="h6">
+                                GovConnect.AI
+                            </StyledTypography>
+                        </StyledLeftSection>
+                        {showAppBuilder ? (
+                            <StyledSearchSection>
+                                <StyledTextField
+                                    variant="outlined"
+                                    size="small"
+                                    placeholder="Search"
+                                    label=""
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <SearchIcon />
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                ></StyledTextField>
+                            </StyledSearchSection>
+                        ) : (
+                            <></>
+                        )}
+                        <StyledRightSection>
+                            <StyledAppBuilderSection>
+                                <StyledAppBuilder variant="h6">
+                                    App Builder
+                                </StyledAppBuilder>
+                                <StyledSwitch
+                                    checked={showAppBuilder}
+                                    onChange={(
+                                        e: ChangeEvent<HTMLInputElement>,
+                                    ) => setShowAppBuilder(e.target.checked)}
+                                ></StyledSwitch>
+                            </StyledAppBuilderSection>
+                        </StyledRightSection>
+                    </Toolbar>
+                </StyledAppBar>
+            </StyledBox>
+            <SideNav
+                isOpen={showSideNav}
+                onClose={() =>
+                    setShowSideNav((prevShowSideNav) => !prevShowSideNav)
+                }
+            />
+            <StyledComponent>
+                {showAppBuilder ? (
+                    <>
+                        <BannerComponent />
+                        <div style={{ display: 'flex', width: '100%' }}>
+                            <PlayGroundContainer />
+                            <AIConductorContainer />
+                        </div>
+                    </>
+                ) : (
+                    <UserLandingPage />
+                )}
+            </StyledComponent>
+        </>
+    );
+};

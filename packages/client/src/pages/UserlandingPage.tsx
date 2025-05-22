@@ -47,28 +47,64 @@ const ContentContainer = styled(Box)(({ theme }) => ({
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: '100%',
     background: theme.palette.common.white,
+    borderRadius: theme.shape.borderRadius * 2,
 }));
 
-const UserLandingPage: React.FC<{ subTitle?: string }> = ({
-    subTitle = 'business apps',
-}) => {
+const SliderTexts = styled(Box)(() => ({
+    position: 'relative',
+    width: '100%',
+    height: '72px',
+    overflow: 'hidden',
+}));
+
+const SliderText = styled(Box)(() => ({
+    position: 'absolute',
+    display: 'flex',
+    flexDirection: 'column',
+    animation: 'slide 9s infinite',
+    height: '216px', // 72px * 3 (for 3 titles)
+    top: 0,
+}));
+
+const keyframes = `
+  @keyframes slide {
+    8% { transform: translateY(0); opacity: 1; }
+    25% { opacity: 0; }
+    42% { transform: translateY(-72px); opacity: 1; }
+    59% { opacity: 0; }
+    76% { transform: translateY(-144px); opacity: 1; }
+    91% { opacity: 0; }
+  }
+`;
+
+const subTitle = ['business apps', 'the power of models', 'knowledge repos'];
+
+const UserLandingPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
 
     const handleSearch = () => {
         console.log('Search query:', searchQuery);
-        // Add your search logic here
     };
 
     return (
         <BackgroundContainer>
-            <ContentContainer>
+            <ContentContainer sx={{ width: '100%' }}>
                 <Typography
                     variant="h2"
                     sx={{ fontWeight: 700, lineHeight: 0.9 }}
                 >
                     Discover
                 </Typography>
-                <GradientText variant="h2">{subTitle}</GradientText>
+                <style>{keyframes}</style>
+                <SliderTexts>
+                    <SliderText>
+                        {subTitle.map((title, idx) => (
+                            <GradientText variant="h2" key={idx}>
+                                {title}
+                            </GradientText>
+                        ))}
+                    </SliderText>
+                </SliderTexts>
             </ContentContainer>
             <Box sx={{ width: '100%', maxWidth: '60vw' }}>
                 <StyledTextField
@@ -77,9 +113,13 @@ const UserLandingPage: React.FC<{ subTitle?: string }> = ({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     InputProps={{
-                        sx: { borderRadius: '60px' },
-                        endAdornment: (
-                            <InputAdornment position="end">
+                        sx: {
+                            borderRadius: '60px',
+                            boxShadow: '0px 0px 0px 1px #8D7BF8',
+                            borderColor: '#C6BFFC',
+                        },
+                        startAdornment: (
+                            <InputAdornment position="start">
                                 <IconButton
                                     aria-label="Search"
                                     onClick={handleSearch}

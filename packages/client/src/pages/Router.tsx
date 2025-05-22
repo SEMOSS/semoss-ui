@@ -66,22 +66,8 @@ export const Router = observer(() => {
                     <Route path="prompt/*" element={<PromptRouter />} />
                 </Route>
 
-                {/* User landing pages */}
-                {/* These are separate routes for design purposes but can be consolidated in the future */}
-                <Route
-                    path="businessUserlanding"
-                    element={<LandingPageHeader subTitle="business apps" />}
-                />
-                <Route
-                    path="modelUserlanding"
-                    element={
-                        <LandingPageHeader subTitle="the power of models" />
-                    }
-                />
-                <Route
-                    path="knowledgeUserlanding"
-                    element={<LandingPageHeader subTitle="knowledge repos" />}
-                />
+                {/* Business User landing page */}
+                <Route path="business-user" element={<LandingPageHeader />} />
                 <Route
                     path="workspace/:appId/*"
                     element={
