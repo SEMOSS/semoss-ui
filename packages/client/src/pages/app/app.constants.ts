@@ -45,7 +45,12 @@ export const BASE_PAGE_BLOCKS: Record<string, Block> = {
                 overflow: 'hidden',
             },
         },
-        listeners: {},
+        listeners: {
+            preProcess: {
+                type: 'sync',
+                order: [],
+            },
+        },
         slots: {
             children: {
                 name: 'children',
@@ -69,7 +74,12 @@ export const BASE_PAGE_BLOCKS: Record<string, Block> = {
             },
             text: 'Welcome to the UI Builder! Drag and drop blocks to use in your app.',
         },
-        listeners: {},
+        listeners: {
+            preProcess: {
+                type: 'sync',
+                order: [],
+            },
+        },
         slots: {},
     },
 };

@@ -10,6 +10,7 @@ export class Env {
         MODULE: "",
         ACCESS_KEY: "",
         SECRET_KEY: "",
+        CSRF: false
     };
 
     /**
@@ -41,6 +42,13 @@ export class Env {
     }
 
     /**
+     * Ready only getter
+     */
+    static get CSRF() {
+        return this._store.CSRF;
+    }
+
+    /**
      *
      * @param updated - updated variables
      */
@@ -59,6 +67,10 @@ export class Env {
 
         if (updated.hasOwnProperty("SECRET_KEY")) {
             this._store.SECRET_KEY = updated.SECRET_KEY;
+        }
+
+        if (updated.hasOwnProperty("CSRF")) {
+            this._store.CSRF = updated.CSRF;
         }
     };
 }
