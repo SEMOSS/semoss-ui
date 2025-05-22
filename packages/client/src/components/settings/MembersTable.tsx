@@ -716,7 +716,8 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 <Checkbox
                                                     disabled={
                                                         userPermission ===
-                                                        'Read-Only'
+                                                            'Read-Only' &&
+                                                        !adminMode
                                                     }
                                                     checked={
                                                         selectedMembers.length ===

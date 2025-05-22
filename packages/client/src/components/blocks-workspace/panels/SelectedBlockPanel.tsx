@@ -27,6 +27,7 @@ import { useDesigner } from '@/hooks';
 import { BlockAvatar, SelectedMenuSection } from '@/components/designer';
 import { AddVariableModal } from '@/components/notebook';
 import { Panel } from '@/components/workspace';
+import VariationIcon from '../../../../../../libs/renderer/src/assets/img/VariationLogo.svg';
 
 const StyledTitle = styled(Typography)(() => ({
     textTransform: 'capitalize',
@@ -110,6 +111,11 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
     },
 }));
 const StyledCustomTabPanel = styled('div')(({ theme }) => ({}));
+
+const StyledVariationIcon = styled('img')(({ theme }) => ({
+    width: theme.spacing(4),
+    height: theme.spacing(4),
+}));
 
 export const SelectedBlockPanel = observer(() => {
     const { designer } = useDesigner();
@@ -301,7 +307,7 @@ export const SelectedBlockPanel = observer(() => {
                         direction="row"
                         alignItems="center"
                     >
-                        <BlockAvatar icon={icon} />
+                        <StyledVariationIcon src={VariationIcon} />
                         <Stack
                             direction={'row'}
                             spacing={0.5}
