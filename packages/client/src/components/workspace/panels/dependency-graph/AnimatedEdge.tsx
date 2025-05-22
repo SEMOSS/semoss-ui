@@ -1,8 +1,15 @@
-import React from 'react';
-import { BaseEdge, getSmoothStepPath, type EdgeProps } from '@xyflow/react';
+import React, { useMemo } from 'react';
+import {
+    BaseEdge,
+    getSmoothStepPath,
+    useNodes,
+    type EdgeProps,
+} from '@xyflow/react';
 
 export function AnimatedEdge({
     id,
+    source,
+    target,
     sourceX,
     sourceY,
     targetX,
@@ -10,6 +17,7 @@ export function AnimatedEdge({
     sourcePosition,
     targetPosition,
 }: EdgeProps) {
+    const nodes = useNodes();
     const [edgePath] = getSmoothStepPath({
         sourceX,
         sourceY,
@@ -19,16 +27,36 @@ export function AnimatedEdge({
         targetPosition,
     });
 
+    const isAnimated = useMemo(() => {
+        const sourceNode = nodes.find((n) => n.id === source);
+        const targetNode = nodes.find((n) => n.id === target);
+
+        return sourceNode.selected || targetNode.selected;
+    }, [nodes, source, target]);
+
+    console.log('is animated', isAnimated);
+
     return (
         <>
             <BaseEdge id={id} path={edgePath} />
-            <circle r="10" fill="#ff0073">
-                <animateMotion
-                    dur="2s"
-                    repeatCount="indefinite"
-                    path={edgePath}
-                />
-            </circle>
+            {isAnimated ? (
+                <circle r="10" stroke="#22A4FF" fill="white" strokeWidth={2}>
+                    <animateMotion
+                        dur="4s"
+                        repeatCount="indefinite"
+                        path={edgePath}
+                    />
+                </circle>
+            ) : (
+                <circle
+                    r="5"
+                    stroke="#22A4FF"
+                    fill="white"
+                    strokeWidth={2}
+                    cx={targetX}
+                    cy={targetY}
+                ></circle>
+            )}
         </>
     );
 }

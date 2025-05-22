@@ -1682,7 +1682,7 @@ export class StateStore {
 
                             if(sourceNodeId ) {
                                 let edge = {
-                                    id: `edge--notebook--${q.id}-cell--${c.id}--depends-on--${targetNodeId}`,
+                                    id: `edge--notebook--${q.id}-cell--${c.id}--depends-on--${sourceNodeId}`,
                                     source: sourceNodeId,
                                     target: `notebook--${q.id}--cell--${c.id}`,
                                     type: 'animatedEdge'

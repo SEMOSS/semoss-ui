@@ -461,6 +461,7 @@ export const ContainerLayoutSettings = observer(
                                 <MenuItem value={"25%"}>4 columns</MenuItem>
                                 <MenuItem value={"20%"}>5 columns</MenuItem>
                                 <MenuItem value={"16.66%"}>6 columns</MenuItem> */}
+                                <MenuItem value={"2"}>2 columns</MenuItem>
                                 <MenuItem value={"3"}>3 columns</MenuItem>
                                 <MenuItem value={"4"}>4 columns</MenuItem>
                                 <MenuItem value={"5"}>5 columns</MenuItem>
