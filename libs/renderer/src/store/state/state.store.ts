@@ -1515,12 +1515,12 @@ export class StateStore {
 
                     if(!variable) return
 
-                    let targetNodeId = null;
+                    let sourceNodeId = null;
 
                     if(variable.type === "cell") {
-                        targetNodeId = `notebook--${variable.to}--cell--${variable.cellId}`;
+                        sourceNodeId = `notebook--${variable.to}--cell--${variable.cellId}`;
                     } else if (variable.type === "block") {
-                        targetNodeId = `block--${variable.to}`;
+                        sourceNodeId = `block--${variable.to}`;
                     } else if (variable.type === "query") {
                         const q = this.getQuery(variable.to)
                         if(q) {
@@ -1530,7 +1530,7 @@ export class StateStore {
                                 const index = Number(path[1]) - 1
                                 const cId = q.list[index]
 
-                                targetNodeId = `notebook--${variable.to}--cell--${cId}`;
+                                sourceNodeId = `notebook--${variable.to}--cell--${cId}`;
 
                             }
                             
@@ -1541,11 +1541,11 @@ export class StateStore {
                         }
                     }
 
-                    if(targetNodeId) {
+                    if(sourceNodeId) {
                         edges.push({
-                            id: `edge--${block.id}--depends-on--${targetNodeId}`,
-                            source: `block--${block.id}`,
-                            target: targetNodeId,
+                            id: `edge--${block.id}--depends-on--${sourceNodeId}`,
+                            source: sourceNodeId,
+                            target: `block--${block.id}`,
                             type: "animatedEdge"
                             // animated: true,
                             // type: "smoothstep",
@@ -1659,10 +1659,10 @@ export class StateStore {
                             const variable = this._store.variables[path[0]]
 
                             // debugger
-                            let targetNodeId = null
+                            let sourceNodeId = null
                             let nodeToAdd = null
                             if(variable.type === 'block') {
-                                targetNodeId = `block--${variable.to}`
+                                sourceNodeId = `block--${variable.to}`
 
                                 nodeToAdd = {
                                     id: `block--${variable.to}`,
@@ -1680,14 +1680,12 @@ export class StateStore {
                             
                             }
 
-                            if(targetNodeId ) {
-                        
-
+                            if(sourceNodeId ) {
                                 let edge = {
                                     id: `edge--notebook--${q.id}-cell--${c.id}--depends-on--${targetNodeId}`,
-                                    source: `notebook--${q.id}--cell--${c.id}`,
-                                    target: targetNodeId,
-                                    type: 'animatedSvgEdge'
+                                    source: sourceNodeId,
+                                    target: `notebook--${q.id}--cell--${c.id}`,
+                                    type: 'animatedEdge'
                                     // animated: true
                                 }
     

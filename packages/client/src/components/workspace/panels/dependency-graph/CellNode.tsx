@@ -1,12 +1,25 @@
 import React from 'react';
 import { Handle, NodeProps, Position } from '@xyflow/react';
 import { observer } from 'mobx-react-lite';
-import { Button } from '@semoss/ui';
+import { Button, Stack, Typography } from '@semoss/ui';
 import { ActionMessages, useBlocks } from '@semoss/renderer';
 
-export const CellNode = observer((props: NodeProps) => {
+interface CellNodeProps {
+    selected: boolean;
+    data: {
+        description: string;
+        id: string;
+        queryId: string;
+    };
+}
+
+export const CellNode = observer((props: CellNodeProps) => {
     const { selected, data } = props;
     const { state } = useBlocks();
+
+    const q = state.getQuery(data.queryId);
+    const index = q.list.indexOf(data.id);
+
     return (
         <div
             style={{
@@ -21,31 +34,26 @@ export const CellNode = observer((props: NodeProps) => {
         >
             {/* Top handle for incoming connections */}
             <Handle type="target" position={Position.Top} id="target" />
-
-            {/* Block content */}
-            {/* <div style={{ fontWeight: 600, marginBottom: 8 }}>
-                {data.label || 'Block Node' as string }
-            </div> */}
-            <div style={{ color: '#555', fontSize: 13 }}>
-                {data.description as string}
-            </div>
-            {data.id}
-            <Button
-                onClick={() => {
-                    state.dispatch({
-                        message: ActionMessages.RUN_CELL,
-                        payload: {
-                            cellId: data.id as string,
-                            queryId: data.queryId as string,
-                        },
-                    });
-                }}
-            >
-                Run
-            </Button>
-
             {/* Bottom handle for outgoing connections */}
             <Handle type="source" position={Position.Bottom} id="source" />
+
+            <Stack>
+                <Typography variant={'h5'}>{data.queryId}</Typography>
+                <Typography variant={'h6'}>Cell # {index + 1}</Typography>
+                <Button
+                    onClick={() => {
+                        state.dispatch({
+                            message: ActionMessages.RUN_CELL,
+                            payload: {
+                                cellId: data.id as string,
+                                queryId: data.queryId as string,
+                            },
+                        });
+                    }}
+                >
+                    Run
+                </Button>
+            </Stack>
         </div>
     );
 });
