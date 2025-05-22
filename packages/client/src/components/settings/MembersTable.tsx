@@ -295,61 +295,100 @@ export const MembersTable = (props: MembersTableProps) => {
         setPage(0);
     }, [debouncedSearch]);
 
+    const getUserDataApi: Parameters<typeof useAPI>[0] =
+        type === 'DATABASE' ||
+        type === 'STORAGE' ||
+        type === 'MODEL' ||
+        type === 'VECTOR' ||
+        type === 'FUNCTION'
+            ? [
+                  'getEngineUsers',
+                  adminMode,
+                  id,
+                  configStore.store.user.id,
+                  permissionPriorityMapper(permissionFilter)?.permission,
+                  0, // offset
+                  1, // limit
+              ]
+            : type === 'APP'
+            ? [
+                  'getProjectUsers',
+                  adminMode,
+                  id,
+                  configStore.store.user.id,
+                  permissionPriorityMapper(permissionFilter)?.permission,
+                  0, // offset
+                  1, // limit
+              ]
+            : null;
+
+    const userDetails = useAPI(getUserDataApi);
+
     /**
      * Sets the user details based on the current user in the members array.
      * If the user is an admin, it sets the user permission to 'Author'.
      * Otherwise, it sets the user permission based on the user's permission in the members array.
      * @param members The array of members to set the user details from
      */
-    const setUserDetails = (members: SETTINGS_PROVISIONED_USER[]) => {
-        if (members.length > 0) {
-            const data = members.filter(
-                (member) => member.name === configStore.store.user.name,
+    const setUserDetails = () => {
+        setUserData(userDetails.data.members[0]);
+        if (adminMode) {
+            const adminPermissionPriority = 'Author';
+            setUserPermission(
+                permissionPriorityMapper(adminPermissionPriority)
+                    ?.permission as SETTINGS_ROLE,
             );
-            if (data.length > 0) {
-                setUserData(data[0]);
-                if (adminMode) {
-                    // if logged in admin, need to provide all Author option previledges
-                    const adminPermissionPriority = 'Author';
-                    setUserPermission(
-                        permissionPriorityMapper(adminPermissionPriority)
-                            ?.permission as SETTINGS_ROLE,
-                    );
-                } else {
-                    setUserPermission(
-                        permissionPriorityMapper(data[0].permission)
-                            ?.permission as SETTINGS_ROLE,
-                    );
-                }
-            } else {
-                if (adminMode) {
-                    // if logged in admin, need to provide all Author option previledges
-                    const adminPermissionPriority = 'Author';
-                    setUserPermission(
-                        permissionPriorityMapper(adminPermissionPriority)
-                            ?.permission as SETTINGS_ROLE,
-                    );
-                }
-            }
+        } else {
+            setUserPermission(
+                permissionPriorityMapper(
+                    userDetails.data.members[0].permission === 'OWNER'
+                        ? 'Author'
+                        : userDetails.data.members[0].permission,
+                )?.permission as SETTINGS_ROLE,
+            );
         }
+
+        // if (members.length > 0) {
+        //     const data = members.filter(
+        //         (member) => member.name === configStore.store.user.name,
+        //     );
+        //     if (data.length > 0) {
+        //         setUserData(data[0]);
+        //         if (adminMode || role === 'OWNER') {
+        //             // if logged in admin, need to provide all Author option previledges
+        //             const adminPermissionPriority = 'Author';
+        //             setUserPermission(
+        //                 permissionPriorityMapper(adminPermissionPriority)
+        //                     ?.permission as SETTINGS_ROLE,
+        //             );
+        //         } else {
+        //             setUserPermission(
+        //                 permissionPriorityMapper(data[0].permission)
+        //                     ?.permission as SETTINGS_ROLE,
+        //             );
+        //         }
+        //     } else {
+        //         if (adminMode || role === 'OWNER') {
+        //             // if logged in admin, need to provide all Author option previledges
+        //             const adminPermissionPriority = 'Author';
+        //             setUserPermission(
+        //                 permissionPriorityMapper(adminPermissionPriority)
+        //                     ?.permission as SETTINGS_ROLE,
+        //             );
+        //         }
+        //     }
+        // }
     };
 
     /**
      * When
      **/
     useEffect(() => {
-        if (getMembers.status !== 'SUCCESS' || !getMembers.data) {
+        if (userDetails.status !== 'SUCCESS' || !userDetails.data) {
             return;
         }
-
-        // setPage(0);
-        // setSelectedMembers([]);
-        setUserDetails(getMembers.data.members);
-
-        // select the member when done mounting
-        memberSearchRef.current?.focus();
-    }, [getMembers.status, getMembers.data]);
-
+        setUserDetails();
+    }, [userDetails.status, userDetails.data]);
     // useLayoutEffect(() => {
     //     if (getMembers.status !== 'SUCCESS' || !getMembers.data) {
     //         return;
@@ -679,8 +718,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                     <Button
                                         disabled={
                                             isLoading ||
-                                            (!adminMode &&
-                                                userPermission === 'Read-Only')
+                                            userPermission === 'Read-Only'
                                         }
                                         variant={'contained'}
                                         onClick={() => {
@@ -716,8 +754,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 <Checkbox
                                                     disabled={
                                                         userPermission ===
-                                                            'Read-Only' &&
-                                                        !adminMode
+                                                        'Read-Only'
                                                     }
                                                     checked={
                                                         selectedMembers.length ===
@@ -812,8 +849,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                             <StyledCheckbox
                                                                 disabled={
                                                                     userPermission ===
-                                                                        'Read-Only' &&
-                                                                    !adminMode
+                                                                    'Read-Only'
                                                                 }
                                                                 checked={
                                                                     isSelected
@@ -915,12 +951,11 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                             type,
                                                                             'access',
                                                                         ) ||
-                                                                        (!adminMode &&
-                                                                            permissionPriorityMapper(
-                                                                                userPermission,
-                                                                            )
-                                                                                .priority >
-                                                                                1)
+                                                                        permissionPriorityMapper(
+                                                                            userPermission,
+                                                                        )
+                                                                            .priority >
+                                                                            1
                                                                     }
                                                                 />
                                                                 <RadioGroup.Item
@@ -931,12 +966,11 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                             type,
                                                                             'access',
                                                                         ) ||
-                                                                        (!adminMode &&
-                                                                            permissionPriorityMapper(
-                                                                                userPermission,
-                                                                            )
-                                                                                ?.priority >
-                                                                                2)
+                                                                        permissionPriorityMapper(
+                                                                            userPermission,
+                                                                        )
+                                                                            ?.priority >
+                                                                            2
                                                                     }
                                                                 />
                                                                 <RadioGroup.Item
@@ -947,15 +981,14 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                             type,
                                                                             'access',
                                                                         ) ||
-                                                                        (!adminMode &&
-                                                                            (permissionPriorityMapper(
-                                                                                userPermission,
-                                                                            )
-                                                                                ?.priority >=
-                                                                                3 ||
-                                                                                readOnlyRestricted(
-                                                                                    user,
-                                                                                )))
+                                                                        permissionPriorityMapper(
+                                                                            userPermission,
+                                                                        )
+                                                                            ?.priority >=
+                                                                            3 ||
+                                                                        readOnlyRestricted(
+                                                                            user,
+                                                                        )
                                                                     }
                                                                 />
                                                             </RadioGroup>
