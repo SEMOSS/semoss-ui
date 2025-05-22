@@ -144,7 +144,7 @@ const StyledComponent = styled('div')(({ theme }) => ({
 
 const StyledLeftSection = styled('div')(({ theme }) => ({
     display: 'flex',
-    gap: '8px',
+    gap: '16px',
     alignItems: 'center',
     justifyContent: 'flex-start',
     flex: '1.5 0.5 5%',
@@ -225,7 +225,20 @@ const BannerComponent = observer(() => {
 const PlayGroundContainer = observer(() => {
     return (
         <div style={{ display: 'flex', flex: '1 1.5 50%' }}>
-            <Typography>Experiment in our Playground</Typography>
+            <Typography
+                style={{
+                    color: 'var(--Text-Primary, #212121)',
+                    fontFeatureSettings: "'liga' off, 'clig' off",
+                    fontFamily: 'Inter',
+                    fontSize: '16px',
+                    fontStyle: 'normal',
+                    fontWeight: '500',
+                    lineHeight: '150%' /* 24px */,
+                    letterSpacing: '0.15px',
+                }}
+            >
+                Experiment in our Playground™️
+            </Typography>
         </div>
     );
 });
@@ -237,6 +250,12 @@ const AIConductorContainer = observer(() => {
         </div>
     );
 });
+
+const StyledAppTitle = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+}));
 
 export const LandingPageHeader = () => {
     const [showAppBuilder, setShowAppBuilder] = useState(false);
@@ -257,10 +276,12 @@ export const LandingPageHeader = () => {
                             >
                                 <MenuIcon />
                             </StyledIconButton>
-                            <Logo />
-                            <StyledTypography variant="h6">
-                                GovConnect.AI
-                            </StyledTypography>
+                            <StyledAppTitle>
+                                <Logo />
+                                <StyledTypography variant="h6">
+                                    GovConnect.AI
+                                </StyledTypography>
+                            </StyledAppTitle>
                         </StyledLeftSection>
                         {showAppBuilder ? (
                             <StyledSearchSection>
@@ -308,8 +329,8 @@ export const LandingPageHeader = () => {
                     <>
                         <BannerComponent />
                         <div style={{ display: 'flex', width: '100%' }}>
-                            <PlayGroundContainer />
-                            <AIConductorContainer />
+                            {/* <PlayGroundContainer />
+                            <AIConductorContainer /> */}
                         </div>
                     </>
                 ) : (
