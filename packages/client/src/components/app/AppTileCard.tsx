@@ -259,6 +259,14 @@ export const AppTileCard = (props: AppTileCardProps) => {
         return `Published ${d.format('MMMM D, YYYY')}`;
     }, [app.project_date_created]);
 
+    const lastEditedDate = useMemo(() => {
+        const d = dayjs(app.project_date_last_edited);
+        if (!d.isValid()) {
+            return `Last Edited ${dayjs().format('MMMM D, YYYY')}`;
+        }
+
+        return `Last Edited ${d.format('MMMM D, YYYY')}`;
+    }, [app.project_date_last_edited]);
     /**
      * @name findAppImage
      * @params appType
@@ -430,6 +438,12 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         <StyledAccessTimeIcon />
                         <StyledPublishedByLabel variant={'body2'}>
                             {createdDate}
+                        </StyledPublishedByLabel>
+                    </StyledPublishedByContainer>
+                    <StyledPublishedByContainer>
+                        <StyledAccessTimeIcon />
+                        <StyledPublishedByLabel variant={'body2'}>
+                            {lastEditedDate}
                         </StyledPublishedByLabel>
                     </StyledPublishedByContainer>
                     {systemApp && !appDetails && <StyledPlaceholder />}
