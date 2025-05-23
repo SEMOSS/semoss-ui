@@ -77,9 +77,8 @@ export const ListenerSettings = observer(
         const { state } = useBlocks();
         const { listeners, setListener } = useBlockSettings(id);
         const notification = useNotification();
-        const blockListeners: ListenerActions[] =
-            toJS(listeners)[listener].order;
-        const type = toJS(listeners)[listener].type;
+        const blockListeners: ListenerActions[] = toJS(listeners)[listener]?.order;
+        const type = toJS(listeners)[listener]?.type;
 
         const [actionIndex, setActionIndex] = useState(-1);
         const [openModal, setOpenModal] = useState(false);
@@ -226,6 +225,10 @@ export const ListenerSettings = observer(
 
         // Transform items for sortable list
         const transformedItems = useMemo(() => {
+            if (!Array.isArray(blockListeners)) {
+                return [];
+            }
+
             return (blockListeners ? blockListeners : []).map(
                 (item, index) => ({
                     id: index.toString(),
