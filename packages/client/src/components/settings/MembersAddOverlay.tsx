@@ -31,6 +31,7 @@ import { useAPI, useDebounceValue, useRootStore, useSettings } from '@/hooks';
 import { MembersAddOverlayUser } from './MembersAddOverlayUser';
 import { SETTINGS_ROLE } from './settings.types';
 import { permissionPriorityMapper } from '@/utility/general';
+import { has } from 'mobx';
 
 const StyledModal = styled(Modal.Content)(({ theme }) => ({
     maxWidth: '50rem',
@@ -203,54 +204,137 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
         setSearch('');
     }, [open]);
 
-    // TODO: Implement Lazy Loading
-    // get the api
-    const getMembersApi: Parameters<typeof useAPI>[0] =
-        type === 'DATABASE' ||
-        type === 'STORAGE' ||
-        type === 'MODEL' ||
-        type === 'VECTOR' ||
-        type === 'FUNCTION'
-            ? [
-                  'getEngineUsersNoCredentials',
-                  adminMode,
-                  id,
-                  AUTOCOMPLETE_LIMIT, // limit
-                  offset, // offset
-                  debouncedSearch ? debouncedSearch : undefined,
-              ]
-            : type === 'APP'
-            ? [
-                  'getProjectUsersNoCredentials',
-                  adminMode,
-                  id,
-                  AUTOCOMPLETE_LIMIT, // limit
-                  offset, // offset
-                  debouncedSearch ? debouncedSearch : undefined,
-              ]
-            : null;
-
-    const getMembers = useAPI(open ? getMembersApi : null);
-
-    const isLoading =
-        getMembers.status === 'INITIAL' || getMembers.status === 'LOADING';
-
     useEffect(() => {
-        if (getMembers.status === 'SUCCESS') {
-            if (getMembers.data.data.length < AUTOCOMPLETE_LIMIT) {
-                setInfiniteOn(false);
+        if (!open || type !== 'APP') return;
+
+        let cancelled = false;
+        setSearchLoading(true);
+        const fetchProjectUsers = async () => {
+            try {
+                const [noCred, cred] = await Promise.all([
+                    monolithStore.getProjectUsersNoCredentials(
+                        adminMode,
+                        id,
+                        AUTOCOMPLETE_LIMIT,
+                        offset,
+                        debouncedSearch || '',
+                    ),
+                    monolithStore.getProjectUsers(
+                        adminMode,
+                        id,
+                        debouncedSearch || '',
+                        '', // permission
+                        offset,
+                        AUTOCOMPLETE_LIMIT,
+                    ),
+                ]);
+                const all = [...(noCred?.data || []), ...(cred?.members || [])];
+                const unique = Array.from(
+                    new Map(all.map((u) => [u.id, u])).values(),
+                );
+                if (!cancelled) {
+                    if (unique.length < AUTOCOMPLETE_LIMIT)
+                        setInfiniteOn(false);
+                    if (
+                        renderedMembers.length >= AUTOCOMPLETE_LIMIT &&
+                        offset > 0
+                    ) {
+                        setRenderedMembers((prev) => [...prev, ...unique]);
+                    } else {
+                        setRenderedMembers(unique);
+                    }
+                    setSearchLoading(false);
+                }
+            } catch (e) {
+                if (!cancelled) {
+                    notification.add({
+                        color: 'error',
+                        message: String(e),
+                    });
+                    setSearchLoading(false);
+                }
             }
-            if (renderedMembers.length >= AUTOCOMPLETE_LIMIT && offset > 0) {
-                setRenderedMembers((prev) => {
-                    return [...prev, ...getMembers.data.data];
-                });
-                setSearchLoading(false);
-            } else {
-                setRenderedMembers(getMembers.data.data);
-                setSearchLoading(false);
-            }
+        };
+
+        fetchProjectUsers();
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line
+    }, [open, debouncedSearch, offset, adminMode, id, type]);
+    // Fetch and combine members for engine types
+    useEffect(() => {
+        if (
+            !open ||
+            !(
+                type === 'DATABASE' ||
+                type === 'STORAGE' ||
+                type === 'MODEL' ||
+                type === 'VECTOR' ||
+                type === 'FUNCTION'
+            )
+        ) {
+            return;
         }
-    }, [getMembers.status]);
+
+        let cancelled = false;
+        setSearchLoading(true);
+
+        const fetchEngineUsers = async () => {
+            try {
+                const [noCred, cred] = await Promise.all([
+                    monolithStore.getEngineUsersNoCredentials(
+                        adminMode,
+                        id,
+                        AUTOCOMPLETE_LIMIT,
+                        offset,
+                        debouncedSearch || '',
+                    ),
+                    monolithStore.getEngineUsers(
+                        adminMode,
+                        id,
+                        debouncedSearch || '',
+                        '', // permission
+                        offset,
+                        AUTOCOMPLETE_LIMIT,
+                    ),
+                ]);
+                const all = [...(noCred?.data || []), ...(cred?.members || [])];
+                const unique = Array.from(
+                    new Map(all.map((u) => [u.id, u])).values(),
+                );
+                if (!cancelled) {
+                    if (unique.length < AUTOCOMPLETE_LIMIT)
+                        setInfiniteOn(false);
+                    if (
+                        renderedMembers.length >= AUTOCOMPLETE_LIMIT &&
+                        offset > 0
+                    ) {
+                        setRenderedMembers((prev) => [...prev, ...unique]);
+                    } else {
+                        setRenderedMembers(unique);
+                    }
+                    setSearchLoading(false);
+                }
+            } catch (e) {
+                if (!cancelled) {
+                    notification.add({
+                        color: 'error',
+                        message: String(e),
+                    });
+                    setSearchLoading(false);
+                }
+            }
+        };
+
+        fetchEngineUsers();
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line
+    }, [open, debouncedSearch, offset, adminMode, id, type]);
+
+    const isLoading = searchLoading;
 
     const getAdditionalMembers = () => {
         setOffset(offset + AUTOCOMPLETE_LIMIT);
@@ -290,16 +374,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 if (restriction === 'compute') {
                     json['maxResponseTime'] = Number(maxTime);
                 }
-
-                // usageRestriction:
-                //     restriction === 'null' ? null : restriction,
-                // usageFrequency: frequency,
-                // ...(restriction === 'token' && {
-                //     maxTokens: Number(maxTokens),
-                // }),
-                // ...(restriction === 'compute' && {
-                //     maxResponseTime: Number(maxTime),
-                // }),
 
                 return json;
             });
@@ -348,7 +422,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 success = true;
 
                 // refresh the members
-                getMembers.refresh();
+                // getMembers.refresh();
 
                 onChange();
             } else {
@@ -556,16 +630,37 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                         onChange={(event, newValue) => {
                             setSelectedMembers(newValue || []);
                         }}
+                        getOptionDisabled={(option) => !!option.permission}
                         renderOption={(props, option) => {
                             const { ...optionProps } = props;
+                            const hasPermission = !!option.permission;
                             return (
                                 <li key={option.id} {...optionProps}>
-                                    <MembersAddOverlayUser
-                                        name={option.name}
-                                        id={option.id}
-                                        email={option.email}
-                                        type={option.type}
-                                    />
+                                    <div
+                                        style={{
+                                            maxWidth: '85%',
+                                            overflow: 'hidden',
+                                        }}
+                                    >
+                                        <MembersAddOverlayUser
+                                            name={option.name}
+                                            id={option.id}
+                                            email={option.email}
+                                            type={option.type}
+                                        />
+                                    </div>
+
+                                    {hasPermission && (
+                                        <div
+                                            style={{
+                                                whiteSpace: 'nowrap',
+                                                display: 'inline-block',
+                                                fontSize: '12px',
+                                            }}
+                                        >
+                                            Already Added
+                                        </div>
+                                    )}
                                 </li>
                             );
                         }}
