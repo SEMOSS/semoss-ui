@@ -42,6 +42,8 @@ const teamItems = [
 
 const drawerStyles = {
     width: drawerWidth,
+    display: 'flex',
+    justifyContent: 'space-between',
     flexShrink: 0,
     '& .MuiDrawer-paper': {
         width: drawerWidth,
@@ -111,6 +113,7 @@ const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
                     display: 'flex',
                     flexDirection: 'column',
                     height: '100%', // Ensures the Drawer takes full height
+                    overflowY: 'auto', // Allows scrolling if content overflows
                 }}
             >
                 {/* Drawer Heading */}
@@ -203,23 +206,23 @@ const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
                         </List.ItemButton>
                     </List.Item>
                 </List>
-                {/* Bottom Section */}
-                <Box sx={bottomSectionStyles}>
-                    <List sx={{ padding: 0 }}>
-                        <List.Item sx={listStyles}>
-                            <List.ItemButton sx={{ gap: 2 }}>
-                                <List.Icon sx={{ minWidth: '24px' }}>
-                                    <PersonIcon sx={personIconStyles} />
-                                </List.Icon>
-                                {configStore.store.user.name && (
-                                    <List.ItemText
-                                        primary={configStore.store.user.name}
-                                    />
-                                )}
-                            </List.ItemButton>
-                        </List.Item>
-                    </List>
-                </Box>
+            </Box>
+            {/* Bottom Section */}
+            <Box sx={bottomSectionStyles}>
+                <List sx={{ padding: 0 }}>
+                    <List.Item sx={listStyles}>
+                        <List.ItemButton sx={{ gap: 2 }}>
+                            <List.Icon sx={{ minWidth: '24px' }}>
+                                <PersonIcon sx={personIconStyles} />
+                            </List.Icon>
+                            {configStore.store.user.name && (
+                                <List.ItemText
+                                    primary={configStore.store.user.name}
+                                />
+                            )}
+                        </List.ItemButton>
+                    </List.Item>
+                </List>
             </Box>
         </Drawer>
     );
