@@ -9,6 +9,7 @@ import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
 import {
     Button,
+    Chip,
     InputAdornment,
     lightTheme,
     Switch,
@@ -20,6 +21,8 @@ import { UserLandingPage } from './UserlandingPage';
 import DevBanner from '@/assets/img/DevBanner.png';
 import { SideNav } from '@/components/ui';
 import { Logo } from '@/assets/img/Logo';
+import playground from '@/assets/img/Playground.png';
+import AIConductor from '@/assets/img/AIConductor.png';
 
 const StyledBox = styled(Box)(({ theme }) => ({
     display: 'flex',
@@ -180,6 +183,56 @@ const StyledBannerText = styled(Typography)(({ theme }) => ({
     width: '35%',
 }));
 
+const StyledAppTitle = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+}));
+const StyledOuterContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flex: '1 1.5 50%',
+    borderRadius: '12px',
+    background: '#FFF',
+    boxShadow: '0px 5px 8px 0px rgba(0, 0, 0, 0.08)',
+}));
+const StyledInnerContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flex: '0.55 1 60%',
+    alignItems: 'center',
+    padding: '16px',
+    justifyContent: 'space-between',
+    flexDirection: 'column',
+}));
+
+const StyledContainerTitleSection = styled('div')(({ theme }) => ({
+    display: 'flex',
+    width: '100%',
+    justifyContent: 'space-between',
+}));
+
+const StyledContainerContentSection = styled('div')(({ theme }) => ({
+    display: 'flex',
+    width: '100%',
+    justifyContent: 'space-between',
+    padding: '16px 0px',
+}));
+
+const StyledContainerButtonSection = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'flex-start',
+    width: '100%',
+}));
+
+const StyledContainerImageSection = styled('div')<{ backgroundImage: string }>(
+    ({ theme, backgroundImage }) => ({
+        display: 'flex',
+        flex: '0.45 1 40%',
+        backgroundImage: `${backgroundImage}`,
+        backgroundSize: '100% 100%',
+        backgroundRepeat: 'no-repeat',
+    }),
+);
+
 const BannerComponent = observer(() => {
     return (
         <>
@@ -187,7 +240,7 @@ const BannerComponent = observer(() => {
                 style={{
                     padding: '53px 21px',
                     backgroundImage: `url(${DevBanner})`,
-                    height: '35dvh',
+                    minHeight: '30dvh',
                     width: '100%',
                     backgroundRepeat: 'no-repeat',
                     backgroundSize: 'cover',
@@ -224,37 +277,142 @@ const BannerComponent = observer(() => {
 
 const PlayGroundContainer = observer(() => {
     return (
-        <div style={{ display: 'flex', flex: '1 1.5 50%' }}>
-            <Typography
-                style={{
-                    color: 'var(--Text-Primary, #212121)',
-                    fontFeatureSettings: "'liga' off, 'clig' off",
-                    fontFamily: 'Inter',
-                    fontSize: '16px',
-                    fontStyle: 'normal',
-                    fontWeight: '500',
-                    lineHeight: '150%' /* 24px */,
-                    letterSpacing: '0.15px',
-                }}
-            >
-                Experiment in our Playground™️
-            </Typography>
-        </div>
+        <StyledOuterContainer>
+            <StyledInnerContainer>
+                <StyledContainerTitleSection>
+                    <Typography
+                        style={{
+                            color: 'var(--Text-Primary, #212121)',
+                            fontFeatureSettings: "'liga' off, 'clig' off",
+                            fontFamily: 'Inter',
+                            fontSize: '16px',
+                            fontStyle: 'normal',
+                            fontWeight: '500',
+                            lineHeight: '150%' /* 24px */,
+                            letterSpacing: '0.15px',
+                        }}
+                    >
+                        Experiment in our Playground™️
+                    </Typography>
+                    <StyledChip
+                        variant="filled"
+                        size="small"
+                        sx={{
+                            borderRadius: '4px',
+                            background: 'var(--Primary-Selected, #EBF4FE)',
+                        }}
+                        label="FEATURED"
+                    />
+                </StyledContainerTitleSection>
+                <StyledContainerContentSection>
+                    <Typography
+                        variant="body2"
+                        style={{
+                            color: 'var(--Text-Primary, #212121)',
+                            fontFeatureSettings: "'liga' off, 'clig' off",
+                        }}
+                    >
+                        Chat with different LLMs and try out different prompts
+                        from our prompt library. Or chat with multiple LLMs in
+                        one room to hold a focus group or round table.
+                    </Typography>
+                </StyledContainerContentSection>
+                <StyledContainerButtonSection>
+                    <Button
+                        variant="text"
+                        endIcon={
+                            <ArrowForwardIcon style={{ color: '#0471F0' }} />
+                        }
+                    >
+                        {' '}
+                        Try it out{' '}
+                    </Button>
+                </StyledContainerButtonSection>
+            </StyledInnerContainer>
+            <StyledContainerImageSection backgroundImage={`url(${playground})`}>
+                &nbsp;
+            </StyledContainerImageSection>
+        </StyledOuterContainer>
     );
 });
 
 const AIConductorContainer = observer(() => {
     return (
-        <div style={{ display: 'flex', flex: '1 1.5 50%' }}>
-            <Typography>Simplify tasks with AI Conductor</Typography>
-        </div>
+        <StyledOuterContainer>
+            <StyledInnerContainer>
+                <StyledContainerTitleSection>
+                    <Typography
+                        style={{
+                            color: 'var(--Text-Primary, #212121)',
+                            fontFeatureSettings: "'liga' off, 'clig' off",
+                            fontFamily: 'Inter',
+                            fontSize: '16px',
+                            fontStyle: 'normal',
+                            fontWeight: '500',
+                            lineHeight: '150%' /* 24px */,
+                            letterSpacing: '0.15px',
+                        }}
+                    >
+                        Simplify tasks with AI Conductor
+                    </Typography>
+                    <StyledChip
+                        variant="filled"
+                        size="small"
+                        sx={{
+                            borderRadius: '4px',
+                            background: 'var(--Primary-Selected, #EBF4FE)',
+                        }}
+                        label="NEW"
+                    />
+                </StyledContainerTitleSection>
+                <StyledContainerContentSection>
+                    <Typography
+                        variant="body2"
+                        style={{
+                            color: 'var(--Text-Primary, #212121)',
+                            fontFeatureSettings: "'liga' off, 'clig' off",
+                        }}
+                    >
+                        Use a chat interface to breakdown goals into subtasks
+                        that can be accomplished via an app, a routine, or
+                        another user. Simplify your workflows!
+                    </Typography>
+                </StyledContainerContentSection>
+                <StyledContainerButtonSection>
+                    <Button
+                        variant="text"
+                        endIcon={
+                            <ArrowForwardIcon style={{ color: '#0471F0' }} />
+                        }
+                    >
+                        {' '}
+                        Try it out{' '}
+                    </Button>
+                </StyledContainerButtonSection>
+            </StyledInnerContainer>
+            <StyledContainerImageSection
+                backgroundImage={`url(${AIConductor})`}
+            >
+                &nbsp;
+            </StyledContainerImageSection>
+        </StyledOuterContainer>
     );
 });
 
-const StyledAppTitle = styled('div')(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
+const StyledChip = styled(Chip)(({ theme }) => ({
+    borderRadius: '4px',
+    background: 'var(--Primary-Selected, #EBF4FE)',
+    '&.MuiChip-root > .MuiChip-label': {
+        color: 'var(--Primary-Main, #0471F0)',
+        fontFeatureSettings: "'liga' off, 'clig' off",
+        /* Components/Chip */
+        fontFamily: 'Inter',
+        fontSize: '13px',
+        fontStyle: 'normal',
+        fontWeight: '400',
+        lineHeight: '18px' /* 138.462% */,
+        letterSpacing: '0.16px',
+    },
 }));
 
 export const LandingPageHeader = () => {
@@ -328,9 +486,15 @@ export const LandingPageHeader = () => {
                 {showAppBuilder ? (
                     <>
                         <BannerComponent />
-                        <div style={{ display: 'flex', width: '100%' }}>
-                            {/* <PlayGroundContainer />
-                            <AIConductorContainer /> */}
+                        <div
+                            style={{
+                                display: 'flex',
+                                width: '100%',
+                                gap: '24px',
+                            }}
+                        >
+                            <PlayGroundContainer />
+                            <AIConductorContainer />
                         </div>
                     </>
                 ) : (
