@@ -138,8 +138,6 @@ interface TeamCardProps {
     teams;
 
     onClick?: (value: string) => void;
-
-    isCustomGroup?: boolean;
 }
 
 const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
@@ -150,16 +148,7 @@ const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
 }));
 
 export const TeamTileCard = (props: TeamCardProps) => {
-    const {
-        id,
-        description,
-        type,
-        tag,
-        dispatch,
-        teams,
-        onClick,
-        isCustomGroup,
-    } = props;
+    const { id, description, type, tag, dispatch, teams, onClick } = props;
     const AUTOCOMPLETE_OFFSET = 0;
     const AUTOCOMPLETE_LIMIT = 10;
 
@@ -331,7 +320,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
             return;
         }
         setIsLoading(true);
-        if (isCustomGroup) {
+        if (type === 'Custom') {
             try {
                 const response = await monolithStore.getNonTeamUsers(
                     id,
@@ -458,7 +447,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                         // transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                     >
                         <MenuList>
-                            {isCustomGroup && (
+                            {type === 'Custom' && (
                                 <MenuItemTwo
                                     onClick={(e) => {
                                         e.stopPropagation();

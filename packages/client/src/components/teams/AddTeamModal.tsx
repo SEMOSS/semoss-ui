@@ -181,19 +181,11 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
         try {
             if (isEdit) {
                 // Logic for editing the team
-                const editResponse =
-                    data.TEAM_TYPE === 'Custom'
-                        ? monolithStore.editTeam(
-                              data.TEAM_NAME,
-                              data.TEAM_DESCRIPTION,
-                              true,
-                          )
-                        : monolithStore.editTeam(
-                              data.TEAM_NAME,
-                              data.TEAM_DESCRIPTION,
-                              false,
-                              data.TEAM_TYPE,
-                          );
+                const editResponse = monolithStore.editTeam(
+                    data.TEAM_NAME,
+                    data.TEAM_DESCRIPTION,
+                    data.TEAM_TYPE,
+                );
 
                 editResponse.then(() => {
                     onClose({
@@ -209,19 +201,11 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                 });
             } else {
                 // Logic for creating a new team
-                const newResponse =
-                    data.TEAM_TYPE === 'Custom'
-                        ? monolithStore.addTeam(
-                              data.TEAM_NAME,
-                              data.TEAM_DESCRIPTION,
-                              true,
-                          )
-                        : monolithStore.addTeam(
-                              data.TEAM_NAME,
-                              data.TEAM_DESCRIPTION,
-                              false,
-                              data.TEAM_TYPE,
-                          );
+                const newResponse = monolithStore.addTeam(
+                    data.TEAM_NAME,
+                    data.TEAM_DESCRIPTION,
+                    data.TEAM_TYPE,
+                );
 
                 newResponse.then(() => {
                     onClose({

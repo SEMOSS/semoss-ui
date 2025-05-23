@@ -1063,15 +1063,9 @@ export class MonolithStore {
      * @param groupId
      * @param description
      * @param type
-     * @param isCustomGroup
      * @returns
      */
-    async addTeam(
-        groupId: string,
-        description: string,
-        isCustomGroup: boolean,
-        type?: string,
-    ) {
+    async addTeam(groupId: string, description: string, type?: string) {
         let url = `${Env.MODULE}/api/auth/admin/`,
             postData = '';
 
@@ -1079,7 +1073,6 @@ export class MonolithStore {
 
         postData += 'groupId=' + encodeURIComponent(groupId);
         postData += '&description=' + encodeURIComponent(description);
-        postData += '&isCustomGroup=' + encodeURIComponent(isCustomGroup);
         if (type) {
             postData += '&type=' + encodeURIComponent(type);
         }
@@ -1098,15 +1091,9 @@ export class MonolithStore {
      * @param groupId
      * @param description
      * @param type
-     * @param isCustomGroup
      * @returns
      */
-    async editTeam(
-        groupId: string,
-        description: string,
-        isCustomGroup: boolean,
-        type?: string,
-    ) {
+    async editTeam(groupId: string, description: string, type?: string) {
         let url = `${Env.MODULE}/api/auth/admin/`,
             postData = '';
 
@@ -1114,7 +1101,6 @@ export class MonolithStore {
 
         postData += 'groupId=' + encodeURIComponent(groupId);
         postData += '&description=' + encodeURIComponent(description);
-        postData += '&isCustomGroup=' + encodeURIComponent(isCustomGroup);
         if (type) {
             postData += '&type=' + encodeURIComponent(type);
         }
