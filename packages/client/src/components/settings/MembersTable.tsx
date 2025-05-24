@@ -357,7 +357,7 @@ export const MembersTable = (props: MembersTableProps) => {
             return;
         }
         setUserDetails();
-    }, [userDetails.status, userDetails.data]);
+    }, [userDetails.status]);
 
     //     // select the member when done mounting
     //     memberSearchRef.current?.focus();
