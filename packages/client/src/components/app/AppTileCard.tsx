@@ -253,7 +253,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
     const createdDate = useMemo(() => {
         const d = dayjs(app.project_date_created);
         if (!d.isValid()) {
-            return `Published ${dayjs().format('MMMM D, YYYY')}`;
+            return '';
         }
 
         return `Published ${d.format('MMMM D, YYYY')}`;
@@ -262,7 +262,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
     const lastEditedDate = useMemo(() => {
         const d = dayjs(app.project_date_last_edited);
         if (!d.isValid()) {
-            return `Last Edited ${dayjs().format('MMMM D, YYYY')}`;
+            return '';
         }
 
         return `Last Edited ${d.format('MMMM D, YYYY')}`;
@@ -434,18 +434,22 @@ export const AppTileCard = (props: AppTileCardProps) => {
                                 />
                             ))}
                     </Stack>
-                    <StyledPublishedByContainer>
-                        <StyledAccessTimeIcon />
-                        <StyledPublishedByLabel variant={'body2'}>
-                            {createdDate}
-                        </StyledPublishedByLabel>
-                    </StyledPublishedByContainer>
-                    <StyledPublishedByContainer>
-                        <StyledAccessTimeIcon />
-                        <StyledPublishedByLabel variant={'body2'}>
-                            {lastEditedDate}
-                        </StyledPublishedByLabel>
-                    </StyledPublishedByContainer>
+                    {createdDate && (
+                        <StyledPublishedByContainer>
+                            <StyledAccessTimeIcon />
+                            <StyledPublishedByLabel variant={'body2'}>
+                                {createdDate}
+                            </StyledPublishedByLabel>
+                        </StyledPublishedByContainer>
+                    )}
+                    {lastEditedDate && (
+                        <StyledPublishedByContainer>
+                            <StyledAccessTimeIcon />
+                            <StyledPublishedByLabel variant={'body2'}>
+                                {lastEditedDate}
+                            </StyledPublishedByLabel>
+                        </StyledPublishedByContainer>
+                    )}
                     {systemApp && !appDetails && <StyledPlaceholder />}
                 </Card.Content>
                 <StyledCardActions>
