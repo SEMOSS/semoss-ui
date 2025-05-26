@@ -15,16 +15,20 @@
         "forceConsistentCasingInFileNames": true,
         "esModuleInterop": true,
         "module": "esnext",
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "resolveJsonModule": true,
         "isolatedModules": true,
         "jsx": "react-jsx",
         "incremental": true,
-        "experimentalDecorators": true
+        "experimentalDecorators": true,
+        "outDir": "./dist",
+        "types": ["vitest/globals", "@testing-library/jest-dom/vitest"]
     },
-    "include": [
-        "./src",
-        "./global.d.ts",
+    "include": ["./src", "./global.d.ts", "./src/testing"],
+    "exclude": [
+        "./plugins/**/*",
+        "./typings/**/*",
+        "./dist/**/*",
         "../../libs/renderer/src/store/state/migration"
     ]
 }

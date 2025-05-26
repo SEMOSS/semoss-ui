@@ -37,7 +37,7 @@ interface SelectInputSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Options for select
      */
-    options: Array<{ value: string; display: string }>;
+    options: Array<{ value: string; display: string; isDefault?: boolean }>;
 
     /**
      * Whether an empty 'None' option should be in the select
@@ -51,6 +51,11 @@ interface SelectInputSettingsProps<D extends BlockDef = BlockDef> {
 
     /** Whether we should dispatch an event to the designer to update the frame around the block */
     resizeOnSet?: boolean;
+
+    /**
+     * Tooltip to display for the setting
+     */
+    tooltip?: string;
 }
 
 const filter = createFilterOptions<string>();
@@ -64,6 +69,7 @@ export const SelectInputSettings = observer(
         allowUnset = false,
         allowCustomInput = false,
         resizeOnSet = false,
+        tooltip = "",
     }: SelectInputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
         const { state } = useBlocks();
@@ -112,6 +118,13 @@ export const SelectInputSettings = observer(
             setValue(computedValue);
         }, [computedValue]);
 
+        useEffect(() => {
+            const defaultOption = options.find((option) => option.isDefault);
+            if (defaultOption) {
+                setValue(defaultOption.value);
+            }
+        }, [options]);
+
         /**
          * Sync the data on change
          */
@@ -145,7 +158,7 @@ export const SelectInputSettings = observer(
         };
 
         return (
-            <BaseSettingSection label={label}>
+            <BaseSettingSection label={label} description={tooltip}>
                 {allowCustomInput ? (
                     <Autocomplete
                         fullWidth

@@ -4,7 +4,7 @@ import { observer } from "mobx-react-lite";
 import { LoadingScreen, Button } from "@semoss/ui";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { Slot } from "../../../components/blocks";
 
 export interface PageBlockDef extends BlockDef<"page"> {
@@ -17,7 +17,10 @@ export interface PageBlockDef extends BlockDef<"page"> {
         content: true;
     };
     listeners: {
-        onPageLoad: true;
+        onPageLoad: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
@@ -40,8 +43,8 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
         <div
             id={id}
             style={{
-                // border: "solid green",
                 // position Set to relative so we can have a modal to attach to page block
+                // height: 'inherit',
                 position: "relative",
                 width: "100%",
                 height: "100%",

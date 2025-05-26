@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
+import { Delete, Edit, PlayArrow } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
+
 import {
     Chip,
     IconButton,
@@ -10,9 +12,9 @@ import {
     CircularProgress,
     useNotification,
 } from '@semoss/ui';
-import { Delete, Edit, PlayArrow } from '@mui/icons-material';
+
+import { runPixelTwo } from '../../runPixelTwo';
 import { Job, JobBuilder } from './job.types';
-import { runPixel } from '@/api';
 import { getHumanReadableCronExpression } from './job.utils';
 
 const StyledDataGrid = styled(DataGrid)(() => ({
@@ -53,7 +55,7 @@ export const JobsTable = (props: {
     const runJob = async (job: Job) => {
         setRunJobLoading(true);
         try {
-            await runPixel(
+            await runPixelTwo(
                 `META | ExecuteScheduledJob ( jobId = [ "${job.id}" ] , jobGroup = [ "${job.group}" ] ) ;`,
             );
         } catch (e) {

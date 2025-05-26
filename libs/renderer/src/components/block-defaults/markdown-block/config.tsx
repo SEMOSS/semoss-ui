@@ -6,6 +6,8 @@ import {
     buildTypographySection,
     buildTextAlignSection,
     buildBorderSection,
+    buildShowField,
+    buildListener,
 } from "../block-defaults.shared";
 
 import { MarkdownBlockDef, MarkdownBlock } from "./MarkdownBlock";
@@ -24,8 +26,14 @@ export const config: BlockConfig<MarkdownBlockDef> = {
         },
         markdown: "**Hello world**",
         isStreaming: false,
+        show: "true",
     },
-    listeners: {},
+    listeners: {
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+    },
     slots: {},
     render: MarkdownBlock,
     icon: FormatListBulleted,
@@ -54,6 +62,14 @@ export const config: BlockConfig<MarkdownBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
     ],
     styleMenu: [buildTypographySection(), buildTextAlignSection()],

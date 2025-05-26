@@ -1,14 +1,17 @@
-import { BlockConfig } from "../../../store";
-import {
-    buildSpacingSection,
-    buildDimensionsSection,
-} from "../block-defaults.shared";
-import { IframeBlockDef, IframeBlock } from "./IframeBlock";
 import { AspectRatio } from "@mui/icons-material";
+
+import { BlockConfig } from "../../../store";
+import { IframeBlockDef, IframeBlock } from "./IframeBlock";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
 import { InputModalSettings } from "../../block-settings/shared/InputModalSettings";
 import { BorderSettings, InputSettings } from "../../block-settings";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
+import {
+    buildSpacingSection,
+    buildDimensionsSection,
+    buildShowField,
+    buildListener,
+} from "../block-defaults.shared";
 
 // export the config for the block
 export const config: BlockConfig<IframeBlockDef> = {
@@ -19,8 +22,14 @@ export const config: BlockConfig<IframeBlockDef> = {
         src: "",
         title: "",
         enableFrameInteractions: true,
+        show: "true",
     },
-    listeners: {},
+    listeners: {
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+    },
     slots: {},
     render: IframeBlock,
     icon: AspectRatio,
@@ -56,6 +65,14 @@ export const config: BlockConfig<IframeBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
     ],
     styleMenu: [

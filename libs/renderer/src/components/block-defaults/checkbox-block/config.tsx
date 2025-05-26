@@ -1,7 +1,7 @@
 import { BlockConfig } from "../../../store";
 import { InputSettings, SelectInputSettings } from "../../block-settings";
 import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
-import { buildListener } from "../block-defaults.shared";
+import { buildListener, buildShowField } from "../block-defaults.shared";
 import { CheckboxBlockDef, CheckboxBlock } from "./CheckboxBlock";
 import { CheckBox } from "@mui/icons-material";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
@@ -18,9 +18,17 @@ export const config: BlockConfig<CheckboxBlockDef> = {
         required: false,
         disabled: false,
         value: false,
+        show: "true",
     },
     listeners: {
-        onChange: [],
+        onChange: {
+            type: "sync",
+            order: [],
+        },
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: CheckboxBlock,
@@ -38,7 +46,15 @@ export const config: BlockConfig<CheckboxBlockDef> = {
             ],
         },
         {
-            name: "on Change",
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
+        },
+        {
+            name: "On Change",
             children: [...buildListener("onChange")],
         },
     ],

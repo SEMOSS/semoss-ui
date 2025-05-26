@@ -1,15 +1,19 @@
 import { CSSProperties } from "react";
+import { KeyboardVoice } from "@mui/icons-material";
+
+import { AudioInputBlockDef, AudioInputBlock } from "./AudioInputBlock";
+import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
+import { InputAudioSettings } from "../../block-settings/shared/InputAudioSettings";
 import { BlockConfig } from "../../../store";
 import {
     SelectInputSettings,
     QuerySelectionSettings,
 } from "../../block-settings";
-import { buildDimensionsSection } from "../block-defaults.shared";
-
-import { AudioInputBlockDef, AudioInputBlock } from "./AudioInputBlock";
-import { KeyboardVoice } from "@mui/icons-material";
-import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
-import { InputAudioSettings } from "../../block-settings/shared/InputAudioSettings";
+import {
+    buildDimensionsSection,
+    buildShowField,
+    buildListener,
+} from "../block-defaults.shared";
 
 export const DefaultStyles: CSSProperties = {};
 
@@ -26,9 +30,17 @@ export const config: BlockConfig<AudioInputBlockDef> = {
         color: "primary",
         value: "",
         mode: "transcribe",
+        show: "true",
     },
     listeners: {
-        onClick: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+        onComplete: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: AudioInputBlock,
@@ -76,6 +88,18 @@ export const config: BlockConfig<AudioInputBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
+        },
+        {
+            name: "On Complete",
+            children: [...buildListener("onComplete")],
         },
     ],
     styleMenu: [

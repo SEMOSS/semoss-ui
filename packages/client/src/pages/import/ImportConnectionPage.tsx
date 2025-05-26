@@ -72,7 +72,7 @@ export const ImportConnectionPage = () => {
             return;
         } else if (values.type === 'MODEL') {
             /** Model: START */
-            var pixel;
+            let pixel;
             if (values.secondaryFields['FILE']) {
                 const upload = await monolithStore.uploadFile(
                     [values.secondaryFields['FILE']],
@@ -176,7 +176,7 @@ export const ImportConnectionPage = () => {
             return;
         } else if (values.type === 'FUNCTION') {
             /** Function: START */
-            var pixel;
+            let pixel;
             if (values.secondaryFields['FILE']) {
                 const upload = await monolithStore.uploadFile(
                     [values.secondaryFields['FILE']],

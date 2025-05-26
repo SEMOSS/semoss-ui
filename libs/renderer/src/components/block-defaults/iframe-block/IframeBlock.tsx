@@ -1,8 +1,8 @@
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 
 export interface IframeBlockDef extends BlockDef<"iframe"> {
     widget: "iframe";
@@ -11,12 +11,25 @@ export interface IframeBlockDef extends BlockDef<"iframe"> {
         src: string;
         title: string;
         enableFrameInteractions: boolean;
+        show: string;
     };
     slots: never;
+    listeners: {
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+    };
 }
 
 export const IframeBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data } = useBlock<IframeBlockDef>(id);
+    const { attrs, data, listeners } = useBlock<IframeBlockDef>(id);
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
 
     return (
         <span

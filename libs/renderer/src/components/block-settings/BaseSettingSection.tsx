@@ -3,7 +3,7 @@ import { styled, Stack, Typography, Tooltip } from "@semoss/ui";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 
 const StyledTypography = styled(Typography)(() => ({
-    width: "30%",
+    width: "100%",
 }));
 
 /**
@@ -17,27 +17,26 @@ export const BaseSettingSection = (props: {
     description?: string;
 }) => {
     return (
-        <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            spacing={2}
-        >
-            <StyledTypography variant="body2">{props.label}</StyledTypography>
-            {!!props.description?.length && (
-                <Tooltip placement="top" title={props.description} arrow>
-                    <HelpOutlineIcon
-                        color="action"
-                        sx={{
-                            fontSize: 15,
-                            marginLeft: "5px",
-                        }}
-                    />
-                </Tooltip>
-            )}
+        <Stack direction="column" spacing={1} className="base-setting-section">
+            <Stack direction="row" alignItems="center" spacing={1}>
+                <StyledTypography variant="body2">
+                    {props.label}
+                </StyledTypography>
+                {!!props.description?.length && (
+                    <Tooltip placement="top" title={props.description} arrow>
+                        <HelpOutlineIcon
+                            color="action"
+                            sx={{
+                                fontSize: 15,
+                                marginLeft: "5px",
+                            }}
+                        />
+                    </Tooltip>
+                )}
+            </Stack>
             <Stack
                 direction="row"
-                justifyContent="end"
+                justifyContent="start"
                 spacing={1}
                 width="100%"
             >

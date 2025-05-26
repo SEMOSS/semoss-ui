@@ -30,10 +30,25 @@ interface OptionsSettingsProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>["data"], 4>;
+
+    /**
+     * Settings label
+     */
+    label?: string;
+
+    /**
+     * Tooltip text
+     */
+    tooltip?: string;
 }
 
 export const OptionsSettings = observer(
-    <D extends BlockDef = BlockDef>({ id, path }: OptionsSettingsProps<D>) => {
+    <D extends BlockDef = BlockDef>({
+        id,
+        path,
+        label,
+        tooltip = "",
+    }: OptionsSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
 
         // track the value
@@ -68,7 +83,7 @@ export const OptionsSettings = observer(
         // update the value whenever the computed one changes
         useEffect(() => {
             // add unique id to the options
-            let modifiedOptions = (computedValue || []).map(
+            const modifiedOptions = (computedValue || []).map(
                 (option, index) => ({
                     ...option,
                     id: `drag-item-${index}`,
@@ -192,7 +207,10 @@ export const OptionsSettings = observer(
         };
 
         return (
-            <BaseSettingSection label="Options">
+            <BaseSettingSection
+                label={label ?? "Options"}
+                description={tooltip}
+            >
                 <Stack spacing={1}>
                     <DndContext
                         collisionDetection={closestCenter}
@@ -299,7 +317,7 @@ export const OptionsSettings = observer(
                             }
                             startIcon={<Add />}
                         >
-                            Add Option
+                            Add {label ?? "Option"}
                         </Button>
                     </Stack>
                 </Stack>

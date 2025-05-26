@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Stack, TextField } from '@semoss/ui';
-import { Autocomplete } from '@mui/material';
+
+import { AutocompleteTwo, Stack, TextField } from '@semoss/ui';
+
 import { DaysOfWeek, FrequencyOptions, Months } from './job.constants';
 import { DayOfWeek, Frequencies, JobBuilder, Month } from './job.types';
 
@@ -126,7 +127,7 @@ export const JobStandardFrequencyBuilder = (props: {
 
     return (
         <Stack spacing={2} width="100%">
-            <Autocomplete
+            <AutocompleteTwo
                 size="small"
                 options={FrequencyOptions}
                 value={frequency}
@@ -137,7 +138,7 @@ export const JobStandardFrequencyBuilder = (props: {
                 onChange={(_, value) => setFrequency(value)}
             />
             {frequency == 'Weekly' ? (
-                <Autocomplete
+                <AutocompleteTwo
                     size="small"
                     options={DaysOfWeek}
                     value={dayOfWeek}
@@ -155,7 +156,7 @@ export const JobStandardFrequencyBuilder = (props: {
                 <></>
             )}
             {frequency == 'Yearly' ? (
-                <Autocomplete
+                <AutocompleteTwo
                     size="small"
                     options={Months}
                     value={month}

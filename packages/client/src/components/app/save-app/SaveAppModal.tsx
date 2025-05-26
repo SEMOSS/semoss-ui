@@ -34,7 +34,7 @@ interface SaveAppProps {
     defaultFormValues: object;
 
     /** Submit handler */
-    handleFormSubmit: Function;
+    handleFormSubmit: (data: object) => void;
 
     /** Error message to display */
     errorMessage: string;

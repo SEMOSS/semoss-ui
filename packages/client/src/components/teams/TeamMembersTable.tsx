@@ -195,6 +195,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
+    const AUTOCOMPLETE_LIMIT = 10;
+    const AUTOCOMPLETE_OFFSET = 0;
 
     /** Member Table State */
     const [membersPage, setMembersPage] = useState<number>(1);
@@ -218,6 +220,30 @@ export const TeamMembersTable = (props: MembersTableProps) => {
     const [hasMembers, setHasMembers] = useState(false);
 
     const limit = 5;
+    const [searchMemberInput, setSearchMemberInput] = useState<string>('');
+    const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
+    const [isScrollBottom, setIsScrollBottom] = useState(false);
+    const [canCollect, setCanCollect] = useState<boolean>(true);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [searchLoading, setSearchLoading] = useState(false);
+
+    const nearBottom = (
+        target: {
+            scrollHeight?: number;
+            scrollTop?: number;
+            clientHeight?: number;
+        } = {},
+    ) => {
+        const diff = Math.round(target.scrollHeight - target.scrollTop);
+        return diff - 25 <= target.clientHeight;
+    };
+
+    /**
+     * @name getAdditionalUsersNonGroup
+     */
+    const getAdditionalUsersNonGroup = () => {
+        setOffset(offset + AUTOCOMPLETE_LIMIT);
+    };
 
     const memberSearchRef = useRef(undefined);
 
@@ -249,6 +275,34 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                 setHasMembers(true);
             });
     }, []);
+
+    useEffect(() => {
+        if (isScrollBottom) {
+            if (canCollect) {
+                getAdditionalUsersNonGroup();
+            }
+        }
+    }, [isScrollBottom]);
+
+    useEffect(() => {
+        if (addMembersModal) {
+            if (searchMemberInput) {
+                setSearchLoading(true);
+            }
+            const timer = setTimeout(() => {
+                if (!offset) {
+                    getUsersNonGroup(true);
+                } else {
+                    if (canCollect) {
+                        getUsersNonGroup(false);
+                    } else {
+                        getUsersNonGroup(true);
+                    }
+                }
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [addMembersModal, offset, searchMemberInput]);
 
     /**
      * @name submitNonGroupUsers
@@ -312,6 +366,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
         } finally {
             // refresh the members
             setCount(count + 1);
+            setOffset(0);
         }
     };
 
@@ -386,15 +441,25 @@ export const TeamMembersTable = (props: MembersTableProps) => {
      * @name getUsersNonGroup
      * @desc Gets all users without credentials
      */
-    const getUsersNonGroup = async () => {
+    const getUsersNonGroup = async (reset: boolean) => {
+        if (isLoading) {
+            return;
+        }
+        setIsLoading(true);
         try {
             let response;
             // possibly add more db table columns / keys here to get id type for display under username
             // eslint-disable-next-line prefer-const
-            response = await monolithStore.getNonTeamUsers(groupId);
+            response = await monolithStore.getNonTeamUsers(
+                groupId,
+                AUTOCOMPLETE_LIMIT,
+                offset,
+                searchMemberInput,
+            );
 
             // ignore if there is no response
             if (response) {
+                let requests = reset ? [] : nonCredentialedUsers;
                 const users = response.map((val) => {
                     return {
                         ...val,
@@ -403,16 +468,19 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                         ],
                     };
                 });
-
-                setNonCredentialedUsers(users);
+                requests = requests.concat(users);
+                setNonCredentialedUsers(requests);
+                setCanCollect(users.length === AUTOCOMPLETE_LIMIT);
+                setIsLoading(false);
+                setSearchLoading(false);
             }
         } catch (e) {
             notification.add({
                 color: 'error',
                 message: String(e),
             });
-        } finally {
-            setAddMembersModal(true);
+            setIsLoading(false);
+            setSearchLoading(false);
         }
     };
 
@@ -546,7 +614,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                                 <Button
                                     variant={'contained'}
                                     onClick={() => {
-                                        getUsersNonGroup();
+                                        setAddMembersModal(true);
+                                        getUsersNonGroup(false);
                                     }}
                                 >
                                     Add Members{' '}
@@ -732,7 +801,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                             <Button
                                 variant={'contained'}
                                 onClick={() => {
-                                    getUsersNonGroup();
+                                    setAddMembersModal(true);
+                                    getUsersNonGroup(false);
                                 }}
                             >
                                 Add Members{' '}
@@ -748,13 +818,18 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                     <StyledModalContentText>
                         <Autocomplete
                             label="Search"
+                            loading={searchLoading}
                             multiple={true}
+                            freeSolo={false}
+                            filterOptions={(x) => x}
                             options={nonCredentialedUsers}
+                            includeInputInList={true}
                             limitTags={2}
                             getLimitTagsText={() =>
                                 ` +${selectedNonCredentialedUsers.length - 2}`
                             }
-                            value={[...selectedNonCredentialedUsers]}
+                            value={selectedNonCredentialedUsers}
+                            inputValue={searchMemberInput}
                             getOptionLabel={(option: any) => {
                                 return `${option.name}`;
                             }}
@@ -763,6 +838,22 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                             }}
                             onChange={(event, newValue: any) => {
                                 setSelectedNonCredentialedUsers([...newValue]);
+                            }}
+                            ListboxProps={{
+                                onScroll: ({ target }) =>
+                                    setIsScrollBottom(
+                                        nearBottom(
+                                            target as {
+                                                scrollHeight?: number;
+                                                scrollTop?: number;
+                                                clientHeight?: number;
+                                            },
+                                        ),
+                                    ),
+                            }}
+                            onInputChange={(event, newValue) => {
+                                setSearchMemberInput(newValue);
+                                setOffset(0);
                             }}
                         />
 
@@ -791,104 +882,136 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                                     >
                                         <Box
                                             sx={{
-                                                display: 'flex',
-                                                justifyContent: 'center',
-                                                marginTop: '6px',
-                                                marginLeft: '8px',
-                                                marginRight: '8px',
+                                                height: '56px',
+                                                width: '100%',
+                                                gap: '8px',
+                                                position: 'relative',
+                                                border: '5px',
                                             }}
                                         >
                                             <Box
                                                 sx={{
                                                     display: 'flex',
-                                                    height: '80px',
-                                                    width: '80px',
-                                                    justifyContent: 'center',
-                                                    alignItems: 'center',
-                                                    border: '0.5px solid rgba(0, 0, 0, .05)',
-                                                    borderRadius: '50%',
+                                                    justifyContent: 'left',
+                                                    marginTop: '6px',
+                                                    marginLeft: '8px',
+                                                    marginRight: '8px',
+                                                    float: 'left',
                                                 }}
                                             >
-                                                <Avatar
-                                                    aria-label="avatar"
-                                                    sx={{
-                                                        display: 'flex',
-                                                        width: '60px',
-                                                        height: '60px',
-                                                        fontSize: '24px',
-                                                        backgroundColor:
-                                                            user.color,
-                                                    }}
-                                                >
-                                                    {initial}
-                                                </Avatar>
-                                            </Box>
-                                        </Box>
-                                        <Card.Header
-                                            title={
-                                                <Typography variant="h5">
-                                                    {user.name}
-                                                </Typography>
-                                            }
-                                            sx={{
-                                                color: '#000',
-                                                width: '100%',
-                                            }}
-                                            subheader={
                                                 <Box
                                                     sx={{
                                                         display: 'flex',
-                                                        gap: 2,
-                                                        marginTop: '4px',
+                                                        height: '32px',
+                                                        width: '32px',
+                                                        justifyContent:
+                                                            'center',
+                                                        alignItems: 'center',
+                                                        border: '0.5px solid rgba(0, 0, 0, .05)',
+                                                        borderRadius: '50%',
                                                     }}
                                                 >
-                                                    <span
-                                                        style={{
-                                                            opacity: 0.9,
-                                                            fontSize: '14px',
+                                                    <Avatar
+                                                        aria-label="avatar"
+                                                        sx={{
+                                                            display: 'flex',
+                                                            width: '32px',
+                                                            height: '32px',
+                                                            fontSize: '24px',
+                                                            backgroundColor:
+                                                                user.color,
                                                         }}
                                                     >
-                                                        {`User ID: `}
-                                                        <Chip
-                                                            label={user.id}
-                                                            size="small"
-                                                        />
-                                                    </span>
-                                                    {`• `}
-                                                    <span>
-                                                        {`Email: `}
-                                                        <Link
-                                                            href={`mailto:${user.email}`}
-                                                            underline="none"
-                                                        >
-                                                            {user.email}
-                                                        </Link>
-                                                    </span>
+                                                        {initial}
+                                                    </Avatar>
                                                 </Box>
-                                            }
-                                            action={
-                                                <IconButton
-                                                    sx={{
-                                                        mt: '16px',
-                                                        color: 'rgba( 0, 0, 0, .7)',
-                                                        mr: '24px',
-                                                    }}
-                                                    onClick={() => {
-                                                        const filtered =
-                                                            selectedNonCredentialedUsers.filter(
-                                                                (val) =>
-                                                                    val.id !==
-                                                                    user.id,
+                                            </Box>
+                                            <Card.Header
+                                                title={
+                                                    <Typography
+                                                        variant="h6"
+                                                        sx={{
+                                                            maxHeight: '24px',
+                                                            height: '90%',
+                                                            marginTop: '5px',
+                                                        }}
+                                                    >
+                                                        {user.name}
+                                                    </Typography>
+                                                }
+                                                sx={{
+                                                    color: '#000',
+                                                    maxWidth: '466px',
+                                                    height: '15px',
+                                                    width: '100%',
+                                                    float: 'left',
+                                                    gap: '16px',
+                                                }}
+                                                subheader={
+                                                    <Box
+                                                        sx={{
+                                                            display: 'flex',
+                                                            gap: '2px',
+                                                            marginTop: '2px',
+                                                        }}
+                                                    >
+                                                        <span
+                                                            style={{
+                                                                opacity: 0.9,
+                                                                fontSize:
+                                                                    '11px',
+                                                            }}
+                                                        >
+                                                            {`User ID: `}
+                                                            <Chip
+                                                                label={user.id}
+                                                                size="small"
+                                                            />
+                                                        </span>
+                                                        {`• `}
+                                                        <span>
+                                                            {`Email: `}
+                                                            <Link
+                                                                href={`mailto:${user.email}`}
+                                                                underline="none"
+                                                            >
+                                                                {user.email}
+                                                            </Link>
+                                                        </span>
+                                                    </Box>
+                                                }
+                                                action={
+                                                    <IconButton
+                                                        sx={{
+                                                            height: '28px',
+                                                            width: '28px',
+                                                            gap: '30px',
+                                                            fontSize: 'small',
+                                                            mt: '16px',
+                                                            color: 'rgba( 0, 0, 0, .7)',
+                                                            mr: '2px',
+                                                            top: '0px',
+                                                            position:
+                                                                'absolute',
+                                                            padding: '10px',
+                                                        }}
+                                                        onClick={() => {
+                                                            const filtered =
+                                                                selectedNonCredentialedUsers.filter(
+                                                                    (val) =>
+                                                                        val.id !==
+                                                                        user.id,
+                                                                );
+                                                            setSelectedNonCredentialedUsers(
+                                                                filtered,
                                                             );
-                                                        setSelectedNonCredentialedUsers(
-                                                            filtered,
-                                                        );
-                                                    }}
-                                                >
-                                                    <ClearRounded />
-                                                </IconButton>
-                                            }
-                                        />
+                                                        }}
+                                                    >
+                                                        <ClearRounded />
+                                                    </IconButton>
+                                                }
+                                            />
+                                        </Box>
                                     </Box>
                                 );
                             })}
@@ -897,7 +1020,11 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                 <Modal.Actions>
                     <Button
                         variant="outlined"
-                        onClick={() => setAddMembersModal(false)}
+                        onClick={() => {
+                            setAddMembersModal(false);
+                            setOffset(0);
+                            setNonCredentialedUsers([]);
+                        }}
                     >
                         Cancel
                     </Button>

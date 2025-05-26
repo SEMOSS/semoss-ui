@@ -1,16 +1,19 @@
 import React from 'react';
-import { Token } from '../../prompt.types';
-import { Autocomplete } from '@mui/material';
+import { InfoOutlined } from '@mui/icons-material';
+
 import {
     styled,
+    AutocompleteTwo,
     Grid,
     Stack,
+    Fade,
     TextField,
     Tooltip,
     Typography,
 } from '@semoss/ui';
-import { Fade } from '@mui/material';
-import { InfoOutlined } from '@mui/icons-material';
+
+import { Token } from '../../prompt.types';
+import { PromptReadonlyInputToken } from '../../shared/token';
 import {
     INPUT_TYPES,
     INPUT_TYPE_DATABASE,
@@ -18,7 +21,6 @@ import {
     INPUT_TYPE_HELP_TEXT,
     INPUT_TYPE_VECTOR,
 } from '../../prompt.constants';
-import { PromptReadonlyInputToken } from '../../shared/token';
 
 const HelpTextIcon = styled(InfoOutlined)(({ theme }) => ({
     color: theme.palette.grey[400],
@@ -106,7 +108,7 @@ export const PromptBuilderInputTypeSelection = (props: {
             </Grid>
             <Grid item xs={9} md={6}>
                 <Stack spacing={2}>
-                    <Autocomplete
+                    <AutocompleteTwo
                         fullWidth
                         disableClearable
                         id="input-token-autocomplete"
@@ -131,7 +133,7 @@ export const PromptBuilderInputTypeSelection = (props: {
                     <Fade in={showMetaAutocomplete}>
                         <span>
                             <Stack direction="row" alignItems="center">
-                                <Autocomplete
+                                <AutocompleteTwo
                                     fullWidth
                                     disableClearable
                                     size="small"

@@ -1,21 +1,30 @@
-import React, { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Search, SearchOff } from '@mui/icons-material';
+import { Search, Tune } from '@mui/icons-material';
 
 import {
     styled,
+    Badge,
     Grid,
     Stack,
     TextField,
     ToggleTabsGroup,
     Typography,
     Divider,
+    InputAdornment,
+    IconButton,
 } from '@semoss/ui';
 
-import { DesignerMenuItem } from '../menus/menu-types';
-import { AddBlocksMenuCard } from '@/components/designer';
+import { runPixelTwo } from '../../../runPixelTwo';
 import { Panel } from '@/components/workspace';
-import { SECTION_ORDER } from '../menus/default-menu';
+import { CLIENT_BLOCKS_MENU, SECTION_ORDER } from '../menus/default-menu';
+import { AddBlocksMenuCard } from '@/components/designer';
+import { BlocksMenuPanelFilterMenu } from './BlocksMenuPanelFilterMenu';
+import {
+    BlockLocalStorageData,
+    DesignerMenuItem,
+    FilterCategory,
+} from '../menus/menu-types';
 
 const StyledTitle = styled('div')(({ theme }) => ({
     paddingTop: theme.spacing(1.5),
@@ -76,10 +85,6 @@ const StyledTypography = styled(Typography)({
     userSelect: 'none',
 });
 
-const StyledSection = styled('div')(({ theme }) => ({
-    ...theme.typography.caption,
-}));
-
 type MODE = 'CLIENT' | 'SYSTEM';
 export interface AddBlocksMenuProps {
     /** Title to render in the menu */
@@ -98,13 +103,44 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
     const { title, items } = props;
 
     const [search, setSearch] = useState('');
+    const [clientBlock, setClientBlock] = useState([]);
     const [mode, setMode] = useState<MODE>('SYSTEM');
 
+    const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+    const [filterCategoryMap, setFilterCategoryMap] = useState<
+        Record<string, FilterCategory>
+    >({});
+
+    const anyEnabledFilter = useMemo(
+        () =>
+            Object.values(filterCategoryMap).some(
+                (category) => category.enabled,
+            ),
+        [filterCategoryMap],
+    );
+
+    /**
+     * TODO: REPLACE WITH A CALL TO THE BACKEND
+     */
+    const getClientBlocks = async () => {
+        // runPixelTwo('1+1').then((res) => {
+        setClientBlock(CLIENT_BLOCKS_MENU);
+        // });
+    };
+
+    useEffect(() => {
+        if (mode === 'CLIENT') {
+            getClientBlocks();
+        }
+    }, [mode]);
+
     const sortedItems = useMemo(() => {
+        // Use Client Block when mode is CLIENT otherwise use items from the props
+        const dataToProcess = mode === 'CLIENT' ? clientBlock : items;
         const sectionRecord: Record<string, DesignerMenuItem[]> = {};
 
         // Group items by section
-        items.forEach((item) => {
+        dataToProcess.forEach((item) => {
             const currentSection = item.section ?? defaultSection;
             if (!sectionRecord[currentSection])
                 sectionRecord[currentSection] = [];
@@ -118,18 +154,59 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                 a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
             );
         }).filter((section) => section.length > 0);
-    }, [items, SECTION_ORDER]);
+    }, [items, mode, clientBlock, SECTION_ORDER]);
 
     // get the rendered items
     const renderedItems: DesignerMenuItem[][] = useMemo(() => {
+        // calculate whether any sections are being filtered
+        const anySectionFilter = Object.values(filterCategoryMap).some(
+            (filter) => filter.type === 'SECTION' && filter.enabled,
+        );
+
+        // room to improve this logic in the future, but for now just keep 6 most used blocks
+        const localStorageMap: Record<string, BlockLocalStorageData> =
+            JSON.parse(localStorage.getItem('blocks--frequently-used')) ?? {};
+        const mostUsedSet = Object.values(localStorageMap)
+            .filter((item) => item.use_count)
+            .sort((a, b) => a.use_count - b.use_count)
+            .slice(0, 6)
+            .reduce((acc, curr) => {
+                acc.add(curr.widget);
+                return acc;
+            }, new Set<string>());
+
+        // filter out sections
+        const selectSectionItems = (
+            sectionItems: DesignerMenuItem[],
+        ): DesignerMenuItem[] => {
+            if (filterCategoryMap[sectionItems[0].section]?.enabled) {
+                // this section is a selected filter; show all of its items
+                return sectionItems;
+            } else if (filterCategoryMap['Most Used Components']?.enabled) {
+                // "Most Used Components" is enabled; return this section's items if they are in most used
+                return sectionItems.filter((item) =>
+                    mostUsedSet.has(item.json.widget),
+                );
+            } else if (anySectionFilter) {
+                // There are section filters applied, but this section is not selected, return nothing
+                return [];
+            } else {
+                // There are no filters applied, return everything
+                return sectionItems;
+            }
+        };
+        const filteredItems = sortedItems
+            .map(selectSectionItems)
+            .filter((sectionItems) => sectionItems.length);
+
         if (!search) {
-            return sortedItems;
+            return filteredItems;
         }
 
         const s = search.replace(/[^a-z0-9]/gi, '').toLowerCase();
 
         return (
-            sortedItems
+            filteredItems
                 .map((sectionItems) =>
                     // pattern match on s
                     sectionItems.filter((item) =>
@@ -142,7 +219,34 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                 // only include sections that have remaining blocks
                 .filter((sectionItems) => sectionItems.length)
         );
-    }, [sortedItems, search]);
+    }, [sortedItems, search, filterCategoryMap]);
+
+    useEffect(() => {
+        setFilterCategoryMap(() => {
+            const uniqueSectionMap = items.reduce((acc, curr) => {
+                acc[curr.section] = true;
+                return acc;
+            }, {});
+            const sortedSections = Object.keys(uniqueSectionMap).sort();
+            return sortedSections.reduce(
+                (acc, curr) => {
+                    acc[curr] = {
+                        id: curr,
+                        enabled: false,
+                        type: 'SECTION',
+                    } satisfies FilterCategory;
+                    return acc;
+                },
+                {
+                    'Most Used Components': {
+                        id: 'Most Used Components',
+                        enabled: false,
+                        type: 'MOST_USED_COMPONENTS',
+                    } satisfies FilterCategory,
+                },
+            );
+        });
+    }, [items]);
 
     return (
         <Panel>
@@ -152,17 +256,44 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                 </StyledTitle>
                 <Stack paddingTop={2} paddingLeft={2} paddingRight={2}>
                     <TextField
-                        // TODO: start + end icons
                         placeholder="Search Components"
                         size="small"
                         fullWidth
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Search />
+                                </InputAdornment>
+                            ),
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        size="small"
+                                        onClick={(e) =>
+                                            setMenuAnchorEl(e.currentTarget)
+                                        }
+                                    >
+                                        <Badge
+                                            variant="dot"
+                                            invisible={!anyEnabledFilter}
+                                            color="primary"
+                                        >
+                                            <Tune />
+                                        </Badge>
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        }}
                     />
-                    {/* <StyledToggleTabsGroup
+                    <StyledToggleTabsGroup
                         value={mode}
                         onChange={(e: React.SyntheticEvent, val) => {
                             setMode(val as MODE);
+                            if (val === 'CLIENT') {
+                                getClientBlocks();
+                            }
                         }}
                     >
                         <StyledToggleTabsGroupItem
@@ -172,17 +303,10 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                         <StyledToggleTabsGroupItem
                             label="Client Blocks"
                             value={'CLIENT'}
-                            disabled={true}
-                            />
-                    </StyledToggleTabsGroup> */}
-                    {/* 
-                    // TODO: Coming next, asked van buren to
-                    // start looking at how to incorporate groupings,
-                    // if not done by 2/19/25, will take it over 
-                    */}
+                        />
+                    </StyledToggleTabsGroup>
                 </Stack>
 
-                {/* TODO: Two Different Menus: Client and System */}
                 {renderedItems.length ? (
                     <StyledMenu>
                         {renderedItems.map((sectionItems, index) => (
@@ -231,6 +355,12 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                     </Stack>
                 )}
             </Stack>
+            <BlocksMenuPanelFilterMenu
+                anchorEl={menuAnchorEl}
+                onClose={() => setMenuAnchorEl(null)}
+                categoryMap={filterCategoryMap}
+                setCategoryMap={setFilterCategoryMap}
+            />
         </Panel>
     );
 });

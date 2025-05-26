@@ -1,5 +1,9 @@
 import React, { useCallback, useState } from "react";
-import { Backdrop, CircularProgress, Typography, Stack } from "../../";
+
+import { Backdrop } from "../Backdrop";
+import { CircularProgress } from "../CircularProgress";
+import { Typography } from "../Typography";
+import { Stack } from "../Stack";
 
 import { LoadingScreenContext } from "./LoadingScreenContext";
 

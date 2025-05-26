@@ -1,7 +1,7 @@
 import { BlockDef } from "../../store";
-import { ListenerSettings } from "../block-settings";
-import { FontSizeSettings } from "../block-settings/custom/FontSizeSettings";
+import { ListenerSettings, QueryInputSettings } from "../block-settings";
 import { SizeSettings } from "../block-settings/shared/SizeSettings";
+import { SizeSpacingSettings } from "../block-settings/custom/SizeSpacingSettings";
 import { ColorSettings } from "../block-settings/shared/ColorSettings";
 import { BorderSettings } from "../block-settings/custom/BorderSettings";
 import { ButtonGroupSettings } from "../block-settings/shared/ButtonGroupSettings";
@@ -17,6 +17,7 @@ import {
     FormatAlignRight,
     FormatBold,
     FormatItalic,
+    RestartAlt,
     FormatUnderlined,
     VerticalAlignBottom,
     VerticalAlignCenter,
@@ -24,7 +25,14 @@ import {
 } from "@mui/icons-material";
 import { DistinctPathButtonGroupSettings } from "../block-settings/shared/DistinctPathButtonGroupSettings";
 import { SelectInputSettings } from "../block-settings/shared/SelectInputSettings";
+import { useBlocks } from "../../hooks";
+import {
+    DEFAULT_TRUE_VARIABLE,
+    DEFAULT_FALSE_VARIABLE,
+} from "./block-defaults.constants";
 
+const trueSegment = DEFAULT_TRUE_VARIABLE;
+const falseSegment = DEFAULT_FALSE_VARIABLE;
 /**
  * Build the Layout Section
  */
@@ -176,13 +184,21 @@ export const buildSpacingSection = () => ({
         {
             description: "Margin",
             render: ({ id }) => (
-                <SizeSettings id={id} label="Margin" path="style.margin" />
+                <SizeSpacingSettings
+                    id={id}
+                    label="Margin"
+                    path="style.margin"
+                />
             ),
         },
         {
             description: "Padding",
             render: ({ id }) => (
-                <SizeSettings id={id} label="Padding" path="style.padding" />
+                <SizeSpacingSettings
+                    id={id}
+                    label="Padding"
+                    path="style.padding"
+                />
             ),
         },
     ],
@@ -243,6 +259,24 @@ export const buildColorSection = () => ({
                 />
             ),
         },
+        {
+            description: "Reset Background Color",
+            render: ({ id }) => (
+                <ButtonGroupSettings
+                    id={id}
+                    path="style.backgroundColor"
+                    label="Reset Color"
+                    options={[
+                        {
+                            value: "#FFFFFF00",
+                            icon: RestartAlt,
+                            title: "Reset",
+                            isDefault: true,
+                        },
+                    ]}
+                />
+            ),
+        },
     ],
 });
 
@@ -264,6 +298,109 @@ export const buildBorderSection = () => ({
                     id={id}
                     label="Border Radius"
                     path="style.border-radius"
+                />
+            ),
+        },
+    ],
+});
+
+/**
+ * Build the Position Section
+ * @returns a position section
+ */
+export const buildPositionSection = () => ({
+    name: "Position",
+    children: [
+        {
+            description: "Position",
+            render: ({ id }) => (
+                <SelectInputSettings
+                    id={id}
+                    path="style.position"
+                    label="Position"
+                    options={[
+                        { value: "static", display: "Static" },
+                        { value: "relative", display: "Relative" },
+                        { value: "absolute", display: "Absolute" },
+                        { value: "fixed", display: "Fixed" },
+                        { value: "sticky", display: "Sticky" },
+                    ]}
+                />
+            ),
+        },
+        {
+            description: "Top",
+            render: ({ id }) => (
+                <SizeSettings id={id} label="Top" path="style.top" />
+            ),
+        },
+        {
+            description: "Z-Index",
+            render: ({ id }) => (
+                <SizeSettings id={id} label="Z-Index" path="style.zIndex" />
+            ),
+        },
+        {
+            description: "Display",
+            render: ({ id }) => (
+                <SelectInputSettings
+                    id={id}
+                    path="style.display"
+                    label="Display"
+                    options={[
+                        { value: "block", display: "Block" },
+                        { value: "inline", display: "Inline" },
+                        { value: "inline-block", display: "Inline Block" },
+                        { value: "flex", display: "Flex" },
+                        { value: "grid", display: "Grid" },
+                        { value: "none", display: "None" },
+                    ]}
+                />
+            ),
+        },
+        {
+            description: "Align Items",
+            render: ({ id }) => (
+                <ButtonGroupSettings
+                    id={id}
+                    path="style.alignItems"
+                    label="Align Items"
+                    options={[
+                        {
+                            value: "flex-start",
+                            icon: AlignHorizontalLeft,
+                            title: "Start",
+                            isDefault: false,
+                        },
+                        {
+                            value: "center",
+                            icon: AlignHorizontalCenter,
+                            title: "Center",
+                            isDefault: false,
+                        },
+                        {
+                            value: "flex-end",
+                            icon: AlignHorizontalRight,
+                            title: "End",
+                            isDefault: false,
+                        },
+                    ]}
+                />
+            ),
+        },
+        {
+            description: "Overflow",
+            render: ({ id }) => (
+                <SelectInputSettings
+                    id={id}
+                    path="style.overflow"
+                    label="Overflow"
+                    options={[
+                        { value: "visible", display: "Visible" },
+                        { value: "hidden", display: "Hidden" },
+                        { value: "scroll", display: "Scroll" },
+                        { value: "auto", display: "Auto", isDefault: true },
+                    ]}
                 />
             ),
         },
@@ -362,5 +499,63 @@ export const buildListener = <D extends BlockDef = BlockDef>(
     {
         description: trigger,
         render: ({ id }) => <ListenerSettings id={id} listener={trigger} />,
+    },
+];
+
+/**
+ * get show field optionslist which will contain static true false, dynamic variables list when the block is selected
+ */
+export function getShowFieldOptions(id: string) {
+    const { state } = useBlocks();
+    const stateVariableList = Object.keys(state.variables).reduce(
+        (acc, queryKey) => {
+            if (
+                state.variables[queryKey].type === "query" ||
+                state.variables[queryKey].type === "cell" ||
+                state.variables[queryKey].type === "block"
+            ) {
+                return [
+                    ...acc,
+                    {
+                        value: `{{${queryKey}}}`,
+                        display: queryKey,
+                    },
+                ];
+            } else {
+                return [...acc];
+            }
+        },
+        [],
+    );
+    return [
+        {
+            value: "true",
+            display: "True",
+        },
+        {
+            value: "false",
+            display: "False",
+        },
+        ...stateVariableList,
+    ];
+}
+
+/**
+ * Show field for the block which contains both static true & false, with other variables and send the field
+ */
+export const buildShowField = <D extends BlockDef = BlockDef>() => [
+    {
+        description: "Show Block",
+        render: ({ id }) => (
+            <QueryInputSettings
+                id={id}
+                label="Show Block"
+                path="show"
+                defaultPathMap={{
+                    ...trueSegment,
+                    ...falseSegment,
+                }}
+            />
+        ),
     },
 ];

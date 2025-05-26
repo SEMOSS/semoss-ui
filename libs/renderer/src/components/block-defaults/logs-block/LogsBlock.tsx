@@ -1,23 +1,36 @@
 // QueriesLogBlock.tsx
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { Stack, Typography } from "@mui/material";
 import { useBlock, useBlocks } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 
 export interface LogsBlockDef extends BlockDef<"logs"> {
     widget: "logs";
     data: {
         style: CSSProperties;
         queryId: string;
+        show: string;
+    };
+    listeners: {
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
 export const LogsBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data } = useBlock<LogsBlockDef>(id);
+    const { attrs, data, listeners } = useBlock<LogsBlockDef>(id);
     const { state } = useBlocks();
 
     const query = state.getQuery(data.queryId);
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
 
     if (!query) {
         return (
