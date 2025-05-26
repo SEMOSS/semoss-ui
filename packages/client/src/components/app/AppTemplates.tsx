@@ -63,6 +63,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: theme.spacing(2),
+    justifyContent: 'space-between',
 }));
 
 const StyledChipContainer = styled('div')(({ theme }) => ({
