@@ -1,9 +1,10 @@
-import { CSSProperties, useEffect } from "react";
+import { CSSProperties, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 
-import { useBlock } from "../../../hooks";
+import { useBlock, useBlocks, useBlockSettings } from "../../../hooks";
 import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
-import { Box, styled, Typography } from "@semoss/ui";
+import { Box, styled, Typography, useNotification } from "@semoss/ui";
+import FilterComponent from "./FilterComponent";
 
 const FilterContainer = styled(Box)(({ theme }) => ({
     display: "flex",
@@ -34,16 +35,27 @@ const FilterBody = styled(Box)(({ theme }) => ({
     alignItems: "center",
     justifyContent: "center",
     padding: theme.spacing(1.25),
+    width: "100%",
+    height: "100%",
 }));
-export interface VisualizationFilterBlockDef extends BlockDef<"visualization-filter"> {
+export interface VisualizationFilterBlockDef
+    extends BlockDef<"visualization-filter"> {
     widget: "visualization-filter";
     data: {
         style: CSSProperties;
-        displayType: string,
-        frame: string,
-        column: string,
-        filterType: string,
+        displayType: string;
+        frame: string;
+        column: string;
+        showPanelTitle: boolean;
+        searchable: boolean;
+        multipleSelection: boolean;
         show: string;
+        filterLabel: string;
+        sliderSensitivity: number;
+        listOptions: string[];
+        selectedValues: string[];
+        color: "secondary" | "primary" | "success" | "warning" | "error";
+        size: "small" | "medium" | "large";
     };
     listeners: {
         preProcess: {
@@ -53,15 +65,71 @@ export interface VisualizationFilterBlockDef extends BlockDef<"visualization-fil
     };
 }
 
-
 export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, listeners } = useBlock<VisualizationFilterBlockDef>(id);
+    const { attrs, data, listeners } =
+        useBlock<VisualizationFilterBlockDef>(id);
+    const { setData } = useBlockSettings<VisualizationFilterBlockDef>(id);
+    const notification = useNotification();
+    const { state } = useBlocks();
+    const blocks = state.blocks;
     useEffect(() => {
         if (listeners.preProcess) {
             listeners.preProcess();
         }
-        console.log("data", data)
     }, [data]);
+
+    const mode = data.displayType.toLowerCase();
+    const handleApply = async (selected) => {
+        // Update the selected values in the block's data
+        setData("selectedValues", selected);
+
+        // Convert the selected string values to numbers
+        const selectedNumbers = selected.map((s) => parseInt(s, 10));
+
+        // Create a string representation of the selected numbers array
+        const valuesString = `[${selectedNumbers}]`;
+
+        try {
+            // Construct the command to set a filter on the frame based on the selected column and values
+            const pixelCommand = `META | ${data.frame} | SetFrameFilter(((${data.column} == ${valuesString})));`;
+
+            // Execute the command as a side effect in the application state
+            const response = await state.runSideEffect(pixelCommand);
+        } catch (error) {
+            // If an error occurs, notify the user with an error message
+            notification.add({
+                color: "error",
+                message:
+                    "Invalid response or errors found while applying the filter.",
+            });
+        }
+    };
+
+    /**
+     * Handle the reset of the filter values in the block's data
+     * and the unfiltering of the frame in the application state.
+     * This function is called when the user clicks the "Reset" button
+     * on the filter component.
+     */
+    const handleReset = async () => {
+        // Update the block's data by removing any selected values
+        setData("selectedValues", []);
+
+        // Construct the command to unfilter the frame in the application state
+        const pixelCommand = `META | UnfilterFrame(${data.frame});`;
+
+        try {
+            // Execute the command as a side effect in the application state
+            const response = await state.runSideEffect(pixelCommand);
+        } catch (error) {
+            // If an error occurs, notify the user with an error message
+            notification.add({
+                color: "error",
+                message:
+                    "Invalid response or errors found while fetching options.",
+            });
+        }
+    };
     return (
         <div
             style={{
@@ -71,10 +139,31 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
         >
             <FilterContainer>
                 <FilterHeader>
-                    <Typography variant="subtitle1">Vizualization filter</Typography>
+                    <Typography variant="subtitle1">
+                        {data.showPanelTitle ? "Filter by " + data.column : ""}
+                    </Typography>
                 </FilterHeader>
                 <FilterBody>
-                    <Typography variant="body2" color="secondary">Select data to display filter results</Typography>
+                    <FilterComponent
+                        key={JSON.stringify(data)}
+                        mode={mode}
+                        listOptions={
+                            data.displayType === "Multiselect"
+                                ? data.selectedValues.length > 0
+                                    ? data.selectedValues
+                                    : data.listOptions
+                                : data.listOptions
+                        }
+                        multi={data.multipleSelection}
+                        showSearch={data.searchable}
+                        checkedValues={data.selectedValues}
+                        onApply={handleApply}
+                        filterLabel={data.filterLabel}
+                        sliderSensitivity={data.sliderSensitivity}
+                        onReset={handleReset}
+                        color={data.color}
+                        size={data.size}
+                    />
                 </FilterBody>
             </FilterContainer>
         </div>

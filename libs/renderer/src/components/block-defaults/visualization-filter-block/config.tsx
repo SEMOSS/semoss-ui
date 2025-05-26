@@ -1,5 +1,8 @@
 import { BlockConfig } from "../../../store";
-import {VisualizationFilterBlockDef, VisualizationFilterBlock} from './VisualizationFilterBlock';
+import {
+    VisualizationFilterBlockDef,
+    VisualizationFilterBlock,
+} from "./VisualizationFilterBlock";
 import { BLOCK_TYPE_CHART } from "../block-defaults.constants";
 import { VisualizationFilterMenu } from "./VisualizationFilterMenu";
 
@@ -17,8 +20,16 @@ export const config: BlockConfig<VisualizationFilterBlockDef> = {
         displayType: "",
         frame: "",
         column: "",
-        filterType: "",
+        showPanelTitle: false,
+        searchable: false,
+        multipleSelection: false,
         show: "true",
+        filterLabel: "",
+        sliderSensitivity: 0,
+        listOptions: [],
+        selectedValues: [],
+        color: "secondary",
+        size: "medium",
     },
     listeners: {
         preProcess: {
@@ -29,37 +40,5 @@ export const config: BlockConfig<VisualizationFilterBlockDef> = {
     slots: {},
     render: VisualizationFilterBlock,
     icon: Link,
-    // contentMenu: [
-    //     {
-    //         name: "General",
-    //         children: [
-    //             {
-    //                 description: "Text",
-    //                 render: ({ id }) => (
-    //                     <InputSettings id={id} label="Text" path="text" />
-    //                 ),
-    //             },
-    //             {
-    //                 description: "Destination",
-    //                 render: ({ id }) => (
-    //                     <InputSettings
-    //                     id={id}
-    //                     label="Destination"
-    //                     path="href"
-    //                     />
-    //                 ),
-    //             },
-    //         ],
-    //     },
-    //     {
-    //         name: "Conditional",
-    //         children: [...buildShowField()],
-    //     },
-    //     {
-    //         name: "Pre Process",
-    //         children: [...buildListener("preProcess")],
-    //     },
-    // ],
-    // styleMenu: [buildTypographySection(), buildTextAlignSection()],
-    menu: VisualizationFilterMenu
+    menu: VisualizationFilterMenu,
 };
