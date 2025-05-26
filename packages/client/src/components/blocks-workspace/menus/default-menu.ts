@@ -89,9 +89,12 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 style: {
                     display: 'flex',
                     flexDirection: 'column',
+                    padding: '16px',
                 },
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {
                 children: [
                     {
@@ -100,13 +103,16 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                             style: {
                                 borderBottom: '1px solid #ccc',
                                 borderRadius: '0',
+                                padding: '16px',
                             },
                             triggerBgColor: '',
                             contentBgColor: '',
                             showExpandIcon: false,
                             show: 'true',
                         },
-                        listeners: {},
+                        listeners: {
+                            preProcess: { type: 'sync', order: [] },
+                        },
                         slots: {
                             header: [
                                 {
@@ -116,32 +122,41 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                             display: 'flex',
                                             flexDirection: 'row',
                                             alignItems: 'center',
+                                            padding: '16px',
                                             gap: '30%',
                                         },
                                     },
-                                    listeners: {},
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
                                     slots: {
                                         children: [
                                             {
                                                 widget: 'text',
                                                 data: {
                                                     style: {
-                                                        padding: '20px',
                                                         whiteSpace: 'pre-line',
                                                         textOverflow:
                                                             'ellipsis',
+                                                        padding: '16px',
                                                     },
                                                     text: 'Accordion 1',
                                                     variant: 'p',
                                                     show: 'true',
                                                 },
-                                                listeners: {},
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
                                                 slots: {},
                                             },
                                             {
                                                 widget: 'text',
                                                 data: {
                                                     style: {
+                                                        padding: '16px',
                                                         whiteSpace: 'pre-line',
                                                         textOverflow:
                                                             'ellipsis',
@@ -152,7 +167,12 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                                     variant: 'h4',
                                                     show: 'true',
                                                 },
-                                                listeners: {},
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
                                                 slots: {},
                                             },
                                         ],
@@ -169,14 +189,17 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                             gap: '18px',
                                         },
                                     },
-                                    listeners: {},
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
                                     slots: {
                                         children: [
                                             {
                                                 widget: 'text',
                                                 data: {
                                                     style: {
-                                                        padding: '20px',
+                                                        padding: '16px',
+                                                        paddingTop: '8px',
                                                         whiteSpace: 'pre-line',
                                                         textOverflow:
                                                             'ellipsis',
@@ -185,7 +208,12 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                                     variant: 'p',
                                                     show: 'true',
                                                 },
-                                                listeners: {},
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
                                                 slots: {},
                                             },
                                         ],
@@ -199,13 +227,16 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                         data: {
                             style: {
                                 borderBottom: '1px solid #ccc',
+                                padding: '16px',
                             },
                             triggerBgColor: '',
                             contentBgColor: '',
                             showExpandIcon: false,
                             show: 'true',
                         },
-                        listeners: {},
+                        listeners: {
+                            preProcess: { type: 'sync', order: [] },
+                        },
                         slots: {
                             header: [
                                 {
@@ -216,16 +247,19 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                             flexDirection: 'row',
                                             alignItems: 'center',
                                             gap: '30%',
+                                            padding: '16px',
                                         },
                                     },
-                                    listeners: {},
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
                                     slots: {
                                         children: [
                                             {
                                                 widget: 'text',
                                                 data: {
                                                     style: {
-                                                        padding: '20px',
+                                                        padding: '16px',
                                                         whiteSpace: 'pre-line',
                                                         textOverflow:
                                                             'ellipsis',
@@ -234,7 +268,12 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                                     variant: 'p',
                                                     show: 'true',
                                                 },
-                                                listeners: {},
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
                                                 slots: {},
                                             },
                                             {
@@ -246,12 +285,18 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                                             'ellipsis',
                                                         color: '#9c9696',
                                                         fontWeight: 'normal',
+                                                        padding: '16px',
                                                     },
                                                     text: 'I am an accordion',
                                                     variant: 'h4',
                                                     show: 'true',
                                                 },
-                                                listeners: {},
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
                                                 slots: {},
                                             },
                                         ],
@@ -266,16 +311,20 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                             display: 'flex',
                                             flexDirection: 'row',
                                             gap: '18px',
+                                            padding: '16px',
                                         },
                                     },
-                                    listeners: {},
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
                                     slots: {
                                         children: [
                                             {
                                                 widget: 'text',
                                                 data: {
                                                     style: {
-                                                        padding: '20px',
+                                                        padding: '16px',
+                                                        paddingTop: '8px',
                                                         whiteSpace: 'pre-line',
                                                         textOverflow:
                                                             'ellipsis',
@@ -284,7 +333,12 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                                     variant: 'p',
                                                     show: 'true',
                                                 },
-                                                listeners: {},
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
                                                 slots: {},
                                             },
                                         ],
@@ -298,13 +352,16 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                         data: {
                             style: {
                                 borderBottom: '1px solid #ccc',
+                                padding: '16px',
                             },
                             triggerBgColor: '',
                             contentBgColor: '',
                             showExpandIcon: false,
                             show: 'true',
                         },
-                        listeners: {},
+                        listeners: {
+                            preProcess: { type: 'sync', order: [] },
+                        },
                         slots: {
                             header: [
                                 {
@@ -315,16 +372,19 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                             flexDirection: 'row',
                                             alignItems: 'center',
                                             gap: '30%',
+                                            padding: '16px',
                                         },
                                     },
-                                    listeners: {},
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
                                     slots: {
                                         children: [
                                             {
                                                 widget: 'text',
                                                 data: {
                                                     style: {
-                                                        padding: '20px',
+                                                        padding: '16px',
                                                         whiteSpace: 'pre-line',
                                                         textOverflow:
                                                             'ellipsis',
@@ -333,7 +393,12 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                                     variant: 'p',
                                                     show: 'true',
                                                 },
-                                                listeners: {},
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
                                                 slots: {},
                                             },
                                             {
@@ -345,12 +410,18 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                                             'ellipsis',
                                                         color: '#9c9696',
                                                         fontWeight: 'normal',
+                                                        padding: '16px',
                                                     },
                                                     text: 'I am an accordion',
                                                     variant: 'h4',
                                                     show: 'true',
                                                 },
-                                                listeners: {},
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
                                                 slots: {},
                                             },
                                         ],
@@ -365,16 +436,20 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                             display: 'flex',
                                             flexDirection: 'row',
                                             gap: '18px',
+                                            padding: '16px',
                                         },
                                     },
-                                    listeners: {},
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
                                     slots: {
                                         children: [
                                             {
                                                 widget: 'text',
                                                 data: {
                                                     style: {
-                                                        padding: '20px',
+                                                        padding: '16px',
+                                                        paddingTop: '8px',
                                                         whiteSpace: 'pre-line',
                                                         textOverflow:
                                                             'ellipsis',
@@ -383,7 +458,12 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                                     variant: 'p',
                                                     show: 'true',
                                                 },
-                                                listeners: {},
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
                                                 slots: {},
                                             },
                                         ],
