@@ -13,6 +13,8 @@ import { ErrorBoundary } from '@/components/common';
 import { ENGINE_ROUTES } from '@/pages/engine';
 import { ErrorPage } from './ErrorPage';
 import { PlatformMessages } from './PlatformMessages';
+import { useRootStore } from '@/hooks';
+import { useEffect, useState } from 'react';
 
 const NAV_HEIGHT = '48px';
 const SIDEBAR_WIDTH = '56px';
@@ -81,48 +83,65 @@ const StyledContent = styled('div')(() => ({
  */
 export const NavigatorLayout = observer(() => {
     const { pathname } = useLocation();
+    const { configStore } = useRootStore();
+    const [viewSidebar, setViewSidebar] = useState(false);
+
+    useEffect(() => {
+        if (configStore.store.user.admin) {
+            setViewSidebar(true);
+        } else if (
+            !configStore.store.user.admin &&
+            !configStore.store.config.adminOnlyViewMenuBarFlag
+        ) {
+            setViewSidebar(true);
+        }
+    }, [
+        configStore.store.user.admin,
+        configStore.store.config.adminOnlyViewMenuBarFlag,
+    ]);
 
     return (
         <ErrorBoundary fallback={<ErrorPage />}>
             <Navbar />
-            <StyledSidebar>
-                <Tooltip title={`Open App Library`} placement="right">
-                    <StyledSidebarItem
-                        data-tour="nav-app-library"
-                        to={'/'}
-                        selected={
-                            !!matchPath('', pathname) ||
-                            !!matchPath('app/*', pathname)
-                        }
-                        aria-label={'Navigate to app library'}
-                    >
-                        <Icon>
-                            <LibraryBooksOutlined />
-                        </Icon>
-                    </StyledSidebarItem>
-                </Tooltip>
-                <StyledSidebarDivider />
-                {ENGINE_ROUTES.map((r) => (
-                    <Tooltip
-                        title={`Open ${r.name}`}
-                        key={r.path}
-                        placement="right"
-                    >
+            {viewSidebar && (
+                <StyledSidebar>
+                    <Tooltip title={`Open App Library`} placement="right">
                         <StyledSidebarItem
-                            data-testid={`${r.name}-icon`}
-                            // id={`${r.name}-icon`}
-                            data-tour={`nav-engine-${r.path}`}
-                            to={`/engine/${r.path}`}
+                            data-tour="nav-app-library"
+                            to={'/'}
                             selected={
-                                !!matchPath(`engine/${r.path}/*`, pathname)
+                                !!matchPath('', pathname) ||
+                                !!matchPath('app/*', pathname)
                             }
-                            aria-label={`Navigate to ${r.name}`}
+                            aria-label={'Navigate to app library'}
                         >
-                            <Icon>{createElement(r.icon, {})}</Icon>
+                            <Icon>
+                                <LibraryBooksOutlined />
+                            </Icon>
                         </StyledSidebarItem>
                     </Tooltip>
-                ))}
-                {/* <Tooltip title={`Open Prompt Hub`} placement="right">
+                    <StyledSidebarDivider />
+                    {ENGINE_ROUTES.map((r) => (
+                        <Tooltip
+                            title={`Open ${r.name}`}
+                            key={r.path}
+                            placement="right"
+                        >
+                            <StyledSidebarItem
+                                data-testid={`${r.name}-icon`}
+                                // id={`${r.name}-icon`}
+                                data-tour={`nav-engine-${r.path}`}
+                                to={`/engine/${r.path}`}
+                                selected={
+                                    !!matchPath(`engine/${r.path}/*`, pathname)
+                                }
+                                aria-label={`Navigate to ${r.name}`}
+                            >
+                                <Icon>{createElement(r.icon, {})}</Icon>
+                            </StyledSidebarItem>
+                        </Tooltip>
+                    ))}
+                    {/* <Tooltip title={`Open Prompt Hub`} placement="right">
                     <StyledSidebarItem
                         to={'/prompt'}
                         selected={!!matchPath('prompt/*', pathname)}
@@ -133,19 +152,20 @@ export const NavigatorLayout = observer(() => {
                         </Icon>
                     </StyledSidebarItem>
                 </Tooltip> */}
-                <Stack flex={1}>&nbsp;</Stack>
-                <Tooltip title={`Open Settings`} placement="right">
-                    <StyledSidebarItem
-                        to={'/settings'}
-                        selected={!!matchPath('settings/*', pathname)}
-                        aria-label={'Navigate to settings'}
-                    >
-                        <Icon>
-                            <Settings data-testid="Settings-icon" />
-                        </Icon>
-                    </StyledSidebarItem>
-                </Tooltip>
-            </StyledSidebar>
+                    <Stack flex={1}>&nbsp;</Stack>
+                    <Tooltip title={`Open Settings`} placement="right">
+                        <StyledSidebarItem
+                            to={'/settings'}
+                            selected={!!matchPath('settings/*', pathname)}
+                            aria-label={'Navigate to settings'}
+                        >
+                            <Icon>
+                                <Settings data-testid="Settings-icon" />
+                            </Icon>
+                        </StyledSidebarItem>
+                    </Tooltip>
+                </StyledSidebar>
+            )}
             <StyledContent>
                 <PlatformMessages platformAssist={true}>
                     <Outlet />
