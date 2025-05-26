@@ -171,7 +171,7 @@ export function JobsPage() {
                     color: 'success',
                     message:
                         jobId.length > 1 && jobGroup.length > 1
-                            ? `Successfully deleted all selected files`
+                            ? `Successfully deleted all selected jobs`
                             : `Successfully deleted ${type}`,
                 });
                 jobId.length > 1 && jobGroup.length > 1
