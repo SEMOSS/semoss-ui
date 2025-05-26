@@ -203,38 +203,67 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
         setSearch('');
     }, [open]);
 
-    useEffect(() => {
-        if (!open || type !== 'APP') return;
+   useEffect(() => {
+        if (!open) return;
 
         let cancelled = false;
         setSearchLoading(true);
-        const fetchProjectUsers = async () => {
+
+        const fetchUsers = async () => {
             try {
-                const [noCred, cred] = await Promise.all([
-                    monolithStore.getProjectUsersNoCredentials(
-                        adminMode,
-                        id,
-                        AUTOCOMPLETE_LIMIT,
-                        offset,
-                        debouncedSearch || '',
-                    ),
-                    monolithStore.getProjectUsers(
-                        adminMode,
-                        id,
-                        debouncedSearch || '',
-                        '', // permission
-                        offset,
-                        AUTOCOMPLETE_LIMIT,
-                    ),
-                ]);
-                const all = [...(noCred?.data || []), ...(cred?.members || [])];
+                let all = [];
+                if (type === 'APP') {
+                    const [noCred, cred] = await Promise.all([
+                        monolithStore.getProjectUsersNoCredentials(
+                            adminMode,
+                            id,
+                            AUTOCOMPLETE_LIMIT,
+                            offset,
+                            debouncedSearch || '',
+                        ),
+                        monolithStore.getProjectUsers(
+                            adminMode,
+                            id,
+                            debouncedSearch || '',
+                            '', // permission
+                            offset,
+                            AUTOCOMPLETE_LIMIT,
+                        ),
+                    ]);
+                    all = [...(noCred?.data || []), ...(cred?.members || [])];
+                } else if (
+                    type === 'DATABASE' ||
+                    type === 'STORAGE' ||
+                    type === 'MODEL' ||
+                    type === 'VECTOR' ||
+                    type === 'FUNCTION'
+                ) {
+                    const [noCred, cred] = await Promise.all([
+                        monolithStore.getEngineUsersNoCredentials(
+                            adminMode,
+                            id,
+                            AUTOCOMPLETE_LIMIT,
+                            offset,
+                            debouncedSearch || '',
+                        ),
+                        monolithStore.getEngineUsers(
+                            adminMode,
+                            id,
+                            debouncedSearch || '',
+                            '', // permission
+                            offset,
+                            AUTOCOMPLETE_LIMIT,
+                        ),
+                    ]);
+                    all = [...(noCred?.data || []), ...(cred?.members || [])];
+                } else {
+                    setSearchLoading(false);
+                    return;
+                }
+
                 if (!cancelled) {
-                    if (all.length < AUTOCOMPLETE_LIMIT)
-                        setInfiniteOn(false);
-                    if (
-                        renderedMembers.length >= AUTOCOMPLETE_LIMIT &&
-                        offset > 0
-                    ) {
+                    if (all.length < AUTOCOMPLETE_LIMIT) setInfiniteOn(false);
+                    if (renderedMembers.length >= AUTOCOMPLETE_LIMIT && offset > 0) {
                         setRenderedMembers((prev) => [...prev, ...all]);
                     } else {
                         setRenderedMembers(all);
@@ -252,79 +281,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
             }
         };
 
-        fetchProjectUsers();
-        return () => {
-            cancelled = true;
-        };
-        // eslint-disable-next-line
-    }, [open, debouncedSearch, offset, adminMode, id, type]);
-    // Fetch and combine members for engine types
-    useEffect(() => {
-        if (
-            !open ||
-            !(
-                type === 'DATABASE' ||
-                type === 'STORAGE' ||
-                type === 'MODEL' ||
-                type === 'VECTOR' ||
-                type === 'FUNCTION'
-            )
-        ) {
-            return;
-        }
-
-        let cancelled = false;
-        setSearchLoading(true);
-
-        const fetchEngineUsers = async () => {
-            try {
-                const [noCred, cred] = await Promise.all([
-                    monolithStore.getEngineUsersNoCredentials(
-                        adminMode,
-                        id,
-                        AUTOCOMPLETE_LIMIT,
-                        offset,
-                        debouncedSearch || '',
-                    ),
-                    monolithStore.getEngineUsers(
-                        adminMode,
-                        id,
-                        debouncedSearch || '',
-                        '', // permission
-                        offset,
-                        AUTOCOMPLETE_LIMIT,
-                    ),
-                ]);
-                const all = [...(noCred?.data || []), ...(cred?.members || [])];
-                if (!cancelled) {
-                    if (all.length < AUTOCOMPLETE_LIMIT)
-                        setInfiniteOn(false);
-                    if (
-                        renderedMembers.length >= AUTOCOMPLETE_LIMIT &&
-                        offset > 0
-                    ) {
-                        setRenderedMembers((prev) => [...prev, ...all]);
-                    } else {
-                        setRenderedMembers(all);
-                    }
-                    setSearchLoading(false);
-                }
-            } catch (e) {
-                if (!cancelled) {
-                    notification.add({
-                        color: 'error',
-                        message: String(e),
-                    });
-                    setSearchLoading(false);
-                }
-            }
-        };
-
-        fetchEngineUsers();
-        return () => {
-            cancelled = true;
-        };
-        // eslint-disable-next-line
+        fetchUsers();
     }, [open, debouncedSearch, offset, adminMode, id, type]);
 
     const isLoading = searchLoading;
