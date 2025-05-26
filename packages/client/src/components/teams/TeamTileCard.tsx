@@ -320,7 +320,8 @@ export const TeamTileCard = (props: TeamCardProps) => {
             return;
         }
         setIsLoading(true);
-        if (type === 'Custom') {
+
+        if (type === 'CUSTOM') {
             try {
                 const response = await monolithStore.getNonTeamUsers(
                     id,
@@ -447,7 +448,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                         // transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                     >
                         <MenuList>
-                            {type === 'Custom' && (
+                            {type === 'CUSTOM' && (
                                 <MenuItemTwo
                                     onClick={(e) => {
                                         e.stopPropagation();

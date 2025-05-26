@@ -325,12 +325,9 @@ export const TeamsSettingsPage = observer(() => {
                         if (team) {
                             const obj = {
                                 id: team.id,
+                                type: team.type,
                                 description: team.description,
                             };
-
-                            if (team.type != 'Custom') {
-                                obj['type'] = team.type;
-                            }
 
                             dispatch({
                                 type: 'field',

@@ -72,7 +72,7 @@ const StyledSelectItem = styled(Select.Item, {
     type: string;
 }>(({ theme, type }) => ({
     borderBottom:
-        type === 'Custom'
+        type === 'CUSTOM'
             ? '1px solid var(--Secondary-Border, #C4C4C4)'
             : 'none',
 }));
@@ -161,7 +161,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 
     const loginTypes = [
         {
-            provider: 'Custom',
+            provider: 'CUSTOM',
             name: 'Custom',
             description: 'Directly manage users in the team',
             isOauth: false,
@@ -225,10 +225,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                         {
                             state: {
                                 name: data.TEAM_NAME,
-                                type:
-                                    data.TEAM_TYPE !== 'Custom'
-                                        ? data.TEAM_TYPE
-                                        : undefined,
+                                type: data.TEAM_TYPE,
                             },
                         },
                     );
@@ -374,7 +371,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                                                 }
                                                 fullWidth={true}
                                             />
-                                            {selectedTeamType !== 'Custom' &&
+                                            {selectedTeamType !== 'CUSTOM' &&
                                             selectedTeamType !== '' ? (
                                                 <StyledContainer>
                                                     Must be the name of the
