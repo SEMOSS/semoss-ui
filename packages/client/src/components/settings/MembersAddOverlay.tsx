@@ -31,7 +31,6 @@ import { useAPI, useDebounceValue, useRootStore, useSettings } from '@/hooks';
 import { MembersAddOverlayUser } from './MembersAddOverlayUser';
 import { SETTINGS_ROLE } from './settings.types';
 import { permissionPriorityMapper } from '@/utility/general';
-import { has } from 'mobx';
 
 const StyledModal = styled(Modal.Content)(({ theme }) => ({
     maxWidth: '50rem',
@@ -229,19 +228,16 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                     ),
                 ]);
                 const all = [...(noCred?.data || []), ...(cred?.members || [])];
-                const unique = Array.from(
-                    new Map(all.map((u) => [u.id, u])).values(),
-                );
                 if (!cancelled) {
-                    if (unique.length < AUTOCOMPLETE_LIMIT)
+                    if (all.length < AUTOCOMPLETE_LIMIT)
                         setInfiniteOn(false);
                     if (
                         renderedMembers.length >= AUTOCOMPLETE_LIMIT &&
                         offset > 0
                     ) {
-                        setRenderedMembers((prev) => [...prev, ...unique]);
+                        setRenderedMembers((prev) => [...prev, ...all]);
                     } else {
-                        setRenderedMembers(unique);
+                        setRenderedMembers(all);
                     }
                     setSearchLoading(false);
                 }
@@ -300,19 +296,16 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                     ),
                 ]);
                 const all = [...(noCred?.data || []), ...(cred?.members || [])];
-                const unique = Array.from(
-                    new Map(all.map((u) => [u.id, u])).values(),
-                );
                 if (!cancelled) {
-                    if (unique.length < AUTOCOMPLETE_LIMIT)
+                    if (all.length < AUTOCOMPLETE_LIMIT)
                         setInfiniteOn(false);
                     if (
                         renderedMembers.length >= AUTOCOMPLETE_LIMIT &&
                         offset > 0
                     ) {
-                        setRenderedMembers((prev) => [...prev, ...unique]);
+                        setRenderedMembers((prev) => [...prev, ...all]);
                     } else {
-                        setRenderedMembers(unique);
+                        setRenderedMembers(all);
                     }
                     setSearchLoading(false);
                 }
@@ -420,9 +413,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 });
 
                 success = true;
-
-                // refresh the members
-                // getMembers.refresh();
 
                 onChange();
             } else {
