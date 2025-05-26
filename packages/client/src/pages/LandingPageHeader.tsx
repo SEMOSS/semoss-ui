@@ -292,7 +292,7 @@ const PlayGroundContainer = observer(() => {
                             letterSpacing: '0.15px',
                         }}
                     >
-                        Experiment in our Playground™️
+                        Experiment in our Playground&trade;
                     </Typography>
                     <StyledChip
                         variant="filled"
