@@ -23,6 +23,7 @@ import { SideNav } from '@/components/ui';
 import { Logo } from '@/assets/img/Logo';
 import playground from '@/assets/img/Playground.png';
 import AIConductor from '@/assets/img/AIConductor.png';
+import NavSection from './app/NavSection';
 
 const StyledBox = styled(Box)(({ theme }) => ({
     display: 'flex',
@@ -143,6 +144,7 @@ const StyledComponent = styled('div')(({ theme }) => ({
     flex: '1 0 0',
     alignSelf: 'stretch',
     width: '100%',
+    backgroundColor: '#FAFAFA',
 }));
 
 const StyledLeftSection = styled('div')(({ theme }) => ({
@@ -491,10 +493,28 @@ export const LandingPageHeader = () => {
                                 display: 'flex',
                                 width: '100%',
                                 gap: '24px',
+                                flexDirection: 'column',
                             }}
                         >
-                            <PlayGroundContainer />
-                            <AIConductorContainer />
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    gap: '24px',
+                                    flexGrow: 1,
+                                    flexDirection: 'row',
+                                }}
+                            >
+                                <PlayGroundContainer />
+                                <AIConductorContainer />
+                            </Box>
+                            <NavSection
+                                setupApp={(type) => {
+                                    console.log(
+                                        'setupApp called with type:',
+                                        type,
+                                    );
+                                }}
+                            />
                         </div>
                     </>
                 ) : (
