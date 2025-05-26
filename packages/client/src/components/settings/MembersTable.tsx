@@ -262,32 +262,36 @@ export const MembersTable = (props: MembersTableProps) => {
     const memberSearchRef = useRef(undefined);
 
     // get the api
-    const getMembersApi: Parameters<typeof useAPI>[0] =
-        type === 'DATABASE' ||
-        type === 'STORAGE' ||
-        type === 'MODEL' ||
-        type === 'VECTOR' ||
-        type === 'FUNCTION'
-            ? [
-                  'getEngineUsers',
-                  adminMode,
-                  id,
-                  debouncedSearch ? debouncedSearch : undefined,
-                  permissionPriorityMapper(permissionFilter)?.permission,
-                  (page + 1) * rowsPerPage - rowsPerPage, // offset
-                  rowsPerPage, // limit
-              ]
-            : type === 'APP'
-            ? [
-                  'getProjectUsers',
-                  adminMode,
-                  id,
-                  debouncedSearch ? debouncedSearch : undefined,
-                  permissionPriorityMapper(permissionFilter)?.permission,
-                  (page + 1) * rowsPerPage - rowsPerPage, // offset
-                  rowsPerPage, // limit
-              ]
-            : null;
+   let getUserDataApi: Parameters<typeof useAPI>[0] ;
+        if (type === 'APP') {
+            getUserDataApi = [
+                'getProjectUsers',
+                adminMode,
+                id,
+                configStore.store.user.id,
+                permissionPriorityMapper(permissionFilter)?.permission,
+                0, // offset
+                1, // limit
+            ];
+        } else if (
+            type === 'DATABASE' ||
+            type === 'STORAGE' ||
+            type === 'MODEL' ||
+            type === 'VECTOR' ||
+            type === 'FUNCTION'
+        ) {
+            getUserDataApi = [
+                'getEngineUsers',
+                adminMode,
+                id,
+                configStore.store.user.id,
+                permissionPriorityMapper(permissionFilter)?.permission,
+                0, // offset
+                1, // limit
+            ];
+        } else {
+            getUserDataApi = null;
+        }
     const getMembers = useAPI(getMembersApi);
 
     //Below UseEffect has been added so that search supersedes pagination , when the user goes to a different page and searches any user the pagination is set 0 and the user is being displayed.
