@@ -121,9 +121,10 @@ export const FrameOperations = observer(
         }, [frameHeaders]);
 
         useEffect(() => {
-            if (columnsSelector.length > 0 && temp) {
+            let filteredColumnsString = JSON.stringify(filteredColumns);
+            let columnsSelectorString = JSON.stringify(columnsSelector);
+            if (columnsSelector.length > 0 && filteredColumnsString !== columnsSelectorString) {
                 setFilteredColumns(columnsSelector);
-                setTemp(false);
             }
         }, [columnsSelector]);
 
@@ -205,7 +206,6 @@ export const FrameOperations = observer(
 
             const firstColumn = columnsDrop[0];
             const secondColumn = columnsDrop[1];
-
             let fieldsData = {
                 [firstColumn?.label]: [],
                 [secondColumn?.label]: [],

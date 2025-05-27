@@ -176,15 +176,22 @@ export const DataTabStyling = observer(
                 else {
                     value = data.option["_state"]?.["fields"]?.[chart[index].label];
                 }
-                const matchedColumns = columnsSelector.filter((column) =>
-                    value?.includes(column.name)
-                );
+                value = value ? (Array.isArray(value) ? value : [value]) : [];
+                let selectorsList = [];
+                let dataTypeList = [];
+                value.forEach(col => {
+                    let selector = columnsSelector.find(column => column.name === col);
+                    if(selector){
+                        selectorsList.push(selector.selector);
+                        dataTypeList.push(selector.dataType);
+                    }
+                });
                 return {
                     name: item.name,
                     label: item.label,
-                    values: value ? (Array.isArray(value) ? value : [value]) : [],
-                    selectors: matchedColumns.map((column) => column.selector),
-                    dataType: matchedColumns.map((column) => column.dataType),
+                    values: value,
+                    selectors: selectorsList,
+                    dataType: dataTypeList,
                 };
             });
             formmattedColumns(formattedArray, data.variation);
@@ -196,15 +203,23 @@ export const DataTabStyling = observer(
             }
             const formattedArray = chart.map((item, index) => {
                 const key = `data-tab-drop-area-${index}`;
-                const matchedColumns = columnsSelector.filter((column) =>
-                    selectedColumns[key]?.includes(column.name)
-                );
+                let value = selectedColumns[key] ?? [];
+                let selectorsList = [];
+                let dataTypeList = [];
+                
+                value.forEach(col => {
+                    let selector = columnsSelector.find(column => column.name === col);
+                    if(selector){
+                        selectorsList.push(selector.selector);
+                        dataTypeList.push(selector.dataType);
+                    }
+                });
                 return {
                     name: item.name,
                     label: item.label,
                     values: selectedColumns[key] || [],
-                    selectors: matchedColumns.map((column) => column.selector),
-                    dataType: matchedColumns.map((column) => column.dataType),
+                    selectors: selectorsList,
+                    dataType: dataTypeList,
                 };
             });
             formmattedColumns(formattedArray, data.variation);
@@ -235,6 +250,8 @@ export const DataTabStyling = observer(
                         onChange={(_, value) => {
                             setData("frame.name", value);
                             syncHeader(value);
+                            setData("columns", []); // Reset columns when frame changes
+                            setSelectedColumns({});
                         }}
                         freeSolo={false}
                         renderInput={(params) => (
