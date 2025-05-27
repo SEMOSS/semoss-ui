@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Handle, NodeProps, Position } from '@xyflow/react';
 import { observer } from 'mobx-react-lite';
 
@@ -9,6 +9,7 @@ import {
     Divider,
     IconButton,
     Stack,
+    TextField,
     Typography,
     styled,
 } from '@semoss/ui';
@@ -42,6 +43,19 @@ export const CellNode = observer((props: CellNodeProps) => {
     const q = state.getQuery(data.queryId);
     const index = q.list.indexOf(data.id);
     const c = q.getCell(data.id);
+
+    const inputs = useMemo(() => {
+        const stringified = JSON.stringify(c.parameters);
+        const matches = stringified.match(/{{(.*?)}}/g);
+        if (matches) {
+            return matches.map((v) => {
+                const varName = v.slice(2, -2).split('.')[0];
+                return varName;
+            });
+        }
+
+        return [];
+    }, [c.parameters]);
 
     return (
         <div
@@ -106,7 +120,22 @@ export const CellNode = observer((props: CellNodeProps) => {
                             <Typography variant="body1">Inputs</Typography>
                         </Accordion.Trigger>
                         <Accordion.Content>
-                            Show text box and settings
+                            <Stack direction={'column'} gap={1}>
+                                {inputs.map((i) => {
+                                    return (
+                                        <>
+                                            <TextField
+                                                label={i}
+                                                onChange={(e) => {
+                                                    console.log(
+                                                        'update block data',
+                                                    );
+                                                }}
+                                            />
+                                        </>
+                                    );
+                                })}
+                            </Stack>
                         </Accordion.Content>
                     </Accordion>
                 </Stack>

@@ -2390,6 +2390,9 @@ export class StateStore {
             }
         })
 
+        console.warn('Sending App Outputs')
+        console.warn(outputMap)
+        
         // Communication with Iframe
         window.parent.postMessage({
             type: "DISPATCH_APP_OUTPUTS",
