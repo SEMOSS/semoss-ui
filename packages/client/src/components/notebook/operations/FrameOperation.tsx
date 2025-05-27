@@ -81,10 +81,10 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
                     </Table.Body>
                 </Table>
             </StyledTableContainer>
-            <Typography variant="caption">
+            {/* <Typography variant="caption">
                 {isSuccess &&
                     `Showing ${getData.data.data.values.length} of ${getCount.data}. This is a preview of ingested data`}
-            </Typography>
+            </Typography> */}
         </>
     );
 });
