@@ -68,10 +68,12 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
 }));
 
 const AppTileSkeleton = styled('div')(({ theme }) => ({
-    marginRight: 0.5,
-    my: 5,
+    display: 'flex',
     flexDirection: 'column',
     margin: theme.spacing(1),
+    marginRight: theme.spacing(0.5),
+    marginTop: theme.spacing(5),
+    marginBottom: theme.spacing(5),
 }));
 type MODE = 'Mine' | 'Discoverable' | 'System';
 
@@ -401,19 +403,23 @@ export const HomePage = observer((): JSX.Element => {
                         </StyledSectionLabel>
                     ) : null}
 
-                    {mode != 'System' && (
+                    {mode !== 'System' && (getFavoritedApps.status === 'LOADING' || favoritedApps.length > 0) && (
                         <StyledSection>
                             {getFavoritedApps.status === 'LOADING'
                                 ? Array.from({ length: 3 }).map((_, i) => (
                                       <AppTileSkeleton key={i}>
-                                          <Skeleton variant="rectangular" width={250} height={118} />
+                                          <Skeleton
+                                              variant="rectangular"
+                                              width={250}
+                                              height={118}
+                                          />
                                           <Skeleton width="80%" />
                                           <Skeleton width="60%" />
                                       </AppTileSkeleton>
                                   ))
-                                : favoritedApps.map((app, i) => (
+                                : favoritedApps.map(app => (
                                       <AppTileCard
-                                          key={i}
+                                          key={app.project_id}
                                           app={app}
                                           systemApp={false}
                                           href={
@@ -433,7 +439,9 @@ export const HomePage = observer((): JSX.Element => {
                                               }
                                           }}
                                           appType={app.project_type}
-                                          isFavorite={isFavorited(app.project_id)}
+                                          isFavorite={isFavorited(
+                                              app.project_id,
+                                          )}
                                           favorite={() => {
                                               favoriteApp(app);
                                           }}
