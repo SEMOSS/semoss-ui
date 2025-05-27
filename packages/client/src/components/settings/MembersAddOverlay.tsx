@@ -677,6 +677,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                             value="Author"
                                             label=""
                                             disabled={
+                                                !adminMode &&
                                                 permissionPriorityMapper(
                                                     userPermission,
                                                 )?.priority > 1
@@ -731,6 +732,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                             value="Editor"
                                             label=""
                                             disabled={
+                                                !adminMode &&
                                                 permissionPriorityMapper(
                                                     userPermission,
                                                 )?.priority > 2
@@ -785,6 +787,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                             value="Read-Only"
                                             label=""
                                             disabled={
+                                                !adminMode &&
                                                 permissionPriorityMapper(
                                                     userPermission,
                                                 )?.priority > 3
