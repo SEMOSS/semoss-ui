@@ -91,7 +91,7 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 
         try {
             // Construct the command to set a filter on the frame based on the selected column and values
-            const pixelCommand = `META | ${data.frame} | SetFrameFilter(((${data.column} == ${valuesString})));`;
+            const pixelCommand = `META | ${data.frame} | AddFrameFilter(((${data.column} == ${valuesString})));`;
 
             // Execute the command as a side effect in the application state
             const response = await state.runSideEffect(pixelCommand);

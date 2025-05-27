@@ -505,21 +505,21 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
                     </>
                 )}
                 {selectedTab === "Tools" && (
-                    <Box>
-                        <Box sx={{ width: "100%", padding: "8px 16px" }}>
+                    <>
+                        <Box sx={{width: "100%", padding: "8px 16px", color: "#666666"}}>
                             <SizeSettings
                                 id={id}
                                 label="Height"
                                 path="style.height"
                             />
                         </Box>
-                        <StyledSubSection>
+                        <Box sx={{width: "100%", padding: "8px 16px", color: "#666666"}}>
                             <SizeSettings
                                 id={id}
                                 label="Width"
                                 path="style.width"
                             />
-                        </StyledSubSection>
+                        </Box>
                         <StyledSubSection>
                             <StyledTypography variant="body2">
                                 Select Button Color
@@ -556,7 +556,7 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
                                 )}
                             />
                         </StyledSubSection>
-                    </Box>
+                    </>
                 )}
             </StyledContainer>
         </StyledStack>
