@@ -163,31 +163,36 @@ export function JobsPage() {
             pixel += 'jobId=["' + jobId[0] + '"], ';
             pixel += 'jobGroup=["' + jobGroup[0] + '"]) ';
         }
-        monolithStore.runQuery(pixel).then((response) => {
-            const type = response.pixelReturn[0].operationType;
-            const output = response.pixelReturn[0].output;
-            if (type.indexOf('ERROR') === -1) {
-                notification.add({
-                    color: 'success',
-                    message:
-                        jobId.length > 1 && jobGroup.length > 1
-                            ? `Successfully deleted all selected jobs`
-                            : `Successfully deleted ${type}`,
-                });
-                jobId.length > 1 && jobGroup.length > 1
-                    ? setJobsToDelete([])
-                    : setJobToDelete(null);
-                jobId.length > 1 && jobGroup.length > 1
-                    ? setDeleteMultiple(false)
-                    : '';
-                getJobs();
-            } else {
+        monolithStore
+            .runQuery(pixel)
+            .then((response) => {
+                const type = response.pixelReturn[0].operationType;
+                const output = response.pixelReturn[0].output;
+                if (type.indexOf('ERROR') === -1 && output === true) {
+                    notification.add({
+                        color: 'success',
+                        message:
+                            jobId.length > 1 && jobGroup.length > 1
+                                ? `Successfully deleted all selected jobs`
+                                : `Successfully deleted ${type}`,
+                    });
+                    jobId.length > 1 && jobGroup.length > 1
+                        ? setJobsToDelete([])
+                        : setJobToDelete(null);
+                    jobId.length > 1 && jobGroup.length > 1
+                        ? setDeleteMultiple(false)
+                        : '';
+                    getJobs();
+                } else {
+                    throw new Error(response.errors[0]);
+                }
+            })
+            .catch((error) => {
                 notification.add({
                     color: 'error',
-                    message: output,
+                    message: error.message,
                 });
-            }
-        });
+            });
     };
 
     const pauseJobs = async () => {
