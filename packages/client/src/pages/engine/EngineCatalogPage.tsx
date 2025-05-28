@@ -160,6 +160,8 @@ export const EngineCatalogPage = observer(
         const dbPixelPrefix: string =
             mode === 'Mine' ? `MyEngines` : 'MyDiscoverableEngines';
 
+        const isDiscoverable = mode !== 'Mine';
+
         const metaKeysDescription = [...metaKeys, 'description'];
 
         const getFavoritedDatabases = usePixel(`
@@ -600,13 +602,15 @@ export const EngineCatalogPage = observer(
                         {'bi'.includes(search.toLowerCase()) &&
                             Object.entries(metaFilters).length === 0 &&
                             'terminal'.includes(search.toLowerCase()) &&
+                            !isDiscoverable &&
                             favoritedDbs.length > 0 && (
                                 <StyledSectionLabel variant="subtitle1">
                                     Bookmarked
                                 </StyledSectionLabel>
                             )}
 
-                        {favoritedDbs.length &&
+                        {!isDiscoverable &&
+                        favoritedDbs.length &&
                         Object.entries(metaFilters).length === 0 ? (
                             <Grid container spacing={3}>
                                 {favoritedDbs.map((db) => {
@@ -627,9 +631,14 @@ export const EngineCatalogPage = observer(
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
                                                 isUpvoted={db.hasUpvoted}
-                                                isFavorite={isFavorited(
-                                                    db.database_id,
-                                                )}
+                                                isFavorite={
+                                                    isDiscoverable
+                                                        ? false
+                                                        : isFavorited(
+                                                              db.database_id,
+                                                          )
+                                                }
+                                                isDiscoverable={isDiscoverable}
                                                 onClick={() => {
                                                     navigate(
                                                         `${db.database_id}`,
@@ -684,9 +693,14 @@ export const EngineCatalogPage = observer(
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
                                                 isUpvoted={db.hasUpvoted}
-                                                isFavorite={isFavorited(
-                                                    db.database_id,
-                                                )}
+                                                isFavorite={
+                                                    isDiscoverable
+                                                        ? false
+                                                        : isFavorited(
+                                                              db.database_id,
+                                                          )
+                                                }
+                                                isDiscoverable={isDiscoverable}
                                                 onClick={() => {
                                                     navigate(
                                                         `${db.database_id}`,
