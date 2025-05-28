@@ -55,9 +55,7 @@ export function useFrameHeaders(
                       : ""
               });`
             : "",
-        {
-            silent: true,
-        },
+        {},
         context.state.insightId,
     );
 
