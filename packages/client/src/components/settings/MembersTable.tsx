@@ -321,6 +321,15 @@ export const MembersTable = (props: MembersTableProps) => {
                             ?.permission as SETTINGS_ROLE,
                     );
                 }
+            } else {
+                if (adminMode) {
+                    // if logged in admin, need to provide all Author option previledges
+                    const adminPermissionPriority = 'Author';
+                    setUserPermission(
+                        permissionPriorityMapper(adminPermissionPriority)
+                            ?.permission as SETTINGS_ROLE,
+                    );
+                }
             }
         }
     };
@@ -670,7 +679,8 @@ export const MembersTable = (props: MembersTableProps) => {
                                     <Button
                                         disabled={
                                             isLoading ||
-                                            userPermission === 'Read-Only'
+                                            (!adminMode &&
+                                                userPermission === 'Read-Only')
                                         }
                                         variant={'contained'}
                                         onClick={() => {
@@ -706,7 +716,8 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 <Checkbox
                                                     disabled={
                                                         userPermission ===
-                                                        'Read-Only'
+                                                            'Read-Only' &&
+                                                        !adminMode
                                                     }
                                                     checked={
                                                         selectedMembers.length ===
@@ -801,7 +812,8 @@ export const MembersTable = (props: MembersTableProps) => {
                                                             <StyledCheckbox
                                                                 disabled={
                                                                     userPermission ===
-                                                                    'Read-Only'
+                                                                        'Read-Only' &&
+                                                                    !adminMode
                                                                 }
                                                                 checked={
                                                                     isSelected
@@ -903,11 +915,12 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                             type,
                                                                             'access',
                                                                         ) ||
-                                                                        permissionPriorityMapper(
-                                                                            userPermission,
-                                                                        )
-                                                                            .priority >
-                                                                            1
+                                                                        (!adminMode &&
+                                                                            permissionPriorityMapper(
+                                                                                userPermission,
+                                                                            )
+                                                                                .priority >
+                                                                                1)
                                                                     }
                                                                 />
                                                                 <RadioGroup.Item
@@ -918,11 +931,12 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                             type,
                                                                             'access',
                                                                         ) ||
-                                                                        permissionPriorityMapper(
-                                                                            userPermission,
-                                                                        )
-                                                                            ?.priority >
-                                                                            2
+                                                                        (!adminMode &&
+                                                                            permissionPriorityMapper(
+                                                                                userPermission,
+                                                                            )
+                                                                                ?.priority >
+                                                                                2)
                                                                     }
                                                                 />
                                                                 <RadioGroup.Item
@@ -933,14 +947,15 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                             type,
                                                                             'access',
                                                                         ) ||
-                                                                        permissionPriorityMapper(
-                                                                            userPermission,
-                                                                        )
-                                                                            ?.priority >=
-                                                                            3 ||
-                                                                        readOnlyRestricted(
-                                                                            user,
-                                                                        )
+                                                                        (!adminMode &&
+                                                                            (permissionPriorityMapper(
+                                                                                userPermission,
+                                                                            )
+                                                                                ?.priority >=
+                                                                                3 ||
+                                                                                readOnlyRestricted(
+                                                                                    user,
+                                                                                )))
                                                                     }
                                                                 />
                                                             </RadioGroup>

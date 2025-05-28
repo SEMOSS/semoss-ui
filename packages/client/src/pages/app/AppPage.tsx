@@ -104,6 +104,7 @@ export const AppPage = observer(() => {
                         onClick={() => {
                             setIsShareOpen(true);
                         }}
+                        data-testid={'app-page-share-btn'}
                     >
                         <ShareRounded fontSize={'inherit'} />
                     </IconButton>
@@ -123,6 +124,7 @@ export const AppPage = observer(() => {
                     component={Link}
                     //@ts-expect-error this is expected. props are forwarded
                     to={`../../../workspace/${appId}`}
+                    data-testid={'app-page-edit-btn'}
                 >
                     Edit
                 </Button>
