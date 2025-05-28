@@ -423,6 +423,8 @@ export const HomePage = observer((): JSX.Element => {
                                         favorite={() => {
                                             favoriteApp(app);
                                         }}
+                                        isLoading={true}
+                                        showSkeleton={true}
                                     />
                                 );
                             })}
@@ -444,6 +446,8 @@ export const HomePage = observer((): JSX.Element => {
                                     href="../../../"
                                     systemApp={true}
                                     appType={'BI'}
+                                    isLoading={false}
+                                    showSkeleton={false}
                                 />
                             )}
 
@@ -455,6 +459,8 @@ export const HomePage = observer((): JSX.Element => {
                                     href="../../../#!/embed-terminal"
                                     systemApp={true}
                                     appType={'TERMINAL'}
+                                    isLoading={false}
+                                    showSkeleton={false}
                                 />
                             )}
                         </StyledSection>
@@ -509,6 +515,8 @@ export const HomePage = observer((): JSX.Element => {
                                             onDelete={() => {
                                                 removeApp(app);
                                             }}
+                                            isLoading={true}
+                                            showSkeleton={true}
                                         />
                                     );
                                 })}
