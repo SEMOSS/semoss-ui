@@ -164,15 +164,18 @@ export const EngineCatalogPage = observer(
 
         const metaKeysDescription = [...metaKeys, 'description'];
 
-        const getFavoritedDatabases = usePixel(`
+        const getFavoritedDatabases = usePixel(
+            !isDiscoverable &&
+                `
         ${dbPixelPrefix}(metaKeys = ${JSON.stringify(
-            metaKeysDescription,
-        )}, metaFilters = [ ${JSON.stringify(
-            metaFilters,
-        )} ] , filterWord=["${search}"], onlyFavorites=[true], ${
-            route ? `engineTypes=['${route.type}']` : ''
-        });
-    `);
+                    metaKeysDescription,
+                )}, metaFilters = [ ${JSON.stringify(
+                    metaFilters,
+                )} ] , filterWord=["${search}"], onlyFavorites=[true], ${
+                    route ? `engineTypes=['${route.type}']` : ''
+                });
+    `,
+        );
 
         const getDatabases = usePixel<
             {
