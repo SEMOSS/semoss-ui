@@ -89,6 +89,16 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         // ID of newly added block
         let id = '';
 
+        // put a placeholder action to check if it is valid
+        const placeholderAction = designer.drag.placeholderAction;
+        if (!placeholderAction || !placeholderAction.id) {
+            designer.deactivateDrag();
+            designer.setHovered('');
+            designer.setSelected('');
+            setLocal(false);
+            return;
+        }
+
         // Track block in session storage
         localStorage.setItem(
             'blocks--frequently-used',
@@ -108,8 +118,16 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         );
 
         // apply the action
-        const placeholderAction = designer.drag.placeholderAction;
         const sw = state.getBlock(placeholderAction.id);
+
+        // Safely get the block associated with the placeholder action
+        if (!sw) {
+            designer.deactivateDrag();
+            designer.setHovered('');
+            designer.setSelected('');
+            setLocal(false);
+            return;
+        }
 
         // TODO: Add logic to prevent adding block it iter block if one is already present
 
@@ -132,7 +150,17 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 const siblingWidget = state.getBlock(placeholderAction.id);
 
                 if (siblingWidget?.parent) {
+                    if (!sw.parent || !sw.parent.id) {
+                        designer.deactivateDrag();
+                        setLocal(false);
+                        return;
+                    }
                     const parent = state.getBlock(sw.parent.id);
+                    if (!parent) {
+                        designer.deactivateDrag();
+                        setLocal(false);
+                        return;
+                    }
                     if (parent.widget === 'iteration') {
                         if (parent.slots.children.children.length) {
                             notification.add({

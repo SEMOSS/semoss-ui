@@ -54,7 +54,6 @@ export const config: BlockConfig<ToggleButtonBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Options",
                     render: ({ id }) => (
@@ -85,11 +84,15 @@ export const config: BlockConfig<ToggleButtonBlockDef> = {
             ],
         },
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
         {
-            name: "on Change",
+            name: "On Change",
             children: [...buildListener("onChange")],
         },
     ],

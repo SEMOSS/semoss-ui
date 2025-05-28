@@ -49,7 +49,6 @@ export const config: BlockConfig<AudioInputBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Mode",
                     render: ({ id }) => (
@@ -91,11 +90,15 @@ export const config: BlockConfig<AudioInputBlockDef> = {
             ],
         },
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
         {
-            name: "on Complete",
+            name: "On Complete",
             children: [...buildListener("onComplete")],
         },
     ],

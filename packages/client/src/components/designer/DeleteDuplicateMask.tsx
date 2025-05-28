@@ -1,8 +1,6 @@
 import { useLayoutEffect, useState } from 'react';
 import { toJS } from 'mobx';
 import { observer } from 'mobx-react-lite';
-
-import { styled, ButtonGroup, Button, IconButton, Tooltip } from '@semoss/ui';
 import {
     ContentCopy,
     Delete,
@@ -16,16 +14,24 @@ import {
     SmartButton,
 } from '@mui/icons-material';
 
-import { getRelativeSize, getBlockElement } from '@/stores';
-
-import { useDesigner } from '@/hooks';
+import {
+    styled,
+    ButtonGroup,
+    Button,
+    IconButton,
+    Tooltip,
+    useNotification,
+} from '@semoss/ui';
 import {
     BlockJSON,
     ActionMessages,
     useBlocks,
     INPUT_BLOCK_TYPES,
 } from '@semoss/renderer';
+
 import { QuickMenu } from './QuickMenu';
+import { getRelativeSize, getBlockElement } from '@/stores';
+import { useDesigner } from '@/hooks';
 
 const STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH = 48;
 const STYLED_BUTTON_GROUP_ICON_BUTTON_HEIGHT = 32;
@@ -78,6 +84,8 @@ export const DeleteDuplicateMask = observer(
             height: number;
             width: number;
         } | null>(null);
+
+        const notification = useNotification();
 
         // get the store
         const { registry, state } = useBlocks();
@@ -249,6 +257,15 @@ export const DeleteDuplicateMask = observer(
                 return blockJson;
             };
 
+            const parentBlock = state.getBlock(block.parent.id);
+            if (parentBlock.widget === 'iteration') {
+                notification.add({
+                    color: 'error',
+                    message: `Unable to duplicate ${block.widget} within an Iterator Block`,
+                });
+                return;
+            }
+
             const position = block?.parent?.id
                 ? {
                       parent: block.parent.id,
@@ -292,22 +309,6 @@ export const DeleteDuplicateMask = observer(
                   value: string;
                   icon: React.ReactElement;
               }) => {
-                  // If the block is an iteration and has children, remove them first
-                  if (
-                      block.widget === 'iteration' &&
-                      block.slots.children.children?.length > 0
-                  ) {
-                      [...block.slots.children.children].forEach((child) => {
-                          state.dispatch({
-                              message: ActionMessages.REMOVE_BLOCK,
-                              payload: {
-                                  id: child,
-                                  keep: false,
-                              },
-                          });
-                      });
-                  }
-
                   // Create the new block JSON
                   const blockJson = {
                       widget: item.value,
@@ -316,7 +317,24 @@ export const DeleteDuplicateMask = observer(
                       slots: registry[item.value].slots,
                   } as BlockJSON;
 
-                  state.dispatch({
+                  // If the block is an iteration and has children, remove them first
+                  if (block.widget === 'iteration') {
+                      if (block.slots.children.children?.length > 0) {
+                          [...block.slots.children.children].forEach(
+                              (child) => {
+                                  state.dispatch({
+                                      message: ActionMessages.REMOVE_BLOCK,
+                                      payload: {
+                                          id: child,
+                                          keep: false,
+                                      },
+                                  });
+                              },
+                          );
+                      }
+                  }
+
+                  const id = state.dispatch({
                       message: ActionMessages.ADD_BLOCK,
                       payload: {
                           json: blockJson as BlockJSON,
@@ -326,6 +344,17 @@ export const DeleteDuplicateMask = observer(
                           },
                       },
                   }) as string;
+
+                  if (block.widget === 'iteration') {
+                      state.dispatch({
+                          message: ActionMessages.SET_BLOCK_DATA,
+                          payload: {
+                              id: block.id,
+                              path: 'child',
+                              value: state.getBlock(id),
+                          },
+                      });
+                  }
 
                   setAnchorEl(null);
               }
