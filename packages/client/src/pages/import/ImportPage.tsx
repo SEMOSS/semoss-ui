@@ -343,12 +343,22 @@ export const ImportPage = () => {
         }
         //Function
 
-        if (
-            obj?.FUNCTION?.Function
-        ) {
+        if (obj.FUNCTION.Function.length > 0) {
             for (let k = 0; k <= obj.FUNCTION.Function.length; k++) {
-                if (!(obj.FUNCTION?.Function[k].name === 'AWS Image Text Extraction')  
-                    ||!(obj.FUNCTION?.Function[k].name === 'Azure Document Intelligence')) {
+                if (obj.FUNCTION.Function[k].name === 'AWS Polly') {
+                    delete obj.FUNCTION.Function[k];
+                } else if (obj.FUNCTION.Function[k].name === 'AWS Transcribe') {
+                    delete obj.FUNCTION.Function[k];
+                } else if (obj.FUNCTION.Function[k].name === 'AWS Comprehend') {
+                    delete obj.FUNCTION.Function[k];
+                }
+                else if (obj.FUNCTION.Function[k].name === 'Azure Speech To Text') {
+                    delete obj.FUNCTION.Function[k];
+                }
+                else if (obj.FUNCTION.Function[k].name === 'Google Speech To Text') {
+                    delete obj.FUNCTION.Function[k];
+                }
+                else if (obj.FUNCTION.Function[k].name === 'Google OCR') {
                     delete obj.FUNCTION.Function[k];
                 }
             }
