@@ -40,12 +40,13 @@ import { CopyDb } from '@/assets/img/CopyDb';
 import { UploadDb } from '@/assets/img/UploadDb';
 import { ConnectStorage } from '@/assets/img/ConnectStorage';
 
-import { useStepper } from '@/hooks';
+import { useStepper ,useRootStore} from '@/hooks';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import { CONNECTION_OPTIONS } from './import.constants';
 import { EstablishConnectionPage, ImportConnectionPage } from './';
 import { Help } from '@/components/help';
+import { ConfigStore } from '@/stores';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -192,7 +193,7 @@ export const ImportPage = () => {
 
     const [connectionOptions, setConnectionOptions] =
         React.useState(CONNECTION_OPTIONS);
-
+    const { configStore } = useRootStore();
     const scrollToTopRef = useRef(null);
 
     useEffect(() => {
@@ -274,9 +275,12 @@ export const ImportPage = () => {
     const setUniqueIdsOnConnectionOptions = async () => {
         setIsLoading(true);
         await assignUniqueIds(CONNECTION_OPTIONS);
-        setIsLoading(false);
-
+        setIsLoading(false);    
+       if(configStore.store.config.adminOnlyNonApprovedFlag)  {
+         getFilterObj();
+        }else{
         setConnectionOptions(CONNECTION_OPTIONS);
+        }
     };
 
     /**
@@ -308,6 +312,57 @@ export const ImportPage = () => {
         }
     }
 
+    function filterNonProdItem(obj) {
+       
+        if (
+            obj?.MODEL?.['Commercially Hosted'] && (
+                'OpenAI' in obj.MODEL['Commercially Hosted'])
+        ) {
+            delete obj.MODEL['Commercially Hosted'].OpenAI;
+            delete obj.MODEL['Commercially Hosted']['AWS Bedrock'];
+            delete obj.MODEL['Commercially Hosted']['NVIDIA NIM Models'];
+
+        }
+        if (
+            obj?.MODEL?.['Locally Hosted']) {
+            delete obj.MODEL['Locally Hosted'];
+        }
+        if (obj?.MODEL?.['File Uploads']) {
+            delete obj.MODEL['File Uploads'];
+        }
+      
+         if (
+            obj?.MODEL?.['Embedded'] ) {
+                for(let k=0;k<=obj.MODEL['Embedded'].length;k++){
+                    if(!(obj.MODEL['Embedded'][k]?.name  === "AWS TITAN TEXT EMBEDDINGS")){
+
+                     delete obj.MODEL['Embedded'][k];
+                    }
+                  
+                }
+        }
+        //Function
+
+        if (
+            obj?.FUNCTION?.Function
+        ) {
+            for (let k = 0; k <= obj.FUNCTION.Function.length; k++) {
+                if (!(obj.FUNCTION?.Function[k].name === 'AWS Image Text Extraction')  
+                    ||!(obj.FUNCTION?.Function[k].name === 'Azure Document Intelligence')) {
+                    delete obj.FUNCTION.Function[k];
+                }
+            }
+        }
+        console.log("After Function Removal",obj);
+        return obj; 
+    }
+    
+    function getFilterObj() {
+      
+       setConnectionOptions(filterNonProdItem(CONNECTION_OPTIONS));
+       console.log("Removed one",connectionOptions);
+       
+    }
     const mapEngineOptions = () => {
         const entries = Object.values(connectionOptions[steps[0].data]);
 
