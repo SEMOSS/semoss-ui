@@ -34,7 +34,6 @@ export const getSelector = (data) => {
     };
     const selectors = getSelectors();
     let selector = "";
-    if (data.hasOwnProperty("columns")) {
         if (data.option.hasOwnProperty("_state")) {
             if (data.option["_state"].hasOwnProperty("fields")) {
                 if (
@@ -604,6 +603,4 @@ export const getSelector = (data) => {
             }
         }
         return "";
-    }
-    return "";
 };
