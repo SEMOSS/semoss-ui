@@ -7,13 +7,12 @@
 
 1. Git clone this repository to your `webapps` folder. `git clone git@repo.semoss.org:semoss/semoss-ui.git`
 
-2. Ensure your BE server is running in eclipse and at a minimum running on a version of pnpm@8.
+2. Ensure your BE server is running in eclipse and at a minimum running on a version of pnpm@10.
 
 3. create a `.env.local` file and populate with the following. **Do not change the .env**
 
 ```
-    ENDPOINT=../../..
-    MODULE=/Monolith_Dev
+    MODULE=http://localhost:9090/Monolith_Dev
 
     THEME_TITLE=SEMOSS
     THEME_FAVICON=./src/assets/favicon.svg
@@ -38,6 +37,7 @@ Application will be accesible at: `http://localhost:9090/semoss-ui/packages/clie
 Legacy application will be accesible at: `http://localhost:9090/semoss-ui/#!/`
 
 ## Common Errors
+ 1. The following issue may error may appear if nx does not build correctly: Cannot find module '@semoss/sdk/react' or its corresponding type declarations. To fix, cd directly into .\libs\sdk and run `pnpm run build`.
  2. `404` on REST calls to the BE, usually points to an issue with the MODULE you have specified in your `.env.local` and/or `.packages/legacy/app.constants` file.  Ask your client project lead what endpoint you hit to ensure you have the right pointer specified for MODULE.
 
  ### Must be on a version of Node 18

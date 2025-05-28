@@ -1,8 +1,7 @@
 import axios from 'axios';
 import { makeAutoObservable } from 'mobx';
 
-import { Env } from '@semoss/sdk';
-// import { Env } from '@/env';
+import { Env } from '@semoss/sdk/react';
 
 import { Role } from '@/types';
 import { RootStore } from '@/stores';
@@ -326,8 +325,8 @@ export class MonolithStore {
             '&email=' +
             encodeURIComponent(email) +
             '&password=' +
-            encodeURIComponent(password);
-        '&phone=' +
+            encodeURIComponent(password) +
+            '&phone=' +
             encodeURIComponent(phone) +
             '&phoneextension=' +
             encodeURIComponent(phoneextension) +
@@ -1077,6 +1076,41 @@ export class MonolithStore {
             postData = '';
 
         url += 'group/addGroup';
+
+        postData += 'groupId=' + encodeURIComponent(groupId);
+        postData += '&description=' + encodeURIComponent(description);
+        postData += '&isCustomGroup=' + encodeURIComponent(isCustomGroup);
+        if (type) {
+            postData += '&type=' + encodeURIComponent(type);
+        }
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    /**
+     * @name editTeam
+     * @param groupId
+     * @param description
+     * @param type
+     * @param isCustomGroup
+     * @returns
+     */
+    async editTeam(
+        groupId: string,
+        description: string,
+        isCustomGroup: boolean,
+        type?: string,
+    ) {
+        let url = `${Env.MODULE}/api/auth/admin/`,
+            postData = '';
+
+        url += 'group/editGroup';
 
         postData += 'groupId=' + encodeURIComponent(groupId);
         postData += '&description=' + encodeURIComponent(description);

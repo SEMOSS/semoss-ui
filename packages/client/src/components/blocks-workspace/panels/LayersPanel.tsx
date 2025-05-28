@@ -35,6 +35,7 @@ import {
     INPUT_BLOCK_TYPES,
     ActionMessages,
     BlockJSON,
+    Block,
 } from '@semoss/renderer';
 import {
     Divider,
@@ -170,7 +171,7 @@ const StyledPageItem = styled('div', {
     backgroundColor: isselected == 'true' ? 'rgba(25, 118, 210, 0.2)' : '',
 }));
 
-const PAGE_BLOCK = {
+const PAGE_BLOCK: BlockJSON = {
     widget: 'page',
     data: {
         style: {
@@ -183,7 +184,10 @@ const PAGE_BLOCK = {
         route: '',
     },
     listeners: {
-        onPageLoad: [],
+        onPageLoad: {
+            type: 'sync',
+            order: [],
+        },
     },
     slots: {
         content: [],
@@ -637,10 +641,14 @@ export const LayersPanel = observer((): JSX.Element => {
             event.stopPropagation();
             setMenuAnchorEl(event.currentTarget);
         };
+
         const handleMenuClose = () => {
             setMenuAnchorEl(null);
         };
+
         const handleDelete = (deletedId: string) => {
+            const parentBlock = state.getBlock(block.parent.id);
+
             state.dispatch({
                 message: ActionMessages.REMOVE_BLOCK,
                 payload: {
@@ -648,6 +656,19 @@ export const LayersPanel = observer((): JSX.Element => {
                     keep: false,
                 },
             });
+
+            // If its within an iteration block, clean up the data.child
+            if (parentBlock.widget === 'iteration') {
+                state.dispatch({
+                    message: ActionMessages.SET_BLOCK_DATA,
+                    payload: {
+                        id: parentBlock.id,
+                        path: 'child',
+                        value: null,
+                    },
+                });
+            }
+
             setTimeout(() => {
                 designer.setSelected('');
                 designer.setHovered('');
@@ -722,6 +743,15 @@ export const LayersPanel = observer((): JSX.Element => {
                 // return it
                 return blockJson;
             };
+
+            const parentBlock = state.getBlock(block.parent.id);
+            if (parentBlock.widget === 'iteration') {
+                notification.add({
+                    color: 'error',
+                    message: `Unable to duplicate ${block.widget} within an Iterator Block`,
+                });
+                return;
+            }
 
             const position = block?.parent?.id
                 ? {

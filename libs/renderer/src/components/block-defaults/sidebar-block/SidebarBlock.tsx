@@ -4,7 +4,7 @@ import { observer } from "mobx-react-lite";
 import { Drawer, Stack } from "@semoss/ui";
 
 import { useBlock, useBlocks } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
 
 export interface SidebarBlockDef extends BlockDef<"sidebar"> {
@@ -19,8 +19,14 @@ export interface SidebarBlockDef extends BlockDef<"sidebar"> {
         content: true;
     };
     listeners: {
-        preProcess: true;
-        postProcess: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+        postProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 

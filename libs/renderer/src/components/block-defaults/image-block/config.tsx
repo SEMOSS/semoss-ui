@@ -31,7 +31,10 @@ export const config: BlockConfig<ImageBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: ImageBlock,
@@ -40,7 +43,6 @@ export const config: BlockConfig<ImageBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Image Source",
                     render: ({ id }) => (
@@ -60,13 +62,17 @@ export const config: BlockConfig<ImageBlockDef> = {
             ],
         },
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
     ],
     styleMenu: [
         {
-            name: "",
+            name: "Layout",
             children: [
                 {
                     description: "Ratio",
