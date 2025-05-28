@@ -159,7 +159,7 @@ const ButtonName = styled('p')(({ theme }) => ({
     letterSpacing: '0.46px',
 }));
 
-const ButtonName1 = styled('p')(({ theme }) => ({
+const ViewDetailsButtonName = styled('p')(({ theme }) => ({
     fontSize: '13px',
     color: '#0471F0',
     fontFamily: 'Inter',
@@ -882,7 +882,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                                                //border:'#9FCFFF'
                                             }}
                                         >
-                                            <ButtonName1>View Details</ButtonName1>
+                                            <ViewDetailsButtonName>View Details</ViewDetailsButtonName>
                                         </div>
                                     </StyledOpenButton> */}
                                 </StyledFooter>
@@ -926,7 +926,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                                               // border:'#9FCFFF'
                                             }}
                                         >
-                                            <ButtonName1>View Details</ButtonName1>
+                                            <ViewDetailsButtonName>View Details</ViewDetailsButtonName>
                                         </div>
                                     </StyledOpenButton> */}
                                 </StyledFooter>
