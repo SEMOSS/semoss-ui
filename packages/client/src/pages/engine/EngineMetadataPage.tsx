@@ -229,6 +229,7 @@ export const EngineMetadataPage = observer(() => {
                                 startIcon={<ArrowCircleDown />}
                                 variant="outlined"
                                 onClick={printMeta}
+                                data-testid={'engine-metadata-print-btn'}
                             >
                                 Print Metadata
                             </Button>
@@ -270,7 +271,7 @@ export const EngineMetadataPage = observer(() => {
                             ))}
                         </Stack>
                     </Section>
-
+            
                     <Section>
                         <Section.Header>Columns</Section.Header>
                         <StyledTableContainer>
