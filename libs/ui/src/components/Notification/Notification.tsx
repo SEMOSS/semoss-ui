@@ -145,7 +145,7 @@ export const Notification = (props: NotificationProps): JSX.Element => {
                 open={isOpen}
                 anchorOrigin={anchorOrigin}
                 autoHideDuration={autoHideDuration}
-                id={`${active ? active.id : getUuid()}`}
+                className={"notification-bubble"}
                 onClose={(event, reason) => {
                     if (reason === "clickaway") {
                         return;
