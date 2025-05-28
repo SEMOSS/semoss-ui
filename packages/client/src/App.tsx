@@ -156,6 +156,7 @@ export const App = () => {
         _store.configStore.initialize().then(() => {
             // set as enabled
             CSRF.isEnabled = _store.configStore.store.config.csrf;
+            Env.update({ CSRF: _store.configStore.store.config.csrf });
         });
     }, []);
 
