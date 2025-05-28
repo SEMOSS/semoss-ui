@@ -512,6 +512,9 @@ export const UserTable = (props: UserTableProps) => {
                                                 padding="checkbox"
                                             >
                                                 <Checkbox
+                                                    id={
+                                                        'userTable-checkbox-selectAll'
+                                                    }
                                                     checked={
                                                         selectedMembers.length ===
                                                             renderedMembers.length &&
