@@ -1,7 +1,7 @@
 import { BlockDef } from "../../store";
 import { ListenerSettings, QueryInputSettings } from "../block-settings";
-import { FontSizeSettings } from "../block-settings/custom/FontSizeSettings";
 import { SizeSettings } from "../block-settings/shared/SizeSettings";
+import { SizeSpacingSettings } from "../block-settings/custom/SizeSpacingSettings";
 import { ColorSettings } from "../block-settings/shared/ColorSettings";
 import { BorderSettings } from "../block-settings/custom/BorderSettings";
 import { ButtonGroupSettings } from "../block-settings/shared/ButtonGroupSettings";
@@ -39,7 +39,6 @@ const falseSegment = DEFAULT_FALSE_VARIABLE;
 export const buildLayoutSection = () => ({
     name: "Layout",
     children: [
-        ...buildShowField(),
         {
             description: "Vertical Align",
             render: ({ id }) => (
@@ -185,13 +184,21 @@ export const buildSpacingSection = () => ({
         {
             description: "Margin",
             render: ({ id }) => (
-                <SizeSettings id={id} label="Margin" path="style.margin" />
+                <SizeSpacingSettings
+                    id={id}
+                    label="Margin"
+                    path="style.margin"
+                />
             ),
         },
         {
             description: "Padding",
             render: ({ id }) => (
-                <SizeSettings id={id} label="Padding" path="style.padding" />
+                <SizeSpacingSettings
+                    id={id}
+                    label="Padding"
+                    path="style.padding"
+                />
             ),
         },
     ],
@@ -499,7 +506,7 @@ export const buildListener = <D extends BlockDef = BlockDef>(
  * get show field optionslist which will contain static true false, dynamic variables list when the block is selected
  */
 export function getShowFieldOptions(id: string) {
-    let { state } = useBlocks();
+    const { state } = useBlocks();
     const stateVariableList = Object.keys(state.variables).reduce(
         (acc, queryKey) => {
             if (

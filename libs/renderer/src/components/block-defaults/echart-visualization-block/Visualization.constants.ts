@@ -71,3 +71,8 @@ export const Line_Alignment = [
 ];
 export const Line_Curve_Type = ["Smooth", "Exact", "Step"];
 export const Line_Type = ["Solid", "Dashed", "Dotted"];
+export const GANTT_CHART = {
+    MILESTONE_COLOR: "#80af6c",
+    MILESTONE_SYMBOL: "triangle",
+    MILESTONE_SYMBOL_SIZE: 16,
+};

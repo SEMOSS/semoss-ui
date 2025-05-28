@@ -2,7 +2,12 @@ import { CellRegistry } from "../../store";
 
 import { CodeCellConfig, CodeCellDef } from "./code-cell";
 import { QueryImportCellConfig, QueryImportCellDef } from "./query-import-cell";
-// import { DataImportCellConfig, DataImportCellDef } from "./data-import-cell";
+import { SendEmailCellConfig, SendEmailCellDef } from "./send-email-cell";
+import { FilterDataCellConfig, FilterDataCellDef } from "./filter-data-cell";
+import {
+    UnFilterDataCellConfig,
+    UnFilterDataCellDef,
+} from "./unfilter-data-cell";
 import {
     UppercaseTransformationCellConfig,
     UppercaseTransformationCellDef,
@@ -53,6 +58,8 @@ export type DefaultCellDefinitions =
     | CodeCellDef
     | QueryImportCellDef
     | DataImportCellDef
+    | FilterDataCellDef
+    | UnFilterDataCellDef
     | TransformationCellDef
     | UppercaseTransformationCellDef
     | UpdateRowTransformationCellDef
@@ -63,11 +70,14 @@ export type DefaultCellDefinitions =
     | JoinTransformationCellDef
     | CumulativeSumTransformationCellDef
     | EncodeColumnTransformationCellDef
-    | CollapseTransformationCellDef;
+    | CollapseTransformationCellDef
+    | SendEmailCellDef;
 
 export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     [CodeCellConfig.widget]: CodeCellConfig,
     [QueryImportCellConfig.widget]: QueryImportCellConfig,
+    [FilterDataCellConfig.widget]: FilterDataCellConfig,
+    [UnFilterDataCellConfig.widget]: UnFilterDataCellConfig,
     [DataImportCellConfig.widget]: DataImportCellConfig,
     [UppercaseTransformationCellConfig.widget]:
         UppercaseTransformationCellConfig,
@@ -86,11 +96,13 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
         EncodeColumnTransformationCellConfig,
     [CollapseTransformationCellConfig.widget]: CollapseTransformationCellConfig,
     [LLMCellConfig.widget]: LLMCellConfig,
+    [SendEmailCellConfig.widget]: SendEmailCellConfig,
 } as const;
 
 const filteredTransformations: Partial<CellRegistry<DefaultCellDefinitions>> =
     {};
 
+const filteredOtherCells: Partial<CellRegistry<DefaultCellDefinitions>> = {};
 // Iterate through the data object and filter out the cell types that have 'transformation' key
 Object.entries(DefaultCells).forEach(([key, value]) => {
     const val = value;
@@ -100,4 +112,14 @@ Object.entries(DefaultCells).forEach(([key, value]) => {
     }
 });
 
+Object.entries(DefaultCells).forEach(([key, value]) => {
+    const val = value;
+
+    if (val.parameters && val.parameters.others) {
+        filteredTransformations[key] = value;
+    }
+});
+
 export const TransformationCells = filteredTransformations;
+
+export const OtherCells = filteredOtherCells;

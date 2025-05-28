@@ -41,6 +41,8 @@ export type {
     VariableWithId,
     CellState,
     NewCellAction,
+    Block,
+    QueryStateConfig
 } from "./store";
 
 // REGISTRY AND MENUS
@@ -56,6 +58,8 @@ export * from "./components/block-defaults";
 export * from "./components/cell-defaults";
 
 export { QueryImportCellConfig } from "./components/cell-defaults/query-import-cell";
+export { FilterDataCellConfig } from "./components/cell-defaults/filter-data-cell";
+export { UnFilterDataCellConfig } from "./components/cell-defaults/unfilter-data-cell";
 export { CodeCellConfig } from "./components/cell-defaults/code-cell";
 export { DataImportCellConfig } from "./components/cell-defaults/data-import-cell";
 

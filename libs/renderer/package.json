@@ -18,7 +18,9 @@
         "lint:fix": "eslint . --fix",
         "format": "prettier . --check --plugin-search-dir=.",
         "format:fix": "prettier . --write --plugin-search-dir=.",
-        "fix": "run-s format:fix lint:fix"
+        "fix": "run-s format:fix lint:fix",
+        "test": "vitest --watch=false --passWithNoTests --changed",
+        "test:browser": "vitest --watch --ui --pool=forks --project renderer"
     },
     "keywords": [],
     "author": "",
@@ -31,7 +33,9 @@
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/modifiers": "^9.0.0",
         "@dnd-kit/sortable": "^10.0.0",
-        "@dnd-kit/utilities": "^3.2.2"
+        "@dnd-kit/utilities": "^3.2.2",
+        "@types/jest": "^29.5.14",
+        "@types/node": "^22.13.10"
     },
     "devDependencies": {
         "@babel/core": "7.22.5",
@@ -82,7 +86,10 @@
         "vega-lite": "^5.16.3",
         "echarts": "^5.5.1",
         "echarts-for-react": "^3.0.2",
-        "react-color": "^2.19.3"
+        "react-color": "^2.19.3",
+        "@testing-library/jest-dom": "^6.6.3",
+        "@testing-library/react": "^16.2.0",
+        "@vitejs/plugin-react": "^4.3.4"
     },
     "peerDependencies": {
         "@mui/material": "5.13.5",

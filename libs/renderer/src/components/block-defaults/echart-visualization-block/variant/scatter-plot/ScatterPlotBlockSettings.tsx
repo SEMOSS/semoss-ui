@@ -26,6 +26,9 @@ import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 
 const StyledStack = styled(Stack)(() => ({
     width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
 }));
 
 interface ScatterPlotBlockSettingsProps<D extends BlockDef = BlockDef> {
@@ -527,176 +530,171 @@ export const ScatterPlotBlockSettings = observer(
                     </IconButton>
                 </BaseSettingSection>
 
-                <StyledStack>
-                    <BaseSettingSection label="Label">
-                        <Autocomplete
-                            size="small"
-                            fullWidth
-                            multiple={false}
-                            disabled={data.frame.name === ""}
-                            value={dataLabel ? dataLabel : ""}
-                            options={fields}
-                            getOptionLabel={(option) => {
-                                return option;
-                            }}
-                            onChange={(_, value, reason) => {
-                                // update the frame
-                                if (reason === "clear")
-                                    handleRemoveOption("label");
-                                else handleChangeLabel(value);
-                            }}
-                            freeSolo={false}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    placeholder="Select label"
-                                    size="small"
-                                    variant="outlined"
-                                />
-                            )}
-                        />
-                    </BaseSettingSection>
-                    <BaseSettingSection label="X-Axis">
-                        <Autocomplete
-                            size="small"
-                            fullWidth
-                            multiple={false}
-                            disabled={data.frame.name === ""}
-                            value={xAxisValue ? xAxisValue : ""}
-                            options={fields}
-                            getOptionLabel={(option) => {
-                                return option;
-                            }}
-                            onChange={(_, value, reason) => {
-                                // update the frame
-                                if (reason === "clear")
-                                    handleRemoveOption("xAxis");
-                                else handleChangeXAxis(value);
-                            }}
-                            freeSolo={false}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    placeholder="Select X-Axis"
-                                    size="small"
-                                    variant="outlined"
-                                />
-                            )}
-                        />
-                    </BaseSettingSection>
-                    <BaseSettingSection label="Y-Axis">
-                        <Autocomplete
-                            size="small"
-                            fullWidth
-                            multiple={false}
-                            disabled={data.frame.name === ""}
-                            value={yAxisValue ? yAxisValue : ""}
-                            options={fields}
-                            getOptionLabel={(option) => {
-                                return option;
-                            }}
-                            onChange={(_, value, reason) => {
-                                // update the frame
-                                if (reason === "clear")
-                                    handleRemoveOption("yAxis");
-                                else handleChangeYAxis(value);
-                            }}
-                            freeSolo={false}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    placeholder="Select Y-Axis"
-                                    size="small"
-                                    variant="outlined"
-                                />
-                            )}
-                        />
-                    </BaseSettingSection>
-                    <BaseSettingSection label="Size">
-                        <Autocomplete
-                            size="small"
-                            fullWidth
-                            multiple={false}
-                            disabled={data.frame.name === ""}
-                            value={size ? size : ""}
-                            options={fields}
-                            getOptionLabel={(option) => {
-                                return option;
-                            }}
-                            onChange={(_, value, reason) => {
-                                // update the frame
-                                if (reason == "clear")
-                                    handleRemoveOption("size");
-                                else handleChangeSize(value);
-                            }}
-                            freeSolo={false}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    placeholder="Select size"
-                                    size="small"
-                                    variant="outlined"
-                                />
-                            )}
-                        />
-                    </BaseSettingSection>
-                    <BaseSettingSection label="Color">
-                        <Autocomplete
-                            size="small"
-                            fullWidth
-                            multiple={false}
-                            disabled={data.frame.name === ""}
-                            value={color ? color : ""}
-                            options={fields}
-                            getOptionLabel={(option) => {
-                                return option;
-                            }}
-                            onChange={(_, value, reason) => {
-                                // update the frame
-                                if (reason === "clear")
-                                    handleRemoveOption("color");
-                                else handleChangeColor(value);
-                            }}
-                            freeSolo={false}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    placeholder="Select color"
-                                    size="small"
-                                    variant="outlined"
-                                />
-                            )}
-                        />
-                    </BaseSettingSection>
-                    <BaseSettingSection label="Tooltip">
-                        <Autocomplete
-                            size="small"
-                            fullWidth
-                            multiple={false}
-                            disabled={data.frame.name === ""}
-                            value={tooltip ? tooltip : ""}
-                            options={fields}
-                            getOptionLabel={(option) => {
-                                return option;
-                            }}
-                            onChange={(_, value, reason) => {
-                                // update the frame
-                                if (reason === "clear")
-                                    handleRemoveOption("tooltip");
-                                else handleChangeTooltip(value);
-                            }}
-                            freeSolo={false}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    placeholder="Select tooltip"
-                                    size="small"
-                                    variant="outlined"
-                                />
-                            )}
-                        />
-                    </BaseSettingSection>
-                </StyledStack>
+                {/* <StyledStack> */}
+                <BaseSettingSection label="Label">
+                    <Autocomplete
+                        size="small"
+                        fullWidth
+                        multiple={false}
+                        disabled={data.frame.name === ""}
+                        value={dataLabel ? dataLabel : ""}
+                        options={fields}
+                        getOptionLabel={(option) => {
+                            return option;
+                        }}
+                        onChange={(_, value, reason) => {
+                            // update the frame
+                            if (reason === "clear") handleRemoveOption("label");
+                            else handleChangeLabel(value);
+                        }}
+                        freeSolo={false}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="Select label"
+                                size="small"
+                                variant="outlined"
+                            />
+                        )}
+                    />
+                </BaseSettingSection>
+                <BaseSettingSection label="X-Axis">
+                    <Autocomplete
+                        size="small"
+                        fullWidth
+                        multiple={false}
+                        disabled={data.frame.name === ""}
+                        value={xAxisValue ? xAxisValue : ""}
+                        options={fields}
+                        getOptionLabel={(option) => {
+                            return option;
+                        }}
+                        onChange={(_, value, reason) => {
+                            // update the frame
+                            if (reason === "clear") handleRemoveOption("xAxis");
+                            else handleChangeXAxis(value);
+                        }}
+                        freeSolo={false}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="Select X-Axis"
+                                size="small"
+                                variant="outlined"
+                            />
+                        )}
+                    />
+                </BaseSettingSection>
+                <BaseSettingSection label="Y-Axis">
+                    <Autocomplete
+                        size="small"
+                        fullWidth
+                        multiple={false}
+                        disabled={data.frame.name === ""}
+                        value={yAxisValue ? yAxisValue : ""}
+                        options={fields}
+                        getOptionLabel={(option) => {
+                            return option;
+                        }}
+                        onChange={(_, value, reason) => {
+                            // update the frame
+                            if (reason === "clear") handleRemoveOption("yAxis");
+                            else handleChangeYAxis(value);
+                        }}
+                        freeSolo={false}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="Select Y-Axis"
+                                size="small"
+                                variant="outlined"
+                            />
+                        )}
+                    />
+                </BaseSettingSection>
+                <BaseSettingSection label="Size">
+                    <Autocomplete
+                        size="small"
+                        fullWidth
+                        multiple={false}
+                        disabled={data.frame.name === ""}
+                        value={size ? size : ""}
+                        options={fields}
+                        getOptionLabel={(option) => {
+                            return option;
+                        }}
+                        onChange={(_, value, reason) => {
+                            // update the frame
+                            if (reason == "clear") handleRemoveOption("size");
+                            else handleChangeSize(value);
+                        }}
+                        freeSolo={false}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="Select size"
+                                size="small"
+                                variant="outlined"
+                            />
+                        )}
+                    />
+                </BaseSettingSection>
+                <BaseSettingSection label="Color">
+                    <Autocomplete
+                        size="small"
+                        fullWidth
+                        multiple={false}
+                        disabled={data.frame.name === ""}
+                        value={color ? color : ""}
+                        options={fields}
+                        getOptionLabel={(option) => {
+                            return option;
+                        }}
+                        onChange={(_, value, reason) => {
+                            // update the frame
+                            if (reason === "clear") handleRemoveOption("color");
+                            else handleChangeColor(value);
+                        }}
+                        freeSolo={false}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="Select color"
+                                size="small"
+                                variant="outlined"
+                            />
+                        )}
+                    />
+                </BaseSettingSection>
+                <BaseSettingSection label="Tooltip">
+                    <Autocomplete
+                        size="small"
+                        fullWidth
+                        multiple={false}
+                        disabled={data.frame.name === ""}
+                        value={tooltip ? tooltip : ""}
+                        options={fields}
+                        getOptionLabel={(option) => {
+                            return option;
+                        }}
+                        onChange={(_, value, reason) => {
+                            // update the frame
+                            if (reason === "clear")
+                                handleRemoveOption("tooltip");
+                            else handleChangeTooltip(value);
+                        }}
+                        freeSolo={false}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="Select tooltip"
+                                size="small"
+                                variant="outlined"
+                            />
+                        )}
+                    />
+                </BaseSettingSection>
+                {/* </StyledStack> */}
             </StyledStack>
         );
     },

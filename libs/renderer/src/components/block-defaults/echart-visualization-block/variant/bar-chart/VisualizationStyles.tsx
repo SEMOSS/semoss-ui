@@ -22,8 +22,20 @@ const StyledBarStylesContainer = styled("div")<{
     width: width ?? undefined,
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
-    padding: "0.95rem",
+    padding: "8px 16px",
 }));
+
+const StyledAxisColDiv = styled("div")<{
+    display?: string;
+    justifyContent: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "column",
+    padding: "8px 16px",
+    gap: "8px",
+}));
+
 //styled text field for customizing text field size
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: "100%",
@@ -234,27 +246,33 @@ export const VisualizationStyles = observer(
         //bar chart component content is rendered into a single variable
         const accordionDetails = (
             <>
-                <ToggleTabsGroup
-                    onChange={(e: React.SyntheticEvent, val: string) =>
-                        setSelectedSeries(val)
-                    }
-                    value={selectedSeries}
-                >
-                    {styleData.length &&
-                        styleData.map((item, index) => {
-                            return (
-                                <ToggleTabsGroup.Item
-                                    label={`Series ${index + 1}`}
-                                    value={`${index}`}
-                                    key={`series${index}`}
-                                />
-                            );
-                        })}
-                    ;
-                </ToggleTabsGroup>
+                <StyledBarStylesContainer>
+                    <ToggleTabsGroup
+                        onChange={(e: React.SyntheticEvent, val: string) =>
+                            setSelectedSeries(val)
+                        }
+                        value={selectedSeries}
+                    >
+                        {styleData.length &&
+                            styleData.map((item, index) => {
+                                return (
+                                    <ToggleTabsGroup.Item
+                                        label={`Series ${index + 1}`}
+                                        value={`${index}`}
+                                        key={`series${index}`}
+                                    />
+                                );
+                            })}
+                        ;
+                    </ToggleTabsGroup>
+                </StyledBarStylesContainer>
                 {styleData[selectedSeries] && (
-                    <StyledBarStylesContainer>
-                        <StyledBarStylesContainer>
+                    // <StyledBarStylesContainer>
+                    <>
+                        <StyledAxisColDiv
+                            display="flex"
+                            justifyContent="flex-start"
+                        >
                             <label>Bar Width</label>
                             <Slider
                                 value={styleData[selectedSeries].barwidth}
@@ -269,21 +287,21 @@ export const VisualizationStyles = observer(
                                     )
                                 }
                             />
-                        </StyledBarStylesContainer>
-                        <StyledBarStylesContainer>
-                            <ColorPickerSettings
-                                id={id}
-                                path={`option.series.${selectedSeries}.itemStyle.color`}
-                                colorValue={currentSeriesColor}
-                                onChange={(e) =>
-                                    handleBarColourChange(
-                                        { target: { value: e } },
-                                        selectedSeries,
-                                    )
-                                }
-                            />
-                        </StyledBarStylesContainer>
-                    </StyledBarStylesContainer>
+                        </StyledAxisColDiv>
+
+                        <ColorPickerSettings
+                            id={id}
+                            path={`option.series.${selectedSeries}.itemStyle.color`}
+                            colorValue={currentSeriesColor}
+                            onChange={(e) =>
+                                handleBarColourChange(
+                                    { target: { value: e } },
+                                    selectedSeries,
+                                )
+                            }
+                        />
+                    </>
+                    // </StyledBarStylesContainer>
                 )}
             </>
         );

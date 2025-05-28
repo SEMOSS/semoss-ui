@@ -1,13 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { runPixel } from "../../api";
 
-// import { useNotification } from "@semoss/ui";
-
 interface PixelState<D> {
     /** Status of the pixel call */
     status: "INITIAL" | "LOADING" | "SUCCESS" | "ERROR";
     /** Data returned from the pixel call */
-    data?: D;
+    data: D;
     /** Error returned from the pixel call */
     error?: Error;
 }
@@ -16,8 +14,14 @@ export interface PixelConfig<D> {
     /** Initial Data */
     data: D;
 
-    /** Mangually process errors. Does not throw notifications */
-    silent: boolean;
+    /** Callback triggered on success */
+    onSuccess: (data: D) => void;
+
+    /** Callback triggered on error */
+    onError: (data: D, error: Error) => void;
+
+    /** Callback triggered at the end */
+    onFinal: () => void;
 }
 
 interface usePixel<D> extends PixelState<D> {
@@ -39,13 +43,13 @@ export function usePixel<D>(
     config?: Partial<PixelConfig<D>>,
     insightId?: string,
 ): usePixel<D> {
-    // const notification = useNotification();
-
     // store the initial config options
     const options: PixelConfig<D> = useMemo(() => {
         return {
             data: undefined,
-            silent: false,
+            onSuccess: () => null,
+            onError: () => null,
+            onFinal: () => null,
             ...config,
         };
     }, [config]);
@@ -55,11 +59,8 @@ export function usePixel<D>(
     const [state, setState] = useState<PixelState<D>>(() => {
         const s: PixelState<D> = {
             status: "INITIAL",
+            data: options.data,
         };
-
-        if (options.data !== undefined) {
-            s.data = options.data;
-        }
 
         return s;
     });
@@ -101,9 +102,10 @@ export function usePixel<D>(
 
         setState({
             status: "LOADING",
+            data: options.data,
         });
 
-        runPixel(pixel, insightId)
+        runPixel<[D]>(pixel, insightId)
             .then((response) => {
                 // ignore if its cancelled
                 if (isCancelled) {
@@ -122,8 +124,10 @@ export function usePixel<D>(
                 // set as success
                 setState({
                     status: "SUCCESS",
-                    data: output as D,
+                    data: output,
                 });
+
+                options.onSuccess(output);
             })
             .catch((error) => {
                 // ignore if its cancelled
@@ -131,26 +135,27 @@ export function usePixel<D>(
                     return;
                 }
 
-                if (!options.silent) {
-                    // notification.add({
-                    //     color: "error",
-                    //     message: error.message,
-                    // });
-                    window.alert(error.message);
-                } else {
-                    console.log(error.message);
-                }
-
                 setState({
                     status: "ERROR",
+                    data: options.data,
                     error: error,
                 });
+
+                options.onError(options.data, error);
+            })
+            .finally(() => {
+                // ignore if its cancelled
+                if (isCancelled) {
+                    return;
+                }
+
+                options.onFinal();
             });
 
         return () => {
             isCancelled = true;
         };
-    }, [pixel, count]);
+    }, [pixel, count, insightId, options]);
 
     return {
         ...state,

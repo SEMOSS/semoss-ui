@@ -30,12 +30,14 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 const StyledAxisDiv = styled("div")<{
     display?: string;
     justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
+    gap?: string;
+}>(({ theme, display, justifyContent, gap }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
-    marginLeft: "4px",
+    padding: "8px 16px",
+    alignItems: "center",
+    gap: gap ?? undefined,
 }));
 const StyledAxis = styled("div")<{
     display?: string;
@@ -44,7 +46,6 @@ const StyledAxis = styled("div")<{
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
 }));
 
 const StyledAxisColDiv = styled("div")<{
@@ -54,14 +55,13 @@ const StyledAxisColDiv = styled("div")<{
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "column",
-    padding: "0.5rem",
-    position: "relative",
-    right: "3px",
+    padding: "8px 16px",
+    gap: "8px",
 }));
 
-const StyledTypography = styled(Typography)({
-    paddingLeft: "10px",
-});
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    color: theme.palette.text.primary,
+}));
 
 const StyledButton = styled(Button)({
     left: "80%",
@@ -257,7 +257,11 @@ export const ValueLabelScatterPlot = observer(
 
         return (
             <StyledAxis>
-                <StyledAxisDiv display="flex" justifyContent="flex-start">
+                <StyledAxisDiv
+                    display="flex"
+                    justifyContent="flex-start"
+                    gap="8px"
+                >
                     <Switch
                         checked={showLabel}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -266,7 +270,7 @@ export const ValueLabelScatterPlot = observer(
                         title="Show Labels"
                         size="small"
                     />
-                    <StyledTypography variant="body1">
+                    <StyledTypography variant="body2">
                         Show Labels
                     </StyledTypography>
                 </StyledAxisDiv>
@@ -276,7 +280,7 @@ export const ValueLabelScatterPlot = observer(
                             display="flex"
                             justifyContent="space-around"
                         >
-                            <Typography variant="body2">
+                            <Typography variant="body2" color="secondary">
                                 Choose a Position For Value Label
                             </Typography>
                             <Select
@@ -328,7 +332,9 @@ export const ValueLabelScatterPlot = observer(
                             display="flex"
                             justifyContent="space-around"
                         >
-                            <Typography variant="body2">Select Font</Typography>
+                            <Typography variant="body2" color="secondary">
+                                Select Font
+                            </Typography>
                             <Select
                                 name="Select Font"
                                 value={labelFont}
@@ -347,7 +353,7 @@ export const ValueLabelScatterPlot = observer(
                             display="flex"
                             justifyContent="space-around"
                         >
-                            <Typography variant="body2">
+                            <Typography variant="body2" color="secondary">
                                 Select Font Size
                             </Typography>
                             <TextField

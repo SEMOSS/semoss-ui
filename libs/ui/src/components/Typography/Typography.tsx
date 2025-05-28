@@ -32,6 +32,8 @@ export interface TypographyProps {
         | "subtitle2"
         | "body1"
         | "body2"
+        | "body3"
+        | "body4"
         | "caption"
         | "button"
         | "overline";
@@ -48,6 +50,8 @@ export interface TypographyProps {
     noWrap?: MuiTypographyProps["noWrap"];
     title?: MuiTypographyProps["title"];
     id?: string;
+    component?: React.ElementType;
+    gutterBottom?: MuiTypographyProps["gutterBottom"];
 }
 
 export const Typography = (props: TypographyProps) => {

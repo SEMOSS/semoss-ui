@@ -4,13 +4,15 @@
         "lib": ["es6", "dom", "ES2015"],
         "target": "es5",
         "jsx": "react-jsx",
+        "types": ["vitest/globals", "@testing-library/jest-dom/vitest"],
 
         /* Modules */
         "baseUrl": "src",
         "rootDir": "src",
         "module": "esnext",
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "allowSyntheticDefaultImports": true,
+        "allowImportingTsExtensions": true,
         "resolveJsonModule": true,
 
         /* Emit */
@@ -34,6 +36,6 @@
             "@semoss/sdk": ["../sdk/src/index.ts"]
         }
     },
-    "include": ["src", "global.d.ts", "example"],
-    "exclude": ["dist", "node_modules", "**/*.spec.ts"]
+    "include": ["src", "global.d.ts", "example", "src/testing", "src/**/*"],
+    "exclude": ["dist", "node_modules"]
 }
