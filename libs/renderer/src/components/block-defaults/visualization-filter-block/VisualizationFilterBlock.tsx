@@ -116,11 +116,21 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
         setData("selectedValues", []);
 
         // Construct the command to unfilter the frame in the application state
-        const pixelCommand = `META | UnfilterFrame(${data.frame});`;
+        const pixelUnfilterCommand = `META | UnfilterFrame(${data.frame});`;
 
         try {
             // Execute the command as a side effect in the application state
-            const response = await state.runSideEffect(pixelCommand);
+            const response = await state.runSideEffect(pixelUnfilterCommand);
+            const res = await state.runSideEffect(
+                `META | Frame(${data.frame}) | Select(${data.column}).as([${data.column}])|Group(${data.column})|Sort(${data.column}) | Offset(0) | Limit(1000) | Collect(1000);`,
+            );
+            const values = (
+                res?.pixelReturn?.[0]?.output as {
+                    data?: { values?: any[] };
+                }
+            )?.data?.values;
+            const options = values.map((item: any) => String(item[0]));
+            setData("listOptions", options);
         } catch (error) {
             // If an error occurs, notify the user with an error message
             notification.add({

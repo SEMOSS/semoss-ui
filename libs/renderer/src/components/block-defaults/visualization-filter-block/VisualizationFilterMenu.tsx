@@ -129,6 +129,8 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
         sliderSensitivity: 0,
         listOptions: [],
         selectedValues: [],
+        color: "secondary",
+        size: "medium",
     };
 
     const [localState, setLocalState] =
@@ -155,6 +157,8 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
             sliderSensitivity: data.sliderSensitivity ?? 0,
             listOptions: data.listOptions ?? [],
             selectedValues: data.selectedValues ?? [],
+            color: data.color ?? "",
+            size: data.size ?? "",
         });
     }, [data, id]);
 
@@ -506,14 +510,26 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
                 )}
                 {selectedTab === "Tools" && (
                     <>
-                        <Box sx={{width: "100%", padding: "8px 16px", color: "#666666"}}>
+                        <Box
+                            sx={{
+                                width: "100%",
+                                padding: "8px 16px",
+                                color: "#666666",
+                            }}
+                        >
                             <SizeSettings
                                 id={id}
                                 label="Height"
                                 path="style.height"
                             />
                         </Box>
-                        <Box sx={{width: "100%", padding: "8px 16px", color: "#666666"}}>
+                        <Box
+                            sx={{
+                                width: "100%",
+                                padding: "8px 16px",
+                                color: "#666666",
+                            }}
+                        >
                             <SizeSettings
                                 id={id}
                                 label="Width"
@@ -526,10 +542,14 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
                             </StyledTypography>
                             <Autocomplete
                                 options={DATA.colors}
-                                value={data.color}
-                                onChange={(event, value) =>
-                                    setData("color", value)
-                                }
+                                value={localState.color || null}
+                                onChange={(event, value) => {
+                                    setData("color", value);
+                                    setLocalState((prev) => ({
+                                        ...prev,
+                                        color: value,
+                                    }));
+                                }}
                                 size="small"
                                 fullWidth={true}
                                 multiple={false}
@@ -544,10 +564,14 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
                             </StyledTypography>
                             <Autocomplete
                                 options={DATA.sizes}
-                                value={data.size}
-                                onChange={(event, value) =>
-                                    setData("size", value)
-                                }
+                                value={localState.size || null}
+                               onChange={(event, value) => {
+                                    setData("size", value);
+                                    setLocalState((prev) => ({
+                                        ...prev,
+                                        size: value,
+                                    }));
+                                }}
                                 size="small"
                                 fullWidth={true}
                                 multiple={false}

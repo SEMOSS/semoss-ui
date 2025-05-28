@@ -3162,7 +3162,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 selectedValues: [],
                 filterLabel: '',
                 sliderSensitivity: 0,
-                color: 'secondary',
+                color: 'primary',
                 size: 'medium',
             },
             listeners: {

@@ -329,7 +329,6 @@ const FilterComponent: React.FC<FilterComponentProps> = ({
         }
         setSearchText("");
 
-        onApply([]);
         if (onReset) {
             onReset();
         }
@@ -352,7 +351,7 @@ const FilterComponent: React.FC<FilterComponentProps> = ({
                 gap: 2,
             }}
         >
-            {showSearch && (mode === "checklist" || mode === "multiselect") && (
+            {(mode === "checklist" || mode === "multiselect") && (
                 <Box
                     sx={{
                         display: "flex",
@@ -361,6 +360,7 @@ const FilterComponent: React.FC<FilterComponentProps> = ({
                         width: "100%",
                     }}
                 >
+                    {showSearch && (
                     <Box sx={{ flex: 1 }}>
                         <SearchFilterHeader
                             searchText={searchText}
@@ -368,6 +368,7 @@ const FilterComponent: React.FC<FilterComponentProps> = ({
                             setChecked={setChecked}
                         />
                     </Box>
+                    )}
                     <IconComponent handleReset={handleReset} />
                 </Box>
             )}
@@ -402,7 +403,7 @@ const FilterComponent: React.FC<FilterComponentProps> = ({
 
             {mode === "dropdown" && (
                 <ClickAwayListener onClickAway={closeDropdown}>
-                    <Box sx={{ position: "relative", width: "100%" }}>
+                    <Box sx={{ position: "relative", width: "100%" }} >
                         <Box
                             sx={{
                                 display: "flex",
@@ -485,7 +486,7 @@ const FilterComponent: React.FC<FilterComponentProps> = ({
             )}
 
             {mode === "multiselect" && (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1, maxHeight: 200, overflowY: "auto" }}>
                     <ChipsArray
                         chips={chipData.filter((chip) =>
                             chip.label
