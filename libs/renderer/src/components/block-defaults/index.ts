@@ -148,7 +148,6 @@ export type DefaultBlockDefinitions =
     | VegaVisualizationBlockDef
     | RadioBlockDef
     | TimePickerBlockDef
-    | ThemeBlockDef
     | VisualizationFilterBlockDef
 // | BodyBlockDef
 // | DividerBlockDef

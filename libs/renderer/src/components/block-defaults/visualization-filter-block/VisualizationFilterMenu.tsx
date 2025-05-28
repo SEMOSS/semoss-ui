@@ -244,7 +244,6 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
      */
     const handleUpdate = async (): Promise<void> => {
         if (!localState.frame || !localState.column) {
-            console.error("Frame and Column must be selected before updating.");
             return;
         }
 
@@ -253,8 +252,6 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
                 `META | Frame(${localState.frame}) | Select(${localState.column}).as([${localState.column}])|Group(${localState.column})|Sort(${localState.column}) | Offset(0) | Limit(1000) | Collect(1000);`,
             );
 
-            console.group("Response", response);
-
             const values = (
                 response?.pixelReturn?.[0]?.output as {
                     data?: { values?: any[] };
@@ -262,7 +259,6 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
             )?.data?.values;
 
             if (!values?.length) {
-                console.error("Invalid response or errors found", response);
                 setLocalState((prev) => ({ ...prev, listOptions: [] }));
 
                 notification.add({
@@ -450,7 +446,6 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
                                 Searchable
                             </StyledTypography>
                         </StyleHorizontalSection>
-                        <>{console.log("TESTING >> ", data)}</>
                         <StyleHorizontalSection
                             style={{
                                 display:
