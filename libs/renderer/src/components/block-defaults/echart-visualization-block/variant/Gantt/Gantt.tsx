@@ -74,7 +74,7 @@ export const Gantt = observer(
         const [seriesNameCol, setSeriesNameCol] = useState(70);
         //selector to fetch data from the frame
         let selector = "";
-        if (data.columns !== undefined) {
+        if (data.columns?.length > 0) {
             selector = `Select(${data.columns
                 .map((item, index) => {
                     return item.selector;

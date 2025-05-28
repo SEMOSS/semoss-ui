@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     Button,
@@ -8,13 +8,12 @@ import {
     Typography,
     Table,
     IconButton,
-    Icon,
 } from '@semoss/ui';
 import { ArrowCircleDown, Create } from '@mui/icons-material';
-
 import { usePixel, useEngine, useRootStore } from '@/hooks';
 import { Section } from '@/components/ui';
 import { Metamodel } from '@/components/metamodel';
+import { SyncChangesModal } from './SyncChangesModal';
 
 const StyledPage = styled('div')(() => ({
     position: 'relative',
@@ -26,7 +25,6 @@ const StyledMetamodelContainer = styled('section')(({ theme }) => ({
     width: '100%',
     borderWidth: '1px',
     borderStyle: 'solid',
-    // borderColor: theme.palette.outline, // TODO: create a theme variable
     borderRadius: theme.shape.borderRadius,
 }));
 
@@ -36,16 +34,15 @@ const StyledTableContainer = styled(Table.Container)(() => ({
 
 export const EngineMetadataPage = observer(() => {
     const { id } = useEngine();
-
     const { monolithStore } = useRootStore();
 
-    // track the selected node
-    const [selectedNode, setSelectedNode] =
-        useState<React.ComponentProps<typeof Metamodel>['selectedNode']>(null);
+    const [selectedNode, setSelectedNode] = useState(null);
     const [columnPage, setColumnPage] = useState<number>(0);
     const [columnVisibleRows, setColumnVisibleRows] = useState<number>(5);
 
-    // get the metadata
+    const [customNodes, setCustomNodes] = useState(null);
+    const [customEdges, setCustomEdges] = useState(null);
+
     const getDatabaseMetamodel = usePixel<{
         dataTypes: Record<string, 'INT' | 'DOUBLE' | 'STRING'>;
         logicalNames: Record<string, string[]>;
@@ -104,109 +101,117 @@ export const EngineMetadataPage = observer(() => {
         },
     );
 
-    // format the nodes
-    const nodes: React.ComponentProps<typeof Metamodel>['nodes'] =
-        useMemo(() => {
-            if (getDatabaseMetamodel.status !== 'SUCCESS') {
-                return [];
-            }
+    const defaultNodes = useMemo(() => {
+        if (getDatabaseMetamodel.status !== 'SUCCESS') return [];
+        const { nodes = [], positions = {} } = getDatabaseMetamodel.data;
+        return nodes.map((n) => ({
+            id: n.conceptualName,
+            type: 'metamodel',
+            data: {
+                name: n.conceptualName.replace(/_/g, ' '),
+                properties: n.propSet.map((p) => ({
+                    id: `${n.conceptualName}__${p}`,
+                    name: p.replace(/_/g, ' '),
+                    type: '',
+                })),
+            },
+            position: positions[n.conceptualName]
+                ? {
+                      x: positions[n.conceptualName].left,
+                      y: positions[n.conceptualName].top,
+                  }
+                : { x: 0, y: 0 },
+        }));
+    }, [getDatabaseMetamodel.status, getDatabaseMetamodel.data]);
 
-            // extract the required information
-            const { nodes = [], positions = {} } = getDatabaseMetamodel.data;
+    const defaultEdges = useMemo(() => {
+        if (getDatabaseMetamodel.status !== 'SUCCESS') return [];
+        return getDatabaseMetamodel.data.edges.map((e) => ({
+            id: e.relation,
+            type: 'floating',
+            source: e.source,
+            target: e.target,
+        }));
+    }, [getDatabaseMetamodel.status, getDatabaseMetamodel.data]);
 
-            return nodes.map((n) => {
-                const node = n.conceptualName;
+    const [showSyncModal, setShowSyncModal] = useState(false);
+    const [tabledata, setTabledata] = useState<string[]>([]);
+    const [viewdata, setViewdata] = useState<string[]>([]);
 
-                return {
-                    id: node,
-                    type: 'metamodel',
-                    data: {
-                        name: String(n.conceptualName).replace(/_/g, ' '),
-                        properties: n.propSet.map((p) => {
-                            const property = `${node}__${p}`;
+    const refreshData = () => {
+        const pixel = `ExternalUpdateJdbcTablesAndViews(database=["${id}"]);`;
+        monolithStore.runQuery(pixel).then((response) => {
+            const output = response.pixelReturn[0].output;
+            setTabledata(output.tables ?? []);
+            setViewdata(output.views ?? []);
+            setShowSyncModal(true);
+        });
+    };
 
-                            return {
-                                id: property,
-                                name: String(p).replace(/_/g, ' '),
-                                type: '',
-                            };
-                        }),
-                    },
-                    position: positions[node]
-                        ? {
-                              x: positions[node].left,
-                              y: positions[node].top,
-                          }
-                        : {
-                              x: 0,
-                              y: 0,
-                          },
-                };
-            });
-        }, [getDatabaseMetamodel.status, getDatabaseMetamodel.data]);
+    const handleSyncApply = (
+        selectedTables: string[],
+        selectedViews: string[],
+    ) => {
+        const filters = JSON.stringify([...selectedTables, ...selectedViews]);
+        const pixel = `ExternalUpdateJdbcSchema(database=["${id}"], filters=${filters});`;
 
-    // format the edges
-    const edges: React.ComponentProps<typeof Metamodel>['edges'] =
-        useMemo(() => {
-            if (getDatabaseMetamodel.status !== 'SUCCESS') {
-                return [];
-            }
-            const data = getDatabaseMetamodel.data;
+        monolithStore.runQuery(pixel).then((response) => {
+            const output = response.pixelReturn[0]?.output;
+            if (!output) return;
 
-            return data.edges.map((e) => {
-                return {
-                    id: e.relation,
-                    type: 'floating',
-                    source: e.source,
-                    target: e.target,
-                };
-            });
-        }, [getDatabaseMetamodel.status, getDatabaseMetamodel.data]);
+            const newNodes = output.tables.map((table) => ({
+                id: table.table,
+                type: 'metamodel',
+                data: {
+                    name: table.table.replace(/_/g, ' '),
+                    properties: table.columns.map((col, idx) => ({
+                        id: `${table.table}__${col}`,
+                        name: col.replace(/_/g, ' '),
+                        type: table.type?.[idx] || '',
+                    })),
+                },
+                position: output.positions?.[table.table]
+                    ? {
+                          x: output.positions[table.table].left,
+                          y: output.positions[table.table].top,
+                      }
+                    : { x: 0, y: 0 },
+            }));
 
-    // format the column rows
+            const newEdges = (output.relationships || []).map((rel, i) => ({
+                id: `${rel.fromTable}-${rel.toTable}-${i}`,
+                type: 'floating',
+                source: rel.fromTable,
+                target: rel.toTable,
+            }));
+
+            setCustomNodes(newNodes);
+            setCustomEdges(newEdges);
+            setShowSyncModal(false);
+        });
+    };
+
     const columnRows = useMemo(() => {
-        if (
-            !selectedNode ||
-            !selectedNode.data ||
-            !selectedNode.data.properties ||
-            selectedNode.data.properties.length === 0
-        ) {
-            return [];
-        }
-
+        if (!selectedNode?.data?.properties?.length) return [];
         return selectedNode.data.properties.slice(
             columnPage * columnVisibleRows,
             (columnPage + 1) * columnVisibleRows,
         );
     }, [selectedNode, columnPage, columnVisibleRows]);
 
-    // get the description + logical names if possible
-    const description =
-        selectedNode &&
-        getDatabaseMetamodel.data &&
-        getDatabaseMetamodel.data.descriptions &&
-        getDatabaseMetamodel.data.descriptions[selectedNode.id]
-            ? getDatabaseMetamodel.data.descriptions[selectedNode.id]
-            : '';
+    const description = selectedNode?.id
+        ? getDatabaseMetamodel.data?.descriptions?.[selectedNode.id] ?? ''
+        : '';
 
-    const logical: string[] =
-        selectedNode &&
-        getDatabaseMetamodel.data &&
-        getDatabaseMetamodel.data.logicalNames &&
-        getDatabaseMetamodel.data.logicalNames[selectedNode.id]
-            ? getDatabaseMetamodel.data.logicalNames[selectedNode.id]
-            : [];
+    const logical = selectedNode?.id
+        ? getDatabaseMetamodel.data?.logicalNames?.[selectedNode.id] ?? []
+        : [];
 
-    /**
-     * @name printMeta
-     * @desc export DB pixel
-     */
     const printMeta = () => {
-        const pixel = `META|DatabaseMetadataToPdf(database=["${id}"] );`;
-        monolithStore.runQuery<[string]>(pixel).then((response) => {
+        const pixel = `META|DatabaseMetadataToPdf(database=["${id}"]);`;
+        monolithStore.runQuery(pixel).then((response) => {
             const output = response.pixelReturn[0].output;
             const insightId = response.insightId;
-
             monolithStore.download(insightId, output);
         });
     };
@@ -216,44 +221,30 @@ export const EngineMetadataPage = observer(() => {
             <Section>
                 <Section.Header
                     actions={
-                        <Button
-                            startIcon={<ArrowCircleDown />}
-                            variant="outlined"
-                            onClick={() => printMeta()}
-                            data-testid={'engine-metadata-print-btn'}
-                        >
-                            Print Metadata
-                        </Button>
+                        <Stack direction="row" spacing={2}>
+                            <Button variant="outlined" onClick={refreshData}>
+                                Refresh Data
+                            </Button>
+                            <Button
+                                startIcon={<ArrowCircleDown />}
+                                variant="outlined"
+                                onClick={printMeta}
+                                data-testid={'engine-metadata-print-btn'}
+                            >
+                                Print Metadata
+                            </Button>
+                        </Stack>
                     }
                 >
                     Metamodel
                 </Section.Header>
                 <Stack spacing={2}>
-                    {/* <StyledSelect
-                        value={selectedNode || ''}
-                        onChange={(e) => {
-                            setSelectedNode(e.target.value as MetamodelNode);
-                        }}
-                        renderValue={(n: MetamodelNode) => n.data.name}
-                        multiple={false}
-                    >
-                        {nodes.map((n) => {
-                            return (
-                                //@ts-expect-error This is an error in the component
-                                <MenuItem key={n.id} value={n}>
-                                    {n.data.name}
-                                </MenuItem>
-                            );
-                        })}
-                    </StyledSelect> */}
                     <StyledMetamodelContainer>
                         <Metamodel
-                            nodes={nodes}
-                            edges={edges}
+                            nodes={customNodes ?? defaultNodes}
+                            edges={customEdges ?? defaultEdges}
                             selectedNode={selectedNode}
-                            onSelectNode={(n) => {
-                                setSelectedNode(n);
-                            }}
+                            onSelectNode={setSelectedNode}
                             isInteractive={true}
                         />
                     </StyledMetamodelContainer>
@@ -261,144 +252,111 @@ export const EngineMetadataPage = observer(() => {
             </Section>
 
             {selectedNode && (
-                <Section>
-                    <Section.Header>Description</Section.Header>
-                    <Typography variant="body2">{description}</Typography>
-                </Section>
-            )}
+                <>
+                    <Section>
+                        <Section.Header>Description</Section.Header>
+                        <Typography variant="body2">{description}</Typography>
+                    </Section>
 
-            {selectedNode && (
-                <Section>
-                    <Section.Header>Logical Names</Section.Header>
-                    <Stack direction={'row'} spacing={1} flexWrap={'wrap'}>
-                        {logical.map((logicalName) => {
-                            return (
+                    <Section>
+                        <Section.Header>Logical Names</Section.Header>
+                        <Stack direction="row" spacing={1} flexWrap="wrap">
+                            {logical.map((name) => (
                                 <Chip
-                                    key={logicalName}
-                                    label={logicalName}
-                                    color={'primary'}
-                                    size={'small'}
-                                ></Chip>
-                            );
-                        })}
-                    </Stack>
-                </Section>
+                                    key={name}
+                                    label={name}
+                                    color="primary"
+                                    size="small"
+                                />
+                            ))}
+                        </Stack>
+                    </Section>
+            
+                    <Section>
+                        <Section.Header>Columns</Section.Header>
+                        <StyledTableContainer>
+                            <Table stickyHeader>
+                                <Table.Head>
+                                    <Table.Row>
+                                        <Table.Cell />
+                                        <Table.Cell>Name</Table.Cell>
+                                        <Table.Cell>Description</Table.Cell>
+                                        <Table.Cell>Logical Names</Table.Cell>
+                                    </Table.Row>
+                                </Table.Head>
+                                <Table.Body>
+                                    {columnRows.map((property, idx) => {
+                                        const desc =
+                                            getDatabaseMetamodel.data
+                                                ?.descriptions?.[property.id] ||
+                                            '';
+                                        const logic =
+                                            getDatabaseMetamodel.data
+                                                ?.logicalNames?.[property.id] ||
+                                            [];
+                                        return (
+                                            <Table.Row key={idx}>
+                                                <Table.Cell>
+                                                    <IconButton disabled>
+                                                        <Create />
+                                                    </IconButton>
+                                                </Table.Cell>
+                                                <Table.Cell>
+                                                    {property.name}
+                                                </Table.Cell>
+                                                <Table.Cell>
+                                                    <Typography variant="caption">
+                                                        {desc}
+                                                    </Typography>
+                                                </Table.Cell>
+                                                <Table.Cell>
+                                                    <Stack
+                                                        direction="row"
+                                                        spacing={1}
+                                                        flexWrap="wrap"
+                                                    >
+                                                        {logic.map((ln) => (
+                                                            <Chip
+                                                                key={ln}
+                                                                label={ln}
+                                                                color="primary"
+                                                                size="small"
+                                                            />
+                                                        ))}
+                                                    </Stack>
+                                                </Table.Cell>
+                                            </Table.Row>
+                                        );
+                                    })}
+                                </Table.Body>
+                                <Table.Footer>
+                                    <Table.Row>
+                                        <Table.Pagination
+                                            page={columnPage}
+                                            count={
+                                                selectedNode?.data?.properties
+                                                    ?.length || 0
+                                            }
+                                            rowsPerPage={columnVisibleRows}
+                                            rowsPerPageOptions={[7, 10, 25]}
+                                            onPageChange={(e, v) =>
+                                                setColumnPage(v)
+                                            }
+                                            onRowsPerPageChange={(e) =>
+                                                setColumnVisibleRows(
+                                                    e.target
+                                                        .value as unknown as number,
+                                                )
+                                            }
+                                        />
+                                    </Table.Row>
+                                </Table.Footer>
+                            </Table>
+                        </StyledTableContainer>
+                    </Section>
+                </>
             )}
 
-            {selectedNode && (
-                <Section>
-                    <Section.Header>Columns</Section.Header>
-                    <StyledTableContainer>
-                        <Table stickyHeader>
-                            <Table.Head>
-                                <Table.Row>
-                                    <Table.Cell>&nbsp;</Table.Cell>
-                                    <Table.Cell>Name</Table.Cell>
-                                    <Table.Cell>Description</Table.Cell>
-                                    <Table.Cell>Logical Names</Table.Cell>
-                                </Table.Row>
-                            </Table.Head>
-                            <Table.Body>
-                                {columnRows.map((property, idx) => {
-                                    const { id, name } = property;
-
-                                    const description =
-                                        getDatabaseMetamodel.data &&
-                                        getDatabaseMetamodel.data
-                                            .descriptions &&
-                                        getDatabaseMetamodel.data.descriptions[
-                                            id
-                                        ]
-                                            ? getDatabaseMetamodel.data
-                                                  .descriptions[id]
-                                            : '';
-
-                                    const logical: string[] =
-                                        getDatabaseMetamodel.data &&
-                                        getDatabaseMetamodel.data
-                                            .logicalNames &&
-                                        getDatabaseMetamodel.data.logicalNames[
-                                            id
-                                        ]
-                                            ? getDatabaseMetamodel.data
-                                                  .logicalNames[id]
-                                            : [];
-
-                                    return (
-                                        <Table.Row key={idx}>
-                                            <Table.Cell>
-                                                <IconButton
-                                                    disabled={true}
-                                                    data-testid={
-                                                        'engine-metadata-create-btn'
-                                                    }
-                                                >
-                                                    <Create />
-                                                </IconButton>
-                                            </Table.Cell>
-                                            <Table.Cell>{name}</Table.Cell>
-                                            <Table.Cell>
-                                                <Typography variant={'caption'}>
-                                                    {description}
-                                                </Typography>
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                <Stack
-                                                    direction={'row'}
-                                                    spacing={1}
-                                                    flexWrap={'wrap'}
-                                                >
-                                                    {logical.map(
-                                                        (logicalName) => {
-                                                            return (
-                                                                <Chip
-                                                                    key={
-                                                                        logicalName
-                                                                    }
-                                                                    label={
-                                                                        logicalName
-                                                                    }
-                                                                    color={
-                                                                        'primary'
-                                                                    }
-                                                                    size={
-                                                                        'small'
-                                                                    }
-                                                                ></Chip>
-                                                            );
-                                                        },
-                                                    )}
-                                                </Stack>
-                                            </Table.Cell>
-                                        </Table.Row>
-                                    );
-                                })}
-                            </Table.Body>
-                            <Table.Footer>
-                                <Table.Row>
-                                    <Table.Pagination
-                                        onPageChange={(e, v) => {
-                                            setColumnPage(v);
-                                        }}
-                                        page={columnPage}
-                                        rowsPerPage={columnVisibleRows}
-                                        onRowsPerPageChange={(e) => {
-                                            setColumnVisibleRows(
-                                                e.target
-                                                    .value as unknown as number,
-                                            );
-                                        }}
-                                        count={
-                                            selectedNode.data.properties.length
-                                        }
-                                        rowsPerPageOptions={[7, 10, 25]}
-                                    />
-                                </Table.Row>
-                            </Table.Footer>
-                        </Table>
-                    </StyledTableContainer>
-                </Section>
-            )}
             {selectedNode && getData.status === 'SUCCESS' && (
                 <Section>
                     <Section.Header>Data</Section.Header>
@@ -406,38 +364,36 @@ export const EngineMetadataPage = observer(() => {
                         <Table stickyHeader>
                             <Table.Head>
                                 <Table.Row>
-                                    {getData.data.data.headers.map((h) => {
-                                        return (
-                                            <Table.Cell key={h}>
-                                                {String(h).replace(/_/g, ' ')}
-                                            </Table.Cell>
-                                        );
-                                    })}
+                                    {getData.data.data.headers.map((h) => (
+                                        <Table.Cell key={h}>
+                                            {h.replace(/_/g, ' ')}
+                                        </Table.Cell>
+                                    ))}
                                 </Table.Row>
                             </Table.Head>
                             <Table.Body>
-                                {getData.data.data.values.map((v, vIdx) => {
-                                    return (
-                                        <Table.Row key={vIdx}>
-                                            {getData.data.data.headers.map(
-                                                (h, hIdx) => {
-                                                    return (
-                                                        <Table.Cell
-                                                            key={`${vIdx}-${hIdx}`}
-                                                        >
-                                                            {v[hIdx]}
-                                                        </Table.Cell>
-                                                    );
-                                                },
-                                            )}
-                                        </Table.Row>
-                                    );
-                                })}
+                                {getData.data.data.values.map((row, i) => (
+                                    <Table.Row key={i}>
+                                        {row.map((val, j) => (
+                                            <Table.Cell key={j}>
+                                                {val}
+                                            </Table.Cell>
+                                        ))}
+                                    </Table.Row>
+                                ))}
                             </Table.Body>
                         </Table>
                     </StyledTableContainer>
                 </Section>
             )}
+
+            <SyncChangesModal
+                open={showSyncModal}
+                onClose={() => setShowSyncModal(false)}
+                onApply={handleSyncApply}
+                tables={tabledata}
+                views={viewdata}
+            />
         </StyledPage>
     );
 });
