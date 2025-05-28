@@ -1,7 +1,18 @@
 import { useLayoutEffect, useState } from 'react';
 import { toJS } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { ContentCopy, Delete, DeleteOutline } from '@mui/icons-material';
+import {
+    ContentCopy,
+    Delete,
+    DeleteOutline,
+    Add,
+    SwapHoriz,
+    TextFields,
+    Image,
+    List,
+    AddCard,
+    SmartButton,
+} from '@mui/icons-material';
 
 import {
     styled,
@@ -18,6 +29,7 @@ import {
     INPUT_BLOCK_TYPES,
 } from '@semoss/renderer';
 
+import { QuickMenu } from './QuickMenu';
 import { getRelativeSize, getBlockElement } from '@/stores';
 import { useDesigner } from '@/hooks';
 
@@ -53,6 +65,14 @@ interface DeleteDuplicateMaskProps {
     screenEle: HTMLDivElement;
 }
 
+const quickMenu = [
+    { name: 'Container', value: 'container', icon: <List /> },
+    { name: 'Text', value: 'text', icon: <TextFields /> },
+    { name: 'Image', value: 'image', icon: <Image /> },
+    { name: 'Card', value: 'flip-card', icon: <AddCard /> },
+    { name: 'Button', value: 'button', icon: <SmartButton /> },
+];
+
 export const DeleteDuplicateMask = observer(
     (props: DeleteDuplicateMaskProps) => {
         const { screenEle } = props;
@@ -74,9 +94,14 @@ export const DeleteDuplicateMask = observer(
         // get the block
         const block = state.getBlock(designer.selected);
 
+        const hasChildren = block?.slots?.children?.children?.length > 0;
+        const isIterationOrContainer =
+            block.widget === 'iteration' || block.widget === 'container';
+        const isChangeable = hasChildren && block.widget !== 'container';
         // check if it is visible
         const isVisible =
             block && registry[block.widget] && block.widget !== 'page';
+        const [anchorEl, setAnchorEl] = useState(null);
 
         // get the root, watch changes, and reposition the mask
         useLayoutEffect(() => {
@@ -276,6 +301,65 @@ export const DeleteDuplicateMask = observer(
             designer.setSelected(id ? (id as string) : '');
         };
 
+        // Conditionally define addBlock to avoid unnecessary creation when not needed.
+        // This ensures the function is only created if the block is an iteration or container.
+        const addBlock = isIterationOrContainer
+            ? (item: {
+                  name: string;
+                  value: string;
+                  icon: React.ReactElement;
+              }) => {
+                  // Create the new block JSON
+                  const blockJson = {
+                      widget: item.value,
+                      data: registry[item.value].data,
+                      listeners: registry[item.value].listeners,
+                      slots: registry[item.value].slots,
+                  } as BlockJSON;
+
+                  // If the block is an iteration and has children, remove them first
+                  if (block.widget === 'iteration') {
+                      if (block.slots.children.children?.length > 0) {
+                          [...block.slots.children.children].forEach(
+                              (child) => {
+                                  state.dispatch({
+                                      message: ActionMessages.REMOVE_BLOCK,
+                                      payload: {
+                                          id: child,
+                                          keep: false,
+                                      },
+                                  });
+                              },
+                          );
+                      }
+                  }
+
+                  const id = state.dispatch({
+                      message: ActionMessages.ADD_BLOCK,
+                      payload: {
+                          json: blockJson as BlockJSON,
+                          position: {
+                              parent: block.id,
+                              slot: 'children',
+                          },
+                      },
+                  }) as string;
+
+                  if (block.widget === 'iteration') {
+                      state.dispatch({
+                          message: ActionMessages.SET_BLOCK_DATA,
+                          payload: {
+                              id: block.id,
+                              path: 'child',
+                              value: state.getBlock(id),
+                          },
+                      });
+                  }
+
+                  setAnchorEl(null);
+              }
+            : null;
+
         // TODO: revisit these actions for the base page once multiple pages/routing is enabled
 
         return (
@@ -302,6 +386,29 @@ export const DeleteDuplicateMask = observer(
                             <DeleteOutline />
                         </StyledButtonGroupIconButton>
                     </Tooltip>
+                    {isIterationOrContainer && (
+                        <>
+                            <Tooltip title={isChangeable ? 'Change' : 'Add'}>
+                                <StyledButtonGroupIconButton
+                                    sx={{ color: '#757575' }}
+                                    onClick={(e) =>
+                                        setAnchorEl(e.currentTarget)
+                                    }
+                                >
+                                    {isChangeable ? <SwapHoriz /> : <Add />}
+                                </StyledButtonGroupIconButton>
+                            </Tooltip>
+                            {anchorEl && (
+                                <QuickMenu
+                                    parentId={block.id}
+                                    anchorEl={anchorEl}
+                                    quickMenu={quickMenu}
+                                    onClose={() => setAnchorEl(null)}
+                                    onSelect={addBlock}
+                                />
+                            )}
+                        </>
+                    )}
                 </StyledButtonGroup>
             </StyledContainer>
         );
