@@ -12,6 +12,8 @@ import {
     TextField,
     Stack,
     FileDropzone,
+    Tooltip,
+    IconButton,
 } from '@semoss/ui';
 
 import {
@@ -21,6 +23,7 @@ import {
     PublishedWithChanges,
     InsertLink,
     Publish,
+    GetAppRounded,
 } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
 import { usePixel, useRootStore, useSettings } from '@/hooks';
@@ -199,6 +202,11 @@ const StyledTable = styled(Table)(({ theme }) => ({
 const StyledPaper = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
     padding: theme.spacing(2),
+}));
+
+const StyledExportDiv = styled('div')(() => ({
+    display: 'flex',
+    justifyContent: 'end',
 }));
 
 // User Table
@@ -531,6 +539,39 @@ export const AppSettings = (props: AppSettingsProps) => {
         }
     });
 
+    /**
+     * Method that is called to export the app
+     */
+    const exportApp = async () => {
+        setIsLoading(true);
+        try {
+            // export  the app
+            const response = await monolithStore.runQuery(
+                `ExportApp(project=["${id}"]);`,
+            );
+
+            // throw an error if there is no key
+            const key = response.pixelReturn[0].output;
+            if (!key) {
+                throw new Error('Error exporting app');
+            }
+
+            await monolithStore.download(configStore.store.insightID, key);
+            notification.add({
+                color: 'success',
+                message: 'Successfully Generated Export',
+            });
+        } catch (e) {
+            console.error(e);
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     if (condensed) {
         return (
             <StyledPaper>
@@ -627,6 +668,18 @@ export const AppSettings = (props: AppSettingsProps) => {
     } else {
         return (
             <StyledAppSettings>
+                <StyledExportDiv>
+                    <Tooltip title={'Export'}>
+                        <IconButton
+                            color="inherit"
+                            onClick={() => {
+                                exportApp();
+                            }}
+                        >
+                            <GetAppRounded />
+                        </IconButton>
+                    </Tooltip>
+                </StyledExportDiv>
                 <StyledTopCardContainer>
                     <StyledCardDiv>
                         <StyledCardLeft>
