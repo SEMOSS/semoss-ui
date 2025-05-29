@@ -94,6 +94,8 @@ export const NavigatorLayout = observer(() => {
             !configStore.store.config.adminOnlyViewMenuBarFlag
         ) {
             setViewSidebar(true);
+        }else{
+            setViewSidebar(false); 
         }
     }, [
         configStore.store.user.admin,
