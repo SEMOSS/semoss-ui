@@ -271,7 +271,7 @@ export const EngineMetadataPage = observer(() => {
                             ))}
                         </Stack>
                     </Section>
-            
+
                     <Section>
                         <Section.Header>Columns</Section.Header>
                         <StyledTableContainer>
