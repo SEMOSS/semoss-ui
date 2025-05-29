@@ -138,8 +138,13 @@ export const VisualMap = observer(
                                         display: "flex",
                                         alignItems: "center",
                                         marginTop: "15px",
+                                        cursor: item?.option ? "pointer" : "default",
                                     }}
-                                    onClick={() => handleSelectItem(item)}
+                                    onClick={() => {
+                                        if (item?.option) {
+                                            handleSelectItem(item);
+                                        }
+                                    }}
                                 >
                                     <div style={{ display: "flex", alignItems: "center" }}>
                                         {item.icon}
@@ -149,6 +154,7 @@ export const VisualMap = observer(
                                             marginLeft: item.icon?.type === "img" ? "30px" : "38px",
                                             display: "flex",
                                             alignItems: "center",
+                                            color: item?.option ? "#000000" : "#808080",
                                         }}
                                     >
                                         {item.label}
