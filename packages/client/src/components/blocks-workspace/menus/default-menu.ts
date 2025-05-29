@@ -1644,13 +1644,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     toolbox: {
                         feature: {
                             brush: {
-                                type: [
-                                    'rect',
-                                    'polygon',
-                                    'lineX',
-                                    'lineY',
-                                    'clear',
-                                ],
+                                type: ['rect', 'clear'],
                                 brushType: 'rect',
                                 xAxisIndex: 'all',
                                 yAxisIndex: 'all',
