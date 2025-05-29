@@ -39,7 +39,11 @@ export const HistoryRow = (props: {
         <>
             <Table.Row>
                 <Table.Cell>
-                    <IconButton size="small" onClick={() => setOpen(!open)}>
+                    <IconButton
+                        size="small"
+                        onClick={() => setOpen(!open)}
+                        data-testid={'history-table-toggle-btn'}
+                    >
                         {open ? <KeyboardArrowDown /> : <ChevronRight />}
                     </IconButton>
                 </Table.Cell>

@@ -105,6 +105,141 @@ export const NewAppPage = () => {
                 />
             </Container>
             <Stack direction={'column'} spacing={5}>
+                <Stack direction={'column'} alignItems={'start'} spacing={2}>
+                    <Stack
+                        direction={'row'}
+                        justifyContent={'space-between'}
+                        alignItems={'center'}
+                        alignSelf={'stretch'}
+                        spacing={2}
+                    >
+                        <Typography variant={'h5'} fontWeight="medium">
+                            Start from our tools
+                        </Typography>
+                        <StyledButton
+                            size="large"
+                            variant="contained"
+                            startIcon={<FileUploadOutlined />}
+                            onClick={() => setIsUploadOpen(true)}
+                            disableRipple={true}
+                            data-testid={'new-app-upload-btn'}
+                        >
+                            Upload App
+                        </StyledButton>
+                    </Stack>
+                    <Stack
+                        direction={'row'}
+                        alignItems={'flex-start'}
+                        flexWrap={'wrap'}
+                        gap={3}
+                        spacing={0}
+                    >
+                        <StyledBox location="first">
+                            <StyledBoxContent>
+                                <StyledBoxHeader>
+                                    <Typography variant={'h6'}>Code</Typography>
+                                    <Typography variant={'body1'}>
+                                        Choose a framework or start coding from
+                                        scratch. Develop your app within our
+                                        code editor feature to seamlessly code
+                                        and preview your live application!
+                                    </Typography>
+                                </StyledBoxHeader>
+                                <Stack direction="row">
+                                    <StyledButton
+                                        size="large"
+                                        variant="contained"
+                                        onClick={() =>
+                                            setNewAppOptions({
+                                                type: 'code',
+                                            })
+                                        }
+                                        data-testid={'new-app-code-btn'}
+                                    >
+                                        Get Started
+                                    </StyledButton>
+                                </Stack>
+                            </StyledBoxContent>
+                            <StyledBoxImage
+                                src={CodeSprite}
+                                height={'143.513px'}
+                                width={'131.539px'}
+                            />
+                        </StyledBox>
+                        <StyledBox location="second">
+                            <StyledBoxContent>
+                                <StyledBoxHeader>
+                                    <Typography variant={'h6'}>
+                                        Drag and Drop
+                                    </Typography>
+                                    <Typography variant={'body1'}>
+                                        Drag and drop UI components to make your
+                                        app come to life. Customize the design
+                                        of your app in this no-code environment.
+                                    </Typography>
+                                </StyledBoxHeader>
+                                <Stack direction="row">
+                                    <StyledButton
+                                        size="large"
+                                        variant="contained"
+                                        onClick={() =>
+                                            setNewAppOptions({
+                                                type: 'blocks',
+                                                state: {
+                                                    version: STATE_VERSION,
+                                                    variables: {},
+                                                    queries: {},
+                                                    blocks: BASE_PAGE_BLOCKS,
+                                                    executionOrder: [],
+                                                },
+                                            })
+                                        }
+                                        data-testid={'new-app-drag-btn'}
+                                    >
+                                        Get Started
+                                    </StyledButton>
+                                </Stack>
+                            </StyledBoxContent>
+                            <StyledBoxImage
+                                src={BlocksSprite}
+                                height={'166.818px'}
+                                width={'130.624px'}
+                            />
+                        </StyledBox>
+                        <StyledBox location="third">
+                            <StyledBoxContent>
+                                <StyledBoxHeader>
+                                    <Typography variant={'h6'}>
+                                        Agent Builder
+                                    </Typography>
+                                    <Typography variant={'body1'}>
+                                        Engineer a prompt to interact with your
+                                        LLM. Structure the text and design
+                                        inputs to generate the optimal AI
+                                        response.
+                                    </Typography>
+                                </StyledBoxHeader>
+                                <Stack direction="row">
+                                    <StyledButton
+                                        size="large"
+                                        variant="contained"
+                                        onClick={() =>
+                                            navigate('/app/new/prompt')
+                                        }
+                                        data-testid={'new-app-agent-btn'}
+                                    >
+                                        Get Started
+                                    </StyledButton>
+                                </Stack>
+                            </StyledBoxContent>
+                            <StyledBoxImage
+                                src={PromptSprite}
+                                height={'178.973px'}
+                                width={'108.189px'}
+                            />
+                        </StyledBox>
+                    </Stack>
+                </Stack>
                 <Stack
                     direction={'column'}
                     alignItems={'flex-start'}
