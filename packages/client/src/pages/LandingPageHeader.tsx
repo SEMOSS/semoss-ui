@@ -13,15 +13,16 @@ import {
     InputAdornment,
     lightTheme,
     Switch,
-    TextField,
+    // TextField,
 } from '@semoss/ui';
+import TextField from '@mui/material/TextField';
 import SearchIcon from '@mui/icons-material/Search';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { UserLandingPage } from './UserlandingPage';
 import DevBanner from '@/assets/img/DevBanner.png';
 import { SideNav } from '@/components/ui';
 import { Logo } from '@/assets/img/Logo';
-import playground from '@/assets/img/Playground.png';
+import playground from '@/assets/img/playground.png';
 import AIConductor from '@/assets/img/AIConductor.png';
 import NavSection from './app/NavSection';
 
