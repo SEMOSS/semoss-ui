@@ -262,71 +262,61 @@ export const MembersTable = (props: MembersTableProps) => {
     const memberSearchRef = useRef(undefined);
 
     // get the api
-   let getUserDataApi: Parameters<typeof useAPI>[0] ;
-        if (type === 'APP') {
-            getUserDataApi = [
-                'getProjectUsers',
-                adminMode,
-                id,
-                configStore.store.user.id,
-                permissionPriorityMapper(permissionFilter)?.permission,
-                0, // offset
-                1, // limit
-            ];
-        } else if (
-            type === 'DATABASE' ||
-            type === 'STORAGE' ||
-            type === 'MODEL' ||
-            type === 'VECTOR' ||
-            type === 'FUNCTION'
-        ) {
-            getUserDataApi = [
-                'getEngineUsers',
-                adminMode,
-                id,
-                configStore.store.user.id,
-                permissionPriorityMapper(permissionFilter)?.permission,
-                0, // offset
-                1, // limit
-            ];
-        } else {
-            getUserDataApi = null;
-        }
-    const getMembers = useAPI(getMembersApi);
-
-    //Below UseEffect has been added so that search supersedes pagination , when the user goes to a different page and searches any user the pagination is set 0 and the user is being displayed.
-    useEffect(() => {
-        setPage(0);
-    }, [debouncedSearch]);
-
-    const getUserDataApi: Parameters<typeof useAPI>[0] =
+    let getMembersApi: Parameters<typeof useAPI>[0] = null;
+    let getUserDataApi: Parameters<typeof useAPI>[0] = null;
+    if (type === 'APP') {
+        getUserDataApi = [
+            'getProjectUsers',
+            adminMode,
+            id,
+            configStore.store.user.id,
+            permissionPriorityMapper(permissionFilter)?.permission,
+            0, // offset
+            1, // limit
+        ];
+        getMembersApi = [
+            'getProjectUsers',
+            adminMode,
+            id,
+            debouncedSearch ? debouncedSearch : undefined,
+            permissionPriorityMapper(permissionFilter)?.permission,
+            (page + 1) * rowsPerPage - rowsPerPage, // offset
+            rowsPerPage, // limit
+        ];
+    } else if (
         type === 'DATABASE' ||
         type === 'STORAGE' ||
         type === 'MODEL' ||
         type === 'VECTOR' ||
         type === 'FUNCTION'
-            ? [
-                  'getEngineUsers',
-                  adminMode,
-                  id,
-                  configStore.store.user.id,
-                  permissionPriorityMapper(permissionFilter)?.permission,
-                  0, // offset
-                  1, // limit
-              ]
-            : type === 'APP'
-            ? [
-                  'getProjectUsers',
-                  adminMode,
-                  id,
-                  configStore.store.user.id,
-                  permissionPriorityMapper(permissionFilter)?.permission,
-                  0, // offset
-                  1, // limit
-              ]
-            : null;
+    ) {
+        getUserDataApi = [
+            'getEngineUsers',
+            adminMode,
+            id,
+            configStore.store.user.id,
+            permissionPriorityMapper(permissionFilter)?.permission,
+            0, // offset
+            1, // limit
+        ];
+        getMembersApi = [
+            'getEngineUsers',
+            adminMode,
+            id,
+            configStore.store.user.id,
+            permissionPriorityMapper(permissionFilter)?.permission,
+            0, // offset
+            1, // limit
+        ];
+    }
 
+    const getMembers = useAPI(getMembersApi);
     const userDetails = useAPI(getUserDataApi);
+
+    //Below UseEffect has been added so that search supersedes pagination , when the user goes to a different page and searches any user the pagination is set 0 and the user is being displayed.
+    useEffect(() => {
+        setPage(0);
+    }, [debouncedSearch]);
 
     /**
      * Sets the user details based on the current user in the members array.
@@ -362,10 +352,6 @@ export const MembersTable = (props: MembersTableProps) => {
         }
         setUserDetails();
     }, [userDetails.status]);
-
-    //     // select the member when done mounting
-    //     memberSearchRef.current?.focus();
-    // }, [getMembers.status, getMembers.data]);
 
     /**
      * Determines if the read-only option should be restricted for a given member.
