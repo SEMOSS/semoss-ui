@@ -291,6 +291,7 @@ const TablesViewsSelection = (props: TablesViewsSelectionProps) => {
                     onClick={() => {
                         setSteps([steps[0], steps[1]], 1);
                     }}
+                    data-testid={'establish-connection-modal-cancel-btn'}
                 >
                     Cancel
                 </Button>
@@ -299,6 +300,7 @@ const TablesViewsSelection = (props: TablesViewsSelectionProps) => {
                     onClick={() => {
                         sendTableViewFilters();
                     }}
+                    data-testid={'establish-connection-modal-apply-btn'}
                 >
                     Apply
                 </Button>
@@ -475,12 +477,14 @@ export const MetamodelView = (props: MetamodelViewProps) => {
                     onClick={() => {
                         setSteps([steps[0], steps[1]], 1);
                     }}
+                    data-testid={'establish-connection-cancel-btn'}
                 >
                     Cancel
                 </Button>
                 <Button
                     variant={'outlined'}
                     onClick={() => returnToTablesAndViews()}
+                    data-testid={'establish-connection-tables-btn'}
                 >
                     Tables and Views
                 </Button>
