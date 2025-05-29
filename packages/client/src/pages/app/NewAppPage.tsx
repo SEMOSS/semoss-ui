@@ -174,6 +174,7 @@ export const NewAppPage = () => {
                             startIcon={<FileUploadOutlined />}
                             onClick={() => setIsUploadOpen(true)}
                             disableRipple={true}
+                            data-testid={'new-app-upload-btn'}
                         >
                             Upload App
                         </StyledButton>
@@ -205,6 +206,7 @@ export const NewAppPage = () => {
                                                 type: 'code',
                                             })
                                         }
+                                        data-testid={'new-app-code-btn'}
                                     >
                                         Get Started
                                     </StyledButton>
@@ -244,6 +246,7 @@ export const NewAppPage = () => {
                                                 },
                                             })
                                         }
+                                        data-testid={'new-app-drag-btn'}
                                     >
                                         Get Started
                                     </StyledButton>
@@ -275,6 +278,7 @@ export const NewAppPage = () => {
                                         onClick={() =>
                                             navigate('/app/new/prompt')
                                         }
+                                        data-testid={'new-app-agent-btn'}
                                     >
                                         Get Started
                                     </StyledButton>
