@@ -181,55 +181,51 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
         try {
             if (isEdit) {
                 // Logic for editing the team
-                const editResponse = monolithStore.editTeam(
+                await monolithStore.editTeam(
                     data.TEAM_NAME,
                     data.TEAM_DESCRIPTION,
                     data.TEAM_TYPE,
                 );
 
-                editResponse.then(() => {
-                    onClose({
-                        id: data.TEAM_NAME,
-                        type: data.TEAM_TYPE,
-                        description: data.TEAM_DESCRIPTION,
-                    });
-                    reset();
-                    notification.add({
-                        color: 'success',
-                        message: 'Successfully updated team',
-                    });
+                onClose({
+                    id: data.TEAM_NAME,
+                    type: data.TEAM_TYPE,
+                    description: data.TEAM_DESCRIPTION,
+                });
+                reset();
+                notification.add({
+                    color: 'success',
+                    message: 'Successfully updated team',
                 });
             } else {
                 // Logic for creating a new team
-                const newResponse = monolithStore.addTeam(
+                await monolithStore.addTeam(
                     data.TEAM_NAME,
                     data.TEAM_DESCRIPTION,
                     data.TEAM_TYPE,
                 );
 
-                newResponse.then(() => {
-                    onClose({
-                        id: data.TEAM_NAME,
-                        type: data.TEAM_TYPE,
-                        description: data.TEAM_DESCRIPTION,
-                    });
-                    reset();
-                    notification.add({
-                        color: 'success',
-                        message: 'Successfully added group',
-                    });
-                    navigate(
-                        `${data.TEAM_NAME.toLowerCase()
-                            .replace(/['"]+/g, '')
-                            .replace(/\s/g, '-')}`,
-                        {
-                            state: {
-                                name: data.TEAM_NAME,
-                                type: data.TEAM_TYPE,
-                            },
-                        },
-                    );
+                onClose({
+                    id: data.TEAM_NAME,
+                    type: data.TEAM_TYPE,
+                    description: data.TEAM_DESCRIPTION,
                 });
+                reset();
+                notification.add({
+                    color: 'success',
+                    message: 'Successfully added group',
+                });
+                navigate(
+                    `${data.TEAM_NAME.toLowerCase()
+                        .replace(/['"]+/g, '')
+                        .replace(/\s/g, '-')}`,
+                    {
+                        state: {
+                            name: data.TEAM_NAME,
+                            type: data.TEAM_TYPE,
+                        },
+                    },
+                );
             }
         } catch (e) {
             console.error(e);
