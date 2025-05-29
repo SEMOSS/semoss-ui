@@ -11,6 +11,7 @@ const navCards = [
             'Drag and drop UI components to make your app come to life. Customize the design of your app in this low code environment.',
         image: Appagent,
         type: 'blocks',
+        testId: 'new-app-drag-btn',
     },
     {
         title: 'Develop in code',
@@ -18,6 +19,7 @@ const navCards = [
             'Choose a framework or start from scratch—code and preview your app seamlessly in our editor!',
         image: Appcode,
         type: 'code',
+        testId: 'new-app-code-btn',
     },
     {
         title: 'Construct an agent',
@@ -25,10 +27,11 @@ const navCards = [
             'Engineer a prompt to interact with your LLM. Structure the text and design inputs to generate the optimal AI response.',
         image: Appdragdrop,
         type: 'agent',
+        testId: 'new-app-agent-btn',
     },
 ];
 
-const NavCard = ({ title, description, type, image, setApp }) => (
+const NavCard = ({ title, description, type, image, setApp, testId }) => (
     <Box
         sx={{
             border: '1px solid #e0e0e0',
@@ -54,6 +57,7 @@ const NavCard = ({ title, description, type, image, setApp }) => (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Button
                 variant="outlined"
+                data-testid={testId}
                 sx={{
                     borderColor: '#C4C4C4',
                     color: '#212121',
@@ -134,6 +138,7 @@ const NavSection = ({
                             alignSelf: 'flex-start',
                         }}
                         onClick={uploadApp}
+                        data-testid={'new-app-upload-btn'}
                     >
                         Upload App
                     </Button>
