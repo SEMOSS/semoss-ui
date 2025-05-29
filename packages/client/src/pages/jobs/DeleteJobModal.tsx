@@ -20,7 +20,11 @@ export const DeleteJobModal = (props: {
                     </Typography>
                 </Modal.Content>
                 <Modal.Actions>
-                    <Button variant="text" onClick={close}>
+                    <Button
+                        variant="text"
+                        onClick={close}
+                        data-testid={'delete-job-cancel-btn'}
+                    >
                         Cancel
                     </Button>
                     <Button
@@ -32,6 +36,7 @@ export const DeleteJobModal = (props: {
                                 job.map((j) => j.group),
                             );
                         }}
+                        data-testid={'delete-job-delete-btn'}
                     >
                         Delete
                     </Button>

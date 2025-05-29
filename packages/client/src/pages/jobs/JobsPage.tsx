@@ -588,6 +588,7 @@ export function JobsPage() {
                             startIcon={<Pause />}
                             size="medium"
                             onClick={() => pauseJobs()}
+                            data-testid={'jobs-page-pause-btn'}
                         >
                             Pause
                         </Button>
@@ -599,6 +600,7 @@ export function JobsPage() {
                             startIcon={<NotStartedOutlined />}
                             size="medium"
                             onClick={() => resumeJobs()}
+                            data-testid={'jobs-page-resume-btn'}
                         >
                             Resume
                         </Button>
@@ -629,6 +631,7 @@ export function JobsPage() {
                                     password: '',
                                 })
                             }
+                            data-testid={'jobs-page-add-btn'}
                         >
                             Add
                         </Button>
