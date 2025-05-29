@@ -332,6 +332,11 @@ interface AppTileCardProps {
     systemApp?: boolean;
 
     /**
+     * Show bookmark
+     */
+    isDiscoverable?: boolean;
+
+    /**
      * Action triggered when deleted
      */
     onDelete?: () => void;
@@ -356,6 +361,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
         favorite,
         appType,
         systemApp,
+        isDiscoverable = false,
         onDelete,
         isLoading,
         showSkeleton,
@@ -734,7 +740,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
     return (
         <StyledMainDiv ref={cardRef}>
             <StyledTileCard disabled={!href}>
-                {!systemApp && (
+                {!systemApp && !isDiscoverable && (
                     <StyledContainer>
                         <StyledOverlayContent>
                             <StyledIconButton
