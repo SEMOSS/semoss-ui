@@ -72,15 +72,22 @@ const NavCard = ({ title, description, type, image, setApp }) => (
             {image && (
                 <Box
                     sx={{
-                        width: '100%',
-                        height: 179,
-                        backgroundImage: `url(${image})`,
-                        backgroundSize: 'contain',
-                        backgroundRepeat: 'no-repeat',
-                        backgroundPosition: 'center',
-                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'flex-end',
+                        justifyContent: 'center',
                     }}
-                />
+                >
+                    <img
+                        src={image}
+                        alt={title}
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'contain',
+                            display: 'block',
+                        }}
+                    />
+                </Box>
             )}
         </Box>
     </Box>

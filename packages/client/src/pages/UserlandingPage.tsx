@@ -22,7 +22,7 @@ const GradientText = styled(Typography)(() => ({
 }));
 
 const BackgroundContainer = styled(Box)(({ theme }) => ({
-    minHeight: '100vh',
+    minHeight: '100%',
     backgroundImage: ` url(${BusinessUserImage}), linear-gradient(rgba(255,255,255,0.5), rgba(255,255,255,0.5)), url(${businessUsercheckgrid})`,
     backgroundRepeat: 'no-repeat',
     backgroundSize: '47%, 100%, 100%',
@@ -107,7 +107,7 @@ const UserLandingPage = () => {
                     </SliderText>
                 </SliderTexts>
             </ContentContainer>
-            <Box sx={{ width: '100%', maxWidth: '60vw' }}>
+            <Box sx={{ width: '100%', maxWidth: '60%' }}>
                 <StyledTextField
                     variant="outlined"
                     placeholder="Search"

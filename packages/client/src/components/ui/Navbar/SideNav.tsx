@@ -143,69 +143,70 @@ const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
                     />
                 </Box>
                 <Divider />
+                <Box sx={{ overflowY: 'auto' }}>
+                    {/* Main Menu */}
+                    <List sx={{ padding: 0 }}>
+                        {menuItems.map((item, index) => (
+                            <List.Item key={index} sx={listStyles}>
+                                <List.ItemButton sx={{ gap: 2 }}>
+                                    <List.Icon sx={{ minWidth: '24px' }}>
+                                        {item.icon}
+                                    </List.Icon>
+                                    <List.ItemText primary={item.text} />
+                                </List.ItemButton>
+                            </List.Item>
+                        ))}
+                    </List>
+                    <Divider />
 
-                {/* Main Menu */}
-                <List sx={{ padding: 0 }}>
-                    {menuItems.map((item, index) => (
-                        <List.Item key={index} sx={listStyles}>
+                    {/* Catalog Section */}
+                    <Typography variant="subtitle1" sx={sectionTitleStyles()}>
+                        Catalogs
+                    </Typography>
+                    <List sx={{ padding: 0 }}>
+                        {catalogItems.map((item, index) => (
+                            <List.Item key={index} sx={listStyles}>
+                                <List.ItemButton sx={{ gap: 2 }}>
+                                    <List.Icon sx={{ minWidth: '24px' }}>
+                                        {item.icon}
+                                    </List.Icon>
+                                    <List.ItemText primary={item.text} />
+                                </List.ItemButton>
+                            </List.Item>
+                        ))}
+                    </List>
+                    <Divider />
+
+                    {/* Teams Section */}
+                    <Typography variant="subtitle1" sx={sectionTitleStyles()}>
+                        Teams
+                    </Typography>
+                    <List sx={{ padding: 0 }}>
+                        {teamItems.map((item, index) => (
+                            <List.Item key={index} sx={listStyles}>
+                                <List.ItemButton sx={{ gap: 2 }}>
+                                    <List.Icon sx={{ minWidth: '24px' }}>
+                                        <Box sx={teamIconStyles(item.color)} />
+                                    </List.Icon>
+                                    <List.ItemText primary={item.text} />
+                                </List.ItemButton>
+                            </List.Item>
+                        ))}
+                    </List>
+                    <Divider />
+
+                    {/* Settings */}
+                    <List sx={{ padding: 0 }}>
+                        <List.Item sx={listStyles}>
                             <List.ItemButton sx={{ gap: 2 }}>
                                 <List.Icon sx={{ minWidth: '24px' }}>
-                                    {item.icon}
+                                    <SettingsIcon />
                                 </List.Icon>
-                                <List.ItemText primary={item.text} />
+                                <List.ItemText primary="Settings" />
                             </List.ItemButton>
                         </List.Item>
-                    ))}
-                </List>
-                <Divider />
-
-                {/* Catalog Section */}
-                <Typography variant="subtitle1" sx={sectionTitleStyles()}>
-                    Catalogs
-                </Typography>
-                <List sx={{ padding: 0 }}>
-                    {catalogItems.map((item, index) => (
-                        <List.Item key={index} sx={listStyles}>
-                            <List.ItemButton sx={{ gap: 2 }}>
-                                <List.Icon sx={{ minWidth: '24px' }}>
-                                    {item.icon}
-                                </List.Icon>
-                                <List.ItemText primary={item.text} />
-                            </List.ItemButton>
-                        </List.Item>
-                    ))}
-                </List>
-                <Divider />
-
-                {/* Teams Section */}
-                <Typography variant="subtitle1" sx={sectionTitleStyles()}>
-                    Teams
-                </Typography>
-                <List sx={{ padding: 0 }}>
-                    {teamItems.map((item, index) => (
-                        <List.Item key={index} sx={listStyles}>
-                            <List.ItemButton sx={{ gap: 2 }}>
-                                <List.Icon sx={{ minWidth: '24px' }}>
-                                    <Box sx={teamIconStyles(item.color)} />
-                                </List.Icon>
-                                <List.ItemText primary={item.text} />
-                            </List.ItemButton>
-                        </List.Item>
-                    ))}
-                </List>
-                <Divider />
-
-                {/* Settings */}
-                <List sx={{ padding: 0 }}>
-                    <List.Item sx={listStyles}>
-                        <List.ItemButton sx={{ gap: 2 }}>
-                            <List.Icon sx={{ minWidth: '24px' }}>
-                                <SettingsIcon />
-                            </List.Icon>
-                            <List.ItemText primary="Settings" />
-                        </List.ItemButton>
-                    </List.Item>
-                </List>
+                    </List>
+                </Box>
             </Box>
             {/* Bottom Section */}
             <Box sx={bottomSectionStyles}>

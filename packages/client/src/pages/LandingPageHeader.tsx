@@ -31,6 +31,9 @@ const StyledBox = styled(Box)(({ theme }) => ({
     background: '#FAFAFA',
     height: '56px',
     flexGrow: 1,
+    position: 'sticky',
+    top: 0,
+    zIndex: 1000,
     '& .MuiPaper-root > .MuiToolbar-root': {
         gap: '8px',
     },
@@ -137,7 +140,6 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
 
 const StyledComponent = styled('div')(({ theme }) => ({
     display: 'flex',
-    padding: '40px',
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: '24px',
@@ -145,6 +147,8 @@ const StyledComponent = styled('div')(({ theme }) => ({
     alignSelf: 'stretch',
     width: '100%',
     backgroundColor: '#FAFAFA',
+    height: 'calc(100vh - 56px)', // Adjust height based on AppBar height
+    overflow: 'auto',
 }));
 
 const StyledLeftSection = styled('div')(({ theme }) => ({
@@ -242,7 +246,7 @@ const BannerComponent = observer(() => {
                 style={{
                     padding: '53px 21px',
                     backgroundImage: `url(${DevBanner})`,
-                    minHeight: '30dvh',
+                    minHeight: '294px',
                     width: '100%',
                     backgroundRepeat: 'no-repeat',
                     backgroundSize: 'cover',
@@ -486,7 +490,14 @@ export const LandingPageHeader = () => {
             />
             <StyledComponent>
                 {showAppBuilder ? (
-                    <>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            padding: '40px',
+                            gap: '24px',
+                            flexDirection: 'column',
+                        }}
+                    >
                         <BannerComponent />
                         <div
                             style={{
@@ -516,7 +527,7 @@ export const LandingPageHeader = () => {
                                 }}
                             />
                         </div>
-                    </>
+                    </Box>
                 ) : (
                     <UserLandingPage />
                 )}
