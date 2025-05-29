@@ -313,6 +313,14 @@ export const ImportPage = () => {
     }
 
     function filterNonProdItem(obj) {
+
+      const functionList =['AWS Polly','AWS Transcribe','AWS Comprehend','Azure Speech To Text','Google Speech To Text','Google OCR'];
+      const connectionList = ['Elastic Search','Milvus','Open Search','PGVector'];
+      const storageList = ['Amazon S3', 'Google Cloud', 'Local File System', 'Microsoft Azure Blob Storage', 'Microsoft OneDrive', 'Network File System', 'SFTP'];
+      const databaseFileList = ['ZIP','CSV','Excel','TSV','Neo4J'];
+      const databaseList = ['Athena', 'BigQuery', 'Cassandra', 'DATABRICKS', 'DB2', 'Elastic Search', 'Impala', 'MariaDB', 'MySQL',
+                'Open Search', 'Oracle', 'Postgres', 'Redshift', 'SAP Hana', 'SEMOSS', 'Snowflake', 'SQL Server', 'SQLITE', 'Teradata'
+            ];
        
         if (
             obj?.MODEL?.['Commercially Hosted'] && (
@@ -343,26 +351,69 @@ export const ImportPage = () => {
         }
         //Function
 
+        //Function
         if (obj.FUNCTION.Function.length > 0) {
-            for (let k = 0; k <= obj.FUNCTION.Function.length; k++) {
-                if (obj.FUNCTION.Function[k].name === 'AWS Polly') {
-                    delete obj.FUNCTION.Function[k];
-                } else if (obj.FUNCTION.Function[k].name === 'AWS Transcribe') {
-                    delete obj.FUNCTION.Function[k];
-                } else if (obj.FUNCTION.Function[k].name === 'AWS Comprehend') {
-                    delete obj.FUNCTION.Function[k];
-                }
-                else if (obj.FUNCTION.Function[k].name === 'Azure Speech To Text') {
-                    delete obj.FUNCTION.Function[k];
-                }
-                else if (obj.FUNCTION.Function[k].name === 'Google Speech To Text') {
-                    delete obj.FUNCTION.Function[k];
-                }
-                else if (obj.FUNCTION.Function[k].name === 'Google OCR') {
-                    delete obj.FUNCTION.Function[k];
-                }
+             for (let k = 0; k <= obj.FUNCTION.Function.length; k++) {
+                for(let m=0;m<functionList.length;m++){
+                    if (obj.FUNCTION.Function[k]?.name === functionList[m]) {
+                         delete obj.FUNCTION.Function[k];
+                    }
+
+                }              
             }
         }
+         //Vector
+
+         if(obj.VECTOR.Connections.length>0){
+             for (let k = 0; k <= obj.VECTOR.Connections.length; k++) {
+                for(let n=0;n<connectionList.length;n++){
+                if (obj.VECTOR.Connections[k]?.name === connectionList[n]) {
+                    delete obj.VECTOR.Connections[k];
+                }
+                
+               }
+           }
+        }
+
+           if (obj?.VECTOR['File Uploads']) {
+            delete obj.VECTOR['File Uploads'];
+            }
+        //Storage 
+        if (obj.STORAGE.Storage.length > 0) {
+              for (let k = 0; k <= obj.STORAGE.Storage.length; k++) {
+                for (let l = 0; l < storageList.length; l++) {
+                    if (obj.STORAGE.Storage[k]?.name === storageList[l]) {
+                        delete obj.STORAGE.Storage[k];
+                    }
+                }
+
+            }
+        }
+         if (obj?.STORAGE?.['File Uploads']) {
+              delete obj.STORAGE['File Uploads'];
+          }
+          //DataBase file Uploads
+         if(obj?.DATABASE?.['File Uploads'].length>0){ 
+             for(let i=0;i<obj.DATABASE['File Uploads'].length;i++){
+                for(let b=0;b<databaseFileList.length;b++){
+               if(obj.DATABASE['File Uploads'][i]?.name === databaseFileList[b]){
+                    delete obj.DATABASE['File Uploads'][i];
+                }
+               }
+            }
+         }
+        //DataBase file Uploads
+        if (obj?.DATABASE?.Connections.length > 0) {
+            for (let i = 0; i < obj.DATABASE.Connections.length; i++) {
+                for (let r = 0; r < databaseList.length; r++) {
+                    if (obj.DATABASE.Connections[i]?.name === databaseList[r]) {
+                        delete obj.DATABASE.Connections[i];
+                    }
+                }
+            }
+              
+        }
+        
         console.log("After Function Removal",obj);
         return obj; 
     }
