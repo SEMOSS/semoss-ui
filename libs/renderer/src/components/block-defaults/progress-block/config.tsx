@@ -23,7 +23,10 @@ export const config: BlockConfig<ProgressBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: ProgressBlock,
@@ -32,7 +35,6 @@ export const config: BlockConfig<ProgressBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Type",
                     render: ({ id }) => {
@@ -57,6 +59,16 @@ export const config: BlockConfig<ProgressBlockDef> = {
                     },
                 },
                 {
+                    description: "Include Label",
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label="Include Label"
+                            path="includeLabel"
+                        />
+                    ),
+                },
+                {
                     description: "Value",
                     render: ({ id }) => (
                         <InputSettings
@@ -67,17 +79,11 @@ export const config: BlockConfig<ProgressBlockDef> = {
                         />
                     ),
                 },
-                {
-                    description: "Include Label",
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Include Label"
-                            path="includeLabel"
-                        />
-                    ),
-                },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

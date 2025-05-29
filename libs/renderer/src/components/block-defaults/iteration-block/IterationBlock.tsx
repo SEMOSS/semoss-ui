@@ -9,6 +9,7 @@ import {
     BlockComponent,
     BlockDef,
     BlockJSON,
+    ListenerActions,
 } from "../../../store";
 import { Slot } from "../../blocks";
 
@@ -39,7 +40,10 @@ export interface IterationBlockDef extends BlockDef<"iteration"> {
         children: true;
     };
     listeners: {
-        preProcess: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
@@ -73,7 +77,6 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
         // Only while we are in app using mode
         if (state.mode === "interactive") {
             if (Array.isArray(list)) {
-                console.log(list.length);
                 const newIds = [];
 
                 blocksToRemove.forEach(async (b) => {

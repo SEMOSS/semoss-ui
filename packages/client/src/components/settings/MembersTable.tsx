@@ -27,7 +27,7 @@ import { SETTINGS_PROVISIONED_USER, SETTINGS_ROLE } from './settings.types';
 import { permissionPriorityMapper } from '@/utility/general';
 import { MembersDeleteOverlay } from './MembersDeleteOverlay';
 import { MembersAddOverlay } from './MembersAddOverlay';
-
+import { UserPopover } from './UserPopover';
 const AvatarWrapper = styled('div')({
     display: 'inline-block',
     width: '50px',
@@ -162,6 +162,10 @@ const StyledCenteredBox = styled(Box)({
     alignItems: 'center',
     gap: '8px',
 });
+const StyledNameStack = styled(Stack)({
+    alignItems: 'center',
+    flex: 1,
+});
 
 const formatValue = (input: string) => {
     if (input !== undefined) {
@@ -231,6 +235,9 @@ export const MembersTable = (props: MembersTableProps) => {
     const [permissionOrder, setPermissionOrder] = useState<'asc' | 'desc'>(
         'asc',
     );
+    /** Utility for Popover */
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+    const [hoveredUser, setHoveredUser] = useState<User | null>(null);
 
     const [userData, setUserData] = useState<SETTINGS_PROVISIONED_USER>(
         {} as SETTINGS_PROVISIONED_USER,
@@ -281,8 +288,12 @@ export const MembersTable = (props: MembersTableProps) => {
                   rowsPerPage, // limit
               ]
             : null;
-
     const getMembers = useAPI(getMembersApi);
+
+    //Below UseEffect has been added so that search supersedes pagination , when the user goes to a different page and searches any user the pagination is set 0 and the user is being displayed.
+    useEffect(() => {
+        setPage(0);
+    }, [debouncedSearch]);
 
     /**
      * Sets the user details based on the current user in the members array.
@@ -307,6 +318,15 @@ export const MembersTable = (props: MembersTableProps) => {
                 } else {
                     setUserPermission(
                         permissionPriorityMapper(data[0].permission)
+                            ?.permission as SETTINGS_ROLE,
+                    );
+                }
+            } else {
+                if (adminMode) {
+                    // if logged in admin, need to provide all Author option previledges
+                    const adminPermissionPriority = 'Author';
+                    setUserPermission(
+                        permissionPriorityMapper(adminPermissionPriority)
                             ?.permission as SETTINGS_ROLE,
                     );
                 }
@@ -553,7 +573,12 @@ export const MembersTable = (props: MembersTableProps) => {
     const handlePermissionSort = () => {
         setPermissionOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     };
-
+    /**
+     * Handle user popover close
+     */
+    const handlePopoverClose = () => {
+        setAnchorEl(null);
+    };
     // Avatars rendered
     const Avatars = useMemo(() => {
         if (!renderedMembers.length) {
@@ -652,7 +677,11 @@ export const MembersTable = (props: MembersTableProps) => {
                                 </StyledDeleteSelectedContainer>
                                 <StyledAddMemberContainer>
                                     <Button
-                                        disabled={isLoading}
+                                        disabled={
+                                            isLoading ||
+                                            (!adminMode &&
+                                                userPermission === 'Read-Only')
+                                        }
                                         variant={'contained'}
                                         onClick={() => {
                                             openAddMembersModal();
@@ -685,6 +714,11 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 padding="checkbox"
                                             >
                                                 <Checkbox
+                                                    disabled={
+                                                        userPermission ===
+                                                            'Read-Only' &&
+                                                        !adminMode
+                                                    }
                                                     checked={
                                                         selectedMembers.length ===
                                                             renderedMembers.length &&
@@ -728,6 +762,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 >
                                                     Permission
                                                 </Table.Sort>
+                                            </Table.Cell>
+                                            <Table.Cell size="small">
+                                                Permission Date
                                             </Table.Cell>
                                             {type === 'MODEL' && (
                                                 <>
@@ -773,6 +810,11 @@ export const MembersTable = (props: MembersTableProps) => {
                                                             padding="checkbox"
                                                         >
                                                             <StyledCheckbox
+                                                                disabled={
+                                                                    userPermission ===
+                                                                        'Read-Only' &&
+                                                                    !adminMode
+                                                                }
                                                                 checked={
                                                                     isSelected
                                                                 }
@@ -811,25 +853,31 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         </StyledTableCell>
                                                         <Table.Cell>
                                                             <StyledCenteredBox>
-                                                                <AvatarWrapper>
-                                                                    <Avatar>
-                                                                        {user.name[0].toUpperCase()}
-                                                                    </Avatar>
-                                                                </AvatarWrapper>
-                                                                <Stack direction="row">
-                                                                    <div>
-                                                                        {
-                                                                            user.name
-                                                                        }
-                                                                    </div>
-                                                                    {user.name ===
-                                                                        userData.name && (
-                                                                        <Badge
-                                                                            color="primary"
-                                                                            variant="dot"
-                                                                        />
-                                                                    )}
-                                                                </Stack>
+                                                                <StyledNameStack
+                                                                    direction="row"
+                                                                    onMouseEnter={(
+                                                                        event,
+                                                                    ) => {
+                                                                        setAnchorEl(
+                                                                            event.currentTarget,
+                                                                        );
+                                                                        setHoveredUser(
+                                                                            user,
+                                                                        );
+                                                                    }}
+                                                                    onMouseLeave={() =>
+                                                                        handlePopoverClose
+                                                                    }
+                                                                    aria-owns="mouse-over-popover"
+                                                                    aria-haspopup="true"
+                                                                >
+                                                                    <AvatarWrapper>
+                                                                        <Avatar>
+                                                                            {user.name[0].toUpperCase()}
+                                                                        </Avatar>
+                                                                    </AvatarWrapper>
+                                                                    {user.name}
+                                                                </StyledNameStack>
                                                             </StyledCenteredBox>
                                                         </Table.Cell>
                                                         <Table.Cell size="medium">
@@ -841,6 +889,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     )
                                                                         ?.permission
                                                                 }
+                                                                sx={{
+                                                                    flexWrap:
+                                                                        'nowrap',
+                                                                }}
                                                                 onChange={(
                                                                     e,
                                                                 ) => {
@@ -863,11 +915,12 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                             type,
                                                                             'access',
                                                                         ) ||
-                                                                        permissionPriorityMapper(
-                                                                            userPermission,
-                                                                        )
-                                                                            .priority >
-                                                                            1
+                                                                        (!adminMode &&
+                                                                            permissionPriorityMapper(
+                                                                                userPermission,
+                                                                            )
+                                                                                .priority >
+                                                                                1)
                                                                     }
                                                                 />
                                                                 <RadioGroup.Item
@@ -878,11 +931,12 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                             type,
                                                                             'access',
                                                                         ) ||
-                                                                        permissionPriorityMapper(
-                                                                            userPermission,
-                                                                        )
-                                                                            ?.priority >
-                                                                            2
+                                                                        (!adminMode &&
+                                                                            permissionPriorityMapper(
+                                                                                userPermission,
+                                                                            )
+                                                                                ?.priority >
+                                                                                2)
                                                                     }
                                                                 />
                                                                 <RadioGroup.Item
@@ -893,17 +947,22 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                             type,
                                                                             'access',
                                                                         ) ||
-                                                                        permissionPriorityMapper(
-                                                                            userPermission,
-                                                                        )
-                                                                            ?.priority >
-                                                                            3 ||
-                                                                        readOnlyRestricted(
-                                                                            user,
-                                                                        )
+                                                                        (!adminMode &&
+                                                                            (permissionPriorityMapper(
+                                                                                userPermission,
+                                                                            )
+                                                                                ?.priority >=
+                                                                                3 ||
+                                                                                readOnlyRestricted(
+                                                                                    user,
+                                                                                )))
                                                                     }
                                                                 />
                                                             </RadioGroup>
+                                                        </Table.Cell>
+                                                        <Table.Cell>
+                                                            {user?.date_added ??
+                                                                'Not Available'}
                                                         </Table.Cell>
                                                         {type === 'MODEL' && (
                                                             <>
@@ -951,7 +1010,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     !configStore.isEngineOperationAvailable(
                                                                         type,
                                                                         'access',
-                                                                    )
+                                                                    ) ||
+                                                                    userPermission ===
+                                                                        'Read-Only'
                                                                 }
                                                             >
                                                                 <Edit />
@@ -966,7 +1027,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     !configStore.isEngineOperationAvailable(
                                                                         type,
                                                                         'access',
-                                                                    )
+                                                                    ) ||
+                                                                    userPermission ===
+                                                                        'Read-Only'
                                                                 }
                                                             >
                                                                 <Delete></Delete>
@@ -1003,6 +1066,24 @@ export const MembersTable = (props: MembersTableProps) => {
                                             />
                                         </Table.Row>
                                     </Table.Footer>
+                                    <UserPopover
+                                        hoveredUser={
+                                            hoveredUser
+                                                ? {
+                                                      id: hoveredUser.id,
+                                                      name:
+                                                          hoveredUser.name ||
+                                                          'Unknown',
+                                                      email:
+                                                          hoveredUser.email ||
+                                                          '',
+                                                  }
+                                                : null
+                                        }
+                                        isPopoverOpen={Boolean(anchorEl)}
+                                        anchorEl={anchorEl}
+                                        handlePopoverClose={handlePopoverClose}
+                                    />
                                 </StyledMemberTable>
                             ) : (
                                 <StyledNoMembersDiv>

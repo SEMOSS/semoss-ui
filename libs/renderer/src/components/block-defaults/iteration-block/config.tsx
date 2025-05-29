@@ -21,7 +21,10 @@ export const config: BlockConfig<IterationBlockDef> = {
         show: "true",
     },
     listeners: {
-        preProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {
         children: [],
@@ -29,10 +32,6 @@ export const config: BlockConfig<IterationBlockDef> = {
     render: IterationBlock,
     icon: FormatShapes,
     contentMenu: [
-        {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
         {
             name: "Data Source",
             children: [
@@ -47,6 +46,10 @@ export const config: BlockConfig<IterationBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",

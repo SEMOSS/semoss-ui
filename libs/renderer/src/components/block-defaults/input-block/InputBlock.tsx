@@ -2,8 +2,8 @@ import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
 import { useBlock } from "../../../hooks";
-import { BlockComponent, BlockDef } from "../../../store";
-import { LinearProgress, TextField, styled } from "@mui/material";
+import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
+import { TextField, styled } from "@mui/material";
 import { CircularProgress, InputAdornment } from "@semoss/ui";
 import { debounced } from "../../../utility";
 
@@ -33,8 +33,14 @@ export interface InputBlockDef extends BlockDef<"input"> {
         show: string;
     };
     listeners: {
-        preProcess: true;
-        onChange: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+        onChange: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
@@ -49,7 +55,7 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
 
     const debouncedCallback = debounced(() => {
         listeners.onChange();
-    }, 200);
+    }, 500);
 
     return (
         <StyledTextField

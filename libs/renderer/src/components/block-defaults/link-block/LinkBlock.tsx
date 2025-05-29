@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { Link } from "react-router-dom";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
 
 export interface LinkBlockDef extends BlockDef<"link"> {
@@ -15,7 +15,10 @@ export interface LinkBlockDef extends BlockDef<"link"> {
         show: string;
     };
     listeners: {
-        preProcess: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
@@ -29,12 +32,38 @@ export const LinkBlock: BlockComponent = observer(({ id }) => {
             listeners.preProcess();
         }
     }, []);
+
+    const isFullUrl = (href:string) => {
+        return /^(https?:)?\/\//.test(data.href)
+    }
+
+    const navigate = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        if(!data.href) return;
+        if(isFullUrl(data.href)){
+            return
+        } else if (data.href.startsWith("/")) {
+            e.preventDefault()
+
+            const hash = window.location.hash 
+            const match = hash.match(/^#\/[^/]+\/[^/]+/)
+
+            if(match) {
+                const base  = match[0]
+
+                const newHash = base + (data.href.startsWith("/") ? data.href : "/")
+
+                window.location.hash = newHash
+            }
+        }
+
+    }
     return (
         <a
             href={data.href}
             style={{
                 ...data.style,
             }}
+            onClick={navigate}
             {...attrs}
         >
             {data.text}

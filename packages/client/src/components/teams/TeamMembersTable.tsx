@@ -342,22 +342,24 @@ export const TeamMembersTable = (props: MembersTableProps) => {
     }, [isScrollBottom]);
 
     useEffect(() => {
-        if (searchMemberInput) {
-            setSearchLoading(true);
-        }
-        const timer = setTimeout(() => {
-            if (!offset) {
-                getUsersNonGroup(true);
-            } else {
-                if (canCollect) {
-                    getUsersNonGroup(false);
-                } else {
-                    getUsersNonGroup(true);
-                }
+        if (addMembersModal) {
+            if (searchMemberInput) {
+                setSearchLoading(true);
             }
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [offset, searchMemberInput]);
+            const timer = setTimeout(() => {
+                if (!offset) {
+                    getUsersNonGroup(true);
+                } else {
+                    if (canCollect) {
+                        getUsersNonGroup(false);
+                    } else {
+                        getUsersNonGroup(true);
+                    }
+                }
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [addMembersModal, offset, searchMemberInput]);
 
     /**
      * @name submitNonGroupUsers
@@ -423,6 +425,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
         } finally {
             // refresh the members
             setCount(count + 1);
+            setOffset(0);
         }
     };
 
@@ -881,7 +884,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                     <StyledModalContentText>
                         <Autocomplete
                             label="Search"
-                            loading={isLoading || searchLoading}
+                            loading={searchLoading}
                             multiple={true}
                             freeSolo={false}
                             filterOptions={(x) => x}
@@ -958,7 +961,6 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                             onInputChange={(event, newValue) => {
                                 setSearchMemberInput(newValue);
                                 setOffset(0);
-                                setNonCredentialedUsers([]);
                             }}
                         />
 

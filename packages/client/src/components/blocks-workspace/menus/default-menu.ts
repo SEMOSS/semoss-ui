@@ -27,9 +27,1431 @@ export const SECTION_ORDER = [
 
 // Development Environment Blocks
 const DEV_BLOCKS = [];
-
+// update the json structure also in VisualMapConstant.tsx
 if (process.env.NODE_ENV === 'development') {
-    DEV_BLOCKS.push({
+    console.warn('PUSH DEV ENV BLOCKS');
+}
+
+// TODO: Alphabetical order by name
+export const DEFAULT_MENU: DesignerMenuItem[] = [
+    // TODO: You will still be able to drop configs on the UI.  Beta version of blocks
+    ...DEV_BLOCKS,
+    // -------------------------------------------------------------
+    // PROD BLOCKS START
+    // ----------------------------------------------------------
+    {
+        section: SECTION_LAYOUT,
+        name: 'Accordion',
+        activeImage: BLOCK_IMAGES['ACCORDION_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['ACCORDION_HOVER'],
+        helperText: 'Click to expand and collapse sections for more details',
+        json: {
+            widget: 'accordion',
+            data: {
+                style: {
+                    padding: '20px',
+                },
+                triggerBgColor: '',
+                contentBgColor: '',
+                showExpandIcon: false,
+                show: 'true',
+                // -------------------------------------------
+                // John B:
+                // We may need to track styles differently.
+                // Can handle this in a migration function
+                // accordionStyles:
+                // accordionHeaderStyles:
+                // accordionContentStyles:
+                // -------------------------------------------
+            },
+            listeners: {
+                preProcess: {
+                    type: 'sync',
+                    order: [],
+                },
+            },
+            slots: {
+                header: [],
+                content: [],
+            },
+        },
+    },
+
+    {
+        section: SECTION_LAYOUT,
+        name: 'Multi-Accordion Block',
+        activeImage: BLOCK_IMAGES['ACCORDION_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['ACCORDION_HOVER'],
+        helperText: 'Click to expand and collapse sections for more details',
+        json: {
+            widget: 'container',
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '16px',
+                },
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {
+                children: [
+                    {
+                        widget: 'accordion',
+                        data: {
+                            style: {
+                                borderBottom: '1px solid #ccc',
+                                borderRadius: '0',
+                                padding: '16px',
+                            },
+                            triggerBgColor: '',
+                            contentBgColor: '',
+                            showExpandIcon: false,
+                            show: 'true',
+                        },
+                        listeners: {
+                            preProcess: { type: 'sync', order: [] },
+                        },
+                        slots: {
+                            header: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            padding: '16px',
+                                            gap: '30%',
+                                        },
+                                    },
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                        padding: '16px',
+                                                    },
+                                                    text: 'Accordion 1',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '16px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                        color: '#9c9696',
+                                                        fontWeight: 'normal',
+                                                    },
+                                                    text: 'I am an accordion',
+                                                    variant: 'h4',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                            content: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            gap: '18px',
+                                        },
+                                    },
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '16px',
+                                                        paddingTop: '8px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                    },
+                                                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        widget: 'accordion',
+                        data: {
+                            style: {
+                                borderBottom: '1px solid #ccc',
+                                padding: '16px',
+                            },
+                            triggerBgColor: '',
+                            contentBgColor: '',
+                            showExpandIcon: false,
+                            show: 'true',
+                        },
+                        listeners: {
+                            preProcess: { type: 'sync', order: [] },
+                        },
+                        slots: {
+                            header: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            gap: '30%',
+                                            padding: '16px',
+                                        },
+                                    },
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '16px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                    },
+                                                    text: 'Accordion 2',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                        color: '#9c9696',
+                                                        fontWeight: 'normal',
+                                                        padding: '16px',
+                                                    },
+                                                    text: 'I am an accordion',
+                                                    variant: 'h4',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                            content: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            gap: '18px',
+                                            padding: '16px',
+                                        },
+                                    },
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '16px',
+                                                        paddingTop: '8px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                    },
+                                                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        widget: 'accordion',
+                        data: {
+                            style: {
+                                borderBottom: '1px solid #ccc',
+                                padding: '16px',
+                            },
+                            triggerBgColor: '',
+                            contentBgColor: '',
+                            showExpandIcon: false,
+                            show: 'true',
+                        },
+                        listeners: {
+                            preProcess: { type: 'sync', order: [] },
+                        },
+                        slots: {
+                            header: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            gap: '30%',
+                                            padding: '16px',
+                                        },
+                                    },
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '16px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                    },
+                                                    text: 'Accordion 3',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                        color: '#9c9696',
+                                                        fontWeight: 'normal',
+                                                        padding: '16px',
+                                                    },
+                                                    text: 'I am an accordion',
+                                                    variant: 'h4',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                            content: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            gap: '18px',
+                                            padding: '16px',
+                                        },
+                                    },
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '16px',
+                                                        paddingTop: '8px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                    },
+                                                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+    },
+
+    {
+        section: SECTION_LAYOUT,
+        name: 'Popover',
+        activeImage: BLOCK_IMAGES['POPOVER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['POPOVER_HOVER'],
+        helperText: 'Click or Hover to show the popover',
+        json: {
+            widget: 'popover',
+            data: {
+                style: {},
+                open: false,
+                designMode: true,
+                openTrigger: 'click',
+                contentBgColor: '',
+            },
+            listeners: {
+                onOpen: {
+                    type: 'sync',
+                    order: [],
+                },
+                onClose: {
+                    type: 'sync',
+                    order: [],
+                },
+            },
+            slots: {
+                header: [],
+                content: [],
+            },
+        },
+    },
+    {
+        section: SECTION_MISC,
+        name: 'Theme Block',
+        helperText: 'Determine the theme of your page with our Theme Block',
+        activeImage: BLOCK_IMAGES['THEME_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['THEME_HOVER'],
+        json: {
+            widget: 'theme',
+            data: {
+                theme: lightTheme,
+            },
+            listeners: {},
+            slots: {
+                children: [],
+            },
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Audio Player',
+        helperText: 'Play back audio responses or other files',
+        activeImage: BLOCK_IMAGES['AUDIO_PLAYER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['AUDIO_PLAYER_HOVER'],
+        json: {
+            widget: 'audio-player',
+            data: {
+                label: 'Audio Player',
+                autoplay: false,
+                controls: true,
+                loop: false,
+                source: '',
+                show: 'true',
+            },
+            listeners: {
+                preProcess: {
+                    type: 'sync',
+                    order: [],
+                },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        name: 'Divider',
+        helperText: 'Separate content with a horizontal line',
+        activeImage: BLOCK_IMAGES['DIVIDER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['DIVIDER_HOVER'],
+        json: {
+            widget: 'divider',
+            data: {
+                style: {
+                    padding: '0px',
+                    width: '100%',
+                },
+                variant: 'fullWidth',
+                orientation: 'horizontal',
+                textAlign: 'center',
+                flexItem: false,
+                light: false,
+                text: '',
+                showText: false,
+                show: 'true',
+            },
+            listeners: {
+                preProcess: {
+                    type: 'sync',
+                    order: [],
+                },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        name: 'Ratings ',
+        helperText: 'Rate on a scale',
+        json: {
+            widget: 'ratings',
+            data: {
+                style: {},
+                size: 'small',
+                type: 'star',
+                value: 2,
+                max: 5,
+            },
+            listeners: {
+                onChange: {
+                    type: 'sync',
+                    order: [],
+                },
+                preProcess: {
+                    type: 'sync',
+                    order: [],
+                },
+            },
+            slots: {
+                children: [],
+            },
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Switch',
+        helperText: 'Toggle between two states',
+        json: {
+            widget: 'switch',
+            data: {
+                style: {
+                    width: 'fit-content',
+                    padding: '4px',
+                },
+                label: 'Toggle Switch',
+                value: false,
+                disabled: false,
+                color: 'primary',
+                size: 'medium',
+                helperText: '',
+                required: false,
+                labelPlacement: 'end',
+            },
+            listeners: {
+                preProcess: {
+                    type: 'sync',
+                    order: [],
+                },
+                onChange: {
+                    type: 'sync',
+                    order: [],
+                },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Time Picker',
+        helperText: 'Select a time from a time picker',
+        json: {
+            widget: 'timepicker',
+            data: {
+                style: {
+                    width: '25%',
+                    padding: '4px',
+                },
+                label: 'Select Time',
+                value: '',
+                variant: 'picker',
+                ampm: true,
+                format: 'hh:mm a',
+                disabled: false,
+                required: false,
+                fullWidth: false,
+                placeholder: '',
+                clearable: true,
+                size: 'small',
+                views: ['hours', 'minutes'],
+            },
+            listeners: {
+                preProcess: {
+                    type: 'sync',
+                    order: [],
+                },
+                onChange: {
+                    type: 'sync',
+                    order: [],
+                },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Button',
+        helperText: 'Creates a click event',
+        activeImage: BLOCK_IMAGES['BUTTON_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['BUTTON_HOVER'],
+        json: {
+            widget: 'button',
+            data: {
+                style: {},
+                label: 'Submit',
+                loading: false,
+                disabled: false,
+                variant: 'contained',
+                color: 'primary',
+                show: true,
+            },
+            listeners: {
+                onClick: {
+                    type: 'sync',
+                    order: [],
+                },
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Checkbox',
+        helperText: 'Add a checkbox for user selection',
+        activeImage: BLOCK_IMAGES['CHECKBOX_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['CHECKBOX_HOVER'],
+        json: {
+            widget: 'checkbox',
+            data: {
+                style: {
+                    padding: 'none',
+                },
+                label: 'Example Checkbox',
+                required: false,
+                disabled: false,
+                value: false,
+                show: 'true',
+            },
+            listeners: {
+                onChange: { type: 'sync', order: [] },
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Radio',
+        activeImage: BLOCK_IMAGES['RADIO_BUTTON_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['RADIO_BUTTON_HOVER'],
+        helperText: 'User select between multiple items',
+        json: {
+            widget: 'radio',
+            data: {
+                style: {
+                    padding: '4px',
+                },
+                value: 'no_value',
+                label: 'Radio Input',
+                isGroup: false,
+                options: [{ label: 'Default', value: 'no_value' }],
+                size: 'medium',
+                direction: 'column',
+                color: 'primary',
+                labelPlacement: 'end',
+                required: false,
+                disabled: false,
+                show: 'true',
+            },
+            listeners: {
+                onChange: { type: 'sync', order: [] },
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_LAYOUT,
+        name: 'Modal',
+        activeImage: BLOCK_IMAGES['MODAL_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['MODAL_HOVER'],
+        helperText: 'Overlay to show more info or action to user',
+        json: {
+            widget: 'modal',
+            data: {
+                style: {},
+                title: 'Modal Title',
+                open: false,
+                fullWidth: true,
+                maxWidth: 'sm',
+                minWidth: 'sm',
+                designMode: true,
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+                onClose: { type: 'sync', order: [] },
+            },
+            slots: {
+                content: [],
+                footer: [],
+            },
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Input',
+        helperText: 'Add an input box for typing text',
+        activeImage: BLOCK_IMAGES['INPUT_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['INPUT_HOVER'],
+        json: {
+            widget: 'input',
+            data: {
+                style: {
+                    width: '100%',
+                    padding: '4px',
+                },
+                value: '',
+                label: 'Example Input',
+                hint: '',
+                type: 'text',
+                rows: 1,
+                multiline: false,
+                disabled: false,
+                required: false,
+                loading: false,
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+                onChange: { type: 'sync', order: [] },
+            },
+            slots: {
+                content: [],
+            },
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Audio Input',
+        helperText: 'Input audio from the user',
+        activeImage: BLOCK_IMAGES['AUDIO_INPUT_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['AUDIO_INPUT_HOVER'],
+        json: {
+            widget: 'audio-input',
+            data: {
+                style: {
+                    width: '50px',
+                    height: '60px',
+                },
+                loading: false,
+                disabled: false,
+                variant: 'contained',
+                color: 'primary',
+                value: '',
+                mode: 'transcribe',
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+                onComplete: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Select',
+        helperText: 'Choose an option from a dropdown list',
+        activeImage: BLOCK_IMAGES['SELECT_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['SELECT_HOVER'],
+        json: {
+            widget: 'select',
+            data: {
+                style: {
+                    padding: '4px',
+                },
+                value: '',
+                label: 'Example Select Input',
+                hint: '',
+                options: [],
+                required: false,
+                disabled: false,
+                loading: false,
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+                onChange: { type: 'sync', order: [] },
+            },
+            slots: {
+                content: [],
+            },
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Upload',
+        helperText: 'Upload files like documents or images',
+        activeImage: BLOCK_IMAGES['UPLOAD_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['UPLOAD_HOVER'],
+        json: {
+            widget: 'upload',
+            data: {
+                style: {
+                    width: '100%',
+                    padding: '4px',
+                },
+                value: '',
+                label: 'Example Input',
+                hint: '',
+                loading: false,
+                disabled: false,
+                required: false,
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+                onChange: { type: 'sync', order: [] },
+            },
+            slots: {
+                content: [],
+            },
+        },
+    },
+    {
+        section: SECTION_LAYOUT,
+        name: 'Container',
+        helperText: 'Create a layout element for custom design',
+        activeImage: BLOCK_IMAGES['CONTAINER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['CONTAINER_HOVER'],
+        json: {
+            widget: 'container',
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '4px',
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                },
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {
+                children: [],
+            },
+        },
+    },
+    {
+        section: SECTION_LAYOUT,
+        name: 'Flip Card',
+        helperText: 'Flip content on hover or click to reveal more information',
+        activeImage: BLOCK_IMAGES['FLIP_CARD_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['FLIP_CARD_HOVER'],
+        json: {
+            widget: 'flip-card',
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '4px',
+                    gap: '8px',
+                },
+                frontBgColor: '#ffffff',
+                backBgColor: '#ffffff',
+                isFlipped: false,
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {
+                front: [],
+                back: [],
+            },
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        name: 'Progress',
+        helperText: 'Display progress tracking or status',
+        activeImage: BLOCK_IMAGES['PROGRESS_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PROGRESS_HOVER'],
+        json: {
+            widget: 'progress',
+            data: {
+                type: 'linear',
+                value: 50,
+                includeLabel: true,
+                size: '300px',
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        name: 'Iframe',
+        helperText: 'Embed a webpage using a source link',
+        activeImage: BLOCK_IMAGES['IFRAME_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['IFRAME_HOVER'],
+        json: {
+            widget: 'iframe',
+            data: {
+                style: {},
+                src: '',
+                title: '',
+                enableFrameInteractions: true,
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        name: 'PDF Viewer',
+        helperText: 'Embed a PDF for viewing',
+        activeImage: BLOCK_IMAGES['PDF_VIEWER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PDF_VIEWER_HOVER'],
+        json: {
+            widget: 'pdfViewer',
+            data: {
+                style: {
+                    width: '100%',
+                    height: '82%',
+                    padding: '8px',
+                },
+                selectedPdf: null,
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        name: 'Image',
+        helperText: 'Add an image to your layout',
+        activeImage: BLOCK_IMAGES['IMAGE_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['IMAGE_HOVER'],
+        json: {
+            widget: 'image',
+            data: {
+                style: {
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%',
+                    height: '200px',
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center center',
+                },
+                src: '',
+                title: '',
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        name: 'Icon',
+        helperText: 'Add an icon to your layout',
+        activeImage: BLOCK_IMAGES['ICON_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['ICON_HOVER'],
+        json: {
+            widget: 'icon',
+            data: {
+                style: {
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '50px',
+                    height: '50px',
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center center',
+                    show: 'true',
+                },
+                src: '',
+                title: '',
+                show: 'true',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Logs',
+        helperText: 'Show logs from the notebook',
+        activeImage: BLOCK_IMAGES['LOGS_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['LOGS_HOVER'],
+        json: {
+            widget: 'logs',
+            data: {
+                style: {},
+                queryId: '',
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_LAYOUT,
+        name: 'Iterator',
+        helperText: 'Render a template for each item in a list/array',
+        activeImage: BLOCK_IMAGES['ITERATOR_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['ITERATOR_HOVER'],
+        isBeta: true,
+        json: {
+            widget: 'iteration',
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                },
+                source: '',
+                child: null,
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {
+                children: [],
+            },
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        activeImage: BLOCK_IMAGES['CHIP_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['CHIP_HOVER'],
+        name: 'Chip',
+        json: {
+            widget: 'chip',
+            data: {
+                style: {
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%',
+                    height: '200px',
+                },
+                src: '',
+                title: '',
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        name: 'Toggle Button',
+        helperText: 'Switch between multiple options',
+        activeImage: BLOCK_IMAGES['TOGGLE_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['TOGGLE_HOVER'],
+        json: {
+            widget: 'toggle-button',
+            data: {
+                disabled: false,
+                color: 'primary',
+                size: 'small',
+                options: [
+                    {
+                        display: 'on',
+                        value: 'on',
+                    },
+                    {
+                        display: 'off',
+                        value: 'off',
+                    },
+                ],
+                value: null,
+                mandatory: true,
+                multiple: false,
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+                onChange: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Link',
+        helperText: 'Access a webpage through a clickable URL',
+        activeImage: BLOCK_IMAGES['LINK_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['LINK_HOVER'],
+        json: {
+            widget: 'link',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                href: '',
+                text: 'Insert text',
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {},
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Markdown',
+        helperText: 'Show text in markdown format',
+        activeImage: BLOCK_IMAGES['MARKDOWN_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['MARKDOWN_HOVER'],
+        json: {
+            widget: 'markdown',
+            data: {
+                style: {
+                    padding: '4px',
+                },
+                markdown: '**Hello world**',
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        name: 'HTML',
+        helperText: 'Write custom HTML manually or with AI assistance',
+        activeImage: BLOCK_IMAGES['HTML_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['HTML_HOVER'],
+        json: {
+            widget: 'html',
+            data: {
+                style: {
+                    padding: '4px',
+                },
+                // default html includes place-holder text and basic styling
+                html: '<html>\r\n    <style>\r\n        html {\r\n            font-family: Roboto;\r\n            text-align: center;\r\n            overflow: hidden;\r\n        }\r\n    </style>\r\n    <body>\r\n        <h2>HTML Block</h2>\r\n    </body>\r\n</html>',
+                show: 'true',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Text (h1)',
+        helperText: 'Display Text in header 1',
+        activeImage: BLOCK_IMAGES['H1_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H1_HOVER'],
+        json: {
+            widget: 'text',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Hello world',
+                variant: 'h1',
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Text (h2)',
+        helperText: 'Display Text in header 2',
+        activeImage: BLOCK_IMAGES['H2_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H2_HOVER'],
+        json: {
+            widget: 'text',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Hello world',
+                variant: 'h2',
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Text (h3)',
+        helperText: 'Display Text in header 3',
+        activeImage: BLOCK_IMAGES['H3_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H3_HOVER'],
+        json: {
+            widget: 'text',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Hello world',
+                variant: 'h3',
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Text (h4)',
+        helperText: 'Display Text in header 4',
+        activeImage: BLOCK_IMAGES['H4_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H4_HOVER'],
+        json: {
+            widget: 'text',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Hello world',
+                variant: 'h4',
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Text (h5)',
+        helperText: 'Display Text in header 5',
+        activeImage: BLOCK_IMAGES['H5_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H5_HOVER'],
+        json: {
+            widget: 'text',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Hello world',
+                variant: 'h5',
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Text (h6)',
+        helperText: 'Display Text in header 6',
+        activeImage: BLOCK_IMAGES['H6_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['H6_HOVER'],
+        json: {
+            widget: 'text',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Hello world',
+                variant: 'h6',
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        name: 'Text',
+        helperText: 'Show text in a regular paragraph style',
+        activeImage: BLOCK_IMAGES['PARAGRAPH_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PARAGRAPH_HOVER'],
+        json: {
+            widget: 'text',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Hello world',
+                variant: 'p',
+                show: 'true',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MISC,
+        name: 'Compare LLMs',
+        helperText: 'Compare large language models against the same context',
+        activeImage: BLOCK_IMAGES['COMPARE_LLMS_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['COMPARE_LLMS_HOVER'],
+        json: {
+            widget: 'llmComparison',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: '',
+                variants: {},
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    // -------------------------------------------------------------
+    // BLOCK END
+    // ----------------------------------------------------------
+    // -------------------------------------------------------------
+    // CHART START
+    // ----------------------------------------------------------
+    {
         section: SECTION_CHARTS,
         name: 'Pie Chart',
         helperText: 'Show proportions of a whole',
@@ -183,11 +1605,13 @@ if (process.env.NODE_ENV === 'development') {
                 ),
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
-    });
-    DEV_BLOCKS.push({
+    },
+    {
         section: SECTION_CHARTS,
         name: 'Bar Chart',
         helperText:
@@ -292,11 +1716,13 @@ if (process.env.NODE_ENV === 'development') {
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
-    });
-    DEV_BLOCKS.push({
+    },
+    {
         section: SECTION_CHARTS,
         name: 'Scatter Plot',
         helperText: 'Show relationships between two variables',
@@ -470,11 +1896,13 @@ if (process.env.NODE_ENV === 'development') {
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
-    });
-    DEV_BLOCKS.push({
+    },
+    {
         section: SECTION_CHARTS,
         name: 'Line Chart',
         helperText: 'Show relationships between two variables',
@@ -652,11 +2080,13 @@ if (process.env.NODE_ENV === 'development') {
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
-    });
-    DEV_BLOCKS.push({
+    },
+    {
         section: SECTION_CHARTS,
         name: 'Bar Chart - Stacked',
         helperText:
@@ -865,11 +2295,13 @@ if (process.env.NODE_ENV === 'development') {
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
-    });
-    DEV_BLOCKS.push({
+    },
+    {
         section: SECTION_CHARTS,
         name: 'World Map Chart',
         activeImage: BLOCK_IMAGES['WORLD_MAP_ACTIVE'],
@@ -970,12 +2402,15 @@ if (process.env.NODE_ENV === 'development') {
                 frame: {
                     name: '',
                 },
+                show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
-    });
-    DEV_BLOCKS.push({
+    },
+    {
         section: SECTION_CHARTS,
         name: 'Gantt Chart',
         helperText: 'Gannt chart for task management',
@@ -1051,12 +2486,15 @@ if (process.env.NODE_ENV === 'development') {
                         columnDetails: {},
                     },
                 },
+                show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
-    });
-    DEV_BLOCKS.push({
+    },
+    {
         section: SECTION_CHARTS,
         name: 'Dendrogram Chart',
         helperText: 'Dendrogram chart',
@@ -1151,995 +2589,12 @@ if (process.env.NODE_ENV === 'development') {
                     facetList: [],
                 },
             },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    });
-}
-
-// TODO: Alphabetical order by name
-export const DEFAULT_MENU: DesignerMenuItem[] = [
-    // TODO: You will still be able to drop configs on the UI.  Beta version of blocks
-    ...DEV_BLOCKS,
-    // -------------------------------------------------------------
-    // PROD BLOCKS START
-    // ----------------------------------------------------------
-    {
-        section: SECTION_LAYOUT,
-        name: 'Accordion',
-        activeImage: BLOCK_IMAGES['ACCORDION_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['ACCORDION_HOVER'],
-        helperText: 'Click to expand and collapse sections for more details',
-        json: {
-            widget: 'accordion',
-            data: {
-                style: {
-                    padding: '20px',
-                },
-                triggerBgColor: '',
-                contentBgColor: '',
-                showExpandIcon: false,
-                show: 'true',
-                // -------------------------------------------
-                // John B:
-                // We may need to track styles differently.
-                // Can handle this in a migration function
-                // accordionStyles:
-                // accordionHeaderStyles:
-                // accordionContentStyles:
-                // -------------------------------------------
-            },
             listeners: {
-                preProcess: [],
-            },
-            slots: {
-                header: [],
-                content: [],
-            },
-        },
-    },
-
-    {
-        section: SECTION_LAYOUT,
-        name: 'Popover',
-        activeImage: BLOCK_IMAGES['POPOVER_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['POPOVER_HOVER'],
-        helperText: 'Click or Hover to show the popover',
-        json: {
-            widget: 'popover',
-            data: {
-                style: {},
-                open: false,
-                designMode: true,
-                openTrigger: 'click',
-                contentBgColor: '',
-            },
-            listeners: {
-                onOpen: [],
-                onClose: [],
-            },
-            slots: {
-                header: [],
-                content: [],
-            },
-        },
-    },
-    {
-        section: SECTION_MISC,
-        name: 'Theme Block',
-        helperText: 'Determine the theme of your page with our Theme Block',
-        activeImage: BLOCK_IMAGES['THEME_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['THEME_HOVER'],
-        json: {
-            widget: 'theme',
-            data: {
-                theme: lightTheme,
-            },
-            listeners: {},
-            slots: {
-                children: [],
-            },
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Audio Player',
-        helperText: 'Play back audio responses or other files',
-        activeImage: BLOCK_IMAGES['AUDIO_PLAYER_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['AUDIO_PLAYER_HOVER'],
-        json: {
-            widget: 'audio-player',
-            data: {
-                label: 'Audio Player',
-                autoplay: false,
-                controls: true,
-                loop: false,
-                source: '',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
+                preProcess: { type: 'sync', order: [] },
             },
             slots: {} as BlockJSON['slots'],
         },
     },
-    {
-        section: SECTION_ELEMENT,
-        name: 'Divider',
-        helperText: 'Separate content with a horizontal line',
-        activeImage: BLOCK_IMAGES['DIVIDER_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['DIVIDER_HOVER'],
-        json: {
-            widget: 'divider',
-            data: {
-                style: {
-                    padding: '0px',
-                    width: '100%',
-                },
-                variant: 'fullWidth',
-                orientation: 'horizontal',
-                textAlign: 'center',
-                flexItem: false,
-                light: false,
-                text: '',
-                showText: false,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_ELEMENT,
-        name: 'Ratings ',
-        helperText: 'Rate on a scale',
-        json: {
-            widget: 'ratings',
-            data: {
-                style: {},
-                size: 'small',
-                type: 'star',
-                value: 2,
-                max: 5,
-            },
-            listeners: {
-                onChange: [],
-                preProcess: [],
-            },
-            slots: {
-                children: [],
-            },
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Switch',
-        helperText: 'Toggle between two states',
-        json: {
-            widget: 'switch',
-            data: {
-                style: {
-                    width: 'fit-content',
-                    padding: '4px',
-                },
-                label: 'Toggle Switch',
-                value: false,
-                disabled: false,
-                color: 'primary',
-                size: 'medium',
-                helperText: '',
-                required: false,
-                labelPlacement: 'end',
-            },
-            listeners: {
-                preProcess: [],
-                onChange: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Time Picker',
-        helperText: 'Select a time from a time picker',
-        json: {
-            widget: 'timepicker',
-            data: {
-                style: {
-                    width: '25%',
-                    padding: '4px',
-                },
-                label: 'Select Time',
-                value: '',
-                variant: 'picker',
-                ampm: true,
-                format: 'hh:mm a',
-                disabled: false,
-                required: false,
-                fullWidth: false,
-                placeholder: '',
-                clearable: true,
-                size: 'small',
-                views: ['hours', 'minutes'],
-            },
-            listeners: {
-                preProcess: [],
-                onChange: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Button',
-        helperText: 'Creates a click event',
-        activeImage: BLOCK_IMAGES['BUTTON_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['BUTTON_HOVER'],
-        json: {
-            widget: 'button',
-            data: {
-                style: {},
-                label: 'Submit',
-                loading: false,
-                disabled: false,
-                variant: 'contained',
-                color: 'primary',
-                show: true,
-            },
-            listeners: {
-                onClick: [],
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Checkbox',
-        helperText: 'Add a checkbox for user selection',
-        activeImage: BLOCK_IMAGES['CHECKBOX_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['CHECKBOX_HOVER'],
-        json: {
-            widget: 'checkbox',
-            data: {
-                style: {
-                    padding: 'none',
-                },
-                label: 'Example Checkbox',
-                required: false,
-                disabled: false,
-                value: false,
-                show: 'true',
-            },
-            listeners: {
-                onChange: [],
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Radio',
-        activeImage: BLOCK_IMAGES['RADIO_BUTTON_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['RADIO_BUTTON_HOVER'],
-        helperText: 'User select between multiple items',
-        json: {
-            widget: 'radio',
-            data: {
-                style: {
-                    padding: '4px',
-                },
-                value: 'no_value',
-                label: 'Radio Input',
-                isGroup: false,
-                options: [{ label: 'Default', value: 'no_value' }],
-                size: 'medium',
-                direction: 'column',
-                color: 'primary',
-                labelPlacement: 'end',
-                required: false,
-                disabled: false,
-                show: 'true',
-            },
-            listeners: {
-                onChange: [],
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_LAYOUT,
-        name: 'Modal',
-        activeImage: BLOCK_IMAGES['MODAL_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['MODAL_HOVER'],
-        helperText: 'Overlay to show more info or action to user',
-        json: {
-            widget: 'modal',
-            data: {
-                style: {},
-                title: 'Modal Title',
-                open: false,
-                fullWidth: true,
-                maxWidth: 'sm',
-                minWidth: 'sm',
-                designMode: true,
-            },
-            listeners: {
-                preProcess: [],
-                onSubmit: [],
-            },
-            slots: {
-                content: [],
-                footer: [],
-            },
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Input',
-        helperText: 'Add an input box for typing text',
-        activeImage: BLOCK_IMAGES['INPUT_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['INPUT_HOVER'],
-        json: {
-            widget: 'input',
-            data: {
-                style: {
-                    width: '100%',
-                    padding: '4px',
-                },
-                value: '',
-                label: 'Example Input',
-                hint: '',
-                type: 'text',
-                rows: 1,
-                multiline: false,
-                disabled: false,
-                required: false,
-                loading: false,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-                onChange: [],
-            },
-            slots: {
-                content: [],
-            },
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Audio Input',
-        helperText: 'Input audio from the user',
-        activeImage: BLOCK_IMAGES['AUDIO_INPUT_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['AUDIO_INPUT_HOVER'],
-        json: {
-            widget: 'audio-input',
-            data: {
-                style: {
-                    width: '50px',
-                    height: '60px',
-                },
-                loading: false,
-                disabled: false,
-                variant: 'contained',
-                color: 'primary',
-                value: '',
-                mode: 'transcribe',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-                onComplete: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Select',
-        helperText: 'Choose an option from a dropdown list',
-        activeImage: BLOCK_IMAGES['SELECT_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['SELECT_HOVER'],
-        json: {
-            widget: 'select',
-            data: {
-                style: {
-                    padding: '4px',
-                },
-                value: '',
-                label: 'Example Select Input',
-                hint: '',
-                options: [],
-                required: false,
-                disabled: false,
-                loading: false,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-                onChange: [],
-            },
-            slots: {
-                content: [],
-            },
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Upload',
-        helperText: 'Upload files like documents or images',
-        activeImage: BLOCK_IMAGES['UPLOAD_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['UPLOAD_HOVER'],
-        json: {
-            widget: 'upload',
-            data: {
-                style: {
-                    width: '100%',
-                    padding: '4px',
-                },
-                value: '',
-                label: 'Example Input',
-                hint: '',
-                loading: false,
-                disabled: false,
-                required: false,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-                onChange: [],
-            },
-            slots: {
-                content: [],
-            },
-        },
-    },
-    {
-        section: SECTION_LAYOUT,
-        name: 'Container',
-        helperText: 'Create a layout element for custom design',
-        activeImage: BLOCK_IMAGES['CONTAINER_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['CONTAINER_HOVER'],
-        json: {
-            widget: 'container',
-            data: {
-                style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '4px',
-                    gap: '8px',
-                    flexWrap: 'wrap',
-                },
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {
-                children: [],
-            },
-        },
-    },
-    {
-        section: SECTION_LAYOUT,
-        name: 'Flip Card',
-        helperText: 'Flip content on hover or click to reveal more information',
-        activeImage: BLOCK_IMAGES['FLIP_CARD_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['FLIP_CARD_HOVER'],
-        json: {
-            widget: 'flip-card',
-            data: {
-                style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '4px',
-                    gap: '8px',
-                },
-                frontBgColor: '#ffffff',
-                backBgColor: '#ffffff',
-                isFlipped: false,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {
-                front: [],
-                back: [],
-            },
-        },
-    },
-    {
-        section: SECTION_ELEMENT,
-        name: 'Progress',
-        helperText: 'Display progress tracking or status',
-        activeImage: BLOCK_IMAGES['PROGRESS_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['PROGRESS_HOVER'],
-        json: {
-            widget: 'progress',
-            data: {
-                type: 'linear',
-                value: 50,
-                includeLabel: true,
-                size: '300px',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_ELEMENT,
-        name: 'Iframe',
-        helperText: 'Embed a webpage using a source link',
-        activeImage: BLOCK_IMAGES['IFRAME_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['IFRAME_HOVER'],
-        json: {
-            widget: 'iframe',
-            data: {
-                style: {},
-                src: '',
-                title: '',
-                enableFrameInteractions: true,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_ELEMENT,
-        name: 'PDF Viewer',
-        helperText: 'Embed a PDF for viewing',
-        activeImage: BLOCK_IMAGES['PDF_VIEWER_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['PDF_VIEWER_HOVER'],
-        json: {
-            widget: 'pdfViewer',
-            data: {
-                style: {
-                    width: '100%',
-                    height: '82%',
-                    padding: '8px',
-                },
-                selectedPdf: null,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_ELEMENT,
-        name: 'Image',
-        helperText: 'Add an image to your layout',
-        activeImage: BLOCK_IMAGES['IMAGE_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['IMAGE_HOVER'],
-        json: {
-            widget: 'image',
-            data: {
-                style: {
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    width: '100%',
-                    height: '200px',
-                    backgroundSize: 'contain',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'center center',
-                },
-                src: '',
-                title: '',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_ELEMENT,
-        name: 'Icon',
-        helperText: 'Add an icon to your layout',
-        activeImage: BLOCK_IMAGES['ICON_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['ICON_HOVER'],
-        json: {
-            widget: 'icon',
-            data: {
-                style: {
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    width: '50px',
-                    height: '50px',
-                    backgroundSize: 'contain',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'center center',
-                    show: 'true',
-                },
-                src: '',
-                title: '',
-                show: 'true',
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Logs',
-        helperText: 'Show logs from the notebook',
-        activeImage: BLOCK_IMAGES['LOGS_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['LOGS_HOVER'],
-        json: {
-            widget: 'logs',
-            data: {
-                style: {},
-                queryId: '',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_LAYOUT,
-        name: 'Iterator',
-        helperText: 'Render a template for each item in a list/array',
-        activeImage: BLOCK_IMAGES['ITERATOR_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['ITERATOR_HOVER'],
-        isBeta: true,
-        json: {
-            widget: 'iteration',
-            data: {
-                style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                },
-                source: '',
-                child: null,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {
-                children: [],
-            },
-        },
-    },
-    {
-        section: SECTION_ELEMENT,
-        activeImage: BLOCK_IMAGES['CHIP_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['CHIP_HOVER'],
-        name: 'Chip',
-        json: {
-            widget: 'chip',
-            data: {
-                style: {
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    width: '100%',
-                    height: '200px',
-                },
-                src: '',
-                title: '',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Toggle Button',
-        helperText: 'Switch between multiple options',
-        activeImage: BLOCK_IMAGES['TOGGLE_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['TOGGLE_HOVER'],
-        json: {
-            widget: 'toggle-button',
-            data: {
-                disabled: false,
-                color: 'primary',
-                size: 'small',
-                options: [
-                    {
-                        display: 'on',
-                        value: 'on',
-                    },
-                    {
-                        display: 'off',
-                        value: 'off',
-                    },
-                ],
-                value: null,
-                mandatory: true,
-                multiple: false,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-                onChange: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Link',
-        helperText: 'Access a webpage through a clickable URL',
-        activeImage: BLOCK_IMAGES['LINK_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['LINK_HOVER'],
-        json: {
-            widget: 'link',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                href: '',
-                text: 'Insert text',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {},
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Markdown',
-        helperText: 'Show text in markdown format',
-        activeImage: BLOCK_IMAGES['MARKDOWN_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['MARKDOWN_HOVER'],
-        json: {
-            widget: 'markdown',
-            data: {
-                style: {
-                    padding: '4px',
-                },
-                markdown: '**Hello world**',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_ELEMENT,
-        name: 'HTML',
-        helperText: 'Write custom HTML manually or with AI assistance',
-        activeImage: BLOCK_IMAGES['HTML_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['HTML_HOVER'],
-        json: {
-            widget: 'html',
-            data: {
-                style: {
-                    padding: '4px',
-                },
-                // default html includes place-holder text and basic styling
-                html: '<html>\r\n    <style>\r\n        html {\r\n            font-family: Roboto;\r\n            text-align: center;\r\n            overflow: hidden;\r\n        }\r\n    </style>\r\n    <body>\r\n        <h2>HTML Block</h2>\r\n    </body>\r\n</html>',
-                show: 'true',
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Text (h1)',
-        helperText: 'Display Text in header 1',
-        activeImage: BLOCK_IMAGES['H1_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['H1_HOVER'],
-        json: {
-            widget: 'text',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                text: 'Hello world',
-                variant: 'h1',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Text (h2)',
-        helperText: 'Display Text in header 2',
-        activeImage: BLOCK_IMAGES['H2_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['H2_HOVER'],
-        json: {
-            widget: 'text',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                text: 'Hello world',
-                variant: 'h2',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Text (h3)',
-        helperText: 'Display Text in header 3',
-        activeImage: BLOCK_IMAGES['H3_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['H3_HOVER'],
-        json: {
-            widget: 'text',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                text: 'Hello world',
-                variant: 'h3',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Text (h4)',
-        helperText: 'Display Text in header 4',
-        activeImage: BLOCK_IMAGES['H4_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['H4_HOVER'],
-        json: {
-            widget: 'text',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                text: 'Hello world',
-                variant: 'h4',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Text (h5)',
-        helperText: 'Display Text in header 5',
-        activeImage: BLOCK_IMAGES['H5_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['H5_HOVER'],
-        json: {
-            widget: 'text',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                text: 'Hello world',
-                variant: 'h5',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Text (h6)',
-        helperText: 'Display Text in header 6',
-        activeImage: BLOCK_IMAGES['H6_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['H6_HOVER'],
-        json: {
-            widget: 'text',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                text: 'Hello world',
-                variant: 'h6',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Text',
-        helperText: 'Show text in a regular paragraph style',
-        activeImage: BLOCK_IMAGES['PARAGRAPH_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['PARAGRAPH_HOVER'],
-        json: {
-            widget: 'text',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                text: 'Hello world',
-                variant: 'p',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_MISC,
-        name: 'Compare LLMs',
-        helperText: 'Compare large language models against the same context',
-        activeImage: BLOCK_IMAGES['COMPARE_LLMS_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['COMPARE_LLMS_HOVER'],
-        json: {
-            widget: 'llmComparison',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                text: '',
-                variants: {},
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    // -------------------------------------------------------------
-    // BLOCK END
-    // ----------------------------------------------------------
-    // -------------------------------------------------------------
-    // CHART START
-    // ----------------------------------------------------------
     {
         section: SECTION_CHARTS,
         name: 'Vega',
@@ -2453,8 +2908,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 designMode: true,
             },
             listeners: {
-                preProcess: [],
-                postProcess: [],
+                preProcess: { type: 'sync', order: [] },
+                postProcess: { type: 'sync', order: [] },
             },
             slots: {
                 content: [],
@@ -2482,10 +2937,203 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 size: '300px',
             },
             listeners: {
-                preProcess: [],
-                onChange: [],
+                preProcess: { type: 'sync', order: [] },
+                onChange: { type: 'sync', order: [] },
             },
             slots: {} as BlockJSON['slots'],
+        },
+    },
+    // -----------------------------------------------
+    // Grouped Components
+    // -----------------------------------------------
+    {
+        section: SECTION_LAYOUT,
+        name: '3x3 Grid',
+        helperText: 'A pre-built 3x3 grid container',
+        json: {
+            widget: 'container',
+            parent: {
+                // can be null
+                id: 'page-1',
+                slot: 'content',
+            },
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: 'px',
+                    gap: 'px',
+                    flexWrap: 'wrap',
+                },
+                type: 'custom',
+            },
+            listeners: {},
+            slots: {
+                children: [
+                    {
+                        widget: 'container',
+                        data: {
+                            style: {
+                                display: 'flex',
+                                padding: '8px',
+                                gap: '8px',
+                                flexWrap: 'wrap',
+                                justifyContent: 'space-around',
+                                border: '2px dotted #4a4a4a',
+                            },
+                        },
+                        listeners: {},
+                        slots: {
+                            children: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            padding: '4px',
+                                            border: '1px solid #DEDEDE',
+                                            justifyContent: 'center',
+                                            flex: '0 0 32%',
+                                        },
+                                    },
+                                    listeners: {},
+                                    slots: {
+                                        children: [],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
         },
     },
 ];
@@ -2597,7 +3245,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -2642,7 +3293,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -2707,7 +3361,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -2752,7 +3409,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -2817,7 +3477,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -2863,7 +3526,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -2928,7 +3594,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -2973,7 +3642,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -3017,7 +3689,10 @@ export const CLIENT_BLOCKS_MENU = [
                                                                 loading: false,
                                                             },
                                                             listeners: {
-                                                                onChange: [],
+                                                                onChange: {
+                                                                    type: 'sync',
+                                                                    order: [],
+                                                                },
                                                             },
                                                             slots: {
                                                                 content: [],
@@ -3555,7 +4230,7 @@ export const CLIENT_BLOCKS_MENU = [
                             loading: false,
                         },
                         listeners: {
-                            onChange: [],
+                            onChange: { type: 'sync', order: [] },
                         },
                         slots: {
                             content: [],
@@ -3580,7 +4255,7 @@ export const CLIENT_BLOCKS_MENU = [
                             mode: 'transcribe',
                         },
                         listeners: {
-                            onClick: [],
+                            onClick: { type: 'sync', order: [] },
                         },
                         slots: {},
                     },

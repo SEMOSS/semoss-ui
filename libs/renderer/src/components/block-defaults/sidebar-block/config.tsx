@@ -13,6 +13,7 @@ import {
     buildColorSection,
     buildBorderSection,
     buildListener,
+    buildShowField,
 } from "../block-defaults.shared";
 
 export const config: BlockConfig<SidebarBlockDef> = {
@@ -28,8 +29,14 @@ export const config: BlockConfig<SidebarBlockDef> = {
         },
     },
     listeners: {
-        preProcess: [],
-        postProcess: [],
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+        postProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {
         content: [],
@@ -44,13 +51,20 @@ export const config: BlockConfig<SidebarBlockDef> = {
                     description: "Design Mode",
                     render: ({ id }) => (
                         <SwitchSettings
-                            id={id}
+                        id={id}
                             label="Design Mode"
                             path="designMode"
                             description="Enable this in order to edit sidebar content without interference from app interactions."
                         />
                     ),
                 },
+                
+            ],
+        },
+        {
+            name: "Conditional",
+            children: [
+                ...buildShowField(),
                 {
                     description: "Open State",
                     render: ({ id }) => (

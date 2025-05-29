@@ -469,6 +469,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
         } finally {
             // close the overlay
             closeOverlay(type, success);
+            //adding a refresh to the page so that the updated by and timestamp show up
+            if (success) {
+                window.location.reload();
+            }
         }
     };
 
@@ -673,6 +677,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                             value="Author"
                                             label=""
                                             disabled={
+                                                !adminMode &&
                                                 permissionPriorityMapper(
                                                     userPermission,
                                                 )?.priority > 1
@@ -692,13 +697,17 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                         >
                                             <Icon
                                                 sx={{
-                                                    width: '20px',
-                                                    height: '20px',
+                                                    width: '24px',
+                                                    height: '24px',
                                                     mt: '6px',
                                                     marginRight: '12px',
                                                     fontSize: '12px',
                                                     fontWeight: 'bold',
                                                     color: 'rgba(0, 0, 0, .5)',
+                                                    maxWidth: '24px',
+                                                    display: 'flex', // Ensure the icon is displayed properly
+                                                    alignItems: 'center', // Center the icon vertically
+                                                    justifyContent: 'center',
                                                 }}
                                             >
                                                 <EditRounded />
@@ -723,6 +732,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                             value="Editor"
                                             label=""
                                             disabled={
+                                                !adminMode &&
                                                 permissionPriorityMapper(
                                                     userPermission,
                                                 )?.priority > 2
@@ -742,13 +752,17 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                         >
                                             <Icon
                                                 sx={{
-                                                    width: '20px',
-                                                    height: '20px',
-                                                    mt: '6px',
+                                                    width: '24px',
+                                                    height: '24px',
+                                                    mt: '0px',
                                                     marginRight: '12px',
-                                                    fontSize: '12px',
+                                                    fontSize: '24px',
                                                     fontWeight: 'bold',
                                                     color: 'rgba(0, 0, 0, .5)',
+                                                    maxWidth: '24px',
+                                                    display: 'flex', // Ensure the icon is displayed properly
+                                                    alignItems: 'center', // Center the icon vertically
+                                                    justifyContent: 'center',
                                                 }}
                                             >
                                                 <RemoveRedEyeRounded />
@@ -773,6 +787,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                             value="Read-Only"
                                             label=""
                                             disabled={
+                                                !adminMode &&
                                                 permissionPriorityMapper(
                                                     userPermission,
                                                 )?.priority > 3

@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { Divider, styled } from "@mui/material";
 
 import { useBlock } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 
 const StyledContainer = styled("div")(({ theme }) => ({
     padding: "4px",
@@ -27,7 +27,10 @@ export interface DividerBlockDef extends BlockDef<"divider"> {
     };
     slots: never;
     listeners: {
-        preProcess: true;
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
