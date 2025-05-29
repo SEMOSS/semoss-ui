@@ -14,7 +14,7 @@ import { AuthenticatedLayout } from './AuthenticatedLayout';
 import { NavigatorLayout } from './NavigatorLayout';
 
 import { LoginPage } from './LoginPage';
-import { HomePage } from './HomePage';
+import { AppPage } from './AppPage';
 import { SharePage } from './SharePage';
 
 import { CookieNotice } from './legal/CookieNotice';
@@ -23,7 +23,7 @@ import { PrivacyNotice } from './legal/PrivacyNotice';
 import { WorkspacePage } from './WorkspacePage';
 
 import { PlatformMessages } from './PlatformMessages';
-import { LandingPageHeader } from './LandingPageHeader';
+import { LandingPage } from './LandingPage';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
@@ -57,17 +57,19 @@ export const Router = observer(() => {
         <Routes>
             <Route path="/" element={<AuthenticatedLayout />}>
                 <Route path="*" element={<NavigatorLayout />}>
-                    <Route index element={<HomePage />} />
+                    <Route index element={<LandingPage />} />
+
+                    <Route path="apps" element={<AppPage />} />
+                    <Route path="marketplace" element={<>Marketplace</>} />
+
                     <Route path="import" element={<ImportRouter />} />
+                    <Route path="engine/*" element={<EngineRouter />} />
+                    <Route path="prompt/*" element={<PromptRouter />} />
 
                     <Route path="settings/*" element={<SettingsRouter />} />
-                    <Route path="engine/*" element={<EngineRouter />} />
-                    <Route path="app/*" element={<AppRouter />} />
-                    <Route path="prompt/*" element={<PromptRouter />} />
                 </Route>
 
-                {/* Business User landing page */}
-                <Route path="business-user" element={<LandingPageHeader />} />
+                <Route path="app/*" element={<AppRouter />} />
                 <Route
                     path="workspace/:appId/*"
                     element={

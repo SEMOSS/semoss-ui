@@ -23,6 +23,8 @@ interface ConfigStoreInterface {
         email: string;
         admin: boolean;
     };
+    /** App Builder mode (local storage, based on userEpoch) */
+    isAppBuilder: boolean;
     /** Config information */
     config: {
         databaseMetaKeys: {
@@ -146,6 +148,7 @@ export class ConfigStore {
         authenticated: false,
         insightID: '',
         userEpoch: '',
+        isAppBuilder: false,
         user: {
             loggedIn: false,
             id: '',
@@ -293,6 +296,9 @@ export class ConfigStore {
         // get the user information
         await this.getUser();
 
+        // checks local storage if user is an app builder
+        await this.getAppBuilderMode();
+
         //set the reactors
         await this.setGeneralReactors();
     }
@@ -420,6 +426,38 @@ export class ConfigStore {
                 this._store.status = 'ERROR';
             });
         }
+    }
+
+    /**
+     * Checks if user is an app builder
+     */
+    private async getAppBuilderMode() {
+        let builderMode = false;
+        const item = localStorage.getItem(`builder--${this._store.userEpoch}`);
+        console.log('epoch', this._store.userEpoch);
+
+        if (item) {
+            const d = JSON.parse(item);
+            builderMode = true;
+            console.log('set it true');
+        } else {
+            console.log('set it false');
+            builderMode = false;
+        }
+
+        runInAction(() => {
+            this._store.isAppBuilder = builderMode;
+        });
+    }
+
+    /**
+     * Switches App Builder on/off
+     * @param bool
+     */
+    async setAppBuilderMode(bool) {
+        runInAction(() => {
+            this._store.isAppBuilder = bool;
+        });
     }
 
     /**

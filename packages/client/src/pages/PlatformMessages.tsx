@@ -84,10 +84,10 @@ export const PlatformMessages = observer((props: PlatformMessagesProps) => {
                     </Modal.Actions>
                 </Modal>
             )}
-
+            {/* 
             {acceptedTerms && addressedCookies && platformAssist && (
                 <WelcomeModal />
-            )}
+            )} */}
         </>
     );
 });

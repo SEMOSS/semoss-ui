@@ -1,4 +1,6 @@
-import { Drawer, List, Divider, Typography, Box } from '@semoss/ui';
+import { useEffect, useMemo, useState } from 'react';
+import { observer } from 'mobx-react-lite';
+import { Link } from 'react-router-dom';
 import {
     Home as HomeIcon,
     Favorite as FavoriteIcon,
@@ -8,29 +10,43 @@ import {
     Close as CloseIcon,
     Person as PersonIcon,
     TokenRounded,
+    Inventory2Outlined,
 } from '@mui/icons-material';
+
+import { Drawer, List, Divider, Typography, Box } from '@semoss/ui';
+
 import { ModelBrain } from '@/assets/img/ModelBrain';
 import { Database } from '@/assets/img/Database';
-import { observer } from 'mobx-react-lite';
 import { useRootStore } from '@/hooks';
 import { Logo } from '@/assets/img/Logo';
+import { THEME } from '@/constants';
 
 const drawerWidth = 312;
 
 const menuItems = [
-    { text: 'Home', icon: <HomeIcon /> },
-    { text: 'My Favorites', icon: <FavoriteIcon /> },
+    { text: 'Home', icon: <HomeIcon />, route: '/' },
+    // { text: 'My Favorites', icon: <FavoriteIcon /> },
 ];
 
 const catalogItems = [
-    { text: 'Apps', icon: <GridViewIcon /> },
+    { text: 'Apps', icon: <GridViewIcon />, route: '/apps' },
     {
         text: 'Models',
         icon: <ModelBrain color="#757575" width="24" height="24" />,
+        route: '/engine/model',
     },
-    { text: 'Databases', icon: <Database color="#757575" /> },
-    { text: 'Vectors', icon: <TokenRounded /> },
-    { text: 'Functions', icon: <FunctionsIcon /> },
+    {
+        text: 'Databases',
+        icon: <Database color="#757575" />,
+        route: '/engine/database',
+    },
+    { text: 'Vectors', icon: <TokenRounded />, route: '/engine/vector' },
+    { text: 'Functions', icon: <FunctionsIcon />, route: '/engine/function' },
+    {
+        text: 'Storages',
+        icon: <Inventory2Outlined />,
+        route: '/engine/storage',
+    },
 ];
 
 const teamItems = [
@@ -101,6 +117,34 @@ const personIconStyles = {
 
 const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
     const { configStore } = useRootStore();
+    const [viewSidebar, setViewSidebar] = useState(false);
+    useEffect(() => {
+        if (configStore.store.user.admin) {
+            setViewSidebar(true);
+        } else if (
+            !configStore.store.user.admin &&
+            !configStore.store.config.adminOnlyViewMenuBarFlag
+        ) {
+            setViewSidebar(true);
+        }
+    }, [
+        configStore.store.user.admin,
+        configStore.store.config.adminOnlyViewMenuBarFlag,
+    ]);
+
+    const themeMap = useMemo(() => {
+        const theme = configStore.store.config['theme'];
+
+        if (theme && theme['THEME_MAP']) {
+            try {
+                return JSON.parse(theme['THEME_MAP'] as string);
+            } catch {
+                return {};
+            }
+        }
+
+        return {};
+    }, [Object.keys(configStore.store.config).length]);
     return (
         <Drawer
             open={isOpen}
@@ -130,7 +174,10 @@ const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
                         }}
                     >
                         <Logo />
-                        <Typography variant="h6">GovConnect.AI</Typography>
+                        <Typography variant="h6">
+                            {' '}
+                            {themeMap.name ? themeMap.name : THEME.name}
+                        </Typography>
                     </Typography>
                     <CloseIcon
                         sx={{
@@ -147,38 +194,73 @@ const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
                     {/* Main Menu */}
                     <List sx={{ padding: 0 }}>
                         {menuItems.map((item, index) => (
-                            <List.Item key={index} sx={listStyles}>
-                                <List.ItemButton sx={{ gap: 2 }}>
-                                    <List.Icon sx={{ minWidth: '24px' }}>
-                                        {item.icon}
-                                    </List.Icon>
-                                    <List.ItemText primary={item.text} />
-                                </List.ItemButton>
-                            </List.Item>
+                            <Link
+                                key={index}
+                                to={item.route}
+                                style={{
+                                    textDecoration: 'none',
+                                    color: 'inherit',
+                                }}
+                                onClick={(e) => {
+                                    onClose();
+                                }}
+                            >
+                                <List.Item key={index} sx={listStyles}>
+                                    <List.ItemButton sx={{ gap: 2 }}>
+                                        <List.Icon sx={{ minWidth: '24px' }}>
+                                            {item.icon}
+                                        </List.Icon>
+                                        <List.ItemText primary={item.text} />
+                                    </List.ItemButton>
+                                </List.Item>
+                            </Link>
                         ))}
                     </List>
                     <Divider />
 
                     {/* Catalog Section */}
-                    <Typography variant="subtitle1" sx={sectionTitleStyles()}>
-                        Catalogs
-                    </Typography>
-                    <List sx={{ padding: 0 }}>
-                        {catalogItems.map((item, index) => (
-                            <List.Item key={index} sx={listStyles}>
-                                <List.ItemButton sx={{ gap: 2 }}>
-                                    <List.Icon sx={{ minWidth: '24px' }}>
-                                        {item.icon}
-                                    </List.Icon>
-                                    <List.ItemText primary={item.text} />
-                                </List.ItemButton>
-                            </List.Item>
-                        ))}
-                    </List>
-                    <Divider />
+                    {viewSidebar && (
+                        <>
+                            <Typography
+                                variant="subtitle1"
+                                sx={sectionTitleStyles()}
+                            >
+                                Catalogs
+                            </Typography>
+                            <List sx={{ padding: 0 }}>
+                                {catalogItems.map((item, index) => (
+                                    <Link
+                                        key={index}
+                                        to={item.route}
+                                        style={{
+                                            textDecoration: 'none',
+                                            color: 'inherit',
+                                        }}
+                                        onClick={(e) => {
+                                            onClose();
+                                        }}
+                                    >
+                                        <List.Item key={index} sx={listStyles}>
+                                            <List.ItemButton sx={{ gap: 2 }}>
+                                                <List.Icon
+                                                    sx={{ minWidth: '24px' }}
+                                                >
+                                                    {item.icon}
+                                                </List.Icon>
+                                                <List.ItemText
+                                                    primary={item.text}
+                                                />
+                                            </List.ItemButton>
+                                        </List.Item>
+                                    </Link>
+                                ))}
+                            </List>
+                            <Divider />
+                        </>
+                    )}
 
                     {/* Teams Section */}
-                    <Typography variant="subtitle1" sx={sectionTitleStyles()}>
+                    {/* <Typography variant="subtitle1" sx={sectionTitleStyles()}>
                         Teams
                     </Typography>
                     <List sx={{ padding: 0 }}>
@@ -193,18 +275,29 @@ const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
                             </List.Item>
                         ))}
                     </List>
-                    <Divider />
+                    <Divider /> */}
 
                     {/* Settings */}
                     <List sx={{ padding: 0 }}>
-                        <List.Item sx={listStyles}>
-                            <List.ItemButton sx={{ gap: 2 }}>
-                                <List.Icon sx={{ minWidth: '24px' }}>
-                                    <SettingsIcon />
-                                </List.Icon>
-                                <List.ItemText primary="Settings" />
-                            </List.ItemButton>
-                        </List.Item>
+                        <Link
+                            to={'/settings'}
+                            style={{
+                                textDecoration: 'none',
+                                color: 'inherit',
+                            }}
+                            onClick={(e) => {
+                                onClose();
+                            }}
+                        >
+                            <List.Item sx={listStyles}>
+                                <List.ItemButton sx={{ gap: 2 }}>
+                                    <List.Icon sx={{ minWidth: '24px' }}>
+                                        <SettingsIcon />
+                                    </List.Icon>
+                                    <List.ItemText primary="Settings" />
+                                </List.ItemButton>
+                            </List.Item>
+                        </Link>
                     </List>
                 </Box>
             </Box>

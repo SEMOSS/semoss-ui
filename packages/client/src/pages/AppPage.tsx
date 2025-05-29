@@ -136,9 +136,9 @@ const TERMINAL_APP: AppMetadata = {
 };
 
 /**
- * Landing page
+ * App page
  */
-export const HomePage = observer((): JSX.Element => {
+export const AppPage = observer((): JSX.Element => {
     const { configStore, monolithStore } = useRootStore();
     const navigate = useNavigate();
 
