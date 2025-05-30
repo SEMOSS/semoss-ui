@@ -69,10 +69,12 @@ const StyledSidebarDivider = styled(Divider)(() => ({
     width: SIDEBAR_DIVIDER_WIDTH,
 }));
 
-const StyledContent = styled('div')(() => ({
+const StyledContent = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'showSidebar',
+})<{ showSidebar: boolean }>(({ showSidebar }) => ({
     position: 'absolute',
     paddingTop: NAV_HEIGHT,
-    paddingLeft: SIDEBAR_WIDTH,
+    paddingLeft: showSidebar ? SIDEBAR_WIDTH : '0',
     height: '100%',
     width: '100%',
     overflow: 'hidden',
@@ -84,28 +86,22 @@ const StyledContent = styled('div')(() => ({
 export const NavigatorLayout = observer(() => {
     const { pathname } = useLocation();
     const { configStore } = useRootStore();
-    const [viewSidebar, setViewSidebar] = useState(false);
 
-    useEffect(() => {
-        if (configStore.store.user.admin) {
-            setViewSidebar(true);
-        } else if (
-            !configStore.store.user.admin &&
-            !configStore.store.config.adminOnlyViewMenuBarFlag
-        ) {
-            setViewSidebar(true);
-        }else{
-            setViewSidebar(false); 
-        }
-    }, [
-        configStore.store.user.admin,
-        configStore.store.config.adminOnlyViewMenuBarFlag,
-    ]);
+    let showSidebar = true;
+    if (configStore.store.user.admin) {
+        // show the sidebar if the user is an admin
+        showSidebar = true;
+    } else if (!configStore.store.config.adminOnlyViewMenuBarFlag) {
+        // if the flag is false, show the sidebar
+        showSidebar = true;
+    } else {
+        showSidebar = false;
+    }
 
     return (
         <ErrorBoundary fallback={<ErrorPage />}>
             <Navbar />
-            {viewSidebar && (
+            {showSidebar && (
                 <StyledSidebar>
                     <Tooltip title={`Open App Library`} placement="right">
                         <StyledSidebarItem
@@ -168,7 +164,7 @@ export const NavigatorLayout = observer(() => {
                     </Tooltip>
                 </StyledSidebar>
             )}
-            <StyledContent>
+            <StyledContent showSidebar={showSidebar}>
                 <PlatformMessages platformAssist={true}>
                     <Outlet />
                 </PlatformMessages>

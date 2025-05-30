@@ -349,20 +349,19 @@ export const HomePage = observer((): JSX.Element => {
             }
         >
             <StyledContainer>
-                <div>
-                    {!configStore.store.config.adminOnlyViewMenuBarFlag &&
-                        configStore.isEngineOperationAvailable(
-                            'APP',
-                            'add',
-                        ) && (
+                {!configStore.store.config.adminOnlyViewMenuBarFlag &&
+                    configStore.isEngineOperationAvailable('APP', 'add') && (
+                        <div>
                             <Filterbox
                                 type={'APP'}
-                                onChange={(filters: Record<string, unknown>) => {
+                                onChange={(
+                                    filters: Record<string, unknown>,
+                                ) => {
                                     setMetaFilters(filters);
                                 }}
                             />
-                        )}
-                </div>
+                        </div>
+                    )}
                 <StyledContentContainer>
                     <Stack
                         direction="row"
