@@ -432,7 +432,9 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
             response = await monolithStore.deleteProjectPermission(
                 groupId,
                 groupType,
-                project,
+                {
+                    project_id: project.project_id,
+                },
             );
 
             if (!response) {
