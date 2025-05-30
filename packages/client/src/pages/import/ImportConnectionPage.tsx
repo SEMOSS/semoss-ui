@@ -222,13 +222,15 @@ export const ImportConnectionPage = () => {
             });
             return;
         } else if (values.type === 'CONNECTOR') {
-            console.log('Connector', values.fields);
-            const output = 1234;
-            navigate(`/engine/connectors/${output}}`);
+            //console.log('Connector', values.fields);
+            const tempOutput: any = { ...values.fields };
+            // const output = 1234;
+            // navigate(`/engine/connectors/1234}}`);
             /** Connector: START */
             const pixel = `CreateJiraIssueReactor(
-                connector=["${values.name}"], 
-                connectorDetails=[${JSON.stringify(values.fields)}]
+                apitoken="${tempOutput.APITOKEN}", 
+                userid=${tempOutput.EMAILUSERNAME},
+                projectKey="${tempOutput.PROJECTKEY}",)}
             )`;
 
             monolithStore.runQuery(pixel).then((response) => {

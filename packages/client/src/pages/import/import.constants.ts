@@ -14696,7 +14696,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false },
                     },
                     {
-                        fieldName: 'EMAIL/USERNAME',
+                        fieldName: 'EMAILUSERNAME',
                         label: 'Email/Username',
                         defaultValue: '',
                         options: {
