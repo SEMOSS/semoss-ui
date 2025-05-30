@@ -59,6 +59,17 @@ export const NavigatorLayout = observer(() => {
     //     configStore.store.config.adminOnlyViewMenuBarFlag,
     // ]);
 
+    // let showSidebar = true;
+    // if (configStore.store.user.admin) {
+    //     // show the sidebar if the user is an admin
+    //     showSidebar = true;
+    // } else if (!configStore.store.config.adminOnlyViewMenuBarFlag) {
+    //     // if the flag is false, show the sidebar
+    //     showSidebar = true;
+    // } else {
+    //     showSidebar = false;
+    // }
+
     return (
         <ErrorBoundary fallback={<ErrorPage />}>
             <StyledBox>
