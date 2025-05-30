@@ -10,11 +10,11 @@ import {
     Typography,
     Paper,
     CircularProgress,
+    Markdown,
 } from '@semoss/ui';
 import { useForm, Controller } from 'react-hook-form';
 import { EngineQASidebar } from '@/components/settings';
 import { useEngine, useRootStore } from '@/hooks';
-import { Markdown } from '@/components/common';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     maxWidth: '1000px',
@@ -237,6 +237,7 @@ export const EngineQAPage = () => {
                                                 <></>
                                             )
                                         }
+                                        data-testid={'engine-qa-generate-btn'}
                                     >
                                         Generate Answer
                                     </Button>
@@ -272,7 +273,7 @@ export const EngineQAPage = () => {
                                         Conclusion:
                                     </Typography>
                                     <Box sx={{ mb: 2, overflow: 'auto' }}>
-                                        <Markdown content={answer.conclusion} />
+                                        <Markdown>{answer.conclusion}</Markdown>
                                     </Box>
                                 </Stack>
                             )}

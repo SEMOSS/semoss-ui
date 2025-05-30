@@ -202,7 +202,7 @@ export const MyProfilePage = () => {
         defaultValues: {
             NAME: name,
             USERNAME: id,
-            USERID: nativeLogin,
+            USERID: id,
             EMAIL: email,
         },
     });
@@ -391,6 +391,7 @@ export const MyProfilePage = () => {
                                 setProfileImgModal(true);
                             }}
                             disabled
+                            data-testid={'my-profile-page-upload-btn'}
                         >
                             Upload
                         </Button>
@@ -522,6 +523,7 @@ export const MyProfilePage = () => {
                                         color="primary"
                                         type="submit"
                                         disabled={!admin}
+                                        data-testid={'my-profile-page-save-btn'}
                                     >
                                         Save
                                     </Button>
@@ -533,6 +535,9 @@ export const MyProfilePage = () => {
                                             userInfoReset();
                                         }}
                                         disabled={!admin}
+                                        data-testid={
+                                            'my-profile-page-reset-btn'
+                                        }
                                     >
                                         Reset
                                     </Button>
@@ -603,6 +608,7 @@ export const MyProfilePage = () => {
                             onClick={() => {
                                 copy(jsSnippet);
                             }}
+                            data-testid={'my-profile-js-copy-btn'}
                         >
                             <ContentCopyOutlined />
                         </IconButton>
@@ -629,6 +635,7 @@ export const MyProfilePage = () => {
                             onClick={() => {
                                 copy(pySnippet);
                             }}
+                            data-testid={'my-profile-py-copy-btn'}
                         >
                             <ContentCopyOutlined />
                         </IconButton>
@@ -653,6 +660,7 @@ export const MyProfilePage = () => {
                         onClick={() => {
                             setAddModal(true);
                         }}
+                        data-testid={'my-profile-new-key-btn'}
                     >
                         New Key
                     </Button>
@@ -707,6 +715,9 @@ export const MyProfilePage = () => {
                                                       onClick={() => {
                                                           copy(k.ACCESSKEY);
                                                       }}
+                                                      data-testid={
+                                                          'my-profile-access-key-copy-btn'
+                                                      }
                                                   >
                                                       <ContentCopyOutlined />
                                                   </IconButton>
@@ -717,6 +728,9 @@ export const MyProfilePage = () => {
                                                               k.ACCESSKEY,
                                                           );
                                                       }}
+                                                      data-testid={
+                                                          'my-profile-access-key-delete-btn'
+                                                      }
                                                   >
                                                       <Delete />
                                                   </IconButton>
@@ -805,6 +819,9 @@ export const MyProfilePage = () => {
                                         type="submit"
                                         variant={'outlined'}
                                         color="primary"
+                                        data-testid={
+                                            'my-profile-page-generate-btn'
+                                        }
                                     >
                                         Generate
                                     </Button>
@@ -830,6 +847,9 @@ export const MyProfilePage = () => {
                                                     onClick={() =>
                                                         copy(ACCESSKEY)
                                                     }
+                                                    data-testid={
+                                                        'my-profile-created-access-copy-btn'
+                                                    }
                                                 >
                                                     Copy
                                                 </Button>
@@ -853,6 +873,9 @@ export const MyProfilePage = () => {
                                                     }
                                                     onClick={() =>
                                                         copy(SECRETKEY)
+                                                    }
+                                                    data-testid={
+                                                        'my-profile-secret-key-copy-btn'
                                                     }
                                                 >
                                                     Copy
@@ -880,6 +903,9 @@ export const MyProfilePage = () => {
                                                             !isJsSdkOpen,
                                                         );
                                                     }}
+                                                    data-testid={
+                                                        'my-profile-page-js-toggle-btn'
+                                                    }
                                                 >
                                                     {isJsSdkOpen ? (
                                                         <KeyboardArrowUp />
@@ -906,6 +932,9 @@ export const MyProfilePage = () => {
                                                         }
                                                         onClick={() =>
                                                             copy(jsSnippet)
+                                                        }
+                                                        data-testid={
+                                                            'my-profile-js-sdk-copy-btn'
                                                         }
                                                     >
                                                         Copy
@@ -934,6 +963,9 @@ export const MyProfilePage = () => {
                                                             !isPySdkOpen,
                                                         );
                                                     }}
+                                                    data-testid={
+                                                        'my-profile-page-py-toggle-btn'
+                                                    }
                                                 >
                                                     {isPySdkOpen ? (
                                                         <KeyboardArrowUp />
@@ -959,6 +991,9 @@ export const MyProfilePage = () => {
                                                         }
                                                         onClick={() =>
                                                             copy(pySnippet)
+                                                        }
+                                                        data-testid={
+                                                            'my-profile-py-sdk-copy-btn'
                                                         }
                                                     >
                                                         Copy
@@ -1018,12 +1053,16 @@ export const MyProfilePage = () => {
                                     variant="contained"
                                     disabled
                                     type="submit"
+                                    data-testid={'my-profile-page-submit-btn'}
                                 >
                                     Save
                                 </Button>
                                 <Button
                                     variant="text"
                                     onClick={() => closeProfileEditModel()}
+                                    data-testid={
+                                        'my-profile-page-close-profile-btn'
+                                    }
                                 >
                                     Close
                                 </Button>

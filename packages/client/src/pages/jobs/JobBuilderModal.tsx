@@ -13,7 +13,7 @@ import {
     useNotification,
 } from '@semoss/ui';
 
-import { runPixel } from '@/api';
+import { runPixelTwo } from '../../runPixelTwo';
 import { JobBuilder } from './job.types';
 import { getEncodeByJobType } from './job.utils';
 import { JobTypesBuilder } from './JobTypesBuilder';
@@ -241,7 +241,7 @@ export const JobBuilderModal = (props: {
         setIsLoading(true);
         try {
             const encode = getEncodeByJobType(builder);
-            const response = await runPixel(
+            const response = await runPixelTwo(
                 `META|ScheduleJob(jobName=["${builder.name}"],${
                     builder.tags.length
                         ? ` jobTags=${JSON.stringify(builder.tags)},`
@@ -278,7 +278,7 @@ export const JobBuilderModal = (props: {
     const updateJob = async () => {
         setIsLoading(true);
         const encode = getEncodeByJobType(builder);
-        await runPixel(
+        await runPixelTwo(
             `META|EditScheduledJob(jobId="${builder.id}",jobName="${
                 builder.name
             }",${
@@ -316,7 +316,11 @@ export const JobBuilderModal = (props: {
                     alignItems="center"
                 >
                     <span>{isEditMode ? 'Edit' : 'Add'} Job</span>
-                    <IconButton aria-label="close" onClick={closeModal}>
+                    <IconButton
+                        aria-label="close"
+                        onClick={closeModal}
+                        data-testid={'job-builder-close-btn'}
+                    >
                         <Close />
                     </IconButton>
                 </Stack>
@@ -339,12 +343,14 @@ export const JobBuilderModal = (props: {
                         <ToggleButton
                             value="standard"
                             onClick={() => setFrequencyType('standard')}
+                            data-testid={'job-builder-standard-btn'}
                         >
                             Standard
                         </ToggleButton>
                         <ToggleButton
                             value="custom"
                             onClick={() => setFrequencyType('custom')}
+                            data-testid={'job-builder-custom-btn'}
                         >
                             Custom
                         </ToggleButton>
@@ -391,6 +397,7 @@ export const JobBuilderModal = (props: {
                         type="button"
                         disabled={isLoading}
                         onClick={closeModal}
+                        data-testid={'job-builder-cancel-btn'}
                     >
                         Cancel
                     </Button>
@@ -407,6 +414,7 @@ export const JobBuilderModal = (props: {
                             isEditMode ? updateJob() : addJob();
                         }}
                         loading={isLoading}
+                        data-testid={'job-builder-add-save-btn'}
                     >
                         {isEditMode ? 'Save' : 'Add'}
                     </Button>

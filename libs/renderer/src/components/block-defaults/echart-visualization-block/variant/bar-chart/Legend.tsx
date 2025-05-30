@@ -2,7 +2,7 @@ import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 
-import { styled, Switch } from "@semoss/ui";
+import { styled, Switch, Typography } from "@semoss/ui";
 
 import { BlockDef } from "../../../../../store";
 import { PathValue } from "../../../../../types";
@@ -21,6 +21,33 @@ const StyledContainer = styled("div")<{
     justifyContent: justifyContent ?? undefined,
     padding: padding ?? undefined,
 }));
+
+const StyledAxis = styled("div")<{
+    display?: string;
+    justifyContent?: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "row",
+}));
+
+const StyledAxisDiv = styled("div")<{
+    display?: string;
+    justifyContent?: string;
+    gap?: string;
+}>(({ theme, display, justifyContent, gap }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "row",
+    padding: "8px 16px",
+    alignItems: "center",
+    gap: gap ?? undefined,
+}));
+
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    color: theme.palette.text.primary,
+}));
+
 //legend component props
 interface legendProps {
     id: string;
@@ -111,13 +138,14 @@ export const Legend = observer(
             }, 300);
         }
         return (
-            <>
-                <StyledContainer
+            <StyledAxis>
+                <StyledAxisDiv
                     display="flex"
-                    justifyContent="space-around"
-                    padding="0.9rem"
+                    justifyContent="flex-start"
+                    gap="8px"
                 >
                     <Switch
+                        size="small"
                         checked={isLegendShown}
                         onChange={(e: ChangeEvent<HTMLInputElement>) => {
                             handleInputChange(
@@ -127,9 +155,11 @@ export const Legend = observer(
                         }}
                         title="Show Legend"
                     />
-                    <label htmlFor="showToolList">Show Legend</label>
-                </StyledContainer>
-            </>
+                    <StyledTypography variant="body2">
+                        Show Legend
+                    </StyledTypography>
+                </StyledAxisDiv>
+            </StyledAxis>
         );
     },
 );

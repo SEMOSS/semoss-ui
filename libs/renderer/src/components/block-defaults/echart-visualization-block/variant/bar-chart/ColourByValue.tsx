@@ -17,6 +17,7 @@ import { ECHART_BAR_COLOUR } from "../../Visualization.constants";
 const StyledMainSection = styled("div")(() => ({
     display: "inline-flex",
     width: "100%",
+    gap: "8px",
 }));
 //select field with custom styling design to show two select fields in a row
 const StyledSelect = styled(Select)(() => ({

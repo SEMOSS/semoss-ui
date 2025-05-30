@@ -5,7 +5,7 @@ import { Select, MenuItem } from "@semoss/ui";
 
 import { BlockConfig } from "../../../store";
 import { useBlockSettings } from "../../../hooks";
-import { buildListener } from "../block-defaults.shared";
+import { buildListener, buildShowField } from "../block-defaults.shared";
 import { SliderBlockDef, SliderBlock } from "./SliderBlock";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import {
@@ -32,17 +32,24 @@ export const config: BlockConfig<SliderBlockDef> = {
         size: "300px",
     },
     listeners: {
-        onChange: [],
+        onChange: {
+            type: "sync",
+            order: [],
+        },
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: SliderBlock,
     icon: BlurLinear,
     contentMenu: [
         {
-            name: "Slider Type",
+            name: "General",
             children: [
                 {
-                    description: "Slider Type",
+                    description: "Type",
                     render: observer(({ id }) => {
                         const { data, setData } = useBlockSettings(id);
 
@@ -61,6 +68,7 @@ export const config: BlockConfig<SliderBlockDef> = {
                         };
                         return (
                             <Select
+                                label="Type"
                                 fullWidth
                                 size="small"
                                 value={data.type}
@@ -79,11 +87,6 @@ export const config: BlockConfig<SliderBlockDef> = {
                         );
                     }),
                 },
-            ],
-        },
-        {
-            name: "General",
-            children: [
                 {
                     description: "Marks",
                     render: observer(({ id }) => {
@@ -123,17 +126,6 @@ export const config: BlockConfig<SliderBlockDef> = {
                     }),
                 },
                 {
-                    description: "Value",
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Value"
-                            path="value"
-                            type="value"
-                        />
-                    ),
-                },
-                {
                     description: "Minimum Value",
                     render: ({ id }) => (
                         <InputSettings
@@ -155,10 +147,29 @@ export const config: BlockConfig<SliderBlockDef> = {
                         />
                     ),
                 },
+                {
+                    description: "Value",
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="Value"
+                            path="value"
+                            type="value"
+                        />
+                    ),
+                },
             ],
         },
         {
-            name: "on Change",
+             name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
+        },
+        {
+            name: "On Change",
             children: [...buildListener("onChange")],
         },
     ],

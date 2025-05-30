@@ -10,6 +10,7 @@ import {
     buildDimensionsSection,
     buildBorderSection,
     buildShowField,
+    buildListener,
 } from "../block-defaults.shared";
 
 export const config: BlockConfig<AccordionBlockDef> = {
@@ -22,7 +23,12 @@ export const config: BlockConfig<AccordionBlockDef> = {
         showExpandIcon: true,
         show: "true",
     },
-    listeners: {},
+    listeners: {
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+    },
     slots: {
         header: [],
         content: [],
@@ -31,9 +37,8 @@ export const config: BlockConfig<AccordionBlockDef> = {
     icon: Schema,
     contentMenu: [
         {
-            name: "Accessories",
+            name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Show expand icon",
                     render: ({ id }) => (
@@ -46,6 +51,14 @@ export const config: BlockConfig<AccordionBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
     ],
     styleMenu: [

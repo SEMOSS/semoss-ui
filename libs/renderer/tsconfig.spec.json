@@ -2,9 +2,19 @@
     "extends": "./tsconfig.json",
     "compilerOptions": {
         "outDir": "dist",
-        "types": ["node"]
+        "types": [
+            "vitest/globals",
+            "vitest/importMeta",
+            "vite/client",
+            "node",
+            "jest",
+            "vitest",
+            "@testing-library/jest-dom",
+            "@testing-library/jest-dom/jest-globals"
+        ]
     },
     "include": [
+        "vite.config.ts",
         "rollup.config.js",
         "src/**/*.test.ts",
         "src/**/*.spec.ts",
@@ -15,5 +25,7 @@
         "src/**/*.test.jsx",
         "src/**/*.spec.jsx",
         "src/**/*.d.ts"
-    ]
+    ],
+    "typeRoots": ["./node_modules/@types", "./node_modules"],
+    "exclude": ["node_modules", "./cypress.config.ts", "cypress"]
 }

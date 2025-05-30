@@ -1,4 +1,5 @@
-import { ActionMessages } from '@/stores';
+import { ActionMessages } from '@semoss/renderer';
+
 import { Template } from './templates.types';
 import CHATAI from '@/assets/img/query.jpeg';
 
@@ -93,7 +94,10 @@ export const AskLLMTemplate: Template = {
                     value: '',
                 },
                 listeners: {
-                    onClick: [],
+                    onClick: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'question',
             },
@@ -111,14 +115,17 @@ export const AskLLMTemplate: Template = {
                     loading: '{{ask-llm.isLoading}}',
                 },
                 listeners: {
-                    onClick: [
-                        {
-                            payload: {
-                                queryId: 'ask-llm',
+                    onClick: {
+                        type: 'sync',
+                        order: [
+                            {
+                                payload: {
+                                    queryId: 'ask-llm',
+                                },
+                                message: ActionMessages.RUN_QUERY,
                             },
-                            message: ActionMessages.RUN_QUERY,
-                        },
-                    ],
+                        ],
+                    },
                 },
                 id: 'submit',
             },
@@ -142,7 +149,10 @@ export const AskLLMTemplate: Template = {
                     },
                 },
                 listeners: {
-                    onPageLoad: [],
+                    onPageLoad: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'page-1',
             },

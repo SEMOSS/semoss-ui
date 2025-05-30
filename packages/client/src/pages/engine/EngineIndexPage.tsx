@@ -1,7 +1,6 @@
-import { Chip, Stack, styled, Typography } from '@semoss/ui';
+import { Chip, Stack, styled, Typography, Markdown } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 import { Section } from '@/components/ui';
-import { Markdown } from '@/components/common';
 import { useEngine, useRootStore } from '@/hooks';
 import { DatabaseStatistics } from '@/components/database/DatabaseStatistics';
 import { removeUnderscores } from '@/utility';
@@ -30,7 +29,6 @@ export const EngineIndexPage = observer(() => {
         },
     );
 
-    console.log('engine meta keys', engineMetaKeys);
     return (
         <StyledPage>
             <Section>
@@ -39,7 +37,7 @@ export const EngineIndexPage = observer(() => {
                 </Section.Header>
                 {metaVals.markdown ? (
                     <StyledMarkdownContainer>
-                        <Markdown content={metaVals.markdown as string} />
+                        <Markdown>{metaVals.markdown as string}</Markdown>
                     </StyledMarkdownContainer>
                 ) : (
                     <div> No Markdown available</div>

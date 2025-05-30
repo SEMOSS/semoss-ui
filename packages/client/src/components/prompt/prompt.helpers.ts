@@ -7,13 +7,15 @@ import {
     INPUT_TYPE_CUSTOM_QUERY,
     INPUT_TYPE_DATABASE,
 } from './prompt.constants';
+
+import { MonolithStore } from '@/stores';
 import {
     ActionMessages,
     Block,
-    MonolithStore,
     QueryStateConfig,
     SerializedState,
-} from '@/stores';
+} from '@semoss/renderer';
+
 import { AppMetadata } from '../app';
 
 export const DESCRIPTION_CONTAINER = 'description-container';
@@ -42,7 +44,7 @@ function getTextFieldInputBlock(
     inputType: string,
     index: number,
     label: string,
-) {
+): Block {
     return {
         id: getIdForInput(inputType, index),
         widget: 'input',
@@ -60,13 +62,24 @@ function getTextFieldInputBlock(
             },
         },
         listeners: {
-            onChange: [],
+            onChange: {
+                type: 'sync',
+                order: [],
+            },
+            preProcess: {
+                type: 'sync',
+                order: [],
+            },
         },
         slots: {},
     };
 }
 
-function getSelectInputBlock(inputType: string, index: number, label: string) {
+function getSelectInputBlock(
+    inputType: string,
+    index: number,
+    label: string,
+): Block {
     return {
         id: getIdForInput(inputType, index),
         widget: 'select',
@@ -83,7 +96,14 @@ function getSelectInputBlock(inputType: string, index: number, label: string) {
             options: [],
         },
         listeners: {
-            onChange: [],
+            onChange: {
+                type: 'sync',
+                order: [],
+            },
+            preProcess: {
+                type: 'sync',
+                order: [],
+            },
         },
         slots: {},
     };
@@ -402,7 +422,7 @@ export async function setBlocksAndOpenUIBuilder(
 ) {
     // create the state
     const state: SerializedState = {
-        version: '1.0.0-alpha.4',
+        version: '1.0.0-alpha.7',
         executionOrder: [],
         variables: {
             [PROMPT_QUERY_DEFINITION_ID]: {
@@ -438,14 +458,17 @@ export async function setBlocksAndOpenUIBuilder(
                     loading: `{{${PROMPT_QUERY_DEFINITION_ID}.isLoading}}`,
                 },
                 listeners: {
-                    onPageLoad: [
-                        {
-                            message: ActionMessages.RUN_QUERY,
-                            payload: {
-                                queryId: PROMPT_QUERY_DEFINITION_ID,
+                    onPageLoad: {
+                        type: 'sync',
+                        order: [
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: PROMPT_QUERY_DEFINITION_ID,
+                                },
                             },
-                        },
-                    ],
+                        ],
+                    },
                 },
                 slots: {
                     content: {
@@ -473,7 +496,12 @@ export async function setBlocksAndOpenUIBuilder(
                         gap: '8px',
                     },
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 slots: {
                     children: {
                         name: 'children',
@@ -496,7 +524,12 @@ export async function setBlocksAndOpenUIBuilder(
                     },
                     text: 'My App',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 slots: {},
             },
             [HELP_TEXT_BLOCK_ID]: {
@@ -513,7 +546,12 @@ export async function setBlocksAndOpenUIBuilder(
                     },
                     text: 'Welcome! Below are pre-configured blocks for your prompt inputs to use in your app.',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 slots: {},
             },
             [PROMPT_CONTAINER_BLOCK_ID]: {
@@ -532,7 +570,12 @@ export async function setBlocksAndOpenUIBuilder(
                         gap: '8px',
                     },
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 slots: {
                     children: {
                         name: 'children',
@@ -557,14 +600,21 @@ export async function setBlocksAndOpenUIBuilder(
                     variant: 'contained',
                 },
                 listeners: {
-                    onClick: [
-                        {
-                            message: ActionMessages.RUN_QUERY,
-                            payload: {
-                                queryId: PROMPT_QUERY_ID,
+                    onClick: {
+                        type: 'sync',
+                        order: [
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: PROMPT_QUERY_ID,
+                                },
                             },
-                        },
-                    ],
+                        ],
+                    },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 slots: {},
             },
@@ -581,7 +631,12 @@ export async function setBlocksAndOpenUIBuilder(
                     },
                     markdown: `{{${PROMPT_QUERY_ID}.output}}`,
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 slots: {},
             },
         },

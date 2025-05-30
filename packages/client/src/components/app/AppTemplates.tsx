@@ -7,7 +7,11 @@ import {
     AskCSVTemplate,
     AskLLMTemplate,
     BlocksGuideTemplate,
+    CreateDiabetesRecordTemplate,
     LandingPageTemplate,
+    DeleteDiabetesRecordTemplate,
+    UpdateDiabetesRecordTemplate,
+    ReadDiabetesRecordTemplate,
 } from './templates';
 
 const DEFAULT_TEMPLATE = [
@@ -15,6 +19,10 @@ const DEFAULT_TEMPLATE = [
     AskLLMTemplate,
     AskCSVTemplate,
     BlocksGuideTemplate,
+    CreateDiabetesRecordTemplate,
+    ReadDiabetesRecordTemplate,
+    UpdateDiabetesRecordTemplate,
+    DeleteDiabetesRecordTemplate,
 ];
 
 // const StyledFilter = styled('div')(({ theme }) => ({

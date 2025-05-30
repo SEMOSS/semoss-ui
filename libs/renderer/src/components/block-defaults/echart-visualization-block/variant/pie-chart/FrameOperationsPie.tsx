@@ -6,7 +6,7 @@ import Checkbox from "@mui/material/Checkbox";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 
-import { Autocomplete, IconButton, TextField } from "@semoss/ui";
+import { Autocomplete, IconButton, styled, TextField } from "@semoss/ui";
 
 import { EchartVisualizationBlockDef } from "../../../echart-visualization-block";
 import { BaseSettingSection } from "../../../../block-settings";
@@ -263,7 +263,13 @@ export const FrameOperationsPie = observer(
         };
 
         return (
-            <>
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.5rem",
+                }}
+            >
                 <BaseSettingSection label="Frame">
                     <Autocomplete
                         fullWidth
@@ -380,7 +386,7 @@ export const FrameOperationsPie = observer(
                         )}
                     />
                 </BaseSettingSection> */}
-            </>
+            </div>
         );
     },
 );
