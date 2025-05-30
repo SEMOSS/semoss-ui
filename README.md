@@ -7,7 +7,7 @@
 
 1. Git clone this repository to your `webapps` folder. `git clone git@repo.semoss.org:semoss/semoss-ui.git`
 
-2. Ensure your BE server is running in eclipse and at a minimum running on a version of pnpm@10.
+2. Ensure your BE server is running in eclipse and at a minimum running on a version of pnpm@10.10.
 
 3. create a `.env.local` file and populate with the following. **Do not change the .env**
 
