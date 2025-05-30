@@ -430,6 +430,8 @@ export const AppPage = observer((): JSX.Element => {
                                             favoriteApp(app);
                                         }}
                                         isDiscoverable={mode !== 'Mine'}
+                                        isLoading={true}
+                                        showSkeleton={true}
                                     />
                                 );
                             })}
@@ -451,6 +453,8 @@ export const AppPage = observer((): JSX.Element => {
                                     href="../../../"
                                     systemApp={true}
                                     appType={'BI'}
+                                    isLoading={false}
+                                    showSkeleton={false}
                                 />
                             )}
 
@@ -462,6 +466,8 @@ export const AppPage = observer((): JSX.Element => {
                                     href="../../../#!/embed-terminal"
                                     systemApp={true}
                                     appType={'TERMINAL'}
+                                    isLoading={false}
+                                    showSkeleton={false}
                                 />
                             )}
                         </StyledSection>
@@ -517,6 +523,8 @@ export const AppPage = observer((): JSX.Element => {
                                             onDelete={() => {
                                                 removeApp(app);
                                             }}
+                                            isLoading={true}
+                                            showSkeleton={true}
                                         />
                                     );
                                 })}

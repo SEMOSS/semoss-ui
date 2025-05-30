@@ -139,6 +139,8 @@ export const AppTemplates = (props: AppTemplatesProps) => {
                                 systemApp={true}
                                 appType={app.project_type}
                                 onAction={() => onUse(t)}
+                                isLoading={false}
+                                showSkeleton={false}
                             />
                         );
                     }

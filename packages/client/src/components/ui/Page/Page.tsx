@@ -34,7 +34,7 @@ const StyledPageHeader = styled('div', {
 }));
 
 const StyledContainer = styled(Container)(() => ({
-    width: '1264px',
+    width: '1600px',
     padding: '0px',
     /* Media query for screens with a minimum width of 600px */
     '@media (min-width: 600px)': {
