@@ -6,7 +6,6 @@ import { styled, Button } from '@semoss/ui';
 import { Ncrt, LandingPage } from './use-cases';
 
 const USE_CASES = [
-    { key: 'NCRT', component: <Ncrt /> },
     { key: 'Landing Page', component: <LandingPage /> },
 ];
 

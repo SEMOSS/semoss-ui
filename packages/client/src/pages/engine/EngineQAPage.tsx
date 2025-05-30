@@ -237,6 +237,7 @@ export const EngineQAPage = () => {
                                                 <></>
                                             )
                                         }
+                                        data-testid={'engine-qa-generate-btn'}
                                     >
                                         Generate Answer
                                     </Button>
