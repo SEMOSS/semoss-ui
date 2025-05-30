@@ -51,6 +51,7 @@ const config = {
             outputHashing: isProduction ? 'all' : 'none',
             watch: isProduction ? false : true,
             memoryLimit: 8192,
+            skipTypeChecking: process.env.NODE_ENV !== 'production',
         }),
         new NxReactWebpackPlugin({
             // Uncomment this line if you don't want to use SVGR
@@ -106,7 +107,13 @@ const config = {
             },
             {
                 test: /\.tsx?$/,
-                use: 'ts-loader',
+                use: {
+                    loader: 'ts-loader',
+                    options: {
+                        // this is enabled in dev as VSCode should show transpile errors
+                        transpileOnly: !isProduction,
+                    },
+                },
                 exclude: /node_modules/,
             },
             {
