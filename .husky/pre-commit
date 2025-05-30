@@ -2,13 +2,13 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 # Linting @semoss/client
-npx lint-staged --concurrent false --relative @semoss/client || {
+npx nx lint @semoss/client || {
   echo "ERROR: Linting issues were found in the packages/client. Please address them before proceeding."
   exit 1
 }
 
-# # Linting @semoss/ui
-npx lint-staged --concurrent false --relative @semoss/ui || {
+# Linting @semoss/ui
+npx nx lint @semoss/ui || {
   echo "ERROR: Linting issues were found in the libs/ui. Please address them before proceeding."
   exit 1
 }
