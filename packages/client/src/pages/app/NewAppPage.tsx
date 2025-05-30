@@ -104,34 +104,7 @@ export const NewAppPage = () => {
                     uploadApp={() => setIsUploadOpen(true)}
                 />
             </Container>
-            <Stack direction={'column'} spacing={5}>
-                <Stack
-                    direction={'column'}
-                    alignItems={'flex-start'}
-                    spacing={2}
-                >
-                    <Stack
-                        direction={'column'}
-                        alignItems={'flex-start'}
-                        spacing={1}
-                    >
-                        <Typography variant={'h5'}>Browse Templates</Typography>
-                        <Typography variant={'body1'}>
-                            Don’t know where to start? Don’t worry! Browse our
-                            collection of templates to start personalizing the
-                            app to your specific use case.
-                        </Typography>
-                    </Stack>
-                    <AppTemplates
-                        onUse={(t) => {
-                            setNewAppOptions({
-                                type: 'blocks',
-                                state: t.state,
-                            });
-                        }}
-                    />
-                </Stack>
-            </Stack>
+            <Stack direction={'column'} spacing={5}></Stack>
         </NewAppStep>
     );
 };

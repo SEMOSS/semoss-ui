@@ -46,8 +46,8 @@ export const NewAppStep = (props: NewAppStepProps) => {
         <Page
             header={
                 <Stack>
-                    <Breadcrumbs>
-                        {previous ? (
+                    {previous ? (
+                        <Breadcrumbs>
                             <StyledLink
                                 onClick={() => {
                                     // trigger the action
@@ -57,8 +57,8 @@ export const NewAppStep = (props: NewAppStepProps) => {
                                 <ArrowBack />
                                 {previous.title}
                             </StyledLink>
-                        ) : null}
-                    </Breadcrumbs>
+                        </Breadcrumbs>
+                    ) : null}
                     <Typography variant="h4">{title}</Typography>
                     {description ? (
                         <Typography variant="body1">{description}</Typography>

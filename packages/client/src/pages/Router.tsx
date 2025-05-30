@@ -14,7 +14,7 @@ import { AuthenticatedLayout } from './AuthenticatedLayout';
 import { NavigatorLayout } from './NavigatorLayout';
 
 import { LoginPage } from './LoginPage';
-import { AppPage } from './AppPage';
+import { AppCatalogPage } from './AppCatalogPage';
 import { SharePage } from './SharePage';
 
 import { CookieNotice } from './legal/CookieNotice';
@@ -24,6 +24,8 @@ import { WorkspacePage } from './WorkspacePage';
 
 import { PlatformMessages } from './PlatformMessages';
 import { LandingPage } from './LandingPage';
+import { MarketplacePage } from './MarketplacePage';
+import { NewPromptBuilderAppPage } from './app/NewPromptBuilderAppPage';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
@@ -59,8 +61,14 @@ export const Router = observer(() => {
                 <Route path="*" element={<NavigatorLayout />}>
                     <Route index element={<LandingPage />} />
 
-                    <Route path="apps" element={<AppPage />} />
-                    <Route path="marketplace" element={<>Marketplace</>} />
+                    <Route path="apps" element={<AppCatalogPage />} />
+                    <Route path="marketplace" element={<MarketplacePage />} />
+                    <Route
+                        path="app/new/prompt"
+                        element={<NewPromptBuilderAppPage />}
+                    />
+
+                    <Route path="app/*" element={<AppRouter />} />
 
                     <Route path="import" element={<ImportRouter />} />
                     <Route path="engine/*" element={<EngineRouter />} />
@@ -69,7 +77,6 @@ export const Router = observer(() => {
                     <Route path="settings/*" element={<SettingsRouter />} />
                 </Route>
 
-                <Route path="app/*" element={<AppRouter />} />
                 <Route
                     path="workspace/:appId/*"
                     element={

@@ -138,7 +138,7 @@ const TERMINAL_APP: AppMetadata = {
 /**
  * App page
  */
-export const AppPage = observer((): JSX.Element => {
+export const AppCatalogPage = observer((): JSX.Element => {
     const { configStore, monolithStore } = useRootStore();
     const navigate = useNavigate();
 

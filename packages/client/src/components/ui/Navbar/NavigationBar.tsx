@@ -18,6 +18,7 @@ import { THEME } from '@/constants';
 import { Logo } from '@/assets/img/Logo';
 import { useRootStore } from '@/hooks';
 import Search from './Search';
+import { useLocation } from 'react-router-dom';
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
     borderBottom: '1px solid #EAEAEE',
@@ -140,6 +141,7 @@ interface NavigationBarProps {
 export const NavigationBar = (props: NavigationBarProps) => {
     const { onOpen } = props;
     const { configStore } = useRootStore();
+    const location = useLocation();
 
     const [showAppBuilder, setShowAppBuilder] = useState(
         configStore.store.isAppBuilder,
@@ -211,34 +213,38 @@ export const NavigationBar = (props: NavigationBarProps) => {
                     </StyledSearchSection>
                 )}
                 <StyledRightSection>
-                    <StyledAppBuilderSection>
-                        <StyledAppBuilder variant="h6">
-                            App Builder
-                        </StyledAppBuilder>
-                        <StyledSwitch
-                            checked={showAppBuilder}
-                            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                                setShowAppBuilder(e.target.checked);
+                    {location.pathname === '/' && (
+                        <StyledAppBuilderSection>
+                            <StyledAppBuilder variant="h6">
+                                App Builder
+                            </StyledAppBuilder>
+                            <StyledSwitch
+                                checked={showAppBuilder}
+                                onChange={(
+                                    e: ChangeEvent<HTMLInputElement>,
+                                ) => {
+                                    setShowAppBuilder(e.target.checked);
 
-                                const key = `builder--${configStore.store.userEpoch}`;
-                                if (e.target.checked) {
-                                    localStorage.setItem(
-                                        key,
-                                        JSON.stringify({ state: true }),
-                                    );
-                                    configStore.setAppBuilderMode(true);
-                                } else {
-                                    const item = localStorage.getItem(
-                                        `builder--${configStore.store.userEpoch}`,
-                                    );
-                                    if (item) {
-                                        localStorage.removeItem(key);
+                                    const key = `builder--${configStore.store.userEpoch}`;
+                                    if (e.target.checked) {
+                                        localStorage.setItem(
+                                            key,
+                                            JSON.stringify({ state: true }),
+                                        );
+                                        configStore.setAppBuilderMode(true);
+                                    } else {
+                                        const item = localStorage.getItem(
+                                            `builder--${configStore.store.userEpoch}`,
+                                        );
+                                        if (item) {
+                                            localStorage.removeItem(key);
+                                        }
+                                        configStore.setAppBuilderMode(false);
                                     }
-                                    configStore.setAppBuilderMode(false);
-                                }
-                            }}
-                        ></StyledSwitch>
-                    </StyledAppBuilderSection>
+                                }}
+                            ></StyledSwitch>
+                        </StyledAppBuilderSection>
+                    )}
                 </StyledRightSection>
             </Toolbar>
         </StyledAppBar>

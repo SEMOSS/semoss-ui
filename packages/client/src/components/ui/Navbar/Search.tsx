@@ -10,13 +10,14 @@ import {
     Typography,
 } from '@semoss/ui';
 import Autocomplete from '@mui/material/Autocomplete';
+import { useNavigate } from 'react-router-dom';
 
 // Dummy data for illustration
 const categories = ['All', 'Catalogs', 'Apps', 'Teams', 'Settings'];
 const recentSearches = [
-    { label: 'Project Alpha' },
-    { label: 'Project Beta' },
-    { label: 'Dashboard 2024' },
+    // { label: 'Project Alpha' },
+    // { label: 'Project Beta' },
+    // { label: 'Dashboard 2024' },
 ];
 
 function CustomPopper(props) {
@@ -24,6 +25,9 @@ function CustomPopper(props) {
 }
 
 const Search = ({ renderInput }) => {
+    // TODO: navigation should be done through callback
+    const navigate = useNavigate();
+
     const [inputValue, setInputValue] = useState('');
     const [open, setOpen] = useState(false);
     const [selectedCategories, setSelectedCategories] = useState([]);
@@ -36,7 +40,7 @@ const Search = ({ renderInput }) => {
         `);
     if (result.data !== null && Array.isArray(result.data)) {
         data = result.data.map((x) => {
-            return { ...x, label: x.project_name };
+            return { ...x, label: x.project_name, id: x.project_id };
         });
     }
     const handleInputChange = (event, newInputValue) => {
@@ -76,8 +80,13 @@ const Search = ({ renderInput }) => {
             renderInput={renderInput}
             renderOption={(props, option) => (
                 <List.Item sx={{ padding: 0 }} key={option.label}>
-                    <List.ItemButton>
-                        {typeof option === 'string' ? option : option.label}
+                    <List.ItemButton
+                        onClick={() => {
+                            navigate(`app/${option.id}`);
+                        }}
+                    >
+                        {typeof option === 'string' ? option : option.label}{' '}
+                        {option.database_id}
                     </List.ItemButton>
                 </List.Item>
             )}

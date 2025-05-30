@@ -4,6 +4,7 @@ import styled from '@emotion/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { Navigate, useNavigate } from 'react-router-dom';
 
 import { Button, Chip } from '@semoss/ui';
 
@@ -13,6 +14,9 @@ import playground from '@/assets/img/playground.png';
 import AIConductor from '@/assets/img/AIConductor.png';
 import NavSection from './app/NavSection';
 import { useRootStore } from '@/hooks';
+import { AddAppModal, NewAppModal } from '@/components/app';
+import { BASE_PAGE_BLOCKS } from './app/app.constants';
+import { STATE_VERSION } from '@semoss/renderer';
 
 const StyledComponent = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -95,6 +99,7 @@ const StyledContainerImageSection = styled('div')<{ backgroundImage: string }>(
 );
 
 const BannerComponent = observer(() => {
+    const navigate = useNavigate();
     return (
         <>
             <div
@@ -127,6 +132,7 @@ const BannerComponent = observer(() => {
                         borderRadius: '12px',
                         background: '#000',
                     }}
+                    onClick={(e) => navigate('/marketplace')}
                     endIcon={<ArrowForwardIcon style={{ color: '#fff' }} />}
                 >
                     Browse Templates
@@ -181,6 +187,7 @@ const PlayGroundContainer = observer(() => {
                 <StyledContainerButtonSection>
                     <Button
                         variant="text"
+                        disabled={true}
                         endIcon={
                             <ArrowForwardIcon style={{ color: '#0471F0' }} />
                         }
@@ -242,6 +249,7 @@ const AIConductorContainer = observer(() => {
                 <StyledContainerButtonSection>
                     <Button
                         variant="text"
+                        disabled={true}
                         endIcon={
                             <ArrowForwardIcon style={{ color: '#0471F0' }} />
                         }
@@ -278,6 +286,53 @@ const StyledChip = styled(Chip)(({ theme }) => ({
 
 export const LandingPage = observer(() => {
     const { configStore } = useRootStore();
+    const navigate = useNavigate();
+
+    const [newAppOptions, setNewAppOptions] = useState<
+        React.ComponentProps<typeof NewAppModal>['options'] | null
+    >(null);
+    const [isUploadOpen, setIsUploadOpen] = useState(false);
+
+    const isNameOpen = !!newAppOptions;
+
+    /**
+     * Navigate to the app and open it
+     *
+     * appId - appId of the app
+     */
+    const navigateApp = (appId: string) => {
+        if (!appId) {
+            return;
+        }
+
+        navigate(`/workspace/${appId}`);
+    };
+
+    const isRestricted = !configStore.isEngineOperationAvailable('APP', 'add');
+    if (isRestricted) {
+        return <Navigate to="/" replace />;
+    }
+
+    const setupApp = (type: 'blocks' | 'code' | 'agent') => {
+        if (type === 'blocks') {
+            setNewAppOptions({
+                type: 'blocks',
+                state: {
+                    version: STATE_VERSION,
+                    variables: {},
+                    queries: {},
+                    blocks: BASE_PAGE_BLOCKS,
+                    executionOrder: [],
+                },
+            });
+        } else if (type === 'code') {
+            setNewAppOptions({
+                type: 'code',
+            });
+        } else if (type === 'agent') {
+            navigate('/app/new/prompt');
+        }
+    };
     return (
         <>
             <StyledComponent>
@@ -310,13 +365,38 @@ export const LandingPage = observer(() => {
                                 <PlayGroundContainer />
                                 <AIConductorContainer />
                             </Box>
+                            {isUploadOpen ? (
+                                <AddAppModal
+                                    open={isUploadOpen}
+                                    handleClose={(appId) => {
+                                        console.log('ok');
+                                        // if there is an appId navigate to it
+                                        if (appId) {
+                                            navigateApp(appId);
+                                        }
+
+                                        // close it
+                                        setIsUploadOpen(false);
+                                    }}
+                                />
+                            ) : null}
+                            {isNameOpen ? (
+                                <NewAppModal
+                                    open={isNameOpen}
+                                    options={newAppOptions}
+                                    onClose={(appId) => {
+                                        if (appId) {
+                                            navigateApp(appId);
+                                        } else {
+                                            // close the modal
+                                            setNewAppOptions(null);
+                                        }
+                                    }}
+                                />
+                            ) : null}
                             <NavSection
-                                setupApp={(type) => {
-                                    console.log(
-                                        'setupApp called with type:',
-                                        type,
-                                    );
-                                }}
+                                setupApp={setupApp}
+                                uploadApp={() => setIsUploadOpen(true)}
                             />
                         </div>
                     </Box>

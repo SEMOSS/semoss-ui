@@ -7,14 +7,7 @@ export const NewPromptBuilderAppPage = () => {
     const navigate = useNavigate();
 
     return (
-        <NewAppStep
-            title={'Agent Builder'}
-            previous={{
-                title: 'New App',
-                onClick: () => navigate('/app/new'),
-            }}
-            isLoading={false}
-        >
+        <NewAppStep title={'Agent Builder'} isLoading={false}>
             <PromptBuilder />
         </NewAppStep>
     );
