@@ -1,6 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
+import {
+    Add,
+    Edit,
+    HdrAuto,
+    MoreVert,
+    Share,
+    EditLocation,
+    RemoveRedEyeRounded,
+    SimCardDownload,
+} from '@mui/icons-material';
+
 import {
     Breadcrumbs,
     Button,
@@ -14,6 +26,12 @@ import {
     Stack,
     CircularProgress,
 } from '@semoss/ui';
+import { Env } from '@semoss/sdk/react';
+
+import { useRootStore } from '@/hooks';
+import { formatPermission, toTitleCase } from '@/utility';
+import { ShareOverlay } from '@/components/ui';
+import { SettingsContext } from '@/contexts';
 import {
     MembersTable,
     PendingMembersTable,
@@ -35,23 +53,6 @@ import {
     DetailsForm,
     AppDetailsRef,
 } from '@/components/app';
-import { ShareOverlay } from '@/components/ui';
-import { SettingsContext } from '@/contexts';
-import { Env } from '@/env';
-import { useRootStore } from '@/hooks';
-import { formatPermission, toTitleCase } from '@/utility';
-import {
-    Add,
-    Edit,
-    HdrAuto,
-    MoreVert,
-    Share,
-    EditLocation,
-    RemoveRedEyeRounded,
-    SimCardDownload,
-} from '@mui/icons-material';
-
-import { Link } from 'react-router-dom';
 
 const OuterContainer = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
@@ -550,6 +551,7 @@ export const AppDetailPage = () => {
                                     }
                                     variant="outlined"
                                     onClick={() => exportApp()}
+                                    data-testid={'app-detail-export-btn'}
                                 >
                                     Export
                                 </Button>
@@ -561,6 +563,7 @@ export const AppDetailPage = () => {
                                         setIsChangeAccessModalOpen(true)
                                     }
                                     sx={{ fontWeight: 'bold' }}
+                                    data-testid={'app-detail-access-btn'}
                                 >
                                     {permission === 'discoverable' ? (
                                         <>Request Access</>
@@ -573,6 +576,7 @@ export const AppDetailPage = () => {
                             <Button
                                 variant="contained"
                                 onClick={() => navigate(`/app/${appId}`)}
+                                data-testid={'app-detail-open-btn'}
                             >
                                 Open
                             </Button>
@@ -581,6 +585,7 @@ export const AppDetailPage = () => {
                                 onClick={(event) =>
                                     setMoreVertAnchorEl(event.currentTarget)
                                 }
+                                data-testid={'app-detail-more-btn'}
                             >
                                 <MoreVert />
                             </IconButton>
@@ -747,6 +752,7 @@ export const AppDetailPage = () => {
                                                 right: 0,
                                                 top: '-0.4rem',
                                             }}
+                                            data-testid={'app-detail-edit-btn'}
                                         >
                                             <Edit />
                                         </IconButton>

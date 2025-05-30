@@ -145,11 +145,11 @@ export const Notification = (props: NotificationProps): JSX.Element => {
                 open={isOpen}
                 anchorOrigin={anchorOrigin}
                 autoHideDuration={autoHideDuration}
+                className={"notification-bubble"}
                 onClose={(event, reason) => {
                     if (reason === "clickaway") {
                         return;
                     }
-
                     // close it
                     setIsOpen(false);
                 }}

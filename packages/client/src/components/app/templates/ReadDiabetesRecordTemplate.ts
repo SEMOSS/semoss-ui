@@ -138,14 +138,17 @@ export const ReadDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [
-                        {
-                            payload: {
-                                queryId: 'get-data',
+                    onChange: {
+                        type: 'sync',
+                        order: [
+                            {
+                                payload: {
+                                    queryId: 'get-data',
+                                },
+                                message: ActionMessages.RUN_QUERY,
                             },
-                            message: ActionMessages.RUN_QUERY,
-                        },
-                    ],
+                        ],
+                    },
                 },
                 id: 'select--9417',
             },
@@ -173,14 +176,17 @@ export const ReadDiabetesRecordTemplate: Template = {
                     loading: '{{response-sheet.isLoading}}',
                 },
                 listeners: {
-                    onPageLoad: [
-                        {
-                            payload: {
-                                queryId: 'on-page-load',
+                    onPageLoad: {
+                        type: 'sync',
+                        order: [
+                            {
+                                payload: {
+                                    queryId: 'on-page-load',
+                                },
+                                message: ActionMessages.RUN_QUERY,
                             },
-                            message: ActionMessages.RUN_QUERY,
-                        },
-                    ],
+                        ],
+                    },
                 },
                 id: 'page-1',
             },

@@ -7,6 +7,8 @@ import {
     NotStartedOutlined,
     Pause,
 } from '@mui/icons-material';
+import { AvTimer } from '@mui/icons-material';
+
 import {
     Button,
     Modal,
@@ -17,8 +19,8 @@ import {
     Typography,
 } from '@semoss/ui';
 
+import { runPixelTwo } from '../../runPixelTwo';
 import { useDebounce, useRootStore } from '@/hooks';
-import { AvTimer } from '@mui/icons-material';
 import { JobCard } from './JobCard';
 import { JobHistory } from './JobHistory';
 import {
@@ -36,7 +38,6 @@ import {
     convertTimetoDate,
 } from './job.utils';
 import { JobsTable } from './JobsTable';
-import { runPixel } from '@/api';
 import { JobBuilderModal } from './JobBuilderModal';
 import { DeleteJobModal } from './DeleteJobModal';
 
@@ -176,7 +177,7 @@ export function JobsPage() {
             pixel += `PauseJobTrigger(jobId=["${job.id}"], jobGroup=["${job.group}"]);`;
         });
         try {
-            await runPixel(pixel);
+            await runPixelTwo(pixel);
         } catch (e) {
             notification.add({
                 color: 'error',
@@ -193,7 +194,7 @@ export function JobsPage() {
             pixel += `ResumeJobTrigger(jobId=["${job.id}"], jobGroup=["${job.group}"]);`;
         });
         try {
-            await runPixel(pixel);
+            await runPixelTwo(pixel);
         } catch (e) {
             notification.add({
                 color: 'error',
@@ -555,6 +556,7 @@ export function JobsPage() {
                             startIcon={<Pause />}
                             size="medium"
                             onClick={() => pauseJobs()}
+                            data-testid={'jobs-page-pause-btn'}
                         >
                             Pause
                         </Button>
@@ -566,6 +568,7 @@ export function JobsPage() {
                             startIcon={<NotStartedOutlined />}
                             size="medium"
                             onClick={() => resumeJobs()}
+                            data-testid={'jobs-page-resume-btn'}
                         >
                             Resume
                         </Button>
@@ -596,6 +599,7 @@ export function JobsPage() {
                                     password: '',
                                 })
                             }
+                            data-testid={'jobs-page-add-btn'}
                         >
                             Add
                         </Button>

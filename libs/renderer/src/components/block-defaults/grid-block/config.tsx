@@ -30,7 +30,6 @@ export const config: BlockConfig<GridBlockDef> = {
         contextMenu: {
             hideFilter: false,
             hideUnfilter: false,
-            // hideExclude: false,
         },
         show: true,
     },
@@ -38,7 +37,6 @@ export const config: BlockConfig<GridBlockDef> = {
     listeners: {},
     slots: {},
     render: GridBlockDuplicate,
-    // render: GridBlock,
     icon: TableChart,
     menu: GridBlockMenu,
 };

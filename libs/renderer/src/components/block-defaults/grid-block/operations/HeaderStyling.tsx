@@ -56,7 +56,7 @@ export const HeaderStyling = observer(
 
         const [gridStyle, setGridStyle] = useState<HeaderBackgroundSettings>({
             backgroundColor: "#ffffff",
-            fontSize: "16",
+            fontSize: "14",
             fontColor: "#000000",
             selectedColumn: [] as string[],
         });

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { ReportRounded } from '@mui/icons-material';
 
-import { ActionMessages, useBlocks } from '@semoss/renderer';
+import { ActionMessages, INPUT_BLOCK_TYPES, useBlocks } from '@semoss/renderer';
 import {
     styled,
     Card,
@@ -89,6 +89,16 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         // ID of newly added block
         let id = '';
 
+        // put a placeholder action to check if it is valid
+        const placeholderAction = designer.drag.placeholderAction;
+        if (!placeholderAction || !placeholderAction.id) {
+            designer.deactivateDrag();
+            designer.setHovered('');
+            designer.setSelected('');
+            setLocal(false);
+            return;
+        }
+
         // Track block in session storage
         localStorage.setItem(
             'blocks--frequently-used',
@@ -108,8 +118,16 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         );
 
         // apply the action
-        const placeholderAction = designer.drag.placeholderAction;
         const sw = state.getBlock(placeholderAction.id);
+
+        // Safely get the block associated with the placeholder action
+        if (!sw) {
+            designer.deactivateDrag();
+            designer.setHovered('');
+            designer.setSelected('');
+            setLocal(false);
+            return;
+        }
 
         // TODO: Add logic to prevent adding block it iter block if one is already present
 
@@ -132,7 +150,17 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 const siblingWidget = state.getBlock(placeholderAction.id);
 
                 if (siblingWidget?.parent) {
+                    if (!sw.parent || !sw.parent.id) {
+                        designer.deactivateDrag();
+                        setLocal(false);
+                        return;
+                    }
                     const parent = state.getBlock(sw.parent.id);
+                    if (!parent) {
+                        designer.deactivateDrag();
+                        setLocal(false);
+                        return;
+                    }
                     if (parent.widget === 'iteration') {
                         if (parent.slots.children.children.length) {
                             notification.add({
@@ -180,6 +208,20 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                     });
                 }
             }
+        }
+
+        // TODO: REFACTOR
+        // Add variables for all blocks that are inputs from user
+        if (INPUT_BLOCK_TYPES.indexOf(item.json.widget) > -1) {
+            state.dispatch({
+                message: ActionMessages.ADD_VARIABLE,
+                payload: {
+                    id: id,
+                    type: 'block',
+                    to: id,
+                    isInput: true,
+                },
+            });
         }
 
         // clear the drag

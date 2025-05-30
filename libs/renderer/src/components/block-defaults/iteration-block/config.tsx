@@ -1,4 +1,3 @@
-
 import { FormatShapes } from "@mui/icons-material";
 
 import { IterationBlockDef, IterationBlock } from "./IterationBlock";
@@ -7,10 +6,9 @@ import { BlockConfig } from "../../../store";
 import {
     buildLayoutSection,
     buildShowField,
+    buildListener,
 } from "../block-defaults.shared";
-import {
-    QueryInputSettings,
-} from "../../block-settings";
+import { QueryInputSettings } from "../../block-settings";
 
 // export the config for the block
 export const config: BlockConfig<IterationBlockDef> = {
@@ -22,17 +20,18 @@ export const config: BlockConfig<IterationBlockDef> = {
         child: null,
         show: "true",
     },
-    listeners: {},
+    listeners: {
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+    },
     slots: {
         children: [],
     },
     render: IterationBlock,
     icon: FormatShapes,
     contentMenu: [
-        {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
         {
             name: "Data Source",
             children: [
@@ -47,6 +46,14 @@ export const config: BlockConfig<IterationBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
         },
         // {
         //     name: "Child Block",

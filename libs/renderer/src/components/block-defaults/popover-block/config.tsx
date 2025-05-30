@@ -18,6 +18,7 @@ import {
     buildBorderSection,
     buildColorSection,
     buildListener,
+    buildShowField,
 } from "../block-defaults.shared";
 
 const TRIGGER_OPTIONS = [
@@ -129,8 +130,14 @@ export const config: BlockConfig<PopoverBlockDef> = {
         openTrigger: "click",
     },
     listeners: {
-        onOpen: [],
-        onClose: [],
+        onOpen: {
+            type: "sync",
+            order: [],
+        },
+        onClose: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {
         header: [],
@@ -175,11 +182,15 @@ export const config: BlockConfig<PopoverBlockDef> = {
             ],
         },
         {
-            name: "on Open",
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
+            name: "Pre Process",
             children: [...buildListener("onOpen")],
         },
         {
-            name: "on Close",
+            name: "Post Process",
             children: [...buildListener("onClose")],
         },
     ],

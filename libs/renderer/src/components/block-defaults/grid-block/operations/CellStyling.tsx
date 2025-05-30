@@ -55,7 +55,7 @@ export const CellStyling = observer(
         const { data, setData } = useBlockSettings<GridBlockDef>(id);
         const [gridStyle, setGridStyle] = useState<CellBackgroundSettings>({
             backgroundColor: "#ffffff",
-            fontSize: "16",
+            fontSize: "14",
             fontColor: "#000000",
             selectedColumn: [] as string[],
         });
