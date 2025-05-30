@@ -110,7 +110,8 @@ const config = {
                 use: {
                     loader: 'ts-loader',
                     options: {
-                        transpileOnly: process.env.NODE_ENV !== isProduction,
+                        // this is enabled in dev as VSCode should show transpile errors
+                        transpileOnly: !isProduction,
                     },
                 },
                 exclude: /node_modules/,
