@@ -566,6 +566,8 @@ export const DataTabStyling = observer(
                                     key={key}
                                     value={key}
                                     onClick={() => {
+                                        if(key == "Maximum") key = "Max";
+                                        if(key == "Minimum") key = "Min";
                                         setAggregateMenuAnchorEl(null);
                                         onAggregateChange(key);
                                     }}
