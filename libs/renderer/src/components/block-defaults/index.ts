@@ -5,8 +5,6 @@ import {
     AccordionBlockDef,
 } from "./accordion-block";
 
-import { config as PopoverBlockConfig, PopoverBlockDef } from "./popover-block";
-
 import { config as AudioBlockConfig, AudioBlockDef } from "./audio-block";
 import {
     config as AudioInputBlockConfig,
@@ -19,6 +17,7 @@ import {
     config as CheckboxBlockConfig,
     CheckboxBlockDef,
 } from "./checkbox-block";
+import { config as ChipBlockConfig, ChipBlockDef } from "./chip-block";
 import {
     config as ContainerBlockConfig,
     ContainerBlockDef,
@@ -31,14 +30,23 @@ import {
     EchartVisualizationBlockDef,
 } from "./echart-visualization-block";
 
+import {
+    config as FlipCardBlockConfig,
+    FlipCardBlockDef,
+} from "./flip-card-block";
+
 import { config as GridBlockConfig, GridBlockDef } from "./grid-block";
 
 import { config as HTMLBlockConfig, HTMLBlockDef } from "./html-block";
 
-import { config as IconBlockConfig, IconBlockDef } from "./Icon_block";
+import { config as IconBlockConfig, IconBlockDef } from "./icon-block";
 import { config as IframeBlockConfig, IframeBlockDef } from "./iframe-block";
 import { config as ImageBlockConfig, ImageBlockDef } from "./image-block";
 import { config as InputBlockConfig, InputBlockDef } from "./input-block";
+import {
+    config as IterationBlockConfig,
+    IterationBlockDef,
+} from "./iteration-block";
 
 import { config as LinkBlockConfig, LinkBlockDef } from "./link-block";
 import { config as LogsBlockConfig, LogsBlockDef } from "./logs-block";
@@ -59,6 +67,7 @@ import {
     config as PDFViewerBlockConfig,
     PDFViewerBlockDef,
 } from "./pdfViewer-block";
+import { config as PopoverBlockConfig, PopoverBlockDef } from "./popover-block";
 import {
     config as ProgressBlockConfig,
     ProgressBlockDef,
@@ -88,6 +97,7 @@ import {
     config as VegaVisualizationBlockConfig,
     VegaVisualizationBlockDef,
 } from "./vega-visualization-block";
+import { config as VisualizationFilterBlockConfig, VisualizationFilterBlockDef } from "./visualization-filter-block";
 
 // import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
 // import { config as BodyBlockConfig, BodyBlockDef } from "./body-block";
@@ -104,15 +114,18 @@ export type DefaultBlockDefinitions =
     | AudioInputBlockDef
     | ButtonBlockDef
     | CheckboxBlockDef
+    | ChipBlockDef
     | ContainerBlockDef
     | DividerBlockDef
     | EchartVisualizationBlockDef
+    | FlipCardBlockDef
     | GridBlockDef
     | HTMLBlockDef
     | IconBlockDef
     | IframeBlockDef
     | ImageBlockDef
     | InputBlockDef
+    | IterationBlockDef
     | LinkBlockDef
     | LLMComparisonBlockDef
     | LogsBlockDef
@@ -135,7 +148,7 @@ export type DefaultBlockDefinitions =
     | VegaVisualizationBlockDef
     | RadioBlockDef
     | TimePickerBlockDef
-    | ThemeBlockDef;
+    | VisualizationFilterBlockDef
 // | BodyBlockDef
 // | DividerBlockDef
 // | FooterBlockDef
@@ -152,14 +165,17 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
+    [ChipBlockConfig.widget]: ChipBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [DividerBlockConfig.widget]: DividerBlockConfig,
     [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
+    [FlipCardBlockConfig.widget]: FlipCardBlockConfig,
     [GridBlockConfig.widget]: GridBlockConfig,
     [IconBlockConfig.widget]: IconBlockConfig,
     [IframeBlockConfig.widget]: IframeBlockConfig,
     [ImageBlockConfig.widget]: ImageBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
+    [IterationBlockConfig.widget]: IterationBlockConfig,
     [LinkBlockConfig.widget]: LinkBlockConfig,
     [LLMComparisonBlockConfig.widget]: LLMComparisonBlockConfig,
     [LogsBlockConfig.widget]: LogsBlockConfig,
@@ -182,6 +198,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
+    [VisualizationFilterBlockConfig.widget]: VisualizationFilterBlockConfig,
     // [StepperBlockConfig.widget]: StepperBlockConfig,
     // [QueryBlockConfig.widget]: QueryBlockConfig,
 };
@@ -193,6 +210,7 @@ export {
     AudioInputBlockConfig,
     ButtonBlockConfig,
     CheckboxBlockConfig,
+    ChipBlockConfig,
     ContainerBlockConfig,
     DividerBlockConfig,
     GridBlockConfig,
@@ -200,6 +218,7 @@ export {
     IframeBlockConfig,
     ImageBlockConfig,
     InputBlockConfig,
+    IterationBlockConfig,
     MarkdownBlockConfig,
     HTMLBlockConfig,
     PageBlockConfig,
@@ -221,4 +240,6 @@ export {
     RadioBlockConfig,
     PDFViewerBlockConfig,
     TimePickerBlockConfig,
+    FlipCardBlockConfig,
+    VisualizationFilterBlockConfig,
 };

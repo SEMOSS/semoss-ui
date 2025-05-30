@@ -31,6 +31,7 @@ export interface EchartVisualizationBlockDef {
         };
         variation: undefined | string;
         columns: EChartColumns[];
+        aggregate: Record<string, any>;
         contextMenu: {
             hideUnfilter: boolean;
             hideFilter: boolean;
@@ -50,7 +51,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
         value: unknown;
     } | null>(null);
 
-    let chartOperationData = useRef({
+    const chartOperationData = useRef({
         brushSelected: [],
         contextMenu: null,
         yAxisColumn: { name: "", selector: "", width: undefined },
@@ -68,67 +69,44 @@ export const StackChart: BlockComponent = observer(({ id }) => {
         category = fields["category"];
         tooltip = fields["tooltip"];
     }
+
     /**
-     * Function to get the type of selector to be used for the stack chart
-     * @returns An object with the selectors for xAxis, yAxis, size and tooltip
+     * Builds a dynamic query string based on the provided input data.
+     * @param inputData - An array of tuples where each tuple contains a string and an object mapping field names to aggregation methods.
+     * @returns A query string that selects and groups by the specified fields with appropriate aggregations.
      */
-    const getSelectors = (): {
-        xAxis: string;
-        yAxis: string;
-        size: string;
-        tooltip: string;
-    } => {
-        return {
-            xAxis: getSelectorType("XAxisDataType"),
-            yAxis: getSelectorType("YAxisDataType"),
-            size: getSelectorType("categoryDataType"),
-            tooltip: getSelectorType("tooltipDataType"),
-        };
-    };
-    // getSelectorType function to get the type of selector to be used for the stack chart
-    const getSelectorType = (type) => {
-        return fields[type] === "NUMBER" ? "Average" : "Count";
-    };
-    const selectors = getSelectors();
-    //selector fuction which will return the pixel expression to send payload to the server
-    const selector = (data) => {
-        if (data.hasOwnProperty("columns")) {
-            if (data.option.hasOwnProperty("_state")) {
-                if (data.option["_state"].hasOwnProperty("fields")) {
-                    if (
-                        fields.hasOwnProperty("XAxis") &&
-                        fields.hasOwnProperty("YAxis") &&
-                        fields.hasOwnProperty("category") &&
-                        fields.hasOwnProperty("tooltip")
-                    ) {
-                        if (xAxis == category && yAxis == tooltip) {
-                            return `Select(${xAxis},${selectors.yAxis}(${yAxis})).as([${xAxis},Average_of_${yAxis}])|Group(${xAxis})`;
-                        }
-                        if (xAxis == category) {
-                            return `Select(${xAxis},${selectors.yAxis}(${yAxis}),${selectors.tooltip}(${tooltip})).as([${xAxis},Average_of_${yAxis},Average_of_${tooltip}])|Group(${xAxis})`;
-                        }
-                        if (yAxis == tooltip) {
-                            return `Select(${xAxis},${selectors.yAxis}(${yAxis}),${category}).as([${xAxis},Average_of_${yAxis},${category}])|Group(${xAxis},${category})`;
-                        }
-                        return `Select(${xAxis},${selectors.yAxis}(${yAxis}),${category},${selectors.tooltip}(${tooltip})).as([${xAxis},Average_of_${yAxis},${category},Average_of_${tooltip}])|Group(${xAxis},${category})`;
+    const buildDynamicQuery = (inputData): string => {
+        const selectParts: string[] = [];
+        const aliasParts: string[] = [];
+        const groupByParts: string[] = [];
+
+        inputData.forEach(([_, fields]) => {
+            for (const field in fields) {
+                const rawAgg = fields[field];
+                if (!aliasParts.includes(field)) aliasParts.push(field);
+
+                if (rawAgg) {
+                    const cleanedAgg = rawAgg.split(" ").join(""); // Remove spaces (e.g., "Unique Count" → "UniqueCount")
+                    if (!selectParts.includes(`${cleanedAgg}(${field})`)) {
+                        selectParts.push(`${cleanedAgg}(${field})`);
                     }
-                    if (
-                        fields.hasOwnProperty("XAxis") &&
-                        fields.hasOwnProperty("YAxis") &&
-                        fields.hasOwnProperty("category")
-                    ) {
-                        if (xAxis == category) {
-                            return `Select(${xAxis},${selectors.yAxis}(${yAxis})).as([${xAxis},Average_of_${yAxis}])|Group(${xAxis})`;
-                        }
-                        return `Select(${xAxis},${selectors.yAxis}(${yAxis}),${category}).as([${xAxis},Average_of_${yAxis},${category}])|Group(${xAxis},${category})`;
+                } else {
+                    if (!selectParts.includes(field)) {
+                        selectParts.push(field);
+                        groupByParts.push(field); // Only unaggregated fields are grouped
                     }
                 }
             }
-        }
+        });
+
+        return `Select(${selectParts.join(", ")}).as([${aliasParts.join(
+            ", ",
+        )}]) | Group(${groupByParts.join(", ")})`;
     };
+
     // useFrame hook to get the frame data
     const frame = useFrame(data?.frame?.name, {
-        selector: selector(data),
+        selector: buildDynamicQuery(Object.entries(data?.aggregate ?? {})),
     });
     //  Function to add only new values and avoid duplicates
     const updateSelectedIndexes = (selectedIndexes, newIndexes) => {
@@ -157,14 +135,14 @@ export const StackChart: BlockComponent = observer(({ id }) => {
             });
             if (selectedDataIndexes.length > 0) {
                 const currentOption = chart.getOption();
-                let xAxisData =
+                const xAxisData =
                     data.option["flipAxis"] === true
                         ? currentOption.yAxis[0].data
                         : currentOption.xAxis[0].data;
-                let filteredXaxis = [...selectedDataIndexes]
+                const filteredXaxis = [...selectedDataIndexes]
                     .filter((index) => {
                         return data.option["series"].some((series) => {
-                            let yValue = series.data[index]?.value;
+                            const yValue = series.data[index]?.value;
                             return (
                                 yValue !== null &&
                                 yValue !== 0 &&
@@ -192,8 +170,8 @@ export const StackChart: BlockComponent = observer(({ id }) => {
     const onClickChart = {
         contextmenu: (params) => {
             if (params.data) {
-                let XAxisName = xAxis;
-                let selectedData = params.dataIndex;
+                const XAxisName = xAxis;
+                const selectedData = params.dataIndex;
                 const filteredXaxis =
                     data.option["flipAxis"] === true
                         ? data.option["yAxis"]["data"][selectedData]
@@ -218,10 +196,10 @@ export const StackChart: BlockComponent = observer(({ id }) => {
     };
     //  Process the API data to render the Stack Chart
     const processData = (apiData, data) => {
-        let xAxisData = [];
-        let groupedData = {};
+        const xAxisData = [];
+        const groupedData = {};
         let maxStackSize = 0;
-        let uniqueCategories = [];
+        const uniqueCategories = [];
         //Reset data before updating
         data.option.series = [];
         data.option.xAxis.data = [];
@@ -234,7 +212,10 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                     fields.hasOwnProperty("category") &&
                     fields.hasOwnProperty("tooltip")
                 ) {
-                    if (xAxis == category && yAxis == tooltip) {
+                    if (
+                        JSON.stringify(xAxis) == JSON.stringify(category) &&
+                        JSON.stringify(yAxis) == JSON.stringify(tooltip)
+                    ) {
                         apiData.values.forEach(([x, y]) => {
                             if (!groupedData[x]) {
                                 groupedData[x] = [];
@@ -256,7 +237,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                         const colorCount = colorList.length;
 
                         //  Assign colors to categories
-                        let categoryColorMap = {};
+                        const categoryColorMap = {};
                         uniqueCategories.forEach((category, index) => {
                             categoryColorMap[category] =
                                 colorList[index % colorCount]; //  Cycle colors
@@ -293,7 +274,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                         const legendData = uniqueCategories.map(String);
                         return { xAxisData, series, maxStackSize, legendData };
                     }
-                    if (xAxis == category) {
+                    if (JSON.stringify(xAxis) == JSON.stringify(category)) {
                         apiData.values.forEach(([x, y, tooltip]) => {
                             if (!groupedData[x]) {
                                 groupedData[x] = [];
@@ -318,7 +299,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                         const colorCount = colorList.length;
 
                         //  Assign colors to categories
-                        let categoryColorMap = {};
+                        const categoryColorMap = {};
                         uniqueCategories.forEach((category, index) => {
                             categoryColorMap[category] =
                                 colorList[index % colorCount]; //  Cycle colors
@@ -355,7 +336,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                         const legendData = uniqueCategories.map(String);
                         return { xAxisData, series, maxStackSize, legendData };
                     }
-                    if (yAxis == tooltip) {
+                    if (JSON.stringify(yAxis) == JSON.stringify(tooltip)) {
                         apiData.values.forEach(([x, y, category]) => {
                             if (!groupedData[x]) {
                                 groupedData[x] = [];
@@ -380,7 +361,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                         const colorCount = colorList.length;
 
                         //  Assign colors to categories
-                        let categoryColorMap = {};
+                        const categoryColorMap = {};
                         uniqueCategories.forEach((category, index) => {
                             categoryColorMap[category] =
                                 colorList[index % colorCount]; //  Cycle colors
@@ -439,7 +420,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                     const colorCount = colorList.length;
 
                     //  Assign colors to categories
-                    let categoryColorMap = {};
+                    const categoryColorMap = {};
                     uniqueCategories.forEach((category, index) => {
                         categoryColorMap[category] =
                             colorList[index % colorCount]; //  Cycle colors
@@ -477,7 +458,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                     fields.hasOwnProperty("YAxis") &&
                     fields.hasOwnProperty("category")
                 ) {
-                    if (xAxis == category) {
+                    if (JSON.stringify(xAxis) == JSON.stringify(category)) {
                         apiData.values.forEach(([x, y]) => {
                             if (!groupedData[x]) {
                                 groupedData[x] = [];
@@ -501,7 +482,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                         const colorCount = colorList.length;
 
                         //  Assign colors to categories
-                        let categoryColorMap = {};
+                        const categoryColorMap = {};
                         uniqueCategories.forEach((category, index) => {
                             categoryColorMap[category] =
                                 colorList[index % colorCount]; //  Cycle colors
@@ -562,7 +543,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                     const colorCount = colorList.length;
 
                     //  Assign colors to categories
-                    let categoryColorMap = {};
+                    const categoryColorMap = {};
                     uniqueCategories.forEach((category, index) => {
                         categoryColorMap[category] =
                             colorList[index % colorCount]; //  Cycle colors
@@ -611,16 +592,16 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                     ) {
                         return function (params) {
                             let tooltipText = `${params[0].axisValue} <br/>`;
-                            let tooltipValues = [];
+                            const tooltipValues = [];
                             let totalTooltipValue = 0;
-                            let tooltipPrefix =
+                            const tooltipPrefix =
                                 data.option["_state"]["fields"][
                                     "tooltipDataType"
                                 ] === "NUMBER"
                                     ? "Average of"
                                     : "Count of";
                             params.forEach((param) => {
-                                let tooltipValue = param.data.tooltipValue;
+                                const tooltipValue = param.data.tooltipValue;
                                 if (param.data.category !== "") {
                                     tooltipText += `${param.marker} ${param.data.category}: ${param.value} <br/>`;
                                 }
@@ -635,7 +616,8 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                                 }
                             });
                             if (maxStackSize > 0) {
-                                let average = totalTooltipValue / maxStackSize;
+                                const average =
+                                    totalTooltipValue / maxStackSize;
                                 tooltipText += `${tooltipPrefix} ${tooltip}: ${average} <br/>`;
                             }
                             return tooltipText.trim();
@@ -688,7 +670,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
         data.option["series"] = [];
         data.option["xAxis"]["data"] = [];
         data.option["yAxis"]["data"] = [];
-        let processedFrameData = processData(frame.data, data);
+        const processedFrameData = processData(frame.data, data);
         if (
             processedFrameData &&
             processedFrameData.hasOwnProperty("xAxisData") &&

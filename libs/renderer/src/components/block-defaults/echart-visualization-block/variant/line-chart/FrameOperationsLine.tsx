@@ -92,7 +92,7 @@ export const FrameOperationsLine = observer(
         useEffect(() => {
             const json: PathValue<D["data"], typeof path> =
                 JSON.parse(computedValue);
-            let state = json["_state"];
+            const state = json["_state"];
             if (state && state.hasOwnProperty("fields")) {
                 reinitializeStates(state["fields"]);
             } else {

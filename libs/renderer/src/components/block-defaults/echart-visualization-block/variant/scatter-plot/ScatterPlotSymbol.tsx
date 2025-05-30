@@ -24,14 +24,13 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 
     path: Paths<Block<D>["data"], 4>;
 }
-const StyledAxisDiv = styled("div")<{
+const StyledAxis = styled("div")<{
     display?: string;
     justifyContent?: string;
 }>(({ theme, display, justifyContent }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
 }));
 
 const StyledAxisColDiv = styled("div")<{
@@ -41,8 +40,8 @@ const StyledAxisColDiv = styled("div")<{
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "column",
-    padding: "0.5rem",
-    marginLeft: "2px",
+    padding: "8px 16px",
+    gap: "8px",
 }));
 
 export const ScatterPlotSymbol = observer(
@@ -102,7 +101,7 @@ export const ScatterPlotSymbol = observer(
             // Update the symbol shape to the selected value
             setSymbolShape(e.target.value);
             // Parse the value of the input to a JSON object
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the symbol shape in the JSON object
             option["series"][0]["symbol"] = e.target.value;
             // Set the JSON object back to the input field
@@ -114,7 +113,7 @@ export const ScatterPlotSymbol = observer(
          */
         const handleChangeSymbolSize = (e) => {
             // Parse the current value to a JSON object
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the symbol size to the selected value
             setSymbolSize(e.target.value);
             // Set the symbol size in the JSON object
@@ -123,9 +122,11 @@ export const ScatterPlotSymbol = observer(
             setData(path, option as PathValue<D["data"], typeof path>);
         };
         return (
-            <StyledAxisDiv>
+            <StyledAxis>
                 <StyledAxisColDiv display="flex" justifyContent="space-around">
-                    <Typography variant="body2">Symbol Shape</Typography>
+                    <Typography variant="body2" color="secondary">
+                        Symbol Shape
+                    </Typography>
                     <Select
                         name="Symbol Shape"
                         value={symbolShape}
@@ -142,7 +143,9 @@ export const ScatterPlotSymbol = observer(
                     </Select>
                 </StyledAxisColDiv>
                 <StyledAxisColDiv display="flex" justifyContent="space-around">
-                    <Typography variant="body2">Symbol Size</Typography>
+                    <Typography variant="body2" color="secondary">
+                        Symbol Size
+                    </Typography>
                     <TextField
                         id="Symbol Size"
                         size="small"
@@ -150,7 +153,7 @@ export const ScatterPlotSymbol = observer(
                         onChange={handleChangeSymbolSize}
                     />
                 </StyledAxisColDiv>
-            </StyledAxisDiv>
+            </StyledAxis>
         );
     },
 );

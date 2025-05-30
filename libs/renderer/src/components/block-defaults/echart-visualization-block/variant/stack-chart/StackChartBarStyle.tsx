@@ -97,14 +97,14 @@ export const StackChartBarStyle = observer(
         };
         // this function is used to set the barWidth of the stack chart
         const stackbarWidth = (e) => {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             setBarWidth(e.target.value);
             option["barWidth"] = e.target.value;
             setData(path, option as PathValue<D["data"], typeof path>);
         };
         // this function is used to flip the axis of the stack chart
         const flipAxisStack = (e: ChangeEvent<HTMLInputElement>) => {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             setFlipAxis(e.target.checked);
             option["flipAxis"] = e.target.checked;
             if (e.target.checked === true) {

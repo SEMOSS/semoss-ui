@@ -302,7 +302,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
         (e) => {
             console.warn(e);
 
-            let errorMessages = [];
+            const errorMessages = [];
             for (const error in e) {
                 if (
                     e[error].hasOwnProperty('message') &&

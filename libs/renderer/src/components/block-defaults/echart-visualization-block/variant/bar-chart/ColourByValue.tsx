@@ -17,6 +17,7 @@ import { ECHART_BAR_COLOUR } from "../../Visualization.constants";
 const StyledMainSection = styled("div")(() => ({
     display: "inline-flex",
     width: "100%",
+    gap: "8px",
 }));
 //select field with custom styling design to show two select fields in a row
 const StyledSelect = styled(Select)(() => ({
@@ -64,7 +65,7 @@ const ColourByValue = observer(
         const [appliedRules, setAppliedRules] = useState([]);
         const [valuesColourMapping, setValuesColourMapping] = useState({});
         //custom reference variable to handle color value applying
-        let functionCallReference = useRef({
+        const functionCallReference = useRef({
             valuesResetCheck: false,
             assignedRules: [],
             applyRulesToChart: false,
@@ -88,7 +89,7 @@ const ColourByValue = observer(
         //initial setting of state data based on the json value
         useEffect(() => {
             functionCallReference.current.applyRulesToChart = false;
-            let option =
+            const option =
                 typeof computedValue === "string"
                     ? JSON.parse(computedValue)
                     : computedValue;
@@ -96,7 +97,7 @@ const ColourByValue = observer(
                 option.hasOwnProperty("customSettings") &&
                 option["customSettings"].hasOwnProperty("appliedColourByValue")
             ) {
-                let appliedRules =
+                const appliedRules =
                     option["customSettings"]["appliedColourByValue"];
                 setAppliedRules(appliedRules);
             }
@@ -107,19 +108,19 @@ const ColourByValue = observer(
         }, [computedValue]);
         useEffect(() => {
             if (functionCallReference.current.applyRulesToChart) {
-                let option =
+                const option =
                     typeof value === "string" ? JSON.parse(value) : value;
                 let colourObj = {};
                 let optionUpdated = option;
                 appliedRules.forEach((appliedItem, index) => {
-                    let xAxisPosition = getXAxisPositions(appliedItem);
+                    const xAxisPosition = getXAxisPositions(appliedItem);
                     //take all the series indexes to update the data
-                    let filteredSeriesIndex = getFilteredSeriesIndex();
+                    const filteredSeriesIndex = getFilteredSeriesIndex();
                     if (xAxisPosition.length) {
                         filteredSeriesIndex.forEach((item, index) => {
-                            let seriesIndexData = item;
+                            const seriesIndexData = item;
                             if (seriesIndexData > -1) {
-                                let data =
+                                const data =
                                     option["series"][seriesIndexData]["data"];
                                 data.forEach((item, dataindex) => {
                                     colourObj = {
@@ -191,9 +192,9 @@ const ColourByValue = observer(
 
         //function to check and retrieve the indexes for bar chart type
         function getFilteredSeriesIndex() {
-            let index = [];
-            let seriesAvailable: any[] = data.option["series"].filter((item) =>
-                BAR_CHART_DATA.JSONVALUE.includes(item.type),
+            const index = [];
+            const seriesAvailable: any[] = data.option["series"].filter(
+                (item) => BAR_CHART_DATA.JSONVALUE.includes(item.type),
             );
             seriesAvailable.forEach((item, seriesIndex) => {
                 index.push(seriesIndex);
@@ -234,8 +235,8 @@ const ColourByValue = observer(
             });
             //if column updated is columnToColour then values to be selected if fetched from series and added to valuestocolor state
             if (column === "columnToColour") {
-                let option = data.option;
-                let jsonPropName = data.columns.find(
+                const option = data.option;
+                const jsonPropName = data.columns.find(
                     (item) => item.selector === event.target.value,
                 );
                 if (jsonPropName.hasOwnProperty("name")) {
@@ -254,7 +255,7 @@ const ColourByValue = observer(
                                     : item;
                             }),
                         );
-                        let dataArray = option["xAxis"]["data"].map(
+                        const dataArray = option["xAxis"]["data"].map(
                             convertSeriesDataToValue,
                         );
                         setNewRules((prevValues) => {
@@ -266,7 +267,7 @@ const ColourByValue = observer(
                         });
                     }
                     if (option["yAxis"]["pixelname"] === jsonPropName["name"]) {
-                        let seriesIndex = option["series"].findIndex(
+                        const seriesIndex = option["series"].findIndex(
                             (series) => series.name === jsonPropName["name"],
                         );
                         if (
@@ -276,7 +277,7 @@ const ColourByValue = observer(
                             setValuesToColour(
                                 option["series"][seriesIndex]["data"],
                             );
-                            let dataArray = option["series"][seriesIndex][
+                            const dataArray = option["series"][seriesIndex][
                                 "data"
                             ].map(convertSeriesDataToValue);
                             setNewRules((prevValues) => {
@@ -293,14 +294,15 @@ const ColourByValue = observer(
         }
         //get the xaxis positons to be updated with the colour selected
         function getXAxisPositions(sourceObject: any = {}) {
-            let option = typeof value === "string" ? JSON.parse(value) : value;
+            const option =
+                typeof value === "string" ? JSON.parse(value) : value;
             let positions = [];
             if (Object.keys(sourceObject).length === 0) {
                 sourceObject = newRules;
             }
             if (sourceObject.columnComparision === "==") {
                 sourceObject.valuesToColour.forEach((item) => {
-                    let xAxisPosition = [];
+                    const xAxisPosition = [];
                     option["xAxis"]["data"].forEach((itemAvailable, index) => {
                         if (
                             item === itemAvailable ||
@@ -314,10 +316,10 @@ const ColourByValue = observer(
                 });
             }
             if (sourceObject.columnComparision === "!=") {
-                let dataVerify = option["xAxis"]["data"];
+                const dataVerify = option["xAxis"]["data"];
                 //finding the similar values as like == condition, and then reversing the process for more optimal results
                 sourceObject.valuesToColour.forEach((item) => {
-                    let xAxisPosition = [];
+                    const xAxisPosition = [];
                     option["xAxis"]["data"].forEach((itemAvailable, index) => {
                         if (
                             item === itemAvailable ||
@@ -330,7 +332,7 @@ const ColourByValue = observer(
                     positions = [...xAxisPosition, ...positions];
                 });
                 //reversing the positions to get the positions to be excluded
-                let xAxisReversedPositions = [];
+                const xAxisReversedPositions = [];
                 option["xAxis"]["data"].forEach((itemAvailable, index) => {
                     if (!positions.includes(index)) {
                         xAxisReversedPositions.push(index);
@@ -340,7 +342,7 @@ const ColourByValue = observer(
             }
             if (sourceObject.columnComparision === "<") {
                 //less than comparision
-                let dataVerify = option["xAxis"]["data"];
+                const dataVerify = option["xAxis"]["data"];
                 dataVerify.forEach((item, index) => {
                     if (
                         (item.hasOwnProperty("value") &&
@@ -353,7 +355,7 @@ const ColourByValue = observer(
             }
             if (sourceObject.columnComparision === ">") {
                 //greater than comparision
-                let dataVerify = option["xAxis"]["data"];
+                const dataVerify = option["xAxis"]["data"];
                 dataVerify.forEach((item, index) => {
                     if (
                         (item.hasOwnProperty("value") &&
@@ -366,7 +368,7 @@ const ColourByValue = observer(
             }
             if (sourceObject.columnComparision === "<=") {
                 //less than or equal to comparision
-                let dataVerify = option["xAxis"]["data"];
+                const dataVerify = option["xAxis"]["data"];
                 dataVerify.forEach((item, index) => {
                     if (
                         (item.hasOwnProperty("value") &&
@@ -379,7 +381,7 @@ const ColourByValue = observer(
             }
             if (sourceObject.columnComparision === ">=") {
                 //greater than or equal to comparision
-                let dataVerify = option["xAxis"]["data"];
+                const dataVerify = option["xAxis"]["data"];
                 dataVerify.forEach((item, index) => {
                     if (
                         (item.hasOwnProperty("value") &&
@@ -408,17 +410,17 @@ const ColourByValue = observer(
                 newRules.columnComparision !== ""
             ) {
                 if (newRules.index === -1) {
-                    let appliedRulesLength = appliedRules.length;
-                    let appliedRulesUpdated = [
+                    const appliedRulesLength = appliedRules.length;
+                    const appliedRulesUpdated = [
                         ...appliedRules,
                         { ...newRules, ["index"]: appliedRulesLength },
                     ];
                     functionCallReference.current.applyRulesToChart = true;
                     setAppliedRules(appliedRulesUpdated);
                 } else {
-                    let index = newRules.index;
-                    let assignedRules = appliedRules;
-                    let updatedRules = [
+                    const index = newRules.index;
+                    const assignedRules = appliedRules;
+                    const updatedRules = [
                         ...assignedRules.filter(
                             (item, itemIndex) => itemIndex < index,
                         ),
@@ -669,7 +671,7 @@ const ColourByValue = observer(
             setAppliedRules(assignedRules);
         }
         function editAssignedRule(rule, index) {
-            let assignedRules = rule;
+            const assignedRules = rule;
             setNewRules(assignedRules);
         }
 

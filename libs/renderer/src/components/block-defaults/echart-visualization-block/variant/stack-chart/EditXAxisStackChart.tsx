@@ -191,7 +191,7 @@ export const EditXAxisStackChart = observer(
          * @returns {void}
          */
         const showXAxis = (e: ChangeEvent<HTMLInputElement>) => {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             setShowXaxis(!showXaxis);
             option["xAxis"]["show"] = e.target.checked;
             setData(path, option as PathValue<D["data"], typeof path>);
@@ -208,7 +208,7 @@ export const EditXAxisStackChart = observer(
          * @returns {void}
          */
         const showXAxisTitle = (e) => {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             setShowXaxisTitle(!showXaxisTitle);
             option["xAxis"]["name"] =
                 option["xAxis"]["name"] == ""
@@ -229,7 +229,7 @@ export const EditXAxisStackChart = observer(
             // Update the xaxisTitle state
             setXaxisTitle(e.target.value);
             // Parse the data option
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the x-axis title in the data option
             option["xAxis"]["name"] = e.target.value;
             option["xAxis"]["flipAxisName"] = e.target.value;
@@ -247,7 +247,7 @@ export const EditXAxisStackChart = observer(
          */
         const handleChangeXAxisFontSize = (e) => {
             // Parse the data option
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the fontSizeXAxis state
             setFontSizeXAxis(e.target.value);
             // Update the font size of the x-axis title in the data option
@@ -266,7 +266,7 @@ export const EditXAxisStackChart = observer(
          */
         const handleChangeXAxisLabelFontSize = (e) => {
             // Parse the data option
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the fontSizeXAxisLabel state
             setFontSizeXAxisLabel(e.target.value);
             // Update the font size of the x-axis label in the data option
@@ -284,7 +284,7 @@ export const EditXAxisStackChart = observer(
          */
         const rotateXAxis = (e) => {
             // Parse the current data option from the JSON string
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
 
             // Update the rotateXaxis state with the new value from the event
             setRotateXaxis(e.target.value);
@@ -306,7 +306,7 @@ export const EditXAxisStackChart = observer(
          */
         const showXAxisTick = (e: ChangeEvent<HTMLInputElement>) => {
             // Parse the current data option from the JSON string
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
 
             // Toggle the showXaxisTick state
             setShowXaxisTick(!showXaxisTick);
@@ -328,7 +328,7 @@ export const EditXAxisStackChart = observer(
          */
         const showXAxisLabel = (e: ChangeEvent<HTMLInputElement>) => {
             // Parse the current data option from the JSON string
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
 
             // Toggle the showAxisLabel state
             setShowAxisLabel(!showAxisLabel);
@@ -349,7 +349,7 @@ export const EditXAxisStackChart = observer(
          */
         const Reset = () => {
             // Parse the current data option from the JSON string
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
 
             // Reset the show state of the x-axis
             setShowXaxis(option["reset"]["axis"]["xaxis"]["show"]);

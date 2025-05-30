@@ -1,7 +1,7 @@
 import { BlockDef } from "../../store";
-import { ListenerSettings } from "../block-settings";
-import { FontSizeSettings } from "../block-settings/custom/FontSizeSettings";
+import { ListenerSettings, QueryInputSettings } from "../block-settings";
 import { SizeSettings } from "../block-settings/shared/SizeSettings";
+import { SizeSpacingSettings } from "../block-settings/custom/SizeSpacingSettings";
 import { ColorSettings } from "../block-settings/shared/ColorSettings";
 import { BorderSettings } from "../block-settings/custom/BorderSettings";
 import { ButtonGroupSettings } from "../block-settings/shared/ButtonGroupSettings";
@@ -25,7 +25,14 @@ import {
 } from "@mui/icons-material";
 import { DistinctPathButtonGroupSettings } from "../block-settings/shared/DistinctPathButtonGroupSettings";
 import { SelectInputSettings } from "../block-settings/shared/SelectInputSettings";
+import { useBlocks } from "../../hooks";
+import {
+    DEFAULT_TRUE_VARIABLE,
+    DEFAULT_FALSE_VARIABLE,
+} from "./block-defaults.constants";
 
+const trueSegment = DEFAULT_TRUE_VARIABLE;
+const falseSegment = DEFAULT_FALSE_VARIABLE;
 /**
  * Build the Layout Section
  */
@@ -177,13 +184,21 @@ export const buildSpacingSection = () => ({
         {
             description: "Margin",
             render: ({ id }) => (
-                <SizeSettings id={id} label="Margin" path="style.margin" />
+                <SizeSpacingSettings
+                    id={id}
+                    label="Margin"
+                    path="style.margin"
+                />
             ),
         },
         {
             description: "Padding",
             render: ({ id }) => (
-                <SizeSettings id={id} label="Padding" path="style.padding" />
+                <SizeSpacingSettings
+                    id={id}
+                    label="Padding"
+                    path="style.padding"
+                />
             ),
         },
     ],
@@ -484,5 +499,63 @@ export const buildListener = <D extends BlockDef = BlockDef>(
     {
         description: trigger,
         render: ({ id }) => <ListenerSettings id={id} listener={trigger} />,
+    },
+];
+
+/**
+ * get show field optionslist which will contain static true false, dynamic variables list when the block is selected
+ */
+export function getShowFieldOptions(id: string) {
+    const { state } = useBlocks();
+    const stateVariableList = Object.keys(state.variables).reduce(
+        (acc, queryKey) => {
+            if (
+                state.variables[queryKey].type === "query" ||
+                state.variables[queryKey].type === "cell" ||
+                state.variables[queryKey].type === "block"
+            ) {
+                return [
+                    ...acc,
+                    {
+                        value: `{{${queryKey}}}`,
+                        display: queryKey,
+                    },
+                ];
+            } else {
+                return [...acc];
+            }
+        },
+        [],
+    );
+    return [
+        {
+            value: "true",
+            display: "True",
+        },
+        {
+            value: "false",
+            display: "False",
+        },
+        ...stateVariableList,
+    ];
+}
+
+/**
+ * Show field for the block which contains both static true & false, with other variables and send the field
+ */
+export const buildShowField = <D extends BlockDef = BlockDef>() => [
+    {
+        description: "Show Block",
+        render: ({ id }) => (
+            <QueryInputSettings
+                id={id}
+                label="Show Block"
+                path="show"
+                defaultPathMap={{
+                    ...trueSegment,
+                    ...falseSegment,
+                }}
+            />
+        ),
     },
 ];

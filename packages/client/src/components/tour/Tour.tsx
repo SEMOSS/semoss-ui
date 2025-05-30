@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { Close } from '@mui/icons-material';
+
 import {
     styled,
     Card,
@@ -6,10 +8,10 @@ import {
     Typography,
     Button,
     Stack,
+    Popper,
 } from '@semoss/ui';
-import { Close } from '@mui/icons-material';
+
 import { TourStep } from './types';
-import { Popper } from '@mui/material';
 
 interface TourOverlayProps {
     top: number;

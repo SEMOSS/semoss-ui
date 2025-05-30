@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react';
 import { Close } from '@mui/icons-material';
-import { ListItemIcon, ListItemText, Popover } from '@mui/material';
+
 import {
     Button,
     Checkbox,
@@ -10,9 +11,12 @@ import {
     Stack,
     styled,
     Typography,
+    ListItemText,
+    ListItemIcon,
+    Popover,
 } from '@semoss/ui';
+
 import { FilterCategory } from '../menus/menu-types';
-import { useEffect, useState } from 'react';
 
 export interface BlocksMenuPanelFilterMenuProps {
     anchorEl: null | HTMLElement;
@@ -53,10 +57,10 @@ export const BlocksMenuPanelFilterMenu = ({
                 vertical: 'bottom',
             }}
             id="blocks-filter-menu"
-            transformOrigin={{
-                horizontal: 'right',
-                vertical: 'top',
-            }}
+            // transformOrigin={{
+            //     horizontal: 'right',
+            //     vertical: 'top',
+            // }}
         >
             <Stack>
                 <Stack

@@ -23,9 +23,6 @@ const StyledCard = styled(Card)(({ theme }) => ({
 }));
 
 const StyledCardImageContainer = styled('div')(({ theme }) => {
-    // TODO: Fix typing
-    const palette = theme.palette as unknown as CustomPaletteOptions;
-
     return {
         display: 'flex',
         justifyContent: 'center',
@@ -33,7 +30,7 @@ const StyledCardImageContainer = styled('div')(({ theme }) => {
         width: theme.spacing(7.5),
         height: theme.spacing(7.5),
         borderRadius: theme.spacing(0.75),
-        backgroundColor: palette.primaryContrast['50'],
+        backgroundColor: theme.palette.primaryContrast['50'],
     };
 });
 

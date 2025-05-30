@@ -35,15 +35,15 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
     function getVisualizationBlockSelector(id: string) {
         if (id) {
             //get the options JSON of the selected block
-            let blockJSON = data.option;
+            const blockJSON = data.option;
             //initialize the selector string
             let selector = "Select(";
             //if there are no fields, return null
             if (!blockJSON["_state"]) return null;
             //get the fields
-            let selectorFields = blockJSON["_state"]["fields"];
+            const selectorFields = blockJSON["_state"]["fields"];
             //  get the value and tooltip properties
-            let dynamicYAndTooltipSet = Array.from(
+            const dynamicYAndTooltipSet = Array.from(
                 new Set([
                     ...selectorFields["yAxis"],
                     ...selectorFields["tooltip"],
@@ -68,8 +68,41 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
         }
         return null;
     }
+
+    /**
+     * Builds a dynamic query string based on the provided input data.
+     * @param inputData - An array of tuples where each tuple contains a string and an object mapping field names to aggregation methods.
+     * @returns A query string that selects and groups by the specified fields with appropriate aggregations.
+     */
+    const buildDynamicQuery = (inputData): string => {
+        const blockJSON = data.option;
+        if (!blockJSON["_state"]) return null;
+        const selectParts: string[] = [];
+        const aliasParts: string[] = [];
+        const groupByParts: string[] = [];
+
+        inputData.forEach(([_, fields]) => {
+            for (const field in fields) {
+                const rawAgg = fields[field];
+                aliasParts.push(field);
+
+                if (rawAgg) {
+                    const cleanedAgg = rawAgg.split(" ").join(""); // Remove spaces (e.g., "Unique Count" → "UniqueCount")
+                    selectParts.push(`${cleanedAgg}(${field})`);
+                } else {
+                    selectParts.push(field);
+                    groupByParts.push(field); // Only unaggregated fields are grouped
+                }
+            }
+        });
+
+        return `Select(${selectParts.join(", ")}).as([${aliasParts.join(
+            ", ",
+        )}]) | Group(${groupByParts.join(", ")})`;
+    };
+
     const frame = useFrame(data.frame.name, {
-        selector: getVisualizationBlockSelector(id),
+        selector: buildDynamicQuery(Object.entries(data?.aggregate ?? {})),
     });
     const computedValue = useMemo(() => {
         return computed(() => {
@@ -98,7 +131,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
     const formatDataPoints = useCallback(
         (resultData: unknown) => {
             if (frame.data.values.length > 0) {
-                let valuesDataSet = JSON.parse(
+                const valuesDataSet = JSON.parse(
                     JSON.stringify(frame.data.values),
                 );
                 let headersDataSet: string[] = JSON.parse(
@@ -111,7 +144,8 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
                 resultData["xAxis"]["data"] = valuesDataSet.map((x) => x[0]);
                 valuesDataSet.map((x) => x.shift());
                 headersDataSet.shift();
-                const yAxisListLength = resultData["yAxis"]["name"].length;
+                const yAxisListLength =
+                    resultData["_state"]["fields"]["yAxis"].length;
                 for (let index = 0; index < yAxisListLength; index++) {
                     resultData["series"][index]["data"] = valuesDataSet.map(
                         (x) => {
@@ -120,11 +154,11 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
                     );
                     resultData["series"][index]["name"] = headersDataSet[index];
                 }
-                resultData["series"].length = yAxisListLength;
+                // resultData["series"].length = yAxisListLength;
                 resultData["series"].slice(0, yAxisListLength);
                 valuesDataSet.map((x) => x.splice(0, yAxisListLength));
                 headersDataSet.splice(0, yAxisListLength);
-                let customTooltipData = [];
+                const customTooltipData = [];
                 data.option["_state"]?.["fields"]["tooltip"].map((x, index) => {
                     customTooltipData.push({
                         name: x,
@@ -132,7 +166,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
                     });
                 });
                 if (!resultData["tooltip"].hasOwnProperty("formatter")) {
-                    let customTooltipData = [];
+                    const customTooltipData = [];
                     data.option["_state"]?.["fields"]["tooltip"].map(
                         (x, index) => {
                             customTooltipData.push({
@@ -144,8 +178,8 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
                     resultData["tooltip"] = {
                         ...resultData["tooltip"],
                         formatter: ((customTooltipData) => (params) => {
-                            let formatterStringArr = ["<div>"];
-                            let dataIndex = params[0]?.dataIndex;
+                            const formatterStringArr = ["<div>"];
+                            const dataIndex = params[0]?.dataIndex;
                             formatterStringArr.push(
                                 `<strong>${params[0].name}</strong><br>`,
                             );
@@ -182,33 +216,43 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
             timer = setTimeout(() => fn(...args), delay);
         };
     }
-    const handleSelection = debounce((value: any, name: any) => {
-        // update the frame
-        frame.filter(`SetFrameFilter(${name}==[${value}])`);
-    }, 2000);
+
     const echartsLoaded = debounce((chart) => {
-        chart.on("brushSelected", (params) => {
-            let selectedData = params.batch[0].selected[0].dataIndex;
+        // Fires only once when brush is released
+        chart.on("brushEnd", (params) => {
+            if (!params.areas || !params.areas.length) return;
+            const area = params.areas[0];
+            // Get xAxis data
             const currentOption = chart.getOption();
-            let labelData = currentOption.series[0].data;
-            const filteredLabels = selectedData.map(
-                (index) => labelData[index].label.formatter,
-            );
-            if (filteredLabels.length > 0) {
-                handleSelection(
-                    filteredLabels,
-                    currentOption.series[0].label.name,
-                );
+            const labelData = currentOption.series[0].data || [];
+            const xAxisData = currentOption.xAxis?.[0]?.data || [];
+            let indices = [];
+            if (area.coordRange && area.coordRange.length === 2) {
+                const [xRange, yRange] = area.coordRange;
+                const xIndices = [];
+                for (let i = xRange[0]; i <= xRange[1]; i++) xIndices.push(i);
+                const yIndices = [];
+                for (let i = 0; i < labelData.length; i++) {
+                    const val = labelData[i];
+                    if (val >= yRange[0] && val <= yRange[1]) yIndices.push(i);
+                }
+                indices = xIndices.filter((i) => yIndices.includes(i));
+
+                const filteredLabels = indices.map((i) => xAxisData[i]);
+                const filteredValues = indices.map((i) => labelData[i]);
+
+                if (filteredValues.length > 0) {
+                    frame.filter(
+                        `SetFrameFilter(((${currentOption.series[0]?.name}==[${filteredValues}]) AND (${currentOption.xAxis?.[0]?.name}==[${filteredLabels}])))`,
+                    );
+                }
             }
         });
-        // chart.on('brushEnd', (params) => {
-        //     console.log('End params', params);
-        // });
     }, 2000);
     const onClickChart = {
         contextmenu: (params) => {
             if (params.data) {
-                let labelName = params.seriesName;
+                const labelName = params.seriesName;
                 setContextMenu(
                     contextMenu === null
                         ? {

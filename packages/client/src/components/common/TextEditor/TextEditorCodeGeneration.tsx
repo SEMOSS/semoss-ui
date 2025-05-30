@@ -21,17 +21,13 @@ const StyledGenerateButton = styled(Button, {
     /** Track if the button should be full width */
     full: boolean;
 }>(({ theme, full }) => {
-    const palette = theme.palette as unknown as {
-        purple: Record<string, string>;
-    };
-
     return {
-        backgroundColor: palette.purple['400'],
+        backgroundColor: theme.palette.purple['400'],
         color: theme.palette.background.paper,
         gap: theme.spacing(1),
         width: full ? '100%' : '',
         '&:hover': {
-            backgroundColor: palette.purple['200'],
+            backgroundColor: theme.palette.purple['200'],
         },
     };
 });

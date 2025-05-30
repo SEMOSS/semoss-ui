@@ -80,7 +80,7 @@ export const LineTooltip = observer(
          * @param e - The event object from the toggle switch
          */
         const showTooltip = (e: ChangeEvent<HTMLInputElement>) => {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Toggle the state of showTooltips
             setShowTooltip(!showTooltips);
             // Update the tooltip.show property in the chart options

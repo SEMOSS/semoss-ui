@@ -87,7 +87,7 @@ export const LegendStackChart = observer(
          * @param e The switch change event.
          */
         const showLegend = (e) => {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             setShowLegend(!legend);
             option["legend"]["show"] = e.target.checked;
             setData(path, option as PathValue<D["data"], typeof path>);

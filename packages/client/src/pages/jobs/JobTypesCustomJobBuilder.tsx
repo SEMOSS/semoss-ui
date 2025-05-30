@@ -1,6 +1,11 @@
+import {
+    createFilterOptions,
+    AutocompleteTwo,
+    Stack,
+    TextField,
+} from '@semoss/ui';
+
 import { JobBuilder } from './job.types';
-import { Stack, TextField } from '@semoss/ui';
-import { Autocomplete, createFilterOptions } from '@mui/material';
 
 export const JobTypesCustomJobBuilder = (props: {
     builder: JobBuilder;
@@ -18,7 +23,7 @@ export const JobTypesCustomJobBuilder = (props: {
                 multiline
                 rows={3}
             />
-            <Autocomplete
+            <AutocompleteTwo
                 value={(builder.tags as string[]) ?? []}
                 fullWidth
                 multiple

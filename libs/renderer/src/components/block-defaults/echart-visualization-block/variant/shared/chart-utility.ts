@@ -3,7 +3,7 @@ export function updateSeriesColor(
     colorArr,
     colorParent = "label",
 ): Object {
-    let optionUpdated = option;
+    const optionUpdated = option;
     optionUpdated["series"].forEach((item, index) => {
         optionUpdated["series"][index][colorParent] = {
             ...optionUpdated["series"][index][colorParent],

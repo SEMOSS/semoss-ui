@@ -7,12 +7,32 @@ import {
     keyframes,
     SimplePaletteColorOptions,
 } from "@mui/material";
+import { TypographyOptions } from "@mui/material/styles/createTypography";
 
 // export specifics from the library
 export { alpha, styled, useTheme, keyframes };
 export type { ThemeOptions };
 
 declare module "@mui/material" {
+    interface Theme {
+        shape: {
+            borderRadiusNone: number;
+            borderRadiusSm: number;
+            borderRadiusLg: number;
+            borderRadiusCircle: number;
+            borderRadiusChip: number;
+            borderRadius: number;
+        };
+    }
+
+    interface Palette {
+        primaryContrast?: CustomPaletteColor;
+        green?: CustomPaletteColor;
+        darkBlue?: CustomPaletteColor;
+        pink?: CustomPaletteColor;
+        purple?: CustomPaletteColor;
+    }
+
     interface PaletteColor {
         hover?: string;
         selected?: string;
@@ -22,6 +42,21 @@ declare module "@mui/material" {
         text?: string;
         white?: string;
         backdropOverlay?: string;
+    }
+
+    interface TypographyVariants {
+        body3: React.CSSProperties;
+        body4: React.CSSProperties;
+    }
+
+    interface TypographyVariantsOptions {
+        body3?: React.CSSProperties;
+        body4?: React.CSSProperties;
+    }
+
+    interface TypographyPropsVariantOverrides {
+        body3: true;
+        body4: true;
     }
 }
 
@@ -53,6 +88,11 @@ export interface CustomSimplePaletteColorOptions
     backdropOverlay?: string;
 }
 
+export interface CustomTypographyOptions extends TypographyOptions {
+    body3: any;
+    body4: any;
+}
+
 export interface CustomPaletteOptions extends PaletteOptions {
     primary: CustomSimplePaletteColorOptions;
     secondary: CustomSimplePaletteColorOptions;
@@ -79,6 +119,7 @@ export interface CustomShapeOptions {
 export interface CustomThemeOptions extends ThemeOptions {
     palette: CustomPaletteOptions;
     shape: CustomShapeOptions;
+    typography: CustomTypographyOptions;
     space?: {
         auto: string;
         full: string;
@@ -236,7 +277,7 @@ export const lightTheme: CustomThemeOptions = {
     },
     shape: {
         borderRadiusNone: 0,
-        borderRadius: 12,
+        borderRadius: 8,
         borderRadiusSm: 4,
         borderRadiusLg: 20,
         borderRadiusCircle: 64,
@@ -260,6 +301,22 @@ export const lightTheme: CustomThemeOptions = {
             fontWeight: "400",
             lineHeight: "143%",
             letterSpacing: "0.17px",
+        },
+        body3: {
+            /* Typography/Body 3 */
+            fontSize: "12px",
+            fontStyle: "normal",
+            fontWeight: "400",
+            lineHeight: "150%",
+            letterSpacing: "0.15px",
+        },
+        body4: {
+            /* Typography/Body 4 */
+            fontSize: "10px",
+            fontStyle: "normal",
+            fontWeight: "400",
+            lineHeight: "150%",
+            letterSpacing: "0.15px",
         },
         subtitle1: {
             /* Typography/Subtitle 1 */
@@ -362,7 +419,7 @@ export const lightTheme: CustomThemeOptions = {
 
                 "*::-webkit-scrollbar-thumb": {
                     // -webkit-border-radius: '4px',
-                    borderRadius: "4px",
+                    borderRadius: "8px",
                     height: "18px",
                     background: "#bdbdbd",
                     backgroundClip: "padding-box",
@@ -606,7 +663,7 @@ export const darkTheme: CustomThemeOptions = {
     },
     shape: {
         borderRadiusNone: 0,
-        borderRadius: 12,
+        borderRadius: 8,
         borderRadiusSm: 4,
         borderRadiusLg: 20,
         borderRadiusCircle: 64,
@@ -630,6 +687,22 @@ export const darkTheme: CustomThemeOptions = {
             fontWeight: "400",
             lineHeight: "143%",
             letterSpacing: "0.17px",
+        },
+        body3: {
+            /* Typography/Body 3 */
+            fontSize: "12px",
+            fontStyle: "normal",
+            fontWeight: "400",
+            lineHeight: "150%",
+            letterSpacing: "0.15px",
+        },
+        body4: {
+            /* Typography/Body 4 */
+            fontSize: "10px",
+            fontStyle: "normal",
+            fontWeight: "400",
+            lineHeight: "150%",
+            letterSpacing: "0.15px",
         },
         subtitle1: {
             /* Typography/Subtitle 1 */
@@ -732,7 +805,7 @@ export const darkTheme: CustomThemeOptions = {
 
                 "*::-webkit-scrollbar-thumb": {
                     // -webkit-border-radius: '4px',
-                    borderRadius: "4px",
+                    borderRadius: "8px",
                     height: "18px",
                     background: "#bdbdbd",
                     backgroundClip: "padding-box",

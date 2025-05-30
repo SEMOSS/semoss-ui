@@ -1,5 +1,10 @@
+import { useEffect, useState } from 'react';
+import { Control, Controller } from 'react-hook-form';
+import { Close } from '@mui/icons-material';
+
 import {
     styled,
+    createFilterOptions,
     Typography,
     Modal,
     IconButton,
@@ -7,13 +12,10 @@ import {
     TextField,
     Autocomplete,
 } from '@semoss/ui';
-import { usePixel, useRootStore } from '@/hooks';
-import { Control, Controller } from 'react-hook-form';
-import { createFilterOptions } from '@mui/material';
-import { useEffect, useState } from 'react';
+
 import { MarkdownEditor } from '../common';
-import { Close } from '@mui/icons-material';
 import { removeUnderscores } from '@/utility';
+import { usePixel, useRootStore } from '@/hooks';
 
 const StyledModalHeading = styled(Modal.Title)({
     display: 'flex',
@@ -196,6 +198,32 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
                                     }
 
                                     return filtered;
+                                }}
+                            />
+                        );
+                    }}
+                />
+                <Controller
+                    name="detailsForm.appImage"
+                    control={control}
+                    render={({ field }) => {
+                        return (
+                            <TextField
+                                label="Image"
+                                variant="outlined"
+                                type="file"
+                                inputProps={{
+                                    accept: 'image/*',
+                                }}
+                                InputLabelProps={{
+                                    shrink: true,
+                                }}
+                                onChange={(e) => {
+                                    const value = (e.target as HTMLInputElement)
+                                        .files;
+                                    if (value && value.length > 0) {
+                                        field.onChange(value[0]);
+                                    }
                                 }}
                             />
                         );

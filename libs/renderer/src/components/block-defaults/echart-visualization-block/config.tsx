@@ -27,13 +27,24 @@ export const config: BlockConfig<EchartVisualizationBlockDef> = {
             name: "",
         },
         columns: [],
+        aggregate: {},
         contextMenu: {
             hideFilter: false,
             hideUnfilter: false,
             hideExclude: false,
         },
+        show: true,
+        facet: {
+            facetList: [],
+            facetSelected: [],
+        },
     },
-    listeners: {},
+    listeners: {
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+    },
     slots: {},
     render: VisualizationBlock,
     icon: Insights,

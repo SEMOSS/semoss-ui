@@ -1,10 +1,20 @@
 import { useMemo, useState } from 'react';
+
+import {
+    createFilterOptions,
+    styled,
+    AutocompleteTwo,
+    Box,
+    Grid,
+    Stack,
+    TextField,
+    Typography,
+} from '@semoss/ui';
+
+import { usePixel } from '@/hooks';
 import { Builder } from '../../prompt.types';
 import { StyledStepPaper } from '../../prompt.styled';
-import { createFilterOptions, Autocomplete } from '@mui/material';
-import { styled, Box, Grid, Stack, TextField, Typography } from '@semoss/ui';
 import { PromptLibraryDialogButton } from '../../library/PromptLibraryDialogButton';
-import { usePixel } from '@/hooks';
 import { PromptBuilderContextTestDialogButton } from './PromptBuilderContextTestDialogButton';
 
 type CfgLibraryEngineState = {
@@ -86,7 +96,7 @@ export const PromptBuilderContextStep = (props: {
                                 props.setBuilderValue('title', e.target.value)
                             }
                         />
-                        <Autocomplete
+                        <AutocompleteTwo
                             disableClearable
                             fullWidth
                             id="model-autocomplete"

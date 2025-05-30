@@ -20,12 +20,14 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 const StyledAxisDiv = styled("div")<{
     display?: string;
     justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
+    gap?: string;
+}>(({ theme, display, justifyContent, gap }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
-    marginLeft: "4px",
+    padding: "8px 16px",
+    alignItems: "center",
+    gap: gap ?? undefined,
 }));
 const StyledAxis = styled("div")<{
     display?: string;
@@ -34,12 +36,11 @@ const StyledAxis = styled("div")<{
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
 }));
 
-const StyledTypography = styled(Typography)({
-    paddingLeft: "10px",
-});
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    color: theme.palette.text.primary,
+}));
 
 export const TooltipScatterPlot = observer(
     <D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
@@ -87,14 +88,18 @@ export const TooltipScatterPlot = observer(
          * @param e The switch change event.
          */
         const showTooltip = (e) => {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             setShowTooltip(!showTooltips);
             option["tooltip"]["show"] = e.target.checked;
             setData(path, option as PathValue<D["data"], typeof path>);
         };
         return (
             <StyledAxis>
-                <StyledAxisDiv display="flex" justifyContent="flex-start">
+                <StyledAxisDiv
+                    display="flex"
+                    justifyContent="flex-start"
+                    gap="8px"
+                >
                     <Switch
                         checked={showTooltips}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>

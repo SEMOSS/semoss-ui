@@ -1,10 +1,5 @@
-import { useMemo, CSSProperties } from "react";
+import { useMemo, CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
-
-import { useBlock, useDebounce } from "../../../hooks";
-import { BlockComponent, BlockDef } from "../../../store";
-import { debounced } from "../../../utility";
-
 import {
     Autocomplete,
     LinearProgress,
@@ -13,7 +8,12 @@ import {
     Typography,
     styled,
 } from "@mui/material";
+
 import { CircularProgress, InputAdornment } from "@semoss/ui";
+
+import { useBlock, useDebounce } from "../../../hooks";
+import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
+import { debounced } from "../../../utility";
 
 const StyledLoading = styled(CircularProgress)(({ theme }) => ({
     color: theme.palette.divider,
@@ -34,6 +34,17 @@ export interface SelectBlockDef extends BlockDef<"select"> {
         optionValue?: string;
         hint?: string;
         loading?: boolean;
+        show: boolean;
+    };
+    listeners: {
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+        onChange: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
@@ -43,6 +54,12 @@ export interface SelectBlockDef extends BlockDef<"select"> {
  */
 export const SelectBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<SelectBlockDef>(id);
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
 
     const stringifiedOptions: string[] = useMemo(() => {
         let arr = [];

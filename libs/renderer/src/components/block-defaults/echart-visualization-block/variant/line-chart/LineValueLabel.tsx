@@ -133,11 +133,12 @@ export const LineValueLabels = observer(
         ];
         //for retaining the previously selected values, this useeffect will help
         useEffect(() => {
-            let option = typeof value === "string" ? JSON.parse(value) : value;
+            const option =
+                typeof value === "string" ? JSON.parse(value) : value;
             if (option["series"]) {
-                let seriesData = getFilteredSeriesIndex();
-                let fieldsData = fieldData;
-                let fieldsDataToUpdate = seriesData.map((seriesChartData) => {
+                const seriesData = getFilteredSeriesIndex();
+                const fieldsData = fieldData;
+                const fieldsDataToUpdate = seriesData.map((seriesChartData) => {
                     if (
                         option["series"][seriesChartData]["label"] === undefined
                     ) {
@@ -216,7 +217,7 @@ export const LineValueLabels = observer(
             if (valueLabelsUpdated === "initial") {
                 setValueLabelsUpdated("updated");
             }
-            let fieldsData = fieldData;
+            const fieldsData = fieldData;
             fieldsData[seriesIndex] = {
                 ...fieldsData[seriesIndex],
                 [fieldName]:
@@ -232,7 +233,7 @@ export const LineValueLabels = observer(
         function updateChartData(values: CustomizeValueLabelsKeys[]) {
             let option = typeof value === "string" ? JSON.parse(value) : value;
             let optionUpdated = option;
-            let customizeLabelOptionsData = {};
+            const customizeLabelOptionsData = {};
             values.forEach((item) => {
                 customizeLabelOptionsData[item.seriesIndex] = {
                     show: item.show,
@@ -251,7 +252,7 @@ export const LineValueLabels = observer(
             //update the series with new styles for every matching series index
             filteredSeries.forEach((item) => {
                 const displayPositionIndex: number = item;
-                let showValueLabel: boolean =
+                const showValueLabel: boolean =
                     customizeLabelOptionsValue[displayPositionIndex]["show"] ??
                     false;
                 if (customizeLabelOptionsValue[displayPositionIndex]["show"]) {
@@ -421,9 +422,10 @@ export const LineValueLabels = observer(
         }
         //function to check and retrieve the indexes for bar chart type
         function getFilteredSeriesIndex() {
-            let index = [];
-            let option = typeof value === "string" ? JSON.parse(value) : value;
-            let seriesAvailable = option["series"].filter((item) =>
+            const index = [];
+            const option =
+                typeof value === "string" ? JSON.parse(value) : value;
+            const seriesAvailable = option["series"].filter((item) =>
                 LINE_CHART_DATA.JSONVALUE.includes(item.type),
             );
             seriesAvailable.forEach((item, seriesIndex) => {

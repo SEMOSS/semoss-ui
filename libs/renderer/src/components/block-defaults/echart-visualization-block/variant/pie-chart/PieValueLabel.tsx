@@ -30,14 +30,28 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 const StyledAxisDiv = styled("div")<{
     display?: string;
     justifyContent?: string;
+    gap?: string;
+}>(({ theme, display, justifyContent, gap }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "row",
+    padding: "8px 16px",
+    alignItems: "center",
+    gap: gap ?? undefined,
+}));
+
+const StyledAxis = styled("div")<{
+    display?: string;
+    justifyContent?: string;
 }>(({ theme, display, justifyContent }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
 }));
-const StyledButton = styled(Button)({
-    left: "80%",
+const StyledButtonWrapper = styled("div")({
+    display: "flex",
+    justifyContent: "flex-end",
+    margin: "8px 16px",
 });
 const StyledAxisColDiv = styled("div")<{
     display?: string;
@@ -46,7 +60,9 @@ const StyledAxisColDiv = styled("div")<{
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "column",
-    padding: "0.5rem",
+    padding: "8px 16px",
+    gap: "8px",
+    marginBottom: "8px",
 }));
 const StyledAxisSpan = styled("span")<{
     display?: string;
@@ -124,7 +140,7 @@ export const PieValueLabel = observer(
         };
         //Handle the change event for any Value Label input
         function handleInputChange(title, inputValue) {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             if (title === "showValueLabel") {
                 option["series"][0]["label"].show = inputValue;
                 setShowValueLabel(inputValue);
@@ -164,7 +180,7 @@ export const PieValueLabel = observer(
         //Retain the local state of the feature on reset button
         //The default values are set in the reset object in the option
         function handleReset() {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             option["series"][0]["label"].show =
                 option["reset"]["label"]["show"];
             option["series"][0]["label"]["position"] =
@@ -183,9 +199,14 @@ export const PieValueLabel = observer(
             retainLocalState(option);
         }
         return (
-            <StyledAxisDiv>
-                <StyledAxisDiv display="flex" justifyContent="space-around">
+            <StyledAxis>
+                <StyledAxisDiv
+                    display="flex"
+                    gap="8px"
+                    style={{ marginTop: "8px" }}
+                >
                     <Switch
+                        size="small"
                         checked={showValueLabel}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                             handleInputChange(
@@ -195,17 +216,21 @@ export const PieValueLabel = observer(
                         }
                         title="Show Value Label"
                     />
-                    <label>Show Value Label</label>
+
+                    <Typography variant="body2" color="primary">
+                        Show Value Label
+                    </Typography>
                 </StyledAxisDiv>
                 {showValueLabel && (
                     <StyledAxisColDiv
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="value-name">
+                        <Typography variant="body2" color="secondary">
                             Choose a position for Value Label
-                        </label>
+                        </Typography>
                         <StyledSelect
+                            size="small"
                             id="position"
                             name="position"
                             value={valueLabel?.position}
@@ -234,10 +259,15 @@ export const PieValueLabel = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="rotate-label">
+                        <Typography variant="body2" color="secondary">
                             Rotate Value Label:
-                        </label>
+                        </Typography>
+
+                        <Typography variant="body2" color="secondary">
+                            Choose a position for Value Label
+                        </Typography>
                         <Slider
+                            size="small"
                             aria-label="Always visible"
                             value={valueLabel.rotate}
                             min={valueLabel.rotateLabelMinValue}
@@ -262,8 +292,11 @@ export const PieValueLabel = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="title-size">Value Label Size</label>
+                        <Typography variant="body2" color="secondary">
+                            Value Label Size
+                        </Typography>
                         <StyledTextField
+                            size="small"
                             id="size"
                             name="size"
                             value={valueLabel?.size}
@@ -278,10 +311,11 @@ export const PieValueLabel = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="title-size">
+                        <Typography variant="body2" color="secondary">
                             Value Label Line Length
-                        </label>
+                        </Typography>
                         <StyledTextField
+                            size="small"
                             id="length"
                             name="length"
                             value={valueLabel?.lineLength}
@@ -296,10 +330,12 @@ export const PieValueLabel = observer(
                         display="flex"
                         justifyContent="space-around"
                     >
-                        <label htmlFor="title-font-family">
+                        <Typography variant="body2" color="secondary">
                             Select Font Family
-                        </label>
+                        </Typography>
+
                         <StyledSelect
+                            size="small"
                             id="font-family"
                             name="fontFamily"
                             value={valueLabel?.family}
@@ -321,29 +357,26 @@ export const PieValueLabel = observer(
                     </StyledAxisColDiv>
                 )}
                 {showValueLabel && (
-                    <StyledAxisColDiv
-                        display="flex"
-                        justifyContent="space-around"
-                    >
-                        <ColorPickerSettings
-                            id={id}
-                            path="option.series.0.label.color"
-                            colorValue={valueLabel.color}
-                            onChange={(e) => handleInputChange("color", e)}
-                        />
-                    </StyledAxisColDiv>
+                    <ColorPickerSettings
+                        id={id}
+                        path="option.series.0.label.color"
+                        colorValue={valueLabel.color}
+                        onChange={(e) => handleInputChange("color", e)}
+                    />
                 )}
                 {showValueLabel && (
-                    <StyledButton
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        onClick={handleReset}
-                    >
-                        Reset
-                    </StyledButton>
+                    <StyledButtonWrapper>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            onClick={handleReset}
+                        >
+                            Reset
+                        </Button>
+                    </StyledButtonWrapper>
                 )}
-            </StyledAxisDiv>
+            </StyledAxis>
         );
     },
 );

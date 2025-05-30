@@ -2,7 +2,14 @@ import { useState, useEffect, ChangeEvent, useMemo, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { computed } from "mobx";
 
-import { Button, Slider, styled, Switch, TextField } from "@semoss/ui";
+import {
+    Button,
+    Slider,
+    styled,
+    Switch,
+    TextField,
+    Typography,
+} from "@semoss/ui";
 
 import { BlockDef } from "../../../../../store";
 import { PathValue } from "../../../../../types";
@@ -15,21 +22,34 @@ import { EchartVisualizationBlockConfig } from "../../../../block-defaults";
 const StyledAxisDiv = styled("div")<{
     display?: string;
     justifyContent?: string;
-}>(({ display, justifyContent }) => ({
+    gap?: string;
+}>(({ theme, display, justifyContent, gap }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
+    padding: "8px 16px",
+    alignItems: "center",
+    gap: gap ?? undefined,
+}));
+
+const StyledAxis = styled("div")<{
+    display?: string;
+    justifyContent?: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: "row",
 }));
 // Axis div styling for input type fields, to show labels and fields in a column
 const StyledAxisColDiv = styled("div")<{
     display?: string;
     justifyContent: string;
-}>(({ display, justifyContent }) => ({
+}>(({ theme, display, justifyContent }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "column",
-    padding: "0.5rem",
+    padding: "8px 16px",
+    gap: "8px",
 }));
 // Axis div styling for span type fields
 const StyledAxisSpan = styled("span")<{
@@ -45,9 +65,15 @@ const StyledAxisSpan = styled("span")<{
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: "100%",
 }));
+
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    color: theme.palette.text.primary,
+}));
+
 //Initial xaxis state used for restoring
 const INITIAL_XAXIS_STATE = {
     showAxis: true,
+    showAxisTitle: true,
     xaxistitle: "",
     xaxisTitleFontSize: 18,
     showXAxisLineTicks: false,
@@ -90,9 +116,10 @@ export const EditXAxis = observer(
         }, [computedValue]);
         //updating the initial local state, based on the existing state store
         useEffect(() => {
-            let axis = "xAxis";
-            let xAxisStateData = {
+            const axis = "xAxis";
+            const xAxisStateData = {
                 showAxis: true,
+                showAxisTitle: true,
                 xaxistitle: "",
                 xaxisTitleFontSize: 18,
                 showXAxisLineTicks: false,
@@ -162,8 +189,9 @@ export const EditXAxis = observer(
         }
         // updating the chart data, when x axis fields are getting updated
         function updateChartData() {
-            let axisData = {
+            const axisData = {
                 showAxis: xaxisState.showAxis,
+                showAxisTitle: xaxisState.showAxisTitle,
                 xaxistitle: xaxisState.xaxistitle,
                 xaxisTitleFontSize: xaxisState.xaxisTitleFontSize,
                 showXAxisLabels: xaxisState.showXAxisLabels,
@@ -176,27 +204,28 @@ export const EditXAxis = observer(
             //update the chart data based on the changes in the x axis fields
             let optionUpdated = option;
             if (option.hasOwnProperty("xAxis") && option["xAxis"]) {
-                if (axisData.hasOwnProperty("showAxis")) {
+                if (axisData.showAxisTitle) {
+                    if (axisData.hasOwnProperty("xaxistitle")) {
+                        option["xAxis"] = {
+                            ...option["xAxis"],
+                            ["name"]: axisData.xaxistitle,
+                        };
+                    }
+                    if (axisData.hasOwnProperty("xaxisTitleFontSize")) {
+                        option["xAxis"] = {
+                            ...option["xAxis"],
+                            ["nameTextStyle"]: {
+                                ...option["xAxis"]["nameTextStyle"],
+                                ["fontSize"]:
+                                    Number(axisData.xaxisTitleFontSize) ||
+                                    undefined,
+                            },
+                        };
+                    }
+                } else {
                     option["xAxis"] = {
                         ...option["xAxis"],
-                        ["show"]: axisData.showAxis,
-                    };
-                }
-                if (axisData.hasOwnProperty("xaxistitle")) {
-                    option["xAxis"] = {
-                        ...option["xAxis"],
-                        ["name"]: axisData.xaxistitle,
-                    };
-                }
-                if (axisData.hasOwnProperty("xaxisTitleFontSize")) {
-                    option["xAxis"] = {
-                        ...option["xAxis"],
-                        ["nameTextStyle"]: {
-                            ...option["xAxis"]["nameTextStyle"],
-                            ["fontSize"]:
-                                Number(axisData.xaxisTitleFontSize) ||
-                                undefined,
-                        },
+                        ["name"]: "",
                     };
                 }
 
@@ -244,7 +273,7 @@ export const EditXAxis = observer(
                 }
                 if (axisData.hasOwnProperty("showxAxisZoom")) {
                     if (option["dataZoom"]) {
-                        let xAxisPosition = option["dataZoom"].findIndex(
+                        const xAxisPosition = option["dataZoom"].findIndex(
                             (opt) => opt.hasOwnProperty("xAxisIndex"),
                         );
                         if (xAxisPosition > -1) {
@@ -304,39 +333,54 @@ export const EditXAxis = observer(
         }
 
         const accordionDetails = (
-            <StyledAxisDiv>
-                <StyledAxisDiv display="flex" justifyContent="space-between">
+            <StyledAxis>
+                <StyledAxisDiv
+                    display="flex"
+                    justifyContent="flex-start"
+                    gap="8px"
+                >
                     <Switch
-                        defaultChecked={xaxisState.showAxis ?? undefined}
+                        size="small"
+                        defaultChecked={xaxisState.showAxisTitle ?? undefined}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            handleInputChange(e, "showAxis", e.target.checked)
+                            handleInputChange(
+                                e,
+                                "showAxisTitle",
+                                e.target.checked,
+                            )
                         }
                         title="Show Axis Title"
                     />
-                    <label>Show Axis Title</label>
+                    <StyledTypography variant="body2">
+                        Show Axis Title
+                    </StyledTypography>
                 </StyledAxisDiv>
-                {xaxisState.showAxis && (
+                {xaxisState.showAxisTitle && (
                     <StyledAxisColDiv
                         display="flex"
-                        justifyContent="space-between"
+                        justifyContent="space-around"
                     >
-                        <label htmlFor="xaxis-title">Set Axis Title</label>
+                        <Typography variant="body2" color="secondary">
+                            Set Axis Title
+                        </Typography>
                         <StyledTextField
+                            size="small"
                             id="xaxis-title"
                             value={xaxisState.xaxistitle}
                             onChange={(e) => handleInputChange(e, "xaxistitle")}
                         />
                     </StyledAxisColDiv>
                 )}
-                {xaxisState.showAxis && (
+                {xaxisState.showAxisTitle && (
                     <StyledAxisColDiv
                         display="flex"
-                        justifyContent="space-between"
+                        justifyContent="space-around"
                     >
-                        <label htmlFor="xaxis-edit-title-font-size">
+                        <Typography variant="body2" color="secondary">
                             Edit Axis Title Font Size
-                        </label>
+                        </Typography>
                         <TextField
+                            size="small"
                             id="xaxis-edit-title-font-size"
                             type="number"
                             value={xaxisState.xaxisTitleFontSize}
@@ -346,8 +390,9 @@ export const EditXAxis = observer(
                         />
                     </StyledAxisColDiv>
                 )}
-                <StyledAxisDiv display="flex" justifyContent="space-between">
+                <StyledAxisDiv display="flex" justifyContent="flex-start">
                     <Switch
+                        size="small"
                         defaultChecked={xaxisState.showXAxisLabels ?? undefined}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                             handleInputChange(
@@ -358,17 +403,20 @@ export const EditXAxis = observer(
                         }
                         title="Show XAxis Labels"
                     />
-                    <label htmlFor="show-xaxis-labels">Show XAxis Labels</label>
+                    <StyledTypography variant="body2">
+                        Show XAxis Labels
+                    </StyledTypography>
                 </StyledAxisDiv>
                 {xaxisState.showXAxisLabels && (
                     <StyledAxisColDiv
                         display="flex"
-                        justifyContent="space-between"
+                        justifyContent="space-around"
                     >
-                        <label htmlFor="set-font-size">
+                        <Typography variant="body2" color="secondary">
                             Edit Label Font Size:
-                        </label>
+                        </Typography>
                         <StyledTextField
+                            size="small"
                             id="set-font-size"
                             value={xaxisState.labelFontSize}
                             type="number"
@@ -381,12 +429,13 @@ export const EditXAxis = observer(
                 {xaxisState.showXAxisLabels && (
                     <StyledAxisColDiv
                         display="flex"
-                        justifyContent="space-between"
+                        justifyContent="space-around"
                     >
-                        <label htmlFor="rotate-label">
+                        <Typography variant="body2" color="secondary">
                             Rotate X-Axis Values:
-                        </label>
+                        </Typography>
                         <Slider
+                            size="small"
                             aria-label="Always visible"
                             value={xaxisState.rotate}
                             min={xaxisState.rotateLabelMinValue}
@@ -407,8 +456,13 @@ export const EditXAxis = observer(
                     </StyledAxisColDiv>
                 )}
 
-                <StyledAxisDiv display="flex" justifyContent="space-between">
+                <StyledAxisDiv
+                    display="flex"
+                    justifyContent="flex-start"
+                    gap="8px"
+                >
                     <Switch
+                        size="small"
                         defaultChecked={
                             xaxisState.showXAxisLineTicks ?? undefined
                         }
@@ -421,12 +475,17 @@ export const EditXAxis = observer(
                         }
                         title="Show XAxis Line Ticks"
                     />
-                    <label htmlFor="show-xaxis-line">
+                    <StyledTypography variant="body2">
                         Show XAxis Line Ticks
-                    </label>
+                    </StyledTypography>
                 </StyledAxisDiv>
-                <StyledAxisDiv display="flex" justifyContent="space-between">
+                <StyledAxisDiv
+                    display="flex"
+                    justifyContent="flex-start"
+                    gap="8px"
+                >
                     <Switch
+                        size="small"
                         checked={xaxisState.showxAxisZoom ?? undefined}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                             handleInputChange(
@@ -437,9 +496,9 @@ export const EditXAxis = observer(
                         }
                         title="Show / Hide X-Axis Zoom"
                     />
-                    <label htmlFor="show-xaxis-zoom">
+                    <StyledTypography variant="body2">
                         Show / Hide X-Axis Zoom
-                    </label>
+                    </StyledTypography>
                 </StyledAxisDiv>
                 <StyledAxisDiv justifyContent="end" display="flex">
                     <Button
@@ -450,7 +509,7 @@ export const EditXAxis = observer(
                         Reset
                     </Button>
                 </StyledAxisDiv>
-            </StyledAxisDiv>
+            </StyledAxis>
         );
         return <>{accordionDetails}</>;
     },

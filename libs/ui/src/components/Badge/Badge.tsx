@@ -47,9 +47,22 @@ export interface BadgeProps {
      * @default 'standard'
      */
     variant?: "standard" | "dot";
+
+    /**
+     * Children to render
+     */
+    children?: React.ReactNode;
+    /**
+     * invisible
+     */
+    invisible?: boolean;
 }
 
 export const Badge = (props: BadgeProps) => {
-    const { sx } = props;
-    return <MuiBadge sx={sx} {...props} />;
+    const { sx, children } = props;
+    return (
+        <MuiBadge sx={sx} {...props}>
+            {children}
+        </MuiBadge>
+    );
 };

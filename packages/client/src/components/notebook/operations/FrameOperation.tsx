@@ -48,7 +48,7 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
     return (
         <>
             <StyledTableContainer>
-                <Table stickyHeader>
+                <Table stickyHeader size="small">
                     <Table.Head>
                         <Table.Row>
                             {getData.status === 'SUCCESS' &&

@@ -132,7 +132,7 @@ export const XAxisStyling = observer(
          * @param inputValue the value of the input field
          */
         function handleInputChange(title: string, inputValue) {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             switch (title) {
                 case "showXAxis":
                     option["xAxis"].show = inputValue;

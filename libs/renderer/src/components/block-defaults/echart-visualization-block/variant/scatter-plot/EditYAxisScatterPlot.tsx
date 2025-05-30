@@ -24,16 +24,20 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 
     path: Paths<Block<D>["data"], 4>;
 }
+
 const StyledAxisDiv = styled("div")<{
     display?: string;
     justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
+    gap?: string;
+}>(({ theme, display, justifyContent, gap }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
-    marginLeft: "4px",
+    padding: "8px 16px",
+    alignItems: "center",
+    gap: gap ?? undefined,
 }));
+
 const StyledAxis = styled("div")<{
     display?: string;
     justifyContent?: string;
@@ -41,7 +45,6 @@ const StyledAxis = styled("div")<{
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "row",
-    padding: "0.5rem",
 }));
 
 const StyledAxisColDiv = styled("div")<{
@@ -51,19 +54,17 @@ const StyledAxisColDiv = styled("div")<{
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
     flexDirection: "column",
-    padding: "0.5rem",
-    position: "relative",
-    right: "3px",
+    padding: "8px 16px",
+    gap: "8px",
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
     width: "100%",
 }));
 
-const StyledTypography = styled(Typography)({
-    paddingLeft: "10px",
-});
-
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    color: theme.palette.text.primary,
+}));
 const StyledButton = styled(Button)({
     left: "80%",
 });
@@ -184,7 +185,7 @@ export const EditYAxisScatterPlot = observer(
          */
         const showYAxis = (e) => {
             // Create a copy of the chart options
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Toggle the showYaxis state
             setShowYaxis(!showYaxis);
             // Update the 'show' property of the yAxis object in the chart options
@@ -203,7 +204,7 @@ export const EditYAxisScatterPlot = observer(
          */
         const showYAxisTitle = (e) => {
             // Create a copy of the chart options
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Toggle the showYaxisTitle state
             setShowYaxisTitle(!showYaxisTitle);
             // Update the y-axis title based on the switch state
@@ -225,7 +226,7 @@ export const EditYAxisScatterPlot = observer(
             // Update the yaxisTitle state
             setYaxisTitle(e.target.value);
             // Create a copy of the chart options
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the 'name' property of the yAxis object in the chart options
             option["yAxis"]["name"] = e.target.value;
             // Save the updated chart options to the state
@@ -258,7 +259,7 @@ export const EditYAxisScatterPlot = observer(
          */
         const handleChangeYAxisLabelFontSize = (e) => {
             // Create a copy of the chart options
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the fontSizeYAxisLabel state
             setFontSizeYAxisLabel(e.target.value);
             // Update the 'fontSize' property of the 'axisLabel' object in the yAxis object in the chart options
@@ -274,7 +275,7 @@ export const EditYAxisScatterPlot = observer(
          */
         const rotateYAxis = (e) => {
             // Parse the current chart options from the state value
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the rotateYaxis state with the new rotation value
             setRotateYaxis(e.target.value);
             // Set the 'rotate' property of the 'axisLabel' object in the yAxis to the new value
@@ -290,7 +291,7 @@ export const EditYAxisScatterPlot = observer(
          */
         const showYAxisTick = (e: React.ChangeEvent<HTMLInputElement>) => {
             // Parse the current chart options from the state value
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the showYaxisTick state with the new value
             setShowYaxisTick(!showYaxisTick);
             // Set the 'show' property of the 'axisTick' object in the yAxis to the new value
@@ -306,7 +307,7 @@ export const EditYAxisScatterPlot = observer(
          */
         const showYAxisLabel = (e: React.ChangeEvent<HTMLInputElement>) => {
             // Parse the current chart options from the state value
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the showYAxisLabel state with the new value
             setShowAxisLabel(!showAxisLabel);
             // Set the 'show' property of the 'axisLabel' object in the yAxis to the new value
@@ -322,7 +323,7 @@ export const EditYAxisScatterPlot = observer(
          * @returns {void}
          */
         const Reset = () => {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             // Update the state of the Y-axis options
             setShowYaxis(option["reset"]["axis"]["yaxis"]["show"]);
             setShowYaxisTitle(true);
@@ -360,7 +361,11 @@ export const EditYAxisScatterPlot = observer(
         };
         return (
             <StyledAxis>
-                <StyledAxisDiv display="flex" justifyContent="flex-start">
+                <StyledAxisDiv
+                    display="flex"
+                    justifyContent="flex-start"
+                    gap="8px"
+                >
                     <Switch
                         checked={showYaxis}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -369,11 +374,15 @@ export const EditYAxisScatterPlot = observer(
                         title="Show/Hide Axis"
                         size="small"
                     />
-                    <StyledTypography variant="body1">
+                    <StyledTypography variant="body2">
                         Show/Hide Axis
                     </StyledTypography>
                 </StyledAxisDiv>
-                <StyledAxisDiv display="flex" justifyContent="flex-start">
+                <StyledAxisDiv
+                    display="flex"
+                    justifyContent="flex-start"
+                    gap="8px"
+                >
                     <Switch
                         checked={showYaxisTitle}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -382,7 +391,7 @@ export const EditYAxisScatterPlot = observer(
                         title="Show Axis Title"
                         size="small"
                     />
-                    <StyledTypography variant="body1">
+                    <StyledTypography variant="body2">
                         Show Axis Title
                     </StyledTypography>
                 </StyledAxisDiv>
@@ -392,7 +401,7 @@ export const EditYAxisScatterPlot = observer(
                             display="flex"
                             justifyContent="flex-start"
                         >
-                            <Typography variant="body2">
+                            <Typography variant="body2" color="secondary">
                                 Set Y Axis Title
                             </Typography>
                             <StyledTextField
@@ -406,7 +415,7 @@ export const EditYAxisScatterPlot = observer(
                             display="flex"
                             justifyContent="space-around"
                         >
-                            <Typography variant="body2">
+                            <Typography variant="body2" color="secondary">
                                 Edit Axis Title Font Size
                             </Typography>
                             <TextField
@@ -419,7 +428,11 @@ export const EditYAxisScatterPlot = observer(
                         </StyledAxisColDiv>
                     </StyledAxis>
                 )}
-                <StyledAxisDiv display="flex" justifyContent="flex-start">
+                <StyledAxisDiv
+                    display="flex"
+                    justifyContent="flex-start"
+                    gap="8px"
+                >
                     <Switch
                         checked={showAxisLabel}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -428,7 +441,7 @@ export const EditYAxisScatterPlot = observer(
                         title="Show Labels"
                         size="small"
                     />
-                    <StyledTypography variant="body1">
+                    <StyledTypography variant="body2">
                         Show Labels
                     </StyledTypography>
                 </StyledAxisDiv>
@@ -438,7 +451,7 @@ export const EditYAxisScatterPlot = observer(
                             display="flex"
                             justifyContent="flex-start"
                         >
-                            <Typography variant="body2">
+                            <Typography variant="body2" color="secondary">
                                 Edit Label Font Size
                             </Typography>
                             <TextField
@@ -469,7 +482,11 @@ export const EditYAxisScatterPlot = observer(
                         </StyledAxisColDiv>
                     </StyledAxis>
                 )}
-                <StyledAxisDiv display="flex" justifyContent="flex-start">
+                <StyledAxisDiv
+                    display="flex"
+                    justifyContent="flex-start"
+                    gap="8px"
+                >
                     <Switch
                         checked={showYaxisTick}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -478,11 +495,15 @@ export const EditYAxisScatterPlot = observer(
                         title="Show Axis Line Ticks"
                         size="small"
                     />
-                    <StyledTypography variant="body1">
+                    <StyledTypography variant="body2">
                         Show Axis Line Ticks
                     </StyledTypography>
                 </StyledAxisDiv>
-                <StyledAxisDiv display="flex" justifyContent="flex-end">
+                <StyledAxisDiv
+                    display="flex"
+                    justifyContent="flex-end"
+                    gap="8px"
+                >
                     <Button
                         variant="contained"
                         color="primary"

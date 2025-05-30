@@ -130,7 +130,7 @@ export const LineStyling = observer(
          * @param inputValue the value of the input field
          */
         function handleInputChange(line: string, inputValue) {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             if (line === "lineCurve") {
                 const dataLength = option["series"].length;
                 for (let i = 0; i < dataLength; i++) {

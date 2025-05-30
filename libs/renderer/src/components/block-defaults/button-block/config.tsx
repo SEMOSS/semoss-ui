@@ -1,4 +1,5 @@
 import { CSSProperties } from "react";
+import { useBlocks } from "../../../hooks";
 import { BlockConfig } from "../../../store";
 import {
     QuerySelectionSettings,
@@ -9,6 +10,7 @@ import {
 import {
     buildDimensionsSection,
     buildListener,
+    buildShowField,
 } from "../block-defaults.shared";
 
 import { ButtonBlockDef, ButtonBlock } from "./ButtonBlock";
@@ -28,9 +30,17 @@ export const config: BlockConfig<ButtonBlockDef> = {
         disabled: false,
         variant: "contained",
         color: "primary",
+        show: "true",
     },
     listeners: {
-        onClick: [],
+        onClick: {
+            type: "sync",
+            order: [],
+        },
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: ButtonBlock,
@@ -59,7 +69,15 @@ export const config: BlockConfig<ButtonBlockDef> = {
             ],
         },
         {
-            name: "on Click",
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
+            name: "Pre Process",
+            children: [...buildListener("preProcess")],
+        },
+        {
+            name: "On Click",
             children: [...buildListener("onClick")],
         },
     ],

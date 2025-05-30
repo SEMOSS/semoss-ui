@@ -1,4 +1,9 @@
+import { useEffect } from 'react';
+import { Close } from '@mui/icons-material';
+import { Control, Controller } from 'react-hook-form';
+
 import {
+    Autocomplete,
     styled,
     Typography,
     Modal,
@@ -8,17 +13,15 @@ import {
     Button,
     useNotification,
 } from '@semoss/ui';
-import { useEffect } from 'react';
+
+import { Env } from '@semoss/sdk/react';
+
 import { usePixel, useRootStore } from '@/hooks';
-import { Env } from '@/env';
 import {
     SetProjectDependencies,
     engine,
     modelledDependency,
 } from './app-details.utility';
-import { Control, Controller } from 'react-hook-form';
-import { Autocomplete } from '@mui/material';
-import { Close } from '@mui/icons-material';
 
 const StyledModalHeading = styled(Modal.Title)({
     display: 'flex',
@@ -158,7 +161,7 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
                                 multiple
                                 onChange={(_, val) => field.onChange(val)}
                                 renderInput={(params) => (
-                                    <TextField {...params} label="Search" />
+                                    <TextField {...params} label="Searching" />
                                 )}
                                 renderOption={(props, option) => (
                                     <li {...props}>{option.name}</li>

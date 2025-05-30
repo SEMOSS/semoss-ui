@@ -211,7 +211,7 @@ export const HomePage = observer((): JSX.Element => {
     ])}, metaFilters=[${JSON.stringify(
         metaFilters,
     )}], filterWord=["${search}"], onlyFavorites=[true]);`;
-    const getFavoritedApps = usePixel(favoritePixel);
+    const getFavoritedApps = usePixel(mode === 'Mine' && favoritePixel);
 
     useEffect(() => {
         if (getFavoritedApps.status !== 'SUCCESS') {
@@ -328,29 +328,40 @@ export const HomePage = observer((): JSX.Element => {
                                 }}
                             />
                         </Stack>
-                        <Button
-                            size={'large'}
-                            variant={'contained'}
-                            onClick={() => {
-                                navigate('/app/new');
-                            }}
-                            aria-label={`Open the App Model`}
-                        >
-                            Create New App
-                        </Button>
+                        {configStore.isEngineOperationAvailable(
+                            'APP',
+                            'add',
+                        ) && (
+                            <Button
+                                size={'large'}
+                                variant={'contained'}
+                                onClick={() => {
+                                    navigate('/app/new');
+                                }}
+                                aria-label={`Open the App Model`}
+                                data-testid={'home-create-app-btn'}
+                            >
+                                Create New App
+                            </Button>
+                        )}
                     </Stack>
                 </Stack>
             }
         >
             <StyledContainer>
-                <div>
-                    <Filterbox
-                        type={'APP'}
-                        onChange={(filters: Record<string, unknown>) => {
-                            setMetaFilters(filters);
-                        }}
-                    />
-                </div>
+                {!configStore.store.config.adminOnlyViewMenuBarFlag &&
+                    configStore.isEngineOperationAvailable('APP', 'add') && (
+                        <div>
+                            <Filterbox
+                                type={'APP'}
+                                onChange={(
+                                    filters: Record<string, unknown>,
+                                ) => {
+                                    setMetaFilters(filters);
+                                }}
+                            />
+                        </div>
+                    )}
                 <StyledContentContainer>
                     <Stack
                         direction="row"
@@ -397,15 +408,28 @@ export const HomePage = observer((): JSX.Element => {
                                         key={i}
                                         app={app}
                                         systemApp={false}
-                                        href={`#/app/${app.project_id}`}
-                                        onAction={() =>
-                                            navigate(`/app/${app.project_id}`)
+                                        href={
+                                            mode === 'Discoverable'
+                                                ? `#/app/${app.project_id}/detail`
+                                                : `#/app/${app.project_id}`
                                         }
+                                        onAction={() => {
+                                            if (mode === 'Discoverable') {
+                                                navigate(
+                                                    `/app/${app.project_id}/detail`,
+                                                );
+                                            } else {
+                                                navigate(
+                                                    `/app/${app.project_id}`,
+                                                );
+                                            }
+                                        }}
                                         appType={app.project_type}
                                         isFavorite={isFavorited(app.project_id)}
                                         favorite={() => {
                                             favoriteApp(app);
                                         }}
+                                        isDiscoverable={mode !== 'Mine'}
                                     />
                                 );
                             })}
@@ -466,12 +490,23 @@ export const HomePage = observer((): JSX.Element => {
                                             key={i}
                                             app={app}
                                             systemApp={false}
-                                            href={`#/app/${app.project_id}`}
-                                            onAction={() =>
-                                                navigate(
-                                                    `/app/${app.project_id}`,
-                                                )
+                                            isDiscoverable={mode !== 'Mine'}
+                                            href={
+                                                mode === 'Discoverable'
+                                                    ? `#/app/${app.project_id}/detail`
+                                                    : `#/app/${app.project_id}`
                                             }
+                                            onAction={() => {
+                                                if (mode === 'Discoverable') {
+                                                    navigate(
+                                                        `/app/${app.project_id}/detail`,
+                                                    );
+                                                } else {
+                                                    navigate(
+                                                        `/app/${app.project_id}`,
+                                                    );
+                                                }
+                                            }}
                                             appType={app.project_type}
                                             isFavorite={isFavorited(
                                                 app.project_id,
