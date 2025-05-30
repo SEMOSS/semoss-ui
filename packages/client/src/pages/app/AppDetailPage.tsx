@@ -560,6 +560,7 @@ export const AppDetailPage = () => {
                                     }
                                     variant="outlined"
                                     onClick={() => exportApp()}
+                                    data-testid={'app-detail-export-btn'}
                                 >
                                     Export
                                 </Button>
@@ -571,6 +572,7 @@ export const AppDetailPage = () => {
                                         setIsChangeAccessModalOpen(true)
                                     }
                                     sx={{ fontWeight: 'bold' }}
+                                    data-testid={'app-detail-access-btn'}
                                 >
                                     {permission === 'discoverable' ? (
                                         <>Request Access</>
@@ -583,6 +585,7 @@ export const AppDetailPage = () => {
                             <Button
                                 variant="contained"
                                 onClick={() => navigate(`/app/${appId}`)}
+                                data-testid={'app-detail-open-btn'}
                             >
                                 Open
                             </Button>
@@ -591,6 +594,7 @@ export const AppDetailPage = () => {
                                 onClick={(event) =>
                                     setMoreVertAnchorEl(event.currentTarget)
                                 }
+                                data-testid={'app-detail-more-btn'}
                             >
                                 <MoreVert />
                             </IconButton>
@@ -757,6 +761,7 @@ export const AppDetailPage = () => {
                                                 right: 0,
                                                 top: '-0.4rem',
                                             }}
+                                            data-testid={'app-detail-edit-btn'}
                                         >
                                             <Edit />
                                         </IconButton>

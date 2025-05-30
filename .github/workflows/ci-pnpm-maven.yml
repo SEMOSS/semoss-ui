@@ -101,10 +101,10 @@ jobs:
                   echo "Release: ${{ vars.RELEASE }}"
                   apt-get update
                   apt-get install -y maven gnupg2
-                  echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg2 --batch --import
+                  echo "${{ secrets.GPG_PRIVATE_KEY_2 }}" | gpg2 --batch --import
                   echo "keyserver keyserver.ubuntu.com" > ~/.gnupg/gpg.conf
                   cat ~/.gnupg/gpg.conf
-                  gpg2 --refresh-key
+                  #gpg2 --refresh-key
                   npm install -g pnpm@10
                   pnpm install
 
@@ -180,9 +180,9 @@ jobs:
                   echo "Release: ${{ vars.RELEASE }}"
                   apt-get update
                   apt-get install -y maven gnupg2
-                  echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg2 --batch --import
+                  echo "${{ secrets.GPG_PRIVATE_KEY_2 }}" | gpg2 --batch --import
                   echo "keyserver keyserver.ubuntu.com" > ~/.gnupg/gpg.conf
-                  gpg2 --refresh-key
+                  #gpg2 --refresh-key
                   npm install -g pnpm@10
                   pnpm install
 
