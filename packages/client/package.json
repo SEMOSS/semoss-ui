@@ -4,6 +4,7 @@
         "dev-old": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --watch --mode=development --node-env=development",
         "lint": "eslint --quiet .",
         "lint:fix": "nx eslint:lint --fix",
+        "lint:staged": "nx lint-staged --concurrent false --relative",
         "format": "prettier . --check --plugin-search-dir=.",
         "format:fix": "prettier . --write --plugin-search-dir=.",
         "fix": "run-s format:fix lint:fix --supress",

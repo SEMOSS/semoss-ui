@@ -45,6 +45,14 @@
             "inputs": ["default", "^default"],
             "executor": "nx:run-commands",
             "configurations": {}
+        },
+        "typecheck": {
+            "executor": "nx:run-commands",
+            "options": {
+                "commands": ["tsc -p tsconfig.app.json --noEmit"],
+                "cwd": "apps/directory-of-your-app-goes-here",
+                "forwardAllArgs": false
+            }
         }
     }
 }
