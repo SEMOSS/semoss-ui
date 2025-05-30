@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import {
     Box,
     styled,
@@ -8,6 +7,7 @@ import {
     InputAdornment,
 } from '@semoss/ui';
 import SearchIcon from '@mui/icons-material/Search';
+import Search from '../components/ui/Navbar/Search';
 import BusinessUserImage from '../assets/img/BusinessUserLanding.svg';
 import businessUsercheckgrid from '../assets/img/businessUsercheckgrid.svg';
 
@@ -81,12 +81,6 @@ const keyframes = `
 const subTitle = ['business apps', 'the power of models', 'knowledge repos'];
 
 const UserLandingPage = () => {
-    const [searchQuery, setSearchQuery] = useState('');
-
-    const handleSearch = () => {
-        console.log('Search query:', searchQuery);
-    };
-
     return (
         <BackgroundContainer>
             <ContentContainer sx={{ width: '100%' }}>
@@ -107,29 +101,42 @@ const UserLandingPage = () => {
                     </SliderText>
                 </SliderTexts>
             </ContentContainer>
-            <Box sx={{ width: '100%', maxWidth: '60%' }}>
-                <StyledTextField
-                    variant="outlined"
-                    placeholder="Search"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    InputProps={{
-                        sx: {
-                            borderRadius: '60px',
-                            boxShadow: '0px 0px 0px 1px #8D7BF8',
-                            borderColor: '#C6BFFC',
-                        },
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <IconButton
-                                    aria-label="Search"
-                                    onClick={handleSearch}
-                                >
-                                    <SearchIcon />
-                                </IconButton>
-                            </InputAdornment>
-                        ),
-                    }}
+            <Box sx={{ width: '100%', maxWidth: '60%', overflow: 'auto' }}>
+                <Search
+                    renderInput={(params) => (
+                        <StyledTextField
+                            {...params}
+                            variant="outlined"
+                            placeholder="Search"
+                            sx={{
+                                // Border color
+                                '& .MuiOutlinedInput-root': {
+                                    '& fieldset': {
+                                        borderColor: '#C6BFFC',
+                                        boxShadow: '0px 0px 0px -1px #8D7BF8',
+                                        borderWidth: 'initial',
+                                        borderRadius: '60px',
+                                    },
+                                    // '&:hover fieldset': {
+                                    //     borderColor: '#6C5DD3', // hover color
+                                    // },
+                                    // '&.Mui-focused fieldset': {
+                                    //     borderColor: '#6C5DD3', // focused color
+                                    // },
+                                },
+                            }}
+                            InputProps={{
+                                ...params.InputProps,
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <IconButton aria-label="Search">
+                                            <SearchIcon />
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                            }}
+                        />
+                    )}
                 />
             </Box>
         </BackgroundContainer>

@@ -11,11 +11,13 @@ import {
     IconButton,
     InputAdornment,
     Switch,
+    Box,
 } from '@semoss/ui';
 
 import { THEME } from '@/constants';
 import { Logo } from '@/assets/img/Logo';
 import { useRootStore } from '@/hooks';
+import Search from './Search';
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
     borderBottom: '1px solid #EAEAEE',
@@ -142,7 +144,6 @@ export const NavigationBar = (props: NavigationBarProps) => {
     const [showAppBuilder, setShowAppBuilder] = useState(
         configStore.store.isAppBuilder,
     );
-    const [showSideNav, setShowSideNav] = useState(false);
 
     const themeMap = useMemo(() => {
         const theme = configStore.store.config['theme'];
@@ -177,26 +178,38 @@ export const NavigationBar = (props: NavigationBarProps) => {
                         </StyledTypography>
                     </StyledAppTitle>
                 </StyledLeftSection>
-                {showAppBuilder ? (
+                {showAppBuilder && (
                     <StyledSearchSection>
-                        <StyledTextField
-                            variant="outlined"
-                            size="small"
-                            placeholder="Search"
-                            label=""
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <SearchIcon />
-                                    </InputAdornment>
-                                ),
+                        <Box
+                            sx={{
+                                width: '100%',
+                                maxWidth: 500,
+                                margin: 'auto',
+                                padding: 2,
                             }}
-                        ></StyledTextField>
+                        >
+                            <Search
+                                renderInput={(params) => (
+                                    <StyledTextField
+                                        {...params}
+                                        variant="outlined"
+                                        size="small"
+                                        placeholder="Search"
+                                        label=""
+                                        InputProps={{
+                                            ...params.InputProps,
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <SearchIcon />
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                    />
+                                )}
+                            />
+                        </Box>
                     </StyledSearchSection>
-                ) : (
-                    <></>
                 )}
-
                 <StyledRightSection>
                     <StyledAppBuilderSection>
                         <StyledAppBuilder variant="h6">
