@@ -172,6 +172,7 @@ export const JobsTable = (props: {
                             onClick={() => {
                                 runJob(job);
                             }}
+                            data-testid={'jobs-table-play-btn'}
                         >
                             {runJobLoading ? (
                                 <CircularProgress
@@ -208,6 +209,7 @@ export const JobsTable = (props: {
                                     password: job.password,
                                 });
                             }}
+                            data-testid={'jobs-table-edit-btn'}
                         >
                             <Edit />
                         </IconButton>
@@ -218,6 +220,7 @@ export const JobsTable = (props: {
                             onClick={() => {
                                 showDeleteJobModal(job);
                             }}
+                            data-testid={'jobs-table-delete-btn'}
                         >
                             <Delete />
                         </IconButton>

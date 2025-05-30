@@ -138,10 +138,9 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
                 );
             case "Link":
                 return (
-                    <a href={link}>
+                    <a href={link} target="_blank">
                         <Chip
                             {...chipProps}
-                            onClick={(e) => e.preventDefault()}
                         />
                     </a>
                 );
