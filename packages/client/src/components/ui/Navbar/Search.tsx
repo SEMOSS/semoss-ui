@@ -75,7 +75,7 @@ const Search = ({ renderInput }) => {
             }
             renderInput={renderInput}
             renderOption={(props, option) => (
-                <List.Item sx={{ padding: 0 }}>
+                <List.Item sx={{ padding: 0 }} key={option.label}>
                     <List.ItemButton>
                         {typeof option === 'string' ? option : option.label}
                     </List.ItemButton>
