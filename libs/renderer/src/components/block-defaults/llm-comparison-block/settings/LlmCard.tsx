@@ -14,9 +14,6 @@ import { ModelBrain } from "../../../../assets/ModelBrain";
 import { TypeLlmConfig } from "../../../../types";
 import { useLLMComparison } from "../hooks";
 
-// import { getEngineImage } from '@/utility';
-// import ImageSkeleton from '@/assets/img/ImageSkeleton.png';
-
 const StyledCard = styled(Card)(({ theme }) => ({
     padding: theme.spacing(2),
     display: "flex",

@@ -1,8 +1,8 @@
-import React, { CSSProperties } from "react";
+import React, { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
 import { useBlock, useTypeWriter, useBlocks } from "../../../hooks";
-import { BlockDef, BlockComponent } from "../../../store";
+import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { showBlock } from "../../blocks/RendererEngine";
 
 export interface TextBlockDef extends BlockDef<"text"> {
@@ -15,13 +15,19 @@ export interface TextBlockDef extends BlockDef<"text"> {
         show: string;
     };
     slots: never;
+    listeners: {
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+    };
 }
 
 export const TextBlock: BlockComponent = observer(({ id }) => {
     // const { attrs, data } = useBlock<TextBlockDef>(id);
     const block = useBlock<TextBlockDef>(id);
     const state = useBlocks();
-    const { attrs, data } = block;
+    const { attrs, data, listeners } = block;
 
     const textContent =
         typeof data.text == "string" ? data.text : JSON.stringify(data.text);
@@ -29,18 +35,32 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
 
     if (!data.isStreaming) displayTxt = textContent;
 
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
+
     // TODO: Why?
     return showBlock(block, state)
         ? React.createElement(
               data.variant ? data.variant : "p",
               {
-                  style: { ...data.style },
+                  style: {
+                      ...data.style,
+                      marginBlockStart: "0px",
+                      marginBlockEnd: "0px",
+                  },
                   ...attrs,
               },
               displayTxt,
           )
         : React.createElement("p", {
-              style: { ...data.style },
+              style: {
+                  ...data.style,
+                  marginBlockStart: "0px",
+                  marginBlockEnd: "0px",
+              },
               ["data-block"]: id,
           });
 });

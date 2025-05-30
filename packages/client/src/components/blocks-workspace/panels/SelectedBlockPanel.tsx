@@ -18,12 +18,16 @@ import {
     Collapse,
     useNotification,
     Modal,
+    Tabs,
+    Tab,
+    ToggleTabsGroup,
 } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
 import { BlockAvatar, SelectedMenuSection } from '@/components/designer';
 import { AddVariableModal } from '@/components/notebook';
 import { Panel } from '@/components/workspace';
+import VariationIcon from '../../../../../../libs/renderer/src/assets/img/VariationLogo.svg';
 
 const StyledTitle = styled(Typography)(() => ({
     textTransform: 'capitalize',
@@ -55,6 +59,10 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
     width: '100%',
     paddingBottom: theme.spacing(1),
     overflowY: 'auto',
+    '>.MuiBox-root': {
+        width: '100%',
+        backgroundColor: 'transparent',
+    },
 }));
 
 const StyledMessage = styled('div')(({ theme }) => ({
@@ -64,6 +72,49 @@ const StyledMessage = styled('div')(({ theme }) => ({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+}));
+//Tab group with custom style with width and margin
+const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
+    minHeight: '42px',
+    color: theme.palette.secondary.light,
+    borderRadius: theme.shape.borderRadius,
+    alignItems: 'center',
+    padding: '0px 3px',
+    width: '100%',
+    margin: '0 auto',
+    display: 'flex',
+    justifyContent: 'space-between',
+    '.MuiTabs-scroller': {
+        display: 'flex',
+        justifyContent: 'space-around',
+        '.MuiTabs-flexContainer': {
+            flex: 1,
+            padding: '3px',
+            backgroundColor: 'rgb(0, 0, 0, 0.04)',
+            borderRadius: '12px',
+            '.MuiButtonBase-root': {
+                padding: '6px 8px',
+            },
+        },
+    },
+}));
+//toggle group item styling
+const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
+    height: '38px',
+    padding: '8px 16px',
+
+    '&.MuiTab-root': {
+        borderRadius: theme.shape.borderRadius,
+    },
+    '&.Mui-selected': {
+        boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.05)',
+    },
+}));
+const StyledCustomTabPanel = styled('div')(({ theme }) => ({}));
+
+const StyledVariationIcon = styled('img')(({ theme }) => ({
+    width: theme.spacing(4),
+    height: theme.spacing(4),
 }));
 
 export const SelectedBlockPanel = observer(() => {
@@ -88,6 +139,7 @@ export const SelectedBlockPanel = observer(() => {
     const canVariabilize = block
         ? INPUT_BLOCK_TYPES.indexOf(block.widget) > -1
         : false;
+    const [settingSection, setSettingSection] = useState<string | number>(0); //state to maintain the selected tab in setting appearance tab
 
     // get the content menu
     const contentMenu = useMemo(() => {
@@ -255,7 +307,7 @@ export const SelectedBlockPanel = observer(() => {
                         direction="row"
                         alignItems="center"
                     >
-                        <BlockAvatar icon={icon} />
+                        <StyledVariationIcon src={VariationIcon} />
                         <Stack
                             direction={'row'}
                             spacing={0.5}
@@ -337,28 +389,90 @@ export const SelectedBlockPanel = observer(() => {
                             id: block.id,
                         })}
 
-                    {contentMenu.length ? (
-                        <SelectedMenuSection
-                            id={block.id}
-                            sectionTitle="Content"
-                            menu={contentMenu}
-                            accordion={contentAccordion}
-                            setAccordion={setContentAccordion}
-                        />
-                    ) : (
-                        <></>
-                    )}
-                    {styleMenu.length ? (
-                        <SelectedMenuSection
-                            id={block.id}
-                            sectionTitle="Appearance"
-                            menu={styleMenu}
-                            accordion={styleAccordion}
-                            setAccordion={setStyleAccordion}
-                        />
-                    ) : (
-                        <></>
-                    )}
+                    {
+                        /**
+                         * This section will show Setting and Appearance tabs if there are any content or style menus
+                         * If there are no content or style menus, it will not show the tabs
+                         */
+                        (contentMenu.length > 0 || styleMenu.length > 0) && (
+                            <StyledToggleTabsGroup
+                                variant="fullWidth"
+                                value={settingSection}
+                                sx={{
+                                    display: 'flex',
+                                    padding: '8px 16px',
+                                    alignItems: 'center',
+                                    alignSelf: 'stretch',
+                                }}
+                                onChange={(
+                                    e: React.SyntheticEvent,
+                                    val: string,
+                                ) => {
+                                    setSettingSection(val);
+                                }}
+                            >
+                                <StyledToggleTabsGroupItem
+                                    label="Settings"
+                                    value={0}
+                                />
+                                <StyledToggleTabsGroupItem
+                                    label="Appearance"
+                                    value={1}
+                                />
+                            </StyledToggleTabsGroup>
+                        )
+                    }
+
+                    {
+                        /**
+                         * This section will show the content menu when setting tab is selected
+                         */
+                        contentMenu.length > 0 && (
+                            <StyledCustomTabPanel
+                                role="tabpanel"
+                                id={`simple-tabpanel-0`}
+                                aria-labelledby={`simple-tab-0`}
+                                hidden={settingSection !== 0 ? true : false}
+                            >
+                                {contentMenu.length ? (
+                                    <SelectedMenuSection
+                                        id={block.id}
+                                        sectionTitle=""
+                                        menu={contentMenu}
+                                        accordion={contentAccordion}
+                                        setAccordion={setContentAccordion}
+                                    />
+                                ) : (
+                                    <></>
+                                )}
+                            </StyledCustomTabPanel>
+                        )
+                    }
+                    {
+                        /**
+                         * This section will show the style menu when appearance tab is selected
+                         */
+                        styleMenu.length > 0 && (
+                            <StyledCustomTabPanel
+                                role="tabpanel"
+                                id={`simple-tabpanel-1`}
+                                aria-labelledby={`simple-tab-1`}
+                                hidden={settingSection !== 1 ? true : false}
+                            >
+                                {styleMenu.length ? (
+                                    <SelectedMenuSection
+                                        id={block.id}
+                                        sectionTitle=""
+                                        menu={styleMenu}
+                                        accordion={styleAccordion}
+                                        setAccordion={setStyleAccordion}
+                                    />
+                                ) : (
+                                    <></>
+                                )}
+                            </StyledCustomTabPanel>
+                        )
+                    }
                 </StyledMenuScroll>
                 {addVariableModal ? (
                     <AddVariableModal

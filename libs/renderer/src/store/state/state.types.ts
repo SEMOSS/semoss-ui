@@ -1,5 +1,5 @@
 import React from "react";
-import { RunQueryAction, DispatchEventAction } from "./state.actions";
+import { RunQueryAction, DispatchEventAction, DispatchOutputsEventAction, RunCellAction } from "./state.actions";
 import { CellState } from "./cell.state";
 import { QueryStateConfig } from "./query.state";
 
@@ -128,7 +128,7 @@ export type Block<D extends BlockDef = BlockDef> = D extends D
           data: D["data"];
 
           /** Event listeners associated with the block */
-          listeners: Record<keyof D["listeners"], ListenerActions[]>;
+          listeners: Record<keyof D["listeners"], {order: ListenerActions[], type: "sync"| "async"}>;
 
           /** Slots associated with the block */
           slots: Record<
@@ -154,7 +154,7 @@ export interface BlockDef<W extends string = string> {
     data: Record<string, unknown>;
 
     /** Listeners associated with the widget */
-    listeners: Record<string, true>;
+    listeners: Record<string, {order: ListenerActions[], type: 'sync' | 'async'}>;
 
     /** Names of the slot associated with the widget */
     slots: Record<string, true>;
@@ -174,7 +174,7 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
     data: D["data"];
 
     /** Listeners associated with the block */
-    listeners: Record<keyof D["listeners"], ListenerActions[]>;
+    listeners: Record<keyof D["listeners"], {order: ListenerActions[], type: 'sync' | 'async'}>;
 
     /** Children associated with the block */
     slots: Record<keyof D["slots"], BlockJSON[]>;
@@ -240,7 +240,7 @@ export type BlockJSON<
           data: T["data"];
 
           /** Event listeners associated with the widget */
-          listeners: Record<keyof T["listeners"], ListenerActions[]>;
+          listeners: Record<keyof T["listeners"], {order: ListenerActions[], type: "sync" | "async"}>;
 
           /** Slot information */
 
@@ -267,7 +267,7 @@ export type RegistryUnwrap<R extends Registry<BlockDef>> = R extends Registry<
 /**
  * Listener Actions
  */
-export type ListenerActions = RunQueryAction | DispatchEventAction;
+export type ListenerActions = RunQueryAction | DispatchEventAction | DispatchOutputsEventAction | RunCellAction;
 
 /**
  * Cell Definition

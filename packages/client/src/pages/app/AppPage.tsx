@@ -15,7 +15,7 @@ import {
 } from '@semoss/ui';
 import { EditOutlined, ShareRounded } from '@mui/icons-material';
 
-import { Env } from '@semoss/sdk';
+import { Env } from '@semoss/sdk/react';
 import { WorkspaceStore } from '@/stores';
 import { useRootStore } from '@/hooks';
 import { LoadingScreen, ShareOverlay } from '@/components/ui';
@@ -24,7 +24,6 @@ import { CodeRenderer } from '@/components/code-workspace';
 import { Link } from 'react-router-dom';
 
 import { Renderer } from '@semoss/renderer';
-import { InsightProvider } from '@semoss/sdk';
 
 const StyledViewport = styled('div')(() => ({
     height: '100%',
@@ -78,15 +77,6 @@ export const AppPage = observer(() => {
         return <LoadingScreen.Trigger description="Initializing app" />;
     }
 
-    /**
-     * Initialize insight for app building
-     */
-    if (workspace.type === 'BLOCKS') {
-        Env.update({
-            MODULE: process.env.MODULE || '',
-        });
-    }
-
     return (
         <StyledViewport>
             <Stack
@@ -114,6 +104,7 @@ export const AppPage = observer(() => {
                         onClick={() => {
                             setIsShareOpen(true);
                         }}
+                        data-testid={'app-page-share-btn'}
                     >
                         <ShareRounded fontSize={'inherit'} />
                     </IconButton>
@@ -133,17 +124,14 @@ export const AppPage = observer(() => {
                     component={Link}
                     //@ts-expect-error this is expected. props are forwarded
                     to={`../../../workspace/${appId}`}
+                    data-testid={'app-page-edit-btn'}
                 >
                     Edit
                 </Button>
             </Stack>
             <StyledContent>
                 {workspace.type === 'BLOCKS' ? (
-                    <>
-                        <InsightProvider>
-                            <Renderer appId={appId} />
-                        </InsightProvider>
-                    </>
+                    <Renderer appId={appId} insightId={workspace.insightId} />
                 ) : null}
                 {workspace.type === 'CODE' ? (
                     <CodeRenderer appId={appId} />

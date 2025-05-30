@@ -24,7 +24,7 @@ interceptors.request = async (options) => {
     }
 
     // only set if enabled
-    if (CSRF.isEnabled) {
+    if (CSRF.isEnabled || Env.CSRF) {
         if (options.method === "POST") {
             // use the token if it is there
             if (!CSRF.token) {
@@ -92,7 +92,7 @@ export const getSystemConfig = async (): Promise<{
 
     if (response.data && response.data.csrf) {
         const token = response.data["X-CSRF-Token"] as string;
-
+        
         // enable and store the token
         CSRF.isEnabled = true;
         CSRF.token = token;
@@ -133,6 +133,7 @@ export const runPixel = async <O extends unknown[] | []>(
             pixelExpression: string;
             pixelId: string;
             additionalOutput?: unknown;
+            timeToRun: number;
         }[];
     }>(`${Env.MODULE}/api/engine/runPixel`, body, {});
 
@@ -177,6 +178,7 @@ export const runPixelAsync = async (pixel: string, insightId?: string) => {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRF-Token": CSRF.token,
             },
             body: postData,
         });
@@ -222,6 +224,7 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRF-Token": CSRF.token,
             },
             body: body,
         });

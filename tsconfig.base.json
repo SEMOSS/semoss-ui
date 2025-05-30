@@ -4,7 +4,7 @@
         "rootDir": ".",
         "sourceMap": true,
         "declaration": false,
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "importHelpers": true,
@@ -17,7 +17,6 @@
         "paths": {
             "@semoss/ui": ["libs/ui/src/index.ts"],
             "@semoss/sdk": ["libs/sdk/src/index.ts"],
-            "@semoss/sdk-react": ["libs/sdk-react/src/index.ts"],
             "@semoss/renderer": ["libs/renderer/src/index.ts"],
             "react": [ "./node_modules/@types/react" ]
         },

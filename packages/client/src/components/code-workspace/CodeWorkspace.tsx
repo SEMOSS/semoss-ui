@@ -7,10 +7,13 @@ import {
     SettingsPanel,
     FileExplorerPanel,
     FileEditorPanel,
+    TerminalPanel,
 } from '@/components/workspace';
 
 import { CodeWorkspaceActions } from './CodeWorkspaceActions';
 import { RendererPanel } from './panels';
+
+const DEFAULT_BORDER_SIZE = 300;
 
 const DEFAULT_OPTIONS: WorkspaceOptions = {
     version: '',
@@ -40,6 +43,21 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                     type: 'tab',
                                     name: 'Files',
                                     component: 'file-explorer',
+                                    enableClose: false,
+                                    config: {},
+                                },
+                            ],
+                        },
+                        {
+                            type: 'border',
+                            location: 'bottom',
+                            size: DEFAULT_BORDER_SIZE,
+                            children: [
+                                {
+                                    id: 'terminal',
+                                    type: 'tab',
+                                    name: 'Terminal',
+                                    component: 'terminal',
                                     enableClose: false,
                                     config: {},
                                 },
@@ -116,6 +134,8 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
         return <RendererPanel />;
     } else if (component === 'settings') {
         return <SettingsPanel />;
+    } else if (component === 'terminal') {
+        return <TerminalPanel />;
     }
 
     return <>{component}</>;

@@ -1,19 +1,17 @@
-//React and Third Party Libraries
 import { useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { Autocomplete, Chip, Stack, TextField } from "@mui/material";
-import { Face } from "@mui/icons-material";
 
-//Internal Semoss libs
 import { Avatar } from "@semoss/ui";
 
-//Modules internal to current package
 import { Paths, PathValue } from "../../../types";
 import { useBlocks, useBlockSettings } from "../../../hooks";
 import { ActionMessages, Block, BlockDef } from "../../../store";
 import { getValueByPath } from "../../../utility";
 import { BaseSettingSection } from "../BaseSettingSection";
+import { IconSelectSettings, inputOptions } from "./IconSelectSettings";
+import { Face } from "@mui/icons-material";
 
 interface ChipSettingsProps<D extends BlockDef = BlockDef> {
     id: string;
@@ -190,6 +188,16 @@ export const ChipSettings = observer(
                                     sx={{ mt: 1 }}
                                 />
                             )}
+                        {selectedChipType && selectedChipType === "Icon" && (
+                            <div>
+                                <IconSelectSettings
+                                    id={id}
+                                    label="Icon"
+                                    path="icon"
+                                    options={inputOptions}
+                                />
+                            </div>
+                        )}
                     </Stack>
                 </BaseSettingSection>
             </Stack>

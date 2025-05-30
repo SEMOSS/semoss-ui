@@ -104,6 +104,7 @@ export const BlockSettingsMask = observer((props: FontStyleSizeMaskProps) => {
         const screenElementSize = screenEle.getBoundingClientRect();
         // get position of selected block element
         const selectedElement = getBlockElement(designer.selected);
+        if (!selectedElement) return;
         const selectedElementSize = selectedElement.getBoundingClientRect();
 
         // check for overflow

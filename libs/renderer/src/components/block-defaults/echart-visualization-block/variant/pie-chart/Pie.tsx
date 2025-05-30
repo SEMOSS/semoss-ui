@@ -52,60 +52,42 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
     let resultData: unknown = {};
 
     /**
+     * Builds a dynamic query string based on the provided input data.
+     * @param inputData - An array of tuples where each tuple contains a string and an object mapping field names to aggregation methods.
+     * @returns A query string that selects and groups by the specified fields with appropriate aggregations.
+     */
+    const buildDynamicQuery = (inputData): string => {
+        const selectParts: string[] = [];
+        const aliasParts: string[] = [];
+        const groupByParts: string[] = [];
+
+        inputData.forEach(([_, fields]) => {
+            for (const field in fields) {
+                const rawAgg = fields[field];
+                aliasParts.push(field);
+
+                if (rawAgg) {
+                    const cleanedAgg = rawAgg.split(" ").join(""); // Remove spaces (e.g., "Unique Count" → "UniqueCount")
+                    selectParts.push(`${cleanedAgg}(${field})`);
+                } else {
+                    selectParts.push(field);
+                    groupByParts.push(field); // Only unaggregated fields are grouped
+                }
+            }
+        });
+
+        return `Select(${selectParts.join(", ")}).as([${aliasParts.join(
+            ", ",
+        )}]) | Group(${groupByParts.join(", ")})`;
+    };
+
+    /**
      * get the frame
      */
     const frame = useFrame(data?.frame?.name, {
-        selector: getVisualizationBlockSelector(id),
+        selector: buildDynamicQuery(Object.entries(data?.aggregate ?? {})),
     });
 
-    /**
-     *
-     * @param id
-     * @description
-     */
-    function getVisualizationBlockSelector(id: string) {
-        if (id) {
-            //get the options JSON of the selected block
-            //let blockJSON = this._store.blocks[id].data.option;
-            const blockJSON = data.option;
-            //initialize the selector string
-            let selector = "Select(";
-
-            //if there are no fields, return null
-            if (!blockJSON["_state"]) return null;
-
-            //get the fields
-            const selectorFields = blockJSON["_state"]["fields"];
-
-            //  get the value and tooltip properties
-            // let dynamicYAndTooltipSet = [
-            //     ...new Set([
-            //         ...selectorFields["Value"],
-            //         ...selectorFields["tooltip"],
-            //     ]),
-            // ];
-            const dynamicYAndTooltipSet = Array.from(
-                new Set([
-                    ...selectorFields["Value"],
-                    ...selectorFields["tooltip"],
-                ]),
-            );
-
-            // start forming the selector string
-            selector += `${selectorFields["Label"][0]}`;
-
-            // add dynamic y axis and tooltip fields to the selector string
-            let averageCollection = "";
-            for (let i = 0; i < dynamicYAndTooltipSet.length; i++) {
-                averageCollection += `, Average(${dynamicYAndTooltipSet[i]})`;
-                selector += `, Average(${dynamicYAndTooltipSet[i]})`;
-            }
-
-            selector += `).as([${selectorFields["Label"][0]}${averageCollection}])|Group(${selectorFields["Label"][0]})|Sort(${selectorFields["Label"][0]})`;
-            return selector;
-        }
-        return null;
-    }
 
     /**
      * @description Trying out different approach for TrendLine, work in progress
