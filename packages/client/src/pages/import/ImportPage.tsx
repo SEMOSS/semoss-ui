@@ -439,6 +439,14 @@ export const ImportPage = () => {
 
                 setSteps([...steps, paramedStep], steps.length + 1);
                 break;
+            case '?type=connector':
+                paramedStep.title = 'Connect to Connector';
+                paramedStep.description =
+                    "In today's interconnected world, connectors play a vital role in bridging systems and enabling seamless data flow. Whether you're integrating APIs, middleware, or other tools, this page provides the foundation for establishing robust connections.";
+                paramedStep.data = 'CONNECTOR';
+
+                setSteps([...steps, paramedStep], steps.length + 1);
+                break;
         }
     }, [importParams]);
 

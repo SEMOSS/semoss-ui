@@ -83,6 +83,7 @@ import CHROMADB from '@/assets/img/CHROMADB.png';
 import MILVUS from '@/assets/img/MILVUS.png';
 import PINECONE from '@/assets/img/PINECONE.png';
 import WEVIATE from '@/assets/img/WEVIATE.png';
+import JIRA from '@/assets/img/JIRA.png';
 
 // TODO: Get rid of this and throw it into Connection Options
 export const stepsOne = [
@@ -130,6 +131,13 @@ export const stepsOne = [
             "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape.",
         disabled: false,
         data: 'FUNCTION',
+    },
+    {
+        name: 'Connect to Connector',
+        description:
+            "Welcome to the Connector Connection Page! Here, you can seamlessly connect to various connectors that facilitate data exchange and interaction with external systems. Whether you're looking to integrate with APIs, data streams, or other services, this page provides a user-friendly interface to establish those connections effortlessly.",
+        disabled: false,
+        data: 'CONNECTOR',
     },
 ];
 
@@ -14648,6 +14656,105 @@ export const CONNECTION_OPTIONS = {
             },
         ],
     },
+    CONNECTOR: {
+        Connections: [
+            {
+                name: 'Jira',
+                disable: false,
+                icon: JIRA,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
+                    },
+                    {
+                        fieldName: 'DESCRIPTION',
+                        label: 'Description',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'EMAIL/USERNAME',
+                        label: 'Email/Username',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^(?:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|[a-zA-Z0-9._-]{3,})$/,
+                                message:
+                                    'Email or username must be valid. Emails should follow the format user@example.com, and usernames must be at least 3 characters long, containing only alphanumeric characters, dots (.), underscores (_), or dashes (-).',
+                            },
+                            // custom: {
+                            //     value: 'CheckEngineName ( "[VALUE]") ;',
+                            //     message:
+                            //         'This Catalog name has already been used, please try another.',
+                            // },
+                        },
+                    },
+                    {
+                        fieldName: 'APITOKEN',
+                        label: 'API Token',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[A-Za-z0-9_-]+$/,
+                                message:
+                                    'API tokens must be alphanumeric and can include underscores (_) and dashes (-). Length must be between 20 and 60 characters.',
+                            },
+                        },
+                    },
+                    {
+                        fieldName: 'PROJECTKEY',
+                        label: 'Project Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[A-Z][A-Z0-9-]{1,9}$/,
+                                message:
+                                    'Project keys must start with an uppercase letter and can include uppercase letters, numbers, and dashes. Length must be between 2 and 10 characters.',
+                            },
+                        },
+                    },
+                ],
+            },
+        ],
+    },
 };
 
 export const ENGINE_IMAGES = {
@@ -15044,6 +15151,12 @@ export const ENGINE_IMAGES = {
         {
             name: 'ZIP',
             icon: ZIP,
+        },
+    ],
+    CONNECTOR: [
+        {
+            name: 'JIRA',
+            icon: JIRA,
         },
     ],
 };

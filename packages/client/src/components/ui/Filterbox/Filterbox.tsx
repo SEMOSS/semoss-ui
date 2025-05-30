@@ -56,7 +56,14 @@ const StyledShowMore = styled(Typography)(({ theme }) => {
 
 export interface FilterboxProps {
     /** Determined to get metakeys for Engines/App */
-    type: 'APP' | 'MODEL' | 'FUNCTION' | 'VECTOR' | 'STORAGE' | 'DATABASE';
+    type:
+        | 'APP'
+        | 'MODEL'
+        | 'FUNCTION'
+        | 'VECTOR'
+        | 'STORAGE'
+        | 'DATABASE'
+        | 'CONNECTOR';
     /** Filters to hold in state at parent */
     onChange: (filters: unknown) => void;
 }

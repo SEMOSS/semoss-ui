@@ -4,6 +4,8 @@ import {
     Polyline,
     SwitchAccessShortcutOutlined,
     TokenOutlined,
+    Link,
+    LinkOutlined,
 } from '@mui/icons-material';
 
 import { ENGINE_TYPES, Role } from '@/types';
@@ -243,6 +245,52 @@ export const ENGINE_ROUTES: {
             {
                 name: 'Settings',
                 path: 'settings',
+                component: EngineSettingsPage,
+                restrict: ['EDIT', 'OWNER'],
+            },
+            {
+                name: 'SMSS',
+                path: 'smss',
+                component: EngineSmssPage,
+                restrict: ['OWNER'],
+            },
+        ],
+    },
+    {
+        name: 'Connector',
+        path: 'connectors',
+        type: 'CONNECTOR',
+        description:
+            'Connectors are a powerful way to integrate with external systems and services, enabling seamless data exchange and interaction. They allow you to connect to various APIs, databases, and other services, facilitating the flow of data and functionality between different applications.',
+        icon: LinkOutlined,
+        specific: [
+            {
+                name: 'Overview',
+                path: '',
+                component: EngineIndexPage,
+                restrict: false,
+            },
+            {
+                name: 'Usage',
+                path: 'usage',
+                component: EngineUsagePage,
+                restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
+            },
+            {
+                name: 'Files',
+                path: 'files',
+                component: EngineFilePage,
+                restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
+            },
+            {
+                name: 'Q&A',
+                path: 'qa',
+                component: EngineQAPage,
+                restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
+            },
+            {
+                name: 'Access Control',
+                path: 'access-control',
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
             },

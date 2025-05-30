@@ -33,7 +33,13 @@ export const ImportConnectionPage = () => {
      * 3. Refactor
      */
     const formSubmit = async (values: {
-        type: 'VECTOR' | 'STORAGE' | 'MODEL' | 'FUNCTION' | 'UPLOAD';
+        type:
+            | 'VECTOR'
+            | 'STORAGE'
+            | 'MODEL'
+            | 'FUNCTION'
+            | 'UPLOAD'
+            | 'CONNECTOR';
         name: string;
         fields: unknown[];
         secondaryFields?: unknown[];
@@ -215,7 +221,39 @@ export const ImportConnectionPage = () => {
                 navigate(`/engine/function/${output.database_id}`);
             });
             return;
+        } else if (values.type === 'CONNECTOR') {
+            console.log('Connector', values.fields);
+            const output = 1234;
+            navigate(`/engine/connectors/${output}}`);
+            /** Connector: START */
+            const pixel = `CreateJiraIssueReactor(
+                connector=["${values.name}"], 
+                connectorDetails=[${JSON.stringify(values.fields)}]
+            )`;
+
+            monolithStore.runQuery(pixel).then((response) => {
+                const output = response.pixelReturn[0].output,
+                    operationType = response.pixelReturn[0].operationType;
+
+                setIsLoading(false);
+
+                if (operationType.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+                    return;
+                }
+
+                notification.add({
+                    color: 'success',
+                    message: `Successfully added connector to catalog`,
+                });
+                navigate(`/engine/connector/${output.database_id}`);
+            });
+            return;
         }
+        /** File Upload: START */
 
         /** Connect to External: START */
         // I'll be hitting this reactor if dbDriver is in RDBMSTypeEnum on BE

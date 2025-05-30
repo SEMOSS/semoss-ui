@@ -26,7 +26,8 @@ export type ENGINE_TYPES =
     | 'STORAGE'
     | 'MODEL'
     | 'VECTOR'
-    | 'FUNCTION';
+    | 'FUNCTION'
+    | 'CONNECTOR';
 
 export type Join<K, P> = K extends string | number
     ? P extends string | number

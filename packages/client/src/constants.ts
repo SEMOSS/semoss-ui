@@ -45,4 +45,10 @@ export const PERMISSION_DESCRIPTION_MAP: Record<
         editor: 'Ability to add and remove files from the vector database, and all read-only permissions',
         readonly: 'Ability to query against the vector database',
     },
+    CONNECTOR: {
+        author: 'Ability to configure and delete connectors, provision other authors, and all editor permissions',
+        editor: 'Ability to edit connector settings, provision other users as editors and read-only users, and all read-only permissions',
+        readonly:
+            'Ability to use the connector for data exchange and interaction',
+    },
 };
