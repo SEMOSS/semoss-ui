@@ -1426,7 +1426,13 @@ export class MonolithStore {
      * @param projectId
      * @returns
      */
-    async deleteProjectPermission(groupId, groupType: string, project) {
+    async deleteProjectPermission(
+        groupId,
+        groupType: string,
+        project: {
+            project_id: string;
+        },
+    ) {
         let url = `${Env.MODULE}/api/auth/admin/`,
             postData = '';
 
@@ -1632,7 +1638,13 @@ export class MonolithStore {
      * @param projectId
      * @returns
      */
-    async deleteEnginePermission(groupId: string, groupType: string, engine) {
+    async deleteEnginePermission(
+        groupId: string,
+        groupType: string,
+        engine: {
+            engine_id: string;
+        },
+    ) {
         let url = `${Env.MODULE}/api/auth/admin/`,
             postData = '';
 

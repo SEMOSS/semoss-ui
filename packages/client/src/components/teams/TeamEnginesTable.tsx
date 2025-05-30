@@ -418,7 +418,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
             response = await monolithStore.deleteEnginePermission(
                 groupId,
                 groupType,
-                engine,
+                {
+                    engine_id: engine.engine_id,
+                },
             );
 
             if (!response) {
@@ -453,7 +455,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                     response = await monolithStore.deleteEnginePermission(
                         groupId,
                         groupType,
-                        selectedEngines[i],
+                        {
+                            engine_id: selectedEngines[i].engine_id,
+                        },
                     );
 
                     if (!response) {
