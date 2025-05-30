@@ -37,7 +37,14 @@ export default defineConfig({
         reporters: ["default"],
         coverage: {
             provider: "v8",
-            reportsDirectory: "../../coverage/packages/renderer",
+            reporter: ["text"],
+            reportsDirectory: "./coverage/packages/renderer",
+            // thresholds: {
+            //     statements: 60,
+            //     functions: 60,
+            //     branches: 60,
+            //     lines: 60,
+            // },
         },
         environmentOptions: {
             jsdom: {
