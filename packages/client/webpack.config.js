@@ -107,13 +107,7 @@ const config = {
             },
             {
                 test: /\.tsx?$/,
-                use: {
-                    loader: 'ts-loader',
-                    options: {
-                        // this is enabled in dev as VSCode should show transpile errors
-                        transpileOnly: !isProduction,
-                    },
-                },
+                use: 'ts-loader',
                 exclude: /node_modules/,
             },
             {
