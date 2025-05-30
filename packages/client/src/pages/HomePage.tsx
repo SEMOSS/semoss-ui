@@ -211,7 +211,7 @@ export const HomePage = observer((): JSX.Element => {
     ])}, metaFilters=[${JSON.stringify(
         metaFilters,
     )}], filterWord=["${search}"], onlyFavorites=[true]);`;
-    const getFavoritedApps = usePixel(favoritePixel);
+    const getFavoritedApps = usePixel(mode === 'Mine' && favoritePixel);
 
     useEffect(() => {
         if (getFavoritedApps.status !== 'SUCCESS') {
@@ -328,22 +328,22 @@ export const HomePage = observer((): JSX.Element => {
                                 }}
                             />
                         </Stack>
-                        {configStore.store.config.adminOnlyViewMenuBarFlag &&
-                            configStore.isEngineOperationAvailable(
-                                'APP',
-                                'add',
-                            ) && (
-                                <Button
-                                    size={'large'}
-                                    variant={'contained'}
-                                    onClick={() => {
-                                        navigate('/app/new');
-                                    }}
-                                    aria-label={`Open the App Model`}
-                                >
-                                    Create New App
-                                </Button>
-                            )}
+                        {configStore.isEngineOperationAvailable(
+                            'APP',
+                            'add',
+                        ) && (
+                            <Button
+                                size={'large'}
+                                variant={'contained'}
+                                onClick={() => {
+                                    navigate('/app/new');
+                                }}
+                                aria-label={`Open the App Model`}
+                                data-testid={'home-create-app-btn'}
+                            >
+                                Create New App
+                            </Button>
+                        )}
                     </Stack>
                 </Stack>
             }
@@ -424,6 +424,7 @@ export const HomePage = observer((): JSX.Element => {
                                         favorite={() => {
                                             favoriteApp(app);
                                         }}
+                                        isDiscoverable={mode !== 'Mine'}
                                     />
                                 );
                             })}
@@ -484,6 +485,7 @@ export const HomePage = observer((): JSX.Element => {
                                             key={i}
                                             app={app}
                                             systemApp={false}
+                                            isDiscoverable={mode !== 'Mine'}
                                             href={
                                                 mode === 'Discoverable'
                                                     ? `#/app/${app.project_id}/detail`
