@@ -27,9 +27,6 @@ import {
     Typography,
     Box,
     Grid,
-    Tabs,
-    Tab,
-    Stack,
 } from '@semoss/ui';
 import { stepsOne } from './import.constants';
 
@@ -43,13 +40,15 @@ import { CopyDb } from '@/assets/img/CopyDb';
 import { UploadDb } from '@/assets/img/UploadDb';
 import { ConnectStorage } from '@/assets/img/ConnectStorage';
 
-import { useStepper } from '@/hooks';
+import { useStepper ,useRootStore} from '@/hooks';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import { CONNECTION_OPTIONS } from './import.constants';
 import { EstablishConnectionPage, ImportConnectionPage } from './';
 import { Help } from '@/components/help';
-import Tooltip from '@mui/material/Tooltip';
+import { ConfigStore } from '@/stores';
+import { config } from 'process';
+import { kkKZ } from '@mui/material/locale';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -103,16 +102,13 @@ const StyledBox = styled(Box)({
     marginBottom: '32px',
 });
 
-const StyledInnerBox = styled('div')<{ isModel?: boolean }>(
-    ({ theme, isModel }) => ({
-        display: 'flex',
-        alignItems: isModel ? 'flex-start' : 'center',
-        gap: theme.spacing(1),
-        flexDirection: isModel ? 'column' : 'row',
-    }),
-);
+const StyledInnerBox = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1),
+}));
 
-const StyledCardImage = styled('img')<{ isModel?: boolean }>(({ isModel }) => ({
+const StyledCardImage = styled('img')({
     display: 'flex',
     height: '30px',
     width: '30px',
@@ -122,8 +118,7 @@ const StyledCardImage = styled('img')<{ isModel?: boolean }>(({ isModel }) => ({
     overflowClipMargin: 'content-box',
     overflow: 'clip',
     objectFit: 'cover',
-    borderRadius: isModel ? '8px' : 'inherit',
-}));
+});
 
 const StyledCardText = styled('p')({
     overflow: 'hidden',
@@ -131,30 +126,6 @@ const StyledCardText = styled('p')({
     whiteSpace: 'nowrap',
     margin: '0',
 });
-
-const StyledCardModelText = styled('p')({
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    margin: '2px 0 0',
-    alignSelf: 'stretch',
-    fontSize: '14px',
-    fontWeight: '500',
-    lineHeight: '143%',
-    letterSpacing: '0.17px',
-    color: '#212121',
-});
-
-const StyledTypographyText = styled(Typography)((theme) => ({
-    display: 'flex',
-    alignItems: 'center',
-    padding: '0 10px',
-    backgroundColor: '#EBEBEB',
-    borderRadius: '16px',
-    marginLeft: 'auto !important',
-    fontSize: '13px',
-    color: '#212121',
-}));
 
 const StyledFormTypeBox = styled(Box, {
     shouldForwardProp: (prop) => prop !== 'disabled',
@@ -184,31 +155,6 @@ const StyledFormTypeBox = styled(Box, {
     };
 });
 
-const StyledFormTypeModelBox = styled(Box, {
-    shouldForwardProp: (prop) => prop !== 'disabled',
-})<{
-    disabled: boolean;
-}>(({ disabled }) => {
-    return {
-        maxWidth: '215px',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        display: 'block',
-        justifyContent: 'center',
-        alignItems: 'center',
-        border: '1px solid #C4C4C4',
-        padding: '16px',
-        backgroundColor: '#fff',
-        opacity: disabled ? 0.6 : 1,
-
-        '&:hover': {
-            cursor: disabled ? 'auto' : 'pointer',
-            border: disabled ? '1px solid #C4C4C4' : '1.5px solid #0471F0',
-            backgroundColor: disabled ? 'white' : '#F5F9FE',
-        },
-    };
-});
-
 const StyledSpan = styled('span')({
     '&:hover': {
         cursor: 'pointer',
@@ -221,11 +167,10 @@ const StyledCategoryTitle = styled(Box)({
     padding: '16px',
 });
 
-const StyledTab = styled(Tab)({
-    fontSize: '14px',
-    fontWeight: '500',
-    letterSpacing: '0.4px',
-    color: 'rgba(0, 0, 0, 0.60)',
+const StyledSubCategoryTitle = styled(Box)({
+    fontSize: '16px',
+    fontWeight: 'bold',
+    padding: '16px',
 });
 
 const IconMapper = {
@@ -250,143 +195,9 @@ export const ImportPage = () => {
 
     const [connectionOptions, setConnectionOptions] =
         React.useState(CONNECTION_OPTIONS);
-    const [selectedTab, setSelectedTab] = React.useState(0);
-
-    const modelOptions = connectionOptions.MODEL;
 
     const scrollToTopRef = useRef(null);
-
-    const isModelPage = steps.length > 0 && steps[0].data === 'MODEL';
-
-    const ModelCard = ({ model, setSteps, steps }) => {
-        const textRef = useRef<HTMLParagraphElement>(null);
-        const [isTruncated, setIsTruncated] = React.useState(false);
-
-        useEffect(() => {
-            const el = textRef.current;
-            if (el) {
-                setIsTruncated(el.scrollWidth > el.clientWidth);
-            }
-        }, [model.name]);
-
-        const cardContent = (
-            <StyledFormTypeModelBox
-                disabled={model.disable}
-                onClick={() => {
-                    if (!model.disable) {
-                        setSteps(
-                            [
-                                ...steps,
-                                {
-                                    id: `${model.name}`,
-                                    title: model.name,
-                                    description: `Fill out ${
-                                        model.name
-                                    } details in order to add ${steps[0].data.toLowerCase()} to catalog`,
-                                    data: model.fields,
-                                },
-                            ],
-                            steps.length + 1,
-                        );
-                    }
-                }}
-            >
-                <StyledInnerBox isModel={true}>
-                    {model.disable ? (
-                        <Stack direction="row" width={'100%'} spacing={1}>
-                            <StyledCardImage isModel={true} src={model.icon} />
-                            <StyledTypographyText variant="body1">
-                                Coming Soon
-                            </StyledTypographyText>
-                        </Stack>
-                    ) : (
-                        <StyledCardImage isModel={true} src={model.icon} />
-                    )}
-
-                    <StyledCardModelText ref={textRef}>
-                        {model.name}
-                    </StyledCardModelText>
-                </StyledInnerBox>
-            </StyledFormTypeModelBox>
-        );
-
-        return isTruncated ? (
-            <Tooltip
-                title={model.name}
-                placement="bottom"
-                arrow
-                componentsProps={{
-                    tooltip: {
-                        sx: {
-                            backgroundColor: '#757575',
-                            fontFamily: 'Inter',
-                            fontStyle: 'normal',
-                            letterSpacing: '0.4px',
-                        },
-                    },
-                }}
-            >
-                <span style={{ display: 'block' }}>{cardContent}</span>
-            </Tooltip>
-        ) : (
-            cardContent
-        );
-    };
-
-    const getTabLabels = () => {
-        const tabs = new Set<string>();
-        tabs.add('All');
-
-        const commercial = modelOptions['Commercially Hosted'];
-        if (commercial && typeof commercial === 'object') {
-            Object.keys(commercial).forEach((key) => tabs.add(key));
-        }
-
-        ['Locally Hosted', 'Embedded', 'File Uploads'].forEach((key) => {
-            if (modelOptions[key]) {
-                tabs.add(key);
-            }
-        });
-
-        return Array.from(tabs);
-    };
-
-    const tabLabels = getTabLabels();
-
-    const getAllModels = () => {
-        let allModels: any[] = [];
-
-        const commercial = modelOptions['Commercially Hosted'];
-        if (commercial && typeof commercial === 'object') {
-            Object.values(commercial).forEach((models: any) => {
-                allModels = allModels.concat(models);
-            });
-        }
-
-        ['Locally Hosted', 'Embedded', 'File Uploads'].forEach((key) => {
-            const models = modelOptions[key];
-            if (Array.isArray(models)) {
-                allModels = allModels.concat(models);
-            }
-        });
-
-        return allModels;
-    };
-
-    const getModelsForTab = (tab: string) => {
-        if (tab === 'All') return getAllModels();
-
-        const commercial = modelOptions['Commercially Hosted'];
-        if (commercial && commercial[tab]) {
-            return commercial[tab];
-        }
-
-        if (modelOptions[tab]) {
-            return modelOptions[tab];
-        }
-
-        return [];
-    };
+    const { configStore } = useRootStore();
 
     useEffect(() => {
         const paramedStep = {
@@ -464,12 +275,16 @@ export const ImportPage = () => {
         setUniqueIdsOnConnectionOptions();
     }, []);
 
-    const setUniqueIdsOnConnectionOptions = async () => {
+    const setUniqueIdsOnConnectionOptions = async () =>{
+
         setIsLoading(true);
         await assignUniqueIds(CONNECTION_OPTIONS);
         setIsLoading(false);
-
+        if(configStore.store.config.adminOnlyNonApprovedFlag)  {
+         getFilterObj();
+        }else{
         setConnectionOptions(CONNECTION_OPTIONS);
+        }
     };
 
     /**
@@ -477,7 +292,8 @@ export const ImportPage = () => {
      * @param obj
      * @param prefix
      */
-    function assignUniqueIds(obj, prefix = '') {
+    function assignUniqueIds(obj, prefix = '') {    
+       
         if (Array.isArray(obj)) {
             // If it's an array, iterate through its elements
             for (let i = 0; i < obj.length; i++) {
@@ -490,6 +306,7 @@ export const ImportPage = () => {
                 const currentPrefix = prefix ? `${prefix}.${key}` : key;
 
                 // Assign unique ID to the 'name', 'disable', 'fields' properties
+            
                 if (key === 'name' || key === 'disable' || key === 'fields') {
                     obj[`id`] = `${currentPrefix}${obj['name']}`;
                 }
@@ -500,24 +317,115 @@ export const ImportPage = () => {
             }
         }
     }
+   
 
-    const renderModelsGrid = (models) => (
-        <Grid container columns={6} columnSpacing={2} rowSpacing={2}>
-            {models
-                .filter((m) =>
-                    m.name.toLowerCase().includes(search.toLowerCase()),
-                )
-                .map((model, idx) => (
-                    <Grid key={idx} item lg={1} md={1} xs={1} xl={1} sm={1}>
-                        <ModelCard
-                            model={model}
-                            steps={steps}
-                            setSteps={setSteps}
-                        />
-                    </Grid>
-                ))}
-        </Grid>
-    );
+    function filterNonProdItem(obj) {
+
+      const functionList = configStore.config.nonApprovedFunctionList;
+      const connectionList = configStore.config.nonApprovedConnectionList;
+      const storageList = configStore.config.nonApprovedStorageList;
+      const databaseFileList = configStore.config.nonApprovedDatabaseFilesList;
+      const databaseList = configStore.config.nonApprovedDatabaseList;
+       
+        if (
+            obj?.MODEL?.['Commercially Hosted'] && (
+                'OpenAI' in obj.MODEL['Commercially Hosted'])
+        ) {
+            delete obj.MODEL['Commercially Hosted'].OpenAI;
+            delete obj.MODEL['Commercially Hosted']['AWS Bedrock'];
+            delete obj.MODEL['Commercially Hosted']['NVIDIA NIM Models'];
+
+        }
+        if (
+            obj?.MODEL?.['Locally Hosted']) {
+            delete obj.MODEL['Locally Hosted'];
+        }
+        if (obj?.MODEL?.['File Uploads']) {
+            delete obj.MODEL['File Uploads'];
+        }
+      
+         if (
+            obj?.MODEL?.['Embedded'] ) {
+                for(let k=0;k<=obj.MODEL['Embedded'].length;k++){
+                    if(!(obj.MODEL['Embedded'][k]?.name  === "AWS TITAN TEXT EMBEDDINGS")){
+
+                     delete obj.MODEL['Embedded'][k];
+                    }
+                  
+                }
+        }
+        //Function
+        if (obj.FUNCTION.Function.length > 0) {
+             for (let k = 0; k <= obj.FUNCTION.Function.length; k++) {
+                for(let m=0;m<functionList.length;m++){
+                    if (obj.FUNCTION.Function[k]?.name === functionList[m]) {
+                         delete obj.FUNCTION.Function[k];
+                    }
+
+                }              
+            }
+        }
+       //Vector
+
+         if(obj.VECTOR.Connections.length>0){
+             for (let k = 0; k <= obj.VECTOR.Connections.length; k++) {
+                for(let n=0;n<connectionList.length;n++){
+                if (obj.VECTOR.Connections[k]?.name === connectionList[n]) {
+                    delete obj.VECTOR.Connections[k];
+                }
+                
+               }
+           }
+        }
+
+           if (obj?.VECTOR['File Uploads']) {
+            delete obj.VECTOR['File Uploads'];
+            }
+         //Storage 
+        if (obj.STORAGE.Storage.length > 0) {
+              for (let k = 0; k <= obj.STORAGE.Storage.length; k++) {
+                for (let l = 0; l < storageList.length; l++) {
+                    if (obj.STORAGE.Storage[k]?.name === storageList[l]) {
+                        delete obj.STORAGE.Storage[k];
+                    }
+                }
+
+            }
+        }
+         if (obj?.STORAGE?.['File Uploads']) {
+              delete obj.STORAGE['File Uploads'];
+          }
+         //DataBase file Uploads
+         if(obj?.DATABASE?.['File Uploads'].length>0){ 
+             for(let i=0;i<obj.DATABASE['File Uploads'].length;i++){
+                for(let b=0;b<databaseFileList.length;b++){
+               if(obj.DATABASE['File Uploads'][i]?.name === databaseFileList[b]){
+                    delete obj.DATABASE['File Uploads'][i];
+                }
+               }
+            }
+         }
+        //DataBase file Uploads
+        if (obj?.DATABASE?.Connections.length > 0) {
+            for (let i = 0; i < obj.DATABASE.Connections.length; i++) {
+                for (let r = 0; r < databaseList.length; r++) {
+                    if (obj.DATABASE.Connections[i]?.name === databaseList[r]) {
+                        delete obj.DATABASE.Connections[i];
+                    }
+                }
+            }
+              
+        }
+        console.log("After Function Removal",obj);
+        return obj; 
+    }
+    
+    function getFilterObj() {
+      
+       setConnectionOptions(filterNonProdItem(CONNECTION_OPTIONS));
+       console.log("Removed one",connectionOptions);
+       
+    }
 
     const mapEngineOptions = () => {
         const entries = Object.values(connectionOptions[steps[0].data]);
@@ -616,21 +524,170 @@ export const ImportPage = () => {
 
             return (
                 <Box sx={{ width: '100%' }}>
-                    <Tabs
-                        value={selectedTab}
-                        onChange={(_, newValue) => setSelectedTab(newValue)}
-                        variant="scrollable"
-                        sx={{ mt: 2, borderBottom: '2px solid #E0E0E0' }}
-                    >
-                        {tabLabels.map((label, i) => (
-                            <StyledTab key={i} label={label} />
-                        ))}
-                    </Tabs>
-                    <Box sx={{ mt: 4 }}>
-                        {renderModelsGrid(
-                            getModelsForTab(tabLabels[selectedTab]),
-                        )}
-                    </Box>
+                    <StyledCategoryTitle sx={{ paddingBottom: '0px' }}>
+                        Commercially Hosted
+                    </StyledCategoryTitle>
+                    {Object.entries(entries[0]).map(
+                        (kv: [string, any[]], i) => {
+                            // TODO FIX ANY TYPE
+                            return (
+                                <div key={i}>
+                                    <StyledSubCategoryTitle>
+                                        {kv[0]}
+                                    </StyledSubCategoryTitle>
+
+                                    <Box>
+                                        <Grid
+                                            container
+                                            columns={6}
+                                            columnSpacing={2}
+                                            rowSpacing={2}
+                                        >
+                                            {kv[1].map((stage, idx) => {
+                                                if (
+                                                    stage.name
+                                                        .toLowerCase()
+                                                        .includes(
+                                                            search.toLowerCase(),
+                                                        )
+                                                ) {
+                                                    return (
+                                                        <Grid
+                                                            key={idx}
+                                                            item
+                                                            lg={1}
+                                                            md={1}
+                                                            xs={1}
+                                                            xl={1}
+                                                            sm={1}
+                                                        >
+                                                            <StyledFormTypeBox
+                                                                disabled={
+                                                                    stage.disable
+                                                                }
+                                                                onClick={() => {
+                                                                    if (
+                                                                        !stage.disable
+                                                                    ) {
+                                                                        setSteps(
+                                                                            [
+                                                                                ...steps,
+                                                                                {
+                                                                                    id: `${kv[0]}.${stage.name}`,
+                                                                                    title: stage.name,
+                                                                                    description: `Fill out ${
+                                                                                        stage.name
+                                                                                    } details in order to add ${steps[0].data.toLowerCase()} to catalog`,
+                                                                                    data: stage.fields,
+                                                                                },
+                                                                            ],
+                                                                            steps.length +
+                                                                                1,
+                                                                        );
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <StyledInnerBox>
+                                                                    <StyledCardImage
+                                                                        src={
+                                                                            stage.icon
+                                                                        }
+                                                                    />
+                                                                    <StyledCardText>
+                                                                        {
+                                                                            stage.name
+                                                                        }
+                                                                    </StyledCardText>
+                                                                </StyledInnerBox>
+                                                            </StyledFormTypeBox>
+                                                        </Grid>
+                                                    );
+                                                }
+                                            })}
+                                        </Grid>
+                                    </Box>
+                                </div>
+                            );
+                        },
+                    )}
+                    {e.map((kv: [string, any[]], i) => {
+                        return (
+                            <Box key={i}>
+                                <StyledCategoryTitle>
+                                    {kv[0]}
+                                </StyledCategoryTitle>
+
+                                <Box>
+                                    <Grid
+                                        container
+                                        columns={6}
+                                        columnSpacing={2}
+                                        rowSpacing={2}
+                                    >
+                                        {kv[1].map((stage, idx) => {
+                                            if (
+                                                stage.name
+                                                    .toLowerCase()
+                                                    .includes(
+                                                        search.toLowerCase(),
+                                                    )
+                                            ) {
+                                                return (
+                                                    <Grid
+                                                        key={idx}
+                                                        item
+                                                        lg={1}
+                                                        md={1}
+                                                        xs={1}
+                                                        xl={1}
+                                                        sm={1}
+                                                    >
+                                                        <StyledFormTypeBox
+                                                            disabled={
+                                                                stage.disable
+                                                            }
+                                                            onClick={() => {
+                                                                if (
+                                                                    !stage.disable
+                                                                ) {
+                                                                    setSteps(
+                                                                        [
+                                                                            ...steps,
+                                                                            {
+                                                                                id: `${kv[0]}.${stage.name}`,
+                                                                                title: stage.name,
+                                                                                description: `Fill out ${
+                                                                                    stage.name
+                                                                                } details in order to add ${steps[0].data.toLowerCase()} to catalog`,
+                                                                                data: stage.fields,
+                                                                            },
+                                                                        ],
+                                                                        steps.length +
+                                                                            1,
+                                                                    );
+                                                                }
+                                                            }}
+                                                        >
+                                                            <StyledInnerBox>
+                                                                <StyledCardImage
+                                                                    src={
+                                                                        stage.icon
+                                                                    }
+                                                                />
+                                                                <StyledCardText>
+                                                                    {stage.name}
+                                                                </StyledCardText>
+                                                            </StyledInnerBox>
+                                                        </StyledFormTypeBox>
+                                                    </Grid>
+                                                );
+                                            }
+                                        })}
+                                    </Grid>
+                                </Box>
+                            </Box>
+                        );
+                    })}
                 </Box>
             );
         }
@@ -642,18 +699,9 @@ export const ImportPage = () => {
                     {steps.length ? (
                         <Breadcrumbs separator="/">
                             <StyledSpan
-                                sx={
-                                    isModelPage
-                                        ? { color: '#212121' }
-                                        : undefined
-                                }
                                 onClick={() => {
                                     setSteps([], -1);
-                                    if (window.history.length > 1) {
-                                        navigate(-1);
-                                    } else {
-                                        navigate('/');
-                                    }
+                                    navigate('/import');
                                 }}
                             >
                                 Import
@@ -679,18 +727,12 @@ export const ImportPage = () => {
                     ) : (
                         <div>&nbsp;</div>
                     )}
-                    <Typography
-                        variant="h4"
-                        sx={isModelPage ? { fontWeight: 500 } : undefined}
-                    >
+                    <Typography variant="h4">
                         {steps.length
                             ? steps[steps.length - 1].title
                             : 'Add Source'}
                     </Typography>
-                    <Typography
-                        variant="body1"
-                        color={isModelPage ? 'secondary' : 'inherit'}
-                    >
+                    <Typography variant="body1">
                         {steps.length
                             ? steps[steps.length - 1].description
                             : "Welcome to our integrated data nexus, your gateway to a world of interconnected possibilities. This page empowers you with the freedom to effortlessly connect to diverse databases, wield versatile storage solutions, and tap into the transformative capabilities of Large Language Models (LLMs). Whether you're a developer, analyst, or visionary, our platform serves as a springboard for unified data orchestration, innovation, and insights."}

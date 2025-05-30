@@ -98,6 +98,12 @@ interface ConfigStoreInterface {
         /**
          * Flags
          */
+        adminOnlyNonApprovedFlag: false,
+        nonApprovedFunctionList:[],
+        nonApprovedStorageList:[],
+        nonApprovedDatabaseFilesList:[],
+        nonApprovedDatabaseList:[],
+        nonApprovedConnectionList:[],
         adminOnlyDbAdd: boolean;
         adminOnlyDbAddAccess: boolean;
         adminOnlyDbDelete: boolean;
@@ -166,6 +172,12 @@ export class ConfigStore {
             python: true,
             csrf: false,
             adminOnlyViewMenuBarFlag: false,
+            adminOnlyNonApprovedFlag:false,
+            nonApprovedFunctionList:[],
+            nonApprovedStorageList:[],
+            nonApprovedDatabaseFilesList:[],
+            nonApprovedDatabaseList:[],
+            nonApprovedConnectionList:[],
             adminOnlyDbAdd: false,
             adminOnlyDbAddAccess: false,
             adminOnlyDbDelete: false,
