@@ -56,6 +56,4 @@ export const Operation = observer((props: OperationProps): JSX.Element => {
             />
         );
     }
-
-    // return <DefaultOperation output={output} />;
 });
