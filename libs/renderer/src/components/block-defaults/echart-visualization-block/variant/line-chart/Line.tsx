@@ -68,8 +68,41 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
         }
         return null;
     }
+
+    /**
+     * Builds a dynamic query string based on the provided input data.
+     * @param inputData - An array of tuples where each tuple contains a string and an object mapping field names to aggregation methods.
+     * @returns A query string that selects and groups by the specified fields with appropriate aggregations.
+     */
+    const buildDynamicQuery = (inputData): string => {
+        const blockJSON = data.option;
+        if (!blockJSON["_state"]) return null;
+        const selectParts: string[] = [];
+        const aliasParts: string[] = [];
+        const groupByParts: string[] = [];
+
+        inputData.forEach(([_, fields]) => {
+            for (const field in fields) {
+                const rawAgg = fields[field];
+                aliasParts.push(field);
+
+                if (rawAgg) {
+                    const cleanedAgg = rawAgg.split(" ").join(""); // Remove spaces (e.g., "Unique Count" → "UniqueCount")
+                    selectParts.push(`${cleanedAgg}(${field})`);
+                } else {
+                    selectParts.push(field);
+                    groupByParts.push(field); // Only unaggregated fields are grouped
+                }
+            }
+        });
+
+        return `Select(${selectParts.join(", ")}).as([${aliasParts.join(
+            ", ",
+        )}]) | Group(${groupByParts.join(", ")})`;
+    };
+
     const frame = useFrame(data.frame.name, {
-        selector: getVisualizationBlockSelector(id),
+        selector: buildDynamicQuery(Object.entries(data?.aggregate ?? {})),
     });
     const computedValue = useMemo(() => {
         return computed(() => {
@@ -111,7 +144,8 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
                 resultData["xAxis"]["data"] = valuesDataSet.map((x) => x[0]);
                 valuesDataSet.map((x) => x.shift());
                 headersDataSet.shift();
-                const yAxisListLength = resultData["_state"]["fields"]["yAxis"].length;
+                const yAxisListLength =
+                    resultData["_state"]["fields"]["yAxis"].length;
                 for (let index = 0; index < yAxisListLength; index++) {
                     resultData["series"][index]["data"] = valuesDataSet.map(
                         (x) => {
