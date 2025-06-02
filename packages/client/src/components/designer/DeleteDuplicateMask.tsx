@@ -368,6 +368,35 @@ export const DeleteDuplicateMask = observer(
         return (
             <StyledContainer id="delete-duplicate-mask" style={getStyle()}>
                 <StyledButtonGroup>
+                    {isIterationOrContainer && (
+                        <>
+                            <Tooltip
+                                title={
+                                    isChangeable
+                                        ? 'Swap Child Block'
+                                        : 'Add Block to Content'
+                                }
+                            >
+                                <StyledButtonGroupIconButton
+                                    sx={{ color: '#757575' }}
+                                    onClick={(e) =>
+                                        setAnchorEl(e.currentTarget)
+                                    }
+                                >
+                                    {isChangeable ? <SwapHoriz /> : <Add />}
+                                </StyledButtonGroupIconButton>
+                            </Tooltip>
+                            {anchorEl && (
+                                <QuickMenu
+                                    parentId={block.id}
+                                    anchorEl={anchorEl}
+                                    quickMenu={quickMenu}
+                                    onClose={() => setAnchorEl(null)}
+                                    onSelect={addBlock}
+                                />
+                            )}
+                        </>
+                    )}
                     <Tooltip title="Add to client">
                         <StyledButtonGroupIconButton
                             sx={{ color: '#757575' }}
@@ -398,35 +427,6 @@ export const DeleteDuplicateMask = observer(
                             <DeleteOutline />
                         </StyledButtonGroupIconButton>
                     </Tooltip>
-                    {isIterationOrContainer && (
-                        <>
-                            <Tooltip
-                                title={
-                                    isChangeable
-                                        ? 'Swap Child Block'
-                                        : 'Add Block to Content'
-                                }
-                            >
-                                <StyledButtonGroupIconButton
-                                    sx={{ color: '#757575' }}
-                                    onClick={(e) =>
-                                        setAnchorEl(e.currentTarget)
-                                    }
-                                >
-                                    {isChangeable ? <SwapHoriz /> : <Add />}
-                                </StyledButtonGroupIconButton>
-                            </Tooltip>
-                            {anchorEl && (
-                                <QuickMenu
-                                    parentId={block.id}
-                                    anchorEl={anchorEl}
-                                    quickMenu={quickMenu}
-                                    onClose={() => setAnchorEl(null)}
-                                    onSelect={addBlock}
-                                />
-                            )}
-                        </>
-                    )}
                 </StyledButtonGroup>
                 <AddClientBlockModal
                     isOpen={openModal}
