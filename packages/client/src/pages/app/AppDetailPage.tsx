@@ -469,10 +469,14 @@ export const AppDetailPage = () => {
     const onSubmit = handleSubmit((data: AppDetailsFormTypes) => {
         // copy over the defined keys
         const meta = {} as AppDetailsFormTypes['detailsForm'];
+        let imageMeta = [] as File[];
         if (data.detailsForm) {
             for (const key in data.detailsForm) {
-                if (data.detailsForm[key] !== undefined) {
+                if (data.detailsForm[key] !== undefined && key !== 'appImage') {
                     meta[key] = data.detailsForm[key];
+                }
+                if (key === 'appImage') {
+                    imageMeta = data.detailsForm[key] as File[];
                 }
             }
         }
@@ -492,7 +496,7 @@ export const AppDetailPage = () => {
                     meta,
                 )}], jsonCleanup=[true])`,
             )
-            .then((response) => {
+            .then(async (response) => {
                 const { output, additionalOutput, operationType } =
                     response.pixelReturn[0];
 
@@ -504,6 +508,11 @@ export const AppDetailPage = () => {
                     });
 
                     return;
+                }
+
+                // upload the image
+                if (imageMeta && appId) {
+                    await monolithStore.uploadImage(imageMeta, appId);
                 }
 
                 // close it, refresh and succesfully message

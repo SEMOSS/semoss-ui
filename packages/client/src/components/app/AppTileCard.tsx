@@ -281,7 +281,8 @@ export const AppTileCard = (props: AppTileCardProps) => {
         if (!image) {
             return APP_IMAGES['INSIGHTS'][0];
         }
-
+        // eliminating random and making it static for now
+        randomInt = 0;
         return image[randomInt];
     };
 

@@ -17,6 +17,8 @@ import {
 
 import { GridBlockColumn } from "./grid-block.types";
 import { GridBlockContextMenu } from "./GridBlockContextMenu";
+import { VisualizationColumns } from "../echart-visualization-block";
+import { Typography } from "@semoss/ui";
 
 const DEFAULT_HEIGHT = "300px";
 const DEFAULT_WIDTH = "500px";
@@ -28,6 +30,12 @@ const StyledBlock = styled("div")(() => ({
     height: DEFAULT_HEIGHT,
     width: DEFAULT_WIDTH,
     overflow: "hidden",
+}));
+
+const StyledTitle = styled("div")(() => ({
+    display: "flex",
+
+    justifyContent: "start",
 }));
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
@@ -59,6 +67,31 @@ const StyledTablePagination = styled(TablePagination)(({ theme }) => ({
     background: theme.palette.background.paper,
 }));
 
+export interface HeaderBackgroundSettings {
+    backgroundColor: string;
+    fontSize: string;
+    fontColor: string;
+    selectedColumn: string[];
+}
+
+export interface CellBackgroundSettings {
+    backgroundColor: string;
+    fontSize: string;
+    fontColor: string;
+    selectedColumn: string[];
+}
+
+export interface ChartTitleSettings {
+    chartTitle: string;
+    fontSize: string;
+    fontColor: string;
+}
+
+export interface WrapTextSettings {
+    selectedColumn: string[];
+    textWrap: boolean;
+}
+
 export interface GridBlockDef extends BlockDef<"grid"> {
     widget: "grid";
 
@@ -73,7 +106,25 @@ export interface GridBlockDef extends BlockDef<"grid"> {
         columns: GridBlockColumn[];
 
         /** */
-        style: Pick<React.CSSProperties, "height" | "width">;
+        style: {
+            height: string | undefined;
+            width: string | undefined;
+            display: string | undefined;
+            flexDirection: string | undefined;
+            padding: string | undefined;
+            gap: string | undefined;
+            flexWrap: string | undefined;
+        };
+        option: {
+            // backgroundColor: string;
+            headerBackgroundSettings?: HeaderBackgroundSettings;
+            cellBackgroundSettings?: CellBackgroundSettings;
+            chartTitleSettings?: ChartTitleSettings;
+            wrapTextSettings?: WrapTextSettings;
+            rowSpanning?: boolean;
+        };
+        variation: undefined | string;
+        show: boolean;
 
         /** Context Menu */
         contextMenu?: {
@@ -144,6 +195,9 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
         return acc + parseInt(DEFAULT_COLUMN_WIDTH);
     }, 0);
 
+    console.log(data, "DATA");
+    console.log(frame, "Frame");
+
     /**
      * Handle the callback for the context menu
      * @param event - triggered event
@@ -174,8 +228,46 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
         );
     };
 
+    const headerSettings = {
+        // columns: [],
+        fontSize: "16",
+        fontColor: "#000000",
+        selectedColumn: [],
+        backgroundColor: "white",
+        ...data.option?.headerBackgroundSettings,
+    };
+
+    const cellSettings = {
+        // columns: [],
+        fontSize: "16",
+        fontColor: "#000000",
+        selectedColumn: [],
+        backgroundColor: "white",
+        ...data.option?.cellBackgroundSettings,
+    };
+
+    const titleSettings = data.option?.chartTitleSettings || {
+        chartTitle: "",
+        fontSize: "16",
+        fontColor: "#000000",
+    };
+
+    const wrapTextSettings = {
+        selectedColumn: [],
+        textWrap: false,
+        ...data.option?.wrapTextSettings,
+    };
+
     return (
         <StyledBlock sx={data.style} {...attrs}>
+            <StyledTitle
+                sx={{
+                    fontSize: `${titleSettings.fontSize}px`,
+                    color: titleSettings.fontColor,
+                }}
+            >
+                {titleSettings.chartTitle}
+            </StyledTitle>
             <StyledTableContainer>
                 <Table
                     size="small"
@@ -192,6 +284,38 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
                                         align="left"
                                         title={c.name}
                                         sx={{
+                                            fontSize:
+                                                headerSettings.selectedColumn.includes(
+                                                    c.name,
+                                                )
+                                                    ? `${headerSettings.fontSize}px`
+                                                    : undefined,
+                                            color: headerSettings.selectedColumn.includes(
+                                                c.name,
+                                            )
+                                                ? headerSettings.fontColor
+                                                : undefined,
+                                            backgroundColor:
+                                                headerSettings.selectedColumn.includes(
+                                                    c.name,
+                                                )
+                                                    ? headerSettings.backgroundColor
+                                                    : undefined,
+
+                                            whiteSpace:
+                                                wrapTextSettings.textWrap &&
+                                                wrapTextSettings.selectedColumn.includes(
+                                                    c.name,
+                                                )
+                                                    ? "normal"
+                                                    : "nowrap",
+                                            wordBreak:
+                                                wrapTextSettings.textWrap &&
+                                                wrapTextSettings.selectedColumn.includes(
+                                                    c.name,
+                                                )
+                                                    ? "break-word"
+                                                    : undefined,
                                             //This component is weird because it is a table / has a special layout, you have to either use minWidth or maxWidth
                                             maxWidth: !isNaN(Number(c.width))
                                                 ? c.width
@@ -238,6 +362,39 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
                                                     align="left"
                                                     title={str}
                                                     sx={{
+                                                        fontSize:
+                                                            cellSettings.selectedColumn.includes(
+                                                                c.name,
+                                                            )
+                                                                ? `${cellSettings.fontSize}px`
+                                                                : undefined,
+                                                        color: cellSettings.selectedColumn.includes(
+                                                            c.name,
+                                                        )
+                                                            ? cellSettings.fontColor
+                                                            : undefined,
+                                                        backgroundColor:
+                                                            cellSettings.selectedColumn.includes(
+                                                                c.name,
+                                                            )
+                                                                ? cellSettings.backgroundColor
+                                                                : undefined,
+
+                                                        whiteSpace:
+                                                            wrapTextSettings.textWrap &&
+                                                            wrapTextSettings.selectedColumn.includes(
+                                                                c.name,
+                                                            )
+                                                                ? "normal"
+                                                                : "nowrap",
+                                                        wordBreak:
+                                                            wrapTextSettings.textWrap &&
+                                                            wrapTextSettings.selectedColumn.includes(
+                                                                c.name,
+                                                            )
+                                                                ? "break-word"
+                                                                : undefined,
+
                                                         //This component is weird because it is a table / has a special layout, you have to either use minWidth or maxWidth
                                                         maxWidth: !isNaN(
                                                             Number(c.width),
