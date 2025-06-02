@@ -12,6 +12,7 @@ import {
     List,
     AddCard,
     SmartButton,
+    AddBox,
 } from '@mui/icons-material';
 
 import {
@@ -373,7 +374,7 @@ export const DeleteDuplicateMask = observer(
                             size="small"
                             onClick={() => setOpenModal(true)}
                         >
-                            <Add />
+                            <AddBox />
                         </StyledButtonGroupIconButton>
                     </Tooltip>
                     <Tooltip title="Duplicate">
@@ -399,7 +400,13 @@ export const DeleteDuplicateMask = observer(
                     </Tooltip>
                     {isIterationOrContainer && (
                         <>
-                            <Tooltip title={isChangeable ? 'Change' : 'Add'}>
+                            <Tooltip
+                                title={
+                                    isChangeable
+                                        ? 'Swap Child Block'
+                                        : 'Add Block to Content'
+                                }
+                            >
                                 <StyledButtonGroupIconButton
                                     sx={{ color: '#757575' }}
                                     onClick={(e) =>
