@@ -12,6 +12,7 @@ import {
     List,
     AddCard,
     SmartButton,
+    AddBox,
 } from '@mui/icons-material';
 
 import {
@@ -28,6 +29,7 @@ import {
     useBlocks,
     INPUT_BLOCK_TYPES,
 } from '@semoss/renderer';
+import { AddClientBlockModal } from './AddClientBlockModal';
 
 import { QuickMenu } from './QuickMenu';
 import { getRelativeSize, getBlockElement } from '@/stores';
@@ -85,11 +87,12 @@ export const DeleteDuplicateMask = observer(
             width: number;
         } | null>(null);
 
-        const notification = useNotification();
+        const [openModal, setOpenModal] = useState<boolean>(false);
 
         // get the store
         const { registry, state } = useBlocks();
         const { designer } = useDesigner();
+        const notification = useNotification();
 
         // get the block
         const block = state.getBlock(designer.selected);
@@ -163,7 +166,7 @@ export const DeleteDuplicateMask = observer(
             const leftValue =
                 size.left +
                 size.width -
-                STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH * 2 -
+                STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH * 3 -
                 12;
 
             let left: string;
@@ -365,6 +368,15 @@ export const DeleteDuplicateMask = observer(
         return (
             <StyledContainer id="delete-duplicate-mask" style={getStyle()}>
                 <StyledButtonGroup>
+                    <Tooltip title="Add to client">
+                        <StyledButtonGroupIconButton
+                            sx={{ color: '#757575' }}
+                            size="small"
+                            onClick={() => setOpenModal(true)}
+                        >
+                            <AddBox />
+                        </StyledButtonGroupIconButton>
+                    </Tooltip>
                     <Tooltip title="Duplicate">
                         <StyledButtonGroupIconButton
                             sx={{ color: '#757575' }}
@@ -388,7 +400,13 @@ export const DeleteDuplicateMask = observer(
                     </Tooltip>
                     {isIterationOrContainer && (
                         <>
-                            <Tooltip title={isChangeable ? 'Change' : 'Add'}>
+                            <Tooltip
+                                title={
+                                    isChangeable
+                                        ? 'Swap Child Block'
+                                        : 'Add Block to Content'
+                                }
+                            >
                                 <StyledButtonGroupIconButton
                                     sx={{ color: '#757575' }}
                                     onClick={(e) =>
@@ -410,6 +428,11 @@ export const DeleteDuplicateMask = observer(
                         </>
                     )}
                 </StyledButtonGroup>
+                <AddClientBlockModal
+                    isOpen={openModal}
+                    onClose={() => setOpenModal(false)}
+                    selected={designer.selected}
+                />
             </StyledContainer>
         );
     },

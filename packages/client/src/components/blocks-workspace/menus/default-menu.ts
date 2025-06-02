@@ -2970,7 +2970,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 type: 'custom',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {
                 children: [
                     {
@@ -2985,7 +2987,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                 border: '2px dotted #4a4a4a',
                             },
                         },
-                        listeners: {},
+                        listeners: {
+                            preProcess: { type: 'sync', order: [] },
+                        },
                         slots: {
                             children: [
                                 {
@@ -2999,7 +3003,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                             flex: '0 0 32%',
                                         },
                                     },
-                                    listeners: {},
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
                                     slots: {
                                         children: [],
                                     },
@@ -3015,7 +3021,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                             flex: '0 0 32%',
                                         },
                                     },
-                                    listeners: {},
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
                                     slots: {
                                         children: [],
                                     },
@@ -3031,7 +3039,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                             flex: '0 0 32%',
                                         },
                                     },
-                                    listeners: {},
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
                                     slots: {
                                         children: [],
                                     },
@@ -3047,7 +3057,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                             flex: '0 0 32%',
                                         },
                                     },
-                                    listeners: {},
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
                                     slots: {
                                         children: [],
                                     },
@@ -3063,7 +3075,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                             flex: '0 0 32%',
                                         },
                                     },
-                                    listeners: {},
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
                                     slots: {
                                         children: [],
                                     },
@@ -3079,7 +3093,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                             flex: '0 0 32%',
                                         },
                                     },
-                                    listeners: {},
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
                                     slots: {
                                         children: [],
                                     },
@@ -3095,7 +3111,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                             flex: '0 0 32%',
                                         },
                                     },
-                                    listeners: {},
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
                                     slots: {
                                         children: [],
                                     },
@@ -3111,7 +3129,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                             flex: '0 0 32%',
                                         },
                                     },
-                                    listeners: {},
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
                                     slots: {
                                         children: [],
                                     },
@@ -3127,7 +3147,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                             flex: '0 0 32%',
                                         },
                                     },
-                                    listeners: {},
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
                                     slots: {
                                         children: [],
                                     },

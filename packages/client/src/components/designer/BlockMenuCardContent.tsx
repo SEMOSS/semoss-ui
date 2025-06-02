@@ -1,4 +1,5 @@
 import { Stack, styled, Typography } from '@semoss/ui';
+import html2canvas from 'html2canvas';
 
 export interface BlockCardContentProps {
     name?: string;
