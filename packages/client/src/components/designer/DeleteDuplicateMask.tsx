@@ -33,7 +33,7 @@ import { AddClientBlockModal } from './AddClientBlockModal';
 
 import { QuickMenu } from './QuickMenu';
 import { getRelativeSize, getBlockElement } from '@/stores';
-import { useDesigner } from '@/hooks';
+import { useDesigner, useRootStore } from '@/hooks';
 
 const STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH = 48;
 const STYLED_BUTTON_GROUP_ICON_BUTTON_HEIGHT = 32;
@@ -93,6 +93,7 @@ export const DeleteDuplicateMask = observer(
         const { registry, state } = useBlocks();
         const { designer } = useDesigner();
         const notification = useNotification();
+        const { configStore } = useRootStore();
 
         // get the block
         const block = state.getBlock(designer.selected);
@@ -397,15 +398,17 @@ export const DeleteDuplicateMask = observer(
                             )}
                         </>
                     )}
-                    <Tooltip title="Add to client">
-                        <StyledButtonGroupIconButton
-                            sx={{ color: '#757575' }}
-                            size="small"
-                            onClick={() => setOpenModal(true)}
-                        >
-                            <AddBox />
-                        </StyledButtonGroupIconButton>
-                    </Tooltip>
+                    {configStore.store.user.admin && (
+                        <Tooltip title="Add to client">
+                            <StyledButtonGroupIconButton
+                                sx={{ color: '#757575' }}
+                                size="small"
+                                onClick={() => setOpenModal(true)}
+                            >
+                                <AddBox />
+                            </StyledButtonGroupIconButton>
+                        </Tooltip>
+                    )}
                     <Tooltip title="Duplicate">
                         <StyledButtonGroupIconButton
                             sx={{ color: '#757575' }}

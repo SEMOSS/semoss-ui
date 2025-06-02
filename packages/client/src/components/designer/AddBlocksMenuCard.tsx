@@ -17,7 +17,7 @@ import {
     Box,
 } from '@semoss/ui';
 
-import { useDesigner } from '@/hooks';
+import { useDesigner, useRootStore } from '@/hooks';
 import { BlockCardContent, blockCardWidth } from './BlockMenuCardContent';
 import {
     BlockLocalStorageData,
@@ -43,7 +43,7 @@ export interface AddBlocksMenuItemProps {
     item: DesignerMenuItem;
 
     /** Determined for snapshot code */
-    isClient: boolean;
+    isCommunity: boolean;
 
     /** Handle the trash click */
     handleOnTrashClick: (blockId: string, blockName: string) => void;
@@ -53,10 +53,11 @@ export interface AddBlocksMenuItemProps {
  * Individaul block that can be dragged onto the UI
  */
 export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
-    const { item, isClient, handleOnTrashClick } = props;
+    const { item, isCommunity, handleOnTrashClick } = props;
     const { state } = useBlocks();
     const { designer } = useDesigner();
     const notification = useNotification();
+    const { configStore } = useRootStore();
 
     const ref = useRef(null);
     const [imageSrc, setImageSrc] = useState(null);
@@ -348,7 +349,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                     <div style={{ position: 'relative' }}>
                         <BlockCardContent
                             image={
-                                isClient
+                                isCommunity
                                     ? imageSrc
                                     : hovered
                                     ? item.hoverImage
@@ -356,30 +357,32 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                             }
                             name={item.name}
                         />
-                        {hovered && isClient && (
-                            <Box
-                                sx={{
-                                    position: 'absolute',
-                                    top: '-5px',
-                                    right: '-5px',
-                                    zIndex: 1000,
-                                }}
-                            >
-                                <IconButton
-                                    size="small"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleOnTrashClick(
-                                            item['id'],
-                                            item.name,
-                                        );
+                        {hovered &&
+                            isCommunity &&
+                            configStore.store.user.admin && (
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        top: '-5px',
+                                        right: '-5px',
+                                        zIndex: 1000,
                                     }}
-                                    color="error"
                                 >
-                                    <DeleteOutline />
-                                </IconButton>
-                            </Box>
-                        )}
+                                    <IconButton
+                                        size="small"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOnTrashClick(
+                                                item['id'],
+                                                item.name,
+                                            );
+                                        }}
+                                        color="error"
+                                    >
+                                        <DeleteOutline />
+                                    </IconButton>
+                                </Box>
+                            )}
                     </div>
                 </Tooltip>
             </StyledCard>

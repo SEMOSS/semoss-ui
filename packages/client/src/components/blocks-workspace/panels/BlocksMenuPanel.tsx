@@ -21,7 +21,7 @@ import {
 
 import { runPixelTwo } from '../../../runPixelTwo';
 import { Panel } from '@/components/workspace';
-import { CLIENT_BLOCKS_MENU, SECTION_ORDER } from '../menus/default-menu';
+import { SECTION_ORDER } from '../menus/default-menu';
 import { AddBlocksMenuCard } from '@/components/designer';
 import { BlocksMenuPanelFilterMenu } from './BlocksMenuPanelFilterMenu';
 import {
@@ -90,7 +90,7 @@ const StyledTypography = styled(Typography)({
     userSelect: 'none',
 });
 
-type MODE = 'CLIENT' | 'SYSTEM';
+type MODE = 'COMMUNITY' | 'SYSTEM';
 export interface AddBlocksMenuProps {
     /** Title to render in the menu */
     title: string;
@@ -110,7 +110,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
     const { workspace } = useWorkspace();
 
     const [search, setSearch] = useState('');
-    const [clientBlock, setClientBlock] = useState([]);
+    const [communityBlock, setCommunityBlock] = useState([]);
     const [loading, setLoading] = useState(false);
     const [mode, setMode] = useState<MODE>('SYSTEM');
 
@@ -148,7 +148,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                         json: JSON.parse(JSON.stringify(item.json)),
                     };
                 });
-                setClientBlock(output as DesignerMenuItem[]);
+                setCommunityBlock(output as DesignerMenuItem[]);
                 setLoading(false);
             }
         });
@@ -160,7 +160,9 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
      * @param blockId - The unique identifier of the block to be deleted.
      */
     const deleteBlock = (blockId: string) => {
-        setClientBlock(clientBlock.filter((item) => item['id'] !== blockId));
+        setCommunityBlock(
+            communityBlock.filter((item) => item['id'] !== blockId),
+        );
         runPixelTwo(
             `DeleteBlock(blockId = "${blockId}", hardDelete = true)`,
         ).then((res) => {
@@ -212,8 +214,8 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
     };
 
     const sortedItems = useMemo(() => {
-        // Use Client Block when mode is CLIENT otherwise use items from the props
-        const dataToProcess = mode === 'CLIENT' ? clientBlock : items;
+        // Use community Block when mode is COMMUNITY otherwise use items from the props
+        const dataToProcess = mode === 'COMMUNITY' ? communityBlock : items;
         const sectionRecord: Record<string, DesignerMenuItem[]> = {};
         const newSectionOrder: string[] = [...SECTION_ORDER];
         // Group items by section
@@ -235,7 +237,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                 );
             })
             .filter((section) => section.length > 0);
-    }, [items, mode, clientBlock, SECTION_ORDER]);
+    }, [items, mode, communityBlock, SECTION_ORDER]);
 
     // get the rendered items
     const renderedItems: DesignerMenuItem[][] = useMemo(() => {
@@ -329,7 +331,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
         });
     }, [items]);
 
-    const isClient = mode === 'CLIENT';
+    const isCommunity = mode === 'COMMUNITY';
 
     return (
         <Panel>
@@ -374,7 +376,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                         value={mode}
                         onChange={(e: React.SyntheticEvent, val) => {
                             setMode(val as MODE);
-                            if (val === 'CLIENT') {
+                            if (val === 'COMMUNITY') {
                                 getClientBlocks();
                             }
                         }}
@@ -384,8 +386,8 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                             value={'SYSTEM'}
                         />
                         <StyledToggleTabsGroupItem
-                            label="Client Blocks"
-                            value={'CLIENT'}
+                            label="Community Blocks"
+                            value={'COMMUNITY'}
                         />
                     </StyledToggleTabsGroup>
                 </Stack>
@@ -422,7 +424,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                                             <Grid item key={block.name}>
                                                 <AddBlocksMenuCard
                                                     item={block}
-                                                    isClient={isClient}
+                                                    isCommunity={isCommunity}
                                                     handleOnTrashClick={
                                                         handleOnTrashClick
                                                     }
