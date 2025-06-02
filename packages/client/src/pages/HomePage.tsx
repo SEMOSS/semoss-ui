@@ -415,8 +415,14 @@ export const HomePage = observer((): JSX.Element => {
                                                   width={250}
                                                   height={118}
                                               />
-                                              <Skeleton width="100%" height={25} />
-                                              <Skeleton width="60%" height={25} />
+                                              <Skeleton
+                                                  width="100%"
+                                                  height={25}
+                                              />
+                                              <Skeleton
+                                                  width="60%"
+                                                  height={25}
+                                              />
                                           </AppTileSkeleton>
                                       ))
                                     : favoritedApps.map((app) => (
