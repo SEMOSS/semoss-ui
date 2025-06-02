@@ -584,7 +584,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_ELEMENT,
         name: 'Ratings ',
-        helperText: 'Rate on a scale',
+        helperText: 'Add an rating to your layout',
+        activeImage: BLOCK_IMAGES['RATING_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['RATING_HOVER'],
         json: {
             widget: 'ratings',
             data: {
