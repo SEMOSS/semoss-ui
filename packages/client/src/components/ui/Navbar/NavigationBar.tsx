@@ -1,4 +1,4 @@
-import { ChangeEvent, useMemo, useState } from 'react';
+import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import SearchIcon from '@mui/icons-material/Search';
 import MenuIcon from '@mui/icons-material/Menu';
 
@@ -19,6 +19,7 @@ import { Logo } from '@/assets/img/Logo';
 import { useRootStore } from '@/hooks';
 import Search from './Search';
 import { useLocation } from 'react-router-dom';
+import { observer } from 'mobx-react-lite';
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
     borderBottom: '1px solid #EAEAEE',
@@ -139,14 +140,12 @@ const StyledSwitch = styled(Switch)(({ theme }) => ({
 interface NavigationBarProps {
     onOpen: () => void;
 }
-export const NavigationBar = (props: NavigationBarProps) => {
+export const NavigationBar = observer((props: NavigationBarProps) => {
     const { onOpen } = props;
     const { configStore } = useRootStore();
     const location = useLocation();
 
-    const [showAppBuilder, setShowAppBuilder] = useState(
-        configStore.store.isAppBuilder,
-    );
+    const [showAppBuilder, setShowAppBuilder] = useState(false);
 
     const themeMap = useMemo(() => {
         const theme = configStore.store.config['theme'];
@@ -161,6 +160,11 @@ export const NavigationBar = (props: NavigationBarProps) => {
 
         return {};
     }, [Object.keys(configStore.store.config).length]);
+
+    useEffect(() => {
+        setShowAppBuilder(configStore.store.isAppBuilder);
+    }, [configStore.store.isAppBuilder]);
+
     return (
         <StyledAppBar>
             <Toolbar>
@@ -226,23 +230,9 @@ export const NavigationBar = (props: NavigationBarProps) => {
                                     e: ChangeEvent<HTMLInputElement>,
                                 ) => {
                                     setShowAppBuilder(e.target.checked);
-
-                                    const key = `builder--${configStore.store.userEpoch}`;
-                                    if (e.target.checked) {
-                                        localStorage.setItem(
-                                            key,
-                                            JSON.stringify({ state: true }),
-                                        );
-                                        configStore.setAppBuilderMode(true);
-                                    } else {
-                                        const item = localStorage.getItem(
-                                            `builder--${configStore.store.userEpoch}`,
-                                        );
-                                        if (item) {
-                                            localStorage.removeItem(key);
-                                        }
-                                        configStore.setAppBuilderMode(false);
-                                    }
+                                    configStore.setAppBuilderMode(
+                                        e.target.checked,
+                                    );
                                 }}
                             ></StyledSwitch>
                         </StyledAppBuilderSection>
@@ -251,4 +241,4 @@ export const NavigationBar = (props: NavigationBarProps) => {
             </Toolbar>
         </StyledAppBar>
     );
-};
+});

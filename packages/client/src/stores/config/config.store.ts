@@ -463,6 +463,19 @@ export class ConfigStore {
      * @param bool
      */
     async setAppBuilderMode(bool) {
+        const key = `builder--${this._store.userEpoch}`;
+
+        if (bool) {
+            localStorage.setItem(key, JSON.stringify({ state: true }));
+        } else {
+            const item = localStorage.getItem(
+                `builder--${this._store.userEpoch}`,
+            );
+            if (item) {
+                localStorage.removeItem(key);
+            }
+        }
+
         runInAction(() => {
             this._store.isAppBuilder = bool;
         });

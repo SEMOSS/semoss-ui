@@ -1,6 +1,19 @@
+import React from 'react';
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { Env } from '@semoss/sdk/react';
+import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
+import {
+    AccessTime,
+    MoreVert,
+    Bookmark,
+    BookmarkBorder,
+    OpenInNewOutlined,
+    DashboardRounded,
+    CodeRounded,
+    BarChartRounded,
+} from '@mui/icons-material';
+
+import { Env } from '@semoss/sdk/react';
 import {
     Card,
     Chip,
@@ -14,23 +27,12 @@ import {
     CardProps,
     Skeleton,
 } from '@semoss/ui';
-import {
-    AccessTime,
-    MoreVert,
-    Bookmark,
-    BookmarkBorder,
-    OpenInNewOutlined,
-    DashboardRounded,
-    CodeRounded,
-    BarChartRounded,
-} from '@mui/icons-material';
+
 import { AppMetadata } from './app.types';
 import { APP_IMAGES } from './app.images';
 import { removeUnderscores } from '@/utility';
 import { AppDeleteModal } from '@/components/app';
-import { useNavigate } from 'react-router-dom';
 import { AddAppCloneModal } from '@/components/app/save-app/AddAppCloneModal';
-import React from 'react';
 import ImageSkeleton from '@/assets/img/Image_Skeleton.svg';
 
 const StyledName = styled(Typography)(() => ({
@@ -422,9 +424,9 @@ export const AppTileCard = (props: AppTileCardProps) => {
         const observer = new window.IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
-                    console.log(entry, 'entry');
+                    // console.log(entry, 'entry');
                     if (entry.isIntersecting) {
-                        console.log('Card is in view');
+                        // console.log('Card is in view');
                         setIsInView(true);
                     }
                 });

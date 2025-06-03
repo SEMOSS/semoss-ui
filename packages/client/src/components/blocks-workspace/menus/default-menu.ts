@@ -22,7 +22,7 @@ export const SECTION_ORDER = [
     SECTION_ELEMENT,
     SECTION_MISC,
     SECTION_CHARTS,
-    SECTION_GROUPED,
+    // SECTION_GROUPED,
 ];
 
 // Development Environment Blocks

@@ -308,25 +308,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
                         >
                             Apps
                         </Typography>
-
-                        {/* <TextField
-                            placeholder="Search"
-                            size="small"
-                            sx={{
-                                width: '200px',
-                            }}
-                            value={search}
-                            variant="outlined"
-                            onChange={(e) => setSearch(e.target.value)}
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <Search fontSize="medium" />
-                                    </InputAdornment>
-                                ),
-                            }}
-                        /> */}
-                        {/* </Stack> */}
                         {configStore.isEngineOperationAvailable(
                             'APP',
                             'add',
@@ -335,7 +316,8 @@ export const AppCatalogPage = observer((): JSX.Element => {
                                 size={'large'}
                                 variant={'contained'}
                                 onClick={() => {
-                                    navigate('/app/new');
+                                    configStore.setAppBuilderMode(true);
+                                    navigate('/');
                                 }}
                                 aria-label={`Open the App Model`}
                                 data-testid={'home-create-app-btn'}
