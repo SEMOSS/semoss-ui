@@ -456,6 +456,18 @@ export const EngineCatalogPage = observer(
             };
         }, [scrollEle]);
 
+        /**
+         * Reset tiles anytime search changes
+         */
+        useEffect(() => {
+            dispatch({
+                type: 'field',
+                field: 'databases',
+                value: [],
+            });
+            setOffset(0);
+        }, [search]);
+
         // finish loading the page
         if (
             getDatabases.status === 'ERROR' ||
@@ -474,11 +486,6 @@ export const EngineCatalogPage = observer(
                             justifyContent={'space-between'}
                             spacing={4}
                         >
-                            {/* <Stack
-                                direction="row"
-                                alignItems={'center'}
-                                spacing={2}
-                            > */}
                             <Typography variant={'h4'}>
                                 {route ? route.name : ''} Catalog
                             </Typography>
