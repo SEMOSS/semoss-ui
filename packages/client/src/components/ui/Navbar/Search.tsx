@@ -20,10 +20,10 @@ import { useNavigate } from 'react-router-dom';
 // Dummy data for illustration
 const categories = [
     { name: 'All', type: 'All' },
-    { name: 'Catalogs', type: 'Engine' },
-    { name: 'Apps', type: 'App' },
-    { name: 'Teams', type: 'Team' },
-    { name: 'Settings', type: 'Settings' },
+    { name: 'Catalogs', type: 'ENGINE' },
+    { name: 'Apps', type: 'PROJECT' },
+    // { name: 'Teams', type: 'Team' },
+    // { name: 'Settings', type: 'Settings' },
 ];
 const recentSearches = [
     // { label: 'Project Alpha' },
@@ -130,7 +130,7 @@ const Search = observer(({ renderInput }: SearchProps) => {
                 ...x,
                 label: x.project_name || x.app_name,
                 id: x.project_id || x.app_id,
-                section: x.app_type || 'App',
+                section: x.app_type || 'APP',
             };
         });
     }
@@ -201,12 +201,17 @@ const Search = observer(({ renderInput }: SearchProps) => {
                             // },
                         }}
                         onClick={() => {
-                            if (option.section === '')
+                            if (option.section === 'APP') {
                                 navigate(`app/${option.id}`);
+                            } else {
+                                navigate(
+                                    `engine/${option.section.toLowerCase()}/${
+                                        option.id
+                                    }`,
+                                );
+                            }
                         }}
                     >
-                        {/* {typeof option === 'string' ? option : option.label}{' '}
-                        {option.database_id} */}
                         <CatalogItem
                             icon={''}
                             title={option.label}
@@ -219,7 +224,8 @@ const Search = observer(({ renderInput }: SearchProps) => {
             renderGroup={(params) => (
                 <li>
                     <Typography variant={'body2'} color="secondary">
-                        {params.group}
+                        {params.group.charAt(0).toUpperCase() +
+                            params.group.slice(1).toLowerCase()}
                     </Typography>
                     <Divider />
                     <div>{params.children}</div>
