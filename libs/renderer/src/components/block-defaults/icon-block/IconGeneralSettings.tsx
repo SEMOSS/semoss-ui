@@ -39,10 +39,25 @@ export const IconGeneralSettings = ({ id }: { id: string }) => {
     return (
         <>
             {/* Toggle field */}
-            <Stack sx={{ flexDirection: "row", alignItems: "center", gap: 2, mt: 1 }}>
-                <Stack direction="row" alignItems="center" spacing={0.5} width="100%">
+            <Stack
+                sx={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 2,
+                    mt: 1,
+                }}
+            >
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={0.5}
+                    width="100%"
+                >
                     <Typography variant="body2">Show Badge</Typography>
-                    <Tooltip title="Toggle to display or hide the badge on the icon" arrow>
+                    <Tooltip
+                        title="Toggle to display or hide the badge on the icon"
+                        arrow
+                    >
                         <HelpOutlineIcon
                             color="action"
                             sx={{ fontSize: 15, ml: "5px" }}
@@ -50,14 +65,14 @@ export const IconGeneralSettings = ({ id }: { id: string }) => {
                     </Tooltip>
                 </Stack>
                 <Switch
-                    value={showBadge}    
+                    value={showBadge}
                     checked={showBadge}
                     onChange={toggleShowBadge}
                     size="small"
                     color="primary"
                 />
             </Stack>
-
+            {/* Render badge settings if showBadge is true */}
             {showBadge && (
                 <>
                     <InputSettings

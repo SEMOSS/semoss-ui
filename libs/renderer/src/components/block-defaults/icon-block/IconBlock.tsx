@@ -14,7 +14,14 @@ export interface IconBlockDef extends BlockDef<"icon"> {
         title: string;
         show: string;
         badgeContent: number;
-        color: "primary" | "default" | "secondary" | "error" | "info" | "success" | "warning";
+        color:
+            | "primary"
+            | "default"
+            | "secondary"
+            | "error"
+            | "info"
+            | "success"
+            | "warning";
         showBadge: boolean;
     };
     slots: never;
@@ -30,8 +37,19 @@ export const IconBlock: BlockComponent = observer(({ id }) => {
         const maxWidth = data.style.maxWidth ?? null;
         const height = data.style.height ?? null;
         const maxHeight = data.style.maxHeight ?? null;
+        const iconElement = (
+            <Icon sx={{ width, maxWidth, height, maxHeight, color }} />
+        );
 
-        return <Badge badgeContent={data.badgeContent} color={data.color}><Icon sx={{ width, maxWidth, height, maxHeight, color }} /></Badge>;
+        if (data.showBadge && data.badgeContent > 0) {
+            return (
+                <Badge badgeContent={data.badgeContent} color={data.color}>
+                    {iconElement}
+                </Badge>
+            );
+        }
+
+        return iconElement;
     };
 
     return (
