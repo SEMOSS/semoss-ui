@@ -88,7 +88,7 @@ export const FrameOperations = observer(
         const [search, setSearch] = useState("");
         const [isAdd, setIsAdd] = useState(false);
         const [addedColumnName, setAddedColumnName] = useState("");
-        const [droppedColumns, setDroppedColumns] = useState<Record<string, string[]>>({});
+        const [droppedColumns, setDroppedColumns] = useState<Record<string, any>>({});
         const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
         const [accordionSection, setAccordionSection] = useState<AccordionSection[]>([{
             ["preProcess"]:{
@@ -133,7 +133,10 @@ export const FrameOperations = observer(
             storedColumns.forEach((item, index) => {
                 const key = `data-tab-drop-area-${index}`;
                 if (item.values && item.values.length > 0) {
-                    updatedColumns[key] = item.values;
+                    updatedColumns[key] = {
+                        values: item.values,
+                        dataType: item.dataType,
+                    }
                 }
             });
             if (JSON.stringify(updatedColumns) !== JSON.stringify(droppedColumns)) {
@@ -921,6 +924,22 @@ export const FrameOperations = observer(
                     setData("facet.facetSelected", []);
                 }
             }
+
+            const checkAggregate = (functionName) => ({ NUMBER: 'Average', STRING: 'Count' }[functionName] || functionName);
+            const formatAggregates = () => {
+                const formattedAggregates = {};
+                columnsValue.forEach((column, columnIndex) => {
+                    const valueMap = {};
+                    column?.values?.forEach((value, valueIndex) => {
+                        valueMap[value] = chart[columnIndex]?.aggregate
+                            ? checkAggregate(column?.dataType[valueIndex])
+                            : "";
+                    });
+                    formattedAggregates[column.label] = valueMap;
+                });
+                return formattedAggregates;
+            }
+            setData("aggregate", formatAggregates());
         }
         function dispatchData(option) {
             if (timeoutRef.current) {
@@ -960,18 +979,26 @@ export const FrameOperations = observer(
             const { source, destination, draggableId } = result;
             const dropId = destination.droppableId;
 
-            setDroppedColumns((prev) => {
-                const updated = { ...prev };
-                if (!updated[dropId]) updated[dropId] = [];
-                updated[dropId].push(draggableId);
-                return updated;
-            });
+            const updated = { ...droppedColumns };
+            if (!updated[dropId]) updated[dropId] = {values: [], dataType: []};
+            const dropCol = filteredColumns.find((col) => col?.name === draggableId);
+            updated[dropId] = {
+                ...updated[dropId],
+                values: [...updated[dropId]?.values, draggableId],
+                dataType: [...updated[dropId]?.dataType, dropCol?.dataType],
+            };
+            setDroppedColumns(updated);
         };
         const deleteDroppedColumn = (columnName: string) => {
             setDroppedColumns((prev) => {
                 const updated = { ...prev };
                 for (const key in updated) {
-                    updated[key] = updated[key].filter((col) => col !== columnName);
+                    let index = updated[key]["values"].indexOf(columnName);
+                    updated[key] = {
+                        ...updated[key],
+                        values: [...updated[key]["values"]?.slice(0, index), ...updated[key]["values"].slice(index + 1)],
+                        dataType: [...updated[key]["dataType"]?.slice(0, index), ...updated[key]["dataType"].slice(index + 1)],
+                    };
                 }
                 return updated;
             });
@@ -1136,16 +1163,18 @@ export const FrameOperations = observer(
                                                                             const updated = { ...prev };
                                                                             if (e.target.checked) {
                                                                                 // Add the column name if checked
-                                                                                if (!updated[addedColumnName]) updated[addedColumnName] = [];
-                                                                                updated[addedColumnName].push(col.name);
+                                                                                if (!updated[addedColumnName]) updated[addedColumnName] = { values: [], dataType: [] };
+                                                                                updated[addedColumnName] = {
+                                                                                    values: [...updated[addedColumnName].values, col.name],
+                                                                                    dataType: [...updated[addedColumnName].dataType, col.dataType],
+                                                                                };
                                                                             } else {
                                                                                 // Remove the column name if unchecked
                                                                                 if (updated[addedColumnName]) {
-                                                                                    updated[addedColumnName] = updated[addedColumnName].filter(
-                                                                                        (name) => name !== col.name
-                                                                                    );
+                                                                                    let index = updated[addedColumnName]["values"].indexOf(col.name);
+                                                                                    updated[addedColumnName] = updated[addedColumnName].values.splice(index, 1);
                                                                                     // If the array becomes empty, you can optionally delete the key
-                                                                                    if (updated[addedColumnName].length === 0) {
+                                                                                    if (updated[addedColumnName]?.values?.length === 0) {
                                                                                         delete updated[addedColumnName];
                                                                                     }
                                                                                 }
