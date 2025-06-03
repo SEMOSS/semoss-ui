@@ -120,9 +120,9 @@ const Search = observer(({ renderInput }: SearchProps) => {
     const result = usePixel(`
         MyEngineProject(metaKeys = ${JSON.stringify(
             [],
-        )}, metaFilters=[{}], filterWord=[${searchValue}], type=[${
+        )}, metaFilters=[{}], filterWord=["${searchValue}"], type=["${
         isAll ? '' : selectedCategories.map((x) => x.type)
-    }], sub_type=[], onlyPortals=[true]);
+    }"], sub_type=[], onlyPortals=[true]);
         `);
     if (result.data !== null && Array.isArray(result.data)) {
         data = result.data.map((x) => {
@@ -130,6 +130,7 @@ const Search = observer(({ renderInput }: SearchProps) => {
                 ...x,
                 label: x.project_name || x.app_name,
                 id: x.project_id || x.app_id,
+                section: x.app_type || 'App',
             };
         });
     }
@@ -145,6 +146,21 @@ const Search = observer(({ renderInput }: SearchProps) => {
         );
     };
 
+    const limitOptionsPerGroup = (options, maxPerGroup = 3) => {
+        const grouped = {};
+        options.forEach((opt) => {
+            const group = opt.section || '';
+            if (!grouped[group]) grouped[group] = [];
+            if (grouped[group].length < maxPerGroup) {
+                grouped[group].push(opt);
+            }
+        });
+
+        return Object.values(grouped).flat();
+    };
+
+    data = limitOptionsPerGroup(data, 3);
+
     return (
         <Autocomplete
             freeSolo
@@ -152,6 +168,7 @@ const Search = observer(({ renderInput }: SearchProps) => {
             onOpen={() => setOpen(true)}
             // onBlur={() => setOpen(false)}
             onClose={() => setOpen(false)}
+            groupBy={(option) => option.section || ''}
             inputValue={searchValue}
             onInputChange={handleInputChange}
             options={
@@ -174,19 +191,6 @@ const Search = observer(({ renderInput }: SearchProps) => {
                     sx={{ padding: 0, flexDirection: 'column' }}
                     key={option.label}
                 >
-                    <Typography
-                        variant="h6"
-                        sx={{
-                            marginBottom: 0,
-                            width: '100%',
-                            fontSize: '14px',
-                            padding: '0 16px',
-                            color: '#666666',
-                        }}
-                    >
-                        Group Label
-                        {/* {option.label} */}
-                    </Typography>
                     <List.ItemButton
                         sx={{
                             width: '100%',
@@ -197,12 +201,14 @@ const Search = observer(({ renderInput }: SearchProps) => {
                             // },
                         }}
                         onClick={() => {
-                            navigate(`app/${option.id}`);
+                            if (option.section === '')
+                                navigate(`app/${option.id}`);
                         }}
                     >
                         {/* {typeof option === 'string' ? option : option.label}{' '}
                         {option.database_id} */}
                         <CatalogItem
+                            icon={''}
                             title={option.label}
                             description={option.description}
                         />
@@ -210,75 +216,81 @@ const Search = observer(({ renderInput }: SearchProps) => {
                 </List.Item>
             )}
             noOptionsText={'No results found'}
-            renderGroup={(params) => <>{params.children}</>}
+            renderGroup={(params) => (
+                <li>
+                    <Typography variant={'body2'} color="secondary">
+                        {params.group}
+                    </Typography>
+                    <Divider />
+                    <div>{params.children}</div>
+                </li>
+            )}
             PaperComponent={({ children }) => (
                 <Paper>
-                    {!searchValue ? (
-                        <Box sx={{ p: 2 }}>
-                            <Typography variant="body2" sx={{ mb: 1 }}>
-                                I'm Searching for
-                            </Typography>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    gap: 1,
-                                    flexWrap: 'wrap',
-                                    mb: 2,
-                                }}
-                            >
-                                {categories.map((category) => {
-                                    const { name } = category;
-                                    const isSelected = selectedCategories.some(
-                                        (c) => c.name === name,
-                                    );
-                                    return (
-                                        <Chip
-                                            key={name}
-                                            label={name}
-                                            size="small"
-                                            sx={{
-                                                backgroundColor: isSelected
-                                                    ? '#C4C4C4'
-                                                    : 'unset',
-                                                border: isSelected
-                                                    ? '1px solid #C4C4C4'
-                                                    : '1px solid #E0E0E0',
-                                                color: isSelected
-                                                    ? '#ffffff'
-                                                    : '#000',
-                                            }}
-                                            clickable
-                                            onMouseDown={(e) =>
-                                                e.preventDefault()
-                                            }
-                                            onClick={() => {
-                                                handleCategoryToggle(category);
-                                            }}
-                                        />
-                                    );
-                                })}
-                            </Box>
-                            <Divider sx={{ borderColor: '#DDE1E6' }} />
+                    {/* {!searchValue ? ( */}
+                    <Box sx={{ p: 2 }}>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                            I'm Searching for
+                        </Typography>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                gap: 1,
+                                flexWrap: 'wrap',
+                                mb: 2,
+                            }}
+                        >
+                            {categories.map((category) => {
+                                const { name } = category;
+                                const isSelected = selectedCategories.some(
+                                    (c) => c.name === name,
+                                );
+                                return (
+                                    <Chip
+                                        key={name}
+                                        label={name}
+                                        size="small"
+                                        sx={{
+                                            backgroundColor: isSelected
+                                                ? '#C4C4C4'
+                                                : 'unset',
+                                            border: isSelected
+                                                ? '1px solid #C4C4C4'
+                                                : '1px solid #E0E0E0',
+                                            color: isSelected
+                                                ? '#ffffff'
+                                                : '#000',
+                                        }}
+                                        clickable
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={() => {
+                                            handleCategoryToggle(category);
+                                        }}
+                                    />
+                                );
+                            })}
+                        </Box>
+                        {children}
+                        <Divider sx={{ borderColor: '#DDE1E6' }} />
+                        {!searchValue && (
                             <Typography
                                 variant="subtitle2"
                                 sx={{ mb: 1, color: '#9E9E9E' }}
                             >
                                 Recents
                             </Typography>
-                            {recentSearches.map(({ label }) => (
-                                <Box key={label} sx={{ mb: 0.5 }}>
-                                    <Typography
-                                        variant="body2"
-                                        sx={{ cursor: 'pointer' }}
-                                    >
-                                        {label}
-                                    </Typography>
-                                </Box>
-                            ))}
-                        </Box>
-                    ) : (
-                        children
-                    )}
+                        )}
+                        {recentSearches.map(({ label }) => (
+                            <Box key={label} sx={{ mb: 0.5 }}>
+                                <Typography
+                                    variant="body2"
+                                    sx={{ cursor: 'pointer' }}
+                                >
+                                    {label}
+                                </Typography>
+                            </Box>
+                        ))}
+                    </Box>
                 </Paper>
             )}
         />

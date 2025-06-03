@@ -388,7 +388,7 @@ export const lightTheme: CustomThemeOptions = {
         },
         h5: {
             /* Typography/H5 */
-            fontSize: "24px",
+            fontSize: "4px",
             fontStyle: "normal",
             fontWeight: "500",
             lineHeight: "133.4%",
