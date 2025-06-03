@@ -9,9 +9,12 @@ import {
     Paper,
     Divider,
     Typography,
+    Card,
+    Grid,
 } from '@semoss/ui';
 import Autocomplete from '@mui/material/Autocomplete';
 import Chip from '@mui/material/Chip';
+import NorthEastIcon from '@mui/icons-material/NorthEast';
 import { useNavigate } from 'react-router-dom';
 
 // Dummy data for illustration
@@ -27,6 +30,73 @@ const recentSearches = [
     // { label: 'Project Beta' },
     // { label: 'Dashboard 2024' },
 ];
+
+const CatalogItem = ({
+    title,
+    description = 'Sample description',
+    icon = '',
+}) => (
+    <Card
+        sx={{
+            marginBottom: '5px',
+            width: '100%',
+            boxShadow: 'none',
+            backgroundColor: 'transparent',
+            '&:hover': {
+                boxShadow: 'none',
+                backgroundColor: 'transparent',
+            },
+            '& :last-child': {
+                paddingBottom: 0,
+            },
+        }}
+    >
+        <Card.Content
+            sx={{
+                padding: '5px 16px',
+                margin: 0,
+                '&.MuiCardContent-root:last-child': {
+                    paddingBottom: 0,
+                },
+            }}
+        >
+            <Grid
+                container
+                alignItems="center"
+                justifyContent={'space-between'}
+            >
+                <Grid item xs={1}>
+                    {/* <img
+                        src={icon}
+                        alt={`${title} icon`}
+                        style={{ width: '40px', height: '40px' }}
+                    /> */}
+                    <span style={{ width: '40px', height: '40px' }}>image</span>
+                </Grid>
+                <Grid item xs={9}>
+                    <Typography
+                        variant="h6"
+                        sx={{ fontSize: '14px', color: '#212121' }}
+                    >
+                        {title}
+                    </Typography>
+                    <Typography
+                        variant="body2"
+                        sx={{ color: 'rgba(0, 0, 0, 0.60)', fontSize: '12px' }}
+                    >
+                        {description}
+                    </Typography>
+                </Grid>
+                <Grid item xs={2} container justifyContent="flex-end">
+                    {/* <IconButton>
+                        <CallMadeIcon />
+                    </IconButton> */}
+                    <NorthEastIcon sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
+                </Grid>
+            </Grid>
+        </Card.Content>
+    </Card>
+);
 
 function CustomPopper(props) {
     return <Popper {...props} placement="bottom-start" />;
@@ -100,14 +170,42 @@ const Search = observer(({ renderInput }: SearchProps) => {
             }
             renderInput={renderInput}
             renderOption={(props, option) => (
-                <List.Item sx={{ padding: 0 }} key={option.label}>
+                <List.Item
+                    sx={{ padding: 0, flexDirection: 'column' }}
+                    key={option.label}
+                >
+                    <Typography
+                        variant="h6"
+                        sx={{
+                            marginBottom: 0,
+                            width: '100%',
+                            fontSize: '14px',
+                            padding: '0 16px',
+                            color: '#666666',
+                        }}
+                    >
+                        Group Label
+                        {/* {option.label} */}
+                    </Typography>
                     <List.ItemButton
+                        sx={{
+                            width: '100%',
+                            padding: 0,
+                            // '&:hover': {
+                            //     backgroundColor: 'transparent', // No background on hover
+                            //     color: 'inherit', // No color change on hover
+                            // },
+                        }}
                         onClick={() => {
                             navigate(`app/${option.id}`);
                         }}
                     >
-                        {typeof option === 'string' ? option : option.label}{' '}
-                        {option.database_id}
+                        {/* {typeof option === 'string' ? option : option.label}{' '}
+                        {option.database_id} */}
+                        <CatalogItem
+                            title={option.label}
+                            description={option.description}
+                        />
                     </List.ItemButton>
                 </List.Item>
             )}
