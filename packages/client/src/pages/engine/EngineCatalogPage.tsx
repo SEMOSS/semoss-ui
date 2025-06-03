@@ -148,8 +148,7 @@ export const EngineCatalogPage = observer(
         offsetRef.current = offset;
         let scrollEle, scrollTimeout, currentScroll, previousScroll;
 
-        // save the search string
-        const [search, setSearch] = useState<string>('');
+        const search = configStore.store.globalSearch || '';
 
         // which view we are on
         const [mode, setMode] = useState<MODE>('Mine');
@@ -475,16 +474,16 @@ export const EngineCatalogPage = observer(
                             justifyContent={'space-between'}
                             spacing={4}
                         >
-                            <Stack
+                            {/* <Stack
                                 direction="row"
                                 alignItems={'center'}
                                 spacing={2}
-                            >
-                                <Typography variant={'h4'}>
-                                    {route ? route.name : ''} Catalog
-                                </Typography>
+                            > */}
+                            <Typography variant={'h4'}>
+                                {route ? route.name : ''} Catalog
+                            </Typography>
 
-                                <TextField
+                            {/* <TextField
                                     size="small"
                                     sx={{
                                         width: '200px',
@@ -510,8 +509,8 @@ export const EngineCatalogPage = observer(
                                             </InputAdornment>
                                         ),
                                     }}
-                                />
-                            </Stack>
+                                /> */}
+                            {/* </Stack> */}
                             {configStore.isEngineOperationAvailable(
                                 route.type,
                                 'add',
@@ -628,6 +627,7 @@ export const EngineCatalogPage = observer(
                                                 id={db.database_id}
                                                 tag={db.tag}
                                                 owner={db.database_created_by}
+                                                date={db.database_date_created}
                                                 description={db.description}
                                                 votes={db.upvotes}
                                                 views={db.views}
@@ -689,6 +689,7 @@ export const EngineCatalogPage = observer(
                                                 type={db.database_type}
                                                 id={db.database_id}
                                                 tag={db.tag}
+                                                date={db.database_date_created}
                                                 owner={db.database_created_by}
                                                 description={db.description}
                                                 votes={db.upvotes}

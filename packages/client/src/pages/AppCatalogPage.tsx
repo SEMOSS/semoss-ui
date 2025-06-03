@@ -144,8 +144,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
     const [state, dispatch] = useReducer(reducer, initialState);
     const { favoritedApps, apps } = state;
-
-    const [search, setSearch] = useState<string>('');
+    const search = configStore.store.globalSearch || '';
     const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
     const [mode, setMode] = useState<MODE>('Mine');
 
@@ -298,36 +297,36 @@ export const AppCatalogPage = observer((): JSX.Element => {
                         justifyContent={'space-between'}
                         spacing={4}
                     >
-                        <Stack
+                        {/* <Stack
                             direction="row"
                             alignItems={'center'}
                             spacing={2}
+                        > */}
+                        <Typography
+                            data-tour="app-library-title"
+                            variant={'h4'}
                         >
-                            <Typography
-                                data-tour="app-library-title"
-                                variant={'h4'}
-                            >
-                                Apps
-                            </Typography>
+                            Apps
+                        </Typography>
 
-                            <TextField
-                                placeholder="Search"
-                                size="small"
-                                sx={{
-                                    width: '200px',
-                                }}
-                                value={search}
-                                variant="outlined"
-                                onChange={(e) => setSearch(e.target.value)}
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <Search fontSize="medium" />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                            />
-                        </Stack>
+                        {/* <TextField
+                            placeholder="Search"
+                            size="small"
+                            sx={{
+                                width: '200px',
+                            }}
+                            value={search}
+                            variant="outlined"
+                            onChange={(e) => setSearch(e.target.value)}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <Search fontSize="medium" />
+                                    </InputAdornment>
+                                ),
+                            }}
+                        /> */}
+                        {/* </Stack> */}
                         {configStore.isEngineOperationAvailable(
                             'APP',
                             'add',

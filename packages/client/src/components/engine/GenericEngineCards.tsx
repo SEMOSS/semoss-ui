@@ -48,14 +48,15 @@ const StyledLandscapeCard = styled(Card)(({ theme }) => ({
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: '16px',
-    boxShadow:
-        '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)',
+    // boxShadow:
+    //     '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)',
+    boxShadow: '0px 5px 24px 0px rgba(0, 0, 0, 0.08)',
     '&:hover': {
         cursor: 'pointer',
     },
     borderRadius: theme.shape.borderRadius,
     padding: '16px',
-    height: '144px',
+    // height: '144px',
 }));
 
 const StyledLandscapeCardHeader = styled('div')({
@@ -79,6 +80,8 @@ const StyledLandscapeCardHeaderDiv = styled('div')({
     flexDirection: 'row',
     alignItems: 'center',
     flex: '1 0 0',
+    justifyContent: 'space-between',
+    gap: '6px',
 });
 
 const StyledLandscapeCardDescriptionContainer = styled('div')({
@@ -234,8 +237,10 @@ const UnstyledVoteCount = styled(ButtonGroup.Item)(() => ({
 const StyledCardIconsDiv = styled('div')({
     display: 'flex',
     justifyContent: 'flex-end',
-    marginTop: '8px',
+    // marginTop: '8px',
     flex: '1',
+    alignItems: 'center',
+    gap: '8px',
 });
 
 /**
@@ -305,6 +310,8 @@ interface DatabaseCardProps {
 
     trending?: string;
 
+    date?: string;
+
     onClick?: (value: string) => void;
 
     favorite?: (value: boolean) => void;
@@ -330,6 +337,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
         votes = '0',
         // views = 'N/A',
         // trending = 'N/A',
+        date,
         onClick,
         favorite,
         upvote,
@@ -339,6 +347,13 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
     /** Menu toggle state */
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
+    const formattedDate = new Date(date)
+        .toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+        })
+        .replace(',', '');
 
     const notification = useNotification();
 
@@ -377,7 +392,48 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
                             <StyledCardImg src={GOOGLE}></StyledCardImg>
                         ) : null}
                     </Typography>
-                    <StyledCardIconsDiv>
+                    <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={0.5}
+                        minHeight="32px"
+                    >
+                        {tag !== undefined &&
+                            (Array.isArray(tag) ? (
+                                <>
+                                    {tag.map((t, i) => {
+                                        if (i <= 2) {
+                                            return (
+                                                <StyledTagChip
+                                                    maxWidth={
+                                                        tag.length === 2
+                                                            ? '100px'
+                                                            : tag.length === 1
+                                                            ? '200px'
+                                                            : '75px'
+                                                    }
+                                                    key={`${id}${i}`}
+                                                    label={t}
+                                                />
+                                            );
+                                        }
+                                    })}
+                                    {tag.length > 3 ? (
+                                        <Typography variant="caption">
+                                            +{tag.length - 3}
+                                        </Typography>
+                                    ) : (
+                                        <></>
+                                    )}
+                                </>
+                            ) : (
+                                <StyledTagChip key={`${id}0`} label={tag} />
+                            ))}
+                    </Stack>
+                </StyledLandscapeCardHeaderDiv>
+                <StyledCardIconsDiv>
+                    <Stack>{formattedDate}</Stack>
+                    <Stack direction="row" alignItems="center" gap={1}>
                         {!isDiscoverable && (
                             <IconButton
                                 size={'small'}
@@ -399,6 +455,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
                             </IconButton>
                         )}
                         <IconButton
+                            sx={{ mt: 0 }}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setAnchorEl(e.currentTarget);
@@ -424,10 +481,10 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
                                 Copy ID
                             </Menu.Item>
                         </Menu>
-                    </StyledCardIconsDiv>
-                </StyledLandscapeCardHeaderDiv>
+                    </Stack>
+                </StyledCardIconsDiv>
             </StyledLandscapeCardHeader>
-            <StyledLandscapeCardDescriptionContainer>
+            {/* <StyledLandscapeCardDescriptionContainer>
                 <StyledLandscapeCardRow>
                     <StyledLandscapeCardRowContainer>
                         <StyledLandscapeCardRowDiv>
@@ -436,52 +493,10 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
                                     ? description
                                     : 'No description available'}
                             </StyledLandscapeCardDescription>
-                            <Stack
-                                direction="row"
-                                alignItems="center"
-                                spacing={0.5}
-                                minHeight="32px"
-                            >
-                                {tag !== undefined &&
-                                    (Array.isArray(tag) ? (
-                                        <>
-                                            {tag.map((t, i) => {
-                                                if (i <= 2) {
-                                                    return (
-                                                        <StyledTagChip
-                                                            maxWidth={
-                                                                tag.length === 2
-                                                                    ? '100px'
-                                                                    : tag.length ===
-                                                                      1
-                                                                    ? '200px'
-                                                                    : '75px'
-                                                            }
-                                                            key={`${id}${i}`}
-                                                            label={t}
-                                                        />
-                                                    );
-                                                }
-                                            })}
-                                            {tag.length > 3 ? (
-                                                <Typography variant="caption">
-                                                    +{tag.length - 3}
-                                                </Typography>
-                                            ) : (
-                                                <></>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <StyledTagChip
-                                            key={`${id}0`}
-                                            label={tag}
-                                        />
-                                    ))}
-                            </Stack>
                         </StyledLandscapeCardRowDiv>
                     </StyledLandscapeCardRowContainer>
                 </StyledLandscapeCardRow>
-            </StyledLandscapeCardDescriptionContainer>
+            </StyledLandscapeCardDescriptionContainer> */}
         </StyledLandscapeCard>
     );
 };

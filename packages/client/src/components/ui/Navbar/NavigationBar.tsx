@@ -180,7 +180,8 @@ export const NavigationBar = (props: NavigationBarProps) => {
                         </StyledTypography>
                     </StyledAppTitle>
                 </StyledLeftSection>
-                {showAppBuilder && (
+                {((location.pathname === '/' && showAppBuilder) ||
+                    location.pathname !== '/') && (
                     <StyledSearchSection>
                         <Box
                             sx={{

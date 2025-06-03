@@ -25,6 +25,7 @@ interface ConfigStoreInterface {
     };
     /** App Builder mode (local storage, based on userEpoch) */
     isAppBuilder: boolean;
+    globalSearch: string;
     /** Config information */
     config: {
         databaseMetaKeys: {
@@ -149,6 +150,7 @@ export class ConfigStore {
         insightID: '',
         userEpoch: '',
         isAppBuilder: false,
+        globalSearch: '',
         user: {
             loggedIn: false,
             id: '',
@@ -447,6 +449,12 @@ export class ConfigStore {
 
         runInAction(() => {
             this._store.isAppBuilder = builderMode;
+        });
+    }
+
+    setGlobalSearch(text = '') {
+        runInAction(() => {
+            this._store.globalSearch = text;
         });
     }
 
