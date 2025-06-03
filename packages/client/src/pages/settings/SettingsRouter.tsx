@@ -20,6 +20,7 @@ import { MemberSettingsPage } from './MemberSettingsPage';
 import { ConfigurationsPage } from './ConfigurationsPage';
 import { AdminQueryPage } from './AdminQueryPage';
 import { MyProfilePage } from './MyProfilePage';
+import { JiraProfilePage } from './JiraProfilePage';
 import { JobsPage } from '../jobs/JobsPage';
 
 // map each route to a component
@@ -33,6 +34,7 @@ const SETTINGS_COMPONETS = {
     'social-properties': ConfigurationsPage,
     'admin-query': AdminQueryPage,
     'my-profile': MyProfilePage,
+    'jira-profile': JiraProfilePage,
     jobs: JobsPage,
     'team-permissions': TeamsSettingsPage,
     'team-permissions/:id': TeamSettingsDetailPage,

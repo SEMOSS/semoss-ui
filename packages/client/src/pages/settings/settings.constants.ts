@@ -200,4 +200,12 @@ export const SETTINGS_ROUTES: {
         history: ['settings/'],
         admin: false,
     },
+    {
+        title: 'Jira Profile',
+        path: 'jira-profile',
+        description: 'Update settings related to your Jira profile.',
+        icon: mdiDatabase,
+        history: ['settings/'],
+        admin: false,
+    },
 ];
