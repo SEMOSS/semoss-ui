@@ -199,6 +199,11 @@ interface AppTileCardProps {
     systemApp?: boolean;
 
     /**
+     * Show bookmark
+     */
+    isDiscoverable?: boolean;
+
+    /**
      * Action triggered when deleted
      */
     onDelete?: () => void;
@@ -214,6 +219,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
         favorite,
         appType,
         systemApp,
+        isDiscoverable = false,
         onDelete,
     } = props;
 
@@ -275,7 +281,8 @@ export const AppTileCard = (props: AppTileCardProps) => {
         if (!image) {
             return APP_IMAGES['INSIGHTS'][0];
         }
-
+        // eliminating random and making it static for now
+        randomInt = 0;
         return image[randomInt];
     };
 
@@ -330,7 +337,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
     return (
         <StyledTileCard disabled={!href}>
-            {!systemApp && (
+            {!systemApp && !isDiscoverable && (
                 <StyledContainer>
                     <StyledOverlayContent>
                         <StyledIconButton

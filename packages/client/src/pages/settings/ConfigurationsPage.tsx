@@ -295,6 +295,7 @@ export const ConfigurationsPage = () => {
                                         onClick={() => {
                                             setAccordionValue(value);
                                         }}
+                                        data-testid={`configuration-page-auth-${value}-btn`}
                                     >
                                         <StyledImage
                                             src={
@@ -334,8 +335,20 @@ export const ConfigurationsPage = () => {
                     <Typography variant="h5">social.properties</Typography>
 
                     <StyledActionButtonsDiv>
-                        <StyledButton variant="outlined">Reset</StyledButton>
-                        <StyledButton variant="contained">Save</StyledButton>
+                        <StyledButton
+                            variant="outlined"
+                            data-testid={
+                                'configuration-page-social-prop-reset-btn'
+                            }
+                        >
+                            Reset
+                        </StyledButton>
+                        <StyledButton
+                            variant="contained"
+                            data-testid={'configuration-social-prop-save-btn'}
+                        >
+                            Save
+                        </StyledButton>
                     </StyledActionButtonsDiv>
                 </StyledTitle>
                 <StyledDivider />
@@ -431,12 +444,14 @@ const SocialProperty = (props) => {
                         onClick={() => {
                             resetLoginProperties(fieldName);
                         }}
+                        data-testid={'configuration-page-reset-btn'}
                     >
                         Reset
                     </StyledButton>
                     <StyledButton
                         variant="contained"
                         onClick={() => onSubmit()}
+                        data-testid={'configuration-page-save-btn'}
                     >
                         Save
                     </StyledButton>
