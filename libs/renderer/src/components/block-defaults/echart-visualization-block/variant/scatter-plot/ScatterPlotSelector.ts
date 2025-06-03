@@ -1,4 +1,4 @@
-export const getSelector = (data) => {
+export const getSelector = (data, aggregates) => {
     let fields = "",
         label = "",
         xAxis = "",
@@ -25,12 +25,17 @@ export const getSelector = (data) => {
         if (!fields[type]) return "";
         return fields[type][0] === "NUMBER" ? "Average" : "Count";
     };
+
+    const getAggregates = (field) => {
+        if (!fields[field] || Object.values(aggregates[field]).length === 0) return "";
+        return Object.values(aggregates[field])[0];
+    }
     const getSelectors = () => {
         return {
-            xAxis: getSelectorType("XAxisDataType"),
-            yAxis: getSelectorType("YAxisDataType"),
-            size: getSelectorType("sizeDataType"),
-            tooltip: getSelectorType("tooltipDataType"),
+            xAxis: getAggregates('XAxis'),
+            yAxis: getAggregates('YAxis'),
+            size: getAggregates('size'),
+            tooltip: getAggregates('tooltip'),
         };
     };
     const selectors = getSelectors();
