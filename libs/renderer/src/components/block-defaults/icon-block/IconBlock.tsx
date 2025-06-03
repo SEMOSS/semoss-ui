@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent } from "../../../store";
 import { iconMap } from "../../../constants";
+import { Badge } from "@mui/material";
 
 export interface IconBlockDef extends BlockDef<"icon"> {
     widget: "icon";
@@ -12,6 +13,9 @@ export interface IconBlockDef extends BlockDef<"icon"> {
         src: string;
         title: string;
         show: string;
+        badgeContent: number;
+        color: "primary" | "default" | "secondary" | "error" | "info" | "success" | "warning";
+        showBadge: boolean;
     };
     slots: never;
 }
@@ -27,7 +31,7 @@ export const IconBlock: BlockComponent = observer(({ id }) => {
         const height = data.style.height ?? null;
         const maxHeight = data.style.maxHeight ?? null;
 
-        return <Icon sx={{ width, maxWidth, height, maxHeight, color }} />;
+        return <Badge badgeContent={data.badgeContent} color={data.color}><Icon sx={{ width, maxWidth, height, maxHeight, color }} /></Badge>;
     };
 
     return (
