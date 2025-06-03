@@ -13,6 +13,7 @@ import {
     UpdateDiabetesRecordTemplate,
     ReadDiabetesRecordTemplate,
 } from './templates';
+import { BrowseTemplateTileCard } from './BrowseTempateTitleCard';
 
 const DEFAULT_TEMPLATE = [
     LandingPageTemplate,
@@ -62,8 +63,9 @@ const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: theme.spacing(2),
-    justifyContent: 'space-between',
+    gap: '24px',
+
+    // justifyContent: 'space-between',
 }));
 
 const StyledChipContainer = styled('div')(({ theme }) => ({
@@ -133,7 +135,7 @@ export const AppTemplates = (props: AppTemplatesProps) => {
                     const app = getAppMetadataFromTemplate(t);
                     {
                         return (
-                            <AppTileCard
+                            <BrowseTemplateTileCard
                                 key={`default-template-${idx}`}
                                 app={getAppMetadataFromTemplate(t)}
                                 systemApp={true}

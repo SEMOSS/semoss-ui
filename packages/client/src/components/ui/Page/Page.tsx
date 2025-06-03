@@ -79,7 +79,16 @@ export const Page = (props: PageProps): JSX.Element => {
     }, [headerElement]);
 
     return (
-        <StyledPage id="home__content">
+        <StyledPage
+            id="home__content"
+            style={
+                {
+                    // border: "solid blue",
+                    // zIndex: 9999,
+                    // minHeight: "100%"
+                }
+            }
+        >
             {header && (
                 <StyledPageHeader
                     ref={(node) => setHeaderElement(node)}

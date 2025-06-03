@@ -27,6 +27,7 @@ const StyledAppBar = styled(AppBar)(({ theme }) => ({
     padding: '0px 32px 0px 32px',
     boxShadow: 'none',
     transition: 'none',
+    height: '56px',
 }));
 
 const StyledLeftSection = styled('div')(({ theme }) => ({

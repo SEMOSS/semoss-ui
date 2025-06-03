@@ -104,7 +104,9 @@ export const NewAppPage = () => {
                     uploadApp={() => setIsUploadOpen(true)}
                 />
             </Container>
-            <Stack direction={'column'} spacing={5}></Stack>
+            <Stack direction={'column'} spacing={5}>
+                {' '}
+            </Stack>
         </NewAppStep>
     );
 };
