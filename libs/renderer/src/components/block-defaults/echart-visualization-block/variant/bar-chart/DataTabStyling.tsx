@@ -13,6 +13,8 @@ import { useBlockSettings, useBlocksPixel, useFrameHeaders } from "../../../../.
 import { BlockDef } from "../../../../../store";
 import { VisualMapConstant } from "../../VisualMapConstant";
 import { VisualMap } from "../../VisualMap";
+import { computed } from "mobx";
+import { getValueByPath } from "@/utility";
 
 //styled components for the data tab
 const StyledMain = styled("div")(() => ({
@@ -77,6 +79,7 @@ const DropContainer = styled("div")(() => ({
 export const DataTabStyling = observer(
     <D extends BlockDef = BlockDef>({ id, updateFrame, path, dragdropColumns, deleteColumns, formmattedColumns, isAdd, syncHeader, chart, storedColumns, visual, selectedItem }) => {
         const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+        console.log(storedColumns, "storedColumns");
         const [selectedColumns, setSelectedColumns] = useState<Record<string, string[]>>(() => {
             return storedColumns || {}; // Initialize with storedColumns if available
         });
@@ -100,6 +103,22 @@ export const DataTabStyling = observer(
                 };
             });
         }, [frameHeaders]);
+
+        // get the value of the input (wrapped in usememo because of path prop)
+        const computedValue = useMemo(() => {
+            return computed(() => {
+                if (!data) {
+                    return "";
+                }
+                const v = getValueByPath(data, path);
+                if (typeof v === "undefined") {
+                    return "";
+                } else if (typeof v === "string") {
+                    return v;
+                }
+                return JSON.stringify(v, null, 2);
+            });
+        }, [data, path]).get();
 
         const matchedVisualMap = getMatchingVisualMapRow(data);
 
@@ -155,7 +174,6 @@ export const DataTabStyling = observer(
                     updatedColumns[key] = [updatedColumns[key][0]];
                 }
             });
-
             if (Object.keys(updatedColumns).length > 0) {
                 setSelectedColumns({ ...updatedColumns });
             }
@@ -165,25 +183,28 @@ export const DataTabStyling = observer(
             if (!columnsSelector || columnsSelector.length === 0) {
                 return;
             }
+            let parsedValue = JSON.parse(computedValue);
             const formattedArray = chart.map((item, index) => {
                 let value;
                 if (data.variation === "echart-bar-graph") {
-                    value = data.option[chart[index].label]?.name;
+                    value = parsedValue[chart[index].label]?.name;
                 }
                 else if (data.variation === "echart-gantt-chart") {
-                    value = data.option["customSettings"]?.["columnDetails"]?.[chart[index].label]?.name;
+                    value = parsedValue["customSettings"]?.["columnDetails"]?.[chart[index].label]?.name;
                 }
                 else {
-                    value = data.option["_state"]?.["fields"]?.[chart[index].label];
+                    value = parsedValue["_state"]?.["fields"]?.[chart[index].label];
                 }
                 value = value ? (Array.isArray(value) ? value : [value]) : [];
                 let selectorsList = [];
                 let dataTypeList = [];
+                let valueList = [];
                 value.forEach(col => {
                     let selector = columnsSelector.find(column => column.name === col);
                     if(selector){
                         selectorsList.push(selector.selector);
                         dataTypeList.push(selector.dataType);
+                        valueList.push(selector.name);
                     }
                 });
                 return {
@@ -206,12 +227,14 @@ export const DataTabStyling = observer(
                 let value = selectedColumns[key] ?? [];
                 let selectorsList = [];
                 let dataTypeList = [];
+                let valueList = [];
                 
                 value.forEach(col => {
                     let selector = columnsSelector.find(column => column.name === col);
                     if(selector){
                         selectorsList.push(selector.selector);
                         dataTypeList.push(selector.dataType);
+                        valueList.push(selector.name);
                     }
                 });
                 return {
@@ -249,9 +272,9 @@ export const DataTabStyling = observer(
                         getOptionLabel={(option) => option}
                         onChange={(_, value) => {
                             setData("frame.name", value);
-                            syncHeader(value);
-                            setData("columns", []); // Reset columns when frame changes
                             setSelectedColumns({});
+                            syncHeader(value, true);
+                            setData("columns", []); // Reset columns when frame changes
                         }}
                         freeSolo={false}
                         renderInput={(params) => (
@@ -401,6 +424,7 @@ export const DataTabStyling = observer(
                                             onClick={() => {
                                                 // Remove the column from dragdropColumns
                                                 const updatedColumns = { ...selectedColumns };
+                                                console.log(column, colIndex, updatedColumns, 'closeIcon');
                                                 updatedColumns[key] = updatedColumns[key].filter((_, i) => i !== colIndex);
                                                 if (updatedColumns[key].length === 0) {
                                                     delete updatedColumns[key];

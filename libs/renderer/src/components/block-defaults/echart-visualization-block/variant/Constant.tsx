@@ -164,7 +164,7 @@ export const WorldMap = [
     },
     {
         name: "Tooltip",
-        multiLabel: false,
+        multiLabel: true,
         label: "tooltip",
     }
   ]

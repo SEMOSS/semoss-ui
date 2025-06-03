@@ -171,13 +171,13 @@ export const Gantt = observer(
                 const toolTipData = Object.keys(
                     option["customSettings"]["columnDetails"],
                 ).filter((item) => item === "tooltip");
-                toolTipData.forEach((item, index) => {
-                    option["customSettings"]["columnDetails"][item].forEach(
-                        (item) => {
-                            toolTipSelected.push(item.name);
-                        },
-                    );
-                });
+                // toolTipData.forEach((item, index) => {
+                //     option["customSettings"]["columnDetails"][item].forEach(
+                //         (item) => {
+                //             toolTipSelected.push(item.name);
+                //         },
+                //     );
+                // });
                 legendShow =
                     option["customSettings"]?.["gantttools"]?.["showLegend"] ||
                     false;

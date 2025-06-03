@@ -1,9 +1,27 @@
-import { createElement, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import {
+    createElement,
+    ReactNode,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { observer } from "mobx-react-lite";
 import { Sync, Search } from "@mui/icons-material";
 import { computed } from "mobx";
 import { Tooltip, Checkbox } from "@mui/material";
-import { Autocomplete, Button, Select, styled, TextField, InputAdornment, IconButton, Stack, Accordion, Typography } from "@semoss/ui";
+import {
+    Autocomplete,
+    Button,
+    Select,
+    styled,
+    TextField,
+    InputAdornment,
+    IconButton,
+    Stack,
+    Accordion,
+    Typography,
+} from "@semoss/ui";
 import {
     useBlockSettings,
     useBlocksPixel,
@@ -20,7 +38,8 @@ import StringIcon from "../../../../assets/img/StringIcon.svg";
 import NumberIcon from "../../../../assets/img/NumberIcon.svg";
 import { buildListener } from "../../block-defaults.shared";
 import { ListenerSettings } from "../../../block-settings";
-import { ExpandMore } from '@mui/icons-material';
+import { ExpandMore } from "@mui/icons-material";
+import { parse } from "path";
 
 //frame operations component props structure
 export interface FrameOperationsProps {
@@ -73,29 +92,43 @@ const COLOUR_PALATTE_DATA = [
 ];
 
 interface AccordionSection {
-    [key :string]: {
+    [key: string]: {
         expanded: boolean;
         title: string;
-    }
-};
+    };
+}
 
 //data tab left section to show the data tab and the drag area for the selected columns
 export const FrameOperations = observer(
-    <D extends BlockDef = BlockDef>({ id, updateFrame, path, chart, storedColumns, handleStoreData, selectedItem }) => {
+    <D extends BlockDef = BlockDef>({
+        id,
+        updateFrame,
+        path,
+        chart,
+        storedColumns,
+        handleStoreData,
+        selectedItem,
+    }) => {
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
         const [columnsData, setColumnsData] = useState([]);
         const [search, setSearch] = useState("");
         const [isAdd, setIsAdd] = useState(false);
         const [addedColumnName, setAddedColumnName] = useState("");
-        const [droppedColumns, setDroppedColumns] = useState<Record<string, string[]>>({});
+        const [droppedColumns, setDroppedColumns] = useState<
+            Record<string, string[]>
+        >({});
         const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
-        const [accordionSection, setAccordionSection] = useState<AccordionSection[]>([{
-            ["preProcess"]:{
-                expanded: true,
-                title: "PRE PROCESS"
-            }
-        }]);
+        const [accordionSection, setAccordionSection] = useState<
+            AccordionSection[]
+        >([
+            {
+                ["preProcess"]: {
+                    expanded: true,
+                    title: "PRE PROCESS",
+                },
+            },
+        ]);
         const accordionList = ["preProcess"];
         const [value, setValue] = useState("");
         // get all of the frames
@@ -123,13 +156,19 @@ export const FrameOperations = observer(
         useEffect(() => {
             let filteredColumnsString = JSON.stringify(filteredColumns);
             let columnsSelectorString = JSON.stringify(columnsSelector);
-            if (columnsSelector.length > 0 && filteredColumnsString !== columnsSelectorString) {
+            if (
+                columnsSelector.length > 0 &&
+                filteredColumnsString !== columnsSelectorString
+            ) {
                 setFilteredColumns(columnsSelector);
             }
         }, [columnsSelector]);
 
         useEffect(() => {
-            setSelectedColumn(storedColumns);
+            // console.log('storedColumns to Set in SelectedColumn', storedColumns);
+            // let parsedData = JSON.parse(computedValue) || {};
+            // console.log(parsedData, '');
+           /* setSelectedColumn(storedColumns);
             const updatedColumns = { ...droppedColumns };
             storedColumns.forEach((item, index) => {
                 const key = `data-tab-drop-area-${index}`;
@@ -137,9 +176,12 @@ export const FrameOperations = observer(
                     updatedColumns[key] = item.values;
                 }
             });
-            if (JSON.stringify(updatedColumns) !== JSON.stringify(droppedColumns)) {
+            if (
+                JSON.stringify(updatedColumns) !==
+                JSON.stringify(droppedColumns)
+            ) {
                 setDroppedColumns(updatedColumns);
-            }
+            }*/
         }, [storedColumns]);
 
         useEffect(() => {
@@ -150,13 +192,113 @@ export const FrameOperations = observer(
             setSearch(searchValue); // Update the search state
             const lowerCaseSearch = searchValue.toLowerCase();
             const filtered = columnsSelector.filter((col) =>
-                col.name.toLowerCase().includes(lowerCaseSearch)
+                col.name.toLowerCase().includes(lowerCaseSearch),
             );
             setFilteredColumns(filtered); // Update the filtered columns
         };
+        function resetBlockData() {
+            let parsedValue = JSON.parse(computedValue) || {};
+            if (data.variation === "echart-bar-graph") {
+                parsedValue = {
+                    ...parsedValue,
+                    ["xAxis"]: {
+                        ...parsedValue["xAxis"],
+                        name: [],
+                        pixelname: [],
+                        pixelvalue: [],
+                    },
+                    ["yAxis"]: {
+                        ...parsedValue["yAxis"],
+                        name: "",
+                        pixelname: [],
+                        pixelvalue: [],
+                    },
+                };
+            } else if (data.variation === "echart-pie-chart") {
+                const { _state, ...mainParsedData } = parsedValue;
+                parsedValue = {
+                    ...mainParsedData,
+                };
+            } else if (data.variation === "echart-gantt-chart") {
+                // let columns = chart.map((item)=>item.label);
+                // let columnDetails = {};
+                // let columnIndexDetails = {};
+                // columns.forEach(element => {
+                //     columnDetails[element] = {
+                //         name: "",
+                //         selector: "",
+                //     };
+                //     columnIndexDetails[element] = "";
+                // });
+                parsedValue = {
+                    ...parsedValue,
+                    "customSettings": {
+                        "columnDetails": {
+                            "task": {
+                                "name": "",
+                                "selector": "",
+                            }
+                        },
+                        "columnIndexDetails": {}
+                    },
+                };
+            } else if (data.variation === "echart-dendrogram-chart") {
+                parsedValue = {
+                    ...parsedValue,
+                    ['_state']:{
+                        ...parsedValue['_state'],
+                        ['dimensions']:[],
+                        ['facet']:[],
+                    }
+                };
+            } else if (data.variation === "echart-line-graph") {
+                const { _state, ...mainParsedData } = parsedValue;
+                parsedValue = {
+                    ...mainParsedData,
+                };
+            } else if(data.variation === 'echart-world-map-chart'){
+                parsedValue = {
+                    ...parsedValue,
+                    ['_state']:{
+                        ['fields']:{},
+                    }
+                };
+            }
+            else if(data.variation === 'echart-scatter-plots'){
+                parsedValue = {
+                    ...parsedValue,
+                    ['_state']:{
+                        ['fields']:{},
+                    }
+                };
+            }
+            else if(data.variation === 'echart-stack-chart'){
+                parsedValue = {
+                    ...parsedValue,
+                    ['_state']:{
+                        ['fields']:{},
+                    }
+                };
+            }
+             else {
+                // parsedValue = {
+                //     ...parsedValue,
+                //     ['_state']:{
+                //         ['fields']:{},
+                //     }
+                // };
+            }
+            storedColumns = {};
+            setDroppedColumns({});
+            try {
+                setData("option", parsedValue);
+            } catch (e) {
+                console.log("error: ", e);
+            }
+        }
 
         //additional function to trigger a sync, when a frame is newly selected
-        function syncHeaders(value: any) {
+        function syncHeaders(value: any, frameChanged: boolean) {
             if (!value) return;
             const columns = frameHeaders.data.list.map((item) => {
                 return {
@@ -169,6 +311,11 @@ export const FrameOperations = observer(
             setColumnsData((prevColumns) => {
                 return columns;
             });
+            if (frameChanged) {
+                storedColumns = [];
+                setSelectedColumn([]);
+                resetBlockData();
+            }
         }
 
         // get the value of the input (wrapped in usememo because of path prop)
@@ -186,6 +333,296 @@ export const FrameOperations = observer(
                 return JSON.stringify(v, null, 2);
             });
         }, [data, path]).get();
+
+        useEffect(() => {
+            if (data.variation === "echart-bar-graph") {
+                let parsedOption = JSON.parse(computedValue) || {};
+                if (
+                    parsedOption.hasOwnProperty("xAxis") &&
+                    parsedOption.hasOwnProperty("yAxis") &&
+                    parsedOption["xAxis"].hasOwnProperty("pixelname") &&
+                    parsedOption["yAxis"].hasOwnProperty("pixelname")
+                ) {
+                    let dataTypeList = {};
+                    ["xAxis", "yAxis"].forEach((item) => {
+                        dataTypeList[item] = columnsSelector
+                            .filter((col) =>
+                                parsedOption[item].pixelname.includes(col.name),
+                            )
+                            .map((col) => col.dataType);
+                    });
+                    let tempStoredColumns = chart.map((item) => {
+                        return {
+                            name: item.name,
+                            label: item.label,
+                            values: parsedOption[item.label].pixelname,
+                            selectors: parsedOption[item.label].pixelvalue,
+                            dataType: dataTypeList[item.label],
+                        };
+                    });
+                    // console.log(tempStoredColumns, "storedColumnsBar");
+                    setSelectedColumn((preVCol) => tempStoredColumns);
+                }
+            }
+            if (data.variation === "echart-dendrogram-chart") {
+                let parsedOption = JSON.parse(computedValue) || {};
+                let dataTypeList = {};
+                if (
+                    parsedOption.hasOwnProperty("_state") &&
+                    parsedOption["_state"].hasOwnProperty("dimensions") &&
+                    parsedOption["_state"].hasOwnProperty("facet")
+                ) {
+                    ["dimensions", "facet"].forEach((item) => {
+                        dataTypeList[item] = columnsSelector
+                            .filter((col) =>
+                                parsedOption["_state"][item].some(
+                                    (stateItem) => stateItem.name === col.name,
+                                ),
+                            )
+                            .map((col) => col.dataType);
+                    });
+                }
+                let tempStoredColumns = chart.map((item) => {
+                    return {
+                        name: item.name,
+                        label: item.label,
+                        values: parsedOption["_state"][item.label].map(
+                            (val) => val.name,
+                        ),
+                        selectors: parsedOption["_state"][item.label].map(
+                            (selector) => selector.selector,
+                        ),
+                        dataType: dataTypeList[item.label],
+                    };
+                });
+                // console.log(tempStoredColumns, "storedColumnsDendrogram");
+                // storedColumns = tempStoredColumns;
+                setSelectedColumn((preVCol) => tempStoredColumns);
+            }
+            if (data.variation === "echart-pie-chart") {
+                let parsedOption = JSON.parse(computedValue) || {};
+                if (
+                    parsedOption.hasOwnProperty("_state") &&
+                    parsedOption["_state"].hasOwnProperty("fields") &&
+                    parsedOption["_state"]["fields"].hasOwnProperty("Label") &&
+                    parsedOption["_state"]["fields"].hasOwnProperty("Value")
+                ) {
+                    // console.log(parsedOption["_state"]["fields"], "fields");
+                    let dataTypeList = {};
+                    ["Label", "Value"].forEach((item) => {
+                        dataTypeList[item] = columnsSelector
+                            .filter((col) =>
+                                parsedOption["_state"]["fields"][item].includes(
+                                    col.name,
+                                ),
+                            )
+                            .map((col) => col.dataType);
+                    });
+                    let tempStoredColumns = chart.map((item) => {
+                        return {
+                            name: item.name,
+                            label: item.label,
+                            values: parsedOption["_state"]["fields"][
+                                item.label
+                            ].filter(
+                                (field) =>
+                                    field && field.hasOwnProperty("name"),
+                            ).length
+                                ? parsedOption["_state"]["fields"][
+                                      item.label
+                                  ]?.map((item) => item?.name || "")
+                                : [],
+                            selectors: parsedOption["_state"]["fields"][
+                                item.label
+                            ].filter(
+                                (field) =>
+                                    field && field.hasOwnProperty("selector"),
+                            ).length
+                                ? parsedOption["_state"]["fields"][
+                                      item.label
+                                  ]?.map((item) => item?.selector || "")
+                                : [],
+                            dataType: dataTypeList[item.label],
+                        };
+                    });
+                    // console.log(tempStoredColumns, "storedColumnsPie");
+                    setSelectedColumn((preVCol) => tempStoredColumns);
+                }
+            }
+            if(data.variation === 'echart-line-graph'){
+                let parsedOption = JSON.parse(computedValue) || {};
+                let dataTypeList = {};
+                if(parsedOption.hasOwnProperty('_state') 
+                    && parsedOption['_state'].hasOwnProperty('fields') 
+                    && parsedOption['_state']['fields'].hasOwnProperty('xAxis') 
+                    && parsedOption['_state']['fields'].hasOwnProperty('yAxis')
+                ){
+                    ["xAxis", "yAxis", "tooltip"].forEach((item) => {
+                        // console.log(item, parsedOption["_state"]['fields'][item], 'fieldsData');
+                        dataTypeList[item] = columnsSelector
+                            .filter((col) =>
+                                parsedOption["_state"]['fields'][item].includes(
+                                    col.name,
+                                ),
+                            )
+                            .map((col) => col.dataType);
+                    });
+                    let tempStoredColumns = chart.map((item) => {
+                    return {
+                        name: item.name,
+                        label: item.label,
+                        values: (
+                            parsedOption["_state"]['fields'][item.label].some((valItem)=>valItem && valItem.hasOwnProperty('name')) ?
+                            parsedOption["_state"]['fields'][item.label].map(
+                            (val) => val.name,
+                            ) : []
+                        ),
+                        selectors: (
+                            parsedOption["_state"]['fields'][item.label].some((valItem)=>valItem && valItem.hasOwnProperty('selector')) ?
+                            parsedOption["_state"]['fields'][item.label].map(
+                            (selector) => selector.selector,
+                            )
+                            :[]
+                        ),
+                        dataType: dataTypeList[item.label],
+                    };
+                });
+                    setSelectedColumn((prevSelectedCol)=> tempStoredColumns);
+                }
+            }
+            if(data.variation === 'echart-world-map-chart'){
+                let parsedJson = JSON.parse(computedValue);
+                if(
+                    parsedJson.hasOwnProperty('_state') &&
+                    parsedJson['_state'].hasOwnProperty('fields') &&
+                    parsedJson['_state']['fields'].hasOwnProperty('label') &&
+                    parsedJson['_state']['fields'].hasOwnProperty('Latitude') &&
+                    parsedJson['_state']['fields'].hasOwnProperty('Longitude')
+                ){
+                    let dataTypeList = {};
+                    let selectorList = [];
+                    ["label", "Latitude", "Longitude", "size", "color", "tooltip"].forEach((item) => {
+                        dataTypeList[item] = columnsSelector
+                            .filter((col) =>
+                                parsedJson["_state"]['fields'][item] === col.name,
+                            )
+                            .map((col) => col.dataType);
+                        selectorList.push(columnsSelector.find((col)=>col.name === parsedJson["_state"]['fields'][item])?.selector || "");
+                    });
+                    let tempStoredColumns = chart.map((item, index) => {
+                    return {
+                        name: item.name,
+                        label: item.label,
+                        values: (
+                            parsedJson["_state"]['fields'].hasOwnProperty(item.label) ? (
+                               Array.isArray(parsedJson['_state']['fields'][item.label]) ?  parsedJson["_state"]['fields'][item.label] :[parsedJson["_state"]['fields'][item.label]]
+                            ) : []
+                        ),
+                        selectors: (
+                          Array.isArray(selectorList[index]) ? selectorList[index] :  [selectorList[index]]
+                        ),
+                        dataType: dataTypeList[item.label],
+                }});
+                setSelectedColumn((prevSelectedCol)=> tempStoredColumns);
+            }
+        }
+            if(data.variation === 'echart-scatter-plots'){
+                let parsedOption = JSON.parse(computedValue) || {};
+                if (
+                    parsedOption.hasOwnProperty("_state") &&
+                    parsedOption["_state"].hasOwnProperty("fields") &&
+                    parsedOption['_state']['fields'].hasOwnProperty("label") &&
+                    parsedOption['_state']['fields'].hasOwnProperty("XAxis") &&
+                    parsedOption['_state']['fields'].hasOwnProperty("YAxis")
+                ) {
+                    let dataTypeList = {};
+                    let selectorList = [];
+                    ["label","XAxis", "YAxis","size","color","tooltip"].forEach((item) => {
+                        if(!parsedOption["_state"]['fields'][item]){ dataTypeList[item] = []; return; }
+                        dataTypeList[item] = columnsSelector
+                            .filter((col) =>
+                                parsedOption["_state"]["fields"][item].includes(col.name),
+                            )
+                            .map((col) => col.dataType);
+                        selectorList.push(columnsSelector.find((col)=>parsedOption["_state"]['fields'][item].includes(col.name))?.selector || "");
+                    });
+                    let tempStoredColumns = chart.map((item, index) => {
+                        return {
+                            name: item.name,
+                            label: item.label,
+                            values: parsedOption["_state"]['fields'][item.label] || [],
+                            selectors: selectorList[index] || [],
+                            dataType: dataTypeList[item.label],
+                        };
+                    });
+                    // console.log(tempStoredColumns, "storedColumnsScatter");
+                    setSelectedColumn((preVCol) => tempStoredColumns);
+                }
+            }
+            if(data.variation === 'echart-stack-chart'){
+                let parsedJson = JSON.parse(computedValue);
+                if(
+                    parsedJson.hasOwnProperty('_state') &&
+                    parsedJson['_state'].hasOwnProperty('fields') &&
+                    parsedJson['_state']['fields'].hasOwnProperty('label') &&
+                    parsedJson['_state']['fields'].hasOwnProperty('XAxis') &&
+                    parsedJson['_state']['fields'].hasOwnProperty('YAxis')
+                ){
+                    let dataTypeList =[];
+                    let selectorList = [];
+                    ['XAxis','YAxis','category','tooltip'].forEach((item) => {
+                        dataTypeList[item] = columnsSelector.filter((col)=>parsedJson["_state"]["fields"][item].includes(col.name)).map((col) => col.dataType) || [];
+                        selectorList.push(columnsSelector.find((col)=>parsedJson["_state"]['fields'][item].includes(col.name))?.selector || "");
+                    });
+                    const tempStoredColumns = chart.map((item, index) => {
+                    return {
+                        name: item.name,
+                        label: item.label,
+                        values: parsedJson["_state"]['fields'][item.label] || [],
+                        selectors: selectorList[index] || [],
+                        dataType: dataTypeList[item.label],
+                    } 
+                    });
+                    setSelectedColumn((preVCol) => tempStoredColumns);
+                }
+                
+            }
+            if(data.variation === 'echart-gantt-chart'){
+                let parsedJson = JSON.parse(computedValue);
+                if(
+                    parsedJson.hasOwnProperty('customSettings') &&
+                    parsedJson['customSettings'].hasOwnProperty('columnDetails') &&
+                    parsedJson['customSettings']['columnDetails'].hasOwnProperty('task') &&
+                    parsedJson['customSettings']['columnDetails'].hasOwnProperty('startdate') &&
+                    parsedJson['customSettings']['columnDetails'].hasOwnProperty('enddate')
+                ){
+                    let dataTypeList =[];
+                    let selectorList = [];
+                    let valueList = [];
+                    ['task','startdate','enddate','taskgroup','tooltip','taskprogress','milestone']
+                    .forEach((item) => {
+                        dataTypeList[item] = columnsSelector.filter((col)=>parsedJson["customSettings"]["columnDetails"][item]?.['name'] === col.name).map((col) => col.dataType) || [];
+                        console.log(parsedJson["customSettings"]['columnDetails'][item]?.['name'], columnsSelector.find((col)=>parsedJson["customSettings"]['columnDetails'][item]?.['name'] === col.name)?.selector, 'selectorData');
+                        selectorList[item] = columnsSelector.find((col)=>parsedJson["customSettings"]['columnDetails'][item]?.['name'] === col.name)?.selector || "";
+                        valueList[item] = parsedJson["customSettings"]["columnDetails"][item]?.['name'] || [];
+                    });
+                    const tempStoredColumns = chart.map((item, index) => {
+                        return {
+                            name: item.name,
+                            label: item.label,
+                            values: Array.isArray(valueList[item.label]) ? valueList[item.label] : [valueList[item.label]],
+                            selectors: Array.isArray(selectorList[item.label]) ? (selectorList[item.label]) : [selectorList[item.label]],
+                            dataType: dataTypeList[item.label],
+                        } 
+                    });
+                    console.log('tempStoredColumns',tempStoredColumns);
+                    setSelectedColumn((preVCol) => tempStoredColumns);
+                }
+                
+            }
+            // console.log("block focus changed", data.variation, computedValue);
+        }, [data.variation, id, computedValue]);
+
         //update the local state value when computed value is getting updated
         useEffect(() => {
             setValue(computedValue);
@@ -193,15 +630,21 @@ export const FrameOperations = observer(
 
         const formattedColumns = (columnsValue: any[], variation: any) => {
             // check if the columns value has any values
-            const hasValues = columnsValue.some(item => item?.values && item?.values.length > 0);
+            const hasValues = columnsValue.some(
+                (item) => item?.values && item?.values.length > 0,
+            );
             if (hasValues) {
+                // console.log("selected column to set with ", columnsValue);
                 setSelectedColumn(columnsValue);
                 handleStoreData(columnsValue);
             }
 
             const columnsDrop = [];
             for (let i = 0; i < columnsValue.length; i++) {
-                columnsDrop[i] = columnsValue[i]?.values?.length > 0 ? columnsValue[i] : null;
+                columnsDrop[i] =
+                    columnsValue[i]?.values?.length > 0
+                        ? columnsValue[i]
+                        : null;
             }
 
             const firstColumn = columnsDrop[0];
@@ -218,7 +661,6 @@ export const FrameOperations = observer(
             const columns = { ...fieldsData };
 
             if (variation === "echart-bar-graph") {
-
                 if (firstColumn?.label) {
                     columns[firstColumn?.label] = [
                         {
@@ -233,7 +675,8 @@ export const FrameOperations = observer(
                     };
                     selectedValues = {
                         ...selectedValues,
-                        [firstColumn?.label]: columns[firstColumn?.label][0]["selector"],
+                        [firstColumn?.label]:
+                            columns[firstColumn?.label][0]["selector"],
                     };
                 }
                 if (secondColumn?.label) {
@@ -250,16 +693,21 @@ export const FrameOperations = observer(
                         [secondColumn?.label]: columns[secondColumn?.label],
                     };
                     let LabelData = [];
-                    columns[secondColumn?.label].forEach((labelItem, labelIndex) => {
-                        LabelData = [...LabelData, labelItem.selector];
-                    });
+                    columns[secondColumn?.label].forEach(
+                        (labelItem, labelIndex) => {
+                            LabelData = [...LabelData, labelItem.selector];
+                        },
+                    );
                     selectedValues = {
                         ...selectedValues,
                         [secondColumn?.label]: LabelData,
                     };
                 }
 
-                if (columns[firstColumn?.label] && columns[secondColumn?.label]) {
+                if (
+                    columns[firstColumn?.label] &&
+                    columns[secondColumn?.label]
+                ) {
                     let tempVal = JSON.parse(computedValue) || {};
                     const seriesIndex =
                         tempVal["series"].findIndex((item) =>
@@ -269,37 +717,50 @@ export const FrameOperations = observer(
                     if (columns[firstColumn?.label]?.length) {
                         tempVal[firstColumn?.label] = {
                             ...tempVal[firstColumn?.label],
-                            ["name"]: columns[firstColumn?.label][0]?.name || "",
-                            ["pixelname"]: columns[firstColumn?.label][0]?.name || "",
-                            ["pixelvalue"]: columns[firstColumn?.label][0]?.selector || "",
+                            ["name"]:
+                                columns[firstColumn?.label][0]?.name || "",
+                            ["pixelname"]:
+                                columns[firstColumn?.label][0]?.name || "",
+                            ["pixelvalue"]:
+                                columns[firstColumn?.label][0]?.selector || "",
                         };
                     }
 
                     columnsmerged = [
                         {
                             name: columns[firstColumn?.label][0]?.name || "",
-                            selector: columns[firstColumn?.label][0]?.selector[0] || "",
+                            selector:
+                                columns[firstColumn?.label][0]?.selector[0] ||
+                                "",
                         },
                     ];
                     const pixelName = [],
                         pixelValue = [];
-                    columns[secondColumn?.label].forEach((columItem, columIndex) => {
-                        pixelName.push(columItem?.name);
-                        pixelValue.push(columItem?.selector);
-                        columnsmerged.push({
-                            name: columItem?.name,
-                            selector: columItem?.selector,
-                        });
-                    });
+                    columns[secondColumn?.label].forEach(
+                        (columItem, columIndex) => {
+                            pixelName.push(columItem?.name);
+                            pixelValue.push(columItem?.selector);
+                            columnsmerged.push({
+                                name: columItem?.name,
+                                selector: columItem?.selector,
+                            });
+                        },
+                    );
                     if (columns[secondColumn?.label]?.length) {
                         tempVal[secondColumn?.label] = {
                             ...tempVal[secondColumn?.label],
-                            ["name"]: columns[secondColumn?.label][0]?.name || pixelName[0],
+                            ["name"]:
+                                columns[secondColumn?.label][0]?.name ||
+                                pixelName[0],
                             ["pixelname"]: pixelName,
                             ["pixelvalue"]: pixelValue,
                         };
                     }
-                    for (let i = 0; i < columns[secondColumn?.label]?.length; i++) {
+                    for (
+                        let i = 0;
+                        i < columns[secondColumn?.label]?.length;
+                        i++
+                    ) {
                         tempVal["series"][i] = {
                             ...tempVal["series"][i],
                             data: [],
@@ -308,7 +769,8 @@ export const FrameOperations = observer(
                             barWidth: 5,
                             ["itemStyle"]: {
                                 ["color"]:
-                                    tempVal["color"][i] ?? COLOUR_PALATTE_DATA[i],
+                                    tempVal["color"][i] ??
+                                    COLOUR_PALATTE_DATA[i],
                             },
                         };
                     }
@@ -319,11 +781,15 @@ export const FrameOperations = observer(
                             ["toolsUpdated"]: false,
                         },
                     };
-                    dispatchData(tempVal);
+                    setData("option", tempVal);
                     setData("columns", columnsmerged);
                 }
             }
-            if (variation === "echart-pie-chart" && firstColumn !== null && secondColumn !== null) {
+            if (
+                variation === "echart-pie-chart" &&
+                firstColumn !== null &&
+                secondColumn !== null
+            ) {
                 const tempValue = JSON.parse(computedValue);
 
                 tempValue["_state"] = {};
@@ -331,8 +797,8 @@ export const FrameOperations = observer(
 
                 tempValue["_state"]["fields"] = {
                     ...tempValue["_state"]["fields"],
-                    Label: firstColumn?.values,
-                    Value: secondColumn?.values,
+                    Value: firstColumn?.values,
+                    Label: secondColumn?.values,
                 };
 
                 // set the value
@@ -345,7 +811,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -355,7 +821,8 @@ export const FrameOperations = observer(
                     };
 
                     // Update the series label name
-                    tempValue["series"][0]["label"]["name"] = firstColumn?.values;
+                    tempValue["series"][0]["label"]["name"] =
+                        firstColumn?.values;
 
                     setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
@@ -365,7 +832,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -385,7 +852,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -405,7 +872,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -422,7 +889,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -439,7 +906,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -458,7 +925,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -480,7 +947,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -502,7 +969,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -519,7 +986,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -532,7 +999,11 @@ export const FrameOperations = observer(
                     setData("option", tempValue);
                 }
             }
-            if (variation === "echart-line-graph" && firstColumn !== null && secondColumn !== null) {
+            if (
+                variation === "echart-line-graph" &&
+                firstColumn !== null &&
+                secondColumn !== null
+            ) {
                 const tempValue = JSON.parse(computedValue);
                 tempValue["xAxis"] = {
                     ...tempValue["xAxis"],
@@ -545,17 +1016,19 @@ export const FrameOperations = observer(
 
                 tempValue["_state"] = {};
                 tempValue["_state"]["fields"] = {};
-                let tempSeries = tempValue['series'] || [];
+                let tempSeries = tempValue["series"] || [];
                 tempValue["_state"]["fields"] = {
                     ...tempValue["_state"]["fields"],
                     xAxis: firstColumn?.values,
                     yAxis: secondColumn?.values,
-                    tooltip: columnsDrop[2]?.values ? columnsDrop[2]?.values : [],
+                    tooltip: columnsDrop[2]?.values
+                        ? columnsDrop[2]?.values
+                        : [],
                 };
-                if(secondColumn?.values.length > 1){
+                if (secondColumn?.values.length > 1) {
                     let seriesListToAdd = [];
                     //Adding newly added field to the state
-                    for(let i=0;i<secondColumn.values.length;i++){
+                    for (let i = 0; i < secondColumn.values.length; i++) {
                         seriesListToAdd[i] = {
                             ...tempSeries[i],
                             name: secondColumn.values[i],
@@ -569,7 +1042,8 @@ export const FrameOperations = observer(
                             label: {
                                 ...tempSeries[i]?.label,
                                 show: tempSeries[i]?.label?.show ?? true,
-                                position: tempSeries[i]?.label?.position ?? "top",
+                                position:
+                                    tempSeries[i]?.label?.position ?? "top",
                                 rotate: tempSeries[i]?.label?.rotate ?? 45,
                                 fontSize: tempSeries[i]?.label?.fontSize ?? 12,
                                 color: tempSeries[i]?.label?.color ?? "#000000",
@@ -577,10 +1051,9 @@ export const FrameOperations = observer(
                         };
                     }
                     tempSeries = seriesListToAdd;
-                }
-                else{
+                } else {
                     //Removing the field from the state if it is not selected
-                    tempSeries = tempSeries.slice(0,1);
+                    tempSeries = tempSeries.slice(0, 1);
                 }
                 tempValue["series"] = tempSeries;
                 // set the value
@@ -593,7 +1066,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -610,7 +1083,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -627,7 +1100,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -644,7 +1117,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -661,7 +1134,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -678,7 +1151,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -693,30 +1166,41 @@ export const FrameOperations = observer(
             }
             if (variation == "echart-gantt-chart") {
                 let columnsToSet = [];
-                let columnsObject = {};
+                let columnsObject = {
+                    tooltip:[]
+                };
                 const formattedArray = [];
 
                 const tempValue = JSON.parse(computedValue);
 
                 for (let i = 0; i < columnsValue.length; i++) {
-                    if (columnsValue[i]?.values.length > 0) {
+                    if (columnsValue[i]?.values.length == 1) {
+                        if(formattedArray.some((item)=> item.name === columnsValue[i]?.values?.[0])) continue;
                         formattedArray.push({
                             name: columnsValue[i]?.values?.[0] || "",
                             selector: columnsValue[i]?.selectors?.[0] || "",
                             width: columnsValue[i]?.width?.[0] || undefined,
                         });
                     }
+                    else{
+                        for (let j=0;j<columnsValue[i]?.values.length;j++){
+                            if(formattedArray.some((item)=> item.name === columnsValue[i]?.values?.[j])) continue;
+                            formattedArray.push({
+                                name: columnsValue[i]?.values?.[j] || "",
+                                selector: columnsValue[i]?.selectors?.[j] || "",
+                                width: columnsValue[i]?.width?.[j] || undefined,
+                            });
+                        }
+                    }
                 }
-
-                setData("columns", formattedArray);
-
+                // console.log('columnsValue', columnsValue, columnsDrop);
                 if (firstColumn?.values) {
                     columnsToSet.push(firstColumn?.values);
                     columnsObject["task"] = firstColumn?.values;
 
                     tempValue["customSettings"] =
                         tempValue["customSettings"] &&
-                            Object.keys(tempValue["customSettings"]).length > 0
+                        Object.keys(tempValue["customSettings"]).length > 0
                             ? tempValue["customSettings"]
                             : {};
 
@@ -726,10 +1210,16 @@ export const FrameOperations = observer(
                             name: firstColumn?.values?.[0],
                             selector: firstColumn?.selectors?.[0],
                         },
-                    }
-
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
+                    };
+                }
+                else{
+                    tempValue["customSettings"]['columnDetails'] = {
+                        ...tempValue["customSettings"]['columnDetails'],
+                        [firstColumn?.label]: {
+                            name: "",
+                            selector: "",
+                        }
+                    };
                 }
                 if (secondColumn?.values) {
                     columnsToSet.push(secondColumn?.values);
@@ -737,7 +1227,7 @@ export const FrameOperations = observer(
 
                     tempValue["customSettings"] =
                         tempValue["customSettings"] &&
-                            Object.keys(tempValue["customSettings"]).length > 0
+                        Object.keys(tempValue["customSettings"]).length > 0
                             ? tempValue["customSettings"]
                             : {};
 
@@ -747,19 +1237,26 @@ export const FrameOperations = observer(
                             name: secondColumn?.values?.[0],
                             selector: secondColumn?.selectors?.[0],
                         },
-                    }
+                    };
 
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
+                    // setValue(JSON.stringify(tempValue));
+                    // setData("option", tempValue);
+                }else{
+                    tempValue["customSettings"]['columnDetails'] = {
+                        ...tempValue["customSettings"]['columnDetails'],
+                        [secondColumn?.label]: {
+                            name: "",
+                            selector: "",
+                        }
+                    };
                 }
                 if (columnsDrop[2]?.values.length > 0) {
-
                     columnsToSet.push(columnsDrop[2]?.values);
                     columnsObject["enddate"] = columnsDrop[2]?.values;
 
                     tempValue["customSettings"] =
                         tempValue["customSettings"] &&
-                            Object.keys(tempValue["customSettings"]).length > 0
+                        Object.keys(tempValue["customSettings"]).length > 0
                             ? tempValue["customSettings"]
                             : {};
 
@@ -769,10 +1266,16 @@ export const FrameOperations = observer(
                             name: columnsDrop[2]?.values?.[0],
                             selector: columnsDrop[2]?.selectors?.[0],
                         },
-                    }
-
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
+                    };
+                }
+                else{
+                    tempValue["customSettings"]['columnDetails'] = {
+                        ...tempValue["customSettings"]['columnDetails'],
+                        [columnsDrop[2]?.label]: {
+                            name: "",
+                            selector: "",
+                        }
+                    };
                 }
                 if (columnsDrop[3]?.values.length > 0) {
                     columnsToSet.push(columnsDrop[3]?.values);
@@ -780,7 +1283,7 @@ export const FrameOperations = observer(
 
                     tempValue["customSettings"] =
                         tempValue["customSettings"] &&
-                            Object.keys(tempValue["customSettings"]).length > 0
+                        Object.keys(tempValue["customSettings"]).length > 0
                             ? tempValue["customSettings"]
                             : {};
 
@@ -790,10 +1293,16 @@ export const FrameOperations = observer(
                             name: columnsDrop[3]?.values?.[0],
                             selector: columnsDrop[3]?.selectors?.[0],
                         },
-                    }
-
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
+                    };
+                }
+                else{
+                    tempValue["customSettings"]['columnDetails'] = {
+                        ...tempValue["customSettings"]['columnDetails'],
+                        [columnsDrop[3]?.label]: {
+                            name: "",
+                            selector: "",
+                        }
+                    };
                 }
                 if (columnsDrop[4]?.values.length > 0) {
                     columnsToSet.push(columnsDrop[4]?.values);
@@ -801,7 +1310,7 @@ export const FrameOperations = observer(
 
                     tempValue["customSettings"] =
                         tempValue["customSettings"] &&
-                            Object.keys(tempValue["customSettings"]).length > 0
+                        Object.keys(tempValue["customSettings"]).length > 0
                             ? tempValue["customSettings"]
                             : {};
 
@@ -811,10 +1320,16 @@ export const FrameOperations = observer(
                             name: columnsDrop[4]?.values?.[0],
                             selector: columnsDrop[4]?.selectors?.[0],
                         },
-                    }
-
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
+                    };
+                }
+                else{
+                    tempValue["customSettings"]['columnDetails'] = {
+                        ...tempValue["customSettings"]['columnDetails'],
+                        [columnsDrop[4]?.label]: {
+                            name: "",
+                            selector: "",
+                        }
+                    };
                 }
                 if (columnsDrop[5]?.values.length > 0) {
                     columnsToSet.push(columnsDrop[5]?.values);
@@ -822,7 +1337,7 @@ export const FrameOperations = observer(
 
                     tempValue["customSettings"] =
                         tempValue["customSettings"] &&
-                            Object.keys(tempValue["customSettings"]).length > 0
+                        Object.keys(tempValue["customSettings"]).length > 0
                             ? tempValue["customSettings"]
                             : {};
 
@@ -832,58 +1347,99 @@ export const FrameOperations = observer(
                             name: columnsDrop[5]?.values?.[0],
                             selector: columnsDrop[5]?.selectors?.[0],
                         },
-                    }
+                    };
 
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
+                    // setValue(JSON.stringify(tempValue));
+                    // setData("option", tempValue);
+                }
+                else{
+                    tempValue["customSettings"]['columnDetails'] = {
+                        ...tempValue["customSettings"]['columnDetails'],
+                        [columnsDrop[5]?.label]: {
+                            name: "",
+                            selector: "",
+                        }
+                    };
                 }
                 if (columnsDrop[6]?.values.length > 0) {
-                    columnsToSet.push(columnsDrop[6]?.values);
-                    columnsObject["tooltip"] = columnsDrop[6]?.values;
+                    if(Array.isArray(columnsDrop[6]?.values)){
+                        columnsToSet = [...columnsToSet, ...columnsDrop[6]?.values];
+                    }else{
+                        columnsToSet.push(columnsDrop[6]?.values);
+                    }
+                    columnsObject["tooltip"] = Array.isArray(columnsDrop[6]?.values) ? columnsDrop[6]?.values : [columnsDrop[6]?.values];
 
                     tempValue["customSettings"] =
                         tempValue["customSettings"] &&
-                            Object.keys(tempValue["customSettings"]).length > 0
+                        Object.keys(tempValue["customSettings"]).length > 0
                             ? tempValue["customSettings"]
                             : {};
 
                     tempValue["customSettings"]["columnDetails"] = {
                         ...tempValue["customSettings"]["columnDetails"],
                         [columnsDrop[6]?.label]: {
-                            name: columnsDrop[6]?.values?.[0],
-                            selector: columnsDrop[6]?.selectors?.[0],
+                            name: columnsDrop[6]?.values,
+                            selector: columnsDrop[6]?.selectors,
                         },
-                    }
+                    };
 
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
                 }
+                else{
+                    tempValue["customSettings"]['columnDetails'] = {
+                        ...tempValue["customSettings"]['columnDetails'],
+                        [columnsDrop[6]?.label]: {
+                            name: "",
+                            selector: "",
+                        }
+                    };
+                }
+                setValue(JSON.stringify(tempValue));
+                setData("option", tempValue);
 
                 let tempDataSet = new Set(columnsToSet);
                 columnsToSet = Array.from(tempDataSet);
+                let {tooltip, ...columnsObj} = columnsObject;
                 let columnsIndexToSet = getColumnIndexToSetData(
-                    columnsObject,
+                    columnsObj,
                     columnsToSet,
                 );
+                console.log(tooltip, columnsToSet, 'tooltipIndexToSetTest');
+                let tooltipIndexToSet = tooltip.reduce((acc,item)=>{
+                    columnsToSet.forEach((colSetItem, colSetIndex) => {
+                        if (colSetItem.includes(item)) {
+                            acc = [...acc, colSetIndex];
+                        }
+                    });
+                    return acc;
+                },[]);
 
                 if (columnsIndexToSet) {
-
                     tempValue["customSettings"]["columnIndexDetails"] = {
                         ...tempValue["customSettings"]["columnIndexDetails"],
                         ...columnsIndexToSet,
-                    }
+                        ...{"tooltip": tooltipIndexToSet},
+                    };
 
                     setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
+                setData("columns", formattedArray);
             }
-            if(variation == "echart-dendrogram-chart"){
+            if (variation == "echart-dendrogram-chart") {
                 let columnsToPush = [];
-                let dimensionElement = columnsValue.find((element) => element.label === 'dimensions');
-                let facetElement = columnsValue.find((element) => element.label === 'facet');
-                if(dimensionElement.label === 'dimensions' && dimensionElement.values.length){
-                    dimensionElement.selectors.forEach((item, index)=>{
-                        if(!item || !dimensionElement.values[index]) return;
+                let dimensionElement = columnsValue.find(
+                    (element) => element.label === "dimensions",
+                );
+                let facetElement = columnsValue.find(
+                    (element) => element.label === "facet",
+                );
+                let parsedJson = JSON.parse(computedValue) || {};
+                if (
+                    dimensionElement.label === "dimensions" &&
+                    dimensionElement.values.length
+                ) {
+                    dimensionElement.selectors.forEach((item, index) => {
+                        if (!item || !dimensionElement.values[index]) return;
                         columnsToPush = [
                             ...columnsToPush,
                             {
@@ -893,35 +1449,77 @@ export const FrameOperations = observer(
                         ];
                     });
                     setData("columns", columnsToPush);
-                }
-                else{
+                    parsedJson = {
+                        ...parsedJson,
+                        ["_state"]: {
+                            ...parsedJson["_state"],
+                            ["dimensions"]: columnsToPush,
+                        },
+                    };
+                    setData("option", parsedJson);
+                } else {
+                    parsedJson = {
+                        ...parsedJson,
+                        ["_state"]: {
+                            ...parsedJson["_state"],
+                            ["dimensions"]: [],
+                        },
+                    };
                     setData("columns", []);
+                    setData("option", parsedJson);
                 }
-                if(facetElement.label === 'facet' && facetElement.values.length){
-                    if(!facetElement.values[0] || !facetElement.selectors[0]) return;
+                if (
+                    facetElement.label === "facet" &&
+                    facetElement.values.length
+                ) {
+                    if (!facetElement.values[0] || !facetElement.selectors[0])
+                        return;
 
-                    setData("facet.facetSelected", [{
-                        name: facetElement.values[0],
-                        selector: facetElement.selectors[0],
-                        value: 0,
-                      }]);
-                    
+                    setData("facet.facetSelected", [
+                        {
+                            name: facetElement.values[0],
+                            selector: facetElement.selectors[0],
+                            value: 0,
+                        },
+                    ]);
+
                     columnsToPush = [
-                          ...columnsToPush,
-                          {
+                        ...columnsToPush,
+                        {
                             name: facetElement.values[0],
                             selector: facetElement.selectors[0],
                             value: 0,
                             isFacet: true,
-                          }   
+                        },
                     ];
                     setData("columns", columnsToPush);
-                }
-                else{
+                    parsedJson = {
+                        ...parsedJson,
+                        ["_state"]: {
+                            ...parsedJson["_state"],
+                            ["facet"]: [
+                                {
+                                    name: facetElement.values[0],
+                                    selector: facetElement.selectors[0],
+                                    value: 0,
+                                },
+                            ],
+                        },
+                    };
+                    setData("option", parsedJson);
+                } else {
+                    parsedJson = {
+                        ...parsedJson,
+                        ["_state"]: {
+                            ...parsedJson["_state"],
+                            ["facet"]: [],
+                        },
+                    };
                     setData("facet.facetSelected", []);
+                    setData("option", parsedJson);
                 }
             }
-        }
+        };
         function dispatchData(option) {
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
@@ -945,7 +1543,7 @@ export const FrameOperations = observer(
                 ) {
                     // Find the index of the first matching value in columnsToSet
                     colIndex[key] = columnsToSet.findIndex(
-                        (colSetItem) => colSetItem[0] === columnsObject[key][0]
+                        (colSetItem) => colSetItem[0] === columnsObject[key][0],
                     );
                 } else {
                     // Handle non-array values if needed (not applicable in your example)
@@ -971,61 +1569,69 @@ export const FrameOperations = observer(
             setDroppedColumns((prev) => {
                 const updated = { ...prev };
                 for (const key in updated) {
-                    updated[key] = updated[key].filter((col) => col !== columnName);
+                    updated[key] = updated[key].filter(
+                        (col) => col !== columnName,
+                    );
                 }
                 return updated;
             });
-        }
+        };
         const onClickAdd = (value: boolean, id: any) => {
             setIsAdd(value);
             setAddedColumnName(id);
-        }
+        };
         let renderElement = [...buildListener("preProcess")];
 
         const renderAccordion = (
             <>
-                {
-                    accordionSection.map((item,index)=>(
-                        <Accordion
+                {accordionSection.map((item, index) => (
+                    <Accordion
                         expanded={item[accordionList[index]].expanded}
-                        onChange={(e) =>{
+                        onChange={(e) => {
                             let accordionSectionToUp = accordionSection;
-                            let indexToUpdate = accordionSectionToUp.findIndex((accordItem)=>accordItem.hasOwnProperty(accordionList[index]));
-                            accordionSectionToUp[indexToUpdate][accordionList[index]] = {
-                                ...accordionSectionToUp[indexToUpdate][accordionList[index]],
-                                expanded: !accordionSectionToUp[indexToUpdate][accordionList[index]].expanded,
+                            let indexToUpdate = accordionSectionToUp.findIndex(
+                                (accordItem) =>
+                                    accordItem.hasOwnProperty(
+                                        accordionList[index],
+                                    ),
+                            );
+                            accordionSectionToUp[indexToUpdate][
+                                accordionList[index]
+                            ] = {
+                                ...accordionSectionToUp[indexToUpdate][
+                                    accordionList[index]
+                                ],
+                                expanded:
+                                    !accordionSectionToUp[indexToUpdate][
+                                        accordionList[index]
+                                    ].expanded,
                             };
-                            setAccordionSection((prevAccordionSection)=>{
+                            setAccordionSection((prevAccordionSection) => {
                                 return [...accordionSectionToUp];
-                            })
-                        }
-                        }
-                        sx={{
-                            width:'100%',
+                            });
                         }}
-                        >
-                            <Accordion.Trigger
-                                expandIcon={<ExpandMore />}
-                            >
-                                <Typography variant="body2">
-                                    {item[accordionList[index]].title}
-                                </Typography>
-                            </Accordion.Trigger>
+                        sx={{
+                            width: "100%",
+                        }}
+                    >
+                        <Accordion.Trigger expandIcon={<ExpandMore />}>
+                            <Typography variant="body2">
+                                {item[accordionList[index]].title}
+                            </Typography>
+                        </Accordion.Trigger>
 
-                            <Accordion.Content>
-                                    <Stack direction="column" spacing={1}>
-                                        {renderElement.map((c, cIdx) => {
-                                            return createElement(c.render, {
-                                                key: cIdx,
-                                                id: id,
-                                            });
-                                        })}
-                                    </Stack>
-                            </Accordion.Content>
-                        </Accordion>
-                    ))
-                }
-                 
+                        <Accordion.Content>
+                            <Stack direction="column" spacing={1}>
+                                {renderElement.map((c, cIdx) => {
+                                    return createElement(c.render, {
+                                        key: cIdx,
+                                        id: id,
+                                    });
+                                })}
+                            </Stack>
+                        </Accordion.Content>
+                    </Accordion>
+                ))}
             </>
         );
 
@@ -1034,14 +1640,14 @@ export const FrameOperations = observer(
 
             tempValue["visual"] =
                 tempValue["visual"] &&
-                    Object.keys(tempValue["visual"]).length > 0
+                Object.keys(tempValue["visual"]).length > 0
                     ? tempValue["visual"]
                     : {};
             tempValue["visual"] = value;
 
             setValue(JSON.stringify(tempValue));
             setData("option", tempValue);
-        }
+        };
         const handleSelectedItem = (item: any) => {
             selectedItem(item);
             setSelectedColumn([]);
@@ -1051,9 +1657,7 @@ export const FrameOperations = observer(
                 <DragDropContext onDragEnd={handleDragEnd}>
                     <StyledDropDownSection>
                         <StyledSubSection>
-                            <StyledSpanDimension>
-                                Dimension
-                            </StyledSpanDimension>
+                            <StyledSpanDimension>Dimension</StyledSpanDimension>
                             <Stack paddingTop={2} width={"95%"}>
                                 <TextField
                                     placeholder="Search"
@@ -1064,7 +1668,9 @@ export const FrameOperations = observer(
                                         },
                                     }}
                                     value={search}
-                                    onChange={(e) => handleSearch(e.target.value)}
+                                    onChange={(e) =>
+                                        handleSearch(e.target.value)
+                                    }
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
@@ -1075,11 +1681,10 @@ export const FrameOperations = observer(
                                             <InputAdornment position="end">
                                                 <IconButton
                                                     size="small"
-                                                // onClick={(e) =>
-                                                //     setMenuAnchorEl(e.currentTarget)
-                                                // }
-                                                >
-                                                </IconButton>
+                                                    // onClick={(e) =>
+                                                    //     setMenuAnchorEl(e.currentTarget)
+                                                    // }
+                                                ></IconButton>
                                             </InputAdornment>
                                         ),
                                     }}
@@ -1087,9 +1692,16 @@ export const FrameOperations = observer(
                             </Stack>
                             <Droppable droppableId="column-list">
                                 {(provided) => (
-                                    <div ref={provided.innerRef} {...provided.droppableProps}>
+                                    <div
+                                        ref={provided.innerRef}
+                                        {...provided.droppableProps}
+                                    >
                                         {filteredColumns.map((col, index) => (
-                                            <Draggable key={col.name} draggableId={col.name} index={index}>
+                                            <Draggable
+                                                key={col.name}
+                                                draggableId={col.name}
+                                                index={index}
+                                            >
                                                 {(provided, snapshot) => (
                                                     <div
                                                         ref={provided.innerRef}
@@ -1097,61 +1709,171 @@ export const FrameOperations = observer(
                                                         {...provided.dragHandleProps}
                                                         style={{
                                                             display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "space-between",
+                                                            alignItems:
+                                                                "center",
+                                                            justifyContent:
+                                                                "space-between",
                                                             gap: "12px",
                                                             padding: "8px",
                                                             marginBottom: "8px",
                                                             marginTop: "2px",
-                                                            background: snapshot.isDragging ? "#f0f0f0" : "#fff",
+                                                            background:
+                                                                snapshot.isDragging
+                                                                    ? "#f0f0f0"
+                                                                    : "#fff",
                                                             borderRadius: "4px",
                                                             maxWidth: "100%",
-                                                            boxShadow: snapshot.isDragging ? "0 2px 5px rgba(0,0,0,0.2)" : "none",
-                                                            ...provided.draggableProps.style,
+                                                            boxShadow:
+                                                                snapshot.isDragging
+                                                                    ? "0 2px 5px rgba(0,0,0,0.2)"
+                                                                    : "none",
+                                                            ...provided
+                                                                .draggableProps
+                                                                .style,
                                                         }}
                                                     >
-                                                        <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center" }}>
-                                                            {col.dataType === "STRING" ? (
-                                                                <StyledLabelIcon src={String(StringIcon)} />
+                                                        <div
+                                                            style={{
+                                                                flex: "0 0 auto",
+                                                                display: "flex",
+                                                                alignItems:
+                                                                    "center",
+                                                            }}
+                                                        >
+                                                            {col.dataType ===
+                                                            "STRING" ? (
+                                                                <StyledLabelIcon
+                                                                    src={String(
+                                                                        StringIcon,
+                                                                    )}
+                                                                />
                                                             ) : (
-                                                                <StyledLabelIcon src={String(NumberIcon)} />
+                                                                <StyledLabelIcon
+                                                                    src={String(
+                                                                        NumberIcon,
+                                                                    )}
+                                                                />
                                                             )}
                                                         </div>
-                                                        <div style={{ flex: "1 1 auto", display: "flex", alignItems: "center" }}>
-                                                            {col.name.length > 7 ? (
-                                                                <Tooltip title={col.name}>
-                                                                    <span style={{ lineHeight: "1.5" }}>{col.name.slice(0, 7)}...</span>
+                                                        <div
+                                                            style={{
+                                                                flex: "1 1 auto",
+                                                                display: "flex",
+                                                                alignItems:
+                                                                    "center",
+                                                            }}
+                                                        >
+                                                            {col.name.length >
+                                                            7 ? (
+                                                                <Tooltip
+                                                                    title={
+                                                                        col.name
+                                                                    }
+                                                                >
+                                                                    <span
+                                                                        style={{
+                                                                            lineHeight:
+                                                                                "1.5",
+                                                                        }}
+                                                                    >
+                                                                        {col.name.slice(
+                                                                            0,
+                                                                            7,
+                                                                        )}
+                                                                        ...
+                                                                    </span>
                                                                 </Tooltip>
                                                             ) : (
-                                                                <span style={{ lineHeight: "1.5" }}>{col.name}</span>
+                                                                <span
+                                                                    style={{
+                                                                        lineHeight:
+                                                                            "1.5",
+                                                                    }}
+                                                                >
+                                                                    {col.name}
+                                                                </span>
                                                             )}
                                                         </div>
                                                         {isAdd && (
-                                                            <div style={{ flex: "1 1 auto", display: "flex", justifyContent: "flex-end" }}>
+                                                            <div
+                                                                style={{
+                                                                    flex: "1 1 auto",
+                                                                    display:
+                                                                        "flex",
+                                                                    justifyContent:
+                                                                        "flex-end",
+                                                                }}
+                                                            >
                                                                 <Checkbox
                                                                     size="small"
                                                                     color="primary"
-                                                                    onChange={(e) => {
-                                                                        setDroppedColumns((prev) => {
-                                                                            const updated = { ...prev };
-                                                                            if (e.target.checked) {
-                                                                                // Add the column name if checked
-                                                                                if (!updated[addedColumnName]) updated[addedColumnName] = [];
-                                                                                updated[addedColumnName].push(col.name);
-                                                                            } else {
-                                                                                // Remove the column name if unchecked
-                                                                                if (updated[addedColumnName]) {
-                                                                                    updated[addedColumnName] = updated[addedColumnName].filter(
-                                                                                        (name) => name !== col.name
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) => {
+                                                                        setDroppedColumns(
+                                                                            (
+                                                                                prev,
+                                                                            ) => {
+                                                                                const updated =
+                                                                                    {
+                                                                                        ...prev,
+                                                                                    };
+                                                                                if (
+                                                                                    e
+                                                                                        .target
+                                                                                        .checked
+                                                                                ) {
+                                                                                    // Add the column name if checked
+                                                                                    if (
+                                                                                        !updated[
+                                                                                            addedColumnName
+                                                                                        ]
+                                                                                    )
+                                                                                        updated[
+                                                                                            addedColumnName
+                                                                                        ] =
+                                                                                            [];
+                                                                                    updated[
+                                                                                        addedColumnName
+                                                                                    ].push(
+                                                                                        col.name,
                                                                                     );
-                                                                                    // If the array becomes empty, you can optionally delete the key
-                                                                                    if (updated[addedColumnName].length === 0) {
-                                                                                        delete updated[addedColumnName];
+                                                                                } else {
+                                                                                    // Remove the column name if unchecked
+                                                                                    if (
+                                                                                        updated[
+                                                                                            addedColumnName
+                                                                                        ]
+                                                                                    ) {
+                                                                                        updated[
+                                                                                            addedColumnName
+                                                                                        ] =
+                                                                                            updated[
+                                                                                                addedColumnName
+                                                                                            ].filter(
+                                                                                                (
+                                                                                                    name,
+                                                                                                ) =>
+                                                                                                    name !==
+                                                                                                    col.name,
+                                                                                            );
+                                                                                        // If the array becomes empty, you can optionally delete the key
+                                                                                        if (
+                                                                                            updated[
+                                                                                                addedColumnName
+                                                                                            ]
+                                                                                                .length ===
+                                                                                            0
+                                                                                        ) {
+                                                                                            delete updated[
+                                                                                                addedColumnName
+                                                                                            ];
+                                                                                        }
                                                                                     }
                                                                                 }
-                                                                            }
-                                                                            return updated;
-                                                                        });
+                                                                                return updated;
+                                                                            },
+                                                                        );
                                                                     }}
                                                                 />
                                                             </div>
@@ -1164,7 +1886,6 @@ export const FrameOperations = observer(
                                     </div>
                                 )}
                             </Droppable>
-
                         </StyledSubSection>
                         <StyledSubSection>
                             <DataTabStyling
@@ -1180,15 +1901,11 @@ export const FrameOperations = observer(
                                 storedColumns={selectedColumn}
                                 visual={handleChangeVisual}
                                 selectedItem={handleSelectedItem}
-                            >
-                            </DataTabStyling>
+                            ></DataTabStyling>
                         </StyledSubSection>
-
                     </StyledDropDownSection>
                     <StyledDropDownSection>
-                            {
-                                renderAccordion
-                            }
+                        {renderAccordion}
                     </StyledDropDownSection>
                 </DragDropContext>
             </>
