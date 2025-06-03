@@ -196,6 +196,15 @@ const StyledTable = styled(Table)(({ theme }) => ({
     borderWidth: 'thin',
 }));
 
+const StyledCenteredFallback = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    minHeight: 120,
+    width: '100%',
+}));
+
 const StyledPaper = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
     padding: theme.spacing(2),
@@ -752,84 +761,85 @@ export const AppSettings = (props: AppSettingsProps) => {
                     </StyledCardDiv>
                 </StyledTopCardContainer>
 
-                {portalReactors.reactors.length ? (
-                    <StyledCardContainer>
-                        <StyledCardDiv>
-                            <StyledCardLeft>
-                                <StyledListItemHeader>
-                                    <Typography variant="h6">
-                                        Reactors
-                                    </Typography>
-                                </StyledListItemHeader>
+                <StyledCardContainer>
+                    <StyledCardDiv>
+                        <StyledCardLeft>
+                            <StyledListItemHeader>
+                                <Typography variant="h6">Reactors</Typography>
+                            </StyledListItemHeader>
+                            <StyledListItemHeader>
+                                Custom reactors created for the portal.
+                            </StyledListItemHeader>
+                            <Button
+                                variant="contained"
+                                onClick={() => {
+                                    recompileReactors({ release: null });
+                                }}
+                            >
+                                Compile Changes on This Instance
+                            </Button>
+                            <Button
+                                variant="contained"
+                                onClick={() => {
+                                    recompileReactors({ release: true });
+                                }}
+                            >
+                                Deploy and Persist Changes
+                            </Button>
+                            {portalReactors.lastCompiled && (
+                                <StyledLeftActionContainer>
+                                    <StyledLeftActionDiv>
+                                        <StyledActionDivLeft>
+                                            <Typography variant="body2">
+                                                Last compiled by:
+                                            </Typography>
+                                        </StyledActionDivLeft>
+                                        <Avatar>
+                                            <StyledPersonIcon />
+                                        </Avatar>
+                                        <Typography variant="body2">
+                                            {portalReactors.compiledBy}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            on
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            {portalReactors.lastCompiled}
+                                        </Typography>
+                                    </StyledLeftActionDiv>
+                                </StyledLeftActionContainer>
+                            )}
+                        </StyledCardLeft>
 
-                                <StyledListItemHeader>
-                                    Custom reactors created for the portal.
-                                </StyledListItemHeader>
-                                <Button
-                                    variant="contained"
-                                    onClick={() => {
-                                        recompileReactors({ release: null });
-                                    }}
-                                >
-                                    Compile Changes on This Instance
-                                </Button>
-                                <Button
-                                    variant="contained"
-                                    onClick={() => {
-                                        recompileReactors({ release: true });
-                                    }}
-                                >
-                                    Deploy and Persist Changes
-                                </Button>
-                                {portalReactors.lastCompiled && (
-                                    <StyledLeftActionContainer>
-                                        <StyledLeftActionDiv>
-                                            <StyledActionDivLeft>
-                                                <Typography variant="body2">
-                                                    Last compiled by:
-                                                </Typography>
-                                            </StyledActionDivLeft>
-                                            <Avatar>
-                                                <StyledPersonIcon />
-                                            </Avatar>
-                                            <Typography variant="body2">
-                                                {portalReactors.compiledBy}
-                                            </Typography>
-                                            <Typography variant="body2">
-                                                on
-                                            </Typography>
-                                            <Typography variant="body2">
-                                                {portalReactors.lastCompiled}
-                                            </Typography>
-                                        </StyledLeftActionDiv>{' '}
-                                    </StyledLeftActionContainer>
-                                )}
-                            </StyledCardLeft>
-                            <StyledCardRight>
+                        <StyledCardRight>
+                            {portalReactors.reactors.length > 0 ? (
                                 <StyledTable>
                                     <Table.Body>
                                         {portalReactors.reactors.map(
-                                            (reactor, i) => {
-                                                return (
-                                                    <Table.Row
-                                                        key={reactor + i}
-                                                    >
-                                                        <Table.Cell>
-                                                            {reactor}
-                                                        </Table.Cell>
-                                                        <Table.Cell align="right">
-                                                            <Java />
-                                                        </Table.Cell>
-                                                    </Table.Row>
-                                                );
-                                            },
+                                            (reactor, i) => (
+                                                <Table.Row key={reactor + i}>
+                                                    <Table.Cell>
+                                                        {reactor}
+                                                    </Table.Cell>
+                                                    <Table.Cell align="right">
+                                                        <Java />
+                                                    </Table.Cell>
+                                                </Table.Row>
+                                            ),
                                         )}
                                     </Table.Body>
                                 </StyledTable>
-                            </StyledCardRight>
-                        </StyledCardDiv>
-                    </StyledCardContainer>
-                ) : null}
+                            ) : (
+                                <StyledCenteredFallback>
+                                    <Typography variant="body2">
+                                        No reactors available.
+                                    </Typography>
+                                </StyledCenteredFallback>
+                            )}
+                        </StyledCardRight>
+                    </StyledCardDiv>
+                </StyledCardContainer>
+
                 <StyledCardContainer>
                     {isLoading && (
                         <LoadingScreen.Trigger description="Updating Project" />

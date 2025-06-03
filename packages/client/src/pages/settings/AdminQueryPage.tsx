@@ -281,6 +281,7 @@ export const AdminQueryPage = () => {
                             variant={'contained'}
                             onClick={() => submitQuery()}
                             disabled={!disableButton}
+                            data-testid={'admin-query-run-btn'}
                         >
                             Run
                         </Button>

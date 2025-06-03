@@ -27,6 +27,7 @@ export const config: BlockConfig<EchartVisualizationBlockDef> = {
             name: "",
         },
         columns: [],
+        aggregate: {},
         contextMenu: {
             hideFilter: false,
             hideUnfilter: false,
@@ -40,8 +41,8 @@ export const config: BlockConfig<EchartVisualizationBlockDef> = {
     },
     listeners: {
         preProcess: {
-            type: 'sync',
-            order: []
+            type: "sync",
+            order: [],
         },
     },
     slots: {},

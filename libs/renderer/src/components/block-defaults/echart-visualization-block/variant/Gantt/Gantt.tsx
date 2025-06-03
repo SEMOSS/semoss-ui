@@ -72,19 +72,40 @@ export const Gantt = observer(
         //table reference variable to align series name with fiscal axis
         const tableRef = useRef(null);
         const [seriesNameCol, setSeriesNameCol] = useState(70);
+
+        /**
+         * Builds a dynamic query string based on the provided input data.
+         * @param inputData - An array of tuples where each tuple contains a string and an object mapping field names to aggregation methods.
+         * @returns A query string that selects and groups by the specified fields with appropriate aggregations.
+         */
+        const buildDynamicQuery = (
+            inputData: [string, Record<string, string | undefined>][],
+        ): string => {
+            const selectParts: string[] = [];
+            const aliasParts: string[] = [];
+            const groupByParts: string[] = [];
+
+            inputData.forEach(([_, fields]) => {
+                for (const field in fields) {
+                    const rawAgg = fields[field];
+                    aliasParts.push(field);
+
+                    if (rawAgg) {
+                        const cleanedAgg = rawAgg.split(" ").join(""); // Remove spaces (e.g., "Unique Count" → "UniqueCount")
+                        selectParts.push(`${cleanedAgg}(${field})`);
+                    } else {
+                        selectParts.push(field);
+                        groupByParts.push(field); // Only unaggregated fields are grouped
+                    }
+                }
+            });
+
+            return `Select(${selectParts.join(", ")}).as([${aliasParts.join(
+                ", ",
+            )}]) | Group(${groupByParts.join(", ")})`;
+        };
         //selector to fetch data from the frame
-        let selector = "";
-        if (data.columns?.length > 0) {
-            selector = `Select(${data.columns
-                .map((item, index) => {
-                    return item.selector;
-                })
-                .join(",")}).as([${data.columns
-                .map((item, index) => {
-                    return item.name;
-                })
-                .join(",")}])`;
-        }
+        let selector = buildDynamicQuery(Object.entries(data?.aggregate ?? {}));
         //frame object to get the data from the frame
         const frame = useFrame(data.frame?.name, {
             selector: selector,
