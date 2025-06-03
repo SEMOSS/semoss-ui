@@ -128,6 +128,7 @@ export const PromptPage = observer(() => {
                                 setIsPromptModalOpen(true);
                             }}
                             aria-label={`Add Prompt`}
+                            data-testid={'prompt-page-add-btn'}
                         >
                             Add Prompt
                         </Button>
