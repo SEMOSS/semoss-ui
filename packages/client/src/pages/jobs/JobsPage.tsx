@@ -155,9 +155,12 @@ export function JobsPage() {
     const deleteJob = (jobId: string[], jobGroup: string[]) => {
         let pixel;
         if (jobId.length > 1 && jobGroup.length > 1) {
-            const jobIdStr = `"${jobId.join(' , ')}"`;
-            const jobGroupStr = `"${jobGroup.join(' , ')}"`;
-            pixel = `META | RemoveJobFromDB(jobId=[${jobIdStr}], jobGroup=[${jobGroupStr}]) `;
+            // const jobIdStr = `"${jobId.join(' , ')}"`;
+            // const jobGroupStr = `"${jobGroup.join(' , ')}"`;
+            // pixel = `META | RemoveJobFromDB(jobId=[${jobIdStr}], jobGroup=[${jobGroupStr}]) `;
+            pixel = `META | RemoveJobFromDB(jobId=${JSON.stringify(
+                jobId,
+            )}, jobGroup=${JSON.stringify(jobGroup)}) `;
         } else {
             pixel = 'META | RemoveJobFromDB(';
             pixel += 'jobId=["' + jobId[0] + '"], ';
