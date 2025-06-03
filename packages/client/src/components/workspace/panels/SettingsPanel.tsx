@@ -140,10 +140,10 @@ export const SettingsPanel = () => {
                                             '/settings/app/',
                                         )
                                     ) {
-                                        // If in app settings, go to app library
+                                        // If in app settings
                                         navigate('/settings/app');
                                     } else {
-                                        // Default: go to home
+                                        // If in App Library
                                         navigate('/');
                                     }
                                 }}
