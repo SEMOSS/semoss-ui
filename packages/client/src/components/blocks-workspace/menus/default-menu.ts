@@ -1743,6 +1743,11 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                         text: '',
                         left: 'center',
                         top: 'top',
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'normal',
+                            color: '#000000',
+                        },
                     },
                     tooltip: {
                         show: true,
@@ -2102,6 +2107,11 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                         text: '',
                         left: 'center',
                         top: 'top',
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'normal',
+                            color: '#000000',
+                        },
                     },
                     tooltip: {
                         show: false,
@@ -2421,6 +2431,16 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 variation: 'echart-gantt-chart',
                 option: {
+                    title: {
+                        text: '',
+                        left: 'center',
+                        top: 'top',
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'normal',
+                            color: '#000000',
+                        },
+                    },
                     tooltip: {
                         show: true,
                     },
@@ -2508,6 +2528,16 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     tooltip: {
                         trigger: 'item',
                         triggerOn: 'mousemove',
+                    },
+                    title: {
+                        text: '',
+                        left: 'center',
+                        top: 'top',
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'normal',
+                            color: '#000000',
+                        },
                     },
                     toolbox: {
                         show: true,

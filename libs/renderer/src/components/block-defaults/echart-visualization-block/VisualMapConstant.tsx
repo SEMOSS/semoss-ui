@@ -576,6 +576,11 @@ export const VisualMapConstant = {
                         text: '',
                         left: 'center',
                         top: 'top',
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'normal',
+                            color: '#000000',
+                        },
                     },
                     tooltip: {
                         show: false,
@@ -798,6 +803,11 @@ export const VisualMapConstant = {
                         text: '',
                         left: 'center',
                         top: 'top',
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'normal',
+                            color: '#000000',
+                        },
                     },
                     tooltip: {
                         show: true,
@@ -1008,6 +1018,16 @@ export const VisualMapConstant = {
                         trigger: 'item',
                         triggerOn: 'mousemove',
                     },
+                    title: {
+                        text: '',
+                        left: 'center',
+                        top: 'top',
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'normal',
+                            color: '#000000',
+                        },
+                    },
                     toolbox: {
                         show: true,
                         feature: {
@@ -1113,6 +1133,16 @@ export const VisualMapConstant = {
                 label: "Gantt",
                 title: "echart-gantt-chart",
                 option: {
+                    title: {
+                        text: '',
+                        left: 'center',
+                        top: 'top',
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'normal',
+                            color: '#000000',
+                        },
+                    },
                     tooltip: {
                         show: true,
                     },

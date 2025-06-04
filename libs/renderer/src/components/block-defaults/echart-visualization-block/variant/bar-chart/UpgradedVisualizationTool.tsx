@@ -208,6 +208,32 @@ const DendrogramToolsList = (({id}) => {
                     <LabelsDendrogram id={id} path={'option'} />
                 )}
            </StyledListItem>
+           <StyledListItem disablePadding>
+                        <ListItemButton
+                            onClick={(e) =>
+                                setDendrogramSelection((prevList) =>
+                                    prevList === "title" ? "" : "title",
+                                )
+                            }
+                            selected={dendrogramSelection === "title"}
+                        >
+                            <ListItemIcon>
+                                <ImageIcon
+                                    fontSize="large"
+                                    color={
+                                        dendrogramSelection === "title"
+                                            ? "primary"
+                                            : "disabled"
+                                    }
+                                />
+                            </ListItemIcon>
+                            <ListItemText primary="Chart Title" />
+                            <InfoOutlined />
+                        </ListItemButton>
+                    {dendrogramSelection === "title" && (
+                        <LineTitle id={id} path={"option"} />
+                    )}
+                </StyledListItem>
        </>
    ) 
 });
@@ -511,6 +537,32 @@ const GanttToolsList = (({id})=>{
                     <GanttDisplayValueLabels id={id} path="option" />
                 </>
             )}
+            <StyledListItem disablePadding>
+                        <ListItemButton
+                            onClick={(e) =>
+                                setGanttSelection((prevList) =>
+                                    prevList === "title" ? "" : "title",
+                                )
+                            }
+                            selected={ganttSelection === "title"}
+                        >
+                            <ListItemIcon>
+                                <ImageIcon
+                                    fontSize="large"
+                                    color={
+                                        ganttSelection === "title"
+                                            ? "primary"
+                                            : "disabled"
+                                    }
+                                />
+                            </ListItemIcon>
+                            <ListItemText primary="Chart Title" />
+                            <InfoOutlined />
+                        </ListItemButton>
+                    {ganttSelection === "title" && (
+                        <LineTitle id={id} path={"option"} />
+                    )}
+                </StyledListItem>
         </>
     );
 });
@@ -703,6 +755,32 @@ const StackChartTool = (({id})=>{
                                 <LegendStackChart id={id} path={"option"} />
                             )}
                     </StyledListItem>
+                    <StyledListItem disablePadding>
+                        <ListItemButton
+                            onClick={(e) =>
+                                setStackChartSelection((prevList) =>
+                                    prevList === "title" ? "" : "title",
+                                )
+                            }
+                            selected={stackChartSelection === "title"}
+                        >
+                            <ListItemIcon>
+                                <ImageIcon
+                                    fontSize="large"
+                                    color={
+                                        stackChartSelection === "title"
+                                            ? "primary"
+                                            : "disabled"
+                                    }
+                                />
+                            </ListItemIcon>
+                            <ListItemText primary="Chart Title" />
+                            <InfoOutlined />
+                        </ListItemButton>
+                    {stackChartSelection === "title" && (
+                        <LineTitle id={id} path={"option"} />
+                    )}
+                </StyledListItem>
         </>
     );
 });
@@ -898,14 +976,12 @@ const BarToolsList = (({id})=>{
                             }
                         />
                     </ListItemIcon>
-                    <ListItemText primary="Chart Style" />
+                    <ListItemText primary="Chart Title" />
                     <InfoOutlined />
                 </ListItemButton>
                         {barSelection === "chartstyle" && (
-                            <ChartStyling
-                                option={data.option}
+                            <LineTitle
                                 id={id}
-                                updateChart={updateChart}
                                 path="option"
                             />
                         )}
@@ -1169,10 +1245,10 @@ const ScatterToolsList = (({id})=>{
                         <InfoOutlined />
                     </ListItemButton>
                 {scatterSelection === "scatter-plots-title" && (
-                    <ScatterPlotChartTitle
+                    <LineTitle
                         id={id}
                         path={"option"}
-                    ></ScatterPlotChartTitle>
+                    ></LineTitle>
                 )}
             </StyledListItem>
         </>
@@ -1482,6 +1558,32 @@ const LineChartTools = (({id})=>{
                         ></MapMarkerSize>
                     )}
                 </StyledListItem>
+                <StyledListItem disablePadding>
+                        <ListItemButton
+                            onClick={(e) =>
+                                setMapSelection((prevList) =>
+                                    prevList === "title" ? "" : "title",
+                                )
+                            }
+                            selected={mapSelection === "title"}
+                        >
+                            <ListItemIcon>
+                                <ImageIcon
+                                    fontSize="large"
+                                    color={
+                                        mapSelection === "title"
+                                            ? "primary"
+                                            : "disabled"
+                                    }
+                                />
+                            </ListItemIcon>
+                            <ListItemText primary="Chart Title" />
+                            <InfoOutlined />
+                        </ListItemButton>
+                    {mapSelection === "title" && (
+                        <LineTitle id={id} path={"option"} />
+                    )}
+                </StyledListItem>
             </>
         );
     });
@@ -1597,7 +1699,7 @@ const LineChartTools = (({id})=>{
                             <InfoOutlined />
                         </ListItemButton>
                     {pieSelection === "title" && (
-                        <PieTitle id={id} path={"option"} />
+                        <LineTitle id={id} path={"option"} />
                     )}
                 </StyledListItem>
                 <StyledListItem disablePadding>
