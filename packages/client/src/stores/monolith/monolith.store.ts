@@ -1891,11 +1891,17 @@ export class MonolithStore {
             params: {
                 projectId: projectId,
             },
+        }).catch((error) => {
+                throw Error(error.response?.data?.errorMessage);
         });
 
         // there was no response, that is an error
         if (!response) {
-            throw Error('No Response to get permission');
+            if (response.status === 401) {
+                throw Error('User does not have access to this project');
+            } else {
+                throw Error('No Response to get permission');
+            }
         }
 
         return response.data;
