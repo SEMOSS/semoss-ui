@@ -123,7 +123,7 @@ export const NewAppPage = () => {
 
     return (
         <NewAppStep
-            title={'Create New App TEST'}
+            title={'Create New App'}
             previous={{ title: 'App Library', onClick: () => navigate('/') }}
         >
             {isUploadOpen ? (
