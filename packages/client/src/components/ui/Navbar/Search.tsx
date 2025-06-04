@@ -16,6 +16,9 @@ import Autocomplete from '@mui/material/Autocomplete';
 import Chip from '@mui/material/Chip';
 import NorthEastIcon from '@mui/icons-material/NorthEast';
 import { useNavigate } from 'react-router-dom';
+import { ENGINE_IMAGES } from '/workspace/apache-tomcat-9.0.96/webapps/SemossWeb/packages/client/src/pages/import/import.constants';
+import BRAIN from '@/assets/img/BRAIN.png';
+import { Env } from '@semoss/sdk/react';
 
 // Dummy data for illustration
 const categories = [
@@ -35,6 +38,7 @@ const CatalogItem = ({
     title,
     description = 'Sample description',
     icon = '',
+    id = '',
 }) => (
     <Card
         sx={{
@@ -66,12 +70,12 @@ const CatalogItem = ({
                 justifyContent={'space-between'}
             >
                 <Grid item xs={1}>
-                    {/* <img
+                    <img
                         src={icon}
                         alt={`${title} icon`}
                         style={{ width: '40px', height: '40px' }}
-                    /> */}
-                    <span style={{ width: '40px', height: '40px' }}>image</span>
+                    />
+                    {/* <span style={{ width: '40px', height: '40px' }}>image</span> */}
                 </Grid>
                 <Grid item xs={9}>
                     <Typography
@@ -160,6 +164,18 @@ const Search = observer(({ renderInput }: SearchProps) => {
     };
 
     data = limitOptionsPerGroup(data, 3);
+    const findDBImage = (appType: string, appSubType: string) => {
+        const obj = ENGINE_IMAGES[appType]?.find(
+            (ele) => ele.name == appSubType,
+        );
+
+        if (!obj) {
+            console.warn('No image found:', appType, appSubType);
+            return BRAIN;
+        }
+
+        return obj.icon;
+    };
 
     return (
         <Autocomplete
@@ -213,9 +229,17 @@ const Search = observer(({ renderInput }: SearchProps) => {
                         }}
                     >
                         <CatalogItem
-                            icon={''}
+                            icon={
+                                option.project_type
+                                    ? `${Env.MODULE}/api/project-${option.id}/projectImage/download`
+                                    : findDBImage(
+                                          option.app_type,
+                                          option.app_subtype,
+                                      )
+                            }
                             title={option.label}
                             description={option.description}
+                            id={option.id}
                         />
                     </List.ItemButton>
                 </List.Item>
