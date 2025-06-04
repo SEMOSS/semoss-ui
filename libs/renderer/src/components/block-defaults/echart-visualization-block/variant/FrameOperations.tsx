@@ -662,6 +662,7 @@ export const FrameOperations = observer(
             const columns = { ...fieldsData };
 
             if (variation === "echart-bar-graph") {
+                let tempVal = JSON.parse(computedValue) || {};
                 if (firstColumn?.label) {
                     columns[firstColumn?.label] = [
                         {
@@ -709,7 +710,6 @@ export const FrameOperations = observer(
                     columns[firstColumn?.label] &&
                     columns[secondColumn?.label]
                 ) {
-                    let tempVal = JSON.parse(computedValue) || {};
                     const seriesIndex =
                         tempVal["series"].findIndex((item) =>
                             BAR_CHART_DATA.JSONVALUE.includes(item.type),
@@ -719,11 +719,19 @@ export const FrameOperations = observer(
                         tempVal[firstColumn?.label] = {
                             ...tempVal[firstColumn?.label],
                             ["name"]:
-                                columns[firstColumn?.label][0]?.name || "",
+                                columns[firstColumn?.label][0]?.name || [],
                             ["pixelname"]:
-                                columns[firstColumn?.label][0]?.name || "",
+                                columns[firstColumn?.label][0]?.name || [],
                             ["pixelvalue"]:
-                                columns[firstColumn?.label][0]?.selector || "",
+                                columns[firstColumn?.label][0]?.selector || [],
+                        };
+                    }
+                    else{
+                        tempVal['xAxis'] = {
+                            ...tempVal['xAxis'],
+                            ['name']: [],
+                            ['pixelname']:[],
+                            ['pixelvalue']:[],
                         };
                     }
 
@@ -757,6 +765,17 @@ export const FrameOperations = observer(
                             ["pixelvalue"]: pixelValue,
                         };
                     }
+                    else{
+                        tempVal = {
+                            ...tempVal,
+                            ['yAxis']:{
+                                ...tempVal['yAxis'],
+                                ['name']:"",
+                                ['pixelname']:[],
+                                ['pixelvalue']:[],
+                            }
+                        };
+                    }
                     for (
                         let i = 0;
                         i < columns[secondColumn?.label]?.length;
@@ -787,9 +806,7 @@ export const FrameOperations = observer(
                 }
             }
             if (
-                variation === "echart-pie-chart" &&
-                firstColumn !== null &&
-                secondColumn !== null
+                variation === "echart-pie-chart"
             ) {
                 const tempValue = JSON.parse(computedValue);
 
@@ -798,8 +815,8 @@ export const FrameOperations = observer(
 
                 tempValue["_state"]["fields"] = {
                     ...tempValue["_state"]["fields"],
-                    Value: firstColumn?.values,
-                    Label: secondColumn?.values,
+                    Value: firstColumn?.values || [],
+                    Label: secondColumn?.values || [],
                 };
 
                 // set the value
@@ -807,14 +824,15 @@ export const FrameOperations = observer(
                 setData("option", tempValue);
             }
             if (variation === "echart-scatter-plots") {
-                if (firstColumn?.values) {
-                    const tempValue = JSON.parse(computedValue);
+                const tempValue = JSON.parse(computedValue);
 
-                    tempValue["_state"] =
-                        tempValue["_state"] &&
-                        Object.keys(tempValue["_state"]).length > 0
-                            ? tempValue["_state"]
-                            : {};
+                tempValue["_state"] =
+                    tempValue["_state"] &&
+                    Object.keys(tempValue["_state"]).length > 0
+                        ? tempValue["_state"]
+                        : {};
+                if (firstColumn?.values) {
+                    
                     tempValue["_state"]["fields"] = {
                         ...tempValue["_state"]["fields"],
                         label: firstColumn?.values,
@@ -825,17 +843,8 @@ export const FrameOperations = observer(
                     tempValue["series"][0]["label"]["name"] =
                         firstColumn?.values;
 
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
                 }
                 if (secondColumn?.values) {
-                    const tempValue = JSON.parse(computedValue);
-
-                    tempValue["_state"] =
-                        tempValue["_state"] &&
-                        Object.keys(tempValue["_state"]).length > 0
-                            ? tempValue["_state"]
-                            : {};
                     tempValue["_state"]["fields"] = {
                         ...tempValue["_state"]["fields"],
                         XAxis: secondColumn?.values,
@@ -845,17 +854,9 @@ export const FrameOperations = observer(
                     tempValue["xAxis"]["name"] = secondColumn?.values;
                     tempValue["xAxis"]["pixelName"] = secondColumn?.values;
 
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
                 }
                 if (columnsDrop[2]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
 
-                    tempValue["_state"] =
-                        tempValue["_state"] &&
-                        Object.keys(tempValue["_state"]).length > 0
-                            ? tempValue["_state"]
-                            : {};
                     tempValue["_state"]["fields"] = {
                         ...tempValue["_state"]["fields"],
                         YAxis: columnsDrop[2]?.values,
@@ -865,64 +866,40 @@ export const FrameOperations = observer(
                     tempValue["yAxis"]["name"] = columnsDrop[2]?.values;
                     tempValue["yAxis"]["pixelName"] = columnsDrop[2]?.values;
 
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
                 }
                 if (columnsDrop[3]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
 
-                    tempValue["_state"] =
-                        tempValue["_state"] &&
-                        Object.keys(tempValue["_state"]).length > 0
-                            ? tempValue["_state"]
-                            : {};
                     tempValue["_state"]["fields"] = {
                         ...tempValue["_state"]["fields"],
                         size: columnsDrop[3]?.values,
                         sizeDataType: columnsDrop[3]?.dataType,
                     };
 
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
+
                 }
                 if (columnsDrop[4]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
 
-                    tempValue["_state"] =
-                        tempValue["_state"] &&
-                        Object.keys(tempValue["_state"]).length > 0
-                            ? tempValue["_state"]
-                            : {};
                     tempValue["_state"]["fields"] = {
                         ...tempValue["_state"]["fields"],
                         color: columnsDrop[4]?.values,
                         colorDataType: columnsDrop[4]?.dataType,
                     };
 
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
                 }
                 if (columnsDrop[5]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
 
-                    tempValue["_state"] =
-                        tempValue["_state"] &&
-                        Object.keys(tempValue["_state"]).length > 0
-                            ? tempValue["_state"]
-                            : {};
                     tempValue["_state"]["fields"] = {
                         ...tempValue["_state"]["fields"],
                         tooltip: columnsDrop[5]?.values,
                         tooltipDataType: columnsDrop[5]?.dataType,
                     };
-
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
                 }
+                setValue(JSON.stringify(tempValue));
+                setData("option", tempValue);
             }
             if (variation === "echart-stack-chart") {
+                const tempValue = JSON.parse(computedValue);
                 if (firstColumn?.values) {
-                    const tempValue = JSON.parse(computedValue);
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
@@ -939,13 +916,8 @@ export const FrameOperations = observer(
                     tempValue["xAxis"]["pixelName"] = firstColumn?.values;
                     tempValue["xAxis"]["flipAxisName"] = firstColumn?.values;
                     tempValue["xAxis"]["axisName"] = firstColumn?.values;
-
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
                 }
                 if (secondColumn?.values) {
-                    const tempValue = JSON.parse(computedValue);
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -961,13 +933,8 @@ export const FrameOperations = observer(
                     tempValue["yAxis"]["pixelName"] = secondColumn?.values;
                     tempValue["yAxis"]["flipAxisName"] = secondColumn?.values;
                     tempValue["yAxis"]["axisName"] = secondColumn?.values;
-
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
                 }
                 if (columnsDrop[2]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -978,13 +945,8 @@ export const FrameOperations = observer(
                         category: columnsDrop[2]?.values,
                         categoryDataType: columnsDrop[2]?.dataType,
                     };
-
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
                 }
                 if (columnsDrop[3]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -995,10 +957,9 @@ export const FrameOperations = observer(
                         tooltip: columnsDrop[3]?.values,
                         tooltipDataType: columnsDrop[3]?.dataType,
                     };
-
-                    setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
                 }
+                setValue(JSON.stringify(tempValue));
+                setData("option", tempValue);
             }
             if (
                 variation === "echart-line-graph" &&
@@ -1434,6 +1395,14 @@ export const FrameOperations = observer(
                 let facetElement = columnsValue.find(
                     (element) => element.label === "facet",
                 );
+                dimensionElement = {
+                    ...dimensionElement,
+                    ['values']: dimensionElement['values']?.['values'] || [],
+                };
+                facetElement = {
+                    ...facetElement,
+                    ['values']: facetElement['values']?.['values'] || [],
+                };
                 let parsedJson = JSON.parse(computedValue) || {};
                 if (
                     dimensionElement.label === "dimensions" &&
