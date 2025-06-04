@@ -325,7 +325,7 @@ export const FrameOperations = observer(
                 if (!data) {
                     return "";
                 }
-                const v = getValueByPath(data, path);
+                const v = getValueByPath(data, "option");
                 if (typeof v === "undefined") {
                     return "";
                 } else if (typeof v === "string") {
@@ -333,7 +333,7 @@ export const FrameOperations = observer(
                 }
                 return JSON.stringify(v, null, 2);
             });
-        }, [data, path]).get();
+        }, [data["option"]]).get();
 
         useEffect(() => {
             if (data.variation === "echart-bar-graph") {
@@ -622,7 +622,7 @@ export const FrameOperations = observer(
                 
             }
             // console.log("block focus changed", data.variation, computedValue);
-        }, [data.variation, id, computedValue]);
+        }, [data.variation, id]);
 
         //update the local state value when computed value is getting updated
         useEffect(() => {
@@ -642,10 +642,17 @@ export const FrameOperations = observer(
 
             const columnsDrop = [];
             for (let i = 0; i < columnsValue.length; i++) {
-                columnsDrop[i] =
-                    columnsValue[i]?.values?.values?.length > 0
-                        ? { ...columnsValue[i], values: columnsValue[i]?.values?.values }
-                        : null;
+                let tempColumns = null;
+                if(columnsValue[i].hasOwnProperty('values')){
+                    tempColumns = columnsValue[i];
+                    if(columnsValue[i]['values'].hasOwnProperty('values')){
+                        tempColumns = {
+                            ...columnsValue[i],
+                            values: columnsValue[i]?.['values']?.['values'],
+                        };
+                    }
+                }
+                columnsDrop[i] = tempColumns;
             }
 
             const firstColumn = columnsDrop[0];
