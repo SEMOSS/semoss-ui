@@ -396,6 +396,7 @@ export function getQueryForPrompt(
         [PROMPT_QUERY_DEFINITION_ID]: {
             id: PROMPT_QUERY_DEFINITION_ID,
             cells: queryDefinitionCells,
+            counter: 1,
         },
         [PROMPT_QUERY_ID]: {
             id: PROMPT_QUERY_ID,
@@ -409,6 +410,7 @@ export function getQueryForPrompt(
                     },
                 },
             ],
+            counter: 1,
         },
     };
 

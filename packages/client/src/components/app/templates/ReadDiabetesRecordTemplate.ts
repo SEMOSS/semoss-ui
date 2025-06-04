@@ -18,6 +18,7 @@ export const ReadDiabetesRecordTemplate: Template = {
         queries: {
             'get-data': {
                 id: 'get-data',
+                counter: 1,
                 cells: [
                     {
                         id: '18552',
@@ -39,6 +40,7 @@ export const ReadDiabetesRecordTemplate: Template = {
             },
             'on-page-load': {
                 id: 'on-page-load',
+                counter: 1,
                 cells: [
                     {
                         id: '90193',

@@ -14,6 +14,7 @@ export const AskLLMTemplate: Template = {
         queries: {
             'ask-llm': {
                 id: 'ask-llm',
+                counter: 1,
                 cells: [
                     {
                         id: 'cell-1',

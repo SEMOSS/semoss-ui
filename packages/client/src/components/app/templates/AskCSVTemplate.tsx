@@ -50,6 +50,7 @@ export const AskCSVTemplate: Template = {
         queries: {
             ['ask-model']: {
                 id: 'ask-model',
+                counter: 1,
                 cells: [
                     {
                         id: 'file-read',

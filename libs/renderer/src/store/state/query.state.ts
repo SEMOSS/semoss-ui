@@ -20,6 +20,9 @@ export interface QueryStateStoreInterface {
 
     /** Ordered list of the cells in the query */
     list: string[];
+
+    /** tracks count for id generation of cell */
+    counter: number;
 }
 
 export interface QueryStateConfig {
@@ -28,6 +31,9 @@ export interface QueryStateConfig {
 
     /** Cells in the query */
     cells: CellStateConfig[];
+
+    /** tracks count for id generation of cell */
+    counter?: number
 }
 
 /**
@@ -41,6 +47,7 @@ export class QueryState {
         error: null,
         cells: {},
         list: [],
+        counter: 1,
     };
 
     constructor(config: QueryStateConfig, state: StateStore) {
@@ -50,11 +57,28 @@ export class QueryState {
         // set the id
         this._store.id = config.id;
 
+        // set counter
+        if (config.counter) {
+            this._store.counter = config.counter
+        }
+
         // create the cells
         const { cells, list } = config.cells.reduce(
             (acc, val) => {
-                acc.cells[val.id] = new CellState(val, this, this._state);
-                acc.list.push(val.id);
+                const id = `${this._store.counter}`
+
+                const c = {
+                    id: val.id ? val.id : id,
+                    ...val
+                }
+                const newCell = new CellState(c, this, this._state);
+
+                acc.cells[newCell.id] = newCell
+                acc.list.push(newCell.id)
+
+                if(!config.counter){
+                    this._store.counter += 1
+                }
 
                 return acc;
             },
@@ -185,6 +209,13 @@ export class QueryState {
     }
 
     /**
+     * Increments based on addition of cell
+     */
+    get counter() {
+        return this._store.counter
+    }
+
+    /**
      * Get list of the cells of the query
      */
     get list() {
@@ -223,6 +254,7 @@ export class QueryState {
         return {
             id: this._store.id,
             cells: this._store.list.map((s) => this._store.cells[s].toJSON()),
+            counter: this._store.counter
         };
     };
 
@@ -295,39 +327,44 @@ export class QueryState {
      * @param previousCellId - id of the previous cell
      */
     _addCell = (
-        cellId: string,
         config: Omit<CellStateConfig, "id">,
         previousCellId: string,
     ) => {
+        const id = `${this._store.counter}`
+
         // create the new cell
         const cell = new CellState(
             {
                 ...config,
-                id: cellId,
+                id: id,
             },
             this,
             this._state,
         );
 
         // save the cell
-        this._store.cells[cellId] = cell;
+        this._store.cells[id] = cell;
 
         // get the index of the previous one
         let previousCellIdx = -1;
         if (previousCellId) {
             previousCellIdx = this._store.list.indexOf(previousCellId);
         }
-
+        
         // add to end if there is no previous cell
         if (previousCellIdx === -1) {
-            this._store.list.push(cellId);
+            this._store.list.push(id);
             return;
         }
-
+        
         // add it
-        if (!this._store.list.includes(cellId)) {
-            this._store.list.splice(previousCellIdx + 1, 0, cellId);
+        if (!this._store.list.includes(id)) {
+            this._store.list.splice(previousCellIdx + 1, 0, id);
         }
+
+        this._store.counter += 1
+
+        return id
     };
 
     _moveCell = (active: string, over: string) => {

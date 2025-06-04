@@ -15,6 +15,7 @@ export const BlocksGuideTemplate: Template = {
         queries: {
             default: {
                 id: 'default',
+                counter: 1,
                 cells: [
                     {
                         id: '82164',
@@ -66,6 +67,7 @@ export const BlocksGuideTemplate: Template = {
             },
             python_code: {
                 id: 'python_code',
+                counter: 1,
                 cells: [
                     {
                         id: '21756',
@@ -87,6 +89,7 @@ export const BlocksGuideTemplate: Template = {
             },
             'py-code': {
                 id: 'py-code',
+                counter: 1,
                 cells: [
                     {
                         id: '70303',

@@ -9,12 +9,14 @@ import migrate__1_0_0_alpha_4_to_1_0_0_alpha_5 from "./migrate__1_0_0_alpha_4__t
 import migrate__1_0_0_alpha_5_to_1_0_0_alpha_6 from "./migrate__1_0_0_alpha_5__to___1_0_0_alpha_6";
 import migrate__1_0_0_alpha_6_to_1_0_0_alpha_7 from "./migrate__1_0_0_alpha_6__to___1_0_0_alpha_7";
 import migrate__1_0_0_alpha_7_to_1_0_0_alpha_8 from "./migrate__1_0_0_alpha_7__to___1_0_0_alpha_8_";
+import migrate__1_0_0_alpha_8_to_1_0_0_alpha_9 from "./migrate__1_0_0_alpha_8__to___1_0_0_alpha_9_";
+
 
 // TODO: ANYTIME VERSION CHANGES
 // Update our template Apps
 // as well as Agent Builder
 
-export const STATE_VERSION = "1.0.0-alpha.8";
+export const STATE_VERSION = "1.0.0-alpha.9";
 
 export class MigrationManager {
     /**
@@ -42,6 +44,8 @@ export class MigrationManager {
             migrate__1_0_0_alpha_6_to_1_0_0_alpha_7,
         [migrate__1_0_0_alpha_7_to_1_0_0_alpha_8.versionFrom]:
             migrate__1_0_0_alpha_7_to_1_0_0_alpha_8,
+        [migrate__1_0_0_alpha_8_to_1_0_0_alpha_9.versionFrom]:
+            migrate__1_0_0_alpha_8_to_1_0_0_alpha_9,
     };
 
     /**
