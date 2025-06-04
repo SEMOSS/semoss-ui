@@ -1009,29 +1009,29 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
-    {
-        section: SECTION_ELEMENT,
-        name: 'PDF Viewer',
-        helperText: 'Embed a PDF for viewing',
-        activeImage: BLOCK_IMAGES['PDF_VIEWER_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['PDF_VIEWER_HOVER'],
-        json: {
-            widget: 'pdfViewer',
-            data: {
-                style: {
-                    width: '100%',
-                    height: '82%',
-                    padding: '8px',
-                },
-                selectedPdf: null,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
+    // {
+    //     section: SECTION_ELEMENT,
+    //     name: 'PDF Viewer',
+    //     helperText: 'Embed a PDF for viewing',
+    //     activeImage: BLOCK_IMAGES['PDF_VIEWER_ACTIVE'],
+    //     hoverImage: BLOCK_IMAGES['PDF_VIEWER_HOVER'],
+    //     json: {
+    //         widget: 'pdfViewer',
+    //         data: {
+    //             style: {
+    //                 width: '100%',
+    //                 height: '82%',
+    //                 padding: '8px',
+    //             },
+    //             selectedPdf: null,
+    //             show: 'true',
+    //         },
+    //         listeners: {
+    //             preProcess: { type: 'sync', order: [] },
+    //         },
+    //         slots: {} as BlockJSON['slots'],
+    //     },
+    // },
     {
         section: SECTION_ELEMENT,
         name: 'Image',
