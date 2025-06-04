@@ -96,4 +96,6 @@ export {
     Autocomplete as AutocompleteTwo,
 };
 
+export { blue, green } from "@mui/material/colors";
+
 export type { TooltipProps as TooltipPropsTwo };

@@ -1,6 +1,6 @@
-import { styled } from '@semoss/ui';
+import { blue, green, styled } from '@semoss/ui';
+
 import { THEME } from '@/constants';
-import { blue, green } from '@mui/material/colors';
 
 interface HoverButtonRootProps {
     disableHover: boolean;

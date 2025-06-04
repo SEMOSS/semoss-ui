@@ -1,13 +1,11 @@
 import { useState, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Button, styled } from '@semoss/ui';
+import { HelpRounded } from '@mui/icons-material';
 
 import { WelcomeModal } from '@/components/welcome';
 
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
+import { Button, Menu, styled } from '@semoss/ui';
 
-import { HelpRounded } from '@mui/icons-material';
 import { useRootStore } from '@/hooks';
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -67,6 +65,7 @@ export const Help = observer((): JSX.Element => {
             };
         }
     }, []);
+
     return (
         <StyledContainer>
             <StyledButton
@@ -102,9 +101,10 @@ export const Help = observer((): JSX.Element => {
 
                     if (v) {
                         return (
-                            <MenuItem
+                            <Menu.Item
                                 key={`${key}-${i}`}
                                 disabled={v.disabled ? v.disabled : false}
+                                value={null}
                             >
                                 <span>
                                     <StyledLink
@@ -115,7 +115,7 @@ export const Help = observer((): JSX.Element => {
                                         {v.label}
                                     </StyledLink>
                                 </span>
-                            </MenuItem>
+                            </Menu.Item>
                         );
                     }
                 })}

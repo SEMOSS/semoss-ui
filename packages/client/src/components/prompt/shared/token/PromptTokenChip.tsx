@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
-import { blue, green } from '@mui/material/colors';
-import { styled, Chip } from '@semoss/ui';
+import { blue, green, styled, Chip } from '@semoss/ui';
 import { THEME } from '@/constants';
 
 interface ChipRootProps {

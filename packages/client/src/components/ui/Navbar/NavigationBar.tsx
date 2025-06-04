@@ -25,10 +25,10 @@ const StyledAppBar = styled(AppBar)(({ theme }) => ({
     borderBottom: '1px solid #EAEAEE',
     background: '#FAFAFA', //"var(--Background-Paper-2, #FAFAFA)",
     color: '#666666', //"var(--Text-Primary-1, #212B36)",
-    padding: '0px 32px 0px 32px',
+    padding: '8px 32px 8px 32px',
     boxShadow: 'none',
     transition: 'none',
-    height: '56px',
+    // height: '62px',
 }));
 
 const StyledLeftSection = styled('div')(({ theme }) => ({
@@ -78,7 +78,7 @@ const StyledSearchSection = styled('div')(({ theme }) => ({
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
-    backgroundColor: '#F5F5F5',
+    // backgroundColor: '#F5F5F5',
     width: '50rem',
     // marginLeft:"128px",
     display: 'flex',
@@ -89,7 +89,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
         padding: '0px 12px',
         borderRadius: '8px',
         border: '1px solid  #C4C4C4',
-        marginBottom: '8px',
+        // marginBottom: '8px',
     },
     '& .MuiOutlinedInput-root > input': {
         paddingLeft: '0px',
