@@ -1,4 +1,3 @@
-//should be ignored in lint
 import React from 'react';
 import { Routes, Route, HashRouter } from 'react-router-dom';
 
