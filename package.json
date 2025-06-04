@@ -23,6 +23,8 @@
         "lint:ui": "npx nx lint @semoss/ui",
         "lint:renderer": "npx nx lint @semoss/renderer",
         "lint:all": "echo \"TODO: fix lint script to lint all packages/libs .\"",
+        "lint:staged": "npx nx lint-staged --concurrent false --relative --verbose",
+        "lint:test": "npx nx affected -t lint --onlyAffected --base=origin/dev",
 
         "test": "npx vitest --watch=false --passWithNoTests --changed",
         "test:browser": "vitest --watch --ui --pool=forks"

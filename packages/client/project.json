@@ -1,14 +1,3 @@
 {
-    "name": "@semoss/client",
-    "tags": [],
-    "targets": {
-        "typecheck": {
-            "executor": "nx:run-commands",
-            "options": {
-                "commands": ["tsc -p tsconfig.app.json --noEmit"],
-                "cwd": "packages/client",
-                "forwardAllArgs": false
-            }
-        }
-    }
+    "name": "@semoss/client"
 }
