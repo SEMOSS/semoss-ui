@@ -1,4 +1,3 @@
-//trigger
 import { useEffect } from 'react';
 import axios, { isAxiosError } from 'axios';
 
