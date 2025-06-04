@@ -2609,6 +2609,49 @@ export class MonolithStore {
         return response.data;
     }
 
+    async uploadImage(
+        files: File[],
+        projectId: string | null,
+        insightId?: string | null,
+    ) {
+        const url = `${Env.MODULE}/api/images/projectImage/upload`,
+            fd: FormData = new FormData();
+
+        if (Array.isArray(files)) {
+            for (let i = 0; i < files.length; i++) {
+                fd.append('file', files[i]);
+            }
+        } else {
+            // pasted data
+            fd.append('file', files);
+        }
+
+        if (insightId) {
+            fd.append('insightId', insightId);
+        } else {
+            const { configStore } = this._root;
+            fd.append('insightId', configStore.store.insightID);
+        }
+
+        if (projectId) {
+            fd.append('projectId', projectId);
+        }
+
+        const response = await axios.post<
+            {
+                app_id: string;
+                app_name: string;
+                message: string;
+            }[]
+        >(url, fd, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response.data;
+    }
+
     async getApps(databaseId: string) {
         const url = `${Env.MODULE}/api/auth/admin/app/getApps?databaseId=${databaseId}`;
         const response = await axios.get(url).catch((error) => {
