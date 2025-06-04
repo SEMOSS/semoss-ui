@@ -14,7 +14,7 @@ const config: Migration = {
 
         Object.entries(newState.queries).forEach((keyValue) => {
             if(!newState.queries[keyValue[0]]['counter']) {
-                newState.queries[keyValue[0]]['counter'] = 1  
+                newState.queries[keyValue[0]]['counter'] =  Object.keys(newState.queries[keyValue[0]].cells).length + 1
             }
         });
 
