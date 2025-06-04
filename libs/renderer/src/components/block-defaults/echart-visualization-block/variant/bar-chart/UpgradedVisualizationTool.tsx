@@ -18,8 +18,6 @@ import { Legend } from "./Legend";
 import { EditXAxis } from "./Edit-X-Axis";
 import { EditYAxis } from "./Edit-Y-Axis";
 import ColourByValue from "./ColourByValue";
-import { ChartStyling } from "./ChartStyling";
-import { PieTitle } from "../pie-chart/PieTitle";
 import { PieLegend } from "../pie-chart/PieLegend";
 import { ToggleTrendline } from "./ToggleTrendline";
 import { ToogleDonut } from "../pie-chart/ToggleDonut";
@@ -37,7 +35,6 @@ import { TooltipScatterPlot } from "../scatter-plot/TooltipScatterPlot";
 import { EditXAxisScatterPlot } from "../scatter-plot/EditXAxisScatterPlot";
 import { EditYAxisScatterPlot } from "../scatter-plot/EditYAxisScatterPlot";
 import { ValueLabelScatterPlot } from "../scatter-plot/ValueLabelScatterPlot";
-import { ScatterPlotChartTitle } from "../scatter-plot/ScatterPlotChartTitle";
 
 import { ColorPickerSettings } from "../../../../block-settings/shared/ColorPickerSettings";
 import { ColorPalatteSettings } from "../../../../block-settings/shared/ColorPalatteSettings";
@@ -45,7 +42,7 @@ import { TooltipMapChart } from "../map-chart/TooltipMapChart";
 import { LegendToggleMapChart } from "../map-chart/LegendToggleMapChart";
 import { MapMarkerSize } from "../map-chart/MapMarkerSize";
 
-import { LineTitle } from "../line-chart/LineTitle";
+import { TitleTool } from "../TitleTool";
 import { LineLegend } from "../line-chart/LineLegend";
 import { LineTooltip } from "../line-chart/LineTooltip";
 import { XAxisStyling } from "../line-chart/XAxisStyling";
@@ -231,7 +228,7 @@ const DendrogramToolsList = (({id}) => {
                             <InfoOutlined />
                         </ListItemButton>
                     {dendrogramSelection === "title" && (
-                        <LineTitle id={id} path={"option"} />
+                        <TitleTool id={id} path={"option"} />
                     )}
                 </StyledListItem>
        </>
@@ -560,7 +557,7 @@ const GanttToolsList = (({id})=>{
                             <InfoOutlined />
                         </ListItemButton>
                     {ganttSelection === "title" && (
-                        <LineTitle id={id} path={"option"} />
+                        <TitleTool id={id} path={"option"} />
                     )}
                 </StyledListItem>
         </>
@@ -778,7 +775,7 @@ const StackChartTool = (({id})=>{
                             <InfoOutlined />
                         </ListItemButton>
                     {stackChartSelection === "title" && (
-                        <LineTitle id={id} path={"option"} />
+                        <TitleTool id={id} path={"option"} />
                     )}
                 </StyledListItem>
         </>
@@ -980,7 +977,7 @@ const BarToolsList = (({id})=>{
                     <InfoOutlined />
                 </ListItemButton>
                         {barSelection === "chartstyle" && (
-                            <LineTitle
+                            <TitleTool
                                 id={id}
                                 path="option"
                             />
@@ -1245,10 +1242,10 @@ const ScatterToolsList = (({id})=>{
                         <InfoOutlined />
                     </ListItemButton>
                 {scatterSelection === "scatter-plots-title" && (
-                    <LineTitle
+                    <TitleTool
                         id={id}
                         path={"option"}
-                    ></LineTitle>
+                    ></TitleTool>
                 )}
             </StyledListItem>
         </>
@@ -1287,7 +1284,7 @@ const LineChartTools = (({id})=>{
                         <InfoOutlined />
                     </ListItemButton>
                 {lineSelection === "lineTitle" && (
-                    <LineTitle id={id} path="option" />
+                    <TitleTool id={id} path="option" />
                 )}
             </StyledListItem>
             <ResizingTool id={id} />
@@ -1581,7 +1578,7 @@ const LineChartTools = (({id})=>{
                             <InfoOutlined />
                         </ListItemButton>
                     {mapSelection === "title" && (
-                        <LineTitle id={id} path={"option"} />
+                        <TitleTool id={id} path={"option"} />
                     )}
                 </StyledListItem>
             </>
@@ -1699,7 +1696,7 @@ const LineChartTools = (({id})=>{
                             <InfoOutlined />
                         </ListItemButton>
                     {pieSelection === "title" && (
-                        <LineTitle id={id} path={"option"} />
+                        <TitleTool id={id} path={"option"} />
                     )}
                 </StyledListItem>
                 <StyledListItem disablePadding>
