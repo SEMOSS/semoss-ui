@@ -1,10 +1,10 @@
 const { execSync } = require('child_process');
 
 module.exports = {
-    '**/*.{ts,tsx,jsx,js}': files => {
+    '{apps,libs,tools}/**/*.{ts,tsx,jsx,js}': files => {
         return `nx affected --target=typecheck --files=${files.join(',')}`;
     },
-    '**/*.{ts,tsx,jsx,js,json}': [
+    '{apps,libs,tools}/**/*.{ts,tsx,jsx,js,json}': [
         files => `nx affected:lint --files=${files.join(',')}`,
         files => `nx format:write --files=${files.join(',')}`,
     ],
