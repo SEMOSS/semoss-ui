@@ -226,19 +226,32 @@ export const ListenerSettings = observer(
 
         // Transform items for sortable list
         const transformedItems = useMemo(() => {
-            return (blockListeners ? blockListeners : []).map(
-                (item, index) => ({
-                    id: index.toString(),
-                    content: item.payload["queryId"]
-                        ? `${state.getAlias(
+            return (blockListeners ? blockListeners : []).map((item, index) => {
+                console.log(item)
+                let display = ""
+
+                if(item.payload["queryId"]) {
+                    if(item.payload["cellId"]) {
+                        display = state.getAlias(
                               item.payload["queryId"],
-                              item.payload["cellId"] ? item.payload["cellId"] : null,
-                          )}
-                        `
-                        : item.payload["name"],
+                              item.payload["cellId"]
+                          )
+                    } else {
+                       display = state.getAlias(item.payload["queryId"])
+                    }
+
+                } else {
+                    if(item.payload["name"]) {
+                        display = item.payload["name"]
+                    }
+                }
+
+                return {
+                    id: index.toString(),
+                    content: display,
                     original: item, // Keep reference to the original item
-                }),
-            );
+                };
+            });
         }, [blockListeners]);
 
         return (
