@@ -1,4 +1,4 @@
-import { Env } from '@/env';
+import { Env } from '../../env';
 import { get, post} from "../../utility";
 
 export const getDatabases = async (admin: boolean) => {

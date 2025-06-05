@@ -1,4 +1,4 @@
-import { Env } from '@/env';
+import { Env } from '../../env';
 import { Role } from '@/types';
 import { get, post} from "../../utility";
 
