@@ -929,6 +929,13 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     flexWrap: 'wrap',
                 },
                 show: 'true',
+                boxShadowParts: {
+                    offsetX: '',
+                    offsetY: '',
+                    blurRadius: '',
+                    spreadRadius: '',
+                    color: '',
+                },
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
