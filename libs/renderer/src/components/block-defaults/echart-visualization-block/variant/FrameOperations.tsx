@@ -161,28 +161,9 @@ export const FrameOperations = observer(
                 setFilteredColumns(columnsSelector);
             }
         }, [columnsSelector]);
-
+        //to be removed in the later part, when chart's data section is working fine
         useEffect(() => {
-            // console.log('storedColumns to Set in SelectedColumn', storedColumns);
-            // let parsedData = JSON.parse(computedValue) || {};
-            // console.log(parsedData, '');
-           /* setSelectedColumn(storedColumns);
-            const updatedColumns = { ...droppedColumns };
-            storedColumns.forEach((item, index) => {
-                const key = `data-tab-drop-area-${index}`;
-                if (item.values && item.values.length > 0) {
-                    updatedColumns[key] = {
-                        values: item.values,
-                        dataType: item.dataType,
-                    }
-                }
-            });
-            if (
-                JSON.stringify(updatedColumns) !==
-                JSON.stringify(droppedColumns)
-            ) {
-                setDroppedColumns(updatedColumns);
-            }*/
+            
         }, [storedColumns]);
 
         useEffect(() => {
@@ -197,6 +178,7 @@ export const FrameOperations = observer(
             );
             setFilteredColumns(filtered); // Update the filtered columns
         };
+        //Resets the block data related to fields so the frame change operation removes all data related to old frame
         function resetBlockData() {
             let parsedValue = JSON.parse(computedValue) || {};
             if (data.variation === "echart-bar-graph") {
@@ -221,16 +203,6 @@ export const FrameOperations = observer(
                     ...mainParsedData,
                 };
             } else if (data.variation === "echart-gantt-chart") {
-                // let columns = chart.map((item)=>item.label);
-                // let columnDetails = {};
-                // let columnIndexDetails = {};
-                // columns.forEach(element => {
-                //     columnDetails[element] = {
-                //         name: "",
-                //         selector: "",
-                //     };
-                //     columnIndexDetails[element] = "";
-                // });
                 parsedValue = {
                     ...parsedValue,
                     "customSettings": {
@@ -282,13 +254,9 @@ export const FrameOperations = observer(
                 };
             }
              else {
-                // parsedValue = {
-                //     ...parsedValue,
-                //     ['_state']:{
-                //         ['fields']:{},
-                //     }
-                // };
+                //to be used for special case if nothing matches
             }
+            //all the stored and dropped columns are resetted to empty
             storedColumns = {};
             setDroppedColumns({});
             try {
@@ -334,8 +302,9 @@ export const FrameOperations = observer(
                 return JSON.stringify(v, null, 2);
             });
         }, [data["option"]]).get();
-
+        //useeffect to run the operations essential when a block is changed from another
         useEffect(() => {
+            let tempStoredColumnsForDropped = {};
             if (data.variation === "echart-bar-graph") {
                 let parsedOption = JSON.parse(computedValue) || {};
                 if (
@@ -361,7 +330,7 @@ export const FrameOperations = observer(
                             dataType: dataTypeList[item.label],
                         };
                     });
-                    // console.log(tempStoredColumns, "storedColumnsBar");
+                    tempStoredColumnsForDropped = tempStoredColumns;
                     setSelectedColumn((preVCol) => tempStoredColumns);
                 }
             }
@@ -396,8 +365,7 @@ export const FrameOperations = observer(
                         dataType: dataTypeList[item.label],
                     };
                 });
-                // console.log(tempStoredColumns, "storedColumnsDendrogram");
-                // storedColumns = tempStoredColumns;
+                tempStoredColumnsForDropped = tempStoredColumns;
                 setSelectedColumn((preVCol) => tempStoredColumns);
             }
             if (data.variation === "echart-pie-chart") {
@@ -408,7 +376,6 @@ export const FrameOperations = observer(
                     parsedOption["_state"]["fields"].hasOwnProperty("Label") &&
                     parsedOption["_state"]["fields"].hasOwnProperty("Value")
                 ) {
-                    // console.log(parsedOption["_state"]["fields"], "fields");
                     let dataTypeList = {};
                     ["Label", "Value"].forEach((item) => {
                         dataTypeList[item] = columnsSelector
@@ -446,7 +413,7 @@ export const FrameOperations = observer(
                             dataType: dataTypeList[item.label],
                         };
                     });
-                    // console.log(tempStoredColumns, "storedColumnsPie");
+                    tempStoredColumnsForDropped = tempStoredColumns;
                     setSelectedColumn((preVCol) => tempStoredColumns);
                 }
             }
@@ -459,7 +426,6 @@ export const FrameOperations = observer(
                     && parsedOption['_state']['fields'].hasOwnProperty('yAxis')
                 ){
                     ["xAxis", "yAxis", "tooltip"].forEach((item) => {
-                        // console.log(item, parsedOption["_state"]['fields'][item], 'fieldsData');
                         dataTypeList[item] = columnsSelector
                             .filter((col) =>
                                 parsedOption["_state"]['fields'][item].includes(
@@ -488,6 +454,7 @@ export const FrameOperations = observer(
                         dataType: dataTypeList[item.label],
                     };
                 });
+                    tempStoredColumnsForDropped = tempStoredColumns;
                     setSelectedColumn((prevSelectedCol)=> tempStoredColumns);
                 }
             }
@@ -523,7 +490,8 @@ export const FrameOperations = observer(
                           Array.isArray(selectorList[index]) ? selectorList[index] :  [selectorList[index]]
                         ),
                         dataType: dataTypeList[item.label],
-                }});
+                    }});
+                tempStoredColumnsForDropped = tempStoredColumns;
                 setSelectedColumn((prevSelectedCol)=> tempStoredColumns);
             }
         }
@@ -556,7 +524,7 @@ export const FrameOperations = observer(
                             dataType: dataTypeList[item.label],
                         };
                     });
-                    // console.log(tempStoredColumns, "storedColumnsScatter");
+                    tempStoredColumnsForDropped = tempStoredColumns;
                     setSelectedColumn((preVCol) => tempStoredColumns);
                 }
             }
@@ -584,6 +552,7 @@ export const FrameOperations = observer(
                         dataType: dataTypeList[item.label],
                     } 
                     });
+                    tempStoredColumnsForDropped = tempStoredColumns;
                     setSelectedColumn((preVCol) => tempStoredColumns);
                 }
                 
@@ -616,18 +585,37 @@ export const FrameOperations = observer(
                             dataType: dataTypeList[item.label],
                         } 
                     });
-                    console.log('tempStoredColumns',tempStoredColumns);
+                    tempStoredColumnsForDropped = tempStoredColumns;
                     setSelectedColumn((preVCol) => tempStoredColumns);
                 }
-                
             }
-            // console.log("block focus changed", data.variation, computedValue);
+            //run the dropped columns update when block is changed
+            if(Object.keys(tempStoredColumnsForDropped).length > 0){
+                    let dragAndDropColumns = getDraggedColumns(tempStoredColumnsForDropped, data.variation);
+                    setDroppedColumns((preVCol) => dragAndDropColumns);   
+            }
         }, [data.variation, id]);
 
         //update the local state value when computed value is getting updated
         useEffect(() => {
             setValue(computedValue);
         }, [computedValue]);
+        // get the dropped columns data for the chart is selected or block is changed
+        function getDraggedColumns(tempStoredColumns, chart: string = ""){
+            let droppedColumnsList = {...droppedColumns};
+
+            tempStoredColumns.forEach((item, index) => {
+                const key = `data-tab-drop-area-${index}`;
+                if (item.values && item.values.length > 0) {
+                    droppedColumnsList[key] = {
+                        values: item.values,
+                        dataType: item.dataType,
+                    }
+                }
+            });
+
+            return droppedColumnsList;
+        }
 
         const formattedColumns = (columnsValue: any[], variation: any) => {
             // check if the columns value has any values
