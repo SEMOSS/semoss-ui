@@ -31,9 +31,6 @@ export interface QueryStateConfig {
 
     /** Cells in the query */
     cells: CellStateConfig[];
-
-    /** tracks count for id generation of cell */
-    counter?: number
 }
 
 /**
