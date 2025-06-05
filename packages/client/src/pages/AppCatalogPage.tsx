@@ -5,6 +5,7 @@ import {
     Typography,
     Button,
     styled,
+    Skeleton,
     ToggleTabsGroup,
     TextField,
     InputAdornment,
@@ -66,6 +67,14 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
     },
 }));
 
+const AppTileSkeleton = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    margin: theme.spacing(1),
+    marginRight: theme.spacing(0.5),
+    marginTop: theme.spacing(5),
+    marginBottom: theme.spacing(5),
+}));
 type MODE = 'Mine' | 'Discoverable' | 'System';
 
 const initialState = {
@@ -381,43 +390,60 @@ export const AppCatalogPage = observer((): JSX.Element => {
                         </StyledSectionLabel>
                     ) : null}
 
-                    {mode != 'System' && favoritedApps.length > 0 ? (
-                        <StyledSection>
-                            {favoritedApps.map((app, i) => {
-                                return (
-                                    <AppTileCard
-                                        key={i}
-                                        app={app}
-                                        systemApp={false}
-                                        href={
-                                            mode === 'Discoverable'
-                                                ? `#/app/${app.project_id}/detail`
-                                                : `#/app/${app.project_id}`
-                                        }
-                                        onAction={() => {
-                                            if (mode === 'Discoverable') {
-                                                navigate(
-                                                    `/app/${app.project_id}/detail`,
-                                                );
-                                            } else {
-                                                navigate(
-                                                    `/app/${app.project_id}`,
-                                                );
-                                            }
-                                        }}
-                                        appType={app.project_type}
-                                        isFavorite={isFavorited(app.project_id)}
-                                        favorite={() => {
-                                            favoriteApp(app);
-                                        }}
-                                        isDiscoverable={mode !== 'Mine'}
-                                        isLoading={true}
-                                        showSkeleton={true}
-                                    />
-                                );
-                            })}
-                        </StyledSection>
-                    ) : null}
+                    {mode !== 'System' &&
+                        (getFavoritedApps.status === 'LOADING' ||
+                            favoritedApps.length > 0) && (
+                            <StyledSection>
+                                {getFavoritedApps.status === 'LOADING'
+                                    ? Array.from({ length: 3 }).map((_, i) => (
+                                          <AppTileSkeleton key={i}>
+                                              <Skeleton
+                                                  variant="rectangular"
+                                                  width={250}
+                                                  height={118}
+                                              />
+                                              <Skeleton
+                                                  width="100%"
+                                                  height={25}
+                                              />
+                                              <Skeleton
+                                                  width="60%"
+                                                  height={25}
+                                              />
+                                          </AppTileSkeleton>
+                                      ))
+                                    : favoritedApps.map((app) => (
+                                          <AppTileCard
+                                              key={app.project_id}
+                                              app={app}
+                                              systemApp={false}
+                                              href={
+                                                  mode === 'Discoverable'
+                                                      ? `#/app/${app.project_id}/detail`
+                                                      : `#/app/${app.project_id}`
+                                              }
+                                              onAction={() => {
+                                                  if (mode === 'Discoverable') {
+                                                      navigate(
+                                                          `/app/${app.project_id}/detail`,
+                                                      );
+                                                  } else {
+                                                      navigate(
+                                                          `/app/${app.project_id}`,
+                                                      );
+                                                  }
+                                              }}
+                                              appType={app.project_type}
+                                              isFavorite={isFavorited(
+                                                  app.project_id,
+                                              )}
+                                              favorite={() => {
+                                                  favoriteApp(app);
+                                              }}
+                                          />
+                                      ))}
+                            </StyledSection>
+                        )}
 
                     {mode == 'System' && (
                         <StyledSectionLabel variant="subtitle1">
