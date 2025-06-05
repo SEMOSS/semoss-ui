@@ -495,7 +495,7 @@ export const MembersTable = (props: MembersTableProps) => {
         if (authors.length > 0 && authorsToDelete.length === authors.length) {
             notification.add({
                 color: 'error',
-                message: `You cannot delete the all admin (Author) in the table.`,
+                message: `You cannot delete all the admins(Authors) from the table.`,
             });
             return;
         }
