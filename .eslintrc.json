@@ -54,8 +54,12 @@
         "no-restricted-imports": [
             "error",
             {
-                "name": "@mui/material",
-                "message": "Please reference mui components directly from @semoss/ui"
+                "paths": [
+                    {
+                        "name": "@mui/material",
+                        "message": "Please reference mui components directly from @semoss/ui"
+                    }
+                ]
             }
         ]
     }
