@@ -511,16 +511,13 @@ export const NotebookCell = observer(
                     <StyledStackTwo
                         onClick={() => {
                             copyTextToClipboard(
-                                `{{${queryId}.${cellOrderNumber}}}`,
+                                `{{${variableName}}}`,
                                 notification,
                             );
                         }}
                     >
-                        <StyledName
-                            variant="subtitle2"
-                            title={'Copy reference id'}
-                        >
-                            # {cellOrderNumber}
+                        <StyledName variant="subtitle2" title={'Copy variable'}>
+                            {variableName}
                         </StyledName>
                     </StyledStackTwo>
 
