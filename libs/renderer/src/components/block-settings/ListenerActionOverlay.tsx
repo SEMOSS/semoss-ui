@@ -223,7 +223,6 @@ export const ListenerActionOverlay = observer(
             }
         }, [message]);
 
-        console.log(cells)
         return (
             <>
                 <Modal.Title>
@@ -337,10 +336,7 @@ export const ListenerActionOverlay = observer(
                                                 }
                                             >
                                                 {cells.map((c) => {
-                                                     let matchIndex = 0;
-                                                    c.query.cellList.forEach((cell, i) => {
-                                                        if (c.id === cell.id) matchIndex = i;
-                                                    });
+                                                     const variableName = state.getAlias(queryId, c.id);
                                                 
                                                     return (
                                                         <Select.Item
@@ -352,15 +348,8 @@ export const ListenerActionOverlay = observer(
                                                                         "body2"
                                                                     }
                                                                 >
-                                                                    #{" "}{matchIndex + 1}
+                                                                    {variableName}
                                                                 </Typography>
-                                                                {/* <Typography
-                                                                    variant={
-                                                                        "caption"
-                                                                    }
-                                                                >
-                                                                    id: {q.id}
-                                                                </Typography> */}
                                                         </Select.Item>
                                                     );
                                                 })}
