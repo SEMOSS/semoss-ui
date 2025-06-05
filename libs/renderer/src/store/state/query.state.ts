@@ -57,11 +57,6 @@ export class QueryState {
         // set the id
         this._store.id = config.id;
 
-        // set counter
-        if (config.counter) {
-            this._store.counter = config.counter
-        }
-
         // create the cells
         const { cells, list } = config.cells.reduce(
             (acc, val) => {
@@ -76,10 +71,6 @@ export class QueryState {
                 acc.cells[newCell.id] = newCell
                 acc.list.push(newCell.id)
 
-                if(!config.counter){
-                    this._store.counter += 1
-                }
-
                 return acc;
             },
             {
@@ -87,6 +78,18 @@ export class QueryState {
                 list: [],
             },
         );
+
+        // Set counter to highest number in cells
+        let highest = 1
+        Object.keys(cells).forEach((cId) => {
+            let parsedId = parseInt(cId)
+
+            if(parsedId > highest) {
+                highest = parsedId
+            }
+        })
+
+        this._store.counter = highest + 1
 
         this._store.cells = cells;
         this._store.list = list;
@@ -254,7 +257,6 @@ export class QueryState {
         return {
             id: this._store.id,
             cells: this._store.list.map((s) => this._store.cells[s].toJSON()),
-            counter: this._store.counter
         };
     };
 

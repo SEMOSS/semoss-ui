@@ -16,7 +16,6 @@ export const UpdateDiabetesRecordTemplate: Template = {
         queries: {
             'update-diabetes-record': {
                 id: 'update-diabetes-record',
-                counter: 1,
                 cells: [
                     {
                         id: '59072',

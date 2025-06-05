@@ -2,8 +2,9 @@ import { Migration } from "./migration.types";
 
 /**
  * @name config
- * @description - Add counter to queries for id generation
+ * @description - id reassign for cells
  *
+ * TODO: An optional migration function that reassigns ids to cells to incremented ints
  *  
  * */
 const config: Migration = {
@@ -12,11 +13,53 @@ const config: Migration = {
     run: (state) => {
         const newState = { ...state };
 
+        // check each cell, convert each cell to a 
         Object.entries(newState.queries).forEach((keyValue) => {
-            if(!newState.queries[keyValue[0]]['counter']) {
-                newState.queries[keyValue[0]]['counter'] =  Object.keys(newState.queries[keyValue[0]].cells).length + 1
-            }
-        });
+            const q = keyValue[1]
+
+            // First get the cell with the highest number to get a starting point
+            let highestExistingId = 1
+            console.log("migration 9", q.cells)
+            q.cells.forEach((c) => {
+                const parsedId = parseInt(c.id)
+                
+                if(parsedId > highestExistingId) {
+                    highestExistingId = parsedId
+                }
+            })
+
+            // highest tells us where to start off for rewriting id's on the cell
+            // Re point changed id's on variables
+            let starter = highestExistingId + 1
+
+            q.cells.forEach((c) => {
+                // if(q.id === "llm-call") {
+                //     debugger
+                // }
+                // to reference in variable reassign below
+                if(c.id < highestExistingId) {
+                    const idBeforeChange = c.id;
+    
+                    // reassign id
+                    c.id = starter
+    
+                    // increment
+                    starter += 1
+    
+                    // reassign variable
+                    Object.values(newState.variables).forEach((variable) => {
+                        if(variable.to === q.id) {
+                            if(variable.cellId === idBeforeChange) {
+                                variable.cellId = c.id
+                            }
+                        }
+                    })
+
+                    // TODO: Make all ids numbers
+                }
+            })
+
+        })
 
         return newState;
     },

@@ -17,7 +17,6 @@ export const DeleteDiabetesRecordTemplate: Template = {
         queries: {
             'delete-record': {
                 id: 'delete-record',
-                counter: 1,
                 cells: [
                     {
                         id: '13836',
@@ -39,7 +38,6 @@ export const DeleteDiabetesRecordTemplate: Template = {
             },
             'on-page-load': {
                 id: 'on-page-load',
-                counter: 1,
                 cells: [
                     {
                         id: '22910',
