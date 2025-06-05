@@ -11,6 +11,7 @@ import {
     Typography,
     Card,
     Grid,
+    Skeleton,
 } from '@semoss/ui';
 import Autocomplete from '@mui/material/Autocomplete';
 import Chip from '@mui/material/Chip';
@@ -96,6 +97,51 @@ const CatalogItem = ({
                         <CallMadeIcon />
                     </IconButton> */}
                     <NorthEastIcon sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
+                </Grid>
+            </Grid>
+        </Card.Content>
+    </Card>
+);
+const CatalogItemSkeleton = () => (
+    <Card
+        sx={{
+            marginBottom: '5px',
+            width: '100%',
+            boxShadow: 'none',
+            backgroundColor: 'transparent',
+            '&:hover': {
+                boxShadow: 'none',
+                backgroundColor: 'transparent',
+            },
+            '& :last-child': {
+                paddingBottom: 0,
+            },
+        }}
+    >
+        <Card.Content
+            sx={{
+                padding: '5px 16px',
+                margin: 0,
+                '&.MuiCardContent-root:last-child': {
+                    paddingBottom: 0,
+                },
+            }}
+        >
+            <Grid container alignItems="center" justifyContent="space-between">
+                <Grid item xs={1}>
+                    <Skeleton variant="rectangular" width={40} height={40} />
+                </Grid>
+                <Grid item xs={9}>
+                    <Skeleton
+                        variant="rectangular"
+                        width="80%"
+                        height={20}
+                        sx={{ mb: 1 }}
+                    />
+                    <Skeleton variant="rectangular" width="60%" height={16} />
+                </Grid>
+                <Grid item xs={2} container justifyContent="flex-end">
+                    <Skeleton variant="rectangular" width={24} height={24} />
                 </Grid>
             </Grid>
         </Card.Content>
@@ -300,7 +346,15 @@ const Search = observer(({ renderInput }: SearchProps) => {
                                 );
                             })}
                         </Box>
-                        {children}
+                        {result.status === 'LOADING' ? (
+                            <>
+                                <CatalogItemSkeleton />
+                                <CatalogItemSkeleton />
+                                <CatalogItemSkeleton />
+                            </>
+                        ) : (
+                            children
+                        )}
                         <Divider sx={{ borderColor: '#DDE1E6' }} />
                         {!searchValue && (
                             <Typography

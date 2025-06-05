@@ -121,7 +121,7 @@ export const MarketplacePage = () => {
                                 </StyledTypographyBrowseTemplates>
                             </Stack>
 
-                            <Typography variant={'h5'}>
+                            <Typography variant={'h4'}>
                                 Browse Templates
                             </Typography>
                             <Typography variant={'body1'}>
