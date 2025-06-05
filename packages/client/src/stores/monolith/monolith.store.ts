@@ -1892,9 +1892,7 @@ export class MonolithStore {
                 params: {
                     projectId: projectId,
                 },
-            }).catch((error) => {
-                throw Error(error.response?.data?.errorMessage);
-            });
+            })
 
             // there was no response, that is an error
             if (!response) {
