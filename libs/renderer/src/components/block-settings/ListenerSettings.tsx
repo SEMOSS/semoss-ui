@@ -78,8 +78,8 @@ export const ListenerSettings = observer(
         const { listeners, setListener } = useBlockSettings(id);
         const notification = useNotification();
         const blockListeners: ListenerActions[] =
-            toJS(listeners)[listener].order;
-        const type = toJS(listeners)[listener].type;
+            toJS(listeners)[listener]?.order;
+        const type = toJS(listeners)[listener]?.type;
 
         const [actionIndex, setActionIndex] = useState(-1);
         const [openModal, setOpenModal] = useState(false);
