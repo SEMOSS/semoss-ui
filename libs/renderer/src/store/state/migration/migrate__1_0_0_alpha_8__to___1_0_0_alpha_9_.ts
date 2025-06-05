@@ -3,8 +3,8 @@ import { Migration } from "./migration.types";
 /**
  * @name config
  * @description - id reassign for cells
- *
- * TODO: An optional migration function that reassigns ids to cells to incremented ints
+ * TODO: An optional migration function that reassigns old ids to cells to new incremented ints
+ * This is more for cleaning up
  *  
  * */
 const config: Migration = {
@@ -33,15 +33,12 @@ const config: Migration = {
             let starter = highestExistingId + 1
 
             q.cells.forEach((c) => {
-                // if(q.id === "llm-call") {
-                //     debugger
-                // }
                 // to reference in variable reassign below
                 if(c.id < highestExistingId) {
                     const idBeforeChange = c.id;
     
                     // reassign id
-                    c.id = starter
+                    c.id = `${starter}`
     
                     // increment
                     starter += 1
@@ -50,12 +47,10 @@ const config: Migration = {
                     Object.values(newState.variables).forEach((variable) => {
                         if(variable.to === q.id) {
                             if(variable.cellId === idBeforeChange) {
-                                variable.cellId = c.id
+                                variable.cellId = `${c.id}`
                             }
                         }
                     })
-
-                    // TODO: Make all ids numbers
                 }
             })
 
@@ -66,3 +61,4 @@ const config: Migration = {
 };
 
 export default config;
+
