@@ -511,6 +511,16 @@ export const DataImportFormModal = observer(
                     },
                 }) as string;
 
+                state.dispatch({
+                    message: ActionMessages.ADD_VARIABLE,
+                    payload: {
+                        id: `${query.id}--${newCellId}`,
+                        type: 'cell',
+                        to: query.id,
+                        cellId: newCellId,
+                    },
+                });
+
                 notebook.selectCell(query.id, newCellId);
             } catch (e) {
                 console.error(e);

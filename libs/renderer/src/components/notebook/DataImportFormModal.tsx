@@ -501,7 +501,7 @@ export const DataImportFormModal = observer(
                         previousCellId: previousCellId,
                         config: config as Omit<CellStateConfig, "id">,
                     },
-                });
+                }) as string;
                 notebook.selectCell(query.id, newCellId);
             } catch (e) {
                 console.error(e);

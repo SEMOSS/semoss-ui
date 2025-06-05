@@ -18,7 +18,7 @@ const config: Migration = {
                 let found = false
                 Object.values(newState.variables).forEach((variable) => {
                     if(variable.to === q.id) {
-                        if (c.id === variable.cell) {
+                        if (c.id === variable.cellId) {
                             found = true
                         }
                     }
