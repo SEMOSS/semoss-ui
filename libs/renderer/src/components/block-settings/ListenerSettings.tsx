@@ -230,13 +230,11 @@ export const ListenerSettings = observer(
                 (item, index) => ({
                     id: index.toString(),
                     content: item.payload["queryId"]
-                        ? `${item.payload["queryId"]}${
-                              "." +
-                              getCellNumber(
-                                  item.payload["queryId"],
-                                  item.payload["cellId"],
-                              )
-                          }`
+                        ? `${state.getAlias(
+                              item.payload["queryId"],
+                              item.payload["cellId"] ? item.payload["cellId"] : null,
+                          )}
+                        `
                         : item.payload["name"],
                     original: item, // Keep reference to the original item
                 }),
