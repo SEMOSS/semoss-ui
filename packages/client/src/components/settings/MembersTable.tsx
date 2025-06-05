@@ -470,9 +470,11 @@ export const MembersTable = (props: MembersTableProps) => {
      *
      * @param members - members that will be deleted
      */
-    const openDeleteMembersModal = (members: SETTINGS_PROVISIONED_USER[]) => {
+    const openDeleteMembersModal = (
+        selectedMembers: SETTINGS_PROVISIONED_USER[],
+    ) => {
         // notify if no members
-        if (members.length === 0) {
+        if (selectedMembers.length === 0) {
             notification.add({
                 color: 'warning',
                 message: `No permissions to change`,
@@ -481,8 +483,25 @@ export const MembersTable = (props: MembersTableProps) => {
             return;
         }
 
+        const authors = renderedMembers.filter(
+            (m) =>
+                permissionPriorityMapper(m.permission)?.permission === 'Author',
+        );
+
+        const authorsToDelete = selectedMembers.filter(
+            (m) =>
+                permissionPriorityMapper(m.permission)?.permission === 'Author',
+        );
+        if (authors.length > 0 && authorsToDelete.length === authors.length) {
+            notification.add({
+                color: 'error',
+                message: `You cannot delete the all admin (Author) in the table.`,
+            });
+            return;
+        }
+
         // set the pending members
-        setPendingDeletedMembers(members);
+        setPendingDeletedMembers(selectedMembers);
 
         // close the model
         setDeleteMembersModal(true);
