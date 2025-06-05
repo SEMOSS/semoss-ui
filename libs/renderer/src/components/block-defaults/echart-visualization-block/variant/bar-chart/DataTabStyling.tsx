@@ -321,7 +321,7 @@ export const DataTabStyling = observer(
                         onChange={(_, value) => {
                             setData("frame.name", value);
                             setSelectedColumns({});
-                            syncHeader(value, true);
+                            syncHeader(value, true); //resets selected columns, stored columns, and block's field data in frameoperations
                             setData("columns", []); // Reset columns when frame changes
                         }}
                         freeSolo={false}

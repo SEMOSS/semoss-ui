@@ -154,6 +154,7 @@ export const FrameOperations = observer(
         useEffect(() => {
             let filteredColumnsString = JSON.stringify(filteredColumns);
             let columnsSelectorString = JSON.stringify(columnsSelector);
+            console.log(filteredColumnsString, columnsSelectorString, 'string comparision');
             if (
                 columnsSelector.length > 0 &&
                 filteredColumnsString !== columnsSelectorString
@@ -594,7 +595,7 @@ export const FrameOperations = observer(
                     let dragAndDropColumns = getDraggedColumns(tempStoredColumnsForDropped, data.variation);
                     setDroppedColumns((preVCol) => dragAndDropColumns);   
             }
-        }, [data.variation, id]);
+        }, [data.variation, id, filteredColumns]);
 
         //update the local state value when computed value is getting updated
         useEffect(() => {
