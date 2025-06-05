@@ -1,6 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { usePixel, useRootStore } from '@/hooks';
+import { useNavigate } from 'react-router-dom';
+
+import Autocomplete from '@mui/material/Autocomplete';
+import Chip from '@mui/material/Chip';
+import NorthEastIcon from '@mui/icons-material/NorthEast';
+
 import {
     Box,
     // Chip,
@@ -11,15 +16,15 @@ import {
     Typography,
     Card,
     Grid,
+    Stack,
     Skeleton,
 } from '@semoss/ui';
-import Autocomplete from '@mui/material/Autocomplete';
-import Chip from '@mui/material/Chip';
-import NorthEastIcon from '@mui/icons-material/NorthEast';
-import { useNavigate } from 'react-router-dom';
-import { ENGINE_IMAGES } from '/workspace/apache-tomcat-9.0.96/webapps/SemossWeb/packages/client/src/pages/import/import.constants';
+
+import { Env, usePixel } from '@semoss/sdk/react';
+
+import { ENGINE_IMAGES } from '@/pages/import/import.constants';
 import BRAIN from '@/assets/img/BRAIN.png';
-import { Env } from '@semoss/sdk/react';
+import { useRootStore } from '@/hooks';
 
 // Dummy data for illustration
 const categories = [
@@ -43,7 +48,6 @@ const CatalogItem = ({
 }) => (
     <Card
         sx={{
-            marginBottom: '5px',
             width: '100%',
             boxShadow: 'none',
             backgroundColor: 'transparent',
@@ -54,11 +58,20 @@ const CatalogItem = ({
             '& :last-child': {
                 paddingBottom: 0,
             },
+            '&.MuiPaper-root': {
+                overflow: 'visible',
+            },
+            '&.MuiCard-root': {
+                overflow: 'visible',
+            },
+            '&.MuiPaper-root.MuiCard-root': {
+                overflow: 'visible',
+            },
         }}
     >
         <Card.Content
             sx={{
-                padding: '5px 16px',
+                paddingLeft: '0px',
                 margin: 0,
                 '&.MuiCardContent-root:last-child': {
                     paddingBottom: 0,
@@ -74,9 +87,8 @@ const CatalogItem = ({
                     <img
                         src={icon}
                         alt={`${title} icon`}
-                        style={{ width: '40px', height: '40px' }}
+                        style={{ width: '40px', height: '40px', zIndex: 9999 }}
                     />
-                    {/* <span style={{ width: '40px', height: '40px' }}>image</span> */}
                 </Grid>
                 <Grid item xs={9}>
                     <Typography
@@ -178,9 +190,10 @@ const Search = observer(({ renderInput }: SearchProps) => {
         data = result.data.map((x) => {
             return {
                 ...x,
-                label: x.project_name || x.app_name,
-                id: x.project_id || x.app_id,
-                section: x.app_type || 'APP',
+                label: x.project_name || x.database_name,
+                id: x.project_id || x.database_id,
+                section: x.database_type || 'APP',
+                description: x.project_id || x.database_id,
             };
         });
     }
@@ -209,7 +222,6 @@ const Search = observer(({ renderInput }: SearchProps) => {
         return Object.values(grouped).flat();
     };
 
-    data = limitOptionsPerGroup(data, 3);
     const findDBImage = (appType: string, appSubType: string) => {
         const obj = ENGINE_IMAGES[appType]?.find(
             (ele) => ele.name == appSubType,
@@ -223,6 +235,22 @@ const Search = observer(({ renderInput }: SearchProps) => {
         return obj.icon;
     };
 
+    const recentSearches = useMemo(() => {
+        return [
+            {
+                label: 'AI Conductor',
+                id: '1783813',
+                type: 'APP',
+            },
+            {
+                label: 'MODEL',
+                id: '1783813',
+                type: 'MODEL',
+            },
+        ];
+    }, []);
+    data = limitOptionsPerGroup(data, 3);
+
     return (
         <Autocomplete
             freeSolo
@@ -233,15 +261,7 @@ const Search = observer(({ renderInput }: SearchProps) => {
             groupBy={(option) => option.section || ''}
             inputValue={searchValue}
             onInputChange={handleInputChange}
-            options={
-                !searchValue?.trim()
-                    ? recentSearches.filter((option) =>
-                          option.label
-                              .toLowerCase()
-                              .includes(searchValue.toLowerCase()),
-                      )
-                    : data
-            }
+            options={!searchValue?.trim() ? [] : data}
             PopperComponent={CustomPopper}
             getOptionKey={(option) => option.id || option.label}
             getOptionLabel={(option) =>
@@ -250,17 +270,24 @@ const Search = observer(({ renderInput }: SearchProps) => {
             renderInput={renderInput}
             renderOption={(props, option) => (
                 <List.Item
-                    sx={{ padding: 0, flexDirection: 'column' }}
+                    disablePadding
+                    disableGutters
+                    sx={{
+                        padding: '0px !important',
+                        flexDirection: 'column',
+                        '&.MuiListItem-root': {
+                            padding: '0px !important',
+                        },
+                    }}
                     key={option.label}
                 >
                     <List.ItemButton
                         sx={{
                             width: '100%',
-                            padding: 0,
-                            // '&:hover': {
-                            //     backgroundColor: 'transparent', // No background on hover
-                            //     color: 'inherit', // No color change on hover
-                            // },
+                            padding: '0px !important',
+                            '&.MuiListItemButton-root': {
+                                padding: '0px !important',
+                            },
                         }}
                         onClick={() => {
                             if (option.section === 'APP') {
@@ -292,21 +319,20 @@ const Search = observer(({ renderInput }: SearchProps) => {
             )}
             noOptionsText={'No results found'}
             renderGroup={(params) => (
-                <li>
+                <Stack direction={'column'} gap={0.5}>
                     <Typography variant={'body2'} color="secondary">
                         {params.group.charAt(0).toUpperCase() +
                             params.group.slice(1).toLowerCase()}
                     </Typography>
                     <Divider />
                     <div>{params.children}</div>
-                </li>
+                </Stack>
             )}
             PaperComponent={({ children }) => (
                 <Paper>
-                    {/* {!searchValue ? ( */}
                     <Box sx={{ p: 2 }}>
                         <Typography variant="body2" sx={{ mb: 1 }}>
-                            I'm Searching for
+                            I'm searching for
                         </Typography>
                         <Box
                             sx={{
@@ -359,21 +385,43 @@ const Search = observer(({ renderInput }: SearchProps) => {
                         {!searchValue && (
                             <Typography
                                 variant="subtitle2"
-                                sx={{ mb: 1, color: '#9E9E9E' }}
+                                sx={{ mb: 1, mt: 1, color: '#9E9E9E' }}
                             >
                                 Recents
                             </Typography>
                         )}
-                        {recentSearches.map(({ label }) => (
-                            <Box key={label} sx={{ mb: 0.5 }}>
-                                <Typography
-                                    variant="body2"
-                                    sx={{ cursor: 'pointer' }}
+                        {!searchValue &&
+                            recentSearches.map(({ label, id, type }) => (
+                                <Stack
+                                    key={label}
+                                    sx={{ mb: 0.5 }}
+                                    alignItems={'center'}
+                                    direction={'row'}
+                                    gap={1}
+                                    onClick={() => {
+                                        window.alert('redirect');
+                                    }}
                                 >
-                                    {label}
-                                </Typography>
-                            </Box>
-                        ))}
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="19"
+                                        height="16"
+                                        viewBox="0 0 19 16"
+                                        fill="none"
+                                    >
+                                        <path
+                                            d="M11.2507 4.66667H10.0007V8.83333L13.5673 10.95L14.1673 9.94167L11.2507 8.20833V4.66667ZM10.834 0.5C8.84486 0.5 6.93721 1.29018 5.53068 2.6967C4.12416 4.10322 3.33398 6.01088 3.33398 8H0.833984L4.13398 11.3583L7.50065 8H5.00065C5.00065 6.4529 5.61523 4.96917 6.7092 3.87521C7.80316 2.78125 9.28689 2.16667 10.834 2.16667C12.3811 2.16667 13.8648 2.78125 14.9588 3.87521C16.0527 4.96917 16.6673 6.4529 16.6673 8C16.6673 9.5471 16.0527 11.0308 14.9588 12.1248C13.8648 13.2188 12.3811 13.8333 10.834 13.8333C9.22565 13.8333 7.76732 13.175 6.71732 12.1167L5.53398 13.3C6.89232 14.6667 8.75065 15.5 10.834 15.5C12.8231 15.5 14.7308 14.7098 16.1373 13.3033C17.5438 11.8968 18.334 9.98912 18.334 8C18.334 6.01088 17.5438 4.10322 16.1373 2.6967C14.7308 1.29018 12.8231 0.5 10.834 0.5Z"
+                                            fill="#9E9E9E"
+                                        />
+                                    </svg>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{ cursor: 'pointer' }}
+                                    >
+                                        {label}
+                                    </Typography>
+                                </Stack>
+                            ))}
                     </Box>
                 </Paper>
             )}
