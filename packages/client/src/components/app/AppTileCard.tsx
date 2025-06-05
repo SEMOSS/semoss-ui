@@ -259,7 +259,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
     const createdDate = useMemo(() => {
         const d = dayjs(app.project_date_created);
         if (!d.isValid()) {
-            return '';
+            return null;
         }
 
         return `Published ${d.format('MMMM D, YYYY')}`;
@@ -268,7 +268,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
     const lastEditedDate = useMemo(() => {
         const d = dayjs(app.project_date_last_edited);
         if (!d.isValid()) {
-            return '';
+            return null;
         }
 
         return `Last Edited ${d.format('MMMM D, YYYY')}`;
