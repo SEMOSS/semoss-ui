@@ -220,7 +220,7 @@ export const FrameOperations = observer(
 
             const columns = { ...fieldsData };
 
-            if (variation === "echart-bar-graph") {
+            if (variation === "echart-bar-chart") {
 
                 if (firstColumn?.label) {
                     columns[firstColumn?.label] = [
@@ -535,7 +535,7 @@ export const FrameOperations = observer(
                     setData("option", tempValue);
                 }
             }
-            if (variation === "echart-line-graph" && firstColumn !== null && secondColumn !== null) {
+            if (variation === "echart-line-chart" && firstColumn !== null && secondColumn !== null) {
                 const tempValue = JSON.parse(computedValue);
                 tempValue["xAxis"] = {
                     ...tempValue["xAxis"],

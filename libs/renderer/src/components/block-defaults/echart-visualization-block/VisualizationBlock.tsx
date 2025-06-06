@@ -160,7 +160,7 @@ export const VisualizationBlock: BlockComponent = observer(
                         style={{ ...updatedDataStyle }}
                         ref={elementRef}
                     >
-                        {data.variation === "echart-bar-graph" && (
+                        {data.variation === "echart-bar-chart" && (
                             <Bar id={id} updateJson={updateChartJson} />
                         )}
                         {data.variation === "echart-pie-chart" && (
@@ -172,7 +172,7 @@ export const VisualizationBlock: BlockComponent = observer(
                         {data.variation === "echart-world-map-chart" && (
                             <Map id={id}></Map>
                         )}
-                        {data.variation === "echart-line-graph" && (
+                        {data.variation === "echart-line-chart" && (
                             <Line id={id} updateJson={updateChartJson} />
                         )}
                         {data.variation === "echart-stack-chart" && (
@@ -196,7 +196,7 @@ export const VisualizationBlock: BlockComponent = observer(
         }
         return (
             <StyledDataContainer {...attrs} style={{ ...updatedDataStyle }}>
-                {data.variation === "echart-bar-graph" && (
+                {data.variation === "echart-bar-chart" && (
                     <Bar id={id} updateJson={updateChartJson} />
                 )}
                 {data.variation === "echart-pie-chart" && (
@@ -208,7 +208,7 @@ export const VisualizationBlock: BlockComponent = observer(
                 {data.variation === "echart-world-map-chart" && (
                     <Map id={id}></Map>
                 )}
-                {data.variation === "echart-line-graph" && (
+                {data.variation === "echart-line-chart" && (
                     <Line id={id} updateJson={updateChartJson} />
                 )}
                 {data.variation === "echart-stack-chart" && (

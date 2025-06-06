@@ -295,7 +295,7 @@ const ColorpalatteTool = (({id})=>{
                     id={id}
                     path="option.color"
                     onColorPalatteSelected={(option, color) => {
-                        if (data.variation === "echart-bar-graph") {
+                        if (data.variation === "echart-bar-chart") {
                             const optionToSend =
                                 typeof option === "string"
                                     ? JSON.parse(option)
@@ -946,7 +946,7 @@ const BarToolsList = (({id})=>{
                 )}
             </StyledListItem>
             <StyledListItem disablePadding>
-                {data.variation === "echart-bar-graph" && (
+                {data.variation === "echart-bar-chart" && (
                     <ListItemButton
                         onClick={(e) =>
                             setBarSelection((prevList) =>
@@ -1698,12 +1698,12 @@ const LineChartTools = (({id})=>{
                             )
                         }
                         {
-                            data.variation === 'echart-line-graph' && (
+                            data.variation === 'echart-line-chart' && (
                                 <LineChartTools id={id} />
                             )
                         }
                         {
-                            data.variation === 'echart-bar-graph' && (
+                            data.variation === 'echart-bar-chart' && (
                                 <BarToolsList id={id} />
                             )
                         }

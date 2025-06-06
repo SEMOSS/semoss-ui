@@ -193,7 +193,7 @@ export const DataTabStyling = observer(
             }
             const formattedArray = chart.map((item, index) => {
                 let value;
-                if (data.variation === "echart-bar-graph") {
+                if (data.variation === "echart-bar-chart") {
                     value = data.option[chart[index].label]?.pixelname;
                 }
                 else if (data.variation === "echart-gantt-chart") {

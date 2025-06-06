@@ -1635,7 +1635,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         json: {
             widget: 'e-chart',
             data: {
-                variation: 'echart-bar-graph',
+                variation: 'echart-bar-chart',
                 style: {
                     display: 'flex',
                     flexDirection: 'column',
@@ -1717,7 +1717,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                         },
                     },
                     title: {
-                        text: 'Bar Graph',
+                        text: 'Bar Chart',
                         show: true,
                         left: 'left',
                         textStyle: {
@@ -1925,14 +1925,14 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         json: {
             widget: 'e-chart',
             data: {
-                variation: 'echart-line-graph',
+                variation: 'echart-line-chart',
                 style: {
                     height: 500,
                     width: 400,
                 },
                 option: {
                     title: {
-                        text: 'ECharts Line Chart',
+                        text: 'Line Chart',
                         left: 'center',
                         top: 20,
                         textStyle: {
