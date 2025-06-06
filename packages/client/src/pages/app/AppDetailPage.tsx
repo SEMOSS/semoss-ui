@@ -239,15 +239,20 @@ export const AppDetailPage = () => {
     }
 
     const fetchAppData = async (id: string) => {
-        Promise.allSettled([
+        await getPermission();
+        const permission = getValues('permission');
+        const promises: Promise<any>[] = [
             fetchAppInfo(
                 monolithStore,
                 id,
                 configStore.store.config.projectMetaKeys.map((a) => a.metakey),
             ),
             fetchMainUses(monolithStore, id),
-            fetchDependencies(monolithStore, id),
-        ]).then((results) =>
+        ];
+        if (permission !== 'discoverable') {
+            promises.push(fetchDependencies(monolithStore, id));
+        }
+        Promise.allSettled(promises).then((results) =>
             results.forEach((res, idx) => {
                 if (res.status === 'rejected') {
                     emitMessage(true, res.reason);
