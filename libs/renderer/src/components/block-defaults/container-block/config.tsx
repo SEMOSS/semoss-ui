@@ -11,6 +11,7 @@ import {
     buildColorSection,
     buildListener,
     buildShowField,
+    buildShadowSection,
 } from "../block-defaults.shared";
 import { SelectInputSettings } from "../../block-settings/shared/SelectInputSettings";
 import { SizeSettings } from "../../block-settings/shared/SizeSettings";
@@ -30,6 +31,13 @@ export const config: BlockConfig<ContainerBlockDef> = {
             gap: "8px",
             flexWrap: "wrap",
         },
+        boxShadowParts: {
+            offsetX: "",
+            offsetY: "",
+            blurRadius: "",
+            spreadRadius: "",
+            color: "",
+        }
     },
     listeners: {
         preProcess: {
@@ -124,5 +132,6 @@ export const config: BlockConfig<ContainerBlockDef> = {
         buildDimensionsSection(),
         buildColorSection(),
         buildBorderSection(),
+        buildShadowSection(),
     ],
 };
