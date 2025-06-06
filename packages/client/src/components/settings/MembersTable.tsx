@@ -264,6 +264,7 @@ export const MembersTable = (props: MembersTableProps) => {
     // get the api
     let getMembersApi: Parameters<typeof useAPI>[0] = null;
     let getUserDataApi: Parameters<typeof useAPI>[0] = null;
+    let getAllAuthorsApi: Parameters<typeof useAPI>[0] = null;
     if (type === 'APP') {
         getUserDataApi = [
             'getProjectUsers',
@@ -282,6 +283,15 @@ export const MembersTable = (props: MembersTableProps) => {
             permissionPriorityMapper(permissionFilter)?.permission,
             (page + 1) * rowsPerPage - rowsPerPage, // offset
             rowsPerPage, // limit
+        ];
+        getAllAuthorsApi = [
+            'getProjectUsers',
+            adminMode,
+            id,
+            undefined, // no search
+            'OWNER', // OWNER Permission Filter
+            undefined, // offset
+            undefined, // limit
         ];
     } else if (
         type === 'DATABASE' ||
@@ -308,10 +318,34 @@ export const MembersTable = (props: MembersTableProps) => {
             0, // offset
             1, // limit
         ];
+        getAllAuthorsApi = [
+            'getEngineUsers',
+            adminMode,
+            id,
+            undefined, // no search
+            'OWNER', // OWNER Permission Filter
+            undefined, // offset
+            undefined, // limit
+        ];
     }
 
     const getMembers = useAPI(getMembersApi);
     const userDetails = useAPI(getUserDataApi);
+    const allAuthorsResponse = useAPI(getAllAuthorsApi);
+    const [allAuthors, setAllAuthors] = useState<SETTINGS_PROVISIONED_USER[]>(
+        [],
+    );
+
+    useEffect(() => {
+        if (
+            allAuthorsResponse.status === 'SUCCESS' &&
+            allAuthorsResponse.data
+        ) {
+            setAllAuthors(allAuthorsResponse.data['members']);
+        } else {
+            setAllAuthors([]);
+        }
+    }, [allAuthorsResponse.status, allAuthorsResponse.data]);
 
     //Below UseEffect has been added so that search supersedes pagination , when the user goes to a different page and searches any user the pagination is set 0 and the user is being displayed.
     useEffect(() => {
@@ -344,7 +378,7 @@ export const MembersTable = (props: MembersTableProps) => {
     };
 
     /**
-     * When
+     * Updates user details when userDetails API call succeeds.
      **/
     useEffect(() => {
         if (userDetails.status !== 'SUCCESS' || !userDetails.data) {
@@ -443,6 +477,7 @@ export const MembersTable = (props: MembersTableProps) => {
 
                 // refresh the members
                 getMembers.refresh();
+                allAuthorsResponse.refresh();
 
                 onChange();
             } else {
@@ -477,16 +512,14 @@ export const MembersTable = (props: MembersTableProps) => {
             return;
         }
 
-        const authors = renderedMembers.filter(
-            (m) =>
-                permissionPriorityMapper(m.permission)?.permission === 'Author',
-        );
-
         const authorsToDelete = selectedMembers.filter(
             (m) =>
                 permissionPriorityMapper(m.permission)?.permission === 'Author',
         );
-        if (authors.length > 0 && authorsToDelete.length === authors.length) {
+        if (
+            allAuthors.length > 0 &&
+            authorsToDelete.length === allAuthors.length
+        ) {
             notification.add({
                 color: 'error',
                 message: `You cannot delete all the admins(Authors) from the table.`,
@@ -936,7 +969,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     value="Editor"
                                                                     label="Editor"
                                                                     disabled={
-                                                                        (userPermission === 'Editor' && user.permission === 'OWNER') ||
+                                                                        (userPermission ===
+                                                                            'Editor' &&
+                                                                            user.permission ===
+                                                                                'OWNER') ||
                                                                         !configStore.isEngineOperationAvailable(
                                                                             type,
                                                                             'access',
@@ -952,7 +988,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     value="Read-Only"
                                                                     label="Read-Only"
                                                                     disabled={
-                                                                        (userPermission === 'Editor' && user.permission === 'OWNER') ||
+                                                                        (userPermission ===
+                                                                            'Editor' &&
+                                                                            user.permission ===
+                                                                                'OWNER') ||
                                                                         !configStore.isEngineOperationAvailable(
                                                                             type,
                                                                             'access',
