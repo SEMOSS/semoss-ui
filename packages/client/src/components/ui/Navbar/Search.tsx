@@ -201,6 +201,10 @@ const Search = observer(({ renderInput }: SearchProps) => {
         configStore.setGlobalSearch(newInputValue);
     };
 
+    const recentSearchItem = localStorage.getItem(
+        `recent-searches--${configStore.store.userEpoch}`,
+    );
+
     const handleCategoryToggle = (category) => {
         setSelectedCategories((prev) =>
             prev.some((c) => c.name === category.name)
@@ -236,20 +240,25 @@ const Search = observer(({ renderInput }: SearchProps) => {
     };
 
     const recentSearches = useMemo(() => {
-        return [
-            {
-                label: 'AI Conductor',
-                id: '1783813',
-                type: 'APP',
-            },
-            {
-                label: 'MODEL',
-                id: '1783813',
-                type: 'MODEL',
-            },
-        ];
-    }, []);
+        return configStore.getRecentSearches();
+    }, [configStore.store.userEpoch, recentSearchItem]);
+
+    // Limit the number of options per group to 3
     data = limitOptionsPerGroup(data, 3);
+
+    const handleOptionClick = (option) => {
+        // Add to recent searches in localStorage
+        configStore.setRecentSearch({
+            label: option.label,
+            id: option.id,
+            type: option.section,
+        });
+        if (option.section === 'APP') {
+            navigate(`app/${option.id}`);
+        } else {
+            navigate(`engine/${option.section.toLowerCase()}/${option.id}`);
+        }
+    };
 
     return (
         <Autocomplete
@@ -289,17 +298,7 @@ const Search = observer(({ renderInput }: SearchProps) => {
                                 padding: '0px !important',
                             },
                         }}
-                        onClick={() => {
-                            if (option.section === 'APP') {
-                                navigate(`app/${option.id}`);
-                            } else {
-                                navigate(
-                                    `engine/${option.section.toLowerCase()}/${
-                                        option.id
-                                    }`,
-                                );
-                            }
-                        }}
+                        onClick={() => handleOptionClick(option)}
                     >
                         <CatalogItem
                             icon={
