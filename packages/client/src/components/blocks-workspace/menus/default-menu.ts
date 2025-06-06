@@ -929,6 +929,13 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     flexWrap: 'wrap',
                 },
                 show: 'true',
+                boxShadowParts: {
+                    offsetX: '',
+                    offsetY: '',
+                    blurRadius: '',
+                    spreadRadius: '',
+                    color: '',
+                },
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
@@ -1081,9 +1088,14 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     backgroundPosition: 'center center',
                     show: 'true',
                 },
+
+                icon: 'Home',
                 src: '',
                 title: '',
                 show: 'true',
+                badgeContent: 0,
+                color: 'default',
+                showBadge: false,
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],

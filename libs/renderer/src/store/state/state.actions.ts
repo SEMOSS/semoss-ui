@@ -213,7 +213,6 @@ export interface NewCellAction extends Action {
     message: ActionMessages.NEW_CELL;
     payload: {
         queryId: string;
-        cellId: string;
         previousCellId: string;
         config: Omit<CellStateConfig, "id">;
     };
