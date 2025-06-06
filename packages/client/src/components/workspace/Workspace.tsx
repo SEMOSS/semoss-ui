@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { Menu, MenuOpen, Public, RestartAlt } from '@mui/icons-material';
-import { Layout, TabNode } from 'flexlayout-react';
+import { Layout, TabNode, Model } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import './flexlayout.css';
 
@@ -27,6 +27,7 @@ import { LoginPopover } from '@/components/ui';
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
 import { WorkspaceTabs } from './WorkspaceTabs';
+import { useBlocks } from '@semoss/renderer';
 
 const StyledViewport = styled('div')(() => ({
     height: '100vh',
@@ -129,12 +130,42 @@ export const Workspace = observer((props: WorkspaceProps) => {
         factory = () => null,
     } = props;
     const { configStore } = useRootStore();
-    const notification = useNotification();
+
+    const { notebook } = useBlocks();
 
     const layoutRef = useRef<Layout>(null);
 
+    const [filteredModel, setFilteredModel] = useState<Model | null>(null);
+
     // build the model from the layout
-    const model = workspace.selectedLayout?.model;
+    const rawModel = workspace.selectedLayout?.model;
+
+    useEffect(() => {
+        if (!rawModel) return;
+
+        const modelJson = rawModel.toJson();
+
+        if (!modelJson) {
+            setFilteredModel(rawModel);
+            return;
+        }
+
+        const validNotebookIds = new Set(notebook.queriesList.map((q) => q.id));
+
+        const root = modelJson.layout.children?.[0];
+        if (!root || !Array.isArray(root.children)) return;
+
+        const filteredLayoutArray = root.children.filter((layout: any) => {
+            const isNotebook = layout.component === 'notebook-viewer';
+            const layoutId = layout.config?.id;
+            return !isNotebook || validNotebookIds.has(layoutId);
+        });
+
+        root.children = filteredLayoutArray;
+        root['selected'] = filteredLayoutArray.length - 1;
+
+        setFilteredModel(Model.fromJson(modelJson));
+    }, [notebook.queriesList, rawModel]);
 
     useEffect(() => {
         // default options if not loaded from cache
@@ -263,11 +294,11 @@ export const Workspace = observer((props: WorkspaceProps) => {
                     <StyledContent>
                         <WorkspaceLoading />
                         <StyledSpacer>
-                            {model ? (
+                            {filteredModel ? (
                                 <>
                                     <Layout
                                         ref={layoutRef}
-                                        model={model}
+                                        model={filteredModel}
                                         factory={(node) => {
                                             return factory(
                                                 node,
