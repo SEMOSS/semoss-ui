@@ -22,12 +22,11 @@ import {
     useNotification,
     TextField,
     Select,
-    Grid,
 } from '@semoss/ui';
 
 import { ALL_TYPES } from '@/types';
 import { PERMISSION_DESCRIPTION_MAP } from '@/constants';
-import { useAPI, useDebounceValue, useRootStore, useSettings } from '@/hooks';
+import { useDebounceValue, useRootStore, useSettings } from '@/hooks';
 import { MembersAddOverlayUser } from './MembersAddOverlayUser';
 import { SETTINGS_ROLE } from './settings.types';
 import { permissionPriorityMapper } from '@/utility/general';
@@ -203,10 +202,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
         setSearch('');
     }, [open]);
 
-   useEffect(() => {
+    useEffect(() => {
         if (!open) return;
 
-        let cancelled = false;
+        const cancelled = false;
         setSearchLoading(true);
 
         const fetchUsers = async () => {
@@ -263,7 +262,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
                 if (!cancelled) {
                     if (all.length < AUTOCOMPLETE_LIMIT) setInfiniteOn(false);
-                    if (renderedMembers.length >= AUTOCOMPLETE_LIMIT && offset > 0) {
+                    if (
+                        renderedMembers.length >= AUTOCOMPLETE_LIMIT &&
+                        offset > 0
+                    ) {
                         setRenderedMembers((prev) => [...prev, ...all]);
                     } else {
                         setRenderedMembers(all);
