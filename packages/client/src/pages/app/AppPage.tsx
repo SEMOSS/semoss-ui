@@ -12,8 +12,7 @@ import {
     Modal,
     Tooltip,
     IconButton,
-    Icon,
-} from '@mui/material';
+} from '@semoss/ui';
 import { EditOutlined, ShareRounded } from '@mui/icons-material';
 
 import { Env } from '@semoss/sdk/react';

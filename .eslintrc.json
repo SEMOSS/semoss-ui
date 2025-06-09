@@ -1,13 +1,7 @@
 {
     "extends": [
-        // "plugin:@nx/react",
-        "plugin:react/recommended",
-        "plugin:react-hooks/recommended",
-        "plugin:@typescript-eslint/recommended",
-        "prettier",
-        "plugin:prettier/recommended"
+        "prettier"
     ],
-    "ignorePatterns": ["!**/*", "dist"],
     "overrides": [
         {
             "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
