@@ -24,7 +24,7 @@ import {
     Menu,
     useNotification,
 } from '@semoss/ui';
-import { Env } from '@semoss/sdk';
+import { Env } from '@semoss/sdk/react';
 
 import BRAIN from '@/assets/img/BRAIN.png';
 import GOOGLE from '@/assets/img/google.png';
@@ -295,6 +295,8 @@ interface DatabaseCardProps {
 
     isFavorite?: boolean;
 
+    isDiscoverable?: boolean;
+
     isUpvoted?: boolean;
 
     votes?: string;
@@ -320,6 +322,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
         tag,
         isGlobal,
         isFavorite,
+        isDiscoverable = false,
         isUpvoted,
         type,
         sub_type,
@@ -375,24 +378,26 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
                         ) : null}
                     </Typography>
                     <StyledCardIconsDiv>
-                        <IconButton
-                            size={'small'}
-                            title={
-                                isFavorite
-                                    ? `Unbookmark ${name ? name : id}`
-                                    : `Bookmark ${name ? name : id}`
-                            }
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                favorite(isFavorite);
-                            }}
-                        >
-                            {isFavorite ? (
-                                <Bookmark color="primary" />
-                            ) : (
-                                <BookmarkBorder />
-                            )}{' '}
-                        </IconButton>
+                        {!isDiscoverable && (
+                            <IconButton
+                                size={'small'}
+                                title={
+                                    isFavorite
+                                        ? `Unbookmark ${name ? name : id}`
+                                        : `Bookmark ${name ? name : id}`
+                                }
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    favorite(isFavorite);
+                                }}
+                            >
+                                {isFavorite ? (
+                                    <Bookmark color="primary" />
+                                ) : (
+                                    <BookmarkBorder />
+                                )}{' '}
+                            </IconButton>
+                        )}
                         <IconButton
                             onClick={(e) => {
                                 e.stopPropagation();

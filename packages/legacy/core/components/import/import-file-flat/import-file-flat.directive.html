@@ -176,11 +176,16 @@
         <smss-btn
             class="smss-left smss-btn--outline"
             ng-click="importFileCtrl.setFile();"
+            data-testid="import-file-back-btn"
         >
             Back
         </smss-btn>
 
-        <smss-btn class="smss-right" ng-click="importFileFlat.importData()">
+        <smss-btn 
+            class="smss-right" 
+            ng-click="importFileFlat.importData()"
+            data-testid="import-file-import-btn"
+        >
             Import
         </smss-btn>
     </div>

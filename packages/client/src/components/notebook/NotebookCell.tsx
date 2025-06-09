@@ -322,21 +322,22 @@ export const NotebookCell = observer(
             });
 
             return matchIndex + 1;
-        }, [cell.id, cell.query.cellList.length]);
+        }, [
+            cell.id,
+            cell.query.list.indexOf(cell.id),
+            cell.query.cellList.length,
+        ]);
 
         /**
          * Create a duplicate cell
          */
         const duplicateCell = () => {
             try {
-                const newCellId = `${Math.floor(Math.random() * 100000)}`;
-
                 // copy and add the step to the end
-                state.dispatch({
+                const newCellId = state.dispatch({
                     message: ActionMessages.NEW_CELL,
                     payload: {
                         queryId: queryId,
-                        cellId: newCellId,
                         previousCellId: cellId,
                         config: {
                             widget: cell.widget,
@@ -345,7 +346,18 @@ export const NotebookCell = observer(
                             },
                         },
                     },
+                }) as string;
+
+                state.dispatch({
+                    message: ActionMessages.ADD_VARIABLE,
+                    payload: {
+                        id: `${queryId}--${newCellId}`,
+                        type: 'cell',
+                        to: queryId,
+                        cellId: newCellId,
+                    },
                 });
+
                 notebook.selectCell(queryId, newCellId);
             } catch (e) {
                 console.error(e);
@@ -501,16 +513,13 @@ export const NotebookCell = observer(
                     <StyledStackTwo
                         onClick={() => {
                             copyTextToClipboard(
-                                `{{${queryId}.${cellOrderNumber}}}`,
+                                `{{${variableName}}}`,
                                 notification,
                             );
                         }}
                     >
-                        <StyledName
-                            variant="subtitle2"
-                            title={'Copy reference id'}
-                        >
-                            {cellOrderNumber}
+                        <StyledName variant="subtitle2" title={'Copy variable'}>
+                            {variableName}
                         </StyledName>
                     </StyledStackTwo>
 
@@ -776,52 +785,167 @@ export const NotebookCell = observer(
                             </StyledRunIconButton>
                             <StyledCardInput>{rendered}</StyledCardInput>
                         </StyledCardContent>
-                        {cell.isExecuted && (
+                        {cell.widget === 'code' ? (
                             <>
-                                {(notebook?.selectedCell?.id ?? '') ==
-                                    cell.id && <Divider />}
-                                <StyledCardActions
-                                    id={`notebook-cell-${queryId}-${cellId}-card-actions`}
-                                    ref={cardActionsRef}
-                                >
-                                    <Stack
-                                        id={`notebook-cell-actions-${queryId}-${cellId}`}
-                                        direction="column"
-                                        width="100%"
-                                    >
-                                        <Stack
-                                            direction="row"
-                                            alignItems="center"
-                                            width="100%"
+                                {cell.messages.length > 0 && (
+                                    <>
+                                        {(notebook?.selectedCell?.id ?? '') ==
+                                            cell.id && <Divider />}
+                                        <StyledCardActions
+                                            id={`notebook-cell-${queryId}-${cellId}-card-actions`}
+                                            ref={cardActionsRef}
                                         >
-                                            {getExecutionLabel()}
-                                        </Stack>
-                                        {outputExpanded && (
-                                            <>
-                                                <NotebookCellConsole
-                                                    messages={cell.messages}
-                                                />
-                                                {cell.isExecuted
-                                                    ? cell.operation.map(
-                                                          (o, oIdx) => {
-                                                              return (
-                                                                  <Operation
-                                                                      key={oIdx}
-                                                                      operation={
-                                                                          o
-                                                                      }
-                                                                      output={
-                                                                          cell.output
-                                                                      }
-                                                                  />
-                                                              );
-                                                          },
-                                                      )
-                                                    : null}
-                                            </>
-                                        )}
-                                    </Stack>
-                                </StyledCardActions>
+                                            <Stack
+                                                id={`notebook-cell-actions-${queryId}-${cellId}`}
+                                                direction="column"
+                                                width="100%"
+                                            >
+                                                <Stack
+                                                    direction="row"
+                                                    alignItems="center"
+                                                    width="100%"
+                                                >
+                                                    {getExecutionLabel()}
+                                                </Stack>
+                                                {outputExpanded && (
+                                                    <>
+                                                        <NotebookCellConsole
+                                                            messages={
+                                                                cell.messages
+                                                            }
+                                                        />
+                                                        {cell.isExecuted
+                                                            ? cell.operation.map(
+                                                                  (o, oIdx) => {
+                                                                      return (
+                                                                          <Operation
+                                                                              key={
+                                                                                  oIdx
+                                                                              }
+                                                                              operation={
+                                                                                  o
+                                                                              }
+                                                                              output={
+                                                                                  cell.output
+                                                                              }
+                                                                          />
+                                                                      );
+                                                                  },
+                                                              )
+                                                            : null}
+                                                    </>
+                                                )}
+                                            </Stack>
+                                        </StyledCardActions>
+                                    </>
+                                )}
+                                {cell.isExecuted && !cell.messages.length && (
+                                    <>
+                                        {(notebook?.selectedCell?.id ?? '') ==
+                                            cell.id && <Divider />}
+                                        <StyledCardActions
+                                            id={`notebook-cell-${queryId}-${cellId}-card-actions`}
+                                            ref={cardActionsRef}
+                                        >
+                                            <Stack
+                                                id={`notebook-cell-actions-${queryId}-${cellId}`}
+                                                direction="column"
+                                                width="100%"
+                                            >
+                                                <Stack
+                                                    direction="row"
+                                                    alignItems="center"
+                                                    width="100%"
+                                                >
+                                                    {getExecutionLabel()}
+                                                </Stack>
+                                                {outputExpanded && (
+                                                    <>
+                                                        <NotebookCellConsole
+                                                            messages={
+                                                                cell.messages
+                                                            }
+                                                        />
+                                                        {cell.isExecuted
+                                                            ? cell.operation.map(
+                                                                  (o, oIdx) => {
+                                                                      return (
+                                                                          <Operation
+                                                                              key={
+                                                                                  oIdx
+                                                                              }
+                                                                              operation={
+                                                                                  o
+                                                                              }
+                                                                              output={
+                                                                                  cell.output
+                                                                              }
+                                                                          />
+                                                                      );
+                                                                  },
+                                                              )
+                                                            : null}
+                                                    </>
+                                                )}
+                                            </Stack>
+                                        </StyledCardActions>
+                                    </>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                {cell.isExecuted && (
+                                    <>
+                                        {(notebook?.selectedCell?.id ?? '') ==
+                                            cell.id && <Divider />}
+                                        <StyledCardActions
+                                            id={`notebook-cell-${queryId}-${cellId}-card-actions`}
+                                            ref={cardActionsRef}
+                                        >
+                                            <Stack
+                                                id={`notebook-cell-actions-${queryId}-${cellId}`}
+                                                direction="column"
+                                                width="100%"
+                                            >
+                                                <Stack
+                                                    direction="row"
+                                                    alignItems="center"
+                                                    width="100%"
+                                                >
+                                                    {getExecutionLabel()}
+                                                </Stack>
+                                                {outputExpanded && (
+                                                    <>
+                                                        <NotebookCellConsole
+                                                            messages={
+                                                                cell.messages
+                                                            }
+                                                        />
+                                                        {cell.isExecuted
+                                                            ? cell.operation.map(
+                                                                  (o, oIdx) => {
+                                                                      return (
+                                                                          <Operation
+                                                                              key={
+                                                                                  oIdx
+                                                                              }
+                                                                              operation={
+                                                                                  o
+                                                                              }
+                                                                              output={
+                                                                                  cell.output
+                                                                              }
+                                                                          />
+                                                                      );
+                                                                  },
+                                                              )
+                                                            : null}
+                                                    </>
+                                                )}
+                                            </Stack>
+                                        </StyledCardActions>
+                                    </>
+                                )}
                             </>
                         )}
                     </StyledCard>

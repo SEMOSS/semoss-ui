@@ -26,7 +26,7 @@ import {
     Stack,
     CircularProgress,
 } from '@semoss/ui';
-import { Env } from '@semoss/sdk';
+import { Env } from '@semoss/sdk/react';
 
 import { useRootStore } from '@/hooks';
 import { formatPermission, toTitleCase } from '@/utility';
@@ -469,10 +469,14 @@ export const AppDetailPage = () => {
     const onSubmit = handleSubmit((data: AppDetailsFormTypes) => {
         // copy over the defined keys
         const meta = {} as AppDetailsFormTypes['detailsForm'];
+        let imageMeta = [] as File[];
         if (data.detailsForm) {
             for (const key in data.detailsForm) {
-                if (data.detailsForm[key] !== undefined) {
+                if (data.detailsForm[key] !== undefined && key !== 'appImage') {
                     meta[key] = data.detailsForm[key];
+                }
+                if (key === 'appImage') {
+                    imageMeta = data.detailsForm[key] as File[];
                 }
             }
         }
@@ -492,7 +496,7 @@ export const AppDetailPage = () => {
                     meta,
                 )}], jsonCleanup=[true])`,
             )
-            .then((response) => {
+            .then(async (response) => {
                 const { output, additionalOutput, operationType } =
                     response.pixelReturn[0];
 
@@ -504,6 +508,11 @@ export const AppDetailPage = () => {
                     });
 
                     return;
+                }
+
+                // upload the image
+                if (imageMeta && appId) {
+                    await monolithStore.uploadImage(imageMeta, appId);
                 }
 
                 // close it, refresh and succesfully message
@@ -551,6 +560,7 @@ export const AppDetailPage = () => {
                                     }
                                     variant="outlined"
                                     onClick={() => exportApp()}
+                                    data-testid={'app-detail-export-btn'}
                                 >
                                     Export
                                 </Button>
@@ -562,6 +572,7 @@ export const AppDetailPage = () => {
                                         setIsChangeAccessModalOpen(true)
                                     }
                                     sx={{ fontWeight: 'bold' }}
+                                    data-testid={'app-detail-access-btn'}
                                 >
                                     {permission === 'discoverable' ? (
                                         <>Request Access</>
@@ -574,6 +585,7 @@ export const AppDetailPage = () => {
                             <Button
                                 variant="contained"
                                 onClick={() => navigate(`/app/${appId}`)}
+                                data-testid={'app-detail-open-btn'}
                             >
                                 Open
                             </Button>
@@ -582,6 +594,7 @@ export const AppDetailPage = () => {
                                 onClick={(event) =>
                                     setMoreVertAnchorEl(event.currentTarget)
                                 }
+                                data-testid={'app-detail-more-btn'}
                             >
                                 <MoreVert />
                             </IconButton>
@@ -748,6 +761,7 @@ export const AppDetailPage = () => {
                                                 right: 0,
                                                 top: '-0.4rem',
                                             }}
+                                            data-testid={'app-detail-edit-btn'}
                                         >
                                             <Edit />
                                         </IconButton>

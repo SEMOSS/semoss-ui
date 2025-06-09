@@ -117,14 +117,17 @@ export const DeleteDiabetesRecordTemplate: Template = {
                     },
                 },
                 listeners: {
-                    onPageLoad: [
-                        {
-                            payload: {
-                                queryId: 'on-page-load',
+                    onPageLoad: {
+                        type: 'sync',
+                        order: [
+                            {
+                                payload: {
+                                    queryId: 'on-page-load',
+                                },
+                                message: ActionMessages.RUN_QUERY,
                             },
-                            message: ActionMessages.RUN_QUERY,
-                        },
-                    ],
+                        ],
+                    },
                 },
                 id: 'page-1',
             },
@@ -155,7 +158,10 @@ export const DeleteDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [],
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'select--9490',
             },
@@ -197,20 +203,23 @@ export const DeleteDiabetesRecordTemplate: Template = {
                     loading: '{{delete-id.isLoading}}',
                 },
                 listeners: {
-                    onClick: [
-                        {
-                            payload: {
-                                queryId: 'delete-record',
+                    onClick: {
+                        type: 'sync',
+                        order: [
+                            {
+                                payload: {
+                                    queryId: 'delete-record',
+                                },
+                                message: ActionMessages.RUN_QUERY,
                             },
-                            message: ActionMessages.RUN_QUERY,
-                        },
-                        {
-                            payload: {
-                                queryId: 'on-page-load',
+                            {
+                                payload: {
+                                    queryId: 'on-page-load',
+                                },
+                                message: ActionMessages.RUN_QUERY,
                             },
-                            message: ActionMessages.RUN_QUERY,
-                        },
-                    ],
+                        ],
+                    },
                 },
                 id: 'button--601',
             },

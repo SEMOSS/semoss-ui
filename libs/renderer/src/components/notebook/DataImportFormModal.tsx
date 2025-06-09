@@ -17,7 +17,8 @@ import {
     styled,
 } from "@semoss/ui";
 import { useBlocks } from "../../hooks";
-import { runPixel, usePixel } from "@semoss/sdk";
+import { runPixel, usePixel } from "@semoss/sdk/react";
+
 import {
     ActionMessages,
     CellStateConfig,
@@ -458,8 +459,6 @@ export const DataImportFormModal = observer(
         /** Create a New Cell and Add to Notebook */
         const appendCell = (widget: string) => {
             try {
-                const newCellId = `${Math.floor(Math.random() * 100000)}`;
-
                 const config: NewCellAction["payload"]["config"] = {
                     widget: DefaultCells[widget].widget,
                     parameters: DefaultCells[widget].parameters,
@@ -468,7 +467,7 @@ export const DataImportFormModal = observer(
                 if (widget === DataImportCellConfig.widget) {
                     config.parameters = {
                         ...DefaultCells[widget].parameters,
-                        frameVariableName: `FRAME_${newCellId}`,
+                        frameVariableName: `FRAME_${Math.floor(Math.random() * 100000)}`,
                         databaseId: selectedDatabaseId,
                         joins: watchedJoins,
                         selectQuery: pixelPartialRef.current,
@@ -495,15 +494,14 @@ export const DataImportFormModal = observer(
                     };
                 }
 
-                state.dispatch({
+                const newCellId = state.dispatch({
                     message: ActionMessages.NEW_CELL,
                     payload: {
                         queryId: query.id,
-                        cellId: newCellId,
                         previousCellId: previousCellId,
                         config: config as Omit<CellStateConfig, "id">,
                     },
-                });
+                }) as string;
                 notebook.selectCell(query.id, newCellId);
             } catch (e) {
                 console.error(e);

@@ -1,31 +1,52 @@
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Autocomplete, TextField, styled } from "@semoss/ui";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MenuItem, TextField, styled } from "@semoss/ui";
 import { observer } from "mobx-react-lite";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
-import { useBlockSettings, useBlocksPixel, useFrameHeaders } from "../../../../../hooks";
-import { BlockDef } from "../../../../../store";
-import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import Switch from '@mui/material/Switch';
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
+import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
+import Switch from "@mui/material/Switch";
+import { ArrowDropDown } from "@mui/icons-material";
+import { Droppable } from "react-beautiful-dnd";
+import { Autocomplete, Popover } from "@mui/material";
+import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+import { useBlockSettings, useBlocksPixel, useFrameHeaders} from "../../../../../hooks";
+import { BlockDef } from "../../../../../store";
+import { VisualMapConstant } from "../../VisualMapConstant";
+import { VisualMap } from "../../VisualMap";
+
+const AGGREGATE_OPTIONS = {
+    NUMBER: [
+        "Average",
+        "Sum",
+        "Count",
+        "Unique Count",
+        "Minimum",
+        "Maximum",
+        "Median",
+    ],
+    STRING_DATE: ["Count", "Unique Count"],
+};
+//styled components for the data tab
 const StyledMain = styled("div")(() => ({
     width: "100%",
     height: "100%",
     marginTop: "1px",
 }));
+//styled span of frame for the frame and visual selection
 const StyledSpanFrame = styled("span")(() => ({
     fontSize: "1rem",
     color: "#808080",
     paddingLeft: "16px",
     position: "relative",
 }));
+//styled span of label for the frame and visual selection
 const StyledSpanLabel = styled("span")(() => ({
     fontSize: "1rem",
     paddingLeft: "16px",
     position: "relative",
 }));
+//styled section for the frame and visual selection
 const StyledSubSection = styled("div")(() => ({
     display: "flex",
     justifyContent: "center",
@@ -33,25 +54,30 @@ const StyledSubSection = styled("div")(() => ({
     width: "100%",
     marginTop: "5px",
 }));
+//styled droppable area of the frame and visual selection
 const StyledDroppable = styled("div")(() => ({
     marginTop: "8px",
 }));
+//styled label area  of the frame and visual selection
 const StyledLabelSection = styled("div")(() => ({
     display: "flex",
     width: "100%",
 }));
+//styled section for the label of the frame and visual selection
 const StyledSwitchSection = styled("div")(() => ({
     display: "flex",
     marginTop: "15px",
     marginLeft: "8px",
     width: "100%",
 }));
+//styled label for the constants
 const StyledSpanSwitch = styled("span")(() => ({
     fontSize: "1rem",
     color: "#808080",
     marginTop: "5px",
     position: "relative",
 }));
+//droppable item styling
 const DropContainer = styled("div")(() => ({
     padding: "8px",
     minHeight: "50px",
@@ -60,20 +86,28 @@ const DropContainer = styled("div")(() => ({
     alignItems: "center",
 }));
 
+//data tab right section of the echart visualization block
 export const DataTabStyling = observer(
-    <D extends BlockDef = BlockDef>({ id, updateFrame, path, dragdropColumns, deleteColumns, formmattedColumns,isAdd , syncHeader, chart, storedColumns}) => {
+    <D extends BlockDef = BlockDef>({ id, updateFrame, path, dragdropColumns, deleteColumns, formmattedColumns, isAdd, syncHeader, chart, storedColumns, visual, selectedItem }) => {
         const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
-        const [columnsData, setColumnsData] = useState([]);
-        const [droppedColumns, setDroppedColumns] = useState<string[]>([]);
-        const [selectedColumns, setSelectedColumns] = useState<Record<string, string[]>>(() => {
+        const [selectedColumns, setSelectedColumns] = useState<Record<string, Record<string, any>>>(() => {
             return storedColumns || {}; // Initialize with storedColumns if available
         });
         const [checkedInstruction, setCheckedInstruction] = useState(false);
         const [checkedVisual, setCheckedVisual] = useState(false);
-        const [isAddIcon, setIsAddIcon] =useState(false);
+        const [isAddIcon, setIsAddIcon] = useState(false);
         const getFrames = useBlocksPixel<string[]>("GetFrames();", { data: [] });
         const options = getFrames.status === "SUCCESS" ? getFrames.data : [];
-
+        const [initialVisual, setInitialVisual] = useState(false);
+        const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+        const [aggregateMenuAnchorEl, setAggregateMenuAnchorEl] =
+            useState<null | HTMLElement>(null);
+        const [aggregateOptions, setAggregateOptions] = useState([]);
+        const [aggregateFilterInput, setAggregateFilterInput] = useState("");
+        const [tempAggClickData, setTempAggClickData] = useState({
+            chartIndex: -1,
+            columnIndex: -1
+        });
         const frameHeaders = useFrameHeaders(data.frame?.name);
         // fetch custom details about headers like alias, header, etc and assign to the variable for using it whenever required
         const columnsSelector = useMemo(() => {
@@ -87,50 +121,161 @@ export const DataTabStyling = observer(
             });
         }, [frameHeaders]);
 
+        const matchedVisualMap = getMatchingVisualMapRow(data);
+
+        function getMatchingVisualMapRow(data: any) {
+            const matchingRow: any = {};
+
+            // Iterate over each category in VisualMapConstant
+            Object.keys(VisualMapConstant).forEach((category) => {
+                const items = VisualMapConstant[category];
+
+                // Find the row where the name matches data.option["title"]["text"]
+                const foundItem = items.find((item: any) => {
+                    return String(item.title) === String(data.variation);
+                });
+
+                if (foundItem) {
+                    matchingRow[category] = foundItem;
+                }
+            });
+
+            return matchingRow;
+        }
+
+        const handleSelectedItem = (item: any) => {
+            selectedItem(item);
+            setSelectedColumns({});
+            storedColumns.length = 0; // Clear the storedColumns array
+            Object.keys(dragdropColumns).forEach((key) => delete dragdropColumns[key]);
+        };
+
         useEffect(() => {
             const updatedColumns = { ...selectedColumns };
             storedColumns.forEach((item, index) => {
                 const key = `data-tab-drop-area-${index}`;
                 if (item.values && item.values.length > 0) {
-                    updatedColumns[key] = item.values;
+                    updatedColumns[key] = {
+                        values: item.values,
+                        dataType: item.dataType,
+                    };
                 }
             });
-            if (JSON.stringify(updatedColumns) !== JSON.stringify(selectedColumns)) {
-                setSelectedColumns(updatedColumns);
+            if (Object.keys(updatedColumns).length > 0) {
+                if (JSON.stringify(updatedColumns) !== JSON.stringify(selectedColumns)) {
+                    setSelectedColumns({ ...updatedColumns });
+                }
             }
         }, [JSON.stringify(storedColumns)]);
 
         useEffect(() => {
-            const updatedColumns = { ...dragdropColumns , ...selectedColumns };
+            const updatedColumns = { ...selectedColumns, ...dragdropColumns };
 
             chart.forEach((item, index) => {
                 const key = `data-tab-drop-area-${index}`;
-                if (!item.multiLabel && updatedColumns[key]?.length > 1) {
+                if (!item.multiLabel && updatedColumns[key]?.values?.length > 1) {
                     // Restrict to only one value if multiLabel is false
-                    updatedColumns[key] = [updatedColumns[key][0]];
+                    updatedColumns[key] = {
+                        values: [updatedColumns[key]?.values[0]],
+                        dataType: [updatedColumns[key]?.dataType[0]],
+                    };
                 }
             });
 
-            setSelectedColumns(updatedColumns);
+            if (Object.keys(updatedColumns).length > 0) {
+                setSelectedColumns({ ...updatedColumns });
+            }
         }, [dragdropColumns]);
 
         useEffect(() => {
+            if (!columnsSelector || columnsSelector.length === 0) {
+                return;
+            }
             const formattedArray = chart.map((item, index) => {
-                const key = `data-tab-drop-area-${index}`;
-                const matchedColumns = columnsSelector.filter((column) =>
-                    selectedColumns[key]?.includes(column.name)
-                );
+                let value;
+                if (data.variation === "echart-bar-graph") {
+                    value = data.option[chart[index].label]?.pixelname;
+                }
+                else if (data.variation === "echart-gantt-chart") {
+                    value = data.option["customSettings"]?.["columnDetails"]?.[chart[index].label]?.name;
+                }
+                else {
+                    value = data.option["_state"]?.["fields"]?.[chart[index].label];
+                }
+                const matchedColumns = (Array.isArray(value) ? value : [value]).map((item) => {
+                    return columnsSelector.find(
+                        (column) => column.name === item,
+                    );
+                });
                 return {
                     name: item.name,
                     label: item.label,
-                    values: selectedColumns[key] || [],
-                    selectors: matchedColumns.map((column) => column.selector),
-                    dataType: matchedColumns.map((column) => column.dataType),
+                    values: value ? (Array.isArray(value) ? value : [value]) : [],
+                    selectors: matchedColumns?.map((column) => column?.selector),
+                    dataType: matchedColumns?.map((column) => column?.dataType),
                 };
             });
+            formmattedColumns(formattedArray, data.variation);
+        }, [columnsSelector.length]);
 
-            formmattedColumns(formattedArray,data.variation);
-        }, [selectedColumns]);
+        useEffect(() => {
+            if (!columnsSelector || columnsSelector.length === 0) {
+                return;
+            }
+            const formattedArray = chart.map((item, index) => {
+                const key = `data-tab-drop-area-${index}`;
+                const matchedColumns = selectedColumns[key]?.values?.map((item, index) => {
+                    let found = columnsSelector.find(
+                        (column) => column.name === item,
+                    );
+                    if(found.dataType!==selectedColumns[key]?.dataType[index]){
+                        found.dataType = selectedColumns[key]?.dataType[index];
+                    }
+                    return found;
+                });
+                return {
+                    name: item.name,
+                    label: item.label,
+                    values: selectedColumns[key]?.values || [],
+                    selectors: matchedColumns?.map((column) => column?.selector),
+                    dataType: matchedColumns?.map((column) => column.dataType),
+                };
+            });
+            formmattedColumns(formattedArray, data.variation);
+        }, [selectedColumns, columnsSelector.length]);
+
+        const handleChangeVisual = (value: boolean, e: React.MouseEvent<HTMLElement>) => {
+            visual(!value);
+            setInitialVisual(!value);
+            setMenuAnchorEl(e.currentTarget);
+        };
+        const handleCloseVisual = () => {
+            setInitialVisual(false);
+            setMenuAnchorEl(null);
+        };
+
+        const onAggregateChange = (selectedAggregate:string) => {
+            let targetDataType = selectedColumns[`data-tab-drop-area-${tempAggClickData.chartIndex}`]?.dataType;
+            if (targetDataType && targetDataType.length > 0) {
+                targetDataType[tempAggClickData.columnIndex] = selectedAggregate;
+                setSelectedColumns({
+                    ...selectedColumns,
+                    [`data-tab-drop-area-${tempAggClickData.chartIndex}`]: {
+                        ...selectedColumns[`data-tab-drop-area-${tempAggClickData.chartIndex}`],
+                        dataType: targetDataType
+                    }
+                })
+            }
+        }
+
+        const handleAggregateClick = (column:string, chartIndex:number, columnIndex:number) => {
+            const isNumberType = columnsSelector.find((col) => col.name === column)?.dataType === "NUMBER";
+            setAggregateOptions(isNumberType ? AGGREGATE_OPTIONS.NUMBER: AGGREGATE_OPTIONS.STRING_DATE);
+            setTempAggClickData({
+                chartIndex,
+                columnIndex
+            })
+        }
 
         return (
             <StyledMain>
@@ -155,17 +300,52 @@ export const DataTabStyling = observer(
                     />
                 </StyledSubSection>
                 <StyledSpanFrame>Selected Visual</StyledSpanFrame>
-                <StyledSubSection>
+                <StyledSubSection onClick={(e: any) => handleChangeVisual(initialVisual, e)}>
                     <Autocomplete
                         fullWidth
                         id="Echart-Visuals"
                         multiple={false}
                         disabled={getFrames.status !== "SUCCESS"}
-                        options={options}
+                        options={[]} // No options to display in the dropdown
+                        disablePortal
+                        PopperComponent={() => null}
                         freeSolo={false}
-                        renderInput={(params) => (
-                            <TextField {...params} size="small" variant="outlined" />
-                        )}
+                        renderInput={(params) => {
+                            // Extract the first matching item from matchedVisualMap
+                            const matchedItem = Object.values(matchedVisualMap)[0] as { icon: React.ReactNode; label: string } | undefined; // Assuming only one match exists
+
+                            return (
+                                <TextField
+                                    {...params}
+                                    size="small"
+                                    variant="outlined"
+                                    InputProps={{
+                                        ...params.InputProps,
+                                        startAdornment: matchedItem ? (
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <div style={{ display: "flex", alignItems: "center" }}>
+                                                    {matchedItem.icon}
+                                                </div>
+                                                <span
+                                                    style={{
+                                                        marginLeft: "10px",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                    }}
+                                                >
+                                                    {matchedItem.label}
+                                                </span>
+                                            </div>
+                                        ) : null,
+                                    }}
+                                />
+                            );
+                        }}
                     />
                 </StyledSubSection>
 
@@ -227,50 +407,80 @@ export const DataTabStyling = observer(
                                 </DropContainer>
                             )}
                         </Droppable>
-
                         {Object.entries(selectedColumns)
                             .filter(([key]) => key === `data-tab-drop-area-${index}`)
                             .map(([key, columns]) =>
-                                columns.map((column, colIndex) => (
-                                    <div
-                                        key={colIndex}
-                                        style={{
-                                            padding: "4px 8px",
-                                            margin: "4px 0",
-                                            backgroundColor: "#f0f0f0",
-                                            height: "4%",
-                                            width: "95%",
-                                            borderRadius: "34px",
-                                            marginLeft: "13px",
-                                            marginTop: "8px",
-                                            textAlign: "left",
-                                            paddingLeft: "16px",
-                                            paddingTop: "8px",
-                                            fontSize: "1rem",
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            alignItems: "center",
-                                        }}
-                                    >
-                                        <span>{column}</span>
-                                        <CloseOutlinedIcon
+                                (columns["values"] ?? []).map((column, colIndex) => {
+                                    const refId = column + colIndex + index + "";
+                                    const aggregatedColumnName = (
+                                        col: string,
+                                    ) => {
+                                        if(!item.aggregate) return col;
+                                        if (columns["dataType"][colIndex] === "NUMBER") return `Average of ${col}`;
+                                        if (columns["dataType"][colIndex] === "STRING") return `Count of ${col}`;
+                                        return columns["dataType"][colIndex] + " of " + col;
+                                    };
+                                    return (
+                                        <div
+                                            key={colIndex}
                                             style={{
-                                                cursor: "pointer",
-                                                color: "#888",
+                                                padding: "4px 8px",
+                                                margin: "4px 0",
+                                                backgroundColor: "#f0f0f0",
+                                                height: "4%",
+                                                width: "95%",
+                                                borderRadius: "34px",
+                                                marginLeft: "13px",
+                                                marginTop: "8px",
+                                                textAlign: "left",
+                                                paddingLeft: "16px",
+                                                paddingTop: "8px",
+                                                fontSize: "1rem",
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
                                             }}
-                                            onClick={() => {
-                                                // Remove the column from dragdropColumns
-                                                const updatedColumns = { ...selectedColumns };
-                                                updatedColumns[key] = updatedColumns[key].filter((_, i) => i !== colIndex);
-                                                if (updatedColumns[key].length === 0) {
-                                                    delete updatedColumns[key];
-                                                }
-                                                setSelectedColumns(updatedColumns);
-                                                deleteColumns(column);
-                                            }}
-                                        />
-                                    </div>
-                                ))
+                                            id={refId}
+                                        >
+                                            <span>
+                                                {aggregatedColumnName(column)}
+                                            </span>
+                                            <div>
+                                                {item.aggregate && <ArrowDropDown
+                                                    style={{
+                                                        cursor: "pointer",
+                                                        color: "#888",
+                                                    }}
+                                                    onClick={() => {
+                                                        setAggregateMenuAnchorEl(
+                                                            document.getElementById(
+                                                                refId,
+                                                            ),
+                                                        );
+                                                        handleAggregateClick(column, index, colIndex);
+                                                    }}
+                                                />}
+
+                                                <CloseOutlinedIcon
+                                                    style={{
+                                                        cursor: "pointer",
+                                                        color: "#888",
+                                                    }}
+                                                    onClick={() => {
+                                                        // Remove the column from dragdropColumns
+                                                        const updatedColumns = { ...selectedColumns };
+                                                        updatedColumns[key] = updatedColumns[key]?.values.filter((_, i) => i !== colIndex);
+                                                        if (updatedColumns[key]?.values.length === 0) {
+                                                            delete updatedColumns[key];
+                                                        }
+                                                        setSelectedColumns(updatedColumns);
+                                                        deleteColumns(column);
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                }),
                             )}
                     </StyledDroppable>
                 ))}
@@ -278,7 +488,7 @@ export const DataTabStyling = observer(
                     <Switch
                         checked={checkedInstruction}
                         onChange={(event) => setCheckedInstruction(event.target.checked)}
-                        inputProps={{ 'aria-label': 'controlled' }}
+                        inputProps={{ "aria-label": "controlled" }}
                     />
                     <StyledSpanSwitch>Show All Instruction</StyledSpanSwitch>
                 </StyledSwitchSection>
@@ -286,10 +496,88 @@ export const DataTabStyling = observer(
                     <Switch
                         checked={checkedVisual}
                         onChange={(event) => setCheckedVisual(event.target.checked)}
-                        inputProps={{ 'aria-label': 'controlled' }}
+                        inputProps={{ "aria-label": "controlled" }}
                     />
                     <StyledSpanSwitch>Auto Visualize</StyledSpanSwitch>
                 </StyledSwitchSection>
+                <div>
+                    <Popover
+                        id={"visual-popover"}
+                        open={initialVisual}
+                        onClose={() => {
+                            setInitialVisual(false);
+                        }}
+                        anchorEl={menuAnchorEl}
+                        anchorReference="anchorPosition" // <-- THIS is the key
+                        anchorPosition={{ top: window.innerHeight * 0.14, left: window.innerWidth * 0.51 }}
+                    >
+                        <VisualMap
+                            selectedItem={handleSelectedItem}
+                            handleClose={handleCloseVisual}
+                        />
+                    </Popover>
+                </div>
+                <div>
+                    <Popover
+                        id={"instruction-popover"}
+                        open={Boolean(aggregateMenuAnchorEl)}
+                        onClose={() => {
+                            setAggregateFilterInput("");
+                            setAggregateMenuAnchorEl(null);
+                        }}
+                        anchorEl={aggregateMenuAnchorEl}
+                        anchorOrigin={{
+                            vertical: "bottom",
+                            horizontal: "left",
+                        }}
+                        transformOrigin={{
+                            vertical: "top",
+                            horizontal: "left",
+                        }}
+                        sx={{
+                            "& .MuiPaper-root": {
+                                padding: "0.5rem",
+                                borderRadius: "8px",
+                                width: aggregateMenuAnchorEl?.offsetWidth,
+                            },
+                        }}
+                    >
+                        <TextField
+                            placeholder="Search"
+                            variant="standard"
+                            size="small"
+                            fullWidth
+                            onChange={(e) =>
+                                setAggregateFilterInput(e.target.value)
+                            }
+                        />
+                        <div>
+                            {(aggregateFilterInput
+                                ? aggregateOptions.filter((item) =>
+                                      item
+                                          .toLowerCase()
+                                          .includes(
+                                              aggregateFilterInput.toLowerCase(),
+                                          ),
+                                  )
+                                : aggregateOptions
+                            ).map((key) => (
+                                <MenuItem
+                                    key={key}
+                                    value={key}
+                                    onClick={() => {
+                                        if(key == "Maximum") key = "Max";
+                                        if(key == "Minimum") key = "Min";
+                                        setAggregateMenuAnchorEl(null);
+                                        onAggregateChange(key);
+                                    }}
+                                >
+                                    {key}
+                                </MenuItem>
+                            ))}
+                        </div>
+                    </Popover>
+                </div>
             </StyledMain>
         );
     }
