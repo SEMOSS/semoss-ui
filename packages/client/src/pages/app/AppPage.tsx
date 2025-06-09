@@ -12,7 +12,6 @@ import {
     Modal,
     Tooltip,
     IconButton,
-    ImageList,
 } from '@mui/material';
 import { EditOutlined, ShareRounded } from '@mui/icons-material';
 
