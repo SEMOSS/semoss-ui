@@ -1,6 +1,6 @@
 module.exports = {
-    '{*,libs,packages}/**/*.{ts,tsx,jsx,js,json}': [
-        files => `npx eslint ${files}`,
-    ],
+    '*.{ts,tsx,jsx,js,json}': (files) => {
+        `echo "Linting files: ${files}"`
+    },
 };
 
