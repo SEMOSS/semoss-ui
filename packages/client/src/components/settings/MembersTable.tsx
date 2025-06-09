@@ -917,7 +917,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     value="Editor"
                                                                     label="Editor"
                                                                     disabled={
-                                                                        (userPermission === 'Editor' && user.permission === 'OWNER') ||
+                                                                        (userPermission ===
+                                                                            'Editor' &&
+                                                                            user.permission ===
+                                                                                'OWNER') ||
                                                                         !configStore.isEngineOperationAvailable(
                                                                             type,
                                                                             'access',
@@ -933,7 +936,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     value="Read-Only"
                                                                     label="Read-Only"
                                                                     disabled={
-                                                                        (userPermission === 'Editor' && user.permission === 'OWNER') ||
+                                                                        (userPermission ===
+                                                                            'Editor' &&
+                                                                            user.permission ===
+                                                                                'OWNER') ||
                                                                         !configStore.isEngineOperationAvailable(
                                                                             type,
                                                                             'access',

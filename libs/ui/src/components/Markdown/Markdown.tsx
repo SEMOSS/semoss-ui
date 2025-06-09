@@ -16,7 +16,7 @@ const defaultComponents: Components = {
     ),
 
     h1: ({ children }) => (
-        <Typography component={"h1"} variant={"h4"} gutterBottom={true}>
+        <Typography component={"h1"} variant={"h5"} gutterBottom={true}>
             {children}
         </Typography>
     ),
@@ -26,7 +26,7 @@ const defaultComponents: Components = {
         </Typography>
     ),
     h3: ({ children }) => (
-        <Typography component={"h3"} variant={"subtitle1"} gutterBottom={true}>
+        <Typography component={"h3"} variant={"body1"} gutterBottom={true}>
             {children}
         </Typography>
     ),
