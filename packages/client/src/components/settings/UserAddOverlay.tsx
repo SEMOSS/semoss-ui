@@ -200,6 +200,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
         // reset on open or close
         reset({
             ...(user || {}),
+            model_usage_restriction: user?.model_usage_restriction ?? 'null', // always set default for new user
         });
     }, [user, open]);
 

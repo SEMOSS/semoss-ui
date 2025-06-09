@@ -333,14 +333,11 @@ export const NotebookCell = observer(
          */
         const duplicateCell = () => {
             try {
-                const newCellId = `${Math.floor(Math.random() * 100000)}`;
-
                 // copy and add the step to the end
-                state.dispatch({
+                const newCellId = state.dispatch({
                     message: ActionMessages.NEW_CELL,
                     payload: {
                         queryId: queryId,
-                        cellId: newCellId,
                         previousCellId: cellId,
                         config: {
                             widget: cell.widget,
@@ -349,7 +346,18 @@ export const NotebookCell = observer(
                             },
                         },
                     },
+                }) as string;
+
+                state.dispatch({
+                    message: ActionMessages.ADD_VARIABLE,
+                    payload: {
+                        id: `${queryId}--${newCellId}`,
+                        type: 'cell',
+                        to: queryId,
+                        cellId: newCellId,
+                    },
                 });
+
                 notebook.selectCell(queryId, newCellId);
             } catch (e) {
                 console.error(e);
@@ -505,16 +513,13 @@ export const NotebookCell = observer(
                     <StyledStackTwo
                         onClick={() => {
                             copyTextToClipboard(
-                                `{{${queryId}.${cellOrderNumber}}}`,
+                                `{{${variableName}}}`,
                                 notification,
                             );
                         }}
                     >
-                        <StyledName
-                            variant="subtitle2"
-                            title={'Copy reference id'}
-                        >
-                            # {cellOrderNumber}
+                        <StyledName variant="subtitle2" title={'Copy variable'}>
+                            {variableName}
                         </StyledName>
                     </StyledStackTwo>
 
