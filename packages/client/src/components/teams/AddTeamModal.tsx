@@ -178,15 +178,14 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
      * Method that is called to create the team
      */
     const onSubmit = handleSubmit(async (data: NewTeamForm) => {
-        try {
-            if (isEdit) {
-                // Logic for editing the team
+        if (isEdit) {
+            // Logic for editing the team
+            try {
                 await monolithStore.editTeam(
                     data.TEAM_NAME,
                     data.TEAM_DESCRIPTION,
                     data.TEAM_TYPE,
                 );
-
                 onClose({
                     id: data.TEAM_NAME,
                     type: data.TEAM_TYPE,
@@ -197,8 +196,16 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                     color: 'success',
                     message: 'Successfully updated team',
                 });
-            } else {
-                // Logic for creating a new team
+            } catch (e) {
+                console.error(e);
+                notification.add({
+                    color: 'error',
+                    message: 'Error updating team',
+                });
+            }
+        } else {
+            // Logic for creating a new team
+            try {
                 await monolithStore.addTeam(
                     data.TEAM_NAME,
                     data.TEAM_DESCRIPTION,
@@ -226,15 +233,13 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                         },
                     },
                 );
+            } catch (e) {
+                console.error(e);
+                notification.add({
+                    color: 'error',
+                    message: 'Error adding team',
+                });
             }
-        } catch (e) {
-            console.error(e);
-            notification.add({
-                color: 'error',
-                message: e,
-            });
-        } finally {
-            // close the modal
         }
     });
 
