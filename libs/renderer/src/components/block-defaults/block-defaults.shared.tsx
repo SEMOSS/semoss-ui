@@ -30,6 +30,8 @@ import {
     DEFAULT_TRUE_VARIABLE,
     DEFAULT_FALSE_VARIABLE,
 } from "./block-defaults.constants";
+import { BoxShadowSizeSettings } from "../block-settings/shared/BoxShadowSizeSetting";
+import { StandardColorSettings } from "../block-settings/shared/StandardColorSettings";
 
 const trueSegment = DEFAULT_TRUE_VARIABLE;
 const falseSegment = DEFAULT_FALSE_VARIABLE;
@@ -252,7 +254,7 @@ export const buildColorSection = () => ({
         {
             description: "Background Color",
             render: ({ id }) => (
-                <ColorSettings
+                <StandardColorSettings
                     id={id}
                     label="Background Color"
                     path="style.backgroundColor"
@@ -559,3 +561,66 @@ export const buildShowField = <D extends BlockDef = BlockDef>() => [
         ),
     },
 ];
+
+/**
+ * Build the Box Shadow Section
+ * @returns a box shadow section
+ */
+
+export const buildShadowSection = () => ({
+    name: "Box Shadow",
+    children: [
+        {
+            description: "Offset-x",
+            render: ({ id }) => (
+                <BoxShadowSizeSettings
+                    id={id}
+                    label="Offset-x"
+                    path="boxShadowParts.offsetX"
+                    required={true}
+                />
+            ),
+        },
+        {
+            description: "Offset-y",
+            render: ({ id }) => (
+                <BoxShadowSizeSettings
+                    id={id}
+                    label="Offset-y"
+                    path="boxShadowParts.offsetY"
+                    required={true}
+                />
+            ),
+        },
+        {
+            description: "Blur Radius",
+            render: ({ id }) => (
+                <BoxShadowSizeSettings
+                    id={id}
+                    label="Blur Radius"
+                    path="boxShadowParts.blurRadius"
+                />
+            ),
+        },
+        {
+            description: "Spread Radius",
+            render: ({ id }) => (
+                <BoxShadowSizeSettings
+                    id={id}
+                    label="Spread Radius"
+                    path="boxShadowParts.spreadRadius"
+                />
+            ),
+        },
+        {
+            description: "Color",
+            render: ({ id }) => (
+                <StandardColorSettings
+                    id={id}
+                    label="Color"
+                    path="boxShadowParts.color"
+                />
+            ),
+        },
+    ],
+});
