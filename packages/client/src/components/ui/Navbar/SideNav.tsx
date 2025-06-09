@@ -13,13 +13,29 @@ import {
     Inventory2Outlined,
 } from '@mui/icons-material';
 
-import { Drawer, List, Divider, Typography, Box } from '@semoss/ui';
+import {
+    Drawer,
+    List,
+    Divider,
+    Typography,
+    Box,
+    IconButton,
+    styled,
+} from '@semoss/ui';
 
 import { ModelBrain } from '@/assets/img/ModelBrain';
 import { Database } from '@/assets/img/Database';
 import { useRootStore } from '@/hooks';
 import { Logo } from '@/assets/img/Logo';
 import { THEME } from '@/constants';
+
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
+    marginRight: 2,
+    borderRadius: '7px',
+    border: '0.938px solid #323232',
+    width: '30px',
+    height: '30px',
+}));
 
 const drawerWidth = 312;
 
@@ -179,15 +195,22 @@ const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
                             {themeMap.name ? themeMap.name : THEME.name}
                         </Typography>
                     </Typography>
-                    <CloseIcon
-                        sx={{
-                            cursor: 'pointer',
-                            color: 'text.secondary',
-                        }}
+                    <StyledIconButton
+                        size="medium"
+                        edge="start"
+                        color="inherit"
+                        aria-label="menu"
                         onClick={() => {
                             onClose();
                         }}
-                    />
+                    >
+                        <CloseIcon
+                            sx={{
+                                cursor: 'pointer',
+                                color: 'text.secondary',
+                            }}
+                        />
+                    </StyledIconButton>
                 </Box>
                 <Divider />
                 <Box sx={{ overflowY: 'auto' }}>

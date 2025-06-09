@@ -12,6 +12,7 @@ import {
     Modal,
     Tooltip,
     IconButton,
+    Container,
 } from '@semoss/ui';
 import { EditOutlined, ShareRounded } from '@mui/icons-material';
 
@@ -29,6 +30,9 @@ const StyledViewport = styled('div')(() => ({
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
+    position: 'absolute',
+    top: '48px',
+    width: '100%',
 }));
 
 const StyledContent = styled('div')(({ theme }) => ({
@@ -37,8 +41,8 @@ const StyledContent = styled('div')(({ theme }) => ({
     height: '100%',
     width: '100%',
     overflow: 'hidden',
-    paddingLeft: theme.spacing(1.5),
-    paddingRight: theme.spacing(1.5),
+    // paddingLeft: theme.spacing(1.5),
+    // paddingRight: theme.spacing(1.5),
     paddingBottom: theme.spacing(1.5),
 }));
 
@@ -79,56 +83,63 @@ export const AppPage = observer(() => {
 
     return (
         <StyledViewport>
-            <Stack
-                direction={'row'}
-                justifyContent={'space-between'}
-                alignItems={'center'}
-                padding={1}
-                spacing={1}
-            >
-                <Stack direction="row" alignItems={'center'} spacing={1}>
-                    <Avatar
-                        variant="rounded"
-                        src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
-                    />
-                    <Typography variant={'subtitle1'}>
-                        {workspace.metadata.project_name}
-                    </Typography>
-                </Stack>
-                <Stack flex={1}>&nbsp;</Stack>
-
-                <Tooltip title={'Share App'}>
-                    <IconButton
-                        size="small"
-                        color="default"
-                        onClick={() => {
-                            setIsShareOpen(true);
-                        }}
-                        data-testid={'app-page-share-btn'}
-                    >
-                        <ShareRounded fontSize={'inherit'} />
-                    </IconButton>
-                </Tooltip>
-
-                <Button
-                    variant="contained"
-                    size={'small'}
-                    color="primary"
-                    disabled={
-                        !(
-                            workspace.role === 'OWNER' ||
-                            workspace.role === 'EDIT'
-                        )
-                    }
-                    endIcon={<EditOutlined fontSize="inherit" />}
-                    component={Link}
-                    //@ts-expect-error this is expected. props are forwarded
-                    to={`../../../workspace/${appId}`}
-                    data-testid={'app-page-edit-btn'}
+            <Container maxWidth={false} sx={{ maxWidth: '1440px' }}>
+                <Stack
+                    direction={'row'}
+                    justifyContent={'space-between'}
+                    alignItems={'center'}
+                    padding={1}
+                    spacing={1}
+                    sx={{
+                        // paddingLeft: '40px',
+                        // paddingRight: '40px',
+                        padding: '8px 32px',
+                    }}
                 >
-                    Edit
-                </Button>
-            </Stack>
+                    <Stack direction="row" alignItems={'center'} spacing={1}>
+                        <Avatar
+                            variant="rounded"
+                            src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
+                        />
+                        <Typography variant={'subtitle1'}>
+                            {workspace.metadata.project_name}
+                        </Typography>
+                    </Stack>
+                    <Stack flex={1}>&nbsp;</Stack>
+
+                    <Tooltip title={'Share App'}>
+                        <IconButton
+                            size="small"
+                            color="default"
+                            onClick={() => {
+                                setIsShareOpen(true);
+                            }}
+                            data-testid={'app-page-share-btn'}
+                        >
+                            <ShareRounded fontSize={'inherit'} />
+                        </IconButton>
+                    </Tooltip>
+
+                    <Button
+                        variant="contained"
+                        size={'small'}
+                        color="primary"
+                        disabled={
+                            !(
+                                workspace.role === 'OWNER' ||
+                                workspace.role === 'EDIT'
+                            )
+                        }
+                        endIcon={<EditOutlined fontSize="inherit" />}
+                        component={Link}
+                        //@ts-expect-error this is expected. props are forwarded
+                        to={`../../../workspace/${appId}`}
+                        data-testid={'app-page-edit-btn'}
+                    >
+                        Edit
+                    </Button>
+                </Stack>
+            </Container>
             <StyledContent>
                 {workspace.type === 'BLOCKS' ? (
                     <Renderer appId={appId} insightId={workspace.insightId} />

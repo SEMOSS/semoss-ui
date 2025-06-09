@@ -1,7 +1,15 @@
 import { createElement } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Outlet, Link, useLocation, matchPath } from 'react-router-dom';
-import { styled, Stack, Icon, Divider, Tooltip, Box } from '@semoss/ui';
+import {
+    styled,
+    Stack,
+    Icon,
+    Divider,
+    Tooltip,
+    Box,
+    Container,
+} from '@semoss/ui';
 import {
     ArticleOutlined,
     LibraryBooksOutlined,
@@ -17,14 +25,14 @@ import { useRootStore } from '@/hooks';
 import { useEffect, useState } from 'react';
 
 const StyledBox = styled(Box)(({ theme }) => ({
-    display: 'flex',
-    justifyContent: 'space-between',
     background: '#FAFAFA',
-    height: '56px',
+    height: '40px !important',
     flexGrow: 1,
     position: 'sticky',
     top: 0,
     zIndex: 1000,
+    display: 'flex',
+    justifyContent: 'center',
     '& .MuiPaper-root > .MuiToolbar-root': {
         gap: '8px',
     },
@@ -34,6 +42,8 @@ const StyledContent = styled('div')(() => ({
     height: '100%',
     width: '100%',
     overflow: 'hidden',
+    display: 'flex',
+    justifyContent: 'center',
 }));
 
 /**

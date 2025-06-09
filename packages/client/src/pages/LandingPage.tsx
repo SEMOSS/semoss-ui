@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
 import Box from '@mui/material/Box';
@@ -6,7 +6,8 @@ import Typography from '@mui/material/Typography';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Navigate, useNavigate } from 'react-router-dom';
 
-import { Button, Chip } from '@semoss/ui';
+import { Button, Chip, Container } from '@semoss/ui';
+import { STATE_VERSION } from '@semoss/renderer';
 
 import { UserLandingPage } from './UserlandingPage';
 import DevBanner from '@/assets/img/DevBanner.png';
@@ -16,18 +17,18 @@ import NavSection from './app/NavSection';
 import { useRootStore } from '@/hooks';
 import { AddAppModal, NewAppModal } from '@/components/app';
 import { BASE_PAGE_BLOCKS } from './app/app.constants';
-import { STATE_VERSION } from '@semoss/renderer';
+import { THEME } from '@/constants';
 
-const StyledComponent = styled('div')(({ theme }) => ({
+const StyledComponent = styled(Container)(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: '24px',
     flex: '1 0 0',
     alignSelf: 'stretch',
-    width: '100%',
+    // width: '100%',
     backgroundColor: '#FAFAFA',
-    height: 'calc(100vh - 56px)', // Adjust height based on AppBar height
+    height: 'calc(100vh - 40px)', // Adjust height based on AppBar height
     overflow: 'auto',
 }));
 
@@ -100,6 +101,23 @@ const StyledContainerImageSection = styled('div')<{ backgroundImage: string }>(
 
 const BannerComponent = observer(() => {
     const navigate = useNavigate();
+
+    const { configStore } = useRootStore();
+
+    const themeMap = useMemo(() => {
+        const theme = configStore.store.config['theme'];
+
+        if (theme && theme['THEME_MAP']) {
+            try {
+                return JSON.parse(theme['THEME_MAP'] as string);
+            } catch {
+                return {};
+            }
+        }
+
+        return {};
+    }, [Object.keys(configStore.store.config).length]);
+
     return (
         <>
             <div
@@ -118,7 +136,8 @@ const BannerComponent = observer(() => {
                 }}
             >
                 <StyledBannerTitle variant="h5">
-                    Empower your ideas with AI Core
+                    Empower your ideas with{' '}
+                    {themeMap.name ? themeMap.name : THEME.name}
                 </StyledBannerTitle>
                 <StyledBannerText variant="body1">
                     Build, automate, and innovate—all without coding. Harness
@@ -335,12 +354,22 @@ export const LandingPage = observer(() => {
     };
     return (
         <>
-            <StyledComponent>
+            <StyledComponent
+                maxWidth={false}
+                sx={{
+                    maxWidth: '1440px',
+                    paddingLeft: '0px',
+                    paddingRight: '0px',
+                }}
+            >
                 {configStore.store.isAppBuilder ? (
                     <Box
                         sx={{
                             display: 'flex',
-                            padding: '40px',
+                            paddingTop: '40px',
+                            paddingBottom: '40px',
+                            // paddingLeft: '32px',
+                            // paddingRight: '32px',
                             gap: '24px',
                             flexDirection: 'column',
                         }}

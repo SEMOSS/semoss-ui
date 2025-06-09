@@ -18,6 +18,7 @@ import {
     Grid,
     Stack,
     Skeleton,
+    Button,
 } from '@semoss/ui';
 
 import { Env, usePixel } from '@semoss/sdk/react';
@@ -30,6 +31,11 @@ import { useRootStore } from '@/hooks';
 const categories = [
     { name: 'All', type: 'All' },
     { name: 'Catalogs', type: 'ENGINE' },
+    { name: 'Model', type: 'MODEL' },
+    { name: 'Vector', type: 'VECTOR' },
+    { name: 'Database', type: 'DATABASE' },
+    { name: 'Function', type: 'FUNCTION' },
+    { name: 'Storage', type: 'STORAGE' },
     { name: 'Apps', type: 'PROJECT' },
     // { name: 'Teams', type: 'Team' },
     // { name: 'Settings', type: 'Settings' },
@@ -260,6 +266,8 @@ const Search = observer(({ renderInput }: SearchProps) => {
         }
     };
 
+    console.log(data);
+
     return (
         <Autocomplete
             freeSolo
@@ -397,8 +405,13 @@ const Search = observer(({ renderInput }: SearchProps) => {
                                     alignItems={'center'}
                                     direction={'row'}
                                     gap={1}
+                                    onMouseDown={(e) => e.preventDefault()}
                                     onClick={() => {
-                                        window.alert('redirect');
+                                        handleOptionClick({
+                                            label,
+                                            id,
+                                            section: type,
+                                        });
                                     }}
                                 >
                                     <svg

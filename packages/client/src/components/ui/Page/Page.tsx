@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { styled, Container } from '@semoss/ui';
 
-const StyledPage = styled('div')(({ theme }) => ({
-    height: '100%',
+const StyledPage = styled(Container)(({ theme }) => ({
+    top: '40px',
+    position: 'absolute',
+    height: 'calc(100vh - 40px) !important',
     width: '100%',
     overflow: 'scroll',
-    backgroundColor: theme.palette.background.paper,
+    background: '#FAFAFA',
     paddingBottom: theme.spacing(2.5),
-    paddingLeft: theme.spacing(3),
-    paddingRight: theme.spacing(3),
+    paddingLeft: '32px !important',
+    paddingRight: '32px !important',
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(2),
@@ -20,22 +22,26 @@ const StyledPageHeader = styled('div', {
     /** Track if the page header is stuck */
     stuck: boolean;
 }>(({ theme, stuck }) => ({
-    position: 'sticky',
-    top: '-1px',
     paddingTop: theme.spacing(5),
     paddingBottom: theme.spacing(1),
+    // paddingLeft: "32px",
+    // paddingRight: "32px",
     // Checkout user permissions, and the stacked avatars
     zIndex: 10,
-    borderBottom: stuck ? `solid ${theme.palette.divider}` : 'none',
     // Set this in Theme
-    backgroundColor: theme.palette.background.paper,
+    background: '#FAFAFA',
     minWidth: '100%',
     width: 'fit-content',
+    // position: 'sticky',
+    // top: '-1px',
+    // borderBottom: stuck ? `solid ${theme.palette.divider}` : 'none',
 }));
 
 const StyledContainer = styled(Container)(() => ({
-    width: '100%',
+    // width: '100%',
     padding: '0px',
+    paddingLeft: '32px',
+    paddingRight: '32px',
     /* Media query for screens with a minimum width of 600px */
     '@media (min-width: 600px)': {
         '&.MuiContainer-root': {
@@ -81,13 +87,8 @@ export const Page = (props: PageProps): JSX.Element => {
     return (
         <StyledPage
             id="home__content"
-            style={
-                {
-                    // border: "solid blue",
-                    // zIndex: 9999,
-                    // minHeight: "100%"
-                }
-            }
+            maxWidth={false}
+            sx={{ maxWidth: '1440px' }}
         >
             {header && (
                 <StyledPageHeader

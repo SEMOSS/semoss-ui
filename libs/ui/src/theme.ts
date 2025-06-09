@@ -411,6 +411,9 @@ export const lightTheme: CustomThemeOptions = {
     components: {
         MuiCssBaseline: {
             styleOverrides: (themeParam) => ({
+                body: {
+                    overflow: "hidden",
+                },
                 "*::-webkit-scrollbar": {
                     width: "8px",
                     height: "8px",

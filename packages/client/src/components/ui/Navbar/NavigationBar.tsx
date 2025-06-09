@@ -12,6 +12,7 @@ import {
     InputAdornment,
     Switch,
     Box,
+    Container,
 } from '@semoss/ui';
 
 import { THEME } from '@/constants';
@@ -28,7 +29,6 @@ const StyledAppBar = styled(AppBar)(({ theme }) => ({
     padding: '8px 32px 8px 32px',
     boxShadow: 'none',
     transition: 'none',
-    // height: '62px',
 }));
 
 const StyledLeftSection = styled('div')(({ theme }) => ({
@@ -75,12 +75,11 @@ const StyledSearchSection = styled('div')(({ theme }) => ({
     alignItems: 'center',
     flex: '2 0.5 10%',
     minWidth: '0px',
+    width: '50%',
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
-    // backgroundColor: '#F5F5F5',
-    width: '50rem',
-    // marginLeft:"128px",
+    width: '720px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'stretch',
@@ -130,7 +129,7 @@ const StyledAppBuilder = styled(Typography)(({ theme }) => ({
 
 const StyledSwitch = styled(Switch)(({ theme }) => ({
     display: 'flex',
-    width: '3.125rem',
+    // width: '3.125rem',
     padding: '2px 0px',
     flexDirection: 'column',
     alignItems: 'flex-start',
@@ -167,33 +166,50 @@ export const NavigationBar = observer((props: NavigationBarProps) => {
 
     return (
         <StyledAppBar>
-            <Toolbar>
+            <Container
+                maxWidth={false}
+                sx={{
+                    maxWidth: '1440px',
+                    display: 'flex',
+                    flexDirection: 'row',
+                }}
+            >
+                {/* <Toolbar sx={{height: "40px !important"}}> */}
                 <StyledLeftSection>
                     <StyledIconButton
                         size="medium"
-                        edge="start"
+                        // edge="start"
                         color="inherit"
                         aria-label="menu"
                         onClick={() => onOpen()}
                     >
-                        <MenuIcon />
+                        <MenuIcon sx={{ width: '22.5px', height: '22.5px' }} />
                     </StyledIconButton>
                     <StyledAppTitle>
                         <Logo />
-                        <StyledTypography variant="h6">
+                        <StyledTypography
+                            variant="h6"
+                            sx={{
+                                /* Typography/H6 */
+                                fontSize: '20px',
+                                fontStyle: 'normal',
+                                fontWeight: '500',
+                                lineHeight: '160%',
+                                letterSpacing: '0.15px',
+                            }}
+                        >
                             {themeMap.name ? themeMap.name : THEME.name}
                         </StyledTypography>
                     </StyledAppTitle>
                 </StyledLeftSection>
-                {((location.pathname === '/' && showAppBuilder) ||
-                    location.pathname !== '/') && (
-                    <StyledSearchSection>
+                <StyledSearchSection>
+                    {((location.pathname === '/' && showAppBuilder) ||
+                        location.pathname !== '/') && (
                         <Box
                             sx={{
                                 width: '100%',
                                 maxWidth: 500,
                                 margin: 'auto',
-                                padding: 2,
                             }}
                         >
                             <Search
@@ -212,12 +228,21 @@ export const NavigationBar = observer((props: NavigationBarProps) => {
                                                 </InputAdornment>
                                             ),
                                         }}
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                                height: '28px !important',
+                                                border: 'none',
+                                                '& input': {
+                                                    height: '28px !important',
+                                                },
+                                            },
+                                        }}
                                     />
                                 )}
                             />
                         </Box>
-                    </StyledSearchSection>
-                )}
+                    )}
+                </StyledSearchSection>
                 <StyledRightSection>
                     {location.pathname === '/' && (
                         <StyledAppBuilderSection>
@@ -226,6 +251,7 @@ export const NavigationBar = observer((props: NavigationBarProps) => {
                             </StyledAppBuilder>
                             <StyledSwitch
                                 checked={showAppBuilder}
+                                size={'small'}
                                 onChange={(
                                     e: ChangeEvent<HTMLInputElement>,
                                 ) => {
@@ -238,7 +264,7 @@ export const NavigationBar = observer((props: NavigationBarProps) => {
                         </StyledAppBuilderSection>
                     )}
                 </StyledRightSection>
-            </Toolbar>
+            </Container>
         </StyledAppBar>
     );
 });
