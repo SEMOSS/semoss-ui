@@ -469,10 +469,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
         } finally {
             // close the overlay
             closeOverlay(type, success);
-            //adding a refresh to the page so that the updated by and timestamp show up
-            if (success) {
-                window.location.reload();
-            }
         }
     };
 
@@ -677,6 +673,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                             value="Author"
                                             label=""
                                             disabled={
+                                                !adminMode &&
                                                 permissionPriorityMapper(
                                                     userPermission,
                                                 )?.priority > 1
@@ -731,6 +728,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                             value="Editor"
                                             label=""
                                             disabled={
+                                                !adminMode &&
                                                 permissionPriorityMapper(
                                                     userPermission,
                                                 )?.priority > 2
@@ -785,6 +783,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                             value="Read-Only"
                                             label=""
                                             disabled={
+                                                !adminMode &&
                                                 permissionPriorityMapper(
                                                     userPermission,
                                                 )?.priority > 3

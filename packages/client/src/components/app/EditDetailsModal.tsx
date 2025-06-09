@@ -203,6 +203,32 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
                         );
                     }}
                 />
+                <Controller
+                    name="detailsForm.appImage"
+                    control={control}
+                    render={({ field }) => {
+                        return (
+                            <TextField
+                                label="Image"
+                                variant="outlined"
+                                type="file"
+                                inputProps={{
+                                    accept: 'image/*',
+                                }}
+                                InputLabelProps={{
+                                    shrink: true,
+                                }}
+                                onChange={(e) => {
+                                    const value = (e.target as HTMLInputElement)
+                                        .files;
+                                    if (value && value.length > 0) {
+                                        field.onChange(value[0]);
+                                    }
+                                }}
+                            />
+                        );
+                    }}
+                />
                 {projectMetaKeys.map((key) => {
                     const { metakey, display_options } = key;
                     const label =
