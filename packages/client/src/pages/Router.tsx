@@ -68,8 +68,6 @@ export const Router = observer(() => {
                         element={<NewPromptBuilderAppPage />}
                     />
 
-                    <Route path="app/*" element={<AppRouter />} />
-
                     <Route path="import" element={<ImportRouter />} />
                     <Route path="engine/*" element={<EngineRouter />} />
                     <Route path="prompt/*" element={<PromptRouter />} />
@@ -77,6 +75,7 @@ export const Router = observer(() => {
                     <Route path="settings/*" element={<SettingsRouter />} />
                 </Route>
 
+                <Route path="app/*" element={<AppRouter />} />
                 <Route
                     path="workspace/:appId/*"
                     element={

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
     Home as HomeIcon,
     Favorite as FavoriteIcon,
@@ -36,6 +36,15 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
     border: '0.938px solid #323232',
     width: '30px',
     height: '30px',
+}));
+
+const StyledHeaderLogo = styled(Link)(({ theme }) => ({
+    color: 'inherit',
+    textDecoration: 'none',
+    cursor: 'pointer',
+    ':hover': {
+        bacakground: theme.palette.action.hover,
+    },
 }));
 
 const drawerWidth = 312;
@@ -134,6 +143,8 @@ const personIconStyles = {
 
 const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
     const { configStore } = useRootStore();
+    const location = useLocation();
+
     const [viewSidebar, setViewSidebar] = useState(false);
     useEffect(() => {
         if (configStore.store.user.admin) {
@@ -162,6 +173,21 @@ const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
 
         return {};
     }, [Object.keys(configStore.store.config).length]);
+
+    /**
+     * to determine if route is selected
+     */
+    const isSelected = (route: string) => {
+        if (route === '/') {
+            console.log(location.pathname);
+            if (location.pathname === '/') {
+                return true;
+            }
+            return false;
+        } else {
+            return location.pathname.includes(route);
+        }
+    };
     return (
         <Drawer
             open={isOpen}
@@ -179,23 +205,25 @@ const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
             >
                 {/* Drawer Heading */}
                 <Box sx={{ ...headingStyles, padding: '12px 16px' }}>
-                    <Typography
-                        variant="body1"
-                        sx={{
-                            ...sectionTitleStyles(700),
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 2,
-                            margin: 0,
-                            padding: 0,
-                        }}
-                    >
-                        <Logo />
-                        <Typography variant="h6">
-                            {' '}
-                            {themeMap.name ? themeMap.name : THEME.name}
+                    <StyledHeaderLogo to={'/'}>
+                        <Typography
+                            variant="body1"
+                            sx={{
+                                ...sectionTitleStyles(700),
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 2,
+                                margin: 0,
+                                padding: 0,
+                            }}
+                        >
+                            <Logo />
+                            <Typography variant="h6">
+                                {' '}
+                                {themeMap.name ? themeMap.name : THEME.name}
+                            </Typography>
                         </Typography>
-                    </Typography>
+                    </StyledHeaderLogo>
                     <StyledIconButton
                         size="medium"
                         edge="start"
@@ -229,7 +257,11 @@ const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
                                     onClose();
                                 }}
                             >
-                                <List.Item key={index} sx={listStyles}>
+                                <List.Item
+                                    key={index}
+                                    sx={listStyles}
+                                    selected={isSelected(item.route)}
+                                >
                                     <List.ItemButton sx={{ gap: 2 }}>
                                         <List.Icon sx={{ minWidth: '24px' }}>
                                             {item.icon}
@@ -264,7 +296,11 @@ const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
                                             onClose();
                                         }}
                                     >
-                                        <List.Item key={index} sx={listStyles}>
+                                        <List.Item
+                                            key={index}
+                                            sx={listStyles}
+                                            selected={isSelected(item.route)}
+                                        >
                                             <List.ItemButton sx={{ gap: 2 }}>
                                                 <List.Icon
                                                     sx={{ minWidth: '24px' }}
@@ -313,7 +349,10 @@ const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
                                 onClose();
                             }}
                         >
-                            <List.Item sx={listStyles}>
+                            <List.Item
+                                sx={listStyles}
+                                selected={isSelected('/settings')}
+                            >
                                 <List.ItemButton sx={{ gap: 2 }}>
                                     <List.Icon sx={{ minWidth: '24px' }}>
                                         <SettingsIcon />

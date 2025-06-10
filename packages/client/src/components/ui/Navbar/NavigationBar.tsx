@@ -1,34 +1,50 @@
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import SearchIcon from '@mui/icons-material/Search';
 import MenuIcon from '@mui/icons-material/Menu';
+import { Link, useLocation } from 'react-router-dom';
+import { observer } from 'mobx-react-lite';
 
 import {
     styled,
     AppBar,
     TextField,
-    Toolbar,
     Typography,
     IconButton,
     InputAdornment,
     Switch,
     Box,
     Container,
+    Stack,
 } from '@semoss/ui';
 
 import { THEME } from '@/constants';
 import { Logo } from '@/assets/img/Logo';
 import { useRootStore } from '@/hooks';
 import Search from './Search';
-import { useLocation } from 'react-router-dom';
-import { observer } from 'mobx-react-lite';
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
     borderBottom: '1px solid #EAEAEE',
     background: '#FAFAFA', //"var(--Background-Paper-2, #FAFAFA)",
     color: '#666666', //"var(--Text-Primary-1, #212B36)",
-    padding: '8px 32px 8px 32px',
+    padding: '8px 0px',
     boxShadow: 'none',
     transition: 'none',
+    height: '56px',
+    borderRadius: '0px',
+    display: 'flex',
+    alignItems: 'center',
+}));
+
+const StyledContainer = styled(Container)(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    /* Media query for screens with a minimum width of 600px */
+    '@media (min-width: 600px)': {
+        '&.MuiContainer-root': {
+            paddingLeft: '0px',
+            paddingRight: '0px',
+        },
+    },
 }));
 
 const StyledLeftSection = styled('div')(({ theme }) => ({
@@ -36,7 +52,8 @@ const StyledLeftSection = styled('div')(({ theme }) => ({
     gap: '16px',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    flex: '1.5 0.5 5%',
+    width: '264px',
+    height: '40px !important',
 }));
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
@@ -62,7 +79,6 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
     letterSpacing: '0.15px',
     color: 'var(--Text-Primary, #212121)',
     fontFeatureSettings: "'liga' off, 'clig' off",
-    // marginLeft: "8px",
     height: 'auto',
     maxWidth: '7.5em',
     display: 'flex',
@@ -73,9 +89,7 @@ const StyledSearchSection = styled('div')(({ theme }) => ({
     display: 'flex',
     gap: '18rem',
     alignItems: 'center',
-    flex: '2 0.5 10%',
-    minWidth: '0px',
-    width: '50%',
+    width: '720px',
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
@@ -88,7 +102,6 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
         padding: '0px 12px',
         borderRadius: '8px',
         border: '1px solid  #C4C4C4',
-        // marginBottom: '8px',
     },
     '& .MuiOutlinedInput-root > input': {
         paddingLeft: '0px',
@@ -100,8 +113,9 @@ const StyledRightSection = styled('div')(({ theme }) => ({
     display: 'flex',
     gap: '8px',
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    flex: '1 0.5 15%',
+    justifyContent: 'flex-end',
+    width: '264px',
+    height: '40px !important',
 }));
 
 const StyledAppBuilderSection = styled('div')(({ theme }) => ({
@@ -136,11 +150,22 @@ const StyledSwitch = styled(Switch)(({ theme }) => ({
     gap: '10px',
 }));
 
+const StyledHeaderLogo = styled(Link)(({ theme }) => ({
+    color: 'inherit',
+    textDecoration: 'none',
+    cursor: 'pointer',
+    ':hover': {
+        bacakground: theme.palette.action.hover,
+    },
+}));
+
 interface NavigationBarProps {
+    left?: React.ReactNode;
+    right?: React.ReactNode;
     onOpen: () => void;
 }
 export const NavigationBar = observer((props: NavigationBarProps) => {
-    const { onOpen } = props;
+    const { onOpen, left, right } = props;
     const { configStore } = useRootStore();
     const location = useLocation();
 
@@ -166,105 +191,122 @@ export const NavigationBar = observer((props: NavigationBarProps) => {
 
     return (
         <StyledAppBar>
-            <Container
-                maxWidth={false}
-                sx={{
-                    maxWidth: '1440px',
-                    display: 'flex',
-                    flexDirection: 'row',
-                }}
-            >
-                {/* <Toolbar sx={{height: "40px !important"}}> */}
-                <StyledLeftSection>
-                    <StyledIconButton
-                        size="medium"
-                        // edge="start"
-                        color="inherit"
-                        aria-label="menu"
-                        onClick={() => onOpen()}
-                    >
-                        <MenuIcon sx={{ width: '22.5px', height: '22.5px' }} />
-                    </StyledIconButton>
-                    <StyledAppTitle>
-                        <Logo />
-                        <StyledTypography
-                            variant="h6"
-                            sx={{
-                                /* Typography/H6 */
-                                fontSize: '20px',
-                                fontStyle: 'normal',
-                                fontWeight: '500',
-                                lineHeight: '160%',
-                                letterSpacing: '0.15px',
-                            }}
+            <StyledContainer maxWidth={false} sx={{ maxWidth: '1440px' }}>
+                <Stack
+                    direction={'row'}
+                    alignItems={'center'}
+                    pl={5}
+                    pr={5}
+                    width={'100%'}
+                    justifyContent={'space-between'}
+                >
+                    <StyledLeftSection>
+                        <StyledIconButton
+                            size="medium"
+                            // edge="start"
+                            color="inherit"
+                            aria-label="menu"
+                            onClick={() => onOpen()}
                         >
-                            {themeMap.name ? themeMap.name : THEME.name}
-                        </StyledTypography>
-                    </StyledAppTitle>
-                </StyledLeftSection>
-                <StyledSearchSection>
-                    {((location.pathname === '/' && showAppBuilder) ||
-                        location.pathname !== '/') && (
-                        <Box
-                            sx={{
-                                width: '100%',
-                                maxWidth: 500,
-                                margin: 'auto',
-                            }}
-                        >
-                            <Search
-                                renderInput={(params) => (
-                                    <StyledTextField
-                                        {...params}
-                                        variant="outlined"
-                                        size="small"
-                                        placeholder="Search"
-                                        label=""
-                                        InputProps={{
-                                            ...params.InputProps,
-                                            startAdornment: (
-                                                <InputAdornment position="start">
-                                                    <SearchIcon />
-                                                </InputAdornment>
-                                            ),
-                                        }}
-                                        sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                height: '28px !important',
-                                                border: 'none',
-                                                '& input': {
-                                                    height: '28px !important',
-                                                },
-                                            },
-                                        }}
-                                    />
-                                )}
-                            />
-                        </Box>
-                    )}
-                </StyledSearchSection>
-                <StyledRightSection>
-                    {location.pathname === '/' && (
-                        <StyledAppBuilderSection>
-                            <StyledAppBuilder variant="h6">
-                                App Builder
-                            </StyledAppBuilder>
-                            <StyledSwitch
-                                checked={showAppBuilder}
-                                size={'small'}
-                                onChange={(
-                                    e: ChangeEvent<HTMLInputElement>,
-                                ) => {
-                                    setShowAppBuilder(e.target.checked);
-                                    configStore.setAppBuilderMode(
-                                        e.target.checked,
-                                    );
+                            <MenuIcon
+                                sx={{
+                                    width: '22.5px',
+                                    height: '22.5px',
                                 }}
-                            ></StyledSwitch>
-                        </StyledAppBuilderSection>
-                    )}
-                </StyledRightSection>
-            </Container>
+                            />
+                        </StyledIconButton>
+                        {left ? (
+                            left
+                        ) : (
+                            <StyledHeaderLogo to={'/'}>
+                                <StyledAppTitle>
+                                    <Logo />
+                                    <StyledTypography
+                                        variant="h6"
+                                        sx={{
+                                            /* Typography/H6 */
+                                            fontSize: '20px',
+                                            fontStyle: 'normal',
+                                            fontWeight: '500',
+                                            lineHeight: '160%',
+                                            letterSpacing: '0.15px',
+                                        }}
+                                    >
+                                        {themeMap.name
+                                            ? themeMap.name
+                                            : THEME.name}
+                                    </StyledTypography>
+                                </StyledAppTitle>
+                            </StyledHeaderLogo>
+                        )}
+                    </StyledLeftSection>
+                    <StyledSearchSection>
+                        {((location.pathname === '/' && showAppBuilder) ||
+                            location.pathname !== '/') && (
+                            <Box
+                                sx={{
+                                    width: '100%',
+                                    margin: 'auto',
+                                }}
+                            >
+                                <Search
+                                    renderInput={(params) => (
+                                        <StyledTextField
+                                            {...params}
+                                            variant="outlined"
+                                            size="small"
+                                            placeholder="Search"
+                                            label=""
+                                            InputProps={{
+                                                ...params.InputProps,
+                                                startAdornment: (
+                                                    <InputAdornment position="start">
+                                                        <SearchIcon />
+                                                    </InputAdornment>
+                                                ),
+                                            }}
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    height: '40px !important',
+                                                    border: 'none',
+                                                    '& input': {
+                                                        height: '40px !important',
+                                                    },
+                                                },
+                                            }}
+                                        />
+                                    )}
+                                />
+                            </Box>
+                        )}
+                    </StyledSearchSection>
+                    <StyledRightSection>
+                        {right
+                            ? right
+                            : location.pathname === '/' && (
+                                  <StyledAppBuilderSection>
+                                      <StyledAppBuilder variant="h6">
+                                          App Builder
+                                      </StyledAppBuilder>
+                                      <StyledSwitch
+                                          checked={showAppBuilder}
+                                          size={'small'}
+                                          onChange={(
+                                              e: ChangeEvent<HTMLInputElement>,
+                                          ) => {
+                                              setShowAppBuilder(
+                                                  e.target.checked,
+                                              );
+                                              configStore.setAppBuilderMode(
+                                                  e.target.checked,
+                                              );
+                                          }}
+                                      ></StyledSwitch>
+                                  </StyledAppBuilderSection>
+                              )}
+                    </StyledRightSection>
+                </Stack>
+            </StyledContainer>
         </StyledAppBar>
     );
 });

@@ -36,7 +36,7 @@ const StyledSection = styled('div')(({ theme }) => ({
 }));
 
 const StyledContentContainer = styled('div')(({ theme }) => ({
-    width: '100%',
+    width: '997px',
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(3),
@@ -341,7 +341,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
             <StyledContainer>
                 {!configStore.store.config.adminOnlyViewMenuBarFlag &&
                     configStore.isEngineOperationAvailable('APP', 'add') && (
-                        <div>
+                        <div style={{ width: '355px' }}>
                             <Filterbox
                                 type={'APP'}
                                 onChange={(

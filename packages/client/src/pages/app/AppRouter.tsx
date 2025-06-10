@@ -6,9 +6,9 @@ import { AppPage } from './AppPage';
 export const AppRouter = observer(() => {
     return (
         <Routes>
+            <Route path="about/:appId" element={<AppDetailPage />} />
             {/* Already Built App */}
             <Route path=":appId" element={<Outlet />}>
-                <Route path="detail" element={<AppDetailPage />} />
                 <Route path="*" index element={<AppPage />} />
             </Route>
             <Route path="*" element={<Navigate to={`/`} replace />} />

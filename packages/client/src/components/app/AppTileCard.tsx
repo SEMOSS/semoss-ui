@@ -226,7 +226,7 @@ const StyledPlaceholder = styled('div')(({ theme }) => ({
 }));
 
 const StyledMainDiv = styled('div')(({ theme }) => ({
-    width: '322px',
+    width: '307px',
     height: '307px',
 }));
 

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { EditOutlined, ShareRounded } from '@mui/icons-material';
 import { observer } from 'mobx-react-lite';
+import { Link } from 'react-router-dom';
 
 import {
     Avatar,
@@ -14,36 +16,36 @@ import {
     IconButton,
     Container,
 } from '@semoss/ui';
-import { EditOutlined, ShareRounded } from '@mui/icons-material';
-
 import { Env } from '@semoss/sdk/react';
+import { Renderer } from '@semoss/renderer';
+
 import { WorkspaceStore } from '@/stores';
 import { useRootStore } from '@/hooks';
-import { LoadingScreen, ShareOverlay } from '@/components/ui';
-// import { BlocksRenderer } from '@/components/blocks-workspace';
+import {
+    LoadingScreen,
+    NavigationBar,
+    ShareOverlay,
+    SideNav,
+} from '@/components/ui';
 import { CodeRenderer } from '@/components/code-workspace';
-import { Link } from 'react-router-dom';
-
-import { Renderer } from '@semoss/renderer';
 
 const StyledViewport = styled('div')(() => ({
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
-    position: 'absolute',
-    top: '48px',
     width: '100%',
 }));
 
 const StyledContent = styled('div')(({ theme }) => ({
-    position: 'relative',
+    position: 'absolute',
+    top: '56px',
     flex: '1',
     height: '100%',
     width: '100%',
     overflow: 'hidden',
     // paddingLeft: theme.spacing(1.5),
     // paddingRight: theme.spacing(1.5),
-    paddingBottom: theme.spacing(1.5),
+    // paddingBottom: theme.spacing(1.5),
 }));
 
 export const AppPage = observer(() => {
@@ -56,6 +58,7 @@ export const AppPage = observer(() => {
 
     const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
     const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
+    const [showSideNav, setShowSideNav] = useState(false);
 
     useEffect(() => {
         // clear out the old app
@@ -83,21 +86,16 @@ export const AppPage = observer(() => {
 
     return (
         <StyledViewport>
-            <Container maxWidth={false} sx={{ maxWidth: '1440px' }}>
-                <Stack
-                    direction={'row'}
-                    justifyContent={'space-between'}
-                    alignItems={'center'}
-                    padding={1}
-                    spacing={1}
-                    sx={{
-                        // paddingLeft: '40px',
-                        // paddingRight: '40px',
-                        padding: '8px 32px',
-                    }}
-                >
-                    <Stack direction="row" alignItems={'center'} spacing={1}>
+            <NavigationBar
+                left={
+                    <Stack
+                        direction={'row'}
+                        gap={1}
+                        alignItems={'center'}
+                        width={'100%'}
+                    >
                         <Avatar
+                            sx={{ width: '30px', height: '30px' }}
                             variant="rounded"
                             src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
                         />
@@ -105,42 +103,52 @@ export const AppPage = observer(() => {
                             {workspace.metadata.project_name}
                         </Typography>
                     </Stack>
-                    <Stack flex={1}>&nbsp;</Stack>
-
-                    <Tooltip title={'Share App'}>
-                        <IconButton
-                            size="small"
-                            color="default"
-                            onClick={() => {
-                                setIsShareOpen(true);
-                            }}
-                            data-testid={'app-page-share-btn'}
-                        >
-                            <ShareRounded fontSize={'inherit'} />
-                        </IconButton>
-                    </Tooltip>
-
-                    <Button
-                        variant="contained"
-                        size={'small'}
-                        color="primary"
-                        disabled={
-                            !(
-                                workspace.role === 'OWNER' ||
-                                workspace.role === 'EDIT'
-                            )
-                        }
-                        endIcon={<EditOutlined fontSize="inherit" />}
-                        component={Link}
-                        //@ts-expect-error this is expected. props are forwarded
-                        to={`../../../workspace/${appId}`}
-                        data-testid={'app-page-edit-btn'}
+                }
+                onOpen={() => {
+                    setShowSideNav(true);
+                }}
+                right={
+                    <Stack
+                        direction={'row'}
+                        gap={1}
+                        justifyContent={'flex-end'}
+                        alignItems={'center'}
                     >
-                        Edit
-                    </Button>
-                </Stack>
-            </Container>
-            <StyledContent>
+                        <Tooltip title={'Share App'}>
+                            <IconButton
+                                size="small"
+                                color="default"
+                                onClick={() => {
+                                    setIsShareOpen(true);
+                                }}
+                                data-testid={'app-page-share-btn'}
+                            >
+                                <ShareRounded fontSize={'inherit'} />
+                            </IconButton>
+                        </Tooltip>
+
+                        <Button
+                            variant="contained"
+                            size={'small'}
+                            color="primary"
+                            disabled={
+                                !(
+                                    workspace.role === 'OWNER' ||
+                                    workspace.role === 'EDIT'
+                                )
+                            }
+                            endIcon={<EditOutlined fontSize="inherit" />}
+                            component={Link}
+                            //@ts-expect-error this is expected. props are forwarded
+                            to={`../../../workspace/${appId}`}
+                            data-testid={'app-page-edit-btn'}
+                        >
+                            Edit
+                        </Button>
+                    </Stack>
+                }
+            />
+            <StyledContent sx={{ paddingLeft: '40px', paddingRight: '40px' }}>
                 {workspace.type === 'BLOCKS' ? (
                     <Renderer appId={appId} insightId={workspace.insightId} />
                 ) : null}
@@ -149,6 +157,10 @@ export const AppPage = observer(() => {
                 ) : null}
             </StyledContent>
 
+            <SideNav
+                isOpen={showSideNav}
+                onClose={() => setShowSideNav(false)}
+            />
             <Modal open={isShareOpen} onClose={() => setIsShareOpen(false)}>
                 <ShareOverlay
                     appId={appId}

@@ -20,6 +20,8 @@ import { BASE_PAGE_BLOCKS } from './app/app.constants';
 import { THEME } from '@/constants';
 
 const StyledComponent = styled(Container)(({ theme }) => ({
+    top: '56px',
+    position: 'absolute',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
@@ -28,8 +30,15 @@ const StyledComponent = styled(Container)(({ theme }) => ({
     alignSelf: 'stretch',
     // width: '100%',
     backgroundColor: '#FAFAFA',
-    height: 'calc(100vh - 40px)', // Adjust height based on AppBar height
+    height: 'calc(100vh - 56px)', // Adjust height based on AppBar height
     overflow: 'auto',
+    /* Media query for screens with a minimum width of 600px */
+    '@media (min-width: 600px)': {
+        '&.MuiContainer-root': {
+            paddingLeft: '0px',
+            paddingRight: '0px',
+        },
+    },
 }));
 
 const StyledBannerTitle = styled(Typography)(({ theme }) => ({
@@ -60,6 +69,7 @@ const StyledOuterContainer = styled('div')(({ theme }) => ({
     borderRadius: '12px',
     background: '#FFF',
     boxShadow: '0px 5px 8px 0px rgba(0, 0, 0, 0.08)',
+    height: '204px',
 }));
 const StyledInnerContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -124,7 +134,7 @@ const BannerComponent = observer(() => {
                 style={{
                     padding: '53px 21px',
                     backgroundImage: `url(${DevBanner})`,
-                    minHeight: '294px',
+                    height: '276px',
                     width: '100%',
                     backgroundRepeat: 'no-repeat',
                     backgroundSize: 'cover',
@@ -208,7 +218,12 @@ const PlayGroundContainer = observer(() => {
                         variant="text"
                         disabled={true}
                         endIcon={
-                            <ArrowForwardIcon style={{ color: '#0471F0' }} />
+                            <ArrowForwardIcon
+                                style={{
+                                    // color: '#0471F0',
+                                    color: 'rgba(0, 0, 0, 0.26)',
+                                }}
+                            />
                         }
                     >
                         {' '}
@@ -270,7 +285,12 @@ const AIConductorContainer = observer(() => {
                         variant="text"
                         disabled={true}
                         endIcon={
-                            <ArrowForwardIcon style={{ color: '#0471F0' }} />
+                            <ArrowForwardIcon
+                                style={{
+                                    // color: '#0471F0',
+                                    color: 'rgba(0, 0, 0, 0.26)',
+                                }}
+                            />
                         }
                     >
                         {' '}
@@ -368,8 +388,8 @@ export const LandingPage = observer(() => {
                             display: 'flex',
                             paddingTop: '40px',
                             paddingBottom: '40px',
-                            // paddingLeft: '32px',
-                            // paddingRight: '32px',
+                            paddingLeft: '40px',
+                            paddingRight: '40px',
                             gap: '24px',
                             flexDirection: 'column',
                         }}

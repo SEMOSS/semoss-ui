@@ -1,19 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { styled, Container } from '@semoss/ui';
+import { styled, Container, Stack, Box } from '@semoss/ui';
 
 const StyledPage = styled(Container)(({ theme }) => ({
-    top: '40px',
+    top: '56px',
     position: 'absolute',
-    height: 'calc(100vh - 40px) !important',
+    height: 'calc(100vh - 56px) !important',
     width: '100%',
     overflow: 'scroll',
     background: '#FAFAFA',
     paddingBottom: theme.spacing(2.5),
-    paddingLeft: '32px !important',
-    paddingRight: '32px !important',
+    paddingLeft: '40px',
+    paddingRight: '40px',
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.spacing(2),
+    /* Media query for screens with a minimum width of 600px */
+    '@media (min-width: 600px)': {
+        '&.MuiContainer-root': {
+            paddingLeft: '0px !important',
+            paddingRight: '0px !important',
+        },
+    },
 }));
 
 const StyledPageHeader = styled('div', {
@@ -22,31 +28,25 @@ const StyledPageHeader = styled('div', {
     /** Track if the page header is stuck */
     stuck: boolean;
 }>(({ theme, stuck }) => ({
-    paddingTop: theme.spacing(5),
     paddingBottom: theme.spacing(1),
-    // paddingLeft: "32px",
-    // paddingRight: "32px",
     // Checkout user permissions, and the stacked avatars
     zIndex: 10,
     // Set this in Theme
     background: '#FAFAFA',
     minWidth: '100%',
     width: 'fit-content',
-    // position: 'sticky',
-    // top: '-1px',
-    // borderBottom: stuck ? `solid ${theme.palette.divider}` : 'none',
 }));
 
 const StyledContainer = styled(Container)(() => ({
     // width: '100%',
     padding: '0px',
-    paddingLeft: '32px',
-    paddingRight: '32px',
+    paddingLeft: '40px',
+    paddingRight: '40px',
     /* Media query for screens with a minimum width of 600px */
     '@media (min-width: 600px)': {
         '&.MuiContainer-root': {
-            paddingLeft: '0px',
-            paddingRight: '0px',
+            paddingLeft: '0px !important',
+            paddingRight: '0px !important',
         },
     },
 }));
@@ -90,15 +90,17 @@ export const Page = (props: PageProps): JSX.Element => {
             maxWidth={false}
             sx={{ maxWidth: '1440px' }}
         >
-            {header && (
-                <StyledPageHeader
-                    ref={(node) => setHeaderElement(node)}
-                    stuck={stuck}
-                >
-                    <StyledContainer maxWidth={false}>{header}</StyledContainer>
-                </StyledPageHeader>
-            )}
-            <StyledContainer maxWidth={false}>{children}</StyledContainer>
+            <Stack direction={'column'} p={5} gap={2}>
+                {header && (
+                    <StyledPageHeader
+                        ref={(node) => setHeaderElement(node)}
+                        stuck={stuck}
+                    >
+                        {header}
+                    </StyledPageHeader>
+                )}
+                <Box>{children}</Box>
+            </Stack>
         </StyledPage>
     );
 };

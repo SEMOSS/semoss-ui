@@ -39,7 +39,7 @@ const StyledTileCard = styled(
     ),
 )<{ disabled: boolean }>(({ disabled, theme }) => ({
     height: '269px',
-    width: '316px',
+    width: '307px',
     '&:hover': {
         cursor: disabled ? 'default' : 'pointer',
     },
@@ -160,7 +160,7 @@ const StyledOpenButton = styled(IconButton)(({ theme }) => ({
 }));
 
 const StyledMainDiv = styled('div')(({ theme }) => ({
-    width: '316px',
+    width: '307px',
     height: '292px',
 }));
 

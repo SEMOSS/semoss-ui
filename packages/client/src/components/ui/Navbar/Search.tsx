@@ -30,13 +30,13 @@ import { useRootStore } from '@/hooks';
 // Dummy data for illustration
 const categories = [
     { name: 'All', type: 'All' },
-    { name: 'Catalogs', type: 'ENGINE' },
-    { name: 'Model', type: 'MODEL' },
-    { name: 'Vector', type: 'VECTOR' },
-    { name: 'Database', type: 'DATABASE' },
-    { name: 'Function', type: 'FUNCTION' },
-    { name: 'Storage', type: 'STORAGE' },
     { name: 'Apps', type: 'PROJECT' },
+    { name: 'Catalogs', type: 'ENGINE' },
+    // { name: 'Model', type: 'MODEL' },
+    // { name: 'Vector', type: 'VECTOR' },
+    // { name: 'Database', type: 'DATABASE' },
+    // { name: 'Function', type: 'FUNCTION' },
+    // { name: 'Storage', type: 'STORAGE' },
     // { name: 'Teams', type: 'Team' },
     // { name: 'Settings', type: 'Settings' },
 ];
@@ -290,9 +290,9 @@ const Search = observer(({ renderInput }: SearchProps) => {
             type: option.section,
         });
         if (option.section === 'APP') {
-            navigate(`app/${option.id}`);
+            navigate(`/app/${option.id}`);
         } else {
-            navigate(`engine/${option.section.toLowerCase()}/${option.id}`);
+            navigate(`/engine/${option.section.toLowerCase()}/${option.id}`);
         }
     };
 
