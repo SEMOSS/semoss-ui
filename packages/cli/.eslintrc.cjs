@@ -6,14 +6,10 @@ module.exports = {
         node: true,
     },
     extends: [
+        "../../.eslintrc.json",
         'eslint:recommended',
-        'plugin:@typescript-eslint/recommended',
-        'prettier',
-        'plugin:prettier/recommended',
     ],
-    parser: '@typescript-eslint/parser',
     rules: {
-        'prettier/prettier': ['error', { endOfLine: 'auto' }],
         '@typescript-eslint/no-explicit-any': 'error',
     },
 };

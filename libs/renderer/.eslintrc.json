@@ -1,13 +1,11 @@
 {
-    "extends": [
-        "../../.eslintrc.json",
-        "plugin:react/recommended",
-        "plugin:react-hooks/recommended",
-        "plugin:@typescript-eslint/recommended",
-        "plugin:prettier/recommended"
-    ],
+    "extends": ["../../.eslintrc.json", "plugin:react-hooks/recommended"],
     "ignorePatterns": ["!**/*", "dist"],
     "globals": {
         "vi": true
+    },
+    "rules": {
+        "no-restricted-imports": "off",
+        "@typescript-eslint/no-empty-function": "off"
     }
 }

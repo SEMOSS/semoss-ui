@@ -467,8 +467,6 @@ export const DataImportFormModal = observer(
         /** Create a New Cell and Add to Notebook */
         const appendCell = (widget: string) => {
             try {
-                const newCellId = `${Math.floor(Math.random() * 100000)}`;
-
                 const config: NewCellAction["payload"]["config"] = {
                     widget: DefaultCells[widget].widget,
                     parameters: DefaultCells[widget].parameters,
@@ -477,7 +475,9 @@ export const DataImportFormModal = observer(
                 if (widget === DataImportCellConfig.widget) {
                     config.parameters = {
                         ...DefaultCells[widget].parameters,
-                        frameVariableName: `FRAME_${newCellId}`,
+                        frameVariableName: `FRAME_${Math.floor(
+                            Math.random() * 100000,
+                        )}`,
                         databaseId: selectedDatabaseId,
                         joins: watchedJoins,
                         selectQuery: pixelPartialRef.current,
@@ -504,22 +504,31 @@ export const DataImportFormModal = observer(
                     };
                 }
 
-                state.dispatch({
+                const newCellId = state.dispatch({
                     message: ActionMessages.NEW_CELL,
                     payload: {
                         queryId: query.id,
-                        cellId: newCellId,
                         previousCellId: previousCellId,
                         config: config as Omit<CellStateConfig, "id">,
                     },
+                }) as string;
+
+                state.dispatch({
+                    message: ActionMessages.ADD_VARIABLE,
+                    payload: {
+                        id: `${query.id}--${newCellId}`,
+                        type: "cell",
+                        to: query.id,
+                        cellId: newCellId,
+                    },
                 });
+
                 notebook.selectCell(query.id, newCellId);
             } catch (e) {
                 console.error(e);
             }
         };
 
-     
         /**
          * Handles the event when a user clicks the "Select All" button in the Data Import Form Modal.
          * If the user clicks the button when all columns are already selected, it unselects all columns.
@@ -532,10 +541,12 @@ export const DataImportFormModal = observer(
             // Check if all columns are currently selected. If they are, set allChecked to false.
             // If not, set allChecked to true.
             const allChecked = !isAllSelected;
-            const updatedColumns = watchedTables[tableIndex].columns.map((column) => ({
-                ...column,
-                checked: allChecked,
-            }));
+            const updatedColumns = watchedTables[tableIndex].columns.map(
+                (column) => ({
+                    ...column,
+                    checked: allChecked,
+                }),
+            );
 
             const freshAliasCountObj = {};
             updatedColumns.forEach((column) => {
@@ -889,7 +900,7 @@ export const DataImportFormModal = observer(
                 const pixelTables: Set<string> = new Set();
                 const pixelColumnNames: string[] = [];
                 const pixelColumnAliases: string[] = [];
-                const pixelJoins: string[] = [];             
+                const pixelJoins: string[] = [];
                 watchedTables?.forEach((tableObject) => {
                     const currTableColumns = tableObject.columns;
                     currTableColumns?.forEach((columnObject) => {
@@ -1115,7 +1126,7 @@ export const DataImportFormModal = observer(
             oldAlias = null,
         ) => {
             const newAliasesCountObj = { ...aliasesCountObj };
-             if (isBeingAdded) {
+            if (isBeingAdded) {
                 if (newAliasesCountObj[newAlias] > 0) {
                     newAliasesCountObj[newAlias] =
                         newAliasesCountObj[newAlias] + 1;
@@ -1252,7 +1263,10 @@ export const DataImportFormModal = observer(
                     // (totalColumnsToCheck) to the total number of columns that are checked
                     // (totalCheckedColumns). If the two values are equal, then all columns
                     // are checked. If not, then some columns are not checked.
-                    if (totalCheckedColumns === totalColumnsToCheck && totalColumnsToCheck > 0) {
+                    if (
+                        totalCheckedColumns === totalColumnsToCheck &&
+                        totalColumnsToCheck > 0
+                    ) {
                         setIsAllSelected(true);
                     } else {
                         setIsAllSelected(false);
@@ -1521,7 +1535,7 @@ export const DataImportFormModal = observer(
                                                                                             ]
                                                                                                 .columns
                                                                                                 .length
-                                                                                    } 
+                                                                                    }
                                                                                     onChange={() =>
                                                                                         addAllTableColumnsHandler(
                                                                                             tableIndex,

@@ -31,11 +31,11 @@ export enum ActionMessages {
     SET_SHEET_EXECUTION_ORDER = "SET_SHEET_EXECUTION_ORDER",
     /**
      * Events
-    */
-   RUN_CELL = "RUN_CELL",
-   RUN_QUERY = "RUN_QUERY",
-   DISPATCH_EVENT = "DISPATCH_EVENT",
-   DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
+     */
+    RUN_CELL = "RUN_CELL",
+    RUN_QUERY = "RUN_QUERY",
+    DISPATCH_EVENT = "DISPATCH_EVENT",
+    DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
 }
 
 export type Actions =
@@ -77,7 +77,7 @@ export interface SetStateAction extends Action {
 
 export interface DispatchOutputsEventAction extends Action {
     message: ActionMessages.DISPATCH_OUTPUTS_EVENT;
-    payload: {};
+    payload: Record<string, unknown>;
 }
 
 export interface AddBlockAction extends Action {
@@ -155,7 +155,7 @@ export interface SetListenerAction extends Action {
         id: string;
         listener: string;
         actions: ListenerActions[];
-        type: "sync" | "async"
+        type: "sync" | "async";
     };
 }
 
@@ -202,7 +202,6 @@ export interface NewCellAction extends Action {
     message: ActionMessages.NEW_CELL;
     payload: {
         queryId: string;
-        cellId: string;
         previousCellId: string;
         config: Omit<CellStateConfig, "id">;
     };
@@ -234,7 +233,6 @@ export interface UpdateCellAction extends Action {
         value: unknown;
     };
 }
-
 
 export interface DispatchEventAction extends Action {
     message: ActionMessages.DISPATCH_EVENT;
