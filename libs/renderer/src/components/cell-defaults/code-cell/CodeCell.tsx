@@ -1,4 +1,4 @@
-import { useRef, useState, Suspense, lazy } from "react";
+import { useRef, useState, Suspense, lazy, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { Code, KeyboardArrowDown } from "@mui/icons-material";
 
@@ -11,8 +11,8 @@ import {
     Variable,
 } from "../../../store";
 import { useBlocks } from "../../../hooks";
-
 import { PythonIcon, RIcon } from "./icons";
+import { runPixelTwo } from '../../../../../../packages/client/src/runPixelTwo'
 
 const StyledSelect = styled(Select)(({ theme }) => ({
     "& .MuiSelect-select": {
@@ -134,8 +134,27 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     const [isLLMRejected, setIsLLMRejected] = useState(false);
     const [count, setCount] = useState(0);
+    const [allFunctions, setAllFunctions] = useState([]);
     // const { workspace } = useWorkspace();
+    const getReactors = async () => {
+        const response = await runPixelTwo(`HelpJson();`);
+        const outputKeys = Object.keys(response.pixelReturn[0].output);
+        const allOutputs = outputKeys.map(key => ({
+            key,
+            value: response.pixelReturn[0].output[key]
+        }));
+        setAllFunctions(allOutputs);
+        console.log("allOutputs", allOutputs);
+        console.log("R outputs", allOutputs.filter(output => output.key === "R"));
+        console.log("Python outputs", allOutputs.filter(output => output.key === "Python"));
+        console.log("Reactor Outputs", allOutputs.filter(output => output.key === "General"));
+        console.log("response", response);
+        console.log("all functions", allFunctions);
 
+    };
+    useEffect(() => {
+        getReactors();
+    }, []);
     /**
      * Ask a LLM a question to generate a response
      * @param prompt - prompt passed to the LLM
@@ -286,8 +305,8 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             label: "Generate Code",
             keybindings: [
                 monaco.KeyMod.CtrlCmd |
-                    monaco.KeyMod.Shift |
-                    monaco.KeyCode.KeyG,
+                monaco.KeyMod.Shift |
+                monaco.KeyCode.KeyG,
             ],
 
             run: async (editor) => {
@@ -383,6 +402,12 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         // register custom pixel language
         monaco.languages.register({ id: "pixel" });
 
+        // const COMMON_PYTHON_FUNCTIONS = allReactors;
+        const COMMON_PYTHON_FUNCTIONS = [
+    "print", "len", "range", "type", "int", "float", "str", "list", "dict", "set", "tuple",
+    "sum", "min", "max", "abs", "sorted", "open", "enumerate", "zip", "map", "filter", "reduce",
+    "any", "all", "isinstance", "issubclass", "dir", "help", "input", "next", "reversed", "slice"
+];
         // add suggestions for each language
         Object.values(EditorLanguages).forEach((language) => {
             // if suggestion already exist, dispose and re-add
@@ -464,9 +489,9 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                     followingTwoCharacters === "}}"
                                         ? 2
                                         : followingTwoCharacters == "} " ||
-                                          followingTwoCharacters == "}"
-                                        ? 1
-                                        : 0;
+                                            followingTwoCharacters == "}"
+                                            ? 1
+                                            : 0;
 
                                 // compose range that we want to replace with the suggestion
                                 const replaceRange = {
@@ -495,17 +520,28 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                         language,
                         {
                             provideCompletionItems: async (model, position) => {
-                                const word =
-                                    model.getWordUntilPosition(position);
+                                const word = model.getWordUntilPosition(position);
 
-                                // word is not empty, completion was triggered by a non-special character
+                                // Suggest common Python functions if word is not empty
                                 if (word.word !== "") {
-                                    // return empty suggestions to trigger built in typeahead
-                                    return {
-                                        suggestions: [],
-                                    };
+                                    const suggestions = COMMON_PYTHON_FUNCTIONS.map(fn => ({
+                                        label: {
+                                            label: fn,
+                                            description: "Function"
+                                        },
+                                        kind: monaco.languages.CompletionItemKind.Function,
+                                        insertText: fn + "()",
+                                        range: {
+                                            startLineNumber: position.lineNumber,
+                                            endLineNumber: position.lineNumber,
+                                            startColumn: word.startColumn,
+                                            endColumn: word.endColumn,
+                                        },
+                                    }));
+                                    return { suggestions };
                                 }
 
+                                // ...existing code for special character handling...
                                 const specialCharacterStartRange = {
                                     startLineNumber: position.lineNumber,
                                     endLineNumber: position.lineNumber,
@@ -533,9 +569,9 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                     followingTwoCharacters === "}}"
                                         ? 2
                                         : followingTwoCharacters == "} " ||
-                                          followingTwoCharacters == "}"
-                                        ? 1
-                                        : 0;
+                                            followingTwoCharacters == "}"
+                                            ? 1
+                                            : 0;
 
                                 const replaceRange = {
                                     startLineNumber: position.lineNumber,
@@ -552,7 +588,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
                                 return { suggestions: variableSuggestions };
                             },
-                            triggerCharacters: ["{"],
+                            triggerCharacters: ["{", ...'abcdefghijklmnopqrstuvwxyz'.split('')],
                         },
                     ),
                 };
@@ -612,7 +648,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                 <>Loading...</>
                 // <LoadingScreen.Trigger description="Generating..." />
             )}
-
+            <Button onClick={getReactors}>Reactors</Button>
             <Stack direction="row" spacing={1}>
                 <StyledContainer>
                     {!isExpanded ? (
