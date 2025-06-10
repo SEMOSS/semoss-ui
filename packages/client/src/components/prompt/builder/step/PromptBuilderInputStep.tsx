@@ -31,30 +31,35 @@ export const PromptBuilderInputStep = (props: {
     }, [builderInputSettings]);
 
     useEffect(() => {
-    function handleMouseUp() {
-        const selection = window.getSelection();
-        if (!selection || selection.isCollapsed) return;
-        
-        const tokenSpans = Array.from(document.querySelectorAll('[data-token-index]'));
-        if (tokenSpans.length === 0) return;
+        function handleMouseUp() {
+            const selection = window.getSelection();
+            if (!selection || selection.isCollapsed) return;
 
-        const selectedIndices: number[] = [];
-        tokenSpans.forEach((span) => {
-            if (selection.containsNode(span, true)){
-                const idx = parseInt(span.getAttribute('data-token-index') || '', 10);
-                if (!isNaN(idx)) selectedIndices.push(idx);
+            const tokenSpans = Array.from(
+                document.querySelectorAll('[data-token-index]'),
+            );
+            if (tokenSpans.length === 0) return;
+
+            const selectedIndices: number[] = [];
+            tokenSpans.forEach((span) => {
+                if (selection.containsNode(span, true)) {
+                    const idx = parseInt(
+                        span.getAttribute('data-token-index') || '',
+                        10,
+                    );
+                    if (!isNaN(idx)) selectedIndices.push(idx);
+                }
+            });
+
+            if (selectedIndices.length > 1) {
+                selectedIndices.sort((a, b) => a - b);
+                setSelectedInputTokens(selectedIndices);
             }
-        });
-
-        if (selectedIndices.length > 1) {
-            selectedIndices.sort((a, b) => a - b);
-            setSelectedInputTokens(selectedIndices);
         }
-    }
 
-    document.addEventListener('mouseup', handleMouseUp);
-    return () => document.removeEventListener('mouseup', handleMouseUp);
-}, [tokens]);
+        document.addEventListener('mouseup', handleMouseUp);
+        return () => document.removeEventListener('mouseup', handleMouseUp);
+    }, [tokens]);
     useEffect(() => {
         // updates after user changes input tokens
         if (initLoadComplete) {
@@ -370,17 +375,19 @@ export const PromptBuilderInputStep = (props: {
                 {Array.from(tokens, (token: Token) => (
                     <React.Fragment key={token.index}>
                         <span data-token-index={token.index}>
-                        <PromptSetToken
-                            token={token}
-                            selectedInputTokens={selectedInputTokens}
-                            isSelectedLinkable={isSelectedLinkable()}
-                            addSelectedInputToken={addSelectedInputToken}
-                            removeSelectedInputToken={removeSelectedInputToken}
-                            resetInputToken={resetInputToken}
-                            setSelectedTokensAsInputs={
-                                setSelectedTokensAsInputs
-                            }
-                        />
+                            <PromptSetToken
+                                token={token}
+                                selectedInputTokens={selectedInputTokens}
+                                isSelectedLinkable={isSelectedLinkable()}
+                                addSelectedInputToken={addSelectedInputToken}
+                                removeSelectedInputToken={
+                                    removeSelectedInputToken
+                                }
+                                resetInputToken={resetInputToken}
+                                setSelectedTokensAsInputs={
+                                    setSelectedTokensAsInputs
+                                }
+                            />
                         </span>
                         {token.display.endsWith('\n') ? (
                             <div style={{ flex: 1 }} />
