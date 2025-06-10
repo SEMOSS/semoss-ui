@@ -99,7 +99,14 @@ const CatalogItem = ({
                 <Grid item xs={9}>
                     <Typography
                         variant="h5"
-                        sx={{ fontSize: '16px', color: '#212121',fontFamily: 'Inter', fontWeight: 400,lineHeight:'21.344px', display:'flex' }}
+                        sx={{
+                            fontSize: '16px',
+                            color: '#212121',
+                            fontFamily: 'Inter',
+                            fontWeight: 400,
+                            lineHeight: '21.344px',
+                            display: 'flex',
+                        }}
                     >
                         {title}
                     </Typography>
@@ -216,26 +223,20 @@ const Search = observer(({ renderInput }: SearchProps) => {
         const idx = label.toLowerCase().indexOf(search.toLowerCase());
         if (idx === -1) return label;
         return (
-            <span style={{whiteSpace: 'pre'}}> 
-            <span>
-            
-                {label.substring(0, idx)}
-                </span>
+            <span style={{ whiteSpace: 'pre' }}>
+                <span>{label.substring(0, idx)}</span>
                 <span
                     style={{
                         background: '#EBF4FE',
                         color: '#212121',
                         borderRadius: '0',
-                        height:'21px',
-                        display: 'inline-block'
+                        height: '21px',
+                        display: 'inline-block',
                     }}
                 >
                     {label.substring(idx, idx + search.length)}
                 </span>
-                <span>                
-                {label.substring(idx + search.length)}
-                </span>
-                
+                <span>{label.substring(idx + search.length)}</span>
             </span>
         );
     };
