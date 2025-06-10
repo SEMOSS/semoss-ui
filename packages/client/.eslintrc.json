@@ -2,9 +2,7 @@
     // TODO: Will need to add rules, one by one until we get errors all fixed up.
     // It will always fail precommit hook if we have all these rules commented in
     "extends": [
-        "../../.eslintrc.json",
-        "plugin:@typescript-eslint/recommended",
-        "plugin:prettier/recommended"
+        "../../.eslintrc.json"
         // "eslint:recommended",
         // "plugin:react/recommended",
         // "plugin:react/jsx-runtime",

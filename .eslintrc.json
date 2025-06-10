@@ -1,7 +1,11 @@
 {
+    "root": true,
     "extends": [
-        "prettier"
+        "prettier",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:prettier/recommended"
     ],
+    "plugins": ["prettier"],
     "overrides": [
         {
             "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
@@ -43,8 +47,12 @@
         "react/prop-types": "off",
         "react/jsx-uses-react": "off",
         "react/react-in-jsx-scope": "off",
-        "prettier/prettier": ["error", { "endOfLine": "auto" }],
-        "@typescript-eslint/no-explicit-any": "error",
+        "prettier/prettier": [
+            "error",
+            {
+                "endOfLine": "auto"
+            }
+        ],
         "no-restricted-imports": [
             "error",
             {
