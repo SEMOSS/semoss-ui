@@ -243,8 +243,6 @@ export const NotebookAddCell = observer(
         /** Create a New Cell and Add to Notebook */
         const appendCell = (widget: string) => {
             try {
-                const newCellId = `${Math.floor(Math.random() * 100000)}`;
-
                 const config: NewCellAction['payload']['config'] = {
                     widget: DefaultCells[widget].widget,
                     parameters: DefaultCells[widget].parameters,
@@ -253,7 +251,9 @@ export const NotebookAddCell = observer(
                 if (widget === QueryImportCellConfig.widget) {
                     config.parameters = {
                         ...DefaultCells[widget].parameters,
-                        frameVariableName: `FRAME_${newCellId}`,
+                        frameVariableName: `FRAME_${Math.floor(
+                            Math.random() * 100000,
+                        )}`,
                     };
                 }
 
@@ -273,15 +273,14 @@ export const NotebookAddCell = observer(
                 }
 
                 // copy and add the step
-                state.dispatch({
+                const newCellId = state.dispatch({
                     message: ActionMessages.NEW_CELL,
                     payload: {
                         queryId: query.id,
-                        cellId: newCellId,
                         previousCellId: previousCellId,
                         config: config as Omit<CellStateConfig, 'id'>,
                     },
-                });
+                }) as string;
 
                 state.dispatch({
                     message: ActionMessages.ADD_VARIABLE,
