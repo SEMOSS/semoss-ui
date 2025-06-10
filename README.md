@@ -72,9 +72,10 @@ The scope should be the name of the package affected along with the overlying is
 
 The following is the list of supported scopes:
 
+* **(cli):**
 * **(client):**
 * **(legacy):**
-* **(playsheet):**
+* **(renderer):**
 * **(sdk):**
 * **(ui):**
 * **(environment):**
