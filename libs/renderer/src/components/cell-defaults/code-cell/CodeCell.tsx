@@ -13,7 +13,6 @@ import {
 import { useBlocks } from "../../../hooks";
 import { PythonIcon, RIcon } from "./icons";
 import { runPixelTwo } from '../../../../../../packages/client/src/runPixelTwo'
-
 const StyledSelect = styled(Select)(({ theme }) => ({
     "& .MuiSelect-select": {
         color: theme.palette.text.secondary,
@@ -402,12 +401,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         // register custom pixel language
         monaco.languages.register({ id: "pixel" });
 
-        // const COMMON_PYTHON_FUNCTIONS = allReactors;
-        const COMMON_PYTHON_FUNCTIONS = [
-    "print", "len", "range", "type", "int", "float", "str", "list", "dict", "set", "tuple",
-    "sum", "min", "max", "abs", "sorted", "open", "enumerate", "zip", "map", "filter", "reduce",
-    "any", "all", "isinstance", "issubclass", "dir", "help", "input", "next", "reversed", "slice"
-];
         // add suggestions for each language
         Object.values(EditorLanguages).forEach((language) => {
             // if suggestion already exist, dispose and re-add
@@ -429,35 +422,26 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                 // we need to chack for wrapping curly brackets manually to know what to replace
                                 const word =
                                     model.getWordUntilPosition(position);
+                                const languageFunctions =
+                                    allFunctions.find(f => f.key.toLowerCase() === 'General'.toLowerCase())?.value || []; // General is name for key for reactors 
 
                                 //trigger reactor suggestions
                                 if (word.word !== "") {
-                                    // const suggestions =
-                                    //     configStore.generalReactors.map(
-                                    //         (reactor) => ({
-                                    //             label: {
-                                    //                 label: reactor,
-                                    //                 description:
-                                    //                     "General Reactor",
-                                    //             },
-                                    //             kind: monaco.languages
-                                    //                 .CompletionItemKind
-                                    //                 .Function,
-                                    //             insertText: reactor,
-                                    //             range: {
-                                    //                 startLineNumber:
-                                    //                     position.lineNumber,
-                                    //                 endLineNumber:
-                                    //                     position.lineNumber,
-                                    //                 startColumn:
-                                    //                     word.startColumn,
-                                    //                 endColumn: word.startColumn,
-                                    //             },
-                                    //         }),
-                                    //     );
-                                    // return {
-                                    //     suggestions: suggestions,
-                                    // };
+                                    const suggestions = languageFunctions.map(reactor => ({
+                                label: {
+                                    label: reactor,
+                                    description: "Reactor"
+                                },
+                                kind: monaco.languages.CompletionItemKind.Function,
+                                insertText: reactor + "();",
+                                range: {
+                                    startLineNumber: position.lineNumber,
+                                    endLineNumber: position.lineNumber,
+                                    startColumn: word.startColumn,
+                                    endColumn: word.endColumn,
+                                },
+                            }));
+                            return { suggestions };
                                 }
 
                                 // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
@@ -521,10 +505,12 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                         {
                             provideCompletionItems: async (model, position) => {
                                 const word = model.getWordUntilPosition(position);
+                                const languageFunctions =
+                                    allFunctions.find(f => f.key.toLowerCase() === language.toLowerCase())?.value || [];
 
                                 // Suggest common Python functions if word is not empty
                                 if (word.word !== "") {
-                                    const suggestions = COMMON_PYTHON_FUNCTIONS.map(fn => ({
+                                    const suggestions = languageFunctions.map(fn => ({
                                         label: {
                                             label: fn,
                                             description: "Function"
@@ -648,7 +634,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                 <>Loading...</>
                 // <LoadingScreen.Trigger description="Generating..." />
             )}
-            <Button onClick={getReactors}>Reactors</Button>
             <Stack direction="row" spacing={1}>
                 <StyledContainer>
                     {!isExpanded ? (
