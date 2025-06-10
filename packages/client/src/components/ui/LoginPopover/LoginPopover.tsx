@@ -19,10 +19,11 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
 
 interface LoginPopoverProps {
     color?: React.ComponentProps<typeof IconButton>['color'];
+    children?: React.ReactNode;
 }
 
 export const LoginPopover: React.FC<LoginPopoverProps> = (props) => {
-    const { color = 'default' } = props;
+    const { color = 'default', children } = props;
 
     const { configStore } = useRootStore();
     const [popoverAnchorEle, setPopoverAnchorEl] = useState<HTMLElement | null>(
@@ -31,18 +32,35 @@ export const LoginPopover: React.FC<LoginPopoverProps> = (props) => {
 
     // track if the popover is open
     const isPopoverOpen = Boolean(popoverAnchorEle);
+    const handleClick = (e: React.MouseEvent<HTMLElement>) => {
+        setPopoverAnchorEl(e.currentTarget);
+    };
 
     return (
         <>
-            <IconButton
-                size={'small'}
-                color={color}
-                onClick={(e) => {
-                    setPopoverAnchorEl(e.currentTarget);
-                }}
-            >
-                <AccountCircle fontSize="inherit" />
-            </IconButton>
+            {children ? (
+                <span
+                    onClick={handleClick}
+                    style={{
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        width: '100%',
+                    }}
+                >
+                    {children}
+                </span>
+            ) : (
+                <IconButton
+                    size={'small'}
+                    color={color}
+                    onClick={(e) => {
+                        setPopoverAnchorEl(e.currentTarget);
+                    }}
+                >
+                    <AccountCircle fontSize="inherit" />
+                </IconButton>
+            )}
 
             <Popover
                 id="logout-popover"

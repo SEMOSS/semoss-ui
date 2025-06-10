@@ -28,6 +28,7 @@ import { Database } from '@/assets/img/Database';
 import { useRootStore } from '@/hooks';
 import { Logo } from '@/assets/img/Logo';
 import { THEME } from '@/constants';
+import { LoginPopover } from '../LoginPopover/LoginPopover';
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
     marginRight: 2,
@@ -329,14 +330,26 @@ const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
                 <List sx={{ padding: 0 }}>
                     <List.Item sx={listStyles}>
                         <List.ItemButton sx={{ gap: 2 }}>
-                            <List.Icon sx={{ minWidth: '24px' }}>
-                                <PersonIcon sx={personIconStyles} />
-                            </List.Icon>
-                            {configStore.store.user.name && (
-                                <List.ItemText
-                                    primary={configStore.store.user.name}
-                                />
-                            )}
+                            <LoginPopover>
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1.5,
+                                    }}
+                                >
+                                    <List.Icon sx={{ minWidth: '24px' }}>
+                                        <PersonIcon sx={personIconStyles} />
+                                    </List.Icon>
+                                    {configStore.store.user.name && (
+                                        <List.ItemText
+                                            primary={
+                                                configStore.store.user.name
+                                            }
+                                        />
+                                    )}
+                                </Box>
+                            </LoginPopover>
                         </List.ItemButton>
                     </List.Item>
                 </List>

@@ -98,8 +98,8 @@ const CatalogItem = ({
                 </Grid>
                 <Grid item xs={9}>
                     <Typography
-                        variant="h6"
-                        sx={{ fontSize: '14px', color: '#212121' }}
+                        variant="h5"
+                        sx={{ fontSize: '16px', color: '#212121',fontFamily: 'Inter', fontWeight: 400,lineHeight:'21.344px', display:'flex' }}
                     >
                         {title}
                     </Typography>
@@ -211,6 +211,35 @@ const Search = observer(({ renderInput }: SearchProps) => {
         `recent-searches--${configStore.store.userEpoch}`,
     );
 
+    const highlightMatch = (label: string, search: string) => {
+        if (!search) return label;
+        const idx = label.toLowerCase().indexOf(search.toLowerCase());
+        if (idx === -1) return label;
+        return (
+            <span style={{whiteSpace: 'pre'}}> 
+            <span>
+            
+                {label.substring(0, idx)}
+                </span>
+                <span
+                    style={{
+                        background: '#EBF4FE',
+                        color: '#212121',
+                        borderRadius: '0',
+                        height:'21px',
+                        display: 'inline-block'
+                    }}
+                >
+                    {label.substring(idx, idx + search.length)}
+                </span>
+                <span>                
+                {label.substring(idx + search.length)}
+                </span>
+                
+            </span>
+        );
+    };
+
     const handleCategoryToggle = (category) => {
         setSelectedCategories((prev) =>
             prev.some((c) => c.name === category.name)
@@ -317,7 +346,7 @@ const Search = observer(({ renderInput }: SearchProps) => {
                                           option.app_subtype,
                                       )
                             }
-                            title={option.label}
+                            title={highlightMatch(option.label, searchValue)}
                             description={option.description}
                             id={option.id}
                         />
