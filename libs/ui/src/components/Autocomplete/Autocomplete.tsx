@@ -50,7 +50,6 @@ export interface AutocompleteProps<
         | "disableCloseOnSelect"
         | "disabledItemsFocusable"
         | "disableListWrap"
-        | "getOptionDisabled"
         | "handleHomeEndKeys"
         | "openOnFocus"
         | "selectOnFocus"
