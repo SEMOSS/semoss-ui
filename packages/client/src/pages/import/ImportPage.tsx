@@ -582,10 +582,14 @@ export const ImportPage = () => {
                             <StyledSpan
                                 onClick={() => {
                                     setSteps([], -1);
-                                    navigate('/import');
+                                    if (window.history.length > 1) {
+                                        navigate(-1);
+                                    } else {
+                                        navigate('/');
+                                    }
                                 }}
                             >
-                                Import
+                                Home
                             </StyledSpan>
                             {steps.map((step, i) => {
                                 return (

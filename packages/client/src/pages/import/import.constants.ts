@@ -183,15 +183,15 @@ export const CONNECTION_OPTIONS = {
                             },
                         },
                         {
-                            fieldName: 'MODEL_TYPE',
+                            fieldName: 'TYPE',
                             label: 'Type',
-                            defaultValue: 'OPEN_AI',
+                            defaultValue: 'Bedrock',
                             options: {
                                 component: 'select',
                                 options: [
                                     {
-                                        display: 'Open AI',
-                                        value: 'OPEN_AI',
+                                        display: 'Bedrock',
+                                        value: 'bedrock',
                                     },
                                 ],
                             },
@@ -199,34 +199,23 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
-                            fieldName: 'OPEN_AI_KEY',
-                            label: 'Open AI Key',
+                            fieldName: 'MODEL_TYPE',
+                            label: 'Model',
                             defaultValue: '',
                             options: {
-                                component: 'password',
+                                component: 'text-field',
                             },
                             disabled: false,
                             rules: { required: true },
                         },
                         {
-                            fieldName: 'MODEL',
-                            label: 'Model',
-                            defaultValue: 'gpt-3.5-turbo',
+                            fieldName: 'AWS_Region',
+                            label: 'AWS Region',
+                            defaultValue: '',
                             options: {
-                                component: 'select',
-                                options: [
-                                    {
-                                        display: 'gpt-3.5-turbo',
-                                        value: 'gpt-3.5-turbo',
-                                    },
-                                    {
-                                        display: 'gpt-4-32k',
-                                        value: 'gpt-4-32k',
-                                    },
-                                ],
+                                component: 'text-field',
                             },
-                            disabled: true,
-                            hidden: true,
+                            disabled: false,
                             rules: { required: true },
                         },
                         {
@@ -240,23 +229,36 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
-                            fieldName: 'CHAT_TYPE',
-                            label: 'Chat Type',
-                            defaultValue: 'chat-completion',
+                            fieldName: 'AWS_ACCESS_KEY',
+                            label: 'AWS Access Key',
+                            defaultValue:
+                                'c73f5e23-9876-487e-9cca-94d3503ff36a',
                             options: {
-                                component: 'select',
-                                options: [
-                                    {
-                                        display: 'chat-completion',
-                                        value: 'chat-completion',
-                                    },
-                                    {
-                                        display: 'completion',
-                                        value: 'completion',
-                                    },
-                                ],
+                                component: 'text-field',
                             },
                             disabled: false,
+                            hidden: true,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'AWS_SECRET_KEY',
+                            label: 'AWS Secret Key',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'char Completion',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            hidden: true,
                             rules: { required: true },
                         },
                         {
@@ -265,47 +267,7 @@ export const CONNECTION_OPTIONS = {
                             defaultValue:
                                 "import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
                             options: {
-                                component: 'text-field',
-                            },
-                            disabled: false,
-                            rules: { required: true },
-                        },
-                        {
-                            fieldName: 'KEEP_CONVERSATION_HISTORY',
-                            label: 'Keep Conversation History',
-                            defaultValue: 'false',
-                            options: {
-                                component: 'select',
-                                options: [
-                                    {
-                                        display: 'true',
-                                        value: 'true',
-                                    },
-                                    {
-                                        display: 'false',
-                                        value: 'false',
-                                    },
-                                ],
-                            },
-                            disabled: false,
-                            rules: { required: true },
-                        },
-                        {
-                            fieldName: 'KEEP_INPUT_OUTPUT',
-                            label: 'Record Questions and Responses',
-                            defaultValue: 'false',
-                            options: {
-                                component: 'select',
-                                options: [
-                                    {
-                                        display: 'true',
-                                        value: 'true',
-                                    },
-                                    {
-                                        display: 'false',
-                                        value: 'false',
-                                    },
-                                ],
+                                component: 'text-area',
                             },
                             disabled: false,
                             rules: { required: true },
@@ -329,6 +291,46 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
+                        },
+                        {
+                            fieldName: 'KEEP_CONVERSATION_HISTORY',
+                            label: 'Keep Conversation History',
+                            defaultValue: 'false',
+                            options: {
+                                component: 'switch',
+                                options: [
+                                    {
+                                        display: 'true',
+                                        value: 'true',
+                                    },
+                                    {
+                                        display: 'false',
+                                        value: 'false',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'KEEP_INPUT_OUTPUT',
+                            label: 'Record Questions and Responses',
+                            defaultValue: 'false',
+                            options: {
+                                component: 'switch',
+                                options: [
+                                    {
+                                        display: 'true',
+                                        value: 'true',
+                                    },
+                                    {
+                                        display: 'false',
+                                        value: 'false',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
                         },
                     ],
                 },
@@ -376,16 +378,6 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
-                            fieldName: 'OPEN_AI_KEY',
-                            label: 'Open AI Key',
-                            defaultValue: '',
-                            options: {
-                                component: 'password',
-                            },
-                            disabled: false,
-                            rules: { required: true },
-                        },
-                        {
                             fieldName: 'MODEL',
                             label: 'Model',
                             defaultValue: 'gpt-4-32k',
@@ -403,6 +395,16 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
+                            fieldName: 'OPEN_AI_KEY',
+                            label: 'Open AI Key',
+                            defaultValue: '',
+                            options: {
+                                component: 'password',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
                             fieldName: 'VAR_NAME',
                             label: 'Variable Name',
                             defaultValue: '',
@@ -412,6 +414,7 @@ export const CONNECTION_OPTIONS = {
                             disabled: false,
                             rules: { required: true },
                         },
+
                         {
                             fieldName: 'CHAT_TYPE',
                             label: 'Chat Type',
@@ -444,11 +447,31 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
+                            fieldName: 'MAX_TOKENS',
+                            label: 'Max Tokens',
+                            rules: { required: false },
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                        },
+                        {
+                            fieldName: 'MAX_INPUT_TOKENS',
+                            label: 'Max Input Tokens',
+                            rules: { required: false },
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                        },
+                        {
                             fieldName: 'KEEP_CONVERSATION_HISTORY',
                             label: 'Keep Conversation History',
                             defaultValue: 'false',
                             options: {
-                                component: 'select',
+                                component: 'switch',
                                 options: [
                                     {
                                         display: 'true',
@@ -468,7 +491,7 @@ export const CONNECTION_OPTIONS = {
                             label: 'Record Questions and Responses',
                             defaultValue: 'false',
                             options: {
-                                component: 'select',
+                                component: 'switch',
                                 options: [
                                     {
                                         display: 'true',
