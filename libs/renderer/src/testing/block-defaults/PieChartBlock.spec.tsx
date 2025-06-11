@@ -1,10 +1,11 @@
 // tests/components/Pie.test.tsx
 import { describe, it, expect } from "vitest";
-import { render } from "@/testing/utils"; // Assuming 'customRender' is exported as 'render'
+import { render, renderHook } from "@/testing/utils"; // Assuming 'customRender' is exported as 'render'
 // import { Pie } from '../../src/components/block-defaults/echart-visualization-block/variant/pie-chart/Pie';
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { Pie } from "@/components/block-defaults/echart-visualization-block/variant/pie-chart/Pie";
-import { VisualizationBlock } from "@/components/block-defaults/echart-visualization-block";
+import { EchartVisualizationBlockDef, VisualizationBlock } from "@/components/block-defaults/echart-visualization-block";
+import { useBlock } from "@/hooks";
 
 // Mock data for testing
 const mockBlocks = {
@@ -169,17 +170,44 @@ describe("Pie Block Component", () => {
 			},
 		});
 	});
+
+	it("use useBlock", async () => {
+		const { result } = renderHook(() => useBlock<EchartVisualizationBlockDef>("pieChart"), {
+			blocks: mockBlocks,
+			renderEngineId: "pieChart",
+			children: <VisualizationBlock id="pieChart" />
+		});
+
+		await waitFor(async() => {
+	
+			console.log({ result: result.current });
+			expect(result.current).toBeDefined()
+		})
+	});
+
 	it("should render Pie chart correctly", () => {
 		const { container } = render(<VisualizationBlock id="pieChart" />, {
 			blocks: mockBlocks,
 		});
+
+		// const {data} = useBlock("pieChart")
+		// console.log({data})
 
 		// screen.debug();
 		const pichart = container.querySelector("[data-block='pieChart']");
 		expect(pichart).toBeInTheDocument();
 	});
 
-    // THIS DOES NOT WORK ATM
+	it("set data of the pie chart", () => {
+		expect(mockBlocks.pieChart.data.option.series[0].type).toBe("pie");
+		expect(
+			mockBlocks.pieChart.data.option.series[0].data.map((data) => data.name),
+		).toEqual(["Search Engine", "Direct", "Email", "Union Ads", "Video Ads"]);
+		expect(
+			mockBlocks.pieChart.data.option.series[0].data.map((data) => data.value),
+		).toEqual([1048, 735, 580, 484, 300]);
+	});
+	// THIS DOES NOT WORK ATM
 	it("should set up a donut chart through useBlockSettings", () => {
 		const { container } = render(<VisualizationBlock id="pieChart" />, {
 			blocks: {
@@ -207,7 +235,7 @@ describe("Pie Block Component", () => {
 		const chartInstance = container.querySelector("canvas");
 		expect(chartInstance).toBeInTheDocument();
 
-        console.log({chartInstance: chartInstance.getAttribute("data-option")})
+		// console.log({ chartInstance: chartInstance.getAttribute("data-option") });
 	});
 	// it("should render Pie chart correctly", () => {
 	// 	const { container } = render(<Pie id="pieChart" updateJson={() => {}} />, {
