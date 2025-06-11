@@ -43,6 +43,12 @@ export const config: BlockConfig<CheckboxBlockDef> = {
                         <SwitchSettings id={id} label="Checked" path="value" />
                     ),
                 },
+                 {
+                    description: "Label",
+                    render: ({ id }) => (
+                        <InputSettings id={id} label="Label" path="label" />
+                    ),
+                },
             ],
         },
         {
