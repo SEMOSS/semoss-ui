@@ -1,8 +1,7 @@
 import axios from 'axios';
 import { makeAutoObservable } from 'mobx';
 
-import { Env } from '@semoss/sdk';
-// import { Env } from '@/env';
+import { Env } from '@semoss/sdk/react';
 
 import { Role } from '@/types';
 import { RootStore } from '@/stores';
@@ -326,8 +325,8 @@ export class MonolithStore {
             '&email=' +
             encodeURIComponent(email) +
             '&password=' +
-            encodeURIComponent(password);
-        '&phone=' +
+            encodeURIComponent(password) +
+            '&phone=' +
             encodeURIComponent(phone) +
             '&phoneextension=' +
             encodeURIComponent(phoneextension) +
@@ -1077,6 +1076,41 @@ export class MonolithStore {
             postData = '';
 
         url += 'group/addGroup';
+
+        postData += 'groupId=' + encodeURIComponent(groupId);
+        postData += '&description=' + encodeURIComponent(description);
+        postData += '&isCustomGroup=' + encodeURIComponent(isCustomGroup);
+        if (type) {
+            postData += '&type=' + encodeURIComponent(type);
+        }
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    /**
+     * @name editTeam
+     * @param groupId
+     * @param description
+     * @param type
+     * @param isCustomGroup
+     * @returns
+     */
+    async editTeam(
+        groupId: string,
+        description: string,
+        isCustomGroup: boolean,
+        type?: string,
+    ) {
+        let url = `${Env.MODULE}/api/auth/admin/`,
+            postData = '';
+
+        url += 'group/editGroup';
 
         postData += 'groupId=' + encodeURIComponent(groupId);
         postData += '&description=' + encodeURIComponent(description);
@@ -1853,18 +1887,26 @@ export class MonolithStore {
 
         url += 'project/getUserProjectPermission';
 
-        const response = await axios.get(url, {
-            params: {
-                projectId: projectId,
-            },
-        });
+        try {
+            const response = await axios.get(url, {
+                params: {
+                    projectId: projectId,
+                },
+            })
 
-        // there was no response, that is an error
-        if (!response) {
-            throw Error('No Response to get permission');
+            // there was no response, that is an error
+            if (!response) {
+                if (response.status === 401) {
+                    throw Error('User does not have access to this project');
+                } else {
+                    throw Error('No Response to get permission');
+                }
+            }
+
+            return response.data;
+        } catch (error) {
+            throw Error(error);
         }
-
-        return response.data;
     }
 
     // ----- Users Start -----
@@ -2579,6 +2621,49 @@ export class MonolithStore {
             {
                 fileName: string;
                 fileLocation: string;
+            }[]
+        >(url, fd, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response.data;
+    }
+
+    async uploadImage(
+        files: File[],
+        projectId: string | null,
+        insightId?: string | null,
+    ) {
+        const url = `${Env.MODULE}/api/images/projectImage/upload`,
+            fd: FormData = new FormData();
+
+        if (Array.isArray(files)) {
+            for (let i = 0; i < files.length; i++) {
+                fd.append('file', files[i]);
+            }
+        } else {
+            // pasted data
+            fd.append('file', files);
+        }
+
+        if (insightId) {
+            fd.append('insightId', insightId);
+        } else {
+            const { configStore } = this._root;
+            fd.append('insightId', configStore.store.insightID);
+        }
+
+        if (projectId) {
+            fd.append('projectId', projectId);
+        }
+
+        const response = await axios.post<
+            {
+                app_id: string;
+                app_name: string;
+                message: string;
             }[]
         >(url, fd, {
             headers: {

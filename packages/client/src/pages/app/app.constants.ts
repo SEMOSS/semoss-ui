@@ -1,4 +1,6 @@
-export const BASE_PAGE_BLOCKS = {
+import { Block } from '@semoss/renderer';
+
+export const BASE_PAGE_BLOCKS: Record<string, Block> = {
     'page-1': {
         id: 'page-1',
         widget: 'page',
@@ -14,7 +16,10 @@ export const BASE_PAGE_BLOCKS = {
             route: '',
         },
         listeners: {
-            onPageLoad: [],
+            onPageLoad: {
+                type: 'sync',
+                order: [],
+            },
         },
         slots: {
             content: {
@@ -40,7 +45,12 @@ export const BASE_PAGE_BLOCKS = {
                 overflow: 'hidden',
             },
         },
-        listeners: {},
+        listeners: {
+            preProcess: {
+                type: 'sync',
+                order: [],
+            },
+        },
         slots: {
             children: {
                 name: 'children',
@@ -64,7 +74,12 @@ export const BASE_PAGE_BLOCKS = {
             },
             text: 'Welcome to the UI Builder! Drag and drop blocks to use in your app.',
         },
-        listeners: {},
+        listeners: {
+            preProcess: {
+                type: 'sync',
+                order: [],
+            },
+        },
         slots: {},
     },
 };

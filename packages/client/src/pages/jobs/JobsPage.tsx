@@ -6,6 +6,7 @@ import {
     ErrorRounded,
     NotStartedOutlined,
     Pause,
+    Delete,
 } from '@mui/icons-material';
 import { AvTimer } from '@mui/icons-material';
 
@@ -59,6 +60,9 @@ export function JobsPage() {
     const [jobsLoading, setJobsLoading] = useState<boolean>(false);
 
     const [jobToDelete, setJobToDelete] = useState<Job>(null);
+
+    const [jobsToDelete, setJobsToDelete] = useState<Job[]>([]);
+    const [deleteMutliple, setDeleteMultiple] = useState<boolean>(false);
 
     const [rowSelectionModel, setRowSelectionModel] =
         useState<GridRowSelectionModel>([]);
@@ -148,27 +152,47 @@ export function JobsPage() {
             });
     };
 
-    const deleteJob = (jobId: string, jobGroup: string) => {
-        let pixel = 'META | RemoveJobFromDB(';
-        pixel += 'jobId=["' + jobId + '"], ';
-        pixel += 'jobGroup=["' + jobGroup + '"]) ';
-        monolithStore.runQuery(pixel).then((response) => {
-            const type = response.pixelReturn[0].operationType;
-            const output = response.pixelReturn[0].output;
-            if (type.indexOf('ERROR') === -1) {
-                notification.add({
-                    color: 'success',
-                    message: `Successfully deleted ${type}`,
-                });
-                setJobToDelete(null);
-                getJobs();
-            } else {
+    const deleteJob = (jobId: string[], jobGroup: string[]) => {
+        let pixel;
+        if (jobId.length > 1 && jobGroup.length > 1) {
+            pixel = `META | RemoveJobFromDB(jobId=${JSON.stringify(
+                jobId,
+            )}, jobGroup=${JSON.stringify(jobGroup)}) `;
+        } else {
+            pixel = 'META | RemoveJobFromDB(';
+            pixel += 'jobId=["' + jobId[0] + '"], ';
+            pixel += 'jobGroup=["' + jobGroup[0] + '"]) ';
+        }
+        monolithStore
+            .runQuery(pixel)
+            .then((response) => {
+                const type = response.pixelReturn[0].operationType;
+                const output = response.pixelReturn[0].output;
+                if (type.indexOf('ERROR') === -1 && output === true) {
+                    notification.add({
+                        color: 'success',
+                        message:
+                            jobId.length > 1 && jobGroup.length > 1
+                                ? `Successfully deleted all selected jobs`
+                                : `Successfully deleted ${type}`,
+                    });
+                    jobId.length > 1 && jobGroup.length > 1
+                        ? setJobsToDelete([])
+                        : setJobToDelete(null);
+                    jobId.length > 1 && jobGroup.length > 1
+                        ? setDeleteMultiple(false)
+                        : '';
+                    getJobs();
+                } else {
+                    throw new Error(response.errors[0]);
+                }
+            })
+            .catch((error) => {
                 notification.add({
                     color: 'error',
-                    message: output,
+                    message: error.message,
                 });
-            }
-        });
+            });
     };
 
     const pauseJobs = async () => {
@@ -498,6 +522,14 @@ export function JobsPage() {
         400,
     );
 
+    const deleteMutlipleJobs = () => {
+        setDeleteMultiple(true);
+        const rowsToBeDeleted = jobs.filter((job) =>
+            rowSelectionModel.includes(job.id),
+        );
+        setJobsToDelete(rowsToBeDeleted);
+    };
+
     return (
         <Stack spacing={2}>
             <Stack direction="row" spacing={3}>
@@ -556,6 +588,7 @@ export function JobsPage() {
                             startIcon={<Pause />}
                             size="medium"
                             onClick={() => pauseJobs()}
+                            data-testid={'jobs-page-pause-btn'}
                         >
                             Pause
                         </Button>
@@ -567,6 +600,7 @@ export function JobsPage() {
                             startIcon={<NotStartedOutlined />}
                             size="medium"
                             onClick={() => resumeJobs()}
+                            data-testid={'jobs-page-resume-btn'}
                         >
                             Resume
                         </Button>
@@ -597,10 +631,26 @@ export function JobsPage() {
                                     password: '',
                                 })
                             }
+                            data-testid={'jobs-page-add-btn'}
                         >
                             Add
                         </Button>
                     </span>
+                    {rowSelectionModel.length > 1 ? (
+                        <span>
+                            <Button
+                                disabled={false}
+                                variant="contained"
+                                startIcon={<Delete />}
+                                size="medium"
+                                onClick={() => deleteMutlipleJobs()}
+                            >
+                                Delete Selected
+                            </Button>
+                        </span>
+                    ) : (
+                        ''
+                    )}
                 </Stack>
             </Stack>
             <JobsTable
@@ -625,9 +675,22 @@ export function JobsPage() {
                 onSearchChange={setHistorySearchBuffer}
             />
             <DeleteJobModal
-                job={jobToDelete}
-                isOpen={jobToDelete !== null}
-                close={() => setJobToDelete(null)}
+                job={deleteMutliple ? jobsToDelete : [jobToDelete]}
+                isOpen={
+                    deleteMutliple
+                        ? jobsToDelete && jobsToDelete.length !== 0
+                        : jobToDelete !== null
+                }
+                close={
+                    deleteMutliple
+                        ? () => {
+                              setJobsToDelete([]);
+                              setDeleteMultiple(false);
+                          }
+                        : () => {
+                              setJobToDelete(null);
+                          }
+                }
                 deleteJob={deleteJob}
             />
             <JobBuilderModal

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useFieldArray, useForm, Controller } from "react-hook-form";
 import { observer } from "mobx-react-lite";
-import { TableContainer } from "@mui/material";
+import { Checkbox, TableContainer } from "@mui/material";
 import {
     ControlPointDuplicateRounded,
     CalendarViewMonth,
@@ -14,9 +14,8 @@ import {
     Warning,
 } from "@mui/icons-material";
 
-import { usePixel, runPixel } from "@semoss/sdk";
+import { runPixel, usePixel } from "@semoss/sdk/react";
 import {
-    Checkbox,
     useNotification,
     Typography,
     TextField,
@@ -189,9 +188,9 @@ const SingleTableWrapper = styled("div")(() => ({
     marginLeft: "12.5px",
 }));
 
-const CheckAllIconButton = styled(IconButton)(() => ({
-    marginLeft: "-10px",
-}));
+// const CheckAllIconButton = styled(IconButton)(() => ({
+//     marginLeft: "-10px",
+// }));
 
 const AliasWarningIcon = styled(Tooltip)(() => ({
     marginLeft: "10px",
@@ -378,7 +377,8 @@ export const DataImportFormModal = observer(
         });
 
         const notification = useNotification();
-
+        /** Select all the rows from a Table */
+        const [isAllSelected, setIsAllSelected] = useState<boolean>(false);
         useEffect(() => {
             if (editMode)
                 retrieveDatabaseTablesAndEdges(cell.parameters.databaseId);
@@ -467,8 +467,6 @@ export const DataImportFormModal = observer(
         /** Create a New Cell and Add to Notebook */
         const appendCell = (widget: string) => {
             try {
-                const newCellId = `${Math.floor(Math.random() * 100000)}`;
-
                 const config: NewCellAction["payload"]["config"] = {
                     widget: DefaultCells[widget].widget,
                     parameters: DefaultCells[widget].parameters,
@@ -477,7 +475,7 @@ export const DataImportFormModal = observer(
                 if (widget === DataImportCellConfig.widget) {
                     config.parameters = {
                         ...DefaultCells[widget].parameters,
-                        frameVariableName: `FRAME_${newCellId}`,
+                        frameVariableName: `FRAME_${Math.floor(Math.random() * 100000)}`,
                         databaseId: selectedDatabaseId,
                         joins: watchedJoins,
                         selectQuery: pixelPartialRef.current,
@@ -504,25 +502,75 @@ export const DataImportFormModal = observer(
                     };
                 }
 
-                state.dispatch({
+                const newCellId = state.dispatch({
                     message: ActionMessages.NEW_CELL,
                     payload: {
                         queryId: query.id,
-                        cellId: newCellId,
                         previousCellId: previousCellId,
                         config: config as Omit<CellStateConfig, "id">,
                     },
+                }) as string;
+
+                state.dispatch({
+                    message: ActionMessages.ADD_VARIABLE,
+                    payload: {
+                        id: `${query.id}--${newCellId}`,
+                        type: 'cell',
+                        to: query.id,
+                        cellId: newCellId,
+                    },
                 });
+
                 notebook.selectCell(query.id, newCellId);
             } catch (e) {
                 console.error(e);
             }
         };
 
-        /** Add all the columns from a Table */
-        const addAllTableColumnsHandler = (event) => {
-            console.log(event);
-            // TODO: check all columns from table
+     
+        /**
+         * Handles the event when a user clicks the "Select All" button in the Data Import Form Modal.
+         * If the user clicks the button when all columns are already selected, it unselects all columns.
+         * If the user clicks the button when no columns are selected, it selects all columns.
+         * @param {number} tableIndex The index of the table in the watchedTables array.
+         */
+        const addAllTableColumnsHandler = (tableIndex: number) => {
+            setShownTables(new Set(tableNames));
+            setRootTable(watchedTables[tableIndex].name);
+            // Check if all columns are currently selected. If they are, set allChecked to false.
+            // If not, set allChecked to true.
+            const allChecked = !isAllSelected;
+            const updatedColumns = watchedTables[tableIndex].columns.map((column) => ({
+                ...column,
+                checked: allChecked,
+            }));
+
+            const freshAliasCountObj = {};
+            updatedColumns.forEach((column) => {
+                if (allChecked) {
+                    // If all columns are being selected, increment the alias count for this column's alias.
+                    const alias = column.userAlias;
+                    if (alias in freshAliasCountObj) {
+                        freshAliasCountObj[alias] += 1;
+                    } else {
+                        freshAliasCountObj[alias] = 1;
+                    }
+                }
+            });
+
+            // Update the aliasesCountObj state variable with the new alias count object.
+            setAliasesCountObj(freshAliasCountObj);
+            aliasesCountObjRef.current = { ...freshAliasCountObj };
+
+            // Update the form value for the columns of the table at the given index with the updated columns array.
+            formSetValue(`tables.${tableIndex}.columns`, updatedColumns, {
+                shouldDirty: true,
+                shouldValidate: true,
+            });
+
+            setCheckedColumnsCount(allChecked ? updatedColumns.length : 0);
+            setIsAllSelected(allChecked);
+            setJoinsStackHandler();
         };
 
         const updateSubmitDispatches = () => {
@@ -613,7 +661,7 @@ export const DataImportFormModal = observer(
 
         /** New Submit for Import Data --- empty */
         const onImportDataSubmit = (data: NewFormData) => {
-            console.log(data);
+            console.log("submitted data", data);
             if (editMode) {
                 retrievePreviewData();
                 updatePixelRef();
@@ -813,7 +861,6 @@ export const DataImportFormModal = observer(
                 setImportModalPixelWidth(IMPORT_MODAL_WIDTHS.large);
 
                 setTableNames(newTableNames);
-
                 // shown tables filtered only on init load of edit mode
                 if (editMode && !isInitLoadComplete) {
                     const newEdges = [
@@ -850,8 +897,7 @@ export const DataImportFormModal = observer(
                 const pixelTables: Set<string> = new Set();
                 const pixelColumnNames: string[] = [];
                 const pixelColumnAliases: string[] = [];
-                const pixelJoins: string[] = [];
-
+                const pixelJoins: string[] = [];             
                 watchedTables?.forEach((tableObject) => {
                     const currTableColumns = tableObject.columns;
                     currTableColumns?.forEach((columnObject) => {
@@ -1077,7 +1123,7 @@ export const DataImportFormModal = observer(
             oldAlias = null,
         ) => {
             const newAliasesCountObj = { ...aliasesCountObj };
-            if (isBeingAdded) {
+             if (isBeingAdded) {
                 if (newAliasesCountObj[newAlias] > 0) {
                     newAliasesCountObj[newAlias] =
                         newAliasesCountObj[newAlias] + 1;
@@ -1108,6 +1154,7 @@ export const DataImportFormModal = observer(
                     delete newAliasesCountObj[oldAlias];
                 }
             }
+
             setAliasesCountObj(newAliasesCountObj);
             aliasesCountObjRef.current = { ...newAliasesCountObj };
 
@@ -1141,6 +1188,16 @@ export const DataImportFormModal = observer(
                 setCheckedColumnsCount(checkedColumnsCount - 1);
             }
             setJoinsStackHandler();
+            // After unselecting a row, check if all are selected or not
+            const tables = dataImportwatch("tables");
+            const totalColumns = tables[tableIndex].columns.length;
+            const selectedCount = tables[tableIndex].columns.filter(
+                (col) => col.checked,
+            ).length;
+
+            if (selectedCount === totalColumns) {
+                setIsAllSelected(true);
+            }
         };
 
         /** Pre-Populate form For Edit  */
@@ -1151,7 +1208,6 @@ export const DataImportFormModal = observer(
             const newAliasesCountObj = {};
 
             setCheckedColumnsCount(cell.parameters.selectedColumns.length);
-
             cell.parameters.selectedColumns?.forEach(
                 (selectedColumnTableCombinedString, idx) => {
                     const [currTableName, currColumnName] =
@@ -1168,11 +1224,17 @@ export const DataImportFormModal = observer(
             setAliasesCountObj({ ...newAliasesCountObj });
             aliasesCountObjRef.current = { ...newAliasesCountObj };
 
+            let totalColumnsToCheck = 0;
+            let totalCheckedColumns = 0;
+
             if (newTableFields) {
                 newTableFields?.forEach((newTableObj, tableIdx) => {
                     if (tablesWithCheckedBoxes.has(newTableObj.name)) {
                         const watchedTableColumns =
                             watchedTables[tableIdx].columns;
+                        // Count total columns in this table
+                        totalColumnsToCheck += watchedTableColumns.length;
+
                         watchedTableColumns?.forEach(
                             (tableColumnObj, columnIdx) => {
                                 const columnName = `${tableColumnObj.tableName}__${tableColumnObj.columnName}`;
@@ -1183,6 +1245,7 @@ export const DataImportFormModal = observer(
                                         `tables.${tableIdx}.columns.${columnIdx}.checked`,
                                         true,
                                     );
+                                    totalCheckedColumns += 1;
                                     formSetValue(
                                         `tables.${tableIdx}.columns.${columnIdx}.userAlias`,
                                         columnAlias,
@@ -1190,6 +1253,17 @@ export const DataImportFormModal = observer(
                                 }
                             },
                         );
+                    }
+                    // If all columns in the table are checked, set isAllSelected to true.
+                    // Otherwise, set isAllSelected to false.
+                    // We do this by comparing the total number of columns in the table
+                    // (totalColumnsToCheck) to the total number of columns that are checked
+                    // (totalCheckedColumns). If the two values are equal, then all columns
+                    // are checked. If not, then some columns are not checked.
+                    if (totalCheckedColumns === totalColumnsToCheck && totalColumnsToCheck > 0) {
+                        setIsAllSelected(true);
+                    } else {
+                        setIsAllSelected(false);
                     }
                 });
             }
@@ -1294,7 +1368,6 @@ export const DataImportFormModal = observer(
             joinsSetCopy.add(newJoinSet);
             setJoinsSet(joinsSetCopy);
         };
-
         return (
             <Modal open={true} maxWidth="lg">
                 <Modal.Content sx={{ width: importModalPixelWidth }}>
@@ -1443,17 +1516,26 @@ export const DataImportFormModal = observer(
                                                                     <Table.Body>
                                                                         <Table.Row>
                                                                             <Table.Cell>
-                                                                                <CheckAllIconButton
-                                                                                    onClick={
-                                                                                        addAllTableColumnsHandler
-                                                                                    }
-                                                                                    color="primary"
-                                                                                    disabled={
-                                                                                        true
-                                                                                    }
-                                                                                >
-                                                                                    <AddBox />
-                                                                                </CheckAllIconButton>
+                                                                                <Checkbox
+                                                                                    checked={
+                                                                                        isAllSelected
+                                                                                    } // Checked if all rows are selected
+                                                                                    indeterminate={
+                                                                                        checkedColumnsCount >
+                                                                                            0 &&
+                                                                                        checkedColumnsCount <
+                                                                                            watchedTables[
+                                                                                                tableIndex
+                                                                                            ]
+                                                                                                .columns
+                                                                                                .length
+                                                                                    } 
+                                                                                    onChange={() =>
+                                                                                        addAllTableColumnsHandler(
+                                                                                            tableIndex,
+                                                                                        )
+                                                                                    } // Handle the toggle of "select all"
+                                                                                />
                                                                             </Table.Cell>
                                                                             <Table.Cell>
                                                                                 <ColumnNameText variant="body1">

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef, useLayoutEffect } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Add, Delete, Edit } from '@mui/icons-material';
 import SearchIcon from '@mui/icons-material/Search';
 import { AxiosResponse } from 'axios';
@@ -16,15 +16,17 @@ import {
     Search,
     useNotification,
     Box,
+    Stack,
 } from '@semoss/ui';
 
 import { ALL_TYPES } from '@/types';
 import { LoadingScreen } from '@/components/ui';
 import { useRootStore, useAPI, useSettings, useDebounceValue } from '@/hooks';
-import { SETTINGS_PROVISIONED_USER } from './settings.types';
+import { SETTINGS_PROVISIONED_USER, SETTINGS_ROLE } from './settings.types';
+import { permissionPriorityMapper } from '@/utility/general';
 import { MembersDeleteOverlay } from './MembersDeleteOverlay';
 import { MembersAddOverlay } from './MembersAddOverlay';
-
+import { UserPopover } from './UserPopover';
 const AvatarWrapper = styled('div')({
     display: 'inline-block',
     width: '50px',
@@ -159,19 +161,10 @@ const StyledCenteredBox = styled(Box)({
     alignItems: 'center',
     gap: '8px',
 });
-
-// maps for permissions,
-const permissionMapper = {
-    1: 'Author', // BE: 'DISPLAY'
-    OWNER: 'Author', // BE: 'DISPLAY'
-    Author: 'OWNER', // DISPLAY: BE
-    2: 'Editor', // BE: 'DISPLAY'
-    EDIT: 'Editor', // BE: 'DISPLAY'
-    Editor: 'EDIT', // DISPLAY: BE
-    3: 'Read-Only', // BE: 'DISPLAY'
-    READ_ONLY: 'Read-Only', // BE: 'DISPLAY'
-    'Read-Only': 'READ_ONLY', // DISPLAY: BE
-};
+const StyledNameStack = styled(Stack)({
+    alignItems: 'center',
+    flex: 1,
+});
 
 const formatValue = (input: string) => {
     if (input !== undefined) {
@@ -223,7 +216,7 @@ interface User {
 export const MembersTable = (props: MembersTableProps) => {
     const { id, type, onChange = () => null } = props;
 
-    const { monolithStore } = useRootStore();
+    const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
     const { adminMode } = useSettings();
 
@@ -241,6 +234,15 @@ export const MembersTable = (props: MembersTableProps) => {
     const [permissionOrder, setPermissionOrder] = useState<'asc' | 'desc'>(
         'asc',
     );
+    /** Utility for Popover */
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+    const [hoveredUser, setHoveredUser] = useState<User | null>(null);
+
+    const [userData, setUserData] = useState<SETTINGS_PROVISIONED_USER>(
+        {} as SETTINGS_PROVISIONED_USER,
+    );
+    const [userPermission, setUserPermission] =
+        useState<SETTINGS_ROLE>('Read-Only');
 
     // debounce the input
     const debouncedSearch = useDebounceValue(search);
@@ -259,58 +261,112 @@ export const MembersTable = (props: MembersTableProps) => {
     const memberSearchRef = useRef(undefined);
 
     // get the api
-    const getMembersApi: Parameters<typeof useAPI>[0] =
+    let getMembersApi: Parameters<typeof useAPI>[0] = null;
+    let getUserDataApi: Parameters<typeof useAPI>[0] = null;
+    if (type === 'APP') {
+        getUserDataApi = [
+            'getProjectUsers',
+            adminMode,
+            id,
+            configStore.store.user.id,
+            permissionPriorityMapper(permissionFilter)?.permission,
+            0, // offset
+            1, // limit
+        ];
+        getMembersApi = [
+            'getProjectUsers',
+            adminMode,
+            id,
+            debouncedSearch ? debouncedSearch : undefined,
+            permissionPriorityMapper(permissionFilter)?.permission,
+            (page + 1) * rowsPerPage - rowsPerPage, // offset
+            rowsPerPage, // limit
+        ];
+    } else if (
         type === 'DATABASE' ||
         type === 'STORAGE' ||
         type === 'MODEL' ||
         type === 'VECTOR' ||
         type === 'FUNCTION'
-            ? [
-                  'getEngineUsers',
-                  adminMode,
-                  id,
-                  debouncedSearch ? debouncedSearch : undefined,
-                  permissionMapper[permissionFilter],
-                  (page + 1) * rowsPerPage - rowsPerPage, // offset
-                  rowsPerPage, // limit
-              ]
-            : type === 'APP'
-            ? [
-                  'getProjectUsers',
-                  adminMode,
-                  id,
-                  debouncedSearch ? debouncedSearch : undefined,
-                  permissionMapper[permissionFilter],
-                  (page + 1) * rowsPerPage - rowsPerPage, // offset
-                  rowsPerPage, // limit
-              ]
-            : null;
+    ) {
+        getUserDataApi = [
+            'getEngineUsers',
+            adminMode,
+            id,
+            configStore.store.user.id,
+            permissionPriorityMapper(permissionFilter)?.permission,
+            0, // offset
+            1, // limit
+        ];
+        getMembersApi = [
+            'getEngineUsers',
+            adminMode,
+            id,
+            debouncedSearch ? debouncedSearch : undefined,
+            permissionPriorityMapper(permissionFilter)?.permission,
+            (page + 1) * rowsPerPage - rowsPerPage, // offset
+            rowsPerPage, // limit
+        ];
+    }
 
     const getMembers = useAPI(getMembersApi);
+    const userDetails = useAPI(getUserDataApi);
+
+    //Below UseEffect has been added so that search supersedes pagination , when the user goes to a different page and searches any user the pagination is set 0 and the user is being displayed.
+    useEffect(() => {
+        setPage(0);
+    }, [debouncedSearch]);
+
+    /**
+     * Sets the user details based on the current user in the members array.
+     * If the user is an admin, it sets the user permission to 'Author'.
+     * Otherwise, it sets the user permission based on the user's permission in the members array.
+     * @param members The array of members to set the user details from
+     */
+    const setUserDetails = () => {
+        setUserData(userDetails.data.members[0]);
+        if (adminMode) {
+            const adminPermissionPriority = 'Author';
+            setUserPermission(
+                permissionPriorityMapper(adminPermissionPriority)
+                    ?.permission as SETTINGS_ROLE,
+            );
+        } else {
+            setUserPermission(
+                permissionPriorityMapper(
+                    userDetails.data.members[0].permission === 'OWNER'
+                        ? 'Author'
+                        : userDetails.data.members[0].permission,
+                )?.permission as SETTINGS_ROLE,
+            );
+        }
+    };
 
     /**
      * When
      **/
     useEffect(() => {
-        if (getMembers.status !== 'SUCCESS' || !getMembers.data) {
+        if (userDetails.status !== 'SUCCESS' || !userDetails.data) {
             return;
         }
+        setUserDetails();
+    }, [userDetails.status]);
 
-        // setPage(0);
-        // setSelectedMembers([]);
-
-        // select the member when done mounting
-        memberSearchRef.current?.focus();
-    }, [getMembers.status, getMembers.data]);
-
-    // useLayoutEffect(() => {
-    //     if (getMembers.status !== 'SUCCESS' || !getMembers.data) {
-    //         return;
-    //     }
-
-    //     // select the member when done mounting
-    //     memberSearchRef.current?.focus();
-    // }, [getMembers.status, getMembers.data]);
+    /**
+     * Determines if the read-only option should be restricted for a given member.
+     * Restrictions apply when the module type is 'DATABASE' or 'APP', and the member
+     * is the currently logged-in user.
+     *
+     * @param member - The member to check for read-only restriction.
+     * @returns {boolean} - `true` if the read-only option is restricted for the member; otherwise, `false`.
+     */
+    const readOnlyRestricted = (member) => {
+        if (!userData) return false;
+        return (
+            (type === 'DATABASE' || type === 'APP') &&
+            member.name === userData.name
+        );
+    };
 
     /**
      * Update the selected users
@@ -471,7 +527,11 @@ export const MembersTable = (props: MembersTableProps) => {
                 Editor: 2,
                 'Read-Only': 3,
             };
-            return permissionOrder[permissionMapper[permission]] || 0;
+            return (
+                permissionOrder[
+                    permissionPriorityMapper(permission)?.permission
+                ] || 0
+            );
         };
         return [...renderedMembers].sort((a, b) => {
             // sort by permission
@@ -491,6 +551,7 @@ export const MembersTable = (props: MembersTableProps) => {
             return permissionComparison;
         });
     }, [renderedMembers, nameOrder, permissionOrder]);
+
     /**
      * Handle Table Sorting Logic for Names
      *
@@ -505,7 +566,12 @@ export const MembersTable = (props: MembersTableProps) => {
     const handlePermissionSort = () => {
         setPermissionOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     };
-
+    /**
+     * Handle user popover close
+     */
+    const handlePopoverClose = () => {
+        setAnchorEl(null);
+    };
     // Avatars rendered
     const Avatars = useMemo(() => {
         if (!renderedMembers.length) {
@@ -581,35 +647,46 @@ export const MembersTable = (props: MembersTableProps) => {
                                 </IconButton>
                             )}
                         </StyledSearchButtonContainer>
-
-                        <StyledDeleteSelectedContainer>
-                            {selectedMembers.length > 0 && (
-                                <Button
-                                    disabled={isLoading}
-                                    variant={'outlined'}
-                                    color="error"
-                                    onClick={() =>
-                                        openDeleteMembersModal(selectedMembers)
-                                    }
-                                >
-                                    Delete Selected
-                                </Button>
-                            )}
-                        </StyledDeleteSelectedContainer>
-                        <StyledAddMemberContainer>
-                            <Button
-                                disabled={isLoading}
-                                variant={'contained'}
-                                onClick={() => {
-                                    openAddMembersModal();
-                                }}
-                            >
-                                <StyledCenteredBox>
-                                    <Add />
-                                    Add Members
-                                </StyledCenteredBox>
-                            </Button>
-                        </StyledAddMemberContainer>
+                        {configStore.isEngineOperationAvailable(
+                            type,
+                            'access',
+                        ) && (
+                            <>
+                                <StyledDeleteSelectedContainer>
+                                    {selectedMembers.length > 0 && (
+                                        <Button
+                                            disabled={isLoading}
+                                            variant={'outlined'}
+                                            color="error"
+                                            onClick={() =>
+                                                openDeleteMembersModal(
+                                                    selectedMembers,
+                                                )
+                                            }
+                                        >
+                                            Delete Selected
+                                        </Button>
+                                    )}
+                                </StyledDeleteSelectedContainer>
+                                <StyledAddMemberContainer>
+                                    <Button
+                                        disabled={
+                                            isLoading ||
+                                            userPermission === 'Read-Only'
+                                        }
+                                        variant={'contained'}
+                                        onClick={() => {
+                                            openAddMembersModal();
+                                        }}
+                                    >
+                                        <StyledCenteredBox>
+                                            <Add />
+                                            Add Members
+                                        </StyledCenteredBox>
+                                    </Button>
+                                </StyledAddMemberContainer>
+                            </>
+                        )}
                     </StyledTableTitleContainer>
 
                     {isLoading ? (
@@ -629,6 +706,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 padding="checkbox"
                                             >
                                                 <Checkbox
+                                                    disabled={
+                                                        userPermission ===
+                                                        'Read-Only'
+                                                    }
                                                     checked={
                                                         selectedMembers.length ===
                                                             renderedMembers.length &&
@@ -672,6 +753,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 >
                                                     Permission
                                                 </Table.Sort>
+                                            </Table.Cell>
+                                            <Table.Cell size="small">
+                                                Permission Date
                                             </Table.Cell>
                                             {type === 'MODEL' && (
                                                 <>
@@ -717,6 +801,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                             padding="checkbox"
                                                         >
                                                             <StyledCheckbox
+                                                                disabled={
+                                                                    userPermission ===
+                                                                    'Read-Only'
+                                                                }
                                                                 checked={
                                                                     isSelected
                                                                 }
@@ -755,49 +843,121 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         </StyledTableCell>
                                                         <Table.Cell>
                                                             <StyledCenteredBox>
-                                                                <AvatarWrapper>
-                                                                    <Avatar>
-                                                                        {user.name[0].toUpperCase()}
-                                                                    </Avatar>
-                                                                </AvatarWrapper>
-                                                                {user.name}
+                                                                <StyledNameStack
+                                                                    direction="row"
+                                                                    onMouseEnter={(
+                                                                        event,
+                                                                    ) => {
+                                                                        setAnchorEl(
+                                                                            event.currentTarget,
+                                                                        );
+                                                                        setHoveredUser(
+                                                                            user,
+                                                                        );
+                                                                    }}
+                                                                    onMouseLeave={() =>
+                                                                        handlePopoverClose
+                                                                    }
+                                                                    aria-owns="mouse-over-popover"
+                                                                    aria-haspopup="true"
+                                                                >
+                                                                    <AvatarWrapper>
+                                                                        <Avatar>
+                                                                            {user.name[0].toUpperCase()}
+                                                                        </Avatar>
+                                                                    </AvatarWrapper>
+                                                                    {user.name}
+                                                                </StyledNameStack>
                                                             </StyledCenteredBox>
                                                         </Table.Cell>
                                                         <Table.Cell size="medium">
                                                             <RadioGroup
                                                                 row
                                                                 defaultValue={
-                                                                    permissionMapper[
-                                                                        user
-                                                                            .permission
-                                                                    ]
+                                                                    permissionPriorityMapper(
+                                                                        user.permission,
+                                                                    )
+                                                                        ?.permission
                                                                 }
+                                                                sx={{
+                                                                    flexWrap:
+                                                                        'nowrap',
+                                                                }}
                                                                 onChange={(
                                                                     e,
                                                                 ) => {
                                                                     updateSelectedUsers(
                                                                         [user],
-                                                                        permissionMapper[
+                                                                        permissionPriorityMapper(
                                                                             e
                                                                                 .target
-                                                                                .value
-                                                                        ],
+                                                                                .value,
+                                                                        )
+                                                                            ?.permission,
                                                                     );
                                                                 }}
                                                             >
                                                                 <RadioGroup.Item
                                                                     value="Author"
                                                                     label="Author"
+                                                                    disabled={
+                                                                        !configStore.isEngineOperationAvailable(
+                                                                            type,
+                                                                            'access',
+                                                                        ) ||
+                                                                        permissionPriorityMapper(
+                                                                            userPermission,
+                                                                        )
+                                                                            .priority >
+                                                                            1
+                                                                    }
                                                                 />
                                                                 <RadioGroup.Item
                                                                     value="Editor"
                                                                     label="Editor"
+                                                                    disabled={
+                                                                        (userPermission ===
+                                                                            'Editor' &&
+                                                                            user.permission ===
+                                                                                'OWNER') ||
+                                                                        !configStore.isEngineOperationAvailable(
+                                                                            type,
+                                                                            'access',
+                                                                        ) ||
+                                                                        permissionPriorityMapper(
+                                                                            userPermission,
+                                                                        )
+                                                                            ?.priority >
+                                                                            2
+                                                                    }
                                                                 />
                                                                 <RadioGroup.Item
                                                                     value="Read-Only"
                                                                     label="Read-Only"
+                                                                    disabled={
+                                                                        (userPermission ===
+                                                                            'Editor' &&
+                                                                            user.permission ===
+                                                                                'OWNER') ||
+                                                                        !configStore.isEngineOperationAvailable(
+                                                                            type,
+                                                                            'access',
+                                                                        ) ||
+                                                                        permissionPriorityMapper(
+                                                                            userPermission,
+                                                                        )
+                                                                            ?.priority >=
+                                                                            3 ||
+                                                                        readOnlyRestricted(
+                                                                            user,
+                                                                        )
+                                                                    }
                                                                 />
                                                             </RadioGroup>
+                                                        </Table.Cell>
+                                                        <Table.Cell>
+                                                            {user?.date_added ??
+                                                                'Not Available'}
                                                         </Table.Cell>
                                                         {type === 'MODEL' && (
                                                             <>
@@ -841,6 +1001,14 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                         user,
                                                                     );
                                                                 }}
+                                                                disabled={
+                                                                    !configStore.isEngineOperationAvailable(
+                                                                        type,
+                                                                        'access',
+                                                                    ) ||
+                                                                    userPermission ===
+                                                                        'Read-Only'
+                                                                }
                                                             >
                                                                 <Edit />
                                                             </IconButton>
@@ -850,6 +1018,14 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                         [user],
                                                                     );
                                                                 }}
+                                                                disabled={
+                                                                    !configStore.isEngineOperationAvailable(
+                                                                        type,
+                                                                        'access',
+                                                                    ) ||
+                                                                    userPermission ===
+                                                                        'Read-Only'
+                                                                }
                                                             >
                                                                 <Delete></Delete>
                                                             </IconButton>
@@ -885,22 +1061,45 @@ export const MembersTable = (props: MembersTableProps) => {
                                             />
                                         </Table.Row>
                                     </Table.Footer>
+                                    <UserPopover
+                                        hoveredUser={
+                                            hoveredUser
+                                                ? {
+                                                      id: hoveredUser.id,
+                                                      name:
+                                                          hoveredUser.name ||
+                                                          'Unknown',
+                                                      email:
+                                                          hoveredUser.email ||
+                                                          '',
+                                                  }
+                                                : null
+                                        }
+                                        isPopoverOpen={Boolean(anchorEl)}
+                                        anchorEl={anchorEl}
+                                        handlePopoverClose={handlePopoverClose}
+                                    />
                                 </StyledMemberTable>
                             ) : (
                                 <StyledNoMembersDiv>
                                     <Typography variant={'body2'}>
                                         No members
                                     </Typography>
-                                    <Button
-                                        disabled={isLoading}
-                                        variant={'contained'}
-                                        onClick={() => {
-                                            setAddModalUser(null);
-                                            openAddMembersModal();
-                                        }}
-                                    >
-                                        Add Members
-                                    </Button>
+                                    {configStore.isEngineOperationAvailable(
+                                        type,
+                                        'access',
+                                    ) && (
+                                        <Button
+                                            disabled={isLoading}
+                                            variant={'contained'}
+                                            onClick={() => {
+                                                setAddModalUser(null);
+                                                openAddMembersModal();
+                                            }}
+                                        >
+                                            Add Members
+                                        </Button>
+                                    )}
                                 </StyledNoMembersDiv>
                             )}
                         </>
@@ -936,6 +1135,7 @@ export const MembersTable = (props: MembersTableProps) => {
                 open={addMembersModal}
                 user={addModalUser}
                 setAddModalUser={setAddModalUser}
+                userPermission={userPermission}
                 onClose={(success) => {
                     // clear out the deleted members
                     setAddMembersModal(false);

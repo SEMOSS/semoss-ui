@@ -1,4 +1,8 @@
+import { useEffect, useMemo, useState } from "react";
+import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
+import { Sync } from "@mui/icons-material";
+import { Stack } from "@mui/material";
 import {
     Autocomplete,
     IconButton,
@@ -12,13 +16,9 @@ import {
     useFrameHeaders,
 } from "../../../../../hooks";
 import { BaseSettingSection } from "../../../../block-settings";
-import { Sync } from "@mui/icons-material";
 
-import { Stack } from "@mui/material";
 import { GridBlockColumn } from "../../../grid-block/grid-block.types";
-import { useEffect, useMemo, useState } from "react";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
-import { computed } from "mobx";
 
 import { getValueByPath } from "../../../../../utility";
 import { Paths } from "@/types";
@@ -122,7 +122,6 @@ export const MapChartBlockSettings = observer(
          * @param {string} label - The selected label alias.
          */
         const handleChangeLabel = (label) => {
-            // debugger;
             // Parse the current value from JSON
             const tempValue = JSON.parse(value);
 

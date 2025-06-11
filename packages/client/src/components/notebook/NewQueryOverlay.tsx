@@ -58,7 +58,7 @@ export const NewQueryOverlay = observer(
             if (!data.ID) {
                 setError('ID', {
                     type: 'manual',
-                    message: `Query Id is required`,
+                    message: `Notebook Id is required`,
                 });
                 return;
             }
@@ -67,7 +67,7 @@ export const NewQueryOverlay = observer(
             if (state.queries[data.ID] || state.blocks[data.ID]) {
                 setError('ID', {
                     type: 'manual',
-                    message: `Query Id ${data.ID} already exists`,
+                    message: `Notebook Id ${data.ID} already exists`,
                 });
                 return;
             }
@@ -76,7 +76,6 @@ export const NewQueryOverlay = observer(
             const defaultCells = [];
             if (configStore.store.config.python) {
                 defaultCells.push({
-                    id: `${Math.floor(Math.random() * 100000)}`,
                     widget: 'code',
                     parameters: {
                         code: '',
@@ -85,7 +84,6 @@ export const NewQueryOverlay = observer(
                 });
             } else if (configStore.store.config.r) {
                 defaultCells.push({
-                    id: `${Math.floor(Math.random() * 100000)}`,
                     widget: 'code',
                     parameters: {
                         code: '',
@@ -94,7 +92,6 @@ export const NewQueryOverlay = observer(
                 });
             } else {
                 defaultCells.push({
-                    id: `${Math.floor(Math.random() * 100000)}`,
                     widget: 'code',
                     parameters: {
                         code: '',

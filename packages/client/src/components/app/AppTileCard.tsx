@@ -26,6 +26,7 @@ import { APP_IMAGES } from './app.images';
 import { removeUnderscores } from '@/utility';
 import { AppDeleteModal } from '@/components/app';
 import { useNavigate } from 'react-router-dom';
+import { AddAppCloneModal } from '@/components/app/save-app/AddAppCloneModal';
 
 const StyledName = styled(Typography)(() => ({
     fontWeight: 500,
@@ -198,6 +199,11 @@ interface AppTileCardProps {
     systemApp?: boolean;
 
     /**
+     * Show bookmark
+     */
+    isDiscoverable?: boolean;
+
+    /**
      * Action triggered when deleted
      */
     onDelete?: () => void;
@@ -213,6 +219,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
         favorite,
         appType,
         systemApp,
+        isDiscoverable = false,
         onDelete,
     } = props;
 
@@ -220,11 +227,18 @@ export const AppTileCard = (props: AppTileCardProps) => {
     const navigate = useNavigate();
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
+    const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isAppDeleteModalOpen, setIsAppDeleteModalOpen] = useState(false);
 
     const open = Boolean(anchorEl);
 
+    const navigateApp = (appId: string) => {
+        if (!appId) {
+            return;
+        }
+
+        navigate(`/workspace/${appId}`);
+    };
     const copyProjectId = (projectId: string) => {
         try {
             navigator.clipboard.writeText(projectId);
@@ -245,12 +259,20 @@ export const AppTileCard = (props: AppTileCardProps) => {
     const createdDate = useMemo(() => {
         const d = dayjs(app.project_date_created);
         if (!d.isValid()) {
-            return `Published ${dayjs().format('MMMM D, YYYY')}`;
+            return null;
         }
 
         return `Published ${d.format('MMMM D, YYYY')}`;
     }, [app.project_date_created]);
 
+    const lastEditedDate = useMemo(() => {
+        const d = dayjs(app.project_date_last_edited);
+        if (!d.isValid()) {
+            return null;
+        }
+
+        return `Last Edited ${d.format('MMMM D, YYYY')}`;
+    }, [app.project_date_last_edited]);
     /**
      * @name findAppImage
      * @params appType
@@ -267,7 +289,8 @@ export const AppTileCard = (props: AppTileCardProps) => {
         if (!image) {
             return APP_IMAGES['INSIGHTS'][0];
         }
-
+        // eliminating random and making it static for now
+        randomInt = 0;
         return image[randomInt];
     };
 
@@ -322,7 +345,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
     return (
         <StyledTileCard disabled={!href}>
-            {!systemApp && (
+            {!systemApp && !isDiscoverable && (
                 <StyledContainer>
                     <StyledOverlayContent>
                         <StyledIconButton
@@ -418,12 +441,22 @@ export const AppTileCard = (props: AppTileCardProps) => {
                                 />
                             ))}
                     </Stack>
-                    <StyledPublishedByContainer>
-                        <StyledAccessTimeIcon />
-                        <StyledPublishedByLabel variant={'body2'}>
-                            {createdDate}
-                        </StyledPublishedByLabel>
-                    </StyledPublishedByContainer>
+                    {createdDate && (
+                        <StyledPublishedByContainer>
+                            <StyledAccessTimeIcon />
+                            <StyledPublishedByLabel variant={'body2'}>
+                                {createdDate}
+                            </StyledPublishedByLabel>
+                        </StyledPublishedByContainer>
+                    )}
+                    {lastEditedDate && (
+                        <StyledPublishedByContainer>
+                            <StyledAccessTimeIcon />
+                            <StyledPublishedByLabel variant={'body2'}>
+                                {lastEditedDate}
+                            </StyledPublishedByLabel>
+                        </StyledPublishedByContainer>
+                    )}
                     {systemApp && !appDetails && <StyledPlaceholder />}
                 </Card.Content>
                 <StyledCardActions>
@@ -478,6 +511,16 @@ export const AppTileCard = (props: AppTileCardProps) => {
                 </Menu.Item>
                 {app?.user_permission && app.user_permission < 2 && (
                     <Menu.Item
+                        value="clone"
+                        onClick={() => {
+                            setIsUploadOpen(true);
+                        }}
+                    >
+                        Clone This App
+                    </Menu.Item>
+                )}
+                {app?.user_permission && app.user_permission < 2 && (
+                    <Menu.Item
                         value="delete"
                         onClick={() => {
                             setIsAppDeleteModalOpen(true);
@@ -499,6 +542,22 @@ export const AppTileCard = (props: AppTileCardProps) => {
                     onDelete();
                 }}
             />
+            {isUploadOpen ? (
+                <AddAppCloneModal
+                    open={isUploadOpen}
+                    appId={app.project_id}
+                    handleClose={(appId) => {
+                        console.log('ok');
+                        // if there is an appId navigate to it
+                        if (appId) {
+                            navigateApp(appId);
+                        }
+
+                        // close it
+                        setIsUploadOpen(false);
+                    }}
+                />
+            ) : null}
         </StyledTileCard>
     );
 };

@@ -160,17 +160,22 @@ export const EngineCatalogPage = observer(
         const dbPixelPrefix: string =
             mode === 'Mine' ? `MyEngines` : 'MyDiscoverableEngines';
 
+        const isDiscoverable = mode !== 'Mine';
+
         const metaKeysDescription = [...metaKeys, 'description'];
 
-        const getFavoritedDatabases = usePixel(`
+        const getFavoritedDatabases = usePixel(
+            !isDiscoverable &&
+                `
         ${dbPixelPrefix}(metaKeys = ${JSON.stringify(
-            metaKeysDescription,
-        )}, metaFilters = [ ${JSON.stringify(
-            metaFilters,
-        )} ] , filterWord=["${search}"], onlyFavorites=[true], ${
-            route ? `engineTypes=['${route.type}']` : ''
-        });
-    `);
+                    metaKeysDescription,
+                )}, metaFilters = [ ${JSON.stringify(
+                    metaFilters,
+                )} ] , filterWord=["${search}"], onlyFavorites=[true], ${
+                    route ? `engineTypes=['${route.type}']` : ''
+                });
+    `,
+        );
 
         const getDatabases = usePixel<
             {
@@ -507,30 +512,36 @@ export const EngineCatalogPage = observer(
                                     }}
                                 />
                             </Stack>
-                            <Stack
-                                direction="row"
-                                alignItems={'center'}
-                                spacing={3}
-                            >
-                                <Button
-                                    size={'large'}
-                                    variant={'contained'}
-                                    onClick={() => {
-                                        if (!route) {
-                                            navigate('/import');
-                                        } else if (route.type) {
-                                            navigate(
-                                                `/import?type=${route.type.toLowerCase()}`,
-                                            );
-                                        }
-                                    }}
-                                    aria-label={`Navigate to import ${
-                                        route ? route.name : 'Engine'
-                                    }`}
+                            {configStore.isEngineOperationAvailable(
+                                route.type,
+                                'add',
+                            ) && (
+                                <Stack
+                                    direction="row"
+                                    alignItems={'center'}
+                                    spacing={3}
                                 >
-                                    Add {route ? route.name : 'Engine'}
-                                </Button>
-                            </Stack>
+                                    <Button
+                                        size={'large'}
+                                        variant={'contained'}
+                                        onClick={() => {
+                                            if (!route) {
+                                                navigate('/import');
+                                            } else if (route.type) {
+                                                navigate(
+                                                    `/import?type=${route.type.toLowerCase()}`,
+                                                );
+                                            }
+                                        }}
+                                        aria-label={`Navigate to import ${
+                                            route ? route.name : 'Engine'
+                                        }`}
+                                        data-testid={'engine-catalog-add-btn'}
+                                    >
+                                        Add {route ? route.name : 'Engine'}
+                                    </Button>
+                                </Stack>
+                            )}
                         </Stack>
                         <Stack
                             direction="row"
@@ -595,13 +606,15 @@ export const EngineCatalogPage = observer(
                         {'bi'.includes(search.toLowerCase()) &&
                             Object.entries(metaFilters).length === 0 &&
                             'terminal'.includes(search.toLowerCase()) &&
+                            !isDiscoverable &&
                             favoritedDbs.length > 0 && (
                                 <StyledSectionLabel variant="subtitle1">
                                     Bookmarked
                                 </StyledSectionLabel>
                             )}
 
-                        {favoritedDbs.length &&
+                        {!isDiscoverable &&
+                        favoritedDbs.length &&
                         Object.entries(metaFilters).length === 0 ? (
                             <Grid container spacing={3}>
                                 {favoritedDbs.map((db) => {
@@ -622,9 +635,14 @@ export const EngineCatalogPage = observer(
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
                                                 isUpvoted={db.hasUpvoted}
-                                                isFavorite={isFavorited(
-                                                    db.database_id,
-                                                )}
+                                                isFavorite={
+                                                    isDiscoverable
+                                                        ? false
+                                                        : isFavorited(
+                                                              db.database_id,
+                                                          )
+                                                }
+                                                isDiscoverable={isDiscoverable}
                                                 onClick={() => {
                                                     navigate(
                                                         `${db.database_id}`,
@@ -679,9 +697,14 @@ export const EngineCatalogPage = observer(
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
                                                 isUpvoted={db.hasUpvoted}
-                                                isFavorite={isFavorited(
-                                                    db.database_id,
-                                                )}
+                                                isFavorite={
+                                                    isDiscoverable
+                                                        ? false
+                                                        : isFavorited(
+                                                              db.database_id,
+                                                          )
+                                                }
+                                                isDiscoverable={isDiscoverable}
                                                 onClick={() => {
                                                     navigate(
                                                         `${db.database_id}`,
