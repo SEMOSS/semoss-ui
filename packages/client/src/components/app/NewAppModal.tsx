@@ -28,6 +28,7 @@ type NewAppForm = {
     APP_NAME: string;
     APP_DESCRIPTION: string;
     APP_TAGS: string[];
+    APP_IMG: File[] | null;
 };
 
 interface NewAppModalProps {
@@ -54,6 +55,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
             APP_NAME: '',
             APP_DESCRIPTION: '',
             APP_TAGS: [],
+            APP_IMG: null,
         },
     });
 
@@ -95,6 +97,10 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
                 appId = pixelReturn[0].output.project_id;
 
+                // upload the image
+                if (data.APP_IMG && appId) {
+                    await monolithStore.uploadImage(data.APP_IMG, appId);
+                }
                 // after the project is created check for metadata. If true, run SetProjectMeta
                 if (data['APP_TAGS'].length || data['APP_DESCRIPTION']) {
                     const setProjectMetadataResponse =
@@ -136,6 +142,11 @@ export const NewAppModal = (props: NewAppModalProps) => {
                 }
 
                 appId = pixelReturn[0].output.project_id;
+
+                // upload the image
+                if (data.APP_IMG && appId) {
+                    await monolithStore.uploadImage(data.APP_IMG, appId);
+                }
 
                 // after the project is created run a pixel to create a new portals/index.html file
                 // use the returned projectId
@@ -289,6 +300,35 @@ export const NewAppModal = (props: NewAppModalProps) => {
                                                 placeholder='Press "Enter" to add tag'
                                             />
                                         )}
+                                    />
+                                );
+                            }}
+                        />
+                        <Controller
+                            name={'APP_IMG'}
+                            control={control}
+                            rules={{}}
+                            render={({ field }) => {
+                                return (
+                                    <TextField
+                                        label="Image"
+                                        variant="outlined"
+                                        disabled={isLoading}
+                                        type="file"
+                                        inputProps={{
+                                            accept: 'image/*',
+                                        }}
+                                        InputLabelProps={{
+                                            shrink: true,
+                                        }}
+                                        onChange={(e) => {
+                                            const value = (
+                                                e.target as HTMLInputElement
+                                            ).files;
+                                            if (value && value.length > 0) {
+                                                field.onChange(value[0]);
+                                            }
+                                        }}
                                     />
                                 );
                             }}

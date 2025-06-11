@@ -76,6 +76,8 @@ export { default as DIVIDER_ACTIVE } from './Divider_Active.png';
 export { default as DIVIDER_HOVER } from './Divider_Hover.png';
 export { default as SLIDER_ACTIVE } from './Slider_Active.png';
 export { default as SLIDER_HOVER } from './Slider_Hover.png';
+export { default as RATING_ACTIVE } from './Rating_Active.png';
+export { default as RATING_HOVER } from './Rating_Hover.png';
 
 // CHARTS
 export { default as AREA_CHART_ACTIVE } from './Area_Chart_Active.png';
@@ -104,3 +106,5 @@ export { default as GANTT_CHART_ACTIVE } from './Gantt_Chart_Active.png';
 export { default as GANTT_CHART_HOVER } from './Gantt_Chart_Hover.png';
 export { default as DENDROGRAM_CHART_ACTIVE } from './Dendrogram_Active.png';
 export { default as DENDROGRAM_CHART_HOVER } from './Dendrogram_Hover.png';
+export { default as VISUALIZATION_FILTER_ACTIVE } from './Viz_Filter_Active.png';
+export { default as VISUALIZATION_FILTER_HOVER } from './Viz_Filter_Hover.png';
