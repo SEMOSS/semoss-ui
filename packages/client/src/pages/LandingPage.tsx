@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { Navigate, useNavigate } from 'react-router-dom';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
-import { Button, Box, Chip, Container, Typography, styled } from '@semoss/ui';
+import { Box, Chip, Container, Typography, styled } from '@semoss/ui';
 import { STATE_VERSION } from '@semoss/renderer';
 
 import { UserLandingPage } from '../components/landing/UserlandingPage';
@@ -144,7 +144,7 @@ export const LandingPage = observer(() => {
                             imageUrl={DevBanner}
                             link={{
                                 label: 'Browse Templates',
-                                to: '/marketplace',
+                                to: '/app/new',
                             }}
                         />
                         <div

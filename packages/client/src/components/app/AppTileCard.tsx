@@ -871,29 +871,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
                                             />
                                         </StyledFooterDiv>
                                     </StyledOpenButton>
-                                    {/* <StyledOpenButton
-    sx={{
-        border: '1px solid #9FCFFF',
-        borderRadius: '12px'
-    }}
->
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                height: '30px',
-                                                width: '123px',
-                                                gap: '8px',
-                                                justifyContent: 'center',
-                                                flex: '1 0 0',
-                                               // borderRadius: '12px',
-                                               // background: '#0471F0',
-                                               //border:'#9FCFFF'
-                                            }}
-                                        >
-                                            <ViewDetailsButtonName>View Details</ViewDetailsButtonName>
-                                        </div>
-                                    </StyledOpenButton> */}
                                 </StyledFooter>
                             ) : (
                                 <StyledFooter>
@@ -916,28 +893,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
                                             </StyledFooterDiv>
                                         </StyledOpenButton>
                                     </Link>
-                                    {/* <StyledOpenButton
-                                sx={{
-        border: '1px solid #9FCFFF',
-        borderRadius: '12px'
-    }}>
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                height: '30px',
-                                                width: '123px',
-                                                gap: '8px',
-                                                justifyContent: 'center',
-                                                flex: '1 0 0',
-                                               // borderRadius: '12px',
-                                               // background: '#0471F0',
-                                              // border:'#9FCFFF'
-                                            }}
-                                        >
-                                            <ViewDetailsButtonName>View Details</ViewDetailsButtonName>
-                                        </div>
-                                    </StyledOpenButton> */}
                                 </StyledFooter>
                             )}
                             {app.project_created_by !== 'SYSTEM' ? (

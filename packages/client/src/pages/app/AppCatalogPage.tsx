@@ -420,7 +420,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
                                               href={
                                                   mode === 'Discoverable'
                                                       ? `#/app/${app.project_id}/detail`
-                                                      : `#/app/${app.project_id}`
+                                                      : `#/app/${app.project_id}/view`
                                               }
                                               onAction={() => {
                                                   if (mode === 'Discoverable') {
@@ -429,7 +429,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
                                                       );
                                                   } else {
                                                       navigate(
-                                                          `/app/${app.project_id}`,
+                                                          `/app/${app.project_id}/view`,
                                                       );
                                                   }
                                               }}
@@ -507,7 +507,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
                                             href={
                                                 mode === 'Discoverable'
                                                     ? `#/app/${app.project_id}/detail`
-                                                    : `#/app/${app.project_id}`
+                                                    : `#/app/${app.project_id}/view`
                                             }
                                             onAction={() => {
                                                 if (mode === 'Discoverable') {
@@ -516,7 +516,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
                                                     );
                                                 } else {
                                                     navigate(
-                                                        `/app/${app.project_id}`,
+                                                        `/app/${app.project_id}/view`,
                                                     );
                                                 }
                                             }}

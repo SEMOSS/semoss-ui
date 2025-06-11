@@ -43,9 +43,6 @@ const StyledContent = styled('div')(({ theme }) => ({
     height: '100%',
     width: '100%',
     overflow: 'hidden',
-    // paddingLeft: theme.spacing(1.5),
-    // paddingRight: theme.spacing(1.5),
-    // paddingBottom: theme.spacing(1.5),
 }));
 
 export const AppPage = observer(() => {
@@ -85,68 +82,6 @@ export const AppPage = observer(() => {
 
     return (
         <StyledViewport>
-            {/* <NavigationBar
-                left={
-                    <Stack
-                        direction={'row'}
-                        gap={1}
-                        alignItems={'center'}
-                        width={'100%'}
-                    >
-                        <Avatar
-                            sx={{ width: '30px', height: '30px' }}
-                            variant="rounded"
-                            src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
-                        />
-                        <Typography variant={'subtitle1'}>
-                            {workspace.metadata.project_name}
-                        </Typography>
-                    </Stack>
-                }
-                onOpen={() => {
-                    // TODO
-                }}
-                right={
-                    <Stack
-                        direction={'row'}
-                        gap={1}
-                        justifyContent={'flex-end'}
-                        alignItems={'center'}
-                    >
-                        <Tooltip title={'Share App'}>
-                            <IconButton
-                                size="small"
-                                color="default"
-                                onClick={() => {
-                                    setIsShareOpen(true);
-                                }}
-                                data-testid={'app-page-share-btn'}
-                            >
-                                <ShareRounded fontSize={'inherit'} />
-                            </IconButton>
-                        </Tooltip>
-
-                        <Button
-                            variant="contained"
-                            size={'small'}
-                            color="primary"
-                            disabled={
-                                !(
-                                    workspace.role === 'OWNER' ||
-                                    workspace.role === 'EDIT'
-                                )
-                            }
-                            endIcon={<EditOutlined fontSize="inherit" />}
-                            component={Link}
-                            //@ts-expect-error this is expected. props are forwarded
-                            to={`../../../workspace/${appId}`}
-                            data-testid={'app-page-edit-btn'}
-                        >
-                            Edit
-                        </Button>
-                    </Stack>
-                }
-            /> */}
             <StyledContent sx={{ paddingLeft: '40px', paddingRight: '40px' }}>
                 {workspace.type === 'BLOCKS' ? (
                     <Renderer appId={appId} insightId={workspace.insightId} />

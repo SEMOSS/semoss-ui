@@ -33,30 +33,54 @@ export const LinkBlock: BlockComponent = observer(({ id }) => {
         }
     }, []);
 
-    const isFullUrl = (href:string) => {
-        return /^(https?:)?\/\//.test(data.href)
-    }
+    const isFullUrl = (href: string) => {
+        return /^(https?:)?\/\//.test(data.href);
+    };
+
+    // const navigate = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    //     if(!data.href) return;
+    //     debugger
+    //     if(isFullUrl(data.href)){
+    //         return
+    //     } else if (data.href.startsWith("/")) {
+    //         e.preventDefault()
+
+    //         const hash = window.location.hash
+    //         const match = hash.match(/^#\/[^/]+\/[^/]+/)
+
+    //         if(match) {
+    //             const base  = match[0]
+
+    //             const newHash = base + (data.href.startsWith("/") ? data.href : "/")
+
+    //             window.location.hash = newHash
+    //         }
+    //     }
+
+    // }
 
     const navigate = (e: React.MouseEvent<HTMLAnchorElement>) => {
-        if(!data.href) return;
-        if(isFullUrl(data.href)){
-            return
+        if (!data.href) return;
+
+        if (isFullUrl(data.href)) {
+            return; // External link, let default behavior happen
         } else if (data.href.startsWith("/")) {
-            e.preventDefault()
+            e.preventDefault();
 
-            const hash = window.location.hash 
-            const match = hash.match(/^#\/[^/]+\/[^/]+/)
+            const hash = window.location.hash;
+            // Match either #/s/:id/ or #/:id/view
+            const appPageMatch = hash.match(/^#\/app\/([^/]+)\/view/)
+            const sharePageMatch = hash.match(/^#\/s\/([^/]+)/)
 
-            if(match) {
-                const base  = match[0]
+            if (appPageMatch || sharePageMatch) {
+                const base = appPageMatch ? appPageMatch[0] : sharePageMatch[0]; // This will be either #/s/:id/ or #/:id/view
+                const newHash = base.replace(/\/$/, "") + data.href; // Avoid double slashes
 
-                const newHash = base + (data.href.startsWith("/") ? data.href : "/")
-
-                window.location.hash = newHash
+                window.location.hash = newHash;
             }
         }
+    };
 
-    }
     return (
         <a
             href={data.href}

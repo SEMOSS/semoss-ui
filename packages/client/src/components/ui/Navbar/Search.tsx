@@ -27,23 +27,15 @@ import { ENGINE_IMAGES } from '@/pages/import/import.constants';
 import BRAIN from '@/assets/img/BRAIN.png';
 import { useRootStore } from '@/hooks';
 
-// Dummy data for illustration
+// Categories we can search
 const categories = [
     { name: 'All', type: 'All' },
     { name: 'Apps', type: 'PROJECT' },
-    { name: 'Catalogs', type: 'ENGINE' },
-    // { name: 'Model', type: 'MODEL' },
-    // { name: 'Vector', type: 'VECTOR' },
-    // { name: 'Database', type: 'DATABASE' },
-    // { name: 'Function', type: 'FUNCTION' },
-    // { name: 'Storage', type: 'STORAGE' },
-    // { name: 'Teams', type: 'Team' },
-    // { name: 'Settings', type: 'Settings' },
-];
-const recentSearches = [
-    // { label: 'Project Alpha' },
-    // { label: 'Project Beta' },
-    // { label: 'Dashboard 2024' },
+    { name: 'Model', type: 'MODEL' },
+    { name: 'Vector', type: 'VECTOR' },
+    { name: 'Database', type: 'DATABASE' },
+    { name: 'Function', type: 'FUNCTION' },
+    { name: 'Storage', type: 'STORAGE' },
 ];
 
 const CatalogItem = ({
@@ -195,9 +187,9 @@ const Search = observer(({ renderInput }: SearchProps) => {
     const result = usePixel(`
         MyEngineProject(metaKeys = ${JSON.stringify(
             [],
-        )}, metaFilters=[{}], filterWord=["${searchValue}"], type=["${
-        isAll ? '' : selectedCategories.map((x) => x.type)
-    }"], sub_type=[], onlyPortals=[true]);
+        )}, metaFilters=[{}], filterWord=["${searchValue}"], type=[[${
+        isAll ? '' : selectedCategories.map((x) => `"${x.type}"`)
+    }]]);
         `);
     if (result.data !== null && Array.isArray(result.data)) {
         data = result.data.map((x) => {
@@ -290,7 +282,7 @@ const Search = observer(({ renderInput }: SearchProps) => {
             type: option.section,
         });
         if (option.section === 'APP') {
-            navigate(`/app/${option.id}`);
+            navigate(`/app/${option.id}/view`);
         } else {
             navigate(`/engine/${option.section.toLowerCase()}/${option.id}`);
         }
