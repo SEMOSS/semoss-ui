@@ -501,7 +501,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                 const languageFunctions =
                                     allFunctions.find(f => f.key.toLowerCase() === language.toLowerCase())?.value || [];
 
-                                // Suggest common Python functions if word is not empty
                                 if (word.word !== "") {
                                     const suggestions = languageFunctions.map(fn => ({
                                         label: {
@@ -519,8 +518,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                     }));
                                     return { suggestions };
                                 }
-
-                                // ...existing code for special character handling...
                                 const specialCharacterStartRange = {
                                     startLineNumber: position.lineNumber,
                                     endLineNumber: position.lineNumber,
