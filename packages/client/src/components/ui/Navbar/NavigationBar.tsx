@@ -23,6 +23,8 @@ import { useRootStore } from '@/hooks';
 import Search from './Search';
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
+    position: 'sticky',
+    top: '0',
     borderBottom: '1px solid #EAEAEE',
     background: '#FAFAFA', //"var(--Background-Paper-2, #FAFAFA)",
     color: '#666666', //"var(--Text-Primary-1, #212B36)",
@@ -160,153 +162,153 @@ const StyledHeaderLogo = styled(Link)(({ theme }) => ({
 }));
 
 interface NavigationBarProps {
-    left?: React.ReactNode;
+    isPinned: boolean;
     right?: React.ReactNode;
     onOpen: () => void;
 }
-export const NavigationBar = observer((props: NavigationBarProps) => {
-    const { onOpen, left, right } = props;
-    const { configStore } = useRootStore();
-    const location = useLocation();
+export const NavigationBar: React.FC<NavigationBarProps> = observer(
+    ({ isPinned, onOpen, right }) => {
+        const { configStore } = useRootStore();
+        const location = useLocation();
 
-    const [showAppBuilder, setShowAppBuilder] = useState(false);
+        const [showAppBuilder, setShowAppBuilder] = useState(false);
 
-    const themeMap = useMemo(() => {
-        const theme = configStore.store.config['theme'];
+        const themeMap = useMemo(() => {
+            const theme = configStore.store.config['theme'];
 
-        if (theme && theme['THEME_MAP']) {
-            try {
-                return JSON.parse(theme['THEME_MAP'] as string);
-            } catch {
-                return {};
+            if (theme && theme['THEME_MAP']) {
+                try {
+                    return JSON.parse(theme['THEME_MAP'] as string);
+                } catch {
+                    return {};
+                }
             }
-        }
 
-        return {};
-    }, [Object.keys(configStore.store.config).length]);
+            return {};
+        }, [Object.keys(configStore.store.config).length]);
 
-    useEffect(() => {
-        setShowAppBuilder(configStore.store.isAppBuilder);
-    }, [configStore.store.isAppBuilder]);
+        useEffect(() => {
+            setShowAppBuilder(configStore.store.isAppBuilder);
+        }, [configStore.store.isAppBuilder]);
 
-    return (
-        <StyledAppBar>
-            <StyledContainer maxWidth={false} sx={{ maxWidth: '1440px' }}>
-                <Stack
-                    direction={'row'}
-                    alignItems={'center'}
-                    pl={5}
-                    pr={5}
-                    width={'100%'}
-                    justifyContent={'space-between'}
-                >
-                    <StyledLeftSection>
-                        <StyledIconButton
-                            size="medium"
-                            // edge="start"
-                            color="inherit"
-                            aria-label="menu"
-                            onClick={() => onOpen()}
-                        >
-                            <MenuIcon
-                                sx={{
-                                    width: '22.5px',
-                                    height: '22.5px',
-                                }}
-                            />
-                        </StyledIconButton>
-                        {left ? (
-                            left
-                        ) : (
-                            <StyledHeaderLogo to={'/'}>
-                                <StyledAppTitle>
-                                    <Logo />
-                                    <StyledTypography
-                                        variant="h6"
+        return (
+            <StyledAppBar>
+                <StyledContainer maxWidth={false} sx={{ maxWidth: '1440px' }}>
+                    <Stack
+                        direction={'row'}
+                        alignItems={'center'}
+                        pl={5}
+                        pr={5}
+                        width={'100%'}
+                        justifyContent={'space-between'}
+                    >
+                        {!isPinned && (
+                            <StyledLeftSection>
+                                <StyledIconButton
+                                    size="medium"
+                                    // edge="start"
+                                    color="inherit"
+                                    aria-label="menu"
+                                    onClick={() => onOpen()}
+                                >
+                                    <MenuIcon
                                         sx={{
-                                            /* Typography/H6 */
-                                            fontSize: '20px',
-                                            fontStyle: 'normal',
-                                            fontWeight: '500',
-                                            lineHeight: '160%',
-                                            letterSpacing: '0.15px',
+                                            width: '22.5px',
+                                            height: '22.5px',
                                         }}
-                                    >
-                                        {themeMap.name
-                                            ? themeMap.name
-                                            : THEME.name}
-                                    </StyledTypography>
-                                </StyledAppTitle>
-                            </StyledHeaderLogo>
-                        )}
-                    </StyledLeftSection>
-                    <StyledSearchSection>
-                        {((location.pathname === '/' && showAppBuilder) ||
-                            location.pathname !== '/') && (
-                            <Box
-                                sx={{
-                                    width: '100%',
-                                    margin: 'auto',
-                                }}
-                            >
-                                <Search
-                                    renderInput={(params) => (
-                                        <StyledTextField
-                                            {...params}
-                                            variant="outlined"
-                                            size="small"
-                                            placeholder="Search"
-                                            label=""
-                                            InputProps={{
-                                                ...params.InputProps,
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        <SearchIcon />
-                                                    </InputAdornment>
-                                                ),
-                                            }}
+                                    />
+                                </StyledIconButton>
+                                <StyledHeaderLogo to={'/'}>
+                                    <StyledAppTitle>
+                                        <Logo />
+                                        <StyledTypography
+                                            variant="h6"
                                             sx={{
-                                                '& .MuiOutlinedInput-root': {
-                                                    height: '40px !important',
-                                                    border: 'none',
-                                                    '& input': {
-                                                        height: '40px !important',
-                                                    },
-                                                },
+                                                /* Typography/H6 */
+                                                fontSize: '20px',
+                                                fontStyle: 'normal',
+                                                fontWeight: '500',
+                                                lineHeight: '160%',
+                                                letterSpacing: '0.15px',
                                             }}
-                                        />
-                                    )}
-                                />
-                            </Box>
+                                        >
+                                            {themeMap.name
+                                                ? themeMap.name
+                                                : THEME.name}
+                                        </StyledTypography>
+                                    </StyledAppTitle>
+                                </StyledHeaderLogo>
+                            </StyledLeftSection>
                         )}
-                    </StyledSearchSection>
-                    <StyledRightSection>
-                        {right
-                            ? right
-                            : location.pathname === '/' && (
-                                  <StyledAppBuilderSection>
-                                      <StyledAppBuilder variant="h6">
-                                          App Builder
-                                      </StyledAppBuilder>
-                                      <StyledSwitch
-                                          checked={showAppBuilder}
-                                          size={'small'}
-                                          onChange={(
-                                              e: ChangeEvent<HTMLInputElement>,
-                                          ) => {
-                                              setShowAppBuilder(
-                                                  e.target.checked,
-                                              );
-                                              configStore.setAppBuilderMode(
-                                                  e.target.checked,
-                                              );
-                                          }}
-                                      ></StyledSwitch>
-                                  </StyledAppBuilderSection>
-                              )}
-                    </StyledRightSection>
-                </Stack>
-            </StyledContainer>
-        </StyledAppBar>
-    );
-});
+                        <StyledSearchSection>
+                            {((location.pathname === '/' && showAppBuilder) ||
+                                location.pathname !== '/') && (
+                                <Box
+                                    sx={{
+                                        width: '100%',
+                                        margin: 'auto',
+                                    }}
+                                >
+                                    <Search
+                                        renderInput={(params) => (
+                                            <StyledTextField
+                                                {...params}
+                                                variant="outlined"
+                                                size="small"
+                                                placeholder="Search"
+                                                label=""
+                                                InputProps={{
+                                                    ...params.InputProps,
+                                                    startAdornment: (
+                                                        <InputAdornment position="start">
+                                                            <SearchIcon />
+                                                        </InputAdornment>
+                                                    ),
+                                                }}
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root':
+                                                        {
+                                                            height: '40px !important',
+                                                            border: 'none',
+                                                            '& input': {
+                                                                height: '40px !important',
+                                                            },
+                                                        },
+                                                }}
+                                            />
+                                        )}
+                                    />
+                                </Box>
+                            )}
+                        </StyledSearchSection>
+                        <StyledRightSection>
+                            {right
+                                ? right
+                                : location.pathname === '/' && (
+                                      <StyledAppBuilderSection>
+                                          <StyledAppBuilder variant="h6">
+                                              App Builder
+                                          </StyledAppBuilder>
+                                          <StyledSwitch
+                                              checked={showAppBuilder}
+                                              size={'small'}
+                                              onChange={(
+                                                  e: ChangeEvent<HTMLInputElement>,
+                                              ) => {
+                                                  setShowAppBuilder(
+                                                      e.target.checked,
+                                                  );
+                                                  configStore.setAppBuilderMode(
+                                                      e.target.checked,
+                                                  );
+                                              }}
+                                          ></StyledSwitch>
+                                      </StyledAppBuilderSection>
+                                  )}
+                        </StyledRightSection>
+                    </Stack>
+                </StyledContainer>
+            </StyledAppBar>
+        );
+    },
+);

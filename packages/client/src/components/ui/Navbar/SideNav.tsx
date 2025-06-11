@@ -3,14 +3,13 @@ import { observer } from 'mobx-react-lite';
 import { Link, useLocation } from 'react-router-dom';
 import {
     Home as HomeIcon,
-    Favorite as FavoriteIcon,
     GridView as GridViewIcon,
     Settings as SettingsIcon,
     Functions as FunctionsIcon,
-    Close as CloseIcon,
     Person as PersonIcon,
     TokenRounded,
     Inventory2Outlined,
+    MenuOpenRounded,
 } from '@mui/icons-material';
 
 import {
@@ -18,9 +17,9 @@ import {
     List,
     Divider,
     Typography,
-    Box,
     IconButton,
     styled,
+    Stack,
 } from '@semoss/ui';
 
 import { ModelBrain } from '@/assets/img/ModelBrain';
@@ -30,31 +29,9 @@ import { Logo } from '@/assets/img/Logo';
 import { THEME } from '@/constants';
 import { LoginPopover } from '../LoginPopover/LoginPopover';
 
-const StyledIconButton = styled(IconButton)(({ theme }) => ({
-    marginRight: 2,
-    borderRadius: '7px',
-    border: '0.938px solid #323232',
-    width: '30px',
-    height: '30px',
-}));
+const DRAWER_OPEN_WIDTH = 312;
 
-const StyledHeaderLogo = styled(Link)(({ theme }) => ({
-    color: 'inherit',
-    textDecoration: 'none',
-    cursor: 'pointer',
-    ':hover': {
-        bacakground: theme.palette.action.hover,
-    },
-}));
-
-const drawerWidth = 312;
-
-const menuItems = [
-    { text: 'Home', icon: <HomeIcon />, route: '/' },
-    // { text: 'My Favorites', icon: <FavoriteIcon /> },
-];
-
-const catalogItems = [
+const CATALOG_ROUTES = [
     { text: 'Apps', icon: <GridViewIcon />, route: '/apps' },
     {
         text: 'Models',
@@ -75,326 +52,295 @@ const catalogItems = [
     },
 ];
 
-const teamItems = [
-    { text: 'SEMOSS Dev', color: '#22A4FF' },
-    { text: 'Netherlands Ops', color: '#FFB74D' },
-    { text: 'Spain Dev Ops', color: '#7AC36B' },
-    { text: 'Microsoft - Spain General', color: '#AA7EEA' },
-];
-
-const drawerStyles = {
-    width: drawerWidth,
-    display: 'flex',
-    justifyContent: 'space-between',
+const StyledSideNav = styled(Drawer)(() => ({
     flexShrink: 0,
+    whiteSpace: 'nowrap',
+    boxSizing: 'border-box',
     '& .MuiDrawer-paper': {
-        width: drawerWidth,
-        boxSizing: 'border-box',
-        borderRadius: '0 12px 12px 0',
-        boxShadow: '4px 0px 4px 0px rgba(0, 0, 0, 0.05)',
+        width: DRAWER_OPEN_WIDTH,
+        borderRadius: '0px',
+        boxShadow: 'none',
+        border: 'none',
     },
-};
+    variants: [
+        {
+            props: ({ variant }) => variant === 'permanent',
+            style: {
+                width: DRAWER_OPEN_WIDTH,
+                '& .MuiDrawer-paper': {
+                    backgroundColor: 'transparent',
+                },
+            },
+        },
+    ],
+}));
 
-const headingStyles = {
+const StyledSideNavHeader = styled(Stack)(({ theme }) => ({
+    paddingTop: theme.spacing(1.5),
+    paddingRight: theme.spacing(2),
+    paddingBottom: theme.spacing(1.5),
+    paddingLeft: theme.spacing(2),
+}));
+
+const StyledSideNavHeaderLink = styled(Link)(({ theme }) => ({
+    flex: 1,
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 2,
-    height: '56px',
-};
-
-const listStyles = {
-    padding: 0,
+    color: 'inherit',
+    textDecoration: 'none',
+    cursor: 'pointer',
+    gap: theme.spacing(2),
     '&:hover': {
-        backgroundColor: '#EBF4FE',
+        background: theme.palette.action.hover,
     },
-};
+}));
 
-const sectionTitleStyles = (fw = 600) => ({
-    margin: '8px 16px',
-    fontWeight: fw,
-});
+const StyledSideNavContent = styled(Stack)(({ theme }) => ({
+    height: '100%',
+    width: '100%',
+    flex: 1,
+    paddingRight: theme.spacing(2),
+    paddingLeft: theme.spacing(2),
+    overflowY: 'auto',
+}));
 
-const teamIconStyles = (color: string) => ({
-    width: 24,
-    height: 24,
-    backgroundColor: color,
-    borderRadius: '4px',
-});
+const StyledSideNavFooter = styled(Stack)(({ theme }) => ({
+    paddingRight: theme.spacing(2),
+    paddingLeft: theme.spacing(2),
+    overflowY: 'hidden',
+}));
+
+const StyledList = styled(List)(() => ({
+    padding: 0,
+}));
+
+const StyledListItem = styled(List.Item)(({ theme }) => ({
+    gap: theme.spacing(1),
+    padding: theme.spacing(1),
+}));
+
+const StyledListItemButton = styled(List.ItemButton, {
+    shouldForwardProp: (prop) => prop !== 'selected',
+})<{ selected: boolean }>(({ theme, selected }) => ({
+    gap: theme.spacing(1),
+    padding: theme.spacing(1),
+    backgroundColor: selected ? theme.palette.secondary.selected : undefined,
+})) as unknown as typeof List.ItemButton;
+
+const StyledListItemIcon = styled(List.Icon)(() => ({
+    width: '28px',
+    minWidth: 'auto',
+}));
+
+const StyledLink = styled(Link)(({ theme }) => ({
+    color: 'inherit',
+    textDecoration: 'none',
+    cursor: 'pointer',
+}));
 
 interface SideNavProps {
+    /** Track if the nav is open */
     isOpen: boolean;
-    onClose: () => void;
+
+    /** Track if the nav is pinned open */
+    isPinned: boolean;
+
+    /** Triggered when the state is upated */
+    onUpdate: (isOpen: boolean, isPinned: boolean) => void;
 }
 
-const bottomSectionStyles = {
-    borderTop: '1px solid #E0E0E0',
-    padding: 0,
-};
+export const SideNav: React.FC<SideNavProps> = observer(
+    ({ isOpen, isPinned, onUpdate }) => {
+        const { configStore } = useRootStore();
+        const location = useLocation();
 
-const personIconStyles = {
-    width: 24,
-    height: 24,
-    border: '1px solid #BDBDBD',
-    borderRadius: '50%',
-    backgroundColor: '#BDBDBD',
-    fill: '#FFFFFF',
-};
-
-const SideNav = observer(({ isOpen, onClose }: SideNavProps) => {
-    const { configStore } = useRootStore();
-    const location = useLocation();
-
-    const [viewSidebar, setViewSidebar] = useState(false);
-    useEffect(() => {
-        if (configStore.store.user.admin) {
-            setViewSidebar(true);
-        } else if (
-            !configStore.store.user.admin &&
-            !configStore.store.config.adminOnlyViewMenuBarFlag
-        ) {
-            setViewSidebar(true);
-        }
-    }, [
-        configStore.store.user.admin,
-        configStore.store.config.adminOnlyViewMenuBarFlag,
-    ]);
-
-    const themeMap = useMemo(() => {
-        const theme = configStore.store.config['theme'];
-
-        if (theme && theme['THEME_MAP']) {
-            try {
-                return JSON.parse(theme['THEME_MAP'] as string);
-            } catch {
-                return {};
+        const [viewSidebar, setViewSidebar] = useState(false);
+        useEffect(() => {
+            if (configStore.store.user.admin) {
+                setViewSidebar(true);
+            } else if (
+                !configStore.store.user.admin &&
+                !configStore.store.config.adminOnlyViewMenuBarFlag
+            ) {
+                setViewSidebar(true);
             }
-        }
+        }, [
+            configStore.store.user.admin,
+            configStore.store.config.adminOnlyViewMenuBarFlag,
+        ]);
 
-        return {};
-    }, [Object.keys(configStore.store.config).length]);
+        // TODO: Load from a theme object
+        const themeMap = useMemo(() => {
+            const theme = configStore.store.config['theme'];
 
-    /**
-     * to determine if route is selected
-     */
-    const isSelected = (route: string) => {
-        if (route === '/') {
-            console.log(location.pathname);
-            if (location.pathname === '/') {
-                return true;
+            if (theme && theme['THEME_MAP']) {
+                try {
+                    return JSON.parse(theme['THEME_MAP'] as string);
+                } catch {
+                    return {};
+                }
             }
-            return false;
-        } else {
-            return location.pathname.includes(route);
-        }
-    };
-    return (
-        <Drawer
-            open={isOpen}
-            variant="temporary"
-            anchor="left"
-            sx={drawerStyles}
-        >
-            <Box
-                sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '100%', // Ensures the Drawer takes full height
-                    overflowY: 'auto', // Allows scrolling if content overflows
+
+            return {};
+        }, [Object.keys(configStore.store.config).length]);
+
+        /**
+         * to determine if route is selected
+         */
+        const isSelected = (route: string) => {
+            if (route === '/') {
+                if (location.pathname === '/') {
+                    return true;
+                }
+                return false;
+            } else {
+                return location.pathname.includes(route);
+            }
+        };
+
+        return (
+            <StyledSideNav
+                variant={isPinned ? 'permanent' : 'temporary'}
+                open={isOpen}
+                onClose={() => onUpdate(false, isPinned)}
+                PaperProps={{
+                    onMouseLeave: () => {
+                        // closes if it is not pinned
+                        if (isPinned) {
+                            return;
+                        }
+
+                        onUpdate(false, isPinned);
+                    },
                 }}
             >
-                {/* Drawer Heading */}
-                <Box sx={{ ...headingStyles, padding: '12px 16px' }}>
-                    <StyledHeaderLogo to={'/'}>
-                        <Typography
-                            variant="body1"
-                            sx={{
-                                ...sectionTitleStyles(700),
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 2,
-                                margin: 0,
-                                padding: 0,
-                            }}
-                        >
-                            <Logo />
-                            <Typography variant="h6">
-                                {' '}
-                                {themeMap.name ? themeMap.name : THEME.name}
-                            </Typography>
+                <StyledSideNavHeader
+                    direction={'row'}
+                    alignItems={'center'}
+                    justifyContent={'flex-start'}
+                    spacing={1}
+                >
+                    <StyledSideNavHeaderLink to={'/'} aria-label={'Go Home'}>
+                        <Logo />
+                        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                            {themeMap.name ? themeMap.name : THEME.name}
                         </Typography>
-                    </StyledHeaderLogo>
-                    <StyledIconButton
-                        size="medium"
-                        edge="start"
-                        color="inherit"
-                        aria-label="menu"
+                    </StyledSideNavHeaderLink>
+
+                    <IconButton
+                        size="small"
                         onClick={() => {
-                            onClose();
+                            console.log('start', isOpen, isPinned);
+                            if (isOpen && !isPinned) {
+                                // if it is open and not pinned, pin it
+                                onUpdate(isOpen, true);
+                            } else if (isOpen && isPinned) {
+                                // if it is open, and pinned, close and unpin
+                                onUpdate(false, false);
+                            } else {
+                                // noop
+                            }
                         }}
                     >
-                        <CloseIcon
-                            sx={{
-                                cursor: 'pointer',
-                                color: 'text.secondary',
-                            }}
-                        />
-                    </StyledIconButton>
-                </Box>
+                        <MenuOpenRounded fontSize="medium" />
+                    </IconButton>
+                </StyledSideNavHeader>
                 <Divider />
-                <Box sx={{ overflowY: 'auto' }}>
-                    {/* Main Menu */}
-                    <List sx={{ padding: 0 }}>
-                        {menuItems.map((item, index) => (
-                            <Link
-                                key={index}
-                                to={item.route}
-                                style={{
-                                    textDecoration: 'none',
-                                    color: 'inherit',
-                                }}
-                                onClick={(e) => {
-                                    onClose();
-                                }}
-                            >
-                                <List.Item
-                                    key={index}
-                                    sx={listStyles}
-                                    selected={isSelected(item.route)}
+                <StyledSideNavContent direction={'column'} spacing={2}>
+                    <StyledList dense={true} aria-label="main navigation">
+                        <Stack direction={'column'} spacing={2}>
+                            <StyledLink to={'/'} aria-label={'Home'}>
+                                <StyledListItemButton
+                                    selected={isSelected('/')}
+                                    dense={true}
                                 >
-                                    <List.ItemButton sx={{ gap: 2 }}>
-                                        <List.Icon sx={{ minWidth: '24px' }}>
-                                            {item.icon}
-                                        </List.Icon>
-                                        <List.ItemText primary={item.text} />
-                                    </List.ItemButton>
-                                </List.Item>
-                            </Link>
-                        ))}
-                    </List>
-                    <Divider />
-
-                    {/* Catalog Section */}
+                                    <StyledListItemIcon>
+                                        <HomeIcon />
+                                    </StyledListItemIcon>
+                                    <List.ItemText primary={'Home'} />
+                                </StyledListItemButton>
+                            </StyledLink>
+                        </Stack>
+                    </StyledList>
                     {viewSidebar && (
                         <>
-                            <Typography
-                                variant="subtitle1"
-                                sx={sectionTitleStyles()}
-                            >
-                                Catalogs
-                            </Typography>
-                            <List sx={{ padding: 0 }}>
-                                {catalogItems.map((item, index) => (
-                                    <Link
-                                        key={index}
-                                        to={item.route}
-                                        style={{
-                                            textDecoration: 'none',
-                                            color: 'inherit',
-                                        }}
-                                        onClick={(e) => {
-                                            onClose();
-                                        }}
-                                    >
-                                        <List.Item
-                                            key={index}
-                                            sx={listStyles}
-                                            selected={isSelected(item.route)}
-                                        >
-                                            <List.ItemButton sx={{ gap: 2 }}>
-                                                <List.Icon
-                                                    sx={{ minWidth: '24px' }}
-                                                >
-                                                    {item.icon}
-                                                </List.Icon>
-                                                <List.ItemText
-                                                    primary={item.text}
-                                                />
-                                            </List.ItemButton>
-                                        </List.Item>
-                                    </Link>
-                                ))}
-                            </List>
                             <Divider />
+                            <StyledList
+                                dense={true}
+                                aria-label="catalog navigation"
+                            >
+                                <Stack direction={'column'} spacing={2}>
+                                    <StyledListItem>
+                                        <List.ItemText>Catalogs</List.ItemText>
+                                    </StyledListItem>
+
+                                    {CATALOG_ROUTES.map((r) => {
+                                        return (
+                                            <StyledLink
+                                                key={r.route}
+                                                to={r.route}
+                                                aria-label={r.text}
+                                            >
+                                                <StyledListItemButton
+                                                    selected={isSelected(
+                                                        r.route,
+                                                    )}
+                                                    aria-label={r.text}
+                                                    dense={true}
+                                                >
+                                                    <StyledListItemIcon>
+                                                        {r.icon}
+                                                    </StyledListItemIcon>
+                                                    <List.ItemText
+                                                        primary={r.text}
+                                                    />
+                                                </StyledListItemButton>
+                                            </StyledLink>
+                                        );
+                                    })}
+                                </Stack>
+                            </StyledList>
                         </>
                     )}
-
-                    {/* Teams Section */}
-                    {/* <Typography variant="subtitle1" sx={sectionTitleStyles()}>
-                        Teams
-                    </Typography>
-                    <List sx={{ padding: 0 }}>
-                        {teamItems.map((item, index) => (
-                            <List.Item key={index} sx={listStyles}>
-                                <List.ItemButton sx={{ gap: 2 }}>
-                                    <List.Icon sx={{ minWidth: '24px' }}>
-                                        <Box sx={teamIconStyles(item.color)} />
-                                    </List.Icon>
-                                    <List.ItemText primary={item.text} />
-                                </List.ItemButton>
-                            </List.Item>
-                        ))}
-                    </List>
-                    <Divider /> */}
-
-                    {/* Settings */}
-                    <List sx={{ padding: 0 }}>
-                        <Link
-                            to={'/settings'}
-                            style={{
-                                textDecoration: 'none',
-                                color: 'inherit',
-                            }}
-                            onClick={(e) => {
-                                onClose();
-                            }}
-                        >
-                            <List.Item
-                                sx={listStyles}
-                                selected={isSelected('/settings')}
+                </StyledSideNavContent>
+                <Divider />
+                <StyledSideNavFooter>
+                    <StyledList dense={true} aria-label="main navigation">
+                        <Stack direction={'column'} spacing={2}>
+                            <StyledLink
+                                to={'/settings'}
+                                aria-label={'Settings'}
                             >
-                                <List.ItemButton sx={{ gap: 2 }}>
-                                    <List.Icon sx={{ minWidth: '24px' }}>
-                                        <SettingsIcon />
-                                    </List.Icon>
-                                    <List.ItemText primary="Settings" />
-                                </List.ItemButton>
-                            </List.Item>
-                        </Link>
-                    </List>
-                </Box>
-            </Box>
-            {/* Bottom Section */}
-            <Box sx={bottomSectionStyles}>
-                <List sx={{ padding: 0 }}>
-                    <List.Item sx={listStyles}>
-                        <List.ItemButton sx={{ gap: 2 }}>
-                            <LoginPopover>
-                                <Box
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 1.5,
-                                    }}
+                                <StyledListItemButton
+                                    selected={isSelected('/settings')}
+                                    dense={true}
                                 >
-                                    <List.Icon sx={{ minWidth: '24px' }}>
-                                        <PersonIcon sx={personIconStyles} />
-                                    </List.Icon>
-                                    {configStore.store.user.name && (
-                                        <List.ItemText
-                                            primary={
-                                                configStore.store.user.name
-                                            }
-                                        />
-                                    )}
-                                </Box>
-                            </LoginPopover>
-                        </List.ItemButton>
-                    </List.Item>
-                </List>
-            </Box>
-        </Drawer>
-    );
-});
+                                    <StyledListItemIcon>
+                                        <SettingsIcon />
+                                    </StyledListItemIcon>
+                                    <List.ItemText primary={'Settings'} />
+                                </StyledListItemButton>
+                            </StyledLink>
 
-export { SideNav };
+                            <LoginPopover>
+                                <StyledListItemButton
+                                    aria-label={'Login'}
+                                    dense={true}
+                                >
+                                    <StyledListItemIcon>
+                                        <PersonIcon />
+                                    </StyledListItemIcon>
+                                    <List.ItemText
+                                        primary={
+                                            configStore.store.user.name || ''
+                                        }
+                                    />
+                                </StyledListItemButton>
+                            </LoginPopover>
+                        </Stack>
+                    </StyledList>
+                </StyledSideNavFooter>
+            </StyledSideNav>
+        );
+    },
+);

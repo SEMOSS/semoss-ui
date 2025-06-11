@@ -58,7 +58,6 @@ export const AppPage = observer(() => {
 
     const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
     const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
-    const [showSideNav, setShowSideNav] = useState(false);
 
     useEffect(() => {
         // clear out the old app
@@ -86,7 +85,7 @@ export const AppPage = observer(() => {
 
     return (
         <StyledViewport>
-            <NavigationBar
+            {/* <NavigationBar
                 left={
                     <Stack
                         direction={'row'}
@@ -105,7 +104,7 @@ export const AppPage = observer(() => {
                     </Stack>
                 }
                 onOpen={() => {
-                    setShowSideNav(true);
+                    // TODO
                 }}
                 right={
                     <Stack
@@ -147,7 +146,7 @@ export const AppPage = observer(() => {
                         </Button>
                     </Stack>
                 }
-            />
+            /> */}
             <StyledContent sx={{ paddingLeft: '40px', paddingRight: '40px' }}>
                 {workspace.type === 'BLOCKS' ? (
                     <Renderer appId={appId} insightId={workspace.insightId} />
@@ -157,10 +156,6 @@ export const AppPage = observer(() => {
                 ) : null}
             </StyledContent>
 
-            <SideNav
-                isOpen={showSideNav}
-                onClose={() => setShowSideNav(false)}
-            />
             <Modal open={isShareOpen} onClose={() => setIsShareOpen(false)}>
                 <ShareOverlay
                     appId={appId}

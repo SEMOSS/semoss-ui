@@ -4,7 +4,14 @@ import { observer } from 'mobx-react-lite';
 import { useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
-import { AppRouter } from './app';
+import {
+    AppCatalogPage,
+    AppMarketplacePage,
+    AppDetailPage,
+    AppPage,
+    NewPromptBuilderAppPage,
+} from './app';
+
 import { EngineRouter } from './engine';
 import { ImportRouter } from './import';
 import { PromptRouter } from './prompt';
@@ -14,7 +21,6 @@ import { AuthenticatedLayout } from './AuthenticatedLayout';
 import { NavigatorLayout } from './NavigatorLayout';
 
 import { LoginPage } from './LoginPage';
-import { AppCatalogPage } from './AppCatalogPage';
 import { SharePage } from './SharePage';
 
 import { CookieNotice } from './legal/CookieNotice';
@@ -24,8 +30,6 @@ import { WorkspacePage } from './WorkspacePage';
 
 import { PlatformMessages } from './PlatformMessages';
 import { LandingPage } from './LandingPage';
-import { MarketplacePage } from './MarketplacePage';
-import { NewPromptBuilderAppPage } from './app/NewPromptBuilderAppPage';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
@@ -61,21 +65,26 @@ export const Router = observer(() => {
                 <Route path="*" element={<NavigatorLayout />}>
                     <Route index element={<LandingPage />} />
 
-                    <Route path="apps" element={<AppCatalogPage />} />
-                    <Route path="marketplace" element={<MarketplacePage />} />
-                    <Route
-                        path="app/new/prompt"
-                        element={<NewPromptBuilderAppPage />}
-                    />
-
-                    <Route path="import" element={<ImportRouter />} />
+                    <Route path="app/*">
+                        <Route index element={<AppCatalogPage />} />
+                        <Route path="new" element={<AppMarketplacePage />} />
+                        <Route
+                            path="new/prompt"
+                            element={<NewPromptBuilderAppPage />}
+                        />
+                        <Route path=":appId" element={<AppDetailPage />} />
+                        <Route path=":appId/view/*" element={<AppPage />} />
+                        <Route
+                            path="*"
+                            element={<Navigate to={`/`} replace />}
+                        />
+                    </Route>
                     <Route path="engine/*" element={<EngineRouter />} />
                     <Route path="prompt/*" element={<PromptRouter />} />
-
                     <Route path="settings/*" element={<SettingsRouter />} />
+                    <Route path="import" element={<ImportRouter />} />
                 </Route>
 
-                <Route path="app/*" element={<AppRouter />} />
                 <Route
                     path="workspace/:appId/*"
                     element={

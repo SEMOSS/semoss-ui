@@ -50,7 +50,7 @@ const StyledTypographyBrowseTemplates = styled(Typography)<
     fontStyle: 'normal',
 }));
 
-export const MarketplacePage = () => {
+export const AppMarketplacePage = () => {
     const navigate = useNavigate();
     const [newAppOptions, setNewAppOptions] = useState<
         React.ComponentProps<typeof NewAppModal>['options'] | null

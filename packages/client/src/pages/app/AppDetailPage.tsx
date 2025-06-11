@@ -31,7 +31,7 @@ import { Env } from '@semoss/sdk/react';
 
 import { useRootStore } from '@/hooks';
 import { formatPermission, toTitleCase } from '@/utility';
-import { NavigationBar, ShareOverlay, SideNav } from '@/components/ui';
+import { ShareOverlay } from '@/components/ui';
 import { SettingsContext } from '@/contexts';
 import {
     MembersTable,
@@ -185,7 +185,6 @@ export const AppDetailPage = () => {
     const dependencies = watch('dependencies');
     const detailsForm = watch('detailsForm');
 
-    const [showSideNav, setShowSideNav] = useState(false);
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
     const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
     const [isChangeAccessModalOpen, setIsChangeAccessModalOpen] =
@@ -549,19 +548,6 @@ export const AppDetailPage = () => {
 
     return (
         <div>
-            <StyledBox>
-                <NavigationBar
-                    onOpen={() => {
-                        setShowSideNav(true);
-                    }}
-                />
-            </StyledBox>
-
-            <SideNav
-                isOpen={showSideNav}
-                onClose={() => setShowSideNav(false)}
-            />
-
             <OuterContainer>
                 <InnerContainer>
                     <Breadcrumbs separator="/">
