@@ -5,6 +5,7 @@ import { Checkbox, styled } from "@mui/material";
 import { useBlock } from "../../../hooks";
 import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { debounced } from "../../../utility";
+import { Box } from "@semoss/ui";
 
 export interface CheckboxBlockDef extends BlockDef<"checkbox"> {
     widget: "checkbox";
@@ -51,19 +52,19 @@ export const CheckboxBlock: BlockComponent = observer(({ id }) => {
 
     return (
         <StyledContainer {...attrs}>
-            <StyledCheckbox
-                style={{
-                    ...data.style,
-                }}
-                disabled={data.disabled}
-                checked={data.value}
-                onChange={(e) => {
-                    const value = e.target.checked;
-                    // update the value
-                    setData("value", value);
-                    debouncedCallback();
-                }}
-            />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <StyledCheckbox
+                    style={{ ...data.style }}
+                    disabled={data.disabled}
+                    checked={data.value}
+                    onChange={(e) => {
+                        const value = e.target.checked;
+                        setData("value", value);
+                        debouncedCallback();
+                    }}
+                />
+                <Box>{data.label}</Box>
+            </Box>
         </StyledContainer>
     );
 });
