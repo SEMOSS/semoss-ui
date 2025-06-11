@@ -1892,7 +1892,7 @@ export class MonolithStore {
                 params: {
                     projectId: projectId,
                 },
-            })
+            });
 
             // there was no response, that is an error
             if (!response) {
