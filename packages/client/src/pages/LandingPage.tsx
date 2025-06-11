@@ -1,15 +1,12 @@
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import styled from '@emotion/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Navigate, useNavigate } from 'react-router-dom';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
-import { Button, Chip, Container } from '@semoss/ui';
+import { Button, Box, Chip, Container, Typography, styled } from '@semoss/ui';
 import { STATE_VERSION } from '@semoss/renderer';
 
-import { UserLandingPage } from './UserlandingPage';
+import { UserLandingPage } from '../components/landing/UserlandingPage';
 import DevBanner from '@/assets/img/DevBanner.png';
 import playground from '@/assets/img/playground.png';
 import AIConductor from '@/assets/img/AIConductor.png';
@@ -18,101 +15,40 @@ import { useRootStore } from '@/hooks';
 import { AddAppModal, NewAppModal } from '@/components/app';
 import { BASE_PAGE_BLOCKS } from './app/app.constants';
 import { THEME } from '@/constants';
+import { FeaturedAppCard } from '@/components/landing/FeaturedAppCard';
+import { BannerSection } from '@/components/landing/BannerSection';
 
 const StyledComponent = styled(Container)(({ theme }) => ({
-    top: '56px',
     position: 'absolute',
+    top: theme.spacing(5),
+    height: `calc(100vh - ${theme.spacing(5)})`, // Adjust height based on AppBar height
+    gap: theme.spacing(3),
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: '24px',
     flex: '1 0 0',
     alignSelf: 'stretch',
-    // width: '100%',
-    backgroundColor: '#FAFAFA',
-    height: 'calc(100vh - 56px)', // Adjust height based on AppBar height
+    backgroundColor: theme.palette.background.default,
     overflow: 'auto',
     /* Media query for screens with a minimum width of 600px */
     '@media (min-width: 600px)': {
         '&.MuiContainer-root': {
-            paddingLeft: '0px',
-            paddingRight: '0px',
+            paddingLeft: theme.spacing(0),
+            paddingRight: theme.spacing(0),
         },
     },
 }));
 
-const StyledBannerTitle = styled(Typography)(({ theme }) => ({
-    color: '#212121',
-    fontFeatureSettings: "'liga' off, 'clig' off",
-    fontFamily: 'Inter',
-    fontSize: '24px',
-    fontStyle: 'normal',
-    fontWeight: '700',
-    lineHeight: '133.4%',
-}));
-
-const StyledBannerText = styled(Typography)(({ theme }) => ({
-    color: '#212121',
-    fontFeatureSettings: "'liga' off, 'clig' off",
-    fontFamily: 'Inter',
-    fontSize: '16px',
-    fontStyle: 'normal',
-    fontWeight: '500',
-    lineHeight: '150%' /* 24px */,
-    letterSpacing: '0.15px',
-    padding: '24px 0px',
-    width: '35%',
-}));
-const StyledOuterContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flex: '1 1.5 50%',
-    borderRadius: '12px',
-    background: '#FFF',
-    boxShadow: '0px 5px 8px 0px rgba(0, 0, 0, 0.08)',
-    height: '204px',
-}));
-const StyledInnerContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flex: '0.55 1 60%',
-    alignItems: 'center',
-    padding: '16px',
-    justifyContent: 'space-between',
-    flexDirection: 'column',
-}));
-
-const StyledContainerTitleSection = styled('div')(({ theme }) => ({
-    display: 'flex',
-    width: '100%',
-    justifyContent: 'space-between',
-}));
-
-const StyledContainerContentSection = styled('div')(({ theme }) => ({
-    display: 'flex',
-    width: '100%',
-    justifyContent: 'space-between',
-    padding: '16px 0px',
-}));
-
-const StyledContainerButtonSection = styled('div')(({ theme }) => ({
-    display: 'flex',
-    justifyContent: 'flex-start',
-    width: '100%',
-}));
-
-const StyledContainerImageSection = styled('div')<{ backgroundImage: string }>(
-    ({ theme, backgroundImage }) => ({
-        display: 'flex',
-        flex: '0.45 1 40%',
-        backgroundImage: `${backgroundImage}`,
-        backgroundSize: '100% 100%',
-        backgroundRepeat: 'no-repeat',
-    }),
-);
-
-const BannerComponent = observer(() => {
+export const LandingPage = observer(() => {
+    const { configStore } = useRootStore();
     const navigate = useNavigate();
 
-    const { configStore } = useRootStore();
+    const [newAppOptions, setNewAppOptions] = useState<
+        React.ComponentProps<typeof NewAppModal>['options'] | null
+    >(null);
+    const [isUploadOpen, setIsUploadOpen] = useState(false);
+
+    const isNameOpen = !!newAppOptions;
 
     const themeMap = useMemo(() => {
         const theme = configStore.store.config['theme'];
@@ -127,212 +63,6 @@ const BannerComponent = observer(() => {
 
         return {};
     }, [Object.keys(configStore.store.config).length]);
-
-    return (
-        <>
-            <div
-                style={{
-                    padding: '53px 21px',
-                    backgroundImage: `url(${DevBanner})`,
-                    height: '276px',
-                    width: '100%',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    borderRadius: '24px',
-                }}
-            >
-                <StyledBannerTitle variant="h5">
-                    Empower your ideas with{' '}
-                    {themeMap.name ? themeMap.name : THEME.name}
-                </StyledBannerTitle>
-                <StyledBannerText variant="body1">
-                    Build, automate, and innovate—all without coding. Harness
-                    the power of AI to transform your projects and workflows
-                </StyledBannerText>
-                <Button
-                    variant="contained"
-                    size="large"
-                    style={{
-                        marginTop: 'auto',
-                        borderRadius: '12px',
-                        background: '#000',
-                    }}
-                    onClick={(e) => navigate('/marketplace')}
-                    endIcon={<ArrowForwardIcon style={{ color: '#fff' }} />}
-                >
-                    Browse Templates
-                </Button>
-            </div>
-        </>
-    );
-});
-
-const PlayGroundContainer = observer(() => {
-    return (
-        <StyledOuterContainer>
-            <StyledInnerContainer>
-                <StyledContainerTitleSection>
-                    <Typography
-                        style={{
-                            color: 'var(--Text-Primary, #212121)',
-                            fontFeatureSettings: "'liga' off, 'clig' off",
-                            fontFamily: 'Inter',
-                            fontSize: '16px',
-                            fontStyle: 'normal',
-                            fontWeight: '500',
-                            lineHeight: '150%' /* 24px */,
-                            letterSpacing: '0.15px',
-                        }}
-                    >
-                        Experiment in our Playground&trade;
-                    </Typography>
-                    <StyledChip
-                        variant="filled"
-                        size="small"
-                        sx={{
-                            borderRadius: '4px',
-                            background: 'var(--Primary-Selected, #EBF4FE)',
-                        }}
-                        label="FEATURED"
-                    />
-                </StyledContainerTitleSection>
-                <StyledContainerContentSection>
-                    <Typography
-                        variant="body2"
-                        style={{
-                            color: 'var(--Text-Primary, #212121)',
-                            fontFeatureSettings: "'liga' off, 'clig' off",
-                        }}
-                    >
-                        Chat with different LLMs and try out different prompts
-                        from our prompt library. Or chat with multiple LLMs in
-                        one room to hold a focus group or round table.
-                    </Typography>
-                </StyledContainerContentSection>
-                <StyledContainerButtonSection>
-                    <Button
-                        variant="text"
-                        disabled={true}
-                        endIcon={
-                            <ArrowForwardIcon
-                                style={{
-                                    // color: '#0471F0',
-                                    color: 'rgba(0, 0, 0, 0.26)',
-                                }}
-                            />
-                        }
-                    >
-                        {' '}
-                        Try it out{' '}
-                    </Button>
-                </StyledContainerButtonSection>
-            </StyledInnerContainer>
-            <StyledContainerImageSection backgroundImage={`url(${playground})`}>
-                &nbsp;
-            </StyledContainerImageSection>
-        </StyledOuterContainer>
-    );
-});
-
-const AIConductorContainer = observer(() => {
-    return (
-        <StyledOuterContainer>
-            <StyledInnerContainer>
-                <StyledContainerTitleSection>
-                    <Typography
-                        style={{
-                            color: 'var(--Text-Primary, #212121)',
-                            fontFeatureSettings: "'liga' off, 'clig' off",
-                            fontFamily: 'Inter',
-                            fontSize: '16px',
-                            fontStyle: 'normal',
-                            fontWeight: '500',
-                            lineHeight: '150%' /* 24px */,
-                            letterSpacing: '0.15px',
-                        }}
-                    >
-                        Simplify tasks with AI Conductor
-                    </Typography>
-                    <StyledChip
-                        variant="filled"
-                        size="small"
-                        sx={{
-                            borderRadius: '4px',
-                            background: 'var(--Primary-Selected, #EBF4FE)',
-                        }}
-                        label="NEW"
-                    />
-                </StyledContainerTitleSection>
-                <StyledContainerContentSection>
-                    <Typography
-                        variant="body2"
-                        style={{
-                            color: 'var(--Text-Primary, #212121)',
-                            fontFeatureSettings: "'liga' off, 'clig' off",
-                        }}
-                    >
-                        Use a chat interface to breakdown goals into subtasks
-                        that can be accomplished via an app, a routine, or
-                        another user. Simplify your workflows!
-                    </Typography>
-                </StyledContainerContentSection>
-                <StyledContainerButtonSection>
-                    <Button
-                        variant="text"
-                        disabled={true}
-                        endIcon={
-                            <ArrowForwardIcon
-                                style={{
-                                    // color: '#0471F0',
-                                    color: 'rgba(0, 0, 0, 0.26)',
-                                }}
-                            />
-                        }
-                    >
-                        {' '}
-                        Try it out{' '}
-                    </Button>
-                </StyledContainerButtonSection>
-            </StyledInnerContainer>
-            <StyledContainerImageSection
-                backgroundImage={`url(${AIConductor})`}
-            >
-                &nbsp;
-            </StyledContainerImageSection>
-        </StyledOuterContainer>
-    );
-});
-
-const StyledChip = styled(Chip)(({ theme }) => ({
-    borderRadius: '4px',
-    background: 'var(--Primary-Selected, #EBF4FE)',
-    '&.MuiChip-root > .MuiChip-label': {
-        color: 'var(--Primary-Main, #0471F0)',
-        fontFeatureSettings: "'liga' off, 'clig' off",
-        /* Components/Chip */
-        fontFamily: 'Inter',
-        fontSize: '13px',
-        fontStyle: 'normal',
-        fontWeight: '400',
-        lineHeight: '18px' /* 138.462% */,
-        letterSpacing: '0.16px',
-    },
-}));
-
-export const LandingPage = observer(() => {
-    const { configStore } = useRootStore();
-    const navigate = useNavigate();
-
-    const [newAppOptions, setNewAppOptions] = useState<
-        React.ComponentProps<typeof NewAppModal>['options'] | null
-    >(null);
-    const [isUploadOpen, setIsUploadOpen] = useState(false);
-
-    const isNameOpen = !!newAppOptions;
 
     /**
      * Navigate to the app and open it
@@ -352,7 +82,16 @@ export const LandingPage = observer(() => {
         return <Navigate to="/" replace />;
     }
 
-    const setupApp = (type: 'blocks' | 'code' | 'agent') => {
+    /**
+     * @name setupApp
+     *
+     * @description Sets initial app meta based on tile click,
+     * in order to open the modal and gather more meta
+     *
+     * @param type - What type of app is user trying to create
+     * @returns void
+     */
+    const setupApp = (type: 'blocks' | 'code' | 'agent'): void => {
         if (type === 'blocks') {
             setNewAppOptions({
                 type: 'blocks',
@@ -372,6 +111,7 @@ export const LandingPage = observer(() => {
             navigate('/app/new/prompt');
         }
     };
+
     return (
         <>
             <StyledComponent
@@ -394,7 +134,19 @@ export const LandingPage = observer(() => {
                             flexDirection: 'column',
                         }}
                     >
-                        <BannerComponent />
+                        <BannerSection
+                            tagline={`Empower your ideas with ${
+                                themeMap.name ? themeMap.name : THEME.name
+                            }`}
+                            description={
+                                'Build, automate, and innovate—all without coding. Harness the power of AI to transform your projects and workflows'
+                            }
+                            imageUrl={DevBanner}
+                            link={{
+                                label: 'Browse Templates',
+                                to: '/marketplace',
+                            }}
+                        />
                         <div
                             style={{
                                 display: 'flex',
@@ -411,14 +163,31 @@ export const LandingPage = observer(() => {
                                     flexDirection: 'row',
                                 }}
                             >
-                                <PlayGroundContainer />
-                                <AIConductorContainer />
+                                <FeaturedAppCard
+                                    tagline={'Experiment in our Playground'}
+                                    description={`Chat with different LLMs and try out different prompts from our prompt library. Or chat with multiple LLMs in one room to hold a focus group or round table.`}
+                                    imageUrl={playground}
+                                    chip={{
+                                        label: 'FEATURED',
+                                        color: '#EBF4FE',
+                                    }}
+                                />
+                                <FeaturedAppCard
+                                    tagline={'Simplify tasks with AI Conductor'}
+                                    description={
+                                        'Use a chat interface to breakdown goals into subtasks that can be accomplished via an app, a routine, or another user. Simplify your workflows!'
+                                    }
+                                    imageUrl={AIConductor}
+                                    chip={{
+                                        label: 'NEW',
+                                        color: '#EBF4FE',
+                                    }}
+                                />
                             </Box>
                             {isUploadOpen ? (
                                 <AddAppModal
                                     open={isUploadOpen}
                                     handleClose={(appId) => {
-                                        console.log('ok');
                                         // if there is an appId navigate to it
                                         if (appId) {
                                             navigateApp(appId);

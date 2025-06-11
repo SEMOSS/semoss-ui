@@ -1,3 +1,5 @@
+import SearchIcon from '@mui/icons-material/Search';
+
 import {
     Box,
     styled,
@@ -6,10 +8,10 @@ import {
     IconButton,
     InputAdornment,
 } from '@semoss/ui';
-import SearchIcon from '@mui/icons-material/Search';
-import Search from '../components/ui/Navbar/Search';
-import BusinessUserImage from '../assets/img/BusinessUserLanding.svg';
-import businessUsercheckgrid from '../assets/img/businessUsercheckgrid.svg';
+
+import Search from '../ui/Navbar/Search';
+import BusinessUserImage from '../../assets/img/BusinessUserLanding.svg';
+import businessUsercheckgrid from '../../assets/img/businessUsercheckgrid.svg';
 
 // Styled components for better reusability and cleaner JSX
 const GradientText = styled(Typography)(() => ({

@@ -32,7 +32,7 @@ import { LoginPopover } from '../LoginPopover/LoginPopover';
 const DRAWER_OPEN_WIDTH = 312;
 
 const CATALOG_ROUTES = [
-    { text: 'Apps', icon: <GridViewIcon />, route: '/apps' },
+    { text: 'Apps', icon: <GridViewIcon />, route: '/app' },
     {
         text: 'Models',
         icon: <ModelBrain color="#757575" width="24" height="24" />,
