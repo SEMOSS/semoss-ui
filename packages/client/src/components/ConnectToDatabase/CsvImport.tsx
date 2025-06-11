@@ -215,6 +215,11 @@ function CsvImport() {
                 const filePathFromExpression = filePathMatch
                     ? filePathMatch[1]
                     : null;
+                if (filePathFromExpression) {
+                    const name =
+                        filePathFromExpression.split(/[/\\]/).pop() || '';
+                    setFileName(name);
+                }
                 setfilePath(filePathFromExpression);
                 setEngineId(response.insightId);
                 parsedResults.push(output);
@@ -314,9 +319,11 @@ function CsvImport() {
             database=["${watchDatabaseName}"],
             filePath=["${watchFile}"],
             delimiter=["${delimiter}"],
-            dataTypeMap=[${JSON.stringify(dataTypeMap)}],
-            newHeaders=[${JSON.stringify(newHeaders)}],
-            additionalDataTypes=[${JSON.stringify(additionalDataTypes)}],
+            dataTypeMap=[${JSON.stringify(payloadObject.dataTypeMap)}],
+            newHeaders=[${JSON.stringify(payloadObject.newHeaders)}],
+            additionalDataTypes=[${JSON.stringify(
+                payloadObject.additionalDataTypes,
+            )}],
             descriptionMap=[${JSON.stringify(payloadObject.descriptionMap)}],
             logicalNamesMap=[${JSON.stringify(payloadObject.logicalNamesMap)}],
             existing=[false]
@@ -717,13 +724,14 @@ function CsvImport() {
                     </div>
                 </form>
             )}
-            {/* {step === 'table' && parsedData && parsedData.length > 0 && (
+            {step === 'table' && parsedData && parsedData.length > 0 && (
                 <DataSelection
                     files={parsedData}
-                    onImport={() => submitTablePixel(parsedData)}
+                    fileName={fileName}
+                    onImport={(payload) => submitTablePixel(payload)}
                     onCancel={handleCancel}
                 />
-            )} */}
+            )}
             {step === 'metaModel' && parsedData && parsedData.length > 0 && (
                 <MetaModelType
                     parsedData={parsedData}

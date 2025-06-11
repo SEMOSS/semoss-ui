@@ -70,9 +70,14 @@ const DataSelection: React.FC<ImportFileProps> = ({
     const [editableFields, setEditableFields] = useState<{
         [key: number]: string;
     }>({});
+    const parsedData = files[0];
     const [rowEditableState, setRowEditableState] = useState<{
         [key: number]: boolean;
-    }>(Object.fromEntries(files.cleanHeaders.map((_, index) => [index, true])));
+    }>(
+        Object.fromEntries(
+            parsedData.cleanHeaders.map((_, index) => [index, true]),
+        ),
+    );
     const [openModal, setOpenModal] = useState(false);
     const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
     const [columnMetadata, setColumnMetadata] = useState<{
@@ -338,13 +343,13 @@ const DataSelection: React.FC<ImportFileProps> = ({
     ];
 
     useEffect(() => {
-        if (files?.cleanHeaders) {
+        if (parsedData?.cleanHeaders) {
             const initialMeta = Object.fromEntries(
-                files.cleanHeaders.map((header) => [
+                parsedData.cleanHeaders.map((header) => [
                     header,
                     {
                         alias: header,
-                        dataType: files.dataTypes?.[header] || 'String',
+                        dataType: parsedData.dataTypes?.[header] || 'String',
                         format: '',
                         description: '',
                         logicalName: [],
@@ -353,7 +358,7 @@ const DataSelection: React.FC<ImportFileProps> = ({
             );
             setColumnMetadata(initialMeta);
         }
-    }, [files]);
+    }, [parsedData]);
 
     useEffect(() => {
         const optionsList = formatOptions.find(
@@ -372,7 +377,7 @@ const DataSelection: React.FC<ImportFileProps> = ({
     }, [selectedDataType]);
 
     const handleNameChange = (index: number, newValue: string) => {
-        const column = files.cleanHeaders[index];
+        const column = parsedData.cleanHeaders[index];
 
         setEditableFields((prev) => ({
             ...prev,
@@ -423,7 +428,7 @@ const DataSelection: React.FC<ImportFileProps> = ({
             },
         }));
 
-        const index = files.cleanHeaders.indexOf(selectedColumn);
+        const index = parsedData.cleanHeaders.indexOf(selectedColumn);
         if (index !== -1) {
             setEditableFields((prev) => ({
                 ...prev,
@@ -446,7 +451,7 @@ const DataSelection: React.FC<ImportFileProps> = ({
     };
 
     const handleImport = () => {
-        const originalHeaders = files.cleanHeaders;
+        const originalHeaders = parsedData.cleanHeaders;
         const updatedHeaders = originalHeaders.map(
             (header: string, ids: number) =>
                 editableFields[ids] !== undefined
@@ -463,7 +468,8 @@ const DataSelection: React.FC<ImportFileProps> = ({
         originalHeaders.forEach((original, index) => {
             const updated = updatedHeaders[index];
             const userMeta = columnMetadata[original] || {};
-            const dataType = userMeta.dataType || files.dataTypes[original];
+            const dataType =
+                userMeta.dataType || parsedData.dataTypes[original];
             const alias = userMeta.alias;
 
             dataTypeMap[updated] = dataType;
@@ -675,122 +681,135 @@ const DataSelection: React.FC<ImportFileProps> = ({
                                 </TableHead>
 
                                 <TableBody>
-                                    {files.cleanHeaders.map((column, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell
-                                                sx={{
-                                                    width: '66%',
-                                                    borderBottom: '0',
-                                                    boxShadow:
-                                                        '0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset;',
-                                                }}
-                                            >
-                                                <TextField
-                                                    fullWidth
-                                                    value={
-                                                        editableFields[index] ??
-                                                        column
-                                                    }
-                                                    onChange={(e) =>
-                                                        handleNameChange(
-                                                            index,
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    variant="outlined"
-                                                    size="small"
-                                                    disabled={
-                                                        !rowEditableState[index]
-                                                    }
+                                    {parsedData.cleanHeaders.map(
+                                        (column, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell
                                                     sx={{
-                                                        '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline':
-                                                            {
-                                                                borderStyle:
-                                                                    'dotted',
-                                                            },
-                                                        '& .MuiInputBase-input':
-                                                            {
-                                                                color: '#666',
-                                                            },
-                                                    }}
-                                                />
-                                            </TableCell>
-                                            <TableCell
-                                                sx={{
-                                                    width: '20%',
-                                                    borderBottom: '0',
-                                                    boxShadow:
-                                                        '0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset;',
-                                                    pointerEvents:
-                                                        !rowEditableState[index]
-                                                            ? 'none'
-                                                            : 'auto',
-                                                }}
-                                            >
-                                                <Typography
-                                                    variant="h6"
-                                                    sx={{
-                                                        fontSize: '14px',
-                                                        color: !rowEditableState[
-                                                            index
-                                                        ]
-                                                            ? '#9E9E9E'
-                                                            : '#212121',
+                                                        width: '66%',
+                                                        borderBottom: '0',
+                                                        boxShadow:
+                                                            '0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset;',
                                                     }}
                                                 >
-                                                    {columnMetadata[
-                                                        column
-                                                    ]?.dataType?.trim() ||
-                                                        files.dataTypes?.[
+                                                    <TextField
+                                                        fullWidth
+                                                        value={
+                                                            editableFields[
+                                                                index
+                                                            ] ?? column
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleNameChange(
+                                                                index,
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        variant="outlined"
+                                                        size="small"
+                                                        disabled={
+                                                            !rowEditableState[
+                                                                index
+                                                            ]
+                                                        }
+                                                        sx={{
+                                                            '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline':
+                                                                {
+                                                                    borderStyle:
+                                                                        'dotted',
+                                                                },
+                                                            '& .MuiInputBase-input':
+                                                                {
+                                                                    color: '#666',
+                                                                },
+                                                        }}
+                                                    />
+                                                </TableCell>
+                                                <TableCell
+                                                    sx={{
+                                                        width: '20%',
+                                                        borderBottom: '0',
+                                                        boxShadow:
+                                                            '0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset;',
+                                                        pointerEvents:
+                                                            !rowEditableState[
+                                                                index
+                                                            ]
+                                                                ? 'none'
+                                                                : 'auto',
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        variant="h6"
+                                                        sx={{
+                                                            fontSize: '14px',
+                                                            color: !rowEditableState[
+                                                                index
+                                                            ]
+                                                                ? '#9E9E9E'
+                                                                : '#212121',
+                                                        }}
+                                                    >
+                                                        {columnMetadata[
                                                             column
-                                                        ]?.trim() ||
-                                                        'String'}
-                                                </Typography>
-                                            </TableCell>
-                                            <TableCell
-                                                sx={{
-                                                    width: '7%',
-                                                    borderBottom: '0',
-                                                    boxShadow:
-                                                        '0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset;',
-                                                }}
-                                            >
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() =>
-                                                        handleOpenModal(column)
-                                                    }
-                                                    disabled={
-                                                        !rowEditableState[index]
-                                                    }
+                                                        ]?.dataType?.trim() ||
+                                                            parsedData.dataTypes?.[
+                                                                column
+                                                            ]?.trim() ||
+                                                            'String'}
+                                                    </Typography>
+                                                </TableCell>
+                                                <TableCell
+                                                    sx={{
+                                                        width: '7%',
+                                                        borderBottom: '0',
+                                                        boxShadow:
+                                                            '0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset;',
+                                                    }}
                                                 >
-                                                    <CreateOutlined />
-                                                </IconButton>
-                                            </TableCell>
-                                            <TableCell
-                                                sx={{
-                                                    width: '7%',
-                                                    borderBottom: '0',
-                                                    boxShadow:
-                                                        '0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset;',
-                                                }}
-                                            >
-                                                <IconButton
-                                                    onClick={() =>
-                                                        toggleRowEditState(
-                                                            index,
-                                                        )
-                                                    }
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() =>
+                                                            handleOpenModal(
+                                                                column,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            !rowEditableState[
+                                                                index
+                                                            ]
+                                                        }
+                                                    >
+                                                        <CreateOutlined />
+                                                    </IconButton>
+                                                </TableCell>
+                                                <TableCell
+                                                    sx={{
+                                                        width: '7%',
+                                                        borderBottom: '0',
+                                                        boxShadow:
+                                                            '0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset;',
+                                                    }}
                                                 >
-                                                    {rowEditableState[index] ? (
-                                                        <CloseIcon color="error" />
-                                                    ) : (
-                                                        <AddIcon color="success" />
-                                                    )}
-                                                </IconButton>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
+                                                    <IconButton
+                                                        onClick={() =>
+                                                            toggleRowEditState(
+                                                                index,
+                                                            )
+                                                        }
+                                                    >
+                                                        {rowEditableState[
+                                                            index
+                                                        ] ? (
+                                                            <CloseIcon color="error" />
+                                                        ) : (
+                                                            <AddIcon color="success" />
+                                                        )}
+                                                    </IconButton>
+                                                </TableCell>
+                                            </TableRow>
+                                        ),
+                                    )}
                                 </TableBody>
                             </Table>
                         </TableContainer>
