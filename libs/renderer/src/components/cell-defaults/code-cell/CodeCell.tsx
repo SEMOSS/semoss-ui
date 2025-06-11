@@ -143,13 +143,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             value: response.pixelReturn[0].output[key]
         }));
         setAllFunctions(allOutputs);
-        console.log("allOutputs", allOutputs);
-        console.log("R outputs", allOutputs.filter(output => output.key === "R"));
-        console.log("Python outputs", allOutputs.filter(output => output.key === "Python"));
-        console.log("Reactor Outputs", allOutputs.filter(output => output.key === "General"));
-        console.log("response", response);
-        console.log("all functions", allFunctions);
-
     };
     useEffect(() => {
         getReactors();
