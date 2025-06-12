@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef, useLayoutEffect } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Add, Delete, Edit } from '@mui/icons-material';
 import SearchIcon from '@mui/icons-material/Search';
 import { AxiosResponse } from 'axios';
@@ -16,7 +16,6 @@ import {
     Search,
     useNotification,
     Box,
-    Badge,
     Stack,
 } from '@semoss/ui';
 
@@ -303,10 +302,10 @@ export const MembersTable = (props: MembersTableProps) => {
             'getEngineUsers',
             adminMode,
             id,
-            configStore.store.user.id,
+            debouncedSearch ? debouncedSearch : undefined,
             permissionPriorityMapper(permissionFilter)?.permission,
-            0, // offset
-            1, // limit
+            (page + 1) * rowsPerPage - rowsPerPage, // offset
+            rowsPerPage, // limit
         ];
     }
 
@@ -917,7 +916,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     value="Editor"
                                                                     label="Editor"
                                                                     disabled={
-                                                                        (userPermission === 'Editor' && user.permission === 'OWNER') ||
+                                                                        (userPermission ===
+                                                                            'Editor' &&
+                                                                            user.permission ===
+                                                                                'OWNER') ||
                                                                         !configStore.isEngineOperationAvailable(
                                                                             type,
                                                                             'access',
@@ -933,7 +935,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     value="Read-Only"
                                                                     label="Read-Only"
                                                                     disabled={
-                                                                        (userPermission === 'Editor' && user.permission === 'OWNER') ||
+                                                                        (userPermission ===
+                                                                            'Editor' &&
+                                                                            user.permission ===
+                                                                                'OWNER') ||
                                                                         !configStore.isEngineOperationAvailable(
                                                                             type,
                                                                             'access',
