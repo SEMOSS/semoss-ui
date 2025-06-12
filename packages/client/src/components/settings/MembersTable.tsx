@@ -265,15 +265,7 @@ export const MembersTable = (props: MembersTableProps) => {
     let getUserDataApi: Parameters<typeof useAPI>[0] = null;
     let getAllAuthorsApi: Parameters<typeof useAPI>[0] = null;
     if (type === 'APP') {
-        getUserDataApi = [
-            'getProjectUsers',
-            adminMode,
-            id,
-            configStore.store.user.id,
-            permissionPriorityMapper(permissionFilter)?.permission,
-            0, // offset
-            1, // limit
-        ];
+        getUserDataApi = ['getUserProjectPermission', id];
         getMembersApi = [
             'getProjectUsers',
             adminMode,
@@ -299,15 +291,7 @@ export const MembersTable = (props: MembersTableProps) => {
         type === 'VECTOR' ||
         type === 'FUNCTION'
     ) {
-        getUserDataApi = [
-            'getEngineUsers',
-            adminMode,
-            id,
-            configStore.store.user.id,
-            permissionPriorityMapper(permissionFilter)?.permission,
-            0, // offset
-            1, // limit
-        ];
+        getUserDataApi = ['getUserEnginePermission', id];
         getMembersApi = [
             'getEngineUsers',
             adminMode,
@@ -358,7 +342,10 @@ export const MembersTable = (props: MembersTableProps) => {
      * @param members The array of members to set the user details from
      */
     const setUserDetails = () => {
-        setUserData(userDetails.data.members[0]);
+        if (!userDetails.data) {
+            return;
+        }
+        setUserData(userDetails.data);
         if (adminMode) {
             const adminPermissionPriority = 'Author';
             setUserPermission(
@@ -368,9 +355,9 @@ export const MembersTable = (props: MembersTableProps) => {
         } else {
             setUserPermission(
                 permissionPriorityMapper(
-                    userDetails.data.members[0].permission === 'OWNER'
+                    userDetails.data.permission === 'OWNER'
                         ? 'Author'
-                        : userDetails.data.members[0].permission,
+                        : userDetails.data.permission,
                 )?.permission as SETTINGS_ROLE,
             );
         }
