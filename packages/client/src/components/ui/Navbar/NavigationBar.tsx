@@ -15,6 +15,8 @@ import {
     Box,
     Container,
     Stack,
+    ToggleButton,
+    ToggleButtonGroup,
 } from '@semoss/ui';
 
 import { THEME } from '@/constants';
@@ -125,6 +127,7 @@ const StyledAppBuilderSection = styled('div')(({ theme }) => ({
     alignItems: 'center',
     gap: '8px',
     flexGrow: 1,
+    justifyContent: 'flex-end',
 }));
 
 const StyledAppBuilder = styled(Typography)(({ theme }) => ({
@@ -286,23 +289,25 @@ export const NavigationBar: React.FC<NavigationBarProps> = observer(
                                 ? right
                                 : location.pathname === '/' && (
                                       <StyledAppBuilderSection>
-                                          <StyledAppBuilder variant="h6">
-                                              App Builder
-                                          </StyledAppBuilder>
-                                          <StyledSwitch
-                                              checked={showAppBuilder}
-                                              size={'small'}
-                                              onChange={(
-                                                  e: ChangeEvent<HTMLInputElement>,
-                                              ) => {
-                                                  setShowAppBuilder(
-                                                      e.target.checked,
-                                                  );
-                                                  configStore.setAppBuilderMode(
-                                                      e.target.checked,
-                                                  );
-                                              }}
-                                          ></StyledSwitch>
+                                          <ToggleButtonGroup
+                                              size="small"
+                                              color={'primary'}
+                                              value={
+                                                  showAppBuilder ? 'build' : ''
+                                              }
+                                          >
+                                              <ToggleButton
+                                                  size="small"
+                                                  value={'build'}
+                                                  onClick={() => {
+                                                      configStore.setAppBuilderMode(
+                                                          !showAppBuilder,
+                                                      );
+                                                  }}
+                                              >
+                                                  Build
+                                              </ToggleButton>
+                                          </ToggleButtonGroup>
                                       </StyledAppBuilderSection>
                                   )}
                         </StyledRightSection>

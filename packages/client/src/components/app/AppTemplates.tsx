@@ -36,10 +36,16 @@ const StyledContainer = styled('div')(({ theme }) => ({
 interface AppTemplatesProps {
     /** Use a template */
     onUse: (template: Template) => void;
+
+    /**
+     * Pass this if you only want a certain amount,
+     * could be useful for random suggestions
+     */
+    randomCount?: number;
 }
 
 export const AppTemplates = (props: AppTemplatesProps) => {
-    const { onUse = () => null } = props;
+    const { randomCount, onUse = () => null } = props;
 
     const getAppMetadataFromTemplate = (template: Template): AppMetadata => {
         return {
@@ -67,6 +73,11 @@ export const AppTemplates = (props: AppTemplatesProps) => {
         >
             <StyledContainer>
                 {DEFAULT_TEMPLATE.map((t, idx) => {
+                    if (randomCount) {
+                        if (idx > randomCount) {
+                            return;
+                        }
+                    }
                     const app = getAppMetadataFromTemplate(t);
                     {
                         return (

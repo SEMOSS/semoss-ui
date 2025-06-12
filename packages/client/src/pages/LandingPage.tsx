@@ -10,13 +10,14 @@ import { UserLandingPage } from '../components/landing/UserlandingPage';
 import DevBanner from '@/assets/img/DevBanner.png';
 import playground from '@/assets/img/playground.png';
 import AIConductor from '@/assets/img/AIConductor.png';
-import NavSection from './app/NavSection';
 import { useRootStore } from '@/hooks';
 import { AddAppModal, NewAppModal } from '@/components/app';
 import { BASE_PAGE_BLOCKS } from './app/app.constants';
 import { THEME } from '@/constants';
 import { FeaturedAppCard } from '@/components/landing/FeaturedAppCard';
 import { BannerSection } from '@/components/landing/BannerSection';
+import CreateAppSection from '../components/landing/CreateAppSection';
+import { FanFavoritesSection } from '../components/landing/FanFavoritesSection';
 
 const StyledComponent = styled(Container)(({ theme }) => ({
     position: 'absolute',
@@ -135,16 +136,16 @@ export const LandingPage = observer(() => {
                         }}
                     >
                         <BannerSection
+                            imageUrl={DevBanner}
                             tagline={`Empower your ideas with ${
                                 themeMap.name ? themeMap.name : THEME.name
                             }`}
                             description={
                                 'Build, automate, and innovate—all without coding. Harness the power of AI to transform your projects and workflows'
                             }
-                            imageUrl={DevBanner}
                             link={{
                                 label: 'Browse Templates',
-                                to: '/app/new',
+                                to: '/app/new/template',
                             }}
                         />
                         <div
@@ -184,20 +185,6 @@ export const LandingPage = observer(() => {
                                     }}
                                 />
                             </Box>
-                            {isUploadOpen ? (
-                                <AddAppModal
-                                    open={isUploadOpen}
-                                    handleClose={(appId) => {
-                                        // if there is an appId navigate to it
-                                        if (appId) {
-                                            navigateApp(appId);
-                                        }
-
-                                        // close it
-                                        setIsUploadOpen(false);
-                                    }}
-                                />
-                            ) : null}
                             {isNameOpen ? (
                                 <NewAppModal
                                     open={isNameOpen}
@@ -212,11 +199,10 @@ export const LandingPage = observer(() => {
                                     }}
                                 />
                             ) : null}
-                            <NavSection
-                                setupApp={setupApp}
-                                uploadApp={() => setIsUploadOpen(true)}
-                            />
+                            <CreateAppSection setupApp={setupApp} />
                         </div>
+
+                        <FanFavoritesSection />
                     </Box>
                 ) : (
                     <UserLandingPage />

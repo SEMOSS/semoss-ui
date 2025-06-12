@@ -8,6 +8,7 @@ import { EngineCatalogPage } from './EngineCatalogPage';
 
 import { createElement } from 'react';
 import { SettingsContext } from '@/contexts';
+import { ImportPageTwo } from '../import/ImportPageTwo';
 
 export const EngineRouter = observer(() => {
     return (
@@ -41,6 +42,10 @@ export const EngineRouter = observer(() => {
                                             />
                                         ))}
                                     </Route>
+                                    <Route
+                                        path="new"
+                                        element={<ImportPageTwo />}
+                                    />
                                 </>
                             ) : null}
 

@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Outlet } from 'react-router-dom';
 
-import { styled, Box, Stack } from '@semoss/ui';
+import { styled, Stack } from '@semoss/ui';
 
-import { NavigationBar, SideNav } from '@/components/ui';
+import { NavigationBar, SideNav } from '../components/ui/Navbar';
 import { ErrorBoundary } from '@/components/common';
 import { ErrorPage } from './ErrorPage';
 import { PlatformMessages } from './PlatformMessages';

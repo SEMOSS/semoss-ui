@@ -1,19 +1,26 @@
 import { useState } from 'react';
-import { Stack, Typography, Container } from '@semoss/ui';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { STATE_VERSION } from '@semoss/renderer';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 
-import { useRootStore } from '@/hooks';
+import { STATE_VERSION } from '@semoss/renderer';
+import { Stack, Container, Breadcrumbs, styled, Typography } from '@semoss/ui';
+
+import { useRootStore } from '../../hooks';
+import { BASE_PAGE_BLOCKS } from './app.constants';
+import { Page } from '../../components/ui';
 import {
     NewAppStep,
     AddAppModal,
-    AppTemplates,
     NewAppModal,
-} from '@/components/app';
-import { BASE_PAGE_BLOCKS } from './app.constants';
-import NavSection from './NavSection';
+    AppTemplates,
+} from '../../components/app';
+import CreateAppSection from '../../components/landing/CreateAppSection';
 
-export const NewAppPage = () => {
+const StyledLink = styled(Link)(() => ({
+    textDecoration: 'none',
+    color: 'inherit',
+}));
+
+export const CreateAppPage = () => {
     const navigate = useNavigate();
 
     const { configStore } = useRootStore();
@@ -64,15 +71,24 @@ export const NewAppPage = () => {
     };
 
     return (
-        <NewAppStep
-            title={'Create New App'}
-            previous={{ title: 'App Library', onClick: () => navigate('/') }}
+        <Page
+            header={
+                <Stack>
+                    <Breadcrumbs>
+                        <StyledLink to={`..`}>Catalog</StyledLink>
+                        <StyledLink to={`.`}>Create</StyledLink>
+                    </Breadcrumbs>
+                    <Stack direction="row" alignItems={'center'} width={'100%'}>
+                        <Typography variant="h4">Create New App</Typography>
+                        <Stack flex={1}> &nbsp;</Stack>
+                    </Stack>
+                </Stack>
+            }
         >
             {isUploadOpen ? (
                 <AddAppModal
                     open={isUploadOpen}
                     handleClose={(appId) => {
-                        console.log('ok');
                         // if there is an appId navigate to it
                         if (appId) {
                             navigateApp(appId);
@@ -98,15 +114,26 @@ export const NewAppPage = () => {
                     }}
                 />
             ) : null}
-            <Container disableGutters={true} sx={{ display: 'flex' }}>
-                <NavSection
-                    setupApp={setupApp}
-                    uploadApp={() => setIsUploadOpen(true)}
+
+            <CreateAppSection
+                setupApp={setupApp}
+                uploadApp={() => setIsUploadOpen(true)}
+            />
+
+            <Stack gap={3}>
+                <Typography variant="h6" gutterBottom>
+                    Start build with a template
+                </Typography>
+                <AppTemplates
+                    randomCount={6}
+                    onUse={(t) => {
+                        setNewAppOptions({
+                            type: 'blocks',
+                            state: t.state,
+                        });
+                    }}
                 />
-            </Container>
-            <Stack direction={'column'} spacing={5}>
-                {' '}
             </Stack>
-        </NewAppStep>
+        </Page>
     );
 };

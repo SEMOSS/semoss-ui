@@ -10,6 +10,7 @@ import {
     AppDetailPage,
     AppPage,
     NewPromptBuilderAppPage,
+    CreateAppPage,
 } from './app';
 
 import { EngineRouter } from './engine';
@@ -67,7 +68,11 @@ export const Router = observer(() => {
 
                     <Route path="app/*">
                         <Route index element={<AppCatalogPage />} />
-                        <Route path="new" element={<AppMarketplacePage />} />
+                        <Route path="new" element={<CreateAppPage />} />
+                        <Route
+                            path="new/template"
+                            element={<AppMarketplacePage />}
+                        />
                         <Route
                             path="new/prompt"
                             element={<NewPromptBuilderAppPage />}
@@ -82,6 +87,7 @@ export const Router = observer(() => {
                     <Route path="engine/*" element={<EngineRouter />} />
                     <Route path="prompt/*" element={<PromptRouter />} />
                     <Route path="settings/*" element={<SettingsRouter />} />
+
                     <Route path="import" element={<ImportRouter />} />
                 </Route>
 
