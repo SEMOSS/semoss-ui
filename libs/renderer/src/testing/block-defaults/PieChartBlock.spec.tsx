@@ -225,7 +225,7 @@ describe("Pie Block Component", () => {
 		expect(pichart).toBeInTheDocument();
 	});
 
-	it("should enable donut for pie chart", async () => {
+	it("should set radius for donut of pie chart via useBlockSettings", async () => {
 		const { result } = renderHook(
 			() => useBlockSettings<EchartVisualizationBlockDef>("pieChart"),
 			{
@@ -244,7 +244,7 @@ describe("Pie Block Component", () => {
 		expect(result.current.data.option.series[0].radius).toEqual(["20%", "50%"]);
 	});
 
-	it("should set radius of pie chart via blocks", () => {
+	it("should set radius for donut of pie chart via blocks", () => {
 		const { result } = renderHook(() => useBlock("pieChart"), {
 			blocks: {
 				// Modify the mockBlocks to test there's a donut chart
@@ -304,5 +304,4 @@ describe("Pie Block Component", () => {
 			mockBlocks.pieChart.data.option.series[0].data.map((data) => data.value),
 		).toEqual([1048, 735, 580, 484, 300]);
 	});
-	// THIS DOES NOT WORK ATM
 });
