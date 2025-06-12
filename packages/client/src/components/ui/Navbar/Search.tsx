@@ -8,7 +8,6 @@ import NorthEastIcon from '@mui/icons-material/NorthEast';
 
 import {
     Box,
-    // Chip,
     List,
     Link,
     Popper,
@@ -303,13 +302,9 @@ const Search = observer(({ renderInput }: SearchProps) => {
             const id = option.id ? option.id : option.database_id;
             const type = option.type ? option.type : option.database_type;
 
-            console.log(id);
-
             return href + `/engine/${type.toLowerCase()}/${id}`;
         }
     };
-
-    console.log('rc', recentSearches);
 
     return (
         <Autocomplete

@@ -14,7 +14,6 @@ import {
 } from './app';
 
 import { EngineRouter } from './engine';
-import { ImportRouter } from './import';
 import { PromptRouter } from './prompt';
 import { SettingsRouter } from './settings';
 
@@ -87,8 +86,6 @@ export const Router = observer(() => {
                     <Route path="engine/*" element={<EngineRouter />} />
                     <Route path="prompt/*" element={<PromptRouter />} />
                     <Route path="settings/*" element={<SettingsRouter />} />
-
-                    <Route path="import" element={<ImportRouter />} />
                 </Route>
 
                 <Route

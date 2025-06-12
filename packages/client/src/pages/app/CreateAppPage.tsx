@@ -75,7 +75,7 @@ export const CreateAppPage = () => {
             header={
                 <Stack>
                     <Breadcrumbs>
-                        <StyledLink to={`..`}>Catalog</StyledLink>
+                        <StyledLink to={`..`}>App Catalog</StyledLink>
                         <StyledLink to={`.`}>Create</StyledLink>
                     </Breadcrumbs>
                     <Stack direction="row" alignItems={'center'} width={'100%'}>
@@ -115,24 +115,26 @@ export const CreateAppPage = () => {
                 />
             ) : null}
 
-            <CreateAppSection
-                setupApp={setupApp}
-                uploadApp={() => setIsUploadOpen(true)}
-            />
-
-            <Stack gap={3}>
-                <Typography variant="h6" gutterBottom>
-                    Start build with a template
-                </Typography>
-                <AppTemplates
-                    randomCount={6}
-                    onUse={(t) => {
-                        setNewAppOptions({
-                            type: 'blocks',
-                            state: t.state,
-                        });
-                    }}
+            <Stack gap={2}>
+                <CreateAppSection
+                    setupApp={setupApp}
+                    uploadApp={() => setIsUploadOpen(true)}
                 />
+
+                <Stack gap={2}>
+                    <Typography variant="h6" gutterBottom>
+                        Start build with a template
+                    </Typography>
+                    <AppTemplates
+                        randomCount={6}
+                        onUse={(t) => {
+                            setNewAppOptions({
+                                type: 'blocks',
+                                state: t.state,
+                            });
+                        }}
+                    />
+                </Stack>
             </Stack>
         </Page>
     );
