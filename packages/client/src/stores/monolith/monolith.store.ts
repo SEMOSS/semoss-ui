@@ -2977,26 +2977,6 @@ export class MonolithStore {
         return response.data;
     }
 
-    async getSavedApiKeys() {
-        const url = `${Env.MODULE}/api/auth/user/getUserAccessKey`;
-
-        const response = await axios
-            .get<
-                {
-                    ACCESSKEY: string;
-                    DATECREATED: string;
-                    TOKENNAME: string;
-                    LASTUSED?: string;
-                    TOKENDESCRIPTION?: string;
-                }[]
-            >(url)
-            .catch((error) => {
-                throw Error(error);
-            });
-
-        return response.data;
-    }
-
     /**
      * Get access keys related to a user
      */
@@ -3011,30 +2991,6 @@ export class MonolithStore {
             .post<{
                 ACCESSKEY: string;
                 SECRETKEY: string;
-                DATECREATED: string;
-                LASTUSED: string;
-                TOKENNAME: string;
-                TOKENDESCRIPTION?: string;
-            }>(url, body, {
-                headers: {
-                    'content-type': 'application/x-www-form-urlencoded',
-                },
-            })
-            .catch((error) => {
-                throw Error(error);
-            });
-
-        return response.data;
-    }
-
-    async saveUserApiKey(apikey: string, userid: string) {
-        const url = `${Env.MODULE}/api/auth/user/saveUserApiKey`;
-        let body = 'apikey=' + encodeURIComponent(apikey);
-        body += '&userid=' + encodeURIComponent(userid);
-        const response = await axios
-            .post<{
-                APIKEY: string;
-                USERID: string;
                 DATECREATED: string;
                 LASTUSED: string;
                 TOKENNAME: string;

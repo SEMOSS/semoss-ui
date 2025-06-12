@@ -26,18 +26,7 @@ import {
 
 import { useAPI, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
-import { useState } from 'react';
-import { getSDKSnippet } from '@/utility';
-const StyledAvatar = styled(Avatar)(({ theme }) => ({
-    display: 'flex',
-    alignContent: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#975FE4',
-}));
-
-const StyledPaper = styled(Paper)(({ theme }) => ({
-    padding: '40px 30px 20px 50px',
-}));
+import { useState, useEffect } from 'react';
 
 const StyledAccessTokensPaper = styled(Paper)(({ theme }) => ({
     padding: '40px 30px 20px 28px',
@@ -72,140 +61,113 @@ const MessageDiv = styled('div')(({ theme }) => ({
     margin: '75px auto 85px',
 }));
 
-const AvatarForm = styled('form')(({ theme }) => ({
-    paddingTop: '15px',
-    width: '750px',
-}));
-
-const CurrentAvatarStack = styled(Stack)(({ theme }) => ({
-    alignItems: 'center',
-}));
-
 const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
     marginTop: '20px',
-}));
-
-const StyledGrid = styled(Grid)(({ theme }) => ({
-    marginBottom: '40px',
-}));
-
-const MonolithGrid = styled(Grid)(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'center',
-}));
-
-const StyledStack = styled(Stack)(({ theme }) => ({
-    marginBottom: '15px',
-}));
-
-const CopyGridItem = styled(Grid)(({ theme }) => ({
-    padding: 0,
-    display: 'flex',
-    justifyContent: 'right',
 }));
 
 const GridItem = styled(Grid)(({ theme }) => ({
     padding: 0,
 }));
 
-const CustomGridItem = styled(GridItem)(({ theme }) => ({
-    padding: 0,
-    zIndex: 8,
-}));
-
-const StyledCodeBlock = styled('pre')(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: theme.spacing(5),
-    background: theme.palette.background.default,
-    borderRadius: theme.shape.borderRadius,
-    padding: theme.spacing(2),
-    overflowX: 'scroll',
-    margin: '0px',
-}));
-
-const StyledCodeContent = styled('code', {
-    shouldForwardProp: (prop) => prop !== 'maxWidth',
-})<{
-    /** Track if the page header is stuck */
-    maxWidth?: string;
-}>(({ theme, maxWidth }) => ({
-    flex: 1,
-    maxWidth: maxWidth ? maxWidth : 'auto',
-    overflowY: 'scroll',
-}));
-
-const StyledSDKBlock = styled('pre')(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '40px',
-    background: theme.palette.background.paper,
-    borderRadius: theme.shape.borderRadius,
-    padding: theme.spacing(2),
-    margin: '0px',
-}));
-
-const StyledCreatedKeyContainer = styled(Stack)(({ theme }) => ({
-    background: theme.palette.background.default,
-    padding: theme.spacing(1),
-}));
-
 interface SaveAPIKeyForm {
     APIKEY: string;
     USERID: string;
-}
-
-interface EditUserInfoForm {
-    NAME: string;
-    USERNAME: string;
-    EMAIL: string;
-    USERID?: string | undefined;
+    URL: string;
 }
 
 export const JiraProfilePage = () => {
     const notification = useNotification();
     const { configStore, monolithStore } = useRootStore();
-    const { email, id, name, admin, loggedIn } = configStore.store.user;
 
     // track the models
     const [addModal, setAddModal] = useState(false);
 
-    // get the keys
-    const getSavedApiKeys = useAPI(['getSavedApiKeys']);
+    const [savedApiKeys, setSavedApiKeys] = useState([]);
 
-    // NATIVE Login USERID must match Username
-    const logins = configStore.store.config.logins;
-    const nativeLogin = logins['NATIVE'];
+    // get the keys
+    //const getSavedApiKeys = useAPI(['getSavedApiKeys']);
 
     const { control, reset, setValue, handleSubmit, watch } =
         useForm<SaveAPIKeyForm>({
             defaultValues: {
                 APIKEY: '',
                 USERID: '',
+                URL: '',
             },
         });
 
-    const SaveAPIKey = async (data: SaveAPIKeyForm) => {
-        try {
-            console.log('Saving API Key', data);
-            const output = await monolithStore.saveUserApiKey(
-                data.APIKEY,
-                data.USERID,
-            );
+    useEffect(() => {
+        getSavedApiKeysQuery();
+    }, []); // Empty dependency array ensures the call is made only once when the component mounts
 
-            // add a new one
-            notification.add({
-                color: 'success',
-                message: 'Successfully Saved key',
+    const getSavedApiKeysQuery = async () => {
+        const pixel = `META | JiraGet()`;
+        monolithStore
+            .runQuery(pixel)
+            .then((response) => {
+                const type = response.pixelReturn[0].operationType;
+                const output = response.pixelReturn[0].output;
+                //setSavedApiKeys((current)=>[...current,{URL: 'https://example.com', DATECREATED: '2023-10-01', LASTUSED: '2023-10-02', USERID: '12345'}]); // Mock data for testing
+                if (type.indexOf('ERROR') === -1 && output.length > 0) {
+                    // notification.add({
+                    //     color: 'success',
+                    //     message: 'Successfully inserted Jira credentials.',
+                    // });
+                    setSavedApiKeys(output);
+                } else {
+                    throw new Error(response.errors[0]);
+                }
+            })
+            .catch((error) => {
+                console.error('Error making pixel call:', error);
             });
-        } catch (e) {
-            if (e instanceof Error) {
+    };
+    const SaveAPIKey = async (data: SaveAPIKeyForm) => {
+        const pixel = `META | JiraInsert(username="${data.USERID}",apikey="${data.APIKEY}",url="${data.URL}")`;
+        monolithStore
+            .runQuery(pixel)
+            .then((response) => {
+                const type = response.pixelReturn[0].operationType;
+                const output = response.pixelReturn[0].output.Success;
+                if (type.indexOf('ERROR') === -1 && output === true) {
+                    notification.add({
+                        color: 'success',
+                        message: 'Successfully inserted Jira credentials.',
+                    });
+
+                    getSavedApiKeysQuery();
+                } else {
+                    throw new Error(response.errors[0]);
+                }
+            })
+            .catch((error) => {
                 notification.add({
                     color: 'error',
-                    message: e.message,
+                    message: error.message,
                 });
-            }
-        }
+            });
+        // try {
+        //     console.log('Saving API Key', data);
+        //     const output = await monolithStore.saveUserApiKey(
+        //         data.APIKEY,
+        //         data.USERID,
+        //     );
+
+        //     getSavedApiKeys.refresh();
+
+        //     // add a new one
+        //     notification.add({
+        //         color: 'success',
+        //         message: 'Successfully Saved key',
+        //     });
+        // } catch (e) {
+        //     if (e instanceof Error) {
+        //         notification.add({
+        //             color: 'error',
+        //             message: e.message,
+        //         });
+        //     }
+        // }
     };
 
     /**
@@ -223,7 +185,7 @@ export const JiraProfilePage = () => {
             }
 
             // refresh the keys
-            getSavedApiKeys.refresh();
+            //getSavedApiKeys.refresh();
 
             // add a new one
             notification.add({
@@ -246,11 +208,6 @@ export const JiraProfilePage = () => {
     const closeModel = () => {
         // close it
         setAddModal(false);
-
-        // a new key was added refresh the current keys
-        // if (isCreated) {
-        getSavedApiKeys.refresh();
-        //}
 
         // reset the form
         reset({});
@@ -276,15 +233,15 @@ export const JiraProfilePage = () => {
         }
     };
 
-    if (
-        getSavedApiKeys.status === 'INITIAL' ||
-        getSavedApiKeys.status === 'LOADING'
-    ) {
-        return <LoadingScreen.Trigger description="Getting access keys" />;
-    }
+    // if (
+    //     getSavedApiKeys.status === 'INITIAL' ||
+    //     getSavedApiKeys.status === 'LOADING'
+    // ) {
+    //     return <LoadingScreen.Trigger description="Getting access keys" />;
+    // }
 
     return (
-        <Stack gap={3} className="my-profile-page">
+        <Stack gap={3} className="my-jira-profile-page">
             <StyledAccessTokensPaper>
                 <Stack direction="row" justifyContent={'space-between'} mb={1}>
                     <Typography variant="h6">Personal Access Tokens</Typography>
@@ -295,9 +252,9 @@ export const JiraProfilePage = () => {
                         onClick={() => {
                             setAddModal(true);
                         }}
-                        data-testid={'my-profile-new-key-btn'}
+                        data-testid={'my-jira-profile-new-key-btn'}
                     >
-                        New Key
+                        Save Key
                     </Button>
                 </Stack>
 
@@ -306,65 +263,56 @@ export const JiraProfilePage = () => {
                         <Table.Head>
                             <Table.Row>
                                 <LeftHeaderCell align={'left'}>
-                                    Name
+                                    Url
                                 </LeftHeaderCell>
-                                <HeaderCell align={'left'}>
-                                    Description
-                                </HeaderCell>
                                 <HeaderCell align={'left'}>
                                     Date Created
                                 </HeaderCell>
                                 <HeaderCell align={'left'}>
                                     Last Used Created
                                 </HeaderCell>
-                                <HeaderCell align={'left'}>
-                                    Access Key
-                                </HeaderCell>
+                                <HeaderCell align={'left'}>UserId</HeaderCell>
                                 <RightHeaderCell>&nbsp;</RightHeaderCell>
                             </Table.Row>
                         </Table.Head>
                         <Table.Body>
-                            {getSavedApiKeys.status === 'SUCCESS' &&
-                            getSavedApiKeys.data.length !== 0
-                                ? getSavedApiKeys.data.map((k, idx) => {
+                            {savedApiKeys.length !== 0
+                                ? savedApiKeys.map((k, idx) => {
                                       return (
                                           <Table.Row key={idx}>
                                               <Table.Cell align={'left'}>
-                                                  {k.TOKENNAME}
+                                                  {k.url}
                                               </Table.Cell>
                                               <Table.Cell align={'left'}>
-                                                  {k.TOKENDESCRIPTION || ''}
+                                                  {k.dateCreated}
                                               </Table.Cell>
                                               <Table.Cell align={'left'}>
-                                                  {k.DATECREATED}
+                                                  {k.lastUsed}
                                               </Table.Cell>
                                               <Table.Cell align={'left'}>
-                                                  {k.LASTUSED}
-                                              </Table.Cell>
-                                              <Table.Cell align={'left'}>
-                                                  {k.ACCESSKEY}
+                                                  {k.userId}
                                               </Table.Cell>
                                               <Table.Cell align={'right'}>
-                                                  <IconButton
+                                                  {/* <IconButton
                                                       title="Copy"
                                                       onClick={() => {
-                                                          copy(k.ACCESSKEY);
+                                                          //copy(k.ACCESSKEY);
                                                       }}
                                                       data-testid={
-                                                          'my-profile-access-key-copy-btn'
+                                                          'my-jira-profile-access-key-copy-btn'
                                                       }
                                                   >
                                                       <ContentCopyOutlined />
-                                                  </IconButton>
+                                                  </IconButton> */}
                                                   <IconButton
                                                       title="Delete"
                                                       onClick={() => {
-                                                          deleteAccessKey(
-                                                              k.ACCESSKEY,
-                                                          );
+                                                          //   deleteAccessKey(
+                                                          //       k.ACCESSKEY,
+                                                          //   );
                                                       }}
                                                       data-testid={
-                                                          'my-profile-access-key-delete-btn'
+                                                          'my-jira-profile-access-key-delete-btn'
                                                       }
                                                   >
                                                       <Delete />
@@ -377,23 +325,22 @@ export const JiraProfilePage = () => {
                         </Table.Body>
                     </Table>
                 </StyledTableContainer>
-                {getSavedApiKeys.status === 'SUCCESS' &&
-                    getSavedApiKeys.data.length === 0 && (
-                        <MessageDiv>
-                            No Personal Access Tokens to display at this time
-                            <br />
-                            Click New Key to create a new Personal Access Token
-                        </MessageDiv>
-                    )}
+                {savedApiKeys.length === 0 && (
+                    <MessageDiv>
+                        No Personal API Keys to display at this time
+                        <br />
+                        Click Save Key to save a new Personal API Key
+                    </MessageDiv>
+                )}
             </StyledAccessTokensPaper>
 
             <Modal open={addModal} onClose={() => closeModel()} maxWidth="lg">
-                <Modal.Title>Generate Key</Modal.Title>
+                <Modal.Title>Save Key</Modal.Title>
                 <Modal.Content>
                     <Stack sx={{ width: '800px' }} spacing={4}>
                         <form
                             onSubmit={handleSubmit(SaveAPIKey)}
-                            className="my-profile-page__generate-key-form"
+                            className="my-jira-profile-page__generate-key-form"
                         >
                             <Stack direction="column" spacing={2}>
                                 {/* <Alert severity="info">
@@ -415,7 +362,6 @@ export const JiraProfilePage = () => {
                                                         ? field.value
                                                         : ''
                                                 }
-                                                //disabled={isCreated}
                                                 onChange={(value) =>
                                                     field.onChange(value)
                                                 }
@@ -439,7 +385,29 @@ export const JiraProfilePage = () => {
                                                         ? field.value
                                                         : ''
                                                 }
-                                                //disabled={isCreated}
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                                inputProps={{ maxLength: 500 }}
+                                            ></TextField>
+                                        );
+                                    }}
+                                />
+
+                                <Controller
+                                    name={'URL'}
+                                    control={control}
+                                    rules={{ required: true }}
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                required
+                                                label="URL"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
                                                 onChange={(value) =>
                                                     field.onChange(value)
                                                 }
@@ -451,12 +419,11 @@ export const JiraProfilePage = () => {
 
                                 <Stack direction="row" justifyContent={'start'}>
                                     <Button
-                                        //disabled={isCreated}
                                         type="submit"
                                         variant={'outlined'}
                                         color="primary"
                                         data-testid={
-                                            'my-profile-page-generate-btn'
+                                            'my-jira-profile-page-generate-btn'
                                         }
                                     >
                                         Save

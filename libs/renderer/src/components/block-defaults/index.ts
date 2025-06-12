@@ -82,6 +82,8 @@ import { config as SliderBlockConfig, SliderBlockDef } from "./slider-block";
 import { config as SwitchBlockConfig, SwitchBlockDef } from "./switch-block";
 
 import { config as TextBlockConfig, TextBlockDef } from "./text-block";
+
+import { config as JiraBlockConfig, JiraBlockDef } from "./jira-block";
 import {
     config as TimePickerBlockConfig,
     TimePickerBlockDef,
@@ -142,6 +144,7 @@ export type DefaultBlockDefinitions =
     | SliderBlockDef
     | SwitchBlockDef
     | TextBlockDef
+    | JiraBlockDef
     | ThemeBlockDef
     | ToggleButtonBlockDef
     | UploadBlockDef
@@ -193,6 +196,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [SliderBlockConfig.widget]: SliderBlockConfig,
     [SwitchBlockConfig.widget]: SwitchBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
+    [JiraBlockConfig.widget]: JiraBlockConfig,
     [TimePickerBlockConfig.widget]: TimePickerBlockConfig,
     [ThemeBlockConfig.widget]: ThemeBlockConfig,
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
@@ -231,6 +235,7 @@ export {
     SliderBlockConfig,
     SwitchBlockConfig,
     TextBlockConfig,
+    JiraBlockConfig,
     ThemeBlockConfig,
     UploadBlockConfig,
     VegaVisualizationBlockConfig,
