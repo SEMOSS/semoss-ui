@@ -1,18 +1,8 @@
-// tests/components/Pie.test.tsx
 import { describe, it, expect } from "vitest";
-import { render, renderHook, getByTitle } from "@/testing/utils"; // Assuming 'customRender' is exported as 'render'
-// import { Pie } from '../../src/components/block-defaults/echart-visualization-block/variant/pie-chart/Pie';
+import { render, renderHook } from "@/testing/utils"; // Assuming 'customRender' is exported as 'render'
+import { act, fireEvent, screen } from "@testing-library/react";
 import {
-	act,
-	fireEvent,
-	getByLabelText,
-	getByRole,
-	screen,
-	waitFor,
-} from "@testing-library/react";
-import { Pie } from "@/components/block-defaults/echart-visualization-block/variant/pie-chart/Pie";
-import {
-	EchartVisualizationBlockDef,
+	type EchartVisualizationBlockDef,
 	VisualizationBlock,
 } from "@/components/block-defaults/echart-visualization-block";
 import { useBlock, useBlockSettings } from "@/hooks";
