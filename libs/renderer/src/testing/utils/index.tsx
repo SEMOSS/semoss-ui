@@ -98,12 +98,13 @@ interface CustomHookRenderOptions<TProps> extends RenderHookOptions<TProps> {
 	blocks: Record<string, Block>;
 	queryConfig?: Record<string, QueryStateConfig>;
 	renderEngineId: string;
+	customChildren?: React.ReactNode
 }
 const customRenderHook = <TProps, TResult>(
 	callback: (props: TProps) => TResult,
 	options?: CustomHookRenderOptions<TProps>,
 ) => {
-	const { blocks, queryConfig, renderEngineId, ...hookOptions } = options;
+	const { blocks, queryConfig, renderEngineId, customChildren, ...hookOptions } = options;
 	// console.log({callback: callback})
 	return renderHook(callback, {
 		wrapper: ({ children, ...props }) => (
@@ -114,6 +115,7 @@ const customRenderHook = <TProps, TResult>(
 				renderEngineId={renderEngineId}
 			>
 				{children}
+				{customChildren && customChildren}
 			</MockHookProvider>
 		),
 		initialProps: {

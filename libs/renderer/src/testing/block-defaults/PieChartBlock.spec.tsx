@@ -1,14 +1,22 @@
 // tests/components/Pie.test.tsx
 import { describe, it, expect } from "vitest";
-import { render, renderHook } from "@/testing/utils"; // Assuming 'customRender' is exported as 'render'
+import { render, renderHook, getByTitle } from "@/testing/utils"; // Assuming 'customRender' is exported as 'render'
 // import { Pie } from '../../src/components/block-defaults/echart-visualization-block/variant/pie-chart/Pie';
-import { act, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	getByLabelText,
+	getByRole,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { Pie } from "@/components/block-defaults/echart-visualization-block/variant/pie-chart/Pie";
 import {
 	EchartVisualizationBlockDef,
 	VisualizationBlock,
 } from "@/components/block-defaults/echart-visualization-block";
 import { useBlock, useBlockSettings } from "@/hooks";
+import { ToogleDonut } from "@/components/block-defaults/echart-visualization-block/variant/pie-chart/ToggleDonut";
 
 // Mock data for testing
 const mockBlocks = {
@@ -262,6 +270,30 @@ describe("Pie Block Component", () => {
 		expect(result.current.data.option.series[0].radius).toEqual(["20%", "50%"]);
 
 		// console.log({ chartInstance: chartInstance.getAttribute("data-option") });
+	});
+
+	it("should toggle donut", async () => {
+		const { result } = renderHook(
+			() => useBlockSettings<EchartVisualizationBlockDef>("pieChart"),
+			{
+				renderEngineId: "pieChart",
+				blocks: mockBlocks,
+				customChildren: <ToogleDonut id="pieChart" path={"option"} />,
+			},
+		);
+
+		/**
+		 * BUG
+			The label element associated with checkbox inputs must have an htmlFor attribute that corresponds to the id of the checkbox. 
+			This ensures proper accessibility support and allows assistive technologies to correctly associate labels with form elements.
+		 */
+		const toggleSwitch = screen.getByRole("checkbox", { hidden: true }); //workaround for getting checkbox
+
+		// screen.debug();
+		expect(toggleSwitch).not.toBeChecked();
+		fireEvent.click(toggleSwitch);
+		expect(toggleSwitch).toBeChecked();
+		expect(result.current.data.option.series[0].radius).toEqual(["20%", "50%"]);
 	});
 	it("set data of the pie chart", () => {
 		expect(mockBlocks.pieChart.data.option.series[0].type).toBe("pie");
