@@ -50,6 +50,7 @@ export const AppTemplates = (props: AppTemplatesProps) => {
             project_global: '',
             project_catalog_name: '',
             project_created_by: 'SYSTEM',
+            project_date_last_edited: '',
             project_created_by_type: '',
             project_date_created: '',
             project_has_portal: false,
