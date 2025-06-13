@@ -631,6 +631,18 @@ export const MembersTable = (props: MembersTableProps) => {
 
         return avatarList;
     }, [renderedMembers.length]);
+    const isLastAuthor = (user) => {
+        const authors = allAuthors.filter(
+            (m) =>
+                permissionPriorityMapper(m.permission)?.permission === 'Author',
+        );
+        return (
+            permissionPriorityMapper(user.permission)?.permission ===
+                'Author' &&
+            authors.length === 1 &&
+            authors[0].id === user.id
+        );
+    };
 
     return (
         <StyledMemberContent>
@@ -955,6 +967,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     value="Editor"
                                                                     label="Editor"
                                                                     disabled={
+                                                                        isLastAuthor(
+                                                                            user,
+                                                                        ) ||
                                                                         (userPermission ===
                                                                             'Editor' &&
                                                                             user.permission ===
@@ -974,6 +989,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     value="Read-Only"
                                                                     label="Read-Only"
                                                                     disabled={
+                                                                        isLastAuthor(
+                                                                            user,
+                                                                        ) ||
                                                                         (userPermission ===
                                                                             'Editor' &&
                                                                             user.permission ===
@@ -1165,6 +1183,7 @@ export const MembersTable = (props: MembersTableProps) => {
 
                         // refresh
                         getMembers.refresh();
+                        allAuthorsResponse.refresh();
                     }
                 }}
             />
