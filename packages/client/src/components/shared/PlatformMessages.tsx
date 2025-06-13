@@ -2,16 +2,14 @@ import { observer } from 'mobx-react-lite';
 import React, { useEffect, useState } from 'react';
 import { useRootStore } from '@/hooks/';
 import { Button, Modal } from '@semoss/ui';
-import { WelcomeModal } from '@/components/welcome';
 import { cookieName } from '@/components/cookies';
 
 interface PlatformMessagesProps {
     children: React.ReactNode;
-    platformAssist?: boolean;
 }
 
 export const PlatformMessages = observer((props: PlatformMessagesProps) => {
-    const { children, platformAssist } = props;
+    const { children } = props;
     const { configStore } = useRootStore();
     const [acceptedTerms, setAcceptedTerms] = useState<boolean | null>(null);
     const [terms, setTerms] = useState({ header: '', text: '' });
@@ -50,8 +48,6 @@ export const PlatformMessages = observer((props: PlatformMessagesProps) => {
         setAcceptedTerms(true);
     };
 
-    const addressedCookies = localStorage.getItem(cookieName);
-
     if (acceptedTerms === null) {
         return <>{children}</>;
     }
@@ -84,10 +80,6 @@ export const PlatformMessages = observer((props: PlatformMessagesProps) => {
                     </Modal.Actions>
                 </Modal>
             )}
-            {/* 
-            {acceptedTerms && addressedCookies && platformAssist && (
-                <WelcomeModal />
-            )} */}
         </>
     );
 });

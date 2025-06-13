@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Outlet } from 'react-router-dom';
 
-import { styled, Box, Stack } from '@semoss/ui';
+import { styled, Stack } from '@semoss/ui';
 
-import { NavigationBar, SideNav } from '@/components/ui';
+import { NavigationBar, SideNav, PlatformMessages } from '@/components/shared';
 import { ErrorBoundary } from '@/components/common';
 import { ErrorPage } from './ErrorPage';
-import { PlatformMessages } from './PlatformMessages';
 import { useCacheState } from '@/hooks';
 
 const StyledMain = styled('div')(() => ({
@@ -28,6 +27,7 @@ const StyledContent = styled(Stack)(() => ({
 }));
 
 const StyledInner = styled('div')(({ theme }) => ({
+    position: 'relative',
     flex: '1',
     height: '100%',
     width: '100%',
@@ -39,7 +39,7 @@ const StyledInner = styled('div')(({ theme }) => ({
 /**
  * Wrap the routes with a side navigation
  */
-export const NavigatorLayout = observer(() => {
+export const MainLayout = observer(() => {
     const [isSideNavOpen, setIsSideNavOpen] = useState(false);
     const [isSideNavPinned, setIsSideNavPinned] = useCacheState(
         false,
@@ -67,7 +67,7 @@ export const NavigatorLayout = observer(() => {
                         }}
                     />
                     <StyledInner>
-                        <PlatformMessages platformAssist={true}>
+                        <PlatformMessages>
                             <Outlet />
                         </PlatformMessages>
                     </StyledInner>

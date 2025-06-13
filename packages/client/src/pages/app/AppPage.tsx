@@ -1,32 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { EditOutlined, ShareRounded } from '@mui/icons-material';
 import { observer } from 'mobx-react-lite';
-import { Link } from 'react-router-dom';
 
-import {
-    Avatar,
-    styled,
-    Stack,
-    Typography,
-    useNotification,
-    Button,
-    Modal,
-    Tooltip,
-    IconButton,
-    Container,
-} from '@semoss/ui';
-import { Env } from '@semoss/sdk/react';
+import { styled, useNotification, Modal } from '@semoss/ui';
 import { Renderer } from '@semoss/renderer';
 
 import { WorkspaceStore } from '@/stores';
 import { useRootStore } from '@/hooks';
-import {
-    LoadingScreen,
-    NavigationBar,
-    ShareOverlay,
-    SideNav,
-} from '@/components/ui';
+import { LoadingScreen, ShareOverlay } from '@/components/ui';
 import { CodeRenderer } from '@/components/code-workspace';
 
 const StyledViewport = styled('div')(() => ({

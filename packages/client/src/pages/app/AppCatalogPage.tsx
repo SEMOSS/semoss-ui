@@ -539,7 +539,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
                     ) : null}
                 </StyledContentContainer>
             </StyledContainer>
-            {/* <WelcomeModal /> */}
             <Help />
         </Page>
     );

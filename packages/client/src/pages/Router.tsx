@@ -18,7 +18,7 @@ import { PromptRouter } from './prompt';
 import { SettingsRouter } from './settings';
 
 import { AuthenticatedLayout } from './AuthenticatedLayout';
-import { NavigatorLayout } from './NavigatorLayout';
+import { MainLayout } from './MainLayout';
 
 import { LoginPage } from './LoginPage';
 import { SharePage } from './SharePage';
@@ -28,7 +28,7 @@ import { PrivacyNotice } from './legal/PrivacyNotice';
 
 import { WorkspacePage } from './WorkspacePage';
 
-import { PlatformMessages } from './PlatformMessages';
+import { PlatformMessages } from '../components/shared';
 import { LandingPage } from './LandingPage';
 
 export const Router = observer(() => {
@@ -62,7 +62,7 @@ export const Router = observer(() => {
     return (
         <Routes>
             <Route path="/" element={<AuthenticatedLayout />}>
-                <Route path="*" element={<NavigatorLayout />}>
+                <Route path="*" element={<MainLayout />}>
                     <Route index element={<LandingPage />} />
 
                     <Route path="app/*">
@@ -74,6 +74,11 @@ export const Router = observer(() => {
                         />
                         <Route path=":appId" element={<AppDetailPage />} />
                         <Route path=":appId/view/*" element={<AppPage />} />
+
+                        <Route
+                            path=":appId/edit/*"
+                            element={<WorkspacePage />}
+                        />
                         <Route
                             path="*"
                             element={<Navigate to={`/`} replace />}
@@ -88,7 +93,7 @@ export const Router = observer(() => {
                 <Route
                     path="workspace/:appId/*"
                     element={
-                        <PlatformMessages platformAssist={false}>
+                        <PlatformMessages>
                             <WorkspacePage />
                         </PlatformMessages>
                     }
@@ -96,7 +101,7 @@ export const Router = observer(() => {
                 <Route
                     path="s/:appId/*"
                     element={
-                        <PlatformMessages platformAssist={false}>
+                        <PlatformMessages>
                             <SharePage />
                         </PlatformMessages>
                     }

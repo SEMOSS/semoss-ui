@@ -23,7 +23,7 @@ import { THEME } from '@/constants';
 import { WorkspaceContext } from '@/contexts';
 import { WorkspaceStore, WorkspaceOptions } from '@/stores';
 import { useRootStore } from '@/hooks';
-import { LoginPopover } from '@/components/ui';
+import { LoginPopover } from '@/components/shared';
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
 import { WorkspaceTabs } from './WorkspaceTabs';

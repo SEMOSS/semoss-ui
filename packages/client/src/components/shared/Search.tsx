@@ -173,7 +173,7 @@ interface SearchProps {
     renderInput: (params: any) => React.ReactNode;
 }
 
-const Search = observer(({ renderInput }: SearchProps) => {
+export const Search = observer(({ renderInput }: SearchProps) => {
     // TODO: navigation should be done through callback
     const navigate = useNavigate();
     const { configStore } = useRootStore();
@@ -462,5 +462,3 @@ const Search = observer(({ renderInput }: SearchProps) => {
         />
     );
 });
-
-export default Search;

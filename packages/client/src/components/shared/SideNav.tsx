@@ -27,7 +27,7 @@ import { Database } from '@/assets/img/Database';
 import { useRootStore } from '@/hooks';
 import { Logo } from '@/assets/img/Logo';
 import { THEME } from '@/constants';
-import { LoginPopover } from '../LoginPopover/LoginPopover';
+import { LoginPopover } from './LoginPopover';
 
 const DRAWER_OPEN_WIDTH = 312;
 
@@ -96,9 +96,7 @@ const StyledSideNavHeaderLink = styled(Link)(({ theme }) => ({
 }));
 
 const StyledSideNavContent = styled(Stack)(({ theme }) => ({
-    height: '100%',
     width: '100%',
-    flex: 1,
     paddingRight: theme.spacing(2),
     paddingLeft: theme.spacing(2),
     overflowY: 'auto',
@@ -262,9 +260,15 @@ export const SideNav: React.FC<SideNavProps> = observer(
                             </StyledLink>
                         </Stack>
                     </StyledList>
-                    {viewSidebar && (
-                        <>
-                            <Divider />
+                </StyledSideNavContent>
+                <Divider />
+                {viewSidebar ? (
+                    <>
+                        <StyledSideNavContent
+                            direction={'column'}
+                            spacing={2}
+                            flex={1}
+                        >
                             <StyledList
                                 dense={true}
                                 aria-label="catalog navigation"
@@ -300,9 +304,11 @@ export const SideNav: React.FC<SideNavProps> = observer(
                                     })}
                                 </Stack>
                             </StyledList>
-                        </>
-                    )}
-                </StyledSideNavContent>
+                        </StyledSideNavContent>
+                    </>
+                ) : (
+                    <Stack flex={1} />
+                )}
                 <Divider />
                 <StyledSideNavFooter>
                     <StyledList dense={true} aria-label="main navigation">

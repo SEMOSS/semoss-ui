@@ -9,7 +9,7 @@ import {
     InputAdornment,
 } from '@semoss/ui';
 
-import Search from '../ui/Navbar/Search';
+import { Search } from '../shared';
 import BusinessUserImage from '../../assets/img/BusinessUserLanding.svg';
 import businessUsercheckgrid from '../../assets/img/businessUsercheckgrid.svg';
 

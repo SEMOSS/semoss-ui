@@ -20,7 +20,7 @@ import {
 import { THEME } from '@/constants';
 import { Logo } from '@/assets/img/Logo';
 import { useRootStore } from '@/hooks';
-import Search from './Search';
+import { Search } from './Search';
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
     position: 'sticky',
