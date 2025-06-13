@@ -1,19 +1,9 @@
-import {
-    createElement,
-    ReactNode,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
+import { createElement, useEffect, useMemo, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { Sync, Search } from "@mui/icons-material";
+import { Search } from "@mui/icons-material";
 import { computed } from "mobx";
 import { Tooltip, Checkbox } from "@mui/material";
 import {
-    Autocomplete,
-    Button,
-    Select,
     styled,
     TextField,
     InputAdornment,
@@ -22,24 +12,17 @@ import {
     Accordion,
     Typography,
 } from "@semoss/ui";
-import {
-    useBlockSettings,
-    useBlocksPixel,
-    useFrameHeaders,
-} from "../../../../hooks";
+import { useBlockSettings, useFrameHeaders } from "../../../../hooks";
 import { BlockDef } from "../../../../store";
 import { PathValue } from "../../../../types";
 import { getValueByPath } from "../../../../utility";
-import { BAR_CHART_DATA } from "../Visualization.constants";
 import { EchartVisualizationBlockDef } from "../VisualizationBlock";
 import { DataTabStyling } from "./bar-chart/DataTabStyling";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import StringIcon from "../../../../assets/img/StringIcon.svg";
 import NumberIcon from "../../../../assets/img/NumberIcon.svg";
-import { buildListener } from "../../block-defaults.shared";
-import { ListenerSettings } from "../../../block-settings";
 import { ExpandMore } from "@mui/icons-material";
-import { ECHART_BAR_COLOUR } from "../Visualization.constants";
+import { buildListener } from "../../block-defaults.shared";
 
 //frame operations component props structure
 export interface FrameOperationsProps {
@@ -79,17 +62,6 @@ const StyledSpanDimension = styled("span")(() => ({
     position: "relative",
 }));
 
-const COLOUR_PALATTE_DATA = [
-    "#5470c6",
-    "#91cc75",
-    "#fac858",
-    "#ee6666",
-    "#73c0de",
-    "#3ba272",
-    "#fc8452",
-    "#9a60b4",
-    "#ea7ccc",
-];
 
 interface AccordionSection {
     [key: string]: {
@@ -111,7 +83,6 @@ export const FrameOperations = observer(
     }) => {
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
-        const [columnsData, setColumnsData] = useState([]);
         const [search, setSearch] = useState("");
         const [isAdd, setIsAdd] = useState(false);
         const [addedColumnName, setAddedColumnName] = useState("");
@@ -130,11 +101,6 @@ export const FrameOperations = observer(
             },
         ]);
         const accordionList = ["preProcess"];
-        const [value, setValue] = useState("");
-        // get all of the frames
-        const getFrames = useBlocksPixel<string[]>("GetFrames();", {
-            data: [],
-        });
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
         const [filteredColumns, setFilteredColumns] = useState([]);
@@ -204,9 +170,6 @@ export const FrameOperations = observer(
                     dataType: item.dataType,
                 };
             });
-            setColumnsData((prevColumns) => {
-                return columns;
-            });
         }
 
         // get the value of the input (wrapped in usememo because of path prop)
@@ -225,10 +188,6 @@ export const FrameOperations = observer(
             });
         }, [data, path]).get();
 
-        //update the local state value when computed value is getting updated
-        // useEffect(() => {
-        //     // setValue(computedValue);
-        // }, [computedValue]);
         const formattedColumns = (columnsValue: any[], variation: any) => {
             // check if the columns value has any values
             const hasValues = columnsValue.some(
@@ -304,10 +263,6 @@ export const FrameOperations = observer(
                             LabelData = [...LabelData, labelItem.selector];
                         },
                     );
-                    selectedValues = {
-                        ...selectedValues,
-                        [secondColumn?.label]: LabelData,
-                    };
                 }
 
                 if (
@@ -339,17 +294,15 @@ export const FrameOperations = observer(
                     ];
                     const pixelName = [],
                         pixelValue = [];
-                    columns[secondColumn?.label].forEach(
-                        (columItem, columIndex) => {
-                            pixelName.push(columItem?.name);
-                            pixelValue.push(columItem?.selector);
-                            columnsmerged.push({
-                                name: columItem?.name,
-                                selector: columItem?.selector,
-                                label: secondColumn?.label,
-                            });
-                        },
-                    );
+                    columns[secondColumn?.label].forEach((columItem) => {
+                        pixelName.push(columItem?.name);
+                        pixelValue.push(columItem?.selector);
+                        columnsmerged.push({
+                            name: columItem?.name,
+                            selector: columItem?.selector,
+                            label: secondColumn?.label,
+                        });
+                    });
                     if (columns[secondColumn?.label]?.length) {
                         tempVal[secondColumn?.label] = {
                             ...tempVal[secondColumn?.label],
@@ -497,7 +450,6 @@ export const FrameOperations = observer(
                         colorDataType: columnsDrop[4]?.dataType,
                     };
 
-                    // setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[5]?.values.length > 0) {
@@ -514,7 +466,6 @@ export const FrameOperations = observer(
                         tooltipDataType: columnsDrop[5]?.dataType,
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
             }
@@ -538,7 +489,6 @@ export const FrameOperations = observer(
                     tempValue["xAxis"]["flipAxisName"] = firstColumn?.values;
                     tempValue["xAxis"]["axisName"] = firstColumn?.values;
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (secondColumn?.values) {
@@ -560,7 +510,6 @@ export const FrameOperations = observer(
                     tempValue["yAxis"]["flipAxisName"] = secondColumn?.values;
                     tempValue["yAxis"]["axisName"] = secondColumn?.values;
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[2]?.values.length > 0) {
@@ -577,7 +526,6 @@ export const FrameOperations = observer(
                         categoryDataType: columnsDrop[2]?.dataType,
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[3]?.values.length > 0) {
@@ -594,7 +542,6 @@ export const FrameOperations = observer(
                         tooltipDataType: columnsDrop[3]?.dataType,
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
             }
@@ -625,7 +572,7 @@ export const FrameOperations = observer(
                         : [],
                 };
                 if (secondColumn?.values.length > 1) {
-                    let seriesListToAdd = [];
+                    const seriesListToAdd = [];
                     //Adding newly added field to the state
                     for (let i = 0; i < secondColumn.values.length; i++) {
                         seriesListToAdd[i] = {
@@ -655,8 +602,6 @@ export const FrameOperations = observer(
                     tempSeries = tempSeries.slice(0, 1);
                 }
                 tempValue["series"] = tempSeries;
-                // set the value
-                setValue(JSON.stringify(tempValue));
                 setData("option", tempValue);
             }
             if (variation === "echart-world-map-chart") {
@@ -674,7 +619,6 @@ export const FrameOperations = observer(
                         labelDataType: firstColumn?.dataType?.[0],
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (secondColumn?.values) {
@@ -691,7 +635,6 @@ export const FrameOperations = observer(
                         LatitudeDataType: secondColumn?.dataType?.[0],
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[2]?.values.length > 0) {
@@ -708,7 +651,6 @@ export const FrameOperations = observer(
                         LongitudeDataType: columnsDrop[2]?.dataType?.[0],
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[3]?.values.length > 0) {
@@ -725,7 +667,6 @@ export const FrameOperations = observer(
                         sizeDataType: columnsDrop[3]?.dataType?.[0],
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[4]?.values.length > 0) {
@@ -742,7 +683,6 @@ export const FrameOperations = observer(
                         colorDataType: columnsDrop[4]?.dataType?.[0],
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[5]?.values.length > 0) {
@@ -759,13 +699,12 @@ export const FrameOperations = observer(
                         tooltipDataType: columnsDrop[5]?.dataType?.[0],
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
             }
             if (variation == "echart-gantt-chart") {
                 let columnsToSet = [];
-                let columnsObject = {};
+                const columnsObject = {};
                 const formattedArray = [];
 
                 const tempValue = computedValue;
@@ -800,7 +739,6 @@ export const FrameOperations = observer(
                         },
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (secondColumn?.values) {
@@ -821,7 +759,6 @@ export const FrameOperations = observer(
                         },
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[2]?.values.length > 0) {
@@ -842,7 +779,6 @@ export const FrameOperations = observer(
                         },
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[3]?.values.length > 0) {
@@ -863,7 +799,6 @@ export const FrameOperations = observer(
                         },
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[4]?.values.length > 0) {
@@ -884,7 +819,6 @@ export const FrameOperations = observer(
                         },
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[5]?.values.length > 0) {
@@ -905,7 +839,6 @@ export const FrameOperations = observer(
                         },
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[6]?.values.length > 0) {
@@ -926,13 +859,12 @@ export const FrameOperations = observer(
                         },
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
 
-                let tempDataSet = new Set(columnsToSet);
+                const tempDataSet = new Set(columnsToSet);
                 columnsToSet = Array.from(tempDataSet);
-                let columnsIndexToSet = getColumnIndexToSetData(
+                const columnsIndexToSet = getColumnIndexToSetData(
                     columnsObject,
                     columnsToSet,
                 );
@@ -943,16 +875,15 @@ export const FrameOperations = observer(
                         ...columnsIndexToSet,
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
             }
             if (variation == "echart-dendrogram-chart") {
                 let columnsToPush = [];
-                let dimensionElement = columnsValue.find(
+                const dimensionElement = columnsValue.find(
                     (element) => element.label === "dimensions",
                 );
-                let facetElement = columnsValue.find(
+                const facetElement = columnsValue.find(
                     (element) => element.label === "facet",
                 );
                 if (
@@ -1036,7 +967,7 @@ export const FrameOperations = observer(
             }, 100);
         }
         function getColumnIndexToSetData(columnsObject, columnsToSet) {
-            let colIndex = {};
+            const colIndex = {};
             Object.keys(columnsObject).forEach((key) => {
                 if (
                     typeof columnsObject[key] === "object" &&
@@ -1076,7 +1007,7 @@ export const FrameOperations = observer(
             setDroppedColumns((prev) => {
                 const updated = { ...prev };
                 for (const key in updated) {
-                    let index = updated[key]["values"].indexOf(columnName);
+                    const index = updated[key]["values"].indexOf(columnName);
                     updated[key] = {
                         ...updated[key],
                         values: [
@@ -1096,21 +1027,22 @@ export const FrameOperations = observer(
             setIsAdd(value);
             setAddedColumnName(id);
         };
-        let renderElement = [...buildListener("preProcess")];
+        const renderElement = [...buildListener("preProcess")];
 
         const renderAccordion = (
             <>
                 {accordionSection.map((item, index) => (
                     <Accordion
                         expanded={item[accordionList[index]].expanded}
+                        key={`accordion-${index}-${item.title}`} // Add a unique key for each accordionindex}
                         onChange={(e) => {
-                            let accordionSectionToUp = accordionSection;
-                            let indexToUpdate = accordionSectionToUp.findIndex(
-                                (accordItem) =>
+                            const accordionSectionToUp = accordionSection;
+                            const indexToUpdate =
+                                accordionSectionToUp.findIndex((accordItem) =>
                                     accordItem.hasOwnProperty(
                                         accordionList[index],
                                     ),
-                            );
+                                );
                             accordionSectionToUp[indexToUpdate][
                                 accordionList[index]
                             ] = {
@@ -1122,7 +1054,7 @@ export const FrameOperations = observer(
                                         accordionList[index]
                                     ].expanded,
                             };
-                            setAccordionSection((prevAccordionSection) => {
+                            setAccordionSection(() => {
                                 return [...accordionSectionToUp];
                             });
                         }}
@@ -1380,7 +1312,7 @@ export const FrameOperations = observer(
                                                                                             addedColumnName
                                                                                         ]
                                                                                     ) {
-                                                                                        let index =
+                                                                                        const index =
                                                                                             updated[
                                                                                                 addedColumnName
                                                                                             ][

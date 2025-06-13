@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { styled } from "@mui/material";
-import * as echarts from "echarts/core";
 import EChartsReact from "echarts-for-react";
 
 import { ChartContextMenu } from "./ChartContextMenu";
@@ -25,9 +24,7 @@ const COLOUR_PALATTE_DATA = [
 ];
 
 function updateColorData(seriesData, appliedRules = null) {
-    //const color = colourObj[seriesData.dataIndex] || ECHART_BAR_COLOUR;
     if (!appliedRules) {
-        console.log("apllied null rules ");
         return COLOUR_PALATTE_DATA[seriesData.seriesIndex] || ECHART_BAR_COLOUR;
     }
     let applyColor =
@@ -36,7 +33,6 @@ function updateColorData(seriesData, appliedRules = null) {
         ECHART_BAR_COLOUR;
     appliedRules?.forEach((appliedRule) => {
         const {
-            coloum,
             columnColour,
             columnComparision,
             columnName,
@@ -69,7 +65,6 @@ function updateColorData(seriesData, appliedRules = null) {
         }
 
         if (columnComparision === "<") {
-            //less than comparision
             if (
                 columnName == seriesData.seriesName &&
                 seriesData.value < parseFloat(filterValue)
@@ -78,7 +73,6 @@ function updateColorData(seriesData, appliedRules = null) {
             }
         }
         if (columnComparision === ">") {
-            //greater than comparision
             if (
                 columnName == seriesData.seriesName &&
                 seriesData.value > parseFloat(filterValue)
@@ -87,7 +81,6 @@ function updateColorData(seriesData, appliedRules = null) {
             }
         }
         if (columnComparision === ">=") {
-            //greater than or equal to comparision
             if (
                 columnName == seriesData.seriesName &&
                 seriesData.value >= parseFloat(filterValue)
@@ -137,7 +130,6 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
         mouseY: number; //y axis position for the click/brush event
         value: unknown; //value can be of object or string or number type
     } | null>(null);
-    let resultData: unknown = {};
 
     /**
      * Builds a dynamic query string based on the provided input data.
@@ -208,13 +200,13 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
             ) {
                 return {};
             }
-            const newOption = {
+            const option = {
                 ...resultData,
             };
             //if the frame data is not available, return the resultData as it is
             let frameDataIndex = 0;
             //setting xaxis data
-            newOption["xAxis"]["data"] = frameData.data?.values?.map(
+            option["xAxis"]["data"] = frameData.data?.values?.map(
                 (item, index) => {
                     return { value: item[frameDataIndex] };
                 },
@@ -224,17 +216,17 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
             //setting all values to all existing series to null, to restore the chart to initial state so new values will be updated
             for (
                 let seriesIdx = 0;
-                seriesIdx < newOption["series"].length;
+                seriesIdx < option["series"].length;
                 seriesIdx++
             ) {
                 if (
-                    newOption["series"][seriesIdx] !== undefined &&
-                    newOption["series"][seriesIdx].hasOwnProperty("data") &&
-                    !newOption["series"][seriesIdx].hasOwnProperty(
+                    option["series"][seriesIdx] !== undefined &&
+                    option["series"][seriesIdx].hasOwnProperty("data") &&
+                    !option["series"][seriesIdx].hasOwnProperty(
                         "toggleTrendLineObject",
                     )
                 ) {
-                    newOption["series"][seriesIdx]["data"] =
+                    option["series"][seriesIdx]["data"] =
                         frameData.data?.values?.map((item, index) => {
                             return {
                                 value: null,
@@ -246,20 +238,19 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
             let i;
             for (i = frameDataIndex; i < optionSeriesLength; i++) {
                 if (
-                    newOption["series"][i - 1] !== undefined &&
-                    newOption["series"][i - 1].hasOwnProperty("data") &&
-                    !newOption["series"][i - 1].hasOwnProperty(
+                    option["series"][i - 1] !== undefined &&
+                    option["series"][i - 1].hasOwnProperty("data") &&
+                    !option["series"][i - 1].hasOwnProperty(
                         "toggleTrendLineObject",
                     )
                 ) {
-                    newOption["series"][i - 1]["data"] =
-                        frameData.data?.values?.map((item, index) => {
+                    option["series"][i - 1]["data"] =
+                        frameData.data?.values?.map((item) => {
                             return { value: item[i] ?? null };
                         });
                 }
             }
-            console.log("series ", newOption["series"]);
-            return { ...data.option, ...newOption }; //returning updated values to chart
+            return { ...data.option, ...option }; //returning updated values to chart
         },
         [frameData.data.values, frameData.data.headers, data.option],
     );
@@ -331,16 +322,12 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
     };
 
     const parsedOption = useMemo(() => {
-        console.log("parsedOption memo called ", computedValue);
         let options: EChartsOption = computedValue;
         if (
             data.frame.name &&
             frameData.data.values.length > 0 &&
             frameData.isLoading === false
         ) {
-            console.log("computedValue operations sett ", computedValue);
-            // const appliedRules = (computedValue as any)?.customSettings
-            //     ?.appliedRules;
             options = receiveValueswithCorrections(computedValue);
         }
         if (Array.isArray(options.series)) {
