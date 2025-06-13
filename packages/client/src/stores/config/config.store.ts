@@ -95,6 +95,10 @@ interface ConfigStoreInterface {
          * sidemenubar if adminOnlyViewMenuBarFlag is enabled
          */
         adminOnlyViewMenuBarFlag: boolean;
+        /*
+         * welcomecontent for aicore
+         */
+        adminOnlyWelcomeContent: boolean;
         /**
          * Flags
          */
@@ -166,6 +170,7 @@ export class ConfigStore {
             python: true,
             csrf: false,
             adminOnlyViewMenuBarFlag: false,
+            adminOnlyWelcomeContent:false,
             adminOnlyDbAdd: false,
             adminOnlyDbAddAccess: false,
             adminOnlyDbDelete: false,

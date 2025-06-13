@@ -108,6 +108,36 @@ const WelcomeModalSteps: Array<WelcomeModalStep> = [
         img: WelcomeDocumentation,
     },
 ];
+const WelcomeModalStepsForOthers: Array<WelcomeModalStep> = [
+    {
+        sidebarTitle: (name) => 'Welcome',
+        mainTitle: (name) => `What you can do with ${name}:`,
+        mainListItems: (name) => [
+            'Build a custom app with no front end coding',
+            'Automate tasks with large language models',
+            "Run an app that connects your client's database with a large language model for efficient data reporting",
+        ],
+        img: WelcomeSplash,
+    },
+    {
+        sidebarTitle: (name) => `${name} Network`,
+        mainTitle: (name) => `${name} Network`,
+        mainListItems: (name) => [
+            `Public and discoverable apps: Try out awesome apps created by our community users and view each app's source code on the ${name} GitHub`,
+            `Blog: Read blogs created by our users for inspiration on how ${name} can help you work faster and better`,
+        ],
+        img: WelcomeApps,
+    },
+    {
+        sidebarTitle: (name) => 'Documentation',
+        mainTitle: (name) => 'Documentation',
+        mainListItems: (name) => [
+            `New to ${name}? Learn about ${name} key concepts, watch tutorials, use the starter kit, and more.`,
+            `Already have a pre-built app that needs hosting on ${name}? Read the How-To guide.`,
+        ],
+        img: WelcomeDocumentation,
+    },
+];
 
 const WelcomeTourSteps: TourStep[] = [
     {
@@ -165,12 +195,22 @@ export const WelcomeModal = () => {
     const { configStore } = useRootStore();
 
     const nextStepAction = () => {
-        if (currentStepIndex === WelcomeModalSteps.length - 1) {
-            setOpen(false);
-            setShowTour(true);
-        } else {
-            setCurrentStepIndex((state) => state + 1);
-        }
+        if(configStore.config.adminOnlyWelcomeContent) {
+             if (currentStepIndex === WelcomeModalStepsForOthers.length - 1) {
+                setOpen(false);
+                setShowTour(true);
+            } else {
+                setCurrentStepIndex((state) => state + 1);
+            }
+
+        }else{
+            if (currentStepIndex === WelcomeModalSteps.length - 1) {
+                setOpen(false);
+                setShowTour(true);
+            } else {
+                setCurrentStepIndex((state) => state + 1);
+            }
+       }
     };
 
     const previousStepAction = () => {
@@ -252,7 +292,8 @@ export const WelcomeModal = () => {
                             )}
                         </StyledList>
                     </StyledSidebar>
-                    <StyledMain id="welcome-modal-main">
+                     <StyledMain id="welcome-modal-main">
+                        {!configStore.config.adminOnlyWelcomeContent && (
                         <Stack
                             id={`welcome-modal-step-${currentStepIndex}`}
                             height="100%"
@@ -314,6 +355,70 @@ export const WelcomeModal = () => {
                                 />
                             </StyledBottomStack>
                         </Stack>
+                        )}
+                         {configStore.config.adminOnlyWelcomeContent && (
+                        <Stack
+                            id={`welcome-modal-step-${currentStepIndex}`}
+                            height="100%"
+                        >
+                            <StyledTopStack>
+                                <WelcomeStepToolbar
+                                    closeModal={() => setOpen(false)}
+                                />
+                                <img
+                                    src={
+                                        WelcomeModalStepsForOthers[currentStepIndex].img
+                                    }
+                                />
+                            </StyledTopStack>
+                            <StyledBottomStack>
+                                <Typography variant="h6">
+                                    {WelcomeModalStepsForOthers[
+                                        currentStepIndex
+                                    ].mainTitle(
+                                        themeMap.name
+                                            ? themeMap.name
+                                            : THEME.name,
+                                    )}
+                                </Typography>
+                                <List
+                                    disablePadding
+                                    sx={{ overflowY: 'scroll' }}
+                                >
+                                    {Array.from(
+                                        WelcomeModalStepsForOthers[
+                                            currentStepIndex
+                                        ].mainListItems(
+                                            themeMap.name
+                                                ? themeMap.name
+                                                : THEME.name,
+                                        ),
+                                        (text, index) => {
+                                            return (
+                                                <List.Item
+                                                    key={`welcome-main-list-${index}`}
+                                                >
+                                                    <List.ItemText
+                                                        primary={`\u2022 ${text}`}
+                                                    />
+                                                </List.Item>
+                                            );
+                                        },
+                                    )}
+                                </List>
+                                <VerticalSpacer />
+                                <WelcomeStepActions
+                                    isFirstStep={currentStepIndex === 0}
+                                    isLastStep={
+                                        currentStepIndex ===
+                                        WelcomeModalStepsForOthers.length - 1
+                                    }
+                                    nextStepAction={nextStepAction}
+                                    previousStepAction={previousStepAction}
+                                />
+                            </StyledBottomStack>
+                        </Stack>
+                        )}
                     </StyledMain>
                 </StyledCard>
             </Modal>
