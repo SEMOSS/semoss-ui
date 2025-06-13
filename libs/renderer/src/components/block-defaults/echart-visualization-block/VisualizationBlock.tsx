@@ -36,6 +36,7 @@ export interface VisualizationColumns {
     name: string;
     selector: string;
     width: string;
+    label?: string;
 }
 
 export interface FacetColumns {

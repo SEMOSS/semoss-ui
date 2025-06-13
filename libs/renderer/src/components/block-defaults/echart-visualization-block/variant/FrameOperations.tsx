@@ -1,9 +1,27 @@
-import { createElement, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import {
+    createElement,
+    ReactNode,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { observer } from "mobx-react-lite";
 import { Sync, Search } from "@mui/icons-material";
 import { computed } from "mobx";
 import { Tooltip, Checkbox } from "@mui/material";
-import { Autocomplete, Button, Select, styled, TextField, InputAdornment, IconButton, Stack, Accordion, Typography } from "@semoss/ui";
+import {
+    Autocomplete,
+    Button,
+    Select,
+    styled,
+    TextField,
+    InputAdornment,
+    IconButton,
+    Stack,
+    Accordion,
+    Typography,
+} from "@semoss/ui";
 import {
     useBlockSettings,
     useBlocksPixel,
@@ -20,7 +38,8 @@ import StringIcon from "../../../../assets/img/StringIcon.svg";
 import NumberIcon from "../../../../assets/img/NumberIcon.svg";
 import { buildListener } from "../../block-defaults.shared";
 import { ListenerSettings } from "../../../block-settings";
-import { ExpandMore } from '@mui/icons-material';
+import { ExpandMore } from "@mui/icons-material";
+import { ECHART_BAR_COLOUR } from "../Visualization.constants";
 
 //frame operations component props structure
 export interface FrameOperationsProps {
@@ -73,29 +92,43 @@ const COLOUR_PALATTE_DATA = [
 ];
 
 interface AccordionSection {
-    [key :string]: {
+    [key: string]: {
         expanded: boolean;
         title: string;
-    }
-};
+    };
+}
 
 //data tab left section to show the data tab and the drag area for the selected columns
 export const FrameOperations = observer(
-    <D extends BlockDef = BlockDef>({ id, updateFrame, path, chart, storedColumns, handleStoreData, selectedItem }) => {
+    <D extends BlockDef = BlockDef>({
+        id,
+        updateFrame,
+        path,
+        chart,
+        storedColumns,
+        handleStoreData,
+        selectedItem,
+    }) => {
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
         const [columnsData, setColumnsData] = useState([]);
         const [search, setSearch] = useState("");
         const [isAdd, setIsAdd] = useState(false);
         const [addedColumnName, setAddedColumnName] = useState("");
-        const [droppedColumns, setDroppedColumns] = useState<Record<string, any>>({});
+        const [droppedColumns, setDroppedColumns] = useState<
+            Record<string, any>
+        >({});
         const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
-        const [accordionSection, setAccordionSection] = useState<AccordionSection[]>([{
-            ["preProcess"]:{
-                expanded: true,
-                title: "PRE PROCESS"
-            }
-        }]);
+        const [accordionSection, setAccordionSection] = useState<
+            AccordionSection[]
+        >([
+            {
+                ["preProcess"]: {
+                    expanded: true,
+                    title: "PRE PROCESS",
+                },
+            },
+        ]);
         const accordionList = ["preProcess"];
         const [value, setValue] = useState("");
         // get all of the frames
@@ -136,10 +169,13 @@ export const FrameOperations = observer(
                     updatedColumns[key] = {
                         values: item.values,
                         dataType: item.dataType,
-                    }
+                    };
                 }
             });
-            if (JSON.stringify(updatedColumns) !== JSON.stringify(droppedColumns)) {
+            if (
+                JSON.stringify(updatedColumns) !==
+                JSON.stringify(droppedColumns)
+            ) {
                 setDroppedColumns(updatedColumns);
             }
         }, [storedColumns]);
@@ -152,7 +188,7 @@ export const FrameOperations = observer(
             setSearch(searchValue); // Update the search state
             const lowerCaseSearch = searchValue.toLowerCase();
             const filtered = columnsSelector.filter((col) =>
-                col.name.toLowerCase().includes(lowerCaseSearch)
+                col.name.toLowerCase().includes(lowerCaseSearch),
             );
             setFilteredColumns(filtered); // Update the filtered columns
         };
@@ -185,17 +221,19 @@ export const FrameOperations = observer(
                 } else if (typeof v === "string") {
                     return v;
                 }
-                return JSON.stringify(v, null, 2);
+                return v; //JSON.stringify(v, null, 2);
             });
         }, [data, path]).get();
-        //update the local state value when computed value is getting updated
-        useEffect(() => {
-            setValue(computedValue);
-        }, [computedValue]);
 
+        //update the local state value when computed value is getting updated
+        // useEffect(() => {
+        //     // setValue(computedValue);
+        // }, [computedValue]);
         const formattedColumns = (columnsValue: any[], variation: any) => {
             // check if the columns value has any values
-            const hasValues = columnsValue.some(item => item?.values && item?.values.length > 0);
+            const hasValues = columnsValue.some(
+                (item) => item?.values && item?.values.length > 0,
+            );
             if (hasValues) {
                 setSelectedColumn(columnsValue);
                 handleStoreData(columnsValue);
@@ -203,7 +241,10 @@ export const FrameOperations = observer(
 
             const columnsDrop = [];
             for (let i = 0; i < columnsValue.length; i++) {
-                columnsDrop[i] = columnsValue[i]?.values?.length > 0 ? columnsValue[i] : null;
+                columnsDrop[i] =
+                    columnsValue[i]?.values?.length > 0
+                        ? columnsValue[i]
+                        : null;
             }
 
             const firstColumn = columnsDrop[0];
@@ -221,13 +262,16 @@ export const FrameOperations = observer(
             const columns = { ...fieldsData };
 
             if (variation === "echart-bar-graph") {
-
                 if (firstColumn?.label) {
+                    columns[firstColumn?.label] = [];
                     columns[firstColumn?.label] = [
                         {
-                            ["name"]: firstColumn?.values || "",
+                            ["name"]: Array.isArray(firstColumn?.values)
+                                ? firstColumn?.values[0] || ""
+                                : firstColumn?.values,
                             ["selector"]: firstColumn.selectors,
                             ["width"]: undefined,
+                            label: firstColumn?.label,
                         },
                     ];
                     fieldsData = {
@@ -236,7 +280,8 @@ export const FrameOperations = observer(
                     };
                     selectedValues = {
                         ...selectedValues,
-                        [firstColumn?.label]: columns[firstColumn?.label][0]["selector"],
+                        [firstColumn?.label]:
+                            columns[firstColumn?.label][0]["selector"],
                     };
                 }
                 if (secondColumn?.label) {
@@ -246,6 +291,7 @@ export const FrameOperations = observer(
                             ["name"]: item,
                             ["selector"]: secondColumn.selectors[index],
                             ["width"]: undefined,
+                            label: secondColumn?.label,
                         });
                     });
                     fieldsData = {
@@ -253,66 +299,78 @@ export const FrameOperations = observer(
                         [secondColumn?.label]: columns[secondColumn?.label],
                     };
                     let LabelData = [];
-                    columns[secondColumn?.label].forEach((labelItem, labelIndex) => {
-                        LabelData = [...LabelData, labelItem.selector];
-                    });
+                    columns[secondColumn?.label].forEach(
+                        (labelItem, labelIndex) => {
+                            LabelData = [...LabelData, labelItem.selector];
+                        },
+                    );
                     selectedValues = {
                         ...selectedValues,
                         [secondColumn?.label]: LabelData,
                     };
                 }
 
-                if (columns[firstColumn?.label] && columns[secondColumn?.label]) {
-                    let tempVal = JSON.parse(computedValue) || {};
-                    const seriesIndex =
-                        tempVal["series"].findIndex((item) =>
-                            BAR_CHART_DATA.JSONVALUE.includes(item.type),
-                        ) || 0;
+                if (
+                    columns[firstColumn?.label] &&
+                    columns[secondColumn?.label]
+                ) {
+                    let tempVal = data.option || {};
                     let columnsmerged = [];
                     if (columns[firstColumn?.label]?.length) {
                         tempVal[firstColumn?.label] = {
                             ...tempVal[firstColumn?.label],
-                            ["name"]: columns[firstColumn?.label][0]?.name || "",
-                            ["pixelname"]: columns[firstColumn?.label][0]?.name || "",
-                            ["pixelvalue"]: columns[firstColumn?.label][0]?.selector || "",
+                            ["name"]:
+                                columns[firstColumn?.label][0]?.name || "",
+                            ["pixelname"]:
+                                columns[firstColumn?.label][0]?.name || "",
+                            ["pixelvalue"]:
+                                columns[firstColumn?.label][0]?.selector || "",
                         };
                     }
 
                     columnsmerged = [
                         {
                             name: columns[firstColumn?.label][0]?.name || "",
-                            selector: columns[firstColumn?.label][0]?.selector[0] || "",
+                            selector:
+                                columns[firstColumn?.label][0]?.selector[0] ||
+                                "",
+                            label: firstColumn?.label,
                         },
                     ];
                     const pixelName = [],
                         pixelValue = [];
-                    columns[secondColumn?.label].forEach((columItem, columIndex) => {
-                        pixelName.push(columItem?.name);
-                        pixelValue.push(columItem?.selector);
-                        columnsmerged.push({
-                            name: columItem?.name,
-                            selector: columItem?.selector,
-                        });
-                    });
+                    columns[secondColumn?.label].forEach(
+                        (columItem, columIndex) => {
+                            pixelName.push(columItem?.name);
+                            pixelValue.push(columItem?.selector);
+                            columnsmerged.push({
+                                name: columItem?.name,
+                                selector: columItem?.selector,
+                                label: secondColumn?.label,
+                            });
+                        },
+                    );
                     if (columns[secondColumn?.label]?.length) {
                         tempVal[secondColumn?.label] = {
                             ...tempVal[secondColumn?.label],
-                            ["name"]: columns[secondColumn?.label][0]?.name || pixelName[0],
+                            ["name"]:
+                                columns[secondColumn?.label][0]?.name ||
+                                pixelName[0],
                             ["pixelname"]: pixelName,
                             ["pixelvalue"]: pixelValue,
                         };
                     }
-                    for (let i = 0; i < columns[secondColumn?.label]?.length; i++) {
+                    for (
+                        let i = 0;
+                        i < columns[secondColumn?.label]?.length;
+                        i++
+                    ) {
                         tempVal["series"][i] = {
                             ...tempVal["series"][i],
-                            data: [],
+                            data: tempVal["series"][i]?.["data"] ?? [],
                             name: columns[secondColumn?.label][i]?.name,
                             type: "bar",
                             barWidth: 5,
-                            ["itemStyle"]: {
-                                ["color"]:
-                                    tempVal["color"][i] ?? COLOUR_PALATTE_DATA[i],
-                            },
                         };
                     }
                     tempVal = {
@@ -326,8 +384,12 @@ export const FrameOperations = observer(
                     setData("columns", columnsmerged);
                 }
             }
-            if (variation === "echart-pie-chart" && firstColumn !== null && secondColumn !== null) {
-                const tempValue = JSON.parse(computedValue);
+            if (
+                variation === "echart-pie-chart" &&
+                firstColumn !== null &&
+                secondColumn !== null
+            ) {
+                const tempValue = computedValue;
 
                 tempValue["_state"] = {};
                 tempValue["_state"]["fields"] = {};
@@ -339,16 +401,16 @@ export const FrameOperations = observer(
                 };
 
                 // set the value
-                setValue(JSON.stringify(tempValue));
+                // setValue(JSON.stringify(tempValue));
                 setData("option", tempValue);
             }
             if (variation === "echart-scatter-plots") {
                 if (firstColumn?.values) {
-                    const tempValue = JSON.parse(computedValue);
+                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -358,17 +420,18 @@ export const FrameOperations = observer(
                     };
 
                     // Update the series label name
-                    tempValue["series"][0]["label"]["name"] = firstColumn?.values;
+                    tempValue["series"][0]["label"]["name"] =
+                        firstColumn?.values;
 
-                    setValue(JSON.stringify(tempValue));
+                    // setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (secondColumn?.values) {
-                    const tempValue = JSON.parse(computedValue);
+                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -380,15 +443,15 @@ export const FrameOperations = observer(
                     tempValue["xAxis"]["name"] = secondColumn?.values;
                     tempValue["xAxis"]["pixelName"] = secondColumn?.values;
 
-                    setValue(JSON.stringify(tempValue));
+                    // setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[2]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
+                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -400,15 +463,15 @@ export const FrameOperations = observer(
                     tempValue["yAxis"]["name"] = columnsDrop[2]?.values;
                     tempValue["yAxis"]["pixelName"] = columnsDrop[2]?.values;
 
-                    setValue(JSON.stringify(tempValue));
+                    // setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[3]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
+                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -417,15 +480,15 @@ export const FrameOperations = observer(
                         sizeDataType: columnsDrop[3]?.dataType,
                     };
 
-                    setValue(JSON.stringify(tempValue));
+                    // setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[4]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
+                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -434,15 +497,15 @@ export const FrameOperations = observer(
                         colorDataType: columnsDrop[4]?.dataType,
                     };
 
-                    setValue(JSON.stringify(tempValue));
+                    // setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[5]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
+                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -457,11 +520,11 @@ export const FrameOperations = observer(
             }
             if (variation === "echart-stack-chart") {
                 if (firstColumn?.values) {
-                    const tempValue = JSON.parse(computedValue);
+                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -479,11 +542,11 @@ export const FrameOperations = observer(
                     setData("option", tempValue);
                 }
                 if (secondColumn?.values) {
-                    const tempValue = JSON.parse(computedValue);
+                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -501,11 +564,11 @@ export const FrameOperations = observer(
                     setData("option", tempValue);
                 }
                 if (columnsDrop[2]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
+                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -518,11 +581,11 @@ export const FrameOperations = observer(
                     setData("option", tempValue);
                 }
                 if (columnsDrop[3]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
+                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -535,8 +598,12 @@ export const FrameOperations = observer(
                     setData("option", tempValue);
                 }
             }
-            if (variation === "echart-line-graph" && firstColumn !== null && secondColumn !== null) {
-                const tempValue = JSON.parse(computedValue);
+            if (
+                variation === "echart-line-graph" &&
+                firstColumn !== null &&
+                secondColumn !== null
+            ) {
+                const tempValue = computedValue;
                 tempValue["xAxis"] = {
                     ...tempValue["xAxis"],
                     name: firstColumn?.values,
@@ -548,17 +615,19 @@ export const FrameOperations = observer(
 
                 tempValue["_state"] = {};
                 tempValue["_state"]["fields"] = {};
-                let tempSeries = tempValue['series'] || [];
+                let tempSeries = tempValue["series"] || [];
                 tempValue["_state"]["fields"] = {
                     ...tempValue["_state"]["fields"],
                     xAxis: firstColumn?.values,
                     yAxis: secondColumn?.values,
-                    tooltip: columnsDrop[2]?.values ? columnsDrop[2]?.values : [],
+                    tooltip: columnsDrop[2]?.values
+                        ? columnsDrop[2]?.values
+                        : [],
                 };
-                if(secondColumn?.values.length > 1){
+                if (secondColumn?.values.length > 1) {
                     let seriesListToAdd = [];
                     //Adding newly added field to the state
-                    for(let i=0;i<secondColumn.values.length;i++){
+                    for (let i = 0; i < secondColumn.values.length; i++) {
                         seriesListToAdd[i] = {
                             ...tempSeries[i],
                             name: secondColumn.values[i],
@@ -572,7 +641,8 @@ export const FrameOperations = observer(
                             label: {
                                 ...tempSeries[i]?.label,
                                 show: tempSeries[i]?.label?.show ?? true,
-                                position: tempSeries[i]?.label?.position ?? "top",
+                                position:
+                                    tempSeries[i]?.label?.position ?? "top",
                                 rotate: tempSeries[i]?.label?.rotate ?? 45,
                                 fontSize: tempSeries[i]?.label?.fontSize ?? 12,
                                 color: tempSeries[i]?.label?.color ?? "#000000",
@@ -580,10 +650,9 @@ export const FrameOperations = observer(
                         };
                     }
                     tempSeries = seriesListToAdd;
-                }
-                else{
+                } else {
                     //Removing the field from the state if it is not selected
-                    tempSeries = tempSeries.slice(0,1);
+                    tempSeries = tempSeries.slice(0, 1);
                 }
                 tempValue["series"] = tempSeries;
                 // set the value
@@ -592,11 +661,11 @@ export const FrameOperations = observer(
             }
             if (variation === "echart-world-map-chart") {
                 if (firstColumn?.values) {
-                    const tempValue = JSON.parse(computedValue);
+                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -609,11 +678,11 @@ export const FrameOperations = observer(
                     setData("option", tempValue);
                 }
                 if (secondColumn?.values) {
-                    const tempValue = JSON.parse(computedValue);
+                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -626,11 +695,11 @@ export const FrameOperations = observer(
                     setData("option", tempValue);
                 }
                 if (columnsDrop[2]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
+                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -643,11 +712,11 @@ export const FrameOperations = observer(
                     setData("option", tempValue);
                 }
                 if (columnsDrop[3]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
+                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -660,11 +729,11 @@ export const FrameOperations = observer(
                     setData("option", tempValue);
                 }
                 if (columnsDrop[4]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
+                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -677,11 +746,11 @@ export const FrameOperations = observer(
                     setData("option", tempValue);
                 }
                 if (columnsDrop[5]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
+                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                            Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -699,7 +768,7 @@ export const FrameOperations = observer(
                 let columnsObject = {};
                 const formattedArray = [];
 
-                const tempValue = JSON.parse(computedValue);
+                const tempValue = computedValue;
 
                 for (let i = 0; i < columnsValue.length; i++) {
                     if (columnsValue[i]?.values.length > 0) {
@@ -719,7 +788,7 @@ export const FrameOperations = observer(
 
                     tempValue["customSettings"] =
                         tempValue["customSettings"] &&
-                            Object.keys(tempValue["customSettings"]).length > 0
+                        Object.keys(tempValue["customSettings"]).length > 0
                             ? tempValue["customSettings"]
                             : {};
 
@@ -729,7 +798,7 @@ export const FrameOperations = observer(
                             name: firstColumn?.values?.[0],
                             selector: firstColumn?.selectors?.[0],
                         },
-                    }
+                    };
 
                     setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
@@ -740,7 +809,7 @@ export const FrameOperations = observer(
 
                     tempValue["customSettings"] =
                         tempValue["customSettings"] &&
-                            Object.keys(tempValue["customSettings"]).length > 0
+                        Object.keys(tempValue["customSettings"]).length > 0
                             ? tempValue["customSettings"]
                             : {};
 
@@ -750,19 +819,18 @@ export const FrameOperations = observer(
                             name: secondColumn?.values?.[0],
                             selector: secondColumn?.selectors?.[0],
                         },
-                    }
+                    };
 
                     setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
                 if (columnsDrop[2]?.values.length > 0) {
-
                     columnsToSet.push(columnsDrop[2]?.values);
                     columnsObject["enddate"] = columnsDrop[2]?.values;
 
                     tempValue["customSettings"] =
                         tempValue["customSettings"] &&
-                            Object.keys(tempValue["customSettings"]).length > 0
+                        Object.keys(tempValue["customSettings"]).length > 0
                             ? tempValue["customSettings"]
                             : {};
 
@@ -772,7 +840,7 @@ export const FrameOperations = observer(
                             name: columnsDrop[2]?.values?.[0],
                             selector: columnsDrop[2]?.selectors?.[0],
                         },
-                    }
+                    };
 
                     setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
@@ -783,7 +851,7 @@ export const FrameOperations = observer(
 
                     tempValue["customSettings"] =
                         tempValue["customSettings"] &&
-                            Object.keys(tempValue["customSettings"]).length > 0
+                        Object.keys(tempValue["customSettings"]).length > 0
                             ? tempValue["customSettings"]
                             : {};
 
@@ -793,7 +861,7 @@ export const FrameOperations = observer(
                             name: columnsDrop[3]?.values?.[0],
                             selector: columnsDrop[3]?.selectors?.[0],
                         },
-                    }
+                    };
 
                     setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
@@ -804,7 +872,7 @@ export const FrameOperations = observer(
 
                     tempValue["customSettings"] =
                         tempValue["customSettings"] &&
-                            Object.keys(tempValue["customSettings"]).length > 0
+                        Object.keys(tempValue["customSettings"]).length > 0
                             ? tempValue["customSettings"]
                             : {};
 
@@ -814,7 +882,7 @@ export const FrameOperations = observer(
                             name: columnsDrop[4]?.values?.[0],
                             selector: columnsDrop[4]?.selectors?.[0],
                         },
-                    }
+                    };
 
                     setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
@@ -825,7 +893,7 @@ export const FrameOperations = observer(
 
                     tempValue["customSettings"] =
                         tempValue["customSettings"] &&
-                            Object.keys(tempValue["customSettings"]).length > 0
+                        Object.keys(tempValue["customSettings"]).length > 0
                             ? tempValue["customSettings"]
                             : {};
 
@@ -835,7 +903,7 @@ export const FrameOperations = observer(
                             name: columnsDrop[5]?.values?.[0],
                             selector: columnsDrop[5]?.selectors?.[0],
                         },
-                    }
+                    };
 
                     setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
@@ -846,7 +914,7 @@ export const FrameOperations = observer(
 
                     tempValue["customSettings"] =
                         tempValue["customSettings"] &&
-                            Object.keys(tempValue["customSettings"]).length > 0
+                        Object.keys(tempValue["customSettings"]).length > 0
                             ? tempValue["customSettings"]
                             : {};
 
@@ -856,7 +924,7 @@ export const FrameOperations = observer(
                             name: columnsDrop[6]?.values?.[0],
                             selector: columnsDrop[6]?.selectors?.[0],
                         },
-                    }
+                    };
 
                     setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
@@ -870,23 +938,29 @@ export const FrameOperations = observer(
                 );
 
                 if (columnsIndexToSet) {
-
                     tempValue["customSettings"]["columnIndexDetails"] = {
                         ...tempValue["customSettings"]["columnIndexDetails"],
                         ...columnsIndexToSet,
-                    }
+                    };
 
                     setValue(JSON.stringify(tempValue));
                     setData("option", tempValue);
                 }
             }
-            if(variation == "echart-dendrogram-chart"){
+            if (variation == "echart-dendrogram-chart") {
                 let columnsToPush = [];
-                let dimensionElement = columnsValue.find((element) => element.label === 'dimensions');
-                let facetElement = columnsValue.find((element) => element.label === 'facet');
-                if(dimensionElement.label === 'dimensions' && dimensionElement.values.length){
-                    dimensionElement.selectors.forEach((item, index)=>{
-                        if(!item || !dimensionElement.values[index]) return;
+                let dimensionElement = columnsValue.find(
+                    (element) => element.label === "dimensions",
+                );
+                let facetElement = columnsValue.find(
+                    (element) => element.label === "facet",
+                );
+                if (
+                    dimensionElement.label === "dimensions" &&
+                    dimensionElement.values.length
+                ) {
+                    dimensionElement.selectors.forEach((item, index) => {
+                        if (!item || !dimensionElement.values[index]) return;
                         columnsToPush = [
                             ...columnsToPush,
                             {
@@ -896,36 +970,42 @@ export const FrameOperations = observer(
                         ];
                     });
                     setData("columns", columnsToPush);
-                }
-                else{
+                } else {
                     setData("columns", []);
                 }
-                if(facetElement.label === 'facet' && facetElement.values.length){
-                    if(!facetElement.values[0] || !facetElement.selectors[0]) return;
+                if (
+                    facetElement.label === "facet" &&
+                    facetElement.values.length
+                ) {
+                    if (!facetElement.values[0] || !facetElement.selectors[0])
+                        return;
 
-                    setData("facet.facetSelected", [{
-                        name: facetElement.values[0],
-                        selector: facetElement.selectors[0],
-                        value: 0,
-                      }]);
-                    
+                    setData("facet.facetSelected", [
+                        {
+                            name: facetElement.values[0],
+                            selector: facetElement.selectors[0],
+                            value: 0,
+                        },
+                    ]);
+
                     columnsToPush = [
-                          ...columnsToPush,
-                          {
+                        ...columnsToPush,
+                        {
                             name: facetElement.values[0],
                             selector: facetElement.selectors[0],
                             value: 0,
                             isFacet: true,
-                          }   
+                        },
                     ];
                     setData("columns", columnsToPush);
-                }
-                else{
+                } else {
                     setData("facet.facetSelected", []);
                 }
             }
 
-            const checkAggregate = (functionName) => ({ NUMBER: 'Average', STRING: 'Count' }[functionName] || functionName);
+            const checkAggregate = (functionName) =>
+                ({ NUMBER: "Average", STRING: "Count" }[functionName] ||
+                functionName);
             const formatAggregates = () => {
                 const formattedAggregates = {};
                 columnsValue.forEach((column, columnIndex) => {
@@ -938,9 +1018,9 @@ export const FrameOperations = observer(
                     formattedAggregates[column.label] = valueMap;
                 });
                 return formattedAggregates;
-            }
+            };
             setData("aggregate", formatAggregates());
-        }
+        };
         function dispatchData(option) {
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
@@ -964,7 +1044,7 @@ export const FrameOperations = observer(
                 ) {
                     // Find the index of the first matching value in columnsToSet
                     colIndex[key] = columnsToSet.findIndex(
-                        (colSetItem) => colSetItem[0] === columnsObject[key][0]
+                        (colSetItem) => colSetItem[0] === columnsObject[key][0],
                     );
                 } else {
                     // Handle non-array values if needed (not applicable in your example)
@@ -980,8 +1060,11 @@ export const FrameOperations = observer(
             const dropId = destination.droppableId;
 
             const updated = { ...droppedColumns };
-            if (!updated[dropId]) updated[dropId] = {values: [], dataType: []};
-            const dropCol = filteredColumns.find((col) => col?.name === draggableId);
+            if (!updated[dropId])
+                updated[dropId] = { values: [], dataType: [] };
+            const dropCol = filteredColumns.find(
+                (col) => col?.name === draggableId,
+            );
             updated[dropId] = {
                 ...updated[dropId],
                 values: [...updated[dropId]?.values, draggableId],
@@ -996,79 +1079,91 @@ export const FrameOperations = observer(
                     let index = updated[key]["values"].indexOf(columnName);
                     updated[key] = {
                         ...updated[key],
-                        values: [...updated[key]["values"]?.slice(0, index), ...updated[key]["values"].slice(index + 1)],
-                        dataType: [...updated[key]["dataType"]?.slice(0, index), ...updated[key]["dataType"].slice(index + 1)],
+                        values: [
+                            ...updated[key]["values"]?.slice(0, index),
+                            ...updated[key]["values"].slice(index + 1),
+                        ],
+                        dataType: [
+                            ...updated[key]["dataType"]?.slice(0, index),
+                            ...updated[key]["dataType"].slice(index + 1),
+                        ],
                     };
                 }
                 return updated;
             });
-        }
+        };
         const onClickAdd = (value: boolean, id: any) => {
             setIsAdd(value);
             setAddedColumnName(id);
-        }
+        };
         let renderElement = [...buildListener("preProcess")];
 
         const renderAccordion = (
             <>
-                {
-                    accordionSection.map((item,index)=>(
-                        <Accordion
+                {accordionSection.map((item, index) => (
+                    <Accordion
                         expanded={item[accordionList[index]].expanded}
-                        onChange={(e) =>{
+                        onChange={(e) => {
                             let accordionSectionToUp = accordionSection;
-                            let indexToUpdate = accordionSectionToUp.findIndex((accordItem)=>accordItem.hasOwnProperty(accordionList[index]));
-                            accordionSectionToUp[indexToUpdate][accordionList[index]] = {
-                                ...accordionSectionToUp[indexToUpdate][accordionList[index]],
-                                expanded: !accordionSectionToUp[indexToUpdate][accordionList[index]].expanded,
+                            let indexToUpdate = accordionSectionToUp.findIndex(
+                                (accordItem) =>
+                                    accordItem.hasOwnProperty(
+                                        accordionList[index],
+                                    ),
+                            );
+                            accordionSectionToUp[indexToUpdate][
+                                accordionList[index]
+                            ] = {
+                                ...accordionSectionToUp[indexToUpdate][
+                                    accordionList[index]
+                                ],
+                                expanded:
+                                    !accordionSectionToUp[indexToUpdate][
+                                        accordionList[index]
+                                    ].expanded,
                             };
-                            setAccordionSection((prevAccordionSection)=>{
+                            setAccordionSection((prevAccordionSection) => {
                                 return [...accordionSectionToUp];
-                            })
-                        }
-                        }
-                        sx={{
-                            width:'100%',
+                            });
                         }}
-                        >
-                            <Accordion.Trigger
-                                expandIcon={<ExpandMore />}
-                            >
-                                <Typography variant="body2">
-                                    {item[accordionList[index]].title}
-                                </Typography>
-                            </Accordion.Trigger>
+                        sx={{
+                            width: "100%",
+                        }}
+                    >
+                        <Accordion.Trigger expandIcon={<ExpandMore />}>
+                            <Typography variant="body2">
+                                {item[accordionList[index]].title}
+                            </Typography>
+                        </Accordion.Trigger>
 
-                            <Accordion.Content>
-                                    <Stack direction="column" spacing={1}>
-                                        {renderElement.map((c, cIdx) => {
-                                            return createElement(c.render, {
-                                                key: cIdx,
-                                                id: id,
-                                            });
-                                        })}
-                                    </Stack>
-                            </Accordion.Content>
-                        </Accordion>
-                    ))
-                }
-                 
+                        <Accordion.Content>
+                            <Stack direction="column" spacing={1}>
+                                {renderElement.map((c, cIdx) => {
+                                    return createElement(c.render, {
+                                        key: cIdx,
+                                        id: id,
+                                    });
+                                })}
+                            </Stack>
+                        </Accordion.Content>
+                    </Accordion>
+                ))}
             </>
         );
 
         const handleChangeVisual = (value: boolean) => {
-            const tempValue = JSON.parse(computedValue);
+            const tempValue = computedValue;
 
             tempValue["visual"] =
                 tempValue["visual"] &&
-                    Object.keys(tempValue["visual"]).length > 0
+                Object.keys(tempValue["visual"]).length > 0
                     ? tempValue["visual"]
                     : {};
             tempValue["visual"] = value;
 
-            setValue(JSON.stringify(tempValue));
+            // setValue(tempValue);
             setData("option", tempValue);
-        }
+        };
         const handleSelectedItem = (item: any) => {
             selectedItem(item);
             setSelectedColumn([]);
@@ -1078,9 +1173,7 @@ export const FrameOperations = observer(
                 <DragDropContext onDragEnd={handleDragEnd}>
                     <StyledDropDownSection>
                         <StyledSubSection>
-                            <StyledSpanDimension>
-                                Dimension
-                            </StyledSpanDimension>
+                            <StyledSpanDimension>Dimension</StyledSpanDimension>
                             <Stack paddingTop={2} width={"95%"}>
                                 <TextField
                                     placeholder="Search"
@@ -1091,7 +1184,9 @@ export const FrameOperations = observer(
                                         },
                                     }}
                                     value={search}
-                                    onChange={(e) => handleSearch(e.target.value)}
+                                    onChange={(e) =>
+                                        handleSearch(e.target.value)
+                                    }
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
@@ -1102,11 +1197,10 @@ export const FrameOperations = observer(
                                             <InputAdornment position="end">
                                                 <IconButton
                                                     size="small"
-                                                // onClick={(e) =>
-                                                //     setMenuAnchorEl(e.currentTarget)
-                                                // }
-                                                >
-                                                </IconButton>
+                                                    // onClick={(e) =>
+                                                    //     setMenuAnchorEl(e.currentTarget)
+                                                    // }
+                                                ></IconButton>
                                             </InputAdornment>
                                         ),
                                     }}
@@ -1114,9 +1208,16 @@ export const FrameOperations = observer(
                             </Stack>
                             <Droppable droppableId="column-list">
                                 {(provided) => (
-                                    <div ref={provided.innerRef} {...provided.droppableProps}>
+                                    <div
+                                        ref={provided.innerRef}
+                                        {...provided.droppableProps}
+                                    >
                                         {filteredColumns.map((col, index) => (
-                                            <Draggable key={col.name} draggableId={col.name} index={index}>
+                                            <Draggable
+                                                key={col.name}
+                                                draggableId={col.name}
+                                                index={index}
+                                            >
                                                 {(provided, snapshot) => (
                                                     <div
                                                         ref={provided.innerRef}
@@ -1124,63 +1225,196 @@ export const FrameOperations = observer(
                                                         {...provided.dragHandleProps}
                                                         style={{
                                                             display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "space-between",
+                                                            alignItems:
+                                                                "center",
+                                                            justifyContent:
+                                                                "space-between",
                                                             gap: "12px",
                                                             padding: "8px",
                                                             marginBottom: "8px",
                                                             marginTop: "2px",
-                                                            background: snapshot.isDragging ? "#f0f0f0" : "#fff",
+                                                            background:
+                                                                snapshot.isDragging
+                                                                    ? "#f0f0f0"
+                                                                    : "#fff",
                                                             borderRadius: "4px",
                                                             maxWidth: "100%",
-                                                            boxShadow: snapshot.isDragging ? "0 2px 5px rgba(0,0,0,0.2)" : "none",
-                                                            ...provided.draggableProps.style,
+                                                            boxShadow:
+                                                                snapshot.isDragging
+                                                                    ? "0 2px 5px rgba(0,0,0,0.2)"
+                                                                    : "none",
+                                                            ...provided
+                                                                .draggableProps
+                                                                .style,
                                                         }}
                                                     >
-                                                        <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center" }}>
-                                                            {col.dataType === "STRING" ? (
-                                                                <StyledLabelIcon src={String(StringIcon)} />
+                                                        <div
+                                                            style={{
+                                                                flex: "0 0 auto",
+                                                                display: "flex",
+                                                                alignItems:
+                                                                    "center",
+                                                            }}
+                                                        >
+                                                            {col.dataType ===
+                                                            "STRING" ? (
+                                                                <StyledLabelIcon
+                                                                    src={String(
+                                                                        StringIcon,
+                                                                    )}
+                                                                />
                                                             ) : (
-                                                                <StyledLabelIcon src={String(NumberIcon)} />
+                                                                <StyledLabelIcon
+                                                                    src={String(
+                                                                        NumberIcon,
+                                                                    )}
+                                                                />
                                                             )}
                                                         </div>
-                                                        <div style={{ flex: "1 1 auto", display: "flex", alignItems: "center" }}>
-                                                            {col.name.length > 7 ? (
-                                                                <Tooltip title={col.name}>
-                                                                    <span style={{ lineHeight: "1.5" }}>{col.name.slice(0, 7)}...</span>
+                                                        <div
+                                                            style={{
+                                                                flex: "1 1 auto",
+                                                                display: "flex",
+                                                                alignItems:
+                                                                    "center",
+                                                            }}
+                                                        >
+                                                            {col.name.length >
+                                                            7 ? (
+                                                                <Tooltip
+                                                                    title={
+                                                                        col.name
+                                                                    }
+                                                                >
+                                                                    <span
+                                                                        style={{
+                                                                            lineHeight:
+                                                                                "1.5",
+                                                                        }}
+                                                                    >
+                                                                        {col.name.slice(
+                                                                            0,
+                                                                            7,
+                                                                        )}
+                                                                        ...
+                                                                    </span>
                                                                 </Tooltip>
                                                             ) : (
-                                                                <span style={{ lineHeight: "1.5" }}>{col.name}</span>
+                                                                <span
+                                                                    style={{
+                                                                        lineHeight:
+                                                                            "1.5",
+                                                                    }}
+                                                                >
+                                                                    {col.name}
+                                                                </span>
                                                             )}
                                                         </div>
                                                         {isAdd && (
-                                                            <div style={{ flex: "1 1 auto", display: "flex", justifyContent: "flex-end" }}>
+                                                            <div
+                                                                style={{
+                                                                    flex: "1 1 auto",
+                                                                    display:
+                                                                        "flex",
+                                                                    justifyContent:
+                                                                        "flex-end",
+                                                                }}
+                                                            >
                                                                 <Checkbox
                                                                     size="small"
                                                                     color="primary"
-                                                                    onChange={(e) => {
-                                                                        setDroppedColumns((prev) => {
-                                                                            const updated = { ...prev };
-                                                                            if (e.target.checked) {
-                                                                                // Add the column name if checked
-                                                                                if (!updated[addedColumnName]) updated[addedColumnName] = { values: [], dataType: [] };
-                                                                                updated[addedColumnName] = {
-                                                                                    values: [...updated[addedColumnName].values, col.name],
-                                                                                    dataType: [...updated[addedColumnName].dataType, col.dataType],
-                                                                                };
-                                                                            } else {
-                                                                                // Remove the column name if unchecked
-                                                                                if (updated[addedColumnName]) {
-                                                                                    let index = updated[addedColumnName]["values"].indexOf(col.name);
-                                                                                    updated[addedColumnName] = updated[addedColumnName].values.splice(index, 1);
-                                                                                    // If the array becomes empty, you can optionally delete the key
-                                                                                    if (updated[addedColumnName]?.values?.length === 0) {
-                                                                                        delete updated[addedColumnName];
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) => {
+                                                                        setDroppedColumns(
+                                                                            (
+                                                                                prev,
+                                                                            ) => {
+                                                                                const updated =
+                                                                                    {
+                                                                                        ...prev,
+                                                                                    };
+                                                                                if (
+                                                                                    e
+                                                                                        .target
+                                                                                        .checked
+                                                                                ) {
+                                                                                    // Add the column name if checked
+                                                                                    if (
+                                                                                        !updated[
+                                                                                            addedColumnName
+                                                                                        ]
+                                                                                    )
+                                                                                        updated[
+                                                                                            addedColumnName
+                                                                                        ] =
+                                                                                            {
+                                                                                                values: [],
+                                                                                                dataType:
+                                                                                                    [],
+                                                                                            };
+                                                                                    updated[
+                                                                                        addedColumnName
+                                                                                    ] =
+                                                                                        {
+                                                                                            values: [
+                                                                                                ...updated[
+                                                                                                    addedColumnName
+                                                                                                ]
+                                                                                                    .values,
+                                                                                                col.name,
+                                                                                            ],
+                                                                                            dataType:
+                                                                                                [
+                                                                                                    ...updated[
+                                                                                                        addedColumnName
+                                                                                                    ]
+                                                                                                        .dataType,
+                                                                                                    col.dataType,
+                                                                                                ],
+                                                                                        };
+                                                                                } else {
+                                                                                    // Remove the column name if unchecked
+                                                                                    if (
+                                                                                        updated[
+                                                                                            addedColumnName
+                                                                                        ]
+                                                                                    ) {
+                                                                                        let index =
+                                                                                            updated[
+                                                                                                addedColumnName
+                                                                                            ][
+                                                                                                "values"
+                                                                                            ].indexOf(
+                                                                                                col.name,
+                                                                                            );
+                                                                                        updated[
+                                                                                            addedColumnName
+                                                                                        ] =
+                                                                                            updated[
+                                                                                                addedColumnName
+                                                                                            ].values.splice(
+                                                                                                index,
+                                                                                                1,
+                                                                                            );
+                                                                                        // If the array becomes empty, you can optionally delete the key
+                                                                                        if (
+                                                                                            updated[
+                                                                                                addedColumnName
+                                                                                            ]
+                                                                                                ?.values
+                                                                                                ?.length ===
+                                                                                            0
+                                                                                        ) {
+                                                                                            delete updated[
+                                                                                                addedColumnName
+                                                                                            ];
+                                                                                        }
                                                                                     }
                                                                                 }
-                                                                            }
-                                                                            return updated;
-                                                                        });
+                                                                                return updated;
+                                                                            },
+                                                                        );
                                                                     }}
                                                                 />
                                                             </div>
@@ -1193,7 +1427,6 @@ export const FrameOperations = observer(
                                     </div>
                                 )}
                             </Droppable>
-
                         </StyledSubSection>
                         <StyledSubSection>
                             <DataTabStyling
@@ -1209,15 +1442,11 @@ export const FrameOperations = observer(
                                 storedColumns={selectedColumn}
                                 visual={handleChangeVisual}
                                 selectedItem={handleSelectedItem}
-                            >
-                            </DataTabStyling>
+                            ></DataTabStyling>
                         </StyledSubSection>
-
                     </StyledDropDownSection>
                     <StyledDropDownSection>
-                            {
-                                renderAccordion
-                            }
+                        {renderAccordion}
                     </StyledDropDownSection>
                 </DragDropContext>
             </>

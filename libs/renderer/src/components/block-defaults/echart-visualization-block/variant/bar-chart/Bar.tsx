@@ -10,6 +10,95 @@ import { getValueByPath } from "../../../../../utility";
 import { useBlockSettings, useFrame } from "../../../../../hooks";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { EChartsOption } from "echarts";
+import { ECHART_BAR_COLOUR } from "../../Visualization.constants";
+
+const COLOUR_PALATTE_DATA = [
+    "#5470c6",
+    "#91cc75",
+    "#fac858",
+    "#ee6666",
+    "#73c0de",
+    "#3ba272",
+    "#fc8452",
+    "#9a60b4",
+    "#ea7ccc",
+];
+
+function updateColorData(seriesData, appliedRules = null) {
+    //const color = colourObj[seriesData.dataIndex] || ECHART_BAR_COLOUR;
+    if (!appliedRules) {
+        console.log("apllied null rules ");
+        return COLOUR_PALATTE_DATA[seriesData.seriesIndex] || ECHART_BAR_COLOUR;
+    }
+    let applyColor =
+        seriesData.color ||
+        COLOUR_PALATTE_DATA[seriesData.seriesIndex] ||
+        ECHART_BAR_COLOUR;
+    appliedRules?.forEach((appliedRule) => {
+        const {
+            coloum,
+            columnColour,
+            columnComparision,
+            columnName,
+            filterValue,
+            valuesToColour,
+        } = appliedRule;
+        if (columnComparision === "==") {
+            if (
+                columnName == seriesData.seriesName &&
+                valuesToColour.includes(seriesData.value)
+            ) {
+                applyColor = columnColour;
+            }
+        }
+        if (columnComparision === "!=") {
+            if (
+                columnName == seriesData.seriesName &&
+                !valuesToColour.includes(seriesData.value)
+            ) {
+                applyColor = columnColour;
+            }
+        }
+        if (columnComparision == "<=") {
+            if (
+                columnName == seriesData.seriesName &&
+                seriesData.value <= parseFloat(filterValue)
+            ) {
+                applyColor = columnColour;
+            }
+        }
+
+        if (columnComparision === "<") {
+            //less than comparision
+            if (
+                columnName == seriesData.seriesName &&
+                seriesData.value < parseFloat(filterValue)
+            ) {
+                applyColor = columnColour;
+            }
+        }
+        if (columnComparision === ">") {
+            //greater than comparision
+            if (
+                columnName == seriesData.seriesName &&
+                seriesData.value > parseFloat(filterValue)
+            ) {
+                applyColor = columnColour;
+            }
+        }
+        if (columnComparision === ">=") {
+            //greater than or equal to comparision
+            if (
+                columnName == seriesData.seriesName &&
+                seriesData.value >= parseFloat(filterValue)
+            ) {
+                applyColor = columnColour;
+            }
+        }
+    });
+
+    return applyColor;
+}
 
 //Main Container for displaying Bar chart
 const StyledMainContainer = styled("div")(({ theme }) => ({
@@ -103,40 +192,29 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
             if (typeof v === "undefined") {
                 return "";
             } else if (typeof v === "string") {
-                return v;
+                return JSON.parse(v);
             }
-            return JSON.stringify(v, null, 2);
+            return v; //JSON.stringify(v, null, 2);
         });
     }, [data, "option"]).get();
 
-    const parsedOption = useMemo(() => {
-        return typeof computedValue === "string"
-            ? JSON.parse(computedValue)
-            : computedValue;
-    }, [computedValue]);
-
-    useEffect(() => {
-        const toolsUpdated =
-            parsedOption.hasOwnProperty("customSettings") &&
-            parsedOption["customSettings"].hasOwnProperty("toolsUpdated")
-                ? parsedOption["customSettings"]["toolsUpdated"]
-                : false;
-        if (
-            data.frame.name &&
-            frameData.data.values.length > 0 &&
-            frameData.isLoading === false &&
-            !toolsUpdated
-        ) {
-            updateJson(resultData, "option");
-        }
-    }, [frameData.data.values]);
-
     //update frame values to the series data when frame values are changed
     const receiveValueswithCorrections = useCallback(
-        (resultData: unknown) => {
+        (resultData) => {
+            if (
+                !resultData ||
+                typeof resultData !== "object" ||
+                resultData === null
+            ) {
+                return {};
+            }
+            const newOption = {
+                ...resultData,
+            };
+            //if the frame data is not available, return the resultData as it is
             let frameDataIndex = 0;
             //setting xaxis data
-            resultData["xAxis"]["data"] = frameData.data?.values?.map(
+            newOption["xAxis"]["data"] = frameData.data?.values?.map(
                 (item, index) => {
                     return { value: item[frameDataIndex] };
                 },
@@ -146,19 +224,21 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
             //setting all values to all existing series to null, to restore the chart to initial state so new values will be updated
             for (
                 let seriesIdx = 0;
-                seriesIdx < resultData["series"].length;
+                seriesIdx < newOption["series"].length;
                 seriesIdx++
             ) {
                 if (
-                    resultData["series"][seriesIdx] !== undefined &&
-                    resultData["series"][seriesIdx].hasOwnProperty("data") &&
-                    !resultData["series"][seriesIdx].hasOwnProperty(
+                    newOption["series"][seriesIdx] !== undefined &&
+                    newOption["series"][seriesIdx].hasOwnProperty("data") &&
+                    !newOption["series"][seriesIdx].hasOwnProperty(
                         "toggleTrendLineObject",
                     )
                 ) {
-                    resultData["series"][seriesIdx]["data"] =
+                    newOption["series"][seriesIdx]["data"] =
                         frameData.data?.values?.map((item, index) => {
-                            return { value: null };
+                            return {
+                                value: null,
+                            };
                         });
                 }
             }
@@ -166,21 +246,22 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
             let i;
             for (i = frameDataIndex; i < optionSeriesLength; i++) {
                 if (
-                    resultData["series"][i - 1] !== undefined &&
-                    resultData["series"][i - 1].hasOwnProperty("data") &&
-                    !resultData["series"][i - 1].hasOwnProperty(
+                    newOption["series"][i - 1] !== undefined &&
+                    newOption["series"][i - 1].hasOwnProperty("data") &&
+                    !newOption["series"][i - 1].hasOwnProperty(
                         "toggleTrendLineObject",
                     )
                 ) {
-                    resultData["series"][i - 1]["data"] =
+                    newOption["series"][i - 1]["data"] =
                         frameData.data?.values?.map((item, index) => {
                             return { value: item[i] ?? null };
                         });
                 }
             }
-            return resultData; //returning updated values to chart
+            console.log("series ", newOption["series"]);
+            return { ...data.option, ...newOption }; //returning updated values to chart
         },
-        [frameData.data.values],
+        [frameData.data.values, frameData.data.headers, data.option],
     );
 
     //on events object for getting and processing events with chart
@@ -249,6 +330,50 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
         },
     };
 
+    const parsedOption = useMemo(() => {
+        console.log("parsedOption memo called ", computedValue);
+        let options: EChartsOption = computedValue;
+        if (
+            data.frame.name &&
+            frameData.data.values.length > 0 &&
+            frameData.isLoading === false
+        ) {
+            console.log("computedValue operations sett ", computedValue);
+            // const appliedRules = (computedValue as any)?.customSettings
+            //     ?.appliedRules;
+            options = receiveValueswithCorrections(computedValue);
+        }
+        if (Array.isArray(options.series)) {
+            options = {
+                ...options,
+                series: options.series.map((item) => {
+                    return {
+                        ...item,
+                        ["itemStyle"]: {
+                            ...item["itemStyle"],
+                            ["color"]: (seriesData) =>
+                                updateColorData(
+                                    seriesData,
+                                    (
+                                        options.customSettings as {
+                                            appliedRules?: any;
+                                        }
+                                    )?.appliedRules,
+                                ),
+                        },
+                    };
+                }),
+            };
+        }
+        return { ...options };
+    }, [
+        computedValue,
+        data.frame,
+        frameData.data.values,
+        frameData.isLoading,
+        receiveValueswithCorrections,
+    ]);
+
     //validating the received data.option is in string format and parse it and then assign the same to chart
     if (typeof data.option === "string") {
         try {
@@ -266,23 +391,17 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
             );
         }
     } else {
-        //assign the data from frame to exising object based on frame is selected or not
-        resultData =
-            data.frame.name &&
-            frameData.data.values.length > 0 &&
-            frameData.isLoading === false
-                ? receiveValueswithCorrections(parsedOption)
-                : parsedOption;
         return (
             <StyledMainContainer id={id}>
                 <EChartsReact
-                    option={resultData as EChartsOption}
+                    option={parsedOption as EChartsOption}
                     // onChartReady={echartsLoaded}
                     onEvents={onClickChart}
                     style={{
                         height: "inherit",
                         width: "inherit",
                     }}
+                    notMerge={true}
                 />
                 <ChartContextMenu
                     id={id}

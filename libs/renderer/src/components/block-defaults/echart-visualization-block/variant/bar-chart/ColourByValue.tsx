@@ -57,11 +57,11 @@ const ColourByValue = observer(
     <D extends BlockDef = BlockDef>({ id, updateChart, path }) => {
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
-
+        // console.log("ColourByValue data ", data);
         const [newRules, setNewRules] = useState(INITIAL_NEW_RULES);
 
         const [valuesToColour, setValuesToColour] = useState([]);
-        const [value, setValue] = useState({});
+        // const [value, setValue] = useState({});
         const [appliedRules, setAppliedRules] = useState([]);
         const [valuesColourMapping, setValuesColourMapping] = useState({});
         //custom reference variable to handle color value applying
@@ -70,7 +70,10 @@ const ColourByValue = observer(
             assignedRules: [],
             applyRulesToChart: false,
         });
-        const columnData = data.columns || [];
+        const columnData = data.columns
+            ? data.columns.filter((item) => item.label === "yAxis")
+            : [];
+        console.log("columnData ", columnData);
         // get the value of the input (wrapped in usememo because of path prop)
         const computedValue = useMemo(() => {
             return computed(() => {
@@ -83,108 +86,135 @@ const ColourByValue = observer(
                 } else if (typeof v === "string") {
                     return v;
                 }
-                return JSON.stringify(v, null, 2);
+                return v; //JSON.stringify(v, null, 2);
             });
         }, [data, path]).get();
         //initial setting of state data based on the json value
         useEffect(() => {
             functionCallReference.current.applyRulesToChart = false;
-            const option =
-                typeof computedValue === "string"
-                    ? JSON.parse(computedValue)
-                    : computedValue;
+            const v = getValueByPath(data, path);
+            const option = typeof v === "string" ? JSON.parse(v) : v;
             if (
                 option.hasOwnProperty("customSettings") &&
-                option["customSettings"].hasOwnProperty("appliedColourByValue")
+                option["customSettings"].hasOwnProperty("appliedRules")
             ) {
-                const appliedRules =
-                    option["customSettings"]["appliedColourByValue"];
+                const appliedRules = option["customSettings"]["appliedRules"];
                 setAppliedRules(appliedRules);
             }
         }, []);
         //whenever a computed value is changed, then respective change for colour by value component is
-        useEffect(() => {
-            setValue(computedValue);
-        }, [computedValue]);
+        // useEffect(() => {
+        //     setValue(computedValue);
+        // }, [computedValue]);
         useEffect(() => {
             if (functionCallReference.current.applyRulesToChart) {
                 const option =
-                    typeof value === "string" ? JSON.parse(value) : value;
-                let colourObj = {};
-                let optionUpdated = option;
+                    typeof computedValue === "string"
+                        ? JSON.parse(computedValue)
+                        : computedValue;
+                //let colourObj = {};
                 appliedRules.forEach((appliedItem, index) => {
-                    const xAxisPosition = getXAxisPositions(appliedItem);
+                    // const xAxisPosition = getXAxisPositions(appliedItem);
                     //take all the series indexes to update the data
-                    const filteredSeriesIndex = getFilteredSeriesIndex();
-                    if (xAxisPosition.length) {
-                        filteredSeriesIndex.forEach((item, index) => {
-                            const seriesIndexData = item;
-                            if (seriesIndexData > -1) {
-                                const data =
-                                    option["series"][seriesIndexData]["data"];
-                                data.forEach((item, dataindex) => {
-                                    colourObj = {
-                                        ...colourObj,
-                                        [dataindex]: xAxisPosition.includes(
-                                            dataindex,
-                                        )
-                                            ? appliedItem.columnColour
-                                            : colourObj.hasOwnProperty(
-                                                  dataindex,
-                                              )
-                                            ? colourObj[dataindex]
-                                            : ECHART_BAR_COLOUR,
-                                    };
-                                });
-                                setValuesColourMapping((prevColour) => {
-                                    return {
-                                        ...prevColour,
-                                        ...colourObj,
-                                    };
-                                });
-                                if (
-                                    option["series"][
-                                        seriesIndexData
-                                    ].hasOwnProperty("itemStyle")
-                                ) {
-                                    option["series"][seriesIndexData][
-                                        "itemStyle"
-                                    ] = {
-                                        ...option["series"][seriesIndexData][
-                                            "itemStyle"
-                                        ],
-                                        ["color"]: (seriesData) =>
-                                            updateColorData(
-                                                seriesData,
-                                                colourObj,
-                                            ),
-                                    };
-                                } else {
-                                    option["series"][seriesIndexData] = {
-                                        ...option["series"][seriesIndexData],
-                                        ["itemStyle"]: {
-                                            ...option["series"][
-                                                seriesIndexData
-                                            ]["itemStyle"],
-                                            ["color"]: (seriesData) =>
-                                                updateColorData(
-                                                    seriesData,
-                                                    colourObj,
-                                                ),
-                                        },
-                                    };
-                                }
-                            }
-                        });
-                    }
+                    // option["series"] = [
+                    //     ...option["series"].map((item) => {
+                    //         if (typeof item.color === "function") {
+                    //             return item;
+                    //         }
+                    //         return {
+                    //             ...item,
+                    //             ["itemStyle"]: {
+                    //                 ...item["itemStyle"],
+                    //                 ["color"]: (seriesData) =>
+                    //                     updateColorData(seriesData, {
+                    //                         ...appliedItem,
+                    //                     }),
+                    //             },
+                    //         };
+                    //     }),
+                    // ];
+                    const filteredSeriesIndex = []; //getFilteredSeriesIndex();
+                    // if (xAxisPosition.length) {
+                    filteredSeriesIndex.forEach((item, index) => {
+                        const seriesIndexData = item;
+                        if (seriesIndexData > -1) {
+                            // const data =
+                            //     option["series"][seriesIndexData]["data"];
+                            // data.forEach((item, dataindex) => {
+                            //     colourObj = {
+                            //         ...colourObj,
+                            //         [dataindex]: xAxisPosition.includes(
+                            //             dataindex,
+                            //         )
+                            //             ? appliedItem.columnColour
+                            //             : colourObj.hasOwnProperty(
+                            //                   dataindex,
+                            //               )
+                            //             ? colourObj[dataindex]
+                            //             : ECHART_BAR_COLOUR,
+                            //     };
+                            // });
+                            // option["series"][seriesIndexData] = {
+                            //     ...option["series"][seriesIndexData],
+                            //     ["itemStyle"]: {
+                            //         ...option["series"][seriesIndexData][
+                            //             "itemStyle"
+                            //         ],
+                            // ["color"]: (seriesData) =>
+                            //     updateColorData(seriesData, {
+                            //         ...appliedItem,
+                            //     }),
+                            //     },
+                            // }; //working one
+                        }
+                    });
+                    // }
                 });
-
-                option["customSettings"] = {
-                    ...option["customSettings"],
-                    ["appliedColourByValue"]: appliedRules,
-                    ["toolsUpdated"]: true,
+                // if (!appliedRules.length) {
+                //     const filteredSeriesIndex = getFilteredSeriesIndex();
+                //     filteredSeriesIndex.forEach((index) => {
+                //         option["series"][index] = {
+                //             ...option["series"][index],
+                //             ["itemStyle"]: {
+                //                 ...option["series"][index]["itemStyle"],
+                //                 ["color"]: (seriesData) =>
+                //                     updateColorData(seriesData),
+                //             },
+                //         }; //working one
+                //     });
+                // }
+                // option["series"] = [
+                //     ...option["series"].map((item) => {
+                //         if (typeof item.color === "function") {
+                //             return item;
+                //         }
+                //         return {
+                //             ...item,
+                //             ["itemStyle"]: {
+                //                 ...item["itemStyle"],
+                //                 ["color"]: (seriesData) =>
+                //                     updateColorData(
+                //                         seriesData,
+                //                         option.customSettings
+                //                             .appliedColourByValue,
+                //                     ),
+                //             },
+                //         };
+                //     }),
+                // ];
+                console.log("colorby appliedRules ", appliedRules);
+                const optionUpdated = {
+                    ...option,
+                    customSettings: {
+                        ...option.customSettings,
+                        appliedRules: [...appliedRules],
+                        toolsUpdated: true,
+                        // appliedColors: {
+                        //     ...option.customSettings.colourObj,
+                        //     ...colourObj,
+                        // },
+                    },
                 };
-                optionUpdated = option;
                 runStateUpdateCustom(optionUpdated);
                 functionCallReference.current.applyRulesToChart = false;
             }
@@ -206,6 +236,7 @@ const ColourByValue = observer(
             updatedOption: PathValue<any, typeof path>,
         ) {
             setTimeout(() => {
+                console.log("runStateUpdateCustom ---->", updatedOption);
                 try {
                     setData(
                         "option",
@@ -230,72 +261,57 @@ const ColourByValue = observer(
             setNewRules((prevRules) => {
                 return {
                     ...prevRules,
-                    [column]: event.target.value,
+                    [column]:
+                        event.target.value?.selector || event.target.value,
                 };
             });
+            console.log(
+                "updatefields computedValue ",
+                computedValue,
+                data.option,
+            );
             //if column updated is columnToColour then values to be selected if fetched from series and added to valuestocolor state
             if (column === "columnToColour") {
                 const option = data.option;
-                const jsonPropName = data.columns.find(
-                    (item) => item.selector === event.target.value,
-                );
-                if (jsonPropName.hasOwnProperty("name")) {
-                    setNewRules((prevValues) => {
-                        return {
-                            ...prevValues,
-                            ["columnName"]: jsonPropName["name"],
-                            ["columnNameToColour"]: jsonPropName["name"],
-                        };
+                const name = Array.isArray(event.target.value.name)
+                    ? event.target.value.name[0]
+                    : event.target.value.name;
+                const pixelId = event.target.value.selector;
+                let valuesToColour = [];
+                if (option["xAxis"]["pixelvalue"].includes(pixelId)) {
+                    valuesToColour = option["xAxis"]["data"].map((item) => {
+                        return item.hasOwnProperty("value") ? item.value : item;
                     });
-                    if (option["xAxis"]["pixelname"] === jsonPropName["name"]) {
-                        setValuesToColour(
-                            option["xAxis"]["data"].map((item) => {
-                                return item.hasOwnProperty("value")
-                                    ? item.value
-                                    : item;
-                            }),
-                        );
-                        const dataArray = option["xAxis"]["data"].map(
-                            convertSeriesDataToValue,
-                        );
-                        setNewRules((prevValues) => {
-                            return {
-                                ...prevValues,
-                                ["filterMinValue"]: Math.min(...dataArray),
-                                ["filterMaxValue"]: Math.max(...dataArray),
-                            };
+                } else if (option["yAxis"]["pixelvalue"].includes(pixelId)) {
+                    valuesToColour = option["series"]
+                        .find((item) => item.name === name)
+                        ["data"].map((item) => {
+                            return item.hasOwnProperty("value")
+                                ? item.value
+                                : item;
                         });
-                    }
-                    if (option["yAxis"]["pixelname"] === jsonPropName["name"]) {
-                        const seriesIndex = option["series"].findIndex(
-                            (series) => series.name === jsonPropName["name"],
-                        );
-                        if (
-                            seriesIndex > -1 &&
-                            option["series"][seriesIndex].hasOwnProperty("data")
-                        ) {
-                            setValuesToColour(
-                                option["series"][seriesIndex]["data"],
-                            );
-                            const dataArray = option["series"][seriesIndex][
-                                "data"
-                            ].map(convertSeriesDataToValue);
-                            setNewRules((prevValues) => {
-                                return {
-                                    ...prevValues,
-                                    ["filterMinValue"]: Math.min(...dataArray),
-                                    ["filterMaxValue"]: Math.max(...dataArray),
-                                };
-                            });
-                        }
-                    }
                 }
+                const dataArray = valuesToColour.map(convertSeriesDataToValue);
+                console.log("dataArray valueTo colour ", dataArray);
+                setValuesToColour(valuesToColour);
+                setNewRules((prevValues) => {
+                    return {
+                        ...prevValues,
+                        ["column"]: name,
+                        ["columnName"]: name,
+                        ["columnNameToColour"]: name,
+                        ["filterMinValue"]: Math.min(...dataArray),
+                        ["filterMaxValue"]: Math.max(...dataArray),
+                    };
+                });
             }
         }
         //get the xaxis positons to be updated with the colour selected
         function getXAxisPositions(sourceObject: any = {}) {
             const option =
-                typeof value === "string" ? JSON.parse(value) : value;
+                typeof computedValue === "string"
+                    ? JSON.parse(computedValue)
+                    : computedValue;
             let positions = [];
             if (Object.keys(sourceObject).length === 0) {
                 sourceObject = newRules;
@@ -396,12 +412,7 @@ const ColourByValue = observer(
             return positions;
         }
         //THE COLOR data function return the colour data for the rules
-        function updateColorData(seriesData, colourObj) {
-            if (colourObj.hasOwnProperty(seriesData.dataIndex)) {
-                return colourObj[seriesData.dataIndex];
-            }
-            return ECHART_BAR_COLOUR;
-        }
+
         //when the condition is met, values from newRules will be added to applied rules, then it will applied to chart
         function updateData() {
             if (
@@ -542,20 +553,6 @@ const ColourByValue = observer(
                     <h3>New Rule</h3>
                 </StyledMainSection>
                 <StyledMainSection>
-                    <StyledSelect
-                        label="Select Column"
-                        name="column"
-                        value={newRules.column}
-                        onChange={(e) => updateFields("column", e)}
-                    >
-                        {data.columns?.map((cols, index) => {
-                            return (
-                                <Select.Item value={cols.selector} key={index}>
-                                    {cols.name}
-                                </Select.Item>
-                            );
-                        })}
-                    </StyledSelect>
                     <StyledTextField
                         label="Enter Colour"
                         name="columnColour"
@@ -569,12 +566,24 @@ const ColourByValue = observer(
                         label="Select Column"
                         name="columnToColour"
                         value={newRules.columnToColour}
-                        onChange={(e) => updateFields("columnToColour", e)}
+                        onChange={(e) => {
+                            const selected = columnData.find(
+                                (col) => col.selector === e.target.value,
+                            );
+                            updateFields("columnToColour", {
+                                target: { value: selected },
+                            });
+                        }}
                     >
-                        {data.columns?.map((cols, index) => {
+                        {columnData?.map((cols, index) => {
                             return (
-                                <Select.Item value={cols.selector} key={index}>
-                                    {cols.name}
+                                <Select.Item
+                                    value={cols.selector}
+                                    key={`columnToColour_${cols.selector}`}
+                                >
+                                    {typeof cols.name === "string"
+                                        ? cols.name
+                                        : cols.name?.[0]}
                                 </Select.Item>
                             );
                         })}
@@ -587,7 +596,10 @@ const ColourByValue = observer(
                     >
                         {columnComparision.map((cols, index) => {
                             return (
-                                <Select.Item value={cols.value} key={index}>
+                                <Select.Item
+                                    value={cols.value}
+                                    key={`columnComparision_${index}`}
+                                >
                                     {cols.name}
                                 </Select.Item>
                             );
@@ -622,7 +634,10 @@ const ColourByValue = observer(
                                 valuesToColour?.length > 0 &&
                                 valuesToColour?.map((cols, index) => {
                                     return (
-                                        <Select.Item value={cols} key={index}>
+                                        <Select.Item
+                                            value={cols}
+                                            key={`columnComparision_${cols}`}
+                                        >
                                             {cols}
                                         </Select.Item>
                                     );
