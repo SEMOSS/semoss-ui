@@ -1185,6 +1185,7 @@ export const MembersTable = (props: MembersTableProps) => {
                         onChange();
 
                         getMembers.refresh();
+                        allAuthorsResponse.refresh();
                     }
                 }}
                 onChange={() => onChange()}
