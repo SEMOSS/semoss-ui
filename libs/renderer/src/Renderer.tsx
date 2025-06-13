@@ -196,9 +196,7 @@ export const Renderer = observer((props: RendererProps) => {
 
 const getCurrentPageId = (state: SerializedState) => {
     const URLroute = window.location.href;
-    // const match = URLroute.match(/#\/[^/]+\/[^/]+\/(.+)/);
     const match = URLroute.match(/([^/]+)$/)
-    debugger
     const currentRoute = match ? match[1] : "";
 
     let activePageID = "";

@@ -8,8 +8,8 @@ import NorthEastIcon from '@mui/icons-material/NorthEast';
 
 import {
     Box,
-    // Chip,
     List,
+    Link,
     Popper,
     Paper,
     Divider,
@@ -19,6 +19,7 @@ import {
     Stack,
     Skeleton,
     Button,
+    styled,
 } from '@semoss/ui';
 
 import { Env, usePixel } from '@semoss/sdk/react';
@@ -169,6 +170,16 @@ function CustomPopper(props) {
     return <Popper {...props} placement="bottom-start" />;
 }
 
+const StyledPublishedByContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    gap: '4px',
+    alignSelf: 'stretch',
+    color: theme.palette.text.secondary,
+    height: '24px',
+}));
+
 interface SearchProps {
     renderInput: (params: any) => React.ReactNode;
 }
@@ -274,21 +285,26 @@ export const Search = observer(({ renderInput }: SearchProps) => {
     // Limit the number of options per group to 3
     data = limitOptionsPerGroup(data, 3);
 
-    const handleOptionClick = (option) => {
-        // Add to recent searches in localStorage
-        configStore.setRecentSearch({
-            label: option.label,
-            id: option.id,
-            type: option.section,
-        });
-        if (option.section === 'APP') {
-            navigate(`/app/${option.id}/view`);
+    /**
+     * Gets url for menu item click
+     *
+     * @param option - Object for engine and project interface
+     * @returns url
+     */
+    const getEngineProjectHref = (option) => {
+        const href = window.location.origin + window.location.pathname + '#';
+
+        if (option.type === 'APP' || option.section === 'APP') {
+            const id = option.id ? option.id : option.project_id;
+
+            return href + `/app/${id}/view`;
         } else {
-            navigate(`/engine/${option.section.toLowerCase()}/${option.id}`);
+            const id = option.id ? option.id : option.database_id;
+            const type = option.type ? option.type : option.database_type;
+
+            return href + `/engine/${type.toLowerCase()}/${id}`;
         }
     };
-
-    console.log(data);
 
     return (
         <Autocomplete
@@ -308,43 +324,61 @@ export const Search = observer(({ renderInput }: SearchProps) => {
             }
             renderInput={renderInput}
             renderOption={(props, option) => (
-                <List.Item
-                    disablePadding
-                    disableGutters
-                    sx={{
-                        padding: '0px !important',
-                        flexDirection: 'column',
-                        '&.MuiListItem-root': {
-                            padding: '0px !important',
-                        },
-                    }}
+                <Link
                     key={option.label}
+                    href={getEngineProjectHref(option)}
+                    rel="noopener noreferrer"
+                    color="inherit"
+                    underline="none"
+                    target="_blank"
                 >
-                    <List.ItemButton
+                    <List.Item
+                        disablePadding
+                        disableGutters
+                        key={option.label}
                         sx={{
-                            width: '100%',
                             padding: '0px !important',
-                            '&.MuiListItemButton-root': {
+                            flexDirection: 'column',
+                            '&.MuiListItem-root': {
                                 padding: '0px !important',
                             },
                         }}
-                        onClick={() => handleOptionClick(option)}
                     >
-                        <CatalogItem
-                            icon={
-                                option.project_type
-                                    ? `${Env.MODULE}/api/project-${option.id}/projectImage/download`
-                                    : findDBImage(
-                                          option.app_type,
-                                          option.app_subtype,
-                                      )
-                            }
-                            title={highlightMatch(option.label, searchValue)}
-                            description={option.description}
-                            id={option.id}
-                        />
-                    </List.ItemButton>
-                </List.Item>
+                        <List.ItemButton
+                            sx={{
+                                width: '100%',
+                                padding: '0px !important',
+                                '&.MuiListItemButton-root': {
+                                    padding: '0px !important',
+                                },
+                            }}
+                            onClick={() => {
+                                configStore.setRecentSearch({
+                                    label: option.label,
+                                    id: option.id,
+                                    type: option.section,
+                                });
+                            }}
+                        >
+                            <CatalogItem
+                                icon={
+                                    option.project_type
+                                        ? `${Env.MODULE}/api/project-${option.id}/projectImage/download`
+                                        : findDBImage(
+                                              option.app_type,
+                                              option.app_subtype,
+                                          )
+                                }
+                                title={highlightMatch(
+                                    option.label,
+                                    searchValue,
+                                )}
+                                description={option.description + 'nonono'}
+                                id={option.id}
+                            />
+                        </List.ItemButton>
+                    </List.Item>
+                </Link>
             )}
             noOptionsText={'No results found'}
             renderGroup={(params) => (
@@ -421,40 +455,52 @@ export const Search = observer(({ renderInput }: SearchProps) => {
                         )}
                         {!searchValue &&
                             recentSearches.map(({ label, id, type }) => (
-                                <Stack
+                                <Link
                                     key={label}
-                                    sx={{ mb: 0.5 }}
-                                    alignItems={'center'}
-                                    direction={'row'}
-                                    gap={1}
-                                    onMouseDown={(e) => e.preventDefault()}
-                                    onClick={() => {
-                                        handleOptionClick({
-                                            label,
-                                            id,
-                                            section: type,
-                                        });
-                                    }}
+                                    href={getEngineProjectHref({
+                                        label,
+                                        id,
+                                        type,
+                                    })}
+                                    rel="noopener noreferrer"
+                                    color="inherit"
+                                    underline="none"
+                                    target="_blank"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="19"
-                                        height="16"
-                                        viewBox="0 0 19 16"
-                                        fill="none"
+                                    <Stack
+                                        sx={{ mb: 0.5 }}
+                                        alignItems={'center'}
+                                        direction={'row'}
+                                        gap={1}
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={() => {
+                                            configStore.setRecentSearch({
+                                                label,
+                                                id,
+                                                type,
+                                            });
+                                        }}
                                     >
-                                        <path
-                                            d="M11.2507 4.66667H10.0007V8.83333L13.5673 10.95L14.1673 9.94167L11.2507 8.20833V4.66667ZM10.834 0.5C8.84486 0.5 6.93721 1.29018 5.53068 2.6967C4.12416 4.10322 3.33398 6.01088 3.33398 8H0.833984L4.13398 11.3583L7.50065 8H5.00065C5.00065 6.4529 5.61523 4.96917 6.7092 3.87521C7.80316 2.78125 9.28689 2.16667 10.834 2.16667C12.3811 2.16667 13.8648 2.78125 14.9588 3.87521C16.0527 4.96917 16.6673 6.4529 16.6673 8C16.6673 9.5471 16.0527 11.0308 14.9588 12.1248C13.8648 13.2188 12.3811 13.8333 10.834 13.8333C9.22565 13.8333 7.76732 13.175 6.71732 12.1167L5.53398 13.3C6.89232 14.6667 8.75065 15.5 10.834 15.5C12.8231 15.5 14.7308 14.7098 16.1373 13.3033C17.5438 11.8968 18.334 9.98912 18.334 8C18.334 6.01088 17.5438 4.10322 16.1373 2.6967C14.7308 1.29018 12.8231 0.5 10.834 0.5Z"
-                                            fill="#9E9E9E"
-                                        />
-                                    </svg>
-                                    <Typography
-                                        variant="body2"
-                                        sx={{ cursor: 'pointer' }}
-                                    >
-                                        {label}
-                                    </Typography>
-                                </Stack>
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="19"
+                                            height="16"
+                                            viewBox="0 0 19 16"
+                                            fill="none"
+                                        >
+                                            <path
+                                                d="M11.2507 4.66667H10.0007V8.83333L13.5673 10.95L14.1673 9.94167L11.2507 8.20833V4.66667ZM10.834 0.5C8.84486 0.5 6.93721 1.29018 5.53068 2.6967C4.12416 4.10322 3.33398 6.01088 3.33398 8H0.833984L4.13398 11.3583L7.50065 8H5.00065C5.00065 6.4529 5.61523 4.96917 6.7092 3.87521C7.80316 2.78125 9.28689 2.16667 10.834 2.16667C12.3811 2.16667 13.8648 2.78125 14.9588 3.87521C16.0527 4.96917 16.6673 6.4529 16.6673 8C16.6673 9.5471 16.0527 11.0308 14.9588 12.1248C13.8648 13.2188 12.3811 13.8333 10.834 13.8333C9.22565 13.8333 7.76732 13.175 6.71732 12.1167L5.53398 13.3C6.89232 14.6667 8.75065 15.5 10.834 15.5C12.8231 15.5 14.7308 14.7098 16.1373 13.3033C17.5438 11.8968 18.334 9.98912 18.334 8C18.334 6.01088 17.5438 4.10322 16.1373 2.6967C14.7308 1.29018 12.8231 0.5 10.834 0.5Z"
+                                                fill="#9E9E9E"
+                                            />
+                                        </svg>
+                                        <Typography
+                                            variant="body2"
+                                            sx={{ cursor: 'pointer' }}
+                                        >
+                                            {label}
+                                        </Typography>
+                                    </Stack>
+                                </Link>
                             ))}
                     </Box>
                 </Paper>

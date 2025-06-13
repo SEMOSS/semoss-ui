@@ -327,8 +327,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
                                 size={'large'}
                                 variant={'contained'}
                                 onClick={() => {
-                                    configStore.setAppBuilderMode(true);
-                                    navigate('/');
+                                    navigate('/app/new');
                                 }}
                                 aria-label={`Open the App Model`}
                                 data-testid={'home-create-app-btn'}

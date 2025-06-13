@@ -436,14 +436,11 @@ export class ConfigStore {
     private async getAppBuilderMode() {
         let builderMode = false;
         const item = localStorage.getItem(`builder--${this._store.userEpoch}`);
-        console.log('epoch', this._store.userEpoch);
 
         if (item) {
             const d = JSON.parse(item);
             builderMode = true;
-            console.log('set it true');
         } else {
-            console.log('set it false');
             builderMode = false;
         }
 
@@ -520,6 +517,7 @@ export class ConfigStore {
     getRecentSearches(): Array<{ label: string; id: string; type: string }> {
         const key = `recent-searches--${this._store.userEpoch}`;
         const item = localStorage.getItem(key);
+
         if (item) {
             try {
                 return JSON.parse(item);

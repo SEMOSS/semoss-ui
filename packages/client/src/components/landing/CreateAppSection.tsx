@@ -1,8 +1,10 @@
+import FileUploadOutlined from '@mui/icons-material/FileUploadOutlined';
+
 import { Typography, Button, Box } from '@semoss/ui';
+
 import Appagent from '../../assets/img/Appagent.svg';
 import Appcode from '../../assets/img/Appcode.svg';
 import Appdragdrop from '../../assets/img/Appdragdrop.svg';
-import FileUploadOutlined from '@mui/icons-material/FileUploadOutlined';
 
 const navCards = [
     {
@@ -97,7 +99,7 @@ const NavCard = ({ title, description, type, image, setApp, testId }) => (
     </Box>
 );
 
-const NavSection = ({
+const CreateAppSection = ({
     setupApp,
     uploadApp,
 }: {
@@ -108,7 +110,6 @@ const NavSection = ({
         <Box
             sx={{
                 margin: 0,
-                paddingBottom: 3,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 1,
@@ -160,4 +161,4 @@ const NavSection = ({
     );
 };
 
-export default NavSection;
+export default CreateAppSection;

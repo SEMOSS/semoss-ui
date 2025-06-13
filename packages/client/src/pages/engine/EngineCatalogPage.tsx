@@ -490,34 +490,6 @@ export const EngineCatalogPage = observer(
                                 {route ? route.name : ''} Catalog
                             </Typography>
 
-                            {/* <TextField
-                                    size="small"
-                                    sx={{
-                                        width: '200px',
-                                    }}
-                                    value={search}
-                                    variant="outlined"
-                                    onChange={(e) => {
-                                        // Reset databases and reset offset
-                                        dispatch({
-                                            type: 'field',
-                                            field: 'databases',
-                                            value: [],
-                                        });
-                                        setOffset(0);
-
-                                        setSearch(e.target.value);
-                                    }}
-                                    placeholder={'Search'}
-                                    InputProps={{
-                                        startAdornment: (
-                                            <InputAdornment position="start">
-                                                <SearchIcon fontSize="medium" />
-                                            </InputAdornment>
-                                        ),
-                                    }}
-                                /> */}
-                            {/* </Stack> */}
                             {configStore.isEngineOperationAvailable(
                                 route.type,
                                 'add',
@@ -531,13 +503,9 @@ export const EngineCatalogPage = observer(
                                         size={'large'}
                                         variant={'contained'}
                                         onClick={() => {
-                                            if (!route) {
-                                                navigate('/import');
-                                            } else if (route.type) {
-                                                navigate(
-                                                    `/import?type=${route.type.toLowerCase()}`,
-                                                );
-                                            }
+                                            navigate(
+                                                `/engine/${route.type.toLowerCase()}/new`,
+                                            );
                                         }}
                                         aria-label={`Navigate to import ${
                                             route ? route.name : 'Engine'

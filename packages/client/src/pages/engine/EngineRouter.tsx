@@ -1,12 +1,11 @@
+import { createElement } from 'react';
 import { Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
 import { ENGINE_ROUTES } from './engine.constants';
-
 import { EngineLayout } from './EngineLayout';
 import { EngineCatalogPage } from './EngineCatalogPage';
-
-import { createElement } from 'react';
+import { ImportPage } from '../import/ImportPage';
 import { SettingsContext } from '@/contexts';
 
 export const EngineRouter = observer(() => {
@@ -41,6 +40,10 @@ export const EngineRouter = observer(() => {
                                             />
                                         ))}
                                     </Route>
+                                    <Route
+                                        path="new"
+                                        element={<ImportPage type={g.type} />}
+                                    />
                                 </>
                             ) : null}
 
