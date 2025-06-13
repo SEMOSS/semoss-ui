@@ -155,9 +155,9 @@ export function JobsPage() {
     const deleteJob = (jobId: string[], jobGroup: string[]) => {
         let pixel;
         if (jobId.length > 1 && jobGroup.length > 1) {
-            const jobIdStr = `"${jobId.join(' , ')}"`;
-            const jobGroupStr = `"${jobGroup.join(' , ')}"`;
-            pixel = `META | RemoveJobFromDB(jobId=[${jobIdStr}], jobGroup=[${jobGroupStr}]) `;
+            pixel = `META | RemoveJobFromDB(jobId=${JSON.stringify(
+                jobId,
+            )}, jobGroup=${JSON.stringify(jobGroup)}) `;
         } else {
             pixel = 'META | RemoveJobFromDB(';
             pixel += 'jobId=["' + jobId[0] + '"], ';
@@ -168,14 +168,27 @@ export function JobsPage() {
             .then((response) => {
                 const type = response.pixelReturn[0].operationType;
                 const output = response.pixelReturn[0].output;
-                if (type.indexOf('ERROR') === -1 && output === true) {
-                    notification.add({
-                        color: 'success',
-                        message:
-                            jobId.length > 1 && jobGroup.length > 1
-                                ? `Successfully deleted all selected jobs`
-                                : `Successfully deleted ${type}`,
-                    });
+                // Expecting output to have { success: string[], failed: string[] }
+                const successIds = output?.success || [];
+                const failedIds = output?.failed || [];
+
+                if (type.indexOf('ERROR') === -1) {
+                    if (failedIds.length === 0) {
+                        notification.add({
+                            color: 'success',
+                            message: `Successfully deleted all selected jobs`,
+                        });
+                    } else {
+                        // Map failed job IDs to job names
+                        const failedJobNames = jobs
+                            .filter((job) => failedIds.includes(job.id))
+                            .map((job) => job.name)
+                            .join(', ');
+                        notification.add({
+                            color: 'warning',
+                            message: `Some jobs were deleted successfully, but the following jobs could not be deleted: ${failedJobNames}`,
+                        });
+                    }
                     jobId.length > 1 && jobGroup.length > 1
                         ? setJobsToDelete([])
                         : setJobToDelete(null);
