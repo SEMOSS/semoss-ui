@@ -6618,16 +6618,6 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false },
                     },
                     {
-                        fieldName: 'METADATA',
-                        label: 'Metadata',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: false },
-                    },
-                    {
                         fieldName: 'EMBEDDER_ENGINE_ID',
                         label: 'Embedder',
                         defaultValue: '',
@@ -6851,16 +6841,6 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'TAGS',
                         label: 'Tags',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: false },
-                    },
-                    {
-                        fieldName: 'METADATA',
-                        label: 'Metadata',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -7200,16 +7180,6 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false },
                     },
                     {
-                        fieldName: 'METADATA',
-                        label: 'Metadata',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: false },
-                    },
-                    {
                         fieldName: 'EMBEDDER_ENGINE_ID',
                         label: 'Embedder',
                         defaultValue: '',
@@ -7399,16 +7369,6 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'TAGS',
                         label: 'Tags',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: false },
-                    },
-                    {
-                        fieldName: 'METADATA',
-                        label: 'Metadata',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -7696,16 +7656,6 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'TAGS',
                         label: 'Tags',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: false },
-                    },
-                    {
-                        fieldName: 'METADATA',
-                        label: 'Metadata',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -8003,16 +7953,6 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'DESCRIPTION',
                         label: 'Description',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: false },
-                    },
-                    {
-                        fieldName: 'METADATA',
-                        label: 'Metadata',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -8362,16 +8302,6 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false },
                     },
                     {
-                        fieldName: 'METADATA',
-                        label: 'Metadata',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: false },
-                    },
-                    {
                         fieldName: 'EMBEDDER_ENGINE_ID',
                         label: 'Embedder',
                         defaultValue: '',
@@ -8597,16 +8527,6 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'TAGS',
                         label: 'Tags',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: false },
-                    },
-                    {
-                        fieldName: 'METADATA',
-                        label: 'Metadata',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
