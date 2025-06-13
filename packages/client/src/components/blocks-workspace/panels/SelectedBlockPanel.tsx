@@ -13,23 +13,20 @@ import {
     Stack,
     Typography,
     IconButton,
-    Divider,
     TextField,
     Collapse,
     useNotification,
-    Modal,
-    Tabs,
-    Tab,
     ToggleTabsGroup,
     AlertTitle,
 } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
-import { BlockAvatar, SelectedMenuSection } from '@/components/designer';
+import { SelectedMenuSection } from '@/components/designer';
 import { AddVariableModal } from '@/components/notebook';
 import { Panel } from '@/components/workspace';
 import MultiBlockIcon from '../../../assets/img/Multiple_Block.svg';
 import GroupIcon from '../../../assets/img/Group.svg';
+import VariationIcon from '../../../assets/img/VariationLogo.svg';
 
 const StyledTitle = styled(Typography)(() => ({
     textTransform: 'capitalize',
@@ -162,6 +159,11 @@ const StyledImgDiv = styled('div')(({ theme }) => ({
     alignItems: 'flex-start',
     width: '22px',
     height: '22px',
+}));
+
+const StyledVariationIcon = styled('img')(({ theme }) => ({
+    width: theme.spacing(4),
+    height: theme.spacing(4),
 }));
 
 export const SelectedBlockPanel = observer(() => {
@@ -388,7 +390,7 @@ export const SelectedBlockPanel = observer(() => {
                         direction="row"
                         alignItems="center"
                     >
-                        <BlockAvatar icon={icon} />
+                        <StyledVariationIcon src={VariationIcon} />
                         <Stack
                             direction={'row'}
                             spacing={0.5}
