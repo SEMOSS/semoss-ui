@@ -13,7 +13,12 @@ import {
     Tooltip,
     IconButton,
 } from '@semoss/ui';
-import { EditOutlined, ShareRounded } from '@mui/icons-material';
+import {
+    Bookmark,
+    BookmarkBorderOutlined,
+    EditOutlined,
+    ShareRounded,
+} from '@mui/icons-material';
 
 import { Env } from '@semoss/sdk/react';
 import { WorkspaceStore } from '@/stores';
@@ -45,14 +50,33 @@ const StyledContent = styled('div')(({ theme }) => ({
 export const AppPage = observer(() => {
     // App ID Needed for pixel calls
     const { appId } = useParams();
-    const { configStore } = useRootStore();
+    const { configStore, monolithStore } = useRootStore();
 
     const notification = useNotification();
     const navigate = useNavigate();
 
     const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
     const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
+    const [bookmarked, setBookmarked] = useState<boolean>(false);
 
+    const handleBookmark = (status: boolean) => {
+        setBookmarked(status);
+        monolithStore
+            .setProjectFavorite(appId, status)
+            .then(() => {
+                notification.add({
+                    color: 'success',
+                    message: `Project ${
+                        bookmarked ? 'unbookmarked' : 'bookmarked'
+                    }`,
+                });
+                return;
+            })
+            .catch((err) => {
+                // throw error if promise doesn't fulfill
+                throw Error(err);
+            });
+    };
     useEffect(() => {
         // clear out the old app
         setWorkspace(undefined);
@@ -61,6 +85,9 @@ export const AppPage = observer(() => {
             .createWorkspace(appId)
             .then((loadedWorkspace) => {
                 setWorkspace(loadedWorkspace);
+                setBookmarked(
+                    Boolean(loadedWorkspace.metadata.project_favorite),
+                );
             })
             .catch((e) => {
                 notification.add({
@@ -96,6 +123,21 @@ export const AppPage = observer(() => {
                     </Typography>
                 </Stack>
                 <Stack flex={1}>&nbsp;</Stack>
+
+                <Tooltip title={'Bookmark App'}>
+                    <IconButton
+                        size="small"
+                        color={bookmarked ? 'primary' : 'default'}
+                        onClick={() => handleBookmark(!bookmarked)}
+                        data-testid={'app-page-bookmark-btn'}
+                    >
+                        {bookmarked ? (
+                            <Bookmark fontSize={'inherit'} />
+                        ) : (
+                            <BookmarkBorderOutlined fontSize={'inherit'} />
+                        )}
+                    </IconButton>
+                </Tooltip>
 
                 <Tooltip title={'Share App'}>
                     <IconButton
