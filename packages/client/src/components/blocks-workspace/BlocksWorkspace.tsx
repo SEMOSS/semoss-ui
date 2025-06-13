@@ -250,14 +250,17 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
     //to throw a warning when the user tried to reload the page
     // this is to prevent the user from losing their work
     useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            e.preventDefault();
-            e.returnValue = '';
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-        };
+        if (process.env.NODE_ENV !== 'development') {
+            const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+                e.preventDefault();
+                e.returnValue = '';
+            };
+            window.addEventListener('beforeunload', handleBeforeUnload);
+
+            return () => {
+                window.removeEventListener('beforeunload', handleBeforeUnload);
+            };
+        }
     }, []);
 
     useEffect(() => {
