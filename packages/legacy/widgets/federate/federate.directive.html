@@ -496,12 +496,14 @@
                     <smss-btn
                         class="smss-btn--text"
                         ng-click="federate.cancel()"
+                        data-testid="federate-join-cancel-btn"
                     >
                         Cancel
                     </smss-btn>
                     <smss-btn
                         class="smss-btn--text"
                         ng-click="federate.navigate('source', 'backward')"
+                        data-testid="federate-join-back-btn"
                     >
                         Back
                     </smss-btn>
@@ -509,12 +511,14 @@
                         class="smss-btn--text"
                         ng-disabled="federate.isJoinDisabled()"
                         ng-click="federate.addData()"
+                        data-testid="federate-join-queue-btn"
                     >
                         Queue Data
                     </smss-btn>
                     <smss-btn
                         ng-disabled="federate.isJoinDisabled()"
                         ng-click="federate.setOverview(); federate.importData()"
+                        data-testid="federate-join-import-btn"
                     >
                         Import
                     </smss-btn>
@@ -523,25 +527,34 @@
                     <smss-btn
                         class="smss-btn--text"
                         ng-click="federate.cancel()"
+                        data-testid="federate-overview-cancel-btn"
                     >
                         Cancel
                     </smss-btn>
                     <smss-btn
                         class="smss-btn--text"
                         ng-click="federate.addMore()"
+                        data-testid="federate-overview-add-btn"
                     >
                         Add More
                     </smss-btn>
                     <smss-btn
                         class="smss-btn--text"
                         ng-click="federate.previewData()"
+                        data-testid="federate-overview-preview-btn"
                     >
                         Preview
                     </smss-btn>
-                    <smss-btn ng-click="federate.importData()">
+                    <smss-btn 
+                        ng-click="federate.importData()" 
+                        data-testid="federate-overview-import-btn"
+                    >
                         Import
                     </smss-btn>
-                    <smss-btn ng-click="federate.visualize()">
+                    <smss-btn 
+                        ng-click="federate.visualize()"
+                        data-testid="federate-overview-visualize-btn"
+                    >
                         Visualize
                     </smss-btn>
                 </div>

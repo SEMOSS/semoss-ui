@@ -1,4 +1,4 @@
-export const getSelector = (data) => {
+export const getSelector = (data, aggregates) => {
     let fields = "",
         label = "",
         latitude = "",
@@ -24,17 +24,20 @@ export const getSelector = (data) => {
     const getSelectorType = (type) => {
         return fields[type] === "NUMBER" ? "Average" : "Count";
     };
+    const getAggregates = (field) => {
+        if (!fields[field] || Object.values(aggregates[field]).length === 0) return "";
+        return Object.values(aggregates[field])[0];
+    }
     const getSelectors = () => {
         return {
-            latitude: getSelectorType("LatitudeDataType"),
-            longitude: getSelectorType("LongitudeDataType"),
-            size: getSelectorType("sizeDataType"),
-            tooltip: getSelectorType("tooltipDataType"),
+            latitude: getAggregates('Latitude'),
+            longitude: getAggregates('Longitude'),
+            size: getAggregates('size'),
+            tooltip: getAggregates('tooltip'),
         };
     };
     const selectors = getSelectors();
     let selector = "";
-    if (data.hasOwnProperty("columns")) {
         if (data.option.hasOwnProperty("_state")) {
             if (data.option["_state"].hasOwnProperty("fields")) {
                 if (
@@ -604,6 +607,4 @@ export const getSelector = (data) => {
             }
         }
         return "";
-    }
-    return "";
 };

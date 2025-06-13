@@ -178,7 +178,12 @@ export const SettingsIndexPage = () => {
                                     <Card.Actions>
                                         <CardActionsLeft></CardActionsLeft>
                                         <CardActionsRight>
-                                            <IconButton disabled={true}>
+                                            <IconButton
+                                                disabled={true}
+                                                data-testid={
+                                                    'settings-index-setting-btn'
+                                                }
+                                            >
                                                 <MoreVert />
                                             </IconButton>
                                         </CardActionsRight>
