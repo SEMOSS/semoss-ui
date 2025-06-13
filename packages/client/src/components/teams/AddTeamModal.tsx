@@ -2,7 +2,7 @@ import { Controller, useForm } from 'react-hook-form';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import { Close } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
     Stack,
     Modal,
@@ -100,6 +100,7 @@ type TeamReturn = {
     id: string;
     type: string;
     description: string;
+    previousTeamName?: string;
 };
 
 type NewTeamForm = {
@@ -125,15 +126,24 @@ interface AddTeamModalProps {
     id?: string;
     type?: string;
     description?: string;
+    isCustomGroup?: boolean;
 }
 
 export const AddTeamModal = (props: AddTeamModalProps) => {
-    const { open, onClose, isEdit, id, type, description } = props;
-    const navigate = useNavigate();
+    const { open, onClose, isEdit, id, type, description, isCustomGroup } =
+        props;
 
+    const navigate = useNavigate();
     const notification = useNotification();
     const { monolithStore, configStore } = useRootStore();
 
+    // State to track the previous team name, type
+    const [previousTeamName, setPreviousTeamName] = React.useState<
+        string | undefined
+    >(id);
+    const [previousType, setPreviousType] = React.useState<string | undefined>(
+        id,
+    );
     const {
         handleSubmit,
         control,
@@ -144,7 +154,8 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
         defaultValues: {
             TEAM_NAME: id || '',
             TEAM_DESCRIPTION: description || '',
-            TEAM_TYPE: type || '',
+            TEAM_TYPE:
+                (isCustomGroup || type === 'custom' ? 'Custom' : type) || '',
         },
         mode: 'onChange', // Ensures validation updates on field changes
     });
@@ -153,9 +164,14 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
         reset({
             TEAM_NAME: id || '',
             TEAM_DESCRIPTION: description || '',
-            TEAM_TYPE: type || '',
+            TEAM_TYPE:
+                (isCustomGroup || type === 'custom' ? 'Custom' : type) || '',
         });
-    }, [id, type, description, reset]);
+
+        // Update the previous team name when the modal is opened
+        setPreviousTeamName(id);
+        setPreviousType(isCustomGroup ? 'Custom' : type);
+    }, [id, type, description, isCustomGroup, reset]);
 
     const selectedTeamType = watch('TEAM_TYPE');
 
@@ -185,11 +201,14 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                     data.TEAM_NAME,
                     data.TEAM_DESCRIPTION,
                     data.TEAM_TYPE,
+                    previousTeamName,
+                    previousType,
                 );
                 onClose({
                     id: data.TEAM_NAME,
                     type: data.TEAM_TYPE,
                     description: data.TEAM_DESCRIPTION,
+                    previousTeamName: previousTeamName,
                 });
                 reset();
                 notification.add({

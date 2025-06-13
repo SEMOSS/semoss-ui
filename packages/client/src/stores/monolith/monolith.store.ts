@@ -1093,17 +1093,23 @@ export class MonolithStore {
      * @param type
      * @returns
      */
-    async editTeam(groupId: string, description: string, type?: string) {
+    async editTeam(
+        groupId: string,
+        description: string,
+        type?: string,
+        previousTeamName?: string,
+        previousType?: string,
+    ) {
         let url = `${Env.MODULE}/api/auth/admin/`,
             postData = '';
 
-        url += 'group/editGroup';
+        url += 'group/editGroupDetails';
 
-        postData += 'groupId=' + encodeURIComponent(groupId);
-        postData += '&description=' + encodeURIComponent(description);
-        if (type) {
-            postData += '&type=' + encodeURIComponent(type);
-        }
+        postData += 'groupId=' + encodeURIComponent(previousTeamName);
+        postData += '&newGroupId=' + encodeURIComponent(groupId);
+        postData += '&newDescription=' + encodeURIComponent(description);
+        postData += '&type=' + encodeURIComponent(previousType);
+        postData += '&newType=' + encodeURIComponent(type);
 
         const response = await axios.post<{ success: boolean }>(url, postData, {
             headers: {
@@ -1873,18 +1879,26 @@ export class MonolithStore {
 
         url += 'project/getUserProjectPermission';
 
-        const response = await axios.get(url, {
-            params: {
-                projectId: projectId,
-            },
-        });
+        try {
+            const response = await axios.get(url, {
+                params: {
+                    projectId: projectId,
+                },
+            });
 
-        // there was no response, that is an error
-        if (!response) {
-            throw Error('No Response to get permission');
+            // there was no response, that is an error
+            if (!response) {
+                if (response.status === 401) {
+                    throw Error('User does not have access to this project');
+                } else {
+                    throw Error('No Response to get permission');
+                }
+            }
+
+            return response.data;
+        } catch (error) {
+            throw Error(error);
         }
-
-        return response.data;
     }
 
     // ----- Users Start -----

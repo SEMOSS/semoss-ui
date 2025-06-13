@@ -463,7 +463,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                                     </Stack>
                                 </MenuItemTwo>
                             )}
-                            {/* <MenuItemTwo
+                            <MenuItemTwo
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleClose(e);
@@ -474,7 +474,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                                     <EditIcon />
                                     <div>Edit team</div>
                                 </Stack>
-                            </MenuItemTwo> */}
+                            </MenuItemTwo>
                             <MenuItemTwo
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -749,21 +749,23 @@ export const TeamTileCard = (props: TeamCardProps) => {
                 type={type?.toLocaleLowerCase()}
                 id={id}
                 description={description}
+                isCustomGroup={isCustomGroup}
                 onClose={(team) => {
                     if (team) {
-                        const obj = {
-                            id: team.id,
-                            description: team.description,
-                        };
-
-                        if (team.type != 'Custom') {
-                            obj['type'] = team.type;
-                        }
+                        const updatedTeams = teams.map((t) =>
+                            t.id === team.previousTeamName
+                                ? {
+                                      id: team.id,
+                                      description: team.description,
+                                      type: team.type,
+                                  }
+                                : t,
+                        );
 
                         dispatch({
                             type: 'field',
                             field: 'teams',
-                            value: [...teams, obj],
+                            value: updatedTeams, // Update the existing team in the array
                         });
                     }
                     setEditTeam(false);
