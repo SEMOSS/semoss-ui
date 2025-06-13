@@ -85,34 +85,7 @@ export interface CodeBlockProps {
     copyButtonClicked?: (status: "success" | "error") => void;
 }
 
-async function main(codeToBeUpdated, theme, language) {
-    const highlighter = await createHighlighterCore({
-        themes: [gitHubDark, minLight],
-        langs: [
-            javascript,
-            typescript,
-            python,
-            java,
-            csharp,
-            cpp,
-            go,
-            html,
-            css,
-            json,
-            csharp,
-            rust,
-            scss,
-            less,
-            yaml,
-            toml,
-            php,
-            ruby,
-            swift,
-            kotlin,
-            sql,
-        ],
-        engine: createJavaScriptRegexEngine(),
-    });
+async function main(codeToBeUpdated, theme, language, highlighter) {
     const code = await highlighter.codeToHtml(codeToBeUpdated, {
         theme: theme == "dark" ? "github-dark" : "min-light",
         lang: language,
@@ -232,9 +205,51 @@ interface HasLength {
         "success" | "error" | null
     >(null);
     const codeContainerRef = useRef<HTMLDivElement>(null);
-    main(codeToBeUpdated, theme, language).then((resThenPromise) => {
-        setContentToUpdate(resThenPromise);
-    });
+    const highlighterRef = useRef(null);
+    useEffect(() => {
+        const createHighlighterObj = async () => {
+            highlighterRef.current = await createHighlighterCore({
+                themes: [gitHubDark, minLight],
+                langs: [
+                    javascript,
+                    typescript,
+                    python,
+                    java,
+                    csharp,
+                    cpp,
+                    go,
+                    html,
+                    css,
+                    json,
+                    csharp,
+                    rust,
+                    scss,
+                    less,
+                    yaml,
+                    toml,
+                    php,
+                    ruby,
+                    swift,
+                    kotlin,
+                    sql,
+                ],
+                engine: createJavaScriptRegexEngine(),
+            });
+            await main(
+                codeToBeUpdated,
+                theme,
+                language,
+                highlighterRef.current,
+            ).then((resThenPromise) => {
+                setContentToUpdate(resThenPromise);
+            });
+        };
+        createHighlighterObj();
+        return () => {
+            highlighterRef.current.dispose();
+        };
+    }, []);
+
     const handleClipBoardClick = async () => {
         try {
             await navigator.clipboard.writeText(codeToBeUpdated);
