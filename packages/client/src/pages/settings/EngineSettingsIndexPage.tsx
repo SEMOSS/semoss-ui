@@ -1,5 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef, useReducer } from 'react';
+import {
+    SpaceDashboardOutlined,
+    FormatListBulletedOutlined,
+    ArrowUpward,
+    ArrowDownward,
+} from '@mui/icons-material';
 
 import {
     Grid,
@@ -10,23 +16,14 @@ import {
     ToggleButtonGroup,
     styled,
     Backdrop,
-    CircularProgress,
-    Stack,
-    Typography,
     Tooltip,
+    CardSkeleton,
 } from '@semoss/ui';
 
-import {
-    SpaceDashboardOutlined,
-    FormatListBulletedOutlined,
-    ArrowUpward,
-    ArrowDownward,
-} from '@mui/icons-material';
-
-import { ALL_TYPES } from '@/types';
-import { useRootStore, usePixel, useAPI, useSettings } from '@/hooks';
-import { EngineLandscapeCard, EngineTileCard } from '@/components/engine';
-import { removeUnderscores } from '@/utility';
+import { ALL_TYPES } from '../../types';
+import { removeUnderscores } from '../../utility';
+import { useRootStore, usePixel, useAPI, useSettings } from '../../hooks';
+import { EngineLandscapeCard, EngineTileCard } from '../../components/engine';
 import SkeletonCard from './SkeletonCard';
 
 export interface DBMember {
@@ -125,10 +122,10 @@ export const EngineSettingsIndexPage = (
     const [sortOrder, setSortOrder] = useState('ASC');
     const [canCollect, setCanCollect] = useState(true);
     const [offset, setOffset] = useState(0);
-    const [loadingMore, setLoadingMore] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     //** amount of items to be loaded */
-    const limit = 15;
+    const limit = 8;
 
     // To focus when getting new results
     const searchbarRef = useRef(null);
@@ -225,7 +222,8 @@ export const EngineSettingsIndexPage = (
             field: 'databases',
             value: mutateListWithVotes,
         });
-        setLoadingMore(true);
+
+        setLoading(true);
         searchbarRef.current?.focus();
     }, [getEngines.status, getEngines.data]);
 
@@ -373,7 +371,7 @@ export const EngineSettingsIndexPage = (
 
             scrollTimeout = setTimeout(() => {
                 if (!canCollectRef.current) return;
-                setLoadingMore(false);
+                setLoading(false);
                 setTimeout(() => {
                     setOffset(offsetRef.current + limit);
                 }, 3000);
@@ -401,18 +399,7 @@ export const EngineSettingsIndexPage = (
                     backgroundColor: 'rgba(255, 255, 255, 0.5)',
                     zIndex: 1501,
                 }}
-            >
-                {/* <Stack
-                    direction={'column'}
-                    alignItems={'center'}
-                    justifyContent={'center'}
-                    spacing={1}
-                >
-                    <CircularProgress />
-                    <Typography variant="body2">Loading</Typography>
-                    <Typography variant="caption">Databases</Typography>
-                </Stack> */}
-            </Backdrop>
+            ></Backdrop>
             <StyledContainer>
                 <StyledSearchbarContainer>
                     <StyledSearchbar
@@ -432,9 +419,6 @@ export const EngineSettingsIndexPage = (
                     >
                         <MenuItem value="ENGINENAME">Name</MenuItem>
                         <MenuItem value="DATECREATED">Date Created</MenuItem>
-                        {/* <MenuItem value="Views">Views</MenuItem>
-                        <MenuItem value="Trending">Trending</MenuItem>
-                        <MenuItem value="Upvotes">Upvotes</MenuItem> */}
                     </StyledSort>
 
                     <ToggleButtonGroup
@@ -582,11 +566,11 @@ export const EngineSettingsIndexPage = (
                               );
                           })
                         : null}
-                    {loadingMore &&
+                    {loading &&
                         Array.from({ length: 4 }).map((_, index) => (
                             <Grid item key={index} sm={12} md={6} lg={4} xl={3}>
                                 <StyledSkeletonContainer>
-                                    <SkeletonCard />
+                                    <CardSkeleton />
                                 </StyledSkeletonContainer>
                             </Grid>
                         ))}
