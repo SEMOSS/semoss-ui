@@ -11,12 +11,12 @@ import {
     styled,
     Stack,
     Typography,
-    useNotification,
     IconButton,
     Tooltip,
     Drawer,
     Button,
 } from '@semoss/ui';
+import { useBlocks } from '@semoss/renderer';
 import { Env } from '@semoss/sdk/react';
 
 import { THEME } from '@/constants';
@@ -27,7 +27,6 @@ import { LoginPopover } from '@/components/ui';
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
 import { WorkspaceTabs } from './WorkspaceTabs';
-import { useBlocks } from '@semoss/renderer';
 
 const StyledViewport = styled('div')(() => ({
     height: '100vh',
@@ -135,7 +134,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 
     const layoutRef = useRef<Layout>(null);
 
-    const [filteredModel, setFilteredModel] = useState<Model | null>(null);
+    const [model, setModel] = useState<Model | null>(null);
 
     // build the model from the layout
     const rawModel = workspace.selectedLayout?.model;
@@ -146,15 +145,17 @@ export const Workspace = observer((props: WorkspaceProps) => {
         const modelJson = rawModel.toJson();
 
         if (!modelJson) {
-            setFilteredModel(rawModel);
+            setModel(rawModel);
             return;
         }
 
+        // List of notebooks tied to app
         const validNotebookIds = new Set(notebook.queriesList.map((q) => q.id));
 
         const root = modelJson.layout.children?.[0];
         if (!root || !Array.isArray(root.children)) return;
 
+        // Remove notebooks that are on react flow model but not actually saved in state
         const filteredLayoutArray = root.children.filter((layout: any) => {
             const isNotebook = layout.component === 'notebook-viewer';
             const layoutId = layout.config?.id;
@@ -164,7 +165,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
         root.children = filteredLayoutArray;
         root['selected'] = filteredLayoutArray.length - 1;
 
-        setFilteredModel(Model.fromJson(modelJson));
+        setModel(Model.fromJson(modelJson));
     }, [notebook.queriesList, rawModel]);
 
     useEffect(() => {
@@ -294,11 +295,11 @@ export const Workspace = observer((props: WorkspaceProps) => {
                     <StyledContent>
                         <WorkspaceLoading />
                         <StyledSpacer>
-                            {filteredModel ? (
+                            {model ? (
                                 <>
                                     <Layout
                                         ref={layoutRef}
-                                        model={filteredModel}
+                                        model={model}
                                         factory={(node) => {
                                             return factory(
                                                 node,
@@ -334,6 +335,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
             </StyledViewport>
             <Drawer
                 anchor="left"
+                variant="persistent"
                 open={workspace.drawer.isOpen}
                 ModalProps={{
                     hideBackdrop: true, // Hide the backdrop
@@ -346,7 +348,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
                         borderRadius: 0,
                     },
                 }}
-                variant="persistent"
             >
                 <Stack direction="column" gap={1} height={'100%'} padding={2}>
                     <StyledHeaderLogo to={'/'}>
