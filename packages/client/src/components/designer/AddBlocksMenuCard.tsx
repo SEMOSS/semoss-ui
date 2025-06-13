@@ -233,8 +233,8 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         // clear the selected
         designer.setSelected(id ? id : '');
 
-        // clear the multiSelectedIds
-        designer.setMultiSelectedIds('clear');
+        // clear the selectedBlocks
+        designer.addBlockToSelected('clear');
 
         // set as active
         setLocal(false);

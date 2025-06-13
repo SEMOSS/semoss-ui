@@ -74,7 +74,7 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 
     // check if all blocks are draggable
     const areAllBlocksDraggable = (): boolean => {
-        return designer.multiselectedIds.every((id) => {
+        return designer.selectedBlocks.every((id) => {
             const block = state.getBlock(id);
             return block && registry[block.widget] && block.widget !== 'page';
         });
@@ -84,23 +84,23 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
      * Handle the mousedown on the block.
      */
     const handleMouseDown = () => {
-        if (designer.multiselectedIds.length > 1) {
+        if (designer.selectedBlocks.length > 1) {
             if (!areAllBlocksDraggable()) {
                 return;
             }
             // Handle drag for multiple selected blocks
             designer.activateDrag(
-                designer.multiselectedIds
+                designer.selectedBlocks
                     .map((id) => state.getBlock(id).widget)
                     .join(','),
                 (parent) => {
                     // Ensure none of the selected blocks are children of the parent
-                    return !designer.multiselectedIds.some((id) =>
+                    return !designer.selectedBlocks.some((id) =>
                         state.containsBlock(id, parent),
                     );
                 },
-                designer.multiselectedIds.join(','),
-                designer.multiselectedIds.map(
+                designer.selectedBlocks.join(','),
+                designer.selectedBlocks.map(
                     (id) => registry[state.getBlock(id).widget].icon,
                 ),
             );
@@ -149,10 +149,10 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
         const placeholderAction = designer.drag.placeholderAction;
 
         if (placeholderAction) {
-            if (designer.multiselectedIds.length > 1) {
+            if (designer.selectedBlocks.length > 1) {
                 // Handle multiple block movements
                 let lastSiblingId = placeholderAction.id; // Start with the placeholder ID
-                designer.multiselectedIds.forEach((id) => {
+                designer.selectedBlocks.forEach((id) => {
                     const sw = state.getBlock(placeholderAction.id);
 
                     if (
@@ -290,7 +290,7 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
         setLocal(false);
     }, [
         designer.selected,
-        designer.multiselectedIds,
+        designer.selectedBlocks,
         designer.drag.active,
         designer.drag.placeholderAction,
         state,
@@ -300,7 +300,7 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
     // reposition the mask
     const repositionMask = () => {
         // Use designer.selected or fallback to the first ID in designer.selectedIds
-        const selectedId = designer.selected || designer.multiselectedIds[0];
+        const selectedId = designer.selected || designer.selectedBlocks[0];
         if (!selectedId) {
             return;
         }
@@ -361,10 +361,10 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
         return <></>;
     }
 
-    if (designer.multiselectedIds.length > 1) {
+    if (designer.selectedBlocks.length > 1) {
         return (
             <>
-                {designer.multiselectedIds.map((id, index) => {
+                {designer.selectedBlocks.map((id, index) => {
                     const blockElement = getBlockElement(id);
                     if (!blockElement) return null;
 

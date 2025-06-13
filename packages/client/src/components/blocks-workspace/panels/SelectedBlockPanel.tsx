@@ -330,7 +330,7 @@ export const SelectedBlockPanel = observer(() => {
             return '';
         }
     };
-    if (designer.multiselectedIds.length > 1) {
+    if (designer.selectedBlocks.length > 1) {
         return (
             <Panel>
                 <StyledParentDiv>

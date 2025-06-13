@@ -113,13 +113,13 @@ export const Screen = observer((props: ScreenProps) => {
         // prevent events for elements until selected
         event.stopPropagation();
         event.preventDefault();
-        if (designer.multiselectedIds.includes(id)) {
+        if (designer.selectedBlocks.includes(id)) {
             return; // Do nothing if the id is already selected
         }
 
         designer.setSelected(id);
-        designer.setMultiSelectedIds(id);
-        if (designer.multiselectedIds.length > 1) {
+        designer.addBlockToSelected(id);
+        if (designer.selectedBlocks.length > 1) {
             designer.setSelected('');
         }
     };
@@ -277,7 +277,7 @@ export const Screen = observer((props: ScreenProps) => {
             {eleRef.current ? (
                 <>
                     {(designer.selected ||
-                        designer.multiselectedIds.length > 1) && (
+                        designer.selectedBlocks.length > 1) && (
                         <SelectedMask screenEle={eleRef.current} />
                     )}
                     {designer.hovered && (
@@ -306,7 +306,7 @@ export const Screen = observer((props: ScreenProps) => {
                                 e.preventDefault();
                                 handleMultipleSelection(e);
                             } else {
-                                designer.setMultiSelectedIds('clear');
+                                designer.addBlockToSelected('clear');
                                 handleClickCapture(e);
                             }
                         }}
