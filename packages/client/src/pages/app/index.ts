@@ -1,15 +1,17 @@
 import { AppCatalogPage } from './AppCatalogPage';
 import { AppMarketplacePage } from './AppMarketplacePage';
 import { AppDetailPage } from './AppDetailPage';
-import { AppPage } from './AppPage';
+import { ViewAppPage } from './ViewAppPage';
 import { NewPromptBuilderAppPage } from './NewPromptBuilderAppPage';
 import { CreateAppPage } from './CreateAppPage';
+import { EditAppPage } from './EditAppPage';
 
 export {
     AppCatalogPage,
     AppMarketplacePage,
     AppDetailPage,
-    AppPage,
+    ViewAppPage,
     CreateAppPage,
+    EditAppPage,
     NewPromptBuilderAppPage,
 };

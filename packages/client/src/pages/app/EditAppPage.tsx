@@ -11,7 +11,7 @@ import { CodeWorkspace } from '@/components/code-workspace';
 
 import { WorkspaceStore } from '@/stores';
 
-export const WorkspacePage = observer(() => {
+export const EditAppPage = observer(() => {
     // App ID Needed for pixel calls
     const { appId } = useParams();
     const { configStore } = useRootStore();

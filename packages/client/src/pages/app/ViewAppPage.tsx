@@ -26,7 +26,7 @@ const StyledContent = styled('div')(({ theme }) => ({
     overflow: 'hidden',
 }));
 
-export const AppPage = observer(() => {
+export const ViewAppPage = observer(() => {
     // App ID Needed for pixel calls
     const { appId } = useParams();
     const { configStore } = useRootStore();

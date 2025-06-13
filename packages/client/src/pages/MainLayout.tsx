@@ -4,7 +4,7 @@ import { Outlet } from 'react-router-dom';
 
 import { styled, Stack } from '@semoss/ui';
 
-import { NavigationBar, SideNav, PlatformMessages } from '@/components/shared';
+import { NavBar, SideNav, PlatformMessages } from '@/components/shared';
 import { ErrorBoundary } from '@/components/common';
 import { ErrorPage } from './ErrorPage';
 import { useCacheState } from '@/hooks';
@@ -31,7 +31,6 @@ const StyledInner = styled('div')(({ theme }) => ({
     flex: '1',
     height: '100%',
     width: '100%',
-    background: '#FAFAFA',
     overflowX: 'hidden',
     overflowY: 'auto',
 }));
@@ -43,7 +42,7 @@ export const MainLayout = observer(() => {
     const [isSideNavOpen, setIsSideNavOpen] = useState(false);
     const [isSideNavPinned, setIsSideNavPinned] = useCacheState(
         false,
-        `sidenav--isPinned--DEV`,
+        `sidenav--isPinned`,
     );
 
     return (
@@ -53,14 +52,13 @@ export const MainLayout = observer(() => {
                     isOpen={isSideNavOpen}
                     isPinned={isSideNavPinned}
                     onUpdate={(isOpen, isPinned) => {
-                        console.log(isOpen, isPinned);
                         setIsSideNavOpen(isOpen);
                         setIsSideNavPinned(isPinned);
                     }}
                 />
 
                 <StyledContent direction={'column'}>
-                    <NavigationBar
+                    <NavBar
                         isPinned={isSideNavPinned}
                         onOpen={() => {
                             setIsSideNavOpen(true);

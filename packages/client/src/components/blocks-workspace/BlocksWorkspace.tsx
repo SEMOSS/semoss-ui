@@ -41,156 +41,112 @@ const DEFAULT_BORDER_SIZE = 300;
 
 const DEFAULT_OPTIONS: WorkspaceOptions = {
     version: '',
-    drawer: {
-        isOpen: false,
-    },
     layout: {
-        selected: 'dev',
-        available: {
-            dev: {
-                id: 'dev',
-                name: 'Dev',
-                data: {
-                    global: { tabEnableClose: false },
-                    borders: [
+        global: { tabEnableClose: false },
+        borders: [
+            {
+                type: 'border',
+                location: 'left',
+                size: DEFAULT_BORDER_SIZE,
+                children: [
+                    {
+                        type: 'tab',
+                        name: 'Blocks',
+                        component: 'blocks',
+                        config: {},
+                        helpText:
+                            'UI components that can be used to display for your app',
+                    },
+                    {
+                        type: 'tab',
+                        name: 'Layers',
+                        component: 'layers',
+                        config: {},
+                        helpText:
+                            'Hierarchy for UI elements within the designer',
+                    },
+                    {
+                        type: 'tab',
+                        name: 'Variables',
+                        component: 'variables',
+                        config: {},
+                        helpText:
+                            'Parameters that are used within blocks and notebooks',
+                    },
+                    {
+                        type: 'tab',
+                        name: 'Files',
+                        component: 'file-explorer',
+                        config: {},
+                        helpText: 'Files that are stored at app level',
+                    },
+                    {
+                        type: 'tab',
+                        name: 'Notebooks',
+                        component: 'notebook-explorer',
+                        config: {},
+                        helpText: 'Notebooks associated with the app',
+                    },
+                ],
+            },
+            {
+                type: 'border',
+                location: 'right',
+                size: DEFAULT_BORDER_SIZE,
+                children: [
+                    {
+                        type: 'tab',
+                        name: 'Block Settings',
+                        component: 'selected',
+                        config: {},
+                        helpText: 'Settings for UI component you have selected',
+                        // icon: '@/assets/favicon.svg',
+                    },
+                ],
+            },
+            {
+                type: 'border',
+                location: 'bottom',
+                size: DEFAULT_BORDER_SIZE,
+                children: [
+                    {
+                        id: 'settings',
+                        type: 'tab',
+                        name: 'Settings',
+                        component: 'settings',
+                        config: {},
+                    },
+                ],
+            },
+        ],
+        layout: {
+            type: 'row',
+            weight: 100,
+            children: [
+                {
+                    type: 'tabset',
+                    weight: 100,
+                    selected: 0,
+                    children: [
                         {
-                            type: 'border',
-                            location: 'left',
-                            size: DEFAULT_BORDER_SIZE,
-                            children: [
-                                {
-                                    type: 'tab',
-                                    name: 'Blocks',
-                                    component: 'blocks',
-                                    config: {},
-                                    helpText:
-                                        'UI components that can be used to display for your app',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Layers',
-                                    component: 'layers',
-                                    config: {},
-                                    helpText:
-                                        'Hierarchy for UI elements within the designer',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Variables',
-                                    component: 'variables',
-                                    config: {},
-                                    helpText:
-                                        'Parameters that are used within blocks and notebooks',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Files',
-                                    component: 'file-explorer',
-                                    config: {},
-                                    helpText:
-                                        'Files that are stored at app level',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Notebooks',
-                                    component: 'notebook-explorer',
-                                    config: {},
-                                    helpText:
-                                        'Notebooks associated with the app',
-                                },
-                            ],
-                        },
-                        {
-                            type: 'border',
-                            location: 'right',
-                            size: DEFAULT_BORDER_SIZE,
-                            children: [
-                                {
-                                    type: 'tab',
-                                    name: 'Block Settings',
-                                    component: 'selected',
-                                    config: {},
-                                    helpText:
-                                        'Settings for UI component you have selected',
-                                    // icon: '@/assets/favicon.svg',
-                                },
-                            ],
+                            type: 'tab',
+                            name: 'page-1',
+                            component: 'designer',
+                            config: {
+                                id: 'page-1',
+                            },
+                            enableClose: true,
                         },
                         // {
-                        //     type: 'border',
-                        //     location: 'bottom',
-                        //     size: DEFAULT_BORDER_SIZE,
-                        //     children: [
-                        //         {
-                        //             id: 'terminal',
-                        //             type: 'tab',
-                        //             name: 'Terminal',
-                        //             component: 'terminal',
-                        //             enableClose: false,
-                        //             config: {},
-                        //         },
-                        //     ],
+                        //     type: 'tab',
+                        //     name: 'Dependency Graph',
+                        //     component: 'graph',
+                        //     config: {},
+                        //     helpText: 'How your app is connected',
                         // },
                     ],
-                    layout: {
-                        type: 'row',
-                        weight: 100,
-                        children: [
-                            {
-                                type: 'tabset',
-                                weight: 100,
-                                selected: 0,
-                                children: [
-                                    {
-                                        type: 'tab',
-                                        name: 'page-1',
-                                        component: 'designer',
-                                        config: {
-                                            id: 'page-1',
-                                        },
-                                        enableClose: true,
-                                    },
-                                    // {
-                                    //     type: 'tab',
-                                    //     name: 'Dependency Graph',
-                                    //     component: 'graph',
-                                    //     config: {},
-                                    //     helpText: 'How your app is connected',
-                                    // },
-                                ],
-                            },
-                        ],
-                    },
                 },
-            },
-            settings: {
-                id: 'settings',
-                name: 'Settings',
-                data: {
-                    global: { tabEnableClose: false },
-                    borders: [],
-                    layout: {
-                        type: 'row',
-                        weight: 100,
-                        children: [
-                            {
-                                type: 'tabset',
-                                weight: 100,
-                                selected: 0,
-                                enableTabStrip: false,
-                                children: [
-                                    {
-                                        type: 'tab',
-                                        name: 'Settings',
-                                        component: 'settings',
-                                        config: {},
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                },
-            },
+            ],
         },
     },
 };

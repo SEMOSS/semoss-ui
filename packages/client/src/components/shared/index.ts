@@ -1,7 +1,6 @@
-import { NavigationBar } from './NavigationBar';
+import { TopNav } from './TopNav';
 import { SideNav } from './SideNav';
 import { PlatformMessages } from './PlatformMessages';
 import { Search } from './Search';
-import { LoginPopover } from './LoginPopover';
 
-export { NavigationBar, SideNav, PlatformMessages, Search, LoginPopover };
+export { TopNav as NavBar, SideNav, PlatformMessages, Search };

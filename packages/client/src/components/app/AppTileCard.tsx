@@ -460,11 +460,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         canvas.height = img.height;
                         ctx?.drawImage(img, 0, 0);
                         const base64String = canvas.toDataURL('image/png');
-                        console.log(
-                            base64String,
-                            app.project_id,
-                            'base64String',
-                        );
                         setBase64Image(base64String); // Store the base64 string in state
                         setLoading(false);
                         setHasDownloaded(true); // Set hasDownloaded to true after loading

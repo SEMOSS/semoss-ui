@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, matchPath, useLocation } from 'react-router-dom';
 import {
     Home as HomeIcon,
     GridView as GridViewIcon,
@@ -20,6 +20,7 @@ import {
     IconButton,
     styled,
     Stack,
+    ListItemText,
 } from '@semoss/ui';
 
 import { ModelBrain } from '@/assets/img/ModelBrain';
@@ -29,24 +30,24 @@ import { Logo } from '@/assets/img/Logo';
 import { THEME } from '@/constants';
 import { LoginPopover } from './LoginPopover';
 
-const DRAWER_OPEN_WIDTH = 312;
+const DRAWER_OPEN_WIDTH = 288;
 
 const CATALOG_ROUTES = [
     { text: 'Apps', icon: <GridViewIcon />, route: '/app' },
     {
-        text: 'Models',
+        text: 'Model',
         icon: <ModelBrain color="#757575" width="24" height="24" />,
         route: '/engine/model',
     },
     {
-        text: 'Databases',
+        text: 'Database',
         icon: <Database color="#757575" />,
         route: '/engine/database',
     },
-    { text: 'Vectors', icon: <TokenRounded />, route: '/engine/vector' },
-    { text: 'Functions', icon: <FunctionsIcon />, route: '/engine/function' },
+    { text: 'Vector', icon: <TokenRounded />, route: '/engine/vector' },
+    { text: 'Function', icon: <FunctionsIcon />, route: '/engine/function' },
     {
-        text: 'Storages',
+        text: 'Storage',
         icon: <Inventory2Outlined />,
         route: '/engine/storage',
     },
@@ -59,8 +60,8 @@ const StyledSideNav = styled(Drawer)(() => ({
     '& .MuiDrawer-paper': {
         width: DRAWER_OPEN_WIDTH,
         borderRadius: '0px',
-        boxShadow: 'none',
-        border: 'none',
+        // boxShadow: 'none',
+        // border: 'none',
     },
     variants: [
         {
@@ -68,7 +69,7 @@ const StyledSideNav = styled(Drawer)(() => ({
             style: {
                 width: DRAWER_OPEN_WIDTH,
                 '& .MuiDrawer-paper': {
-                    backgroundColor: 'transparent',
+                    // backgroundColor: 'transparent',
                 },
             },
         },
@@ -96,6 +97,7 @@ const StyledSideNavHeaderLink = styled(Link)(({ theme }) => ({
 }));
 
 const StyledSideNavContent = styled(Stack)(({ theme }) => ({
+    flexDirection: 'column',
     width: '100%',
     paddingRight: theme.spacing(2),
     paddingLeft: theme.spacing(2),
@@ -122,7 +124,7 @@ const StyledListItemButton = styled(List.ItemButton, {
 })<{ selected: boolean }>(({ theme, selected }) => ({
     gap: theme.spacing(1),
     padding: theme.spacing(1),
-    backgroundColor: selected ? theme.palette.secondary.selected : undefined,
+    backgroundColor: selected ? theme.palette.secondary.light : undefined,
 })) as unknown as typeof List.ItemButton;
 
 const StyledListItemIcon = styled(List.Icon)(() => ({
@@ -150,7 +152,7 @@ interface SideNavProps {
 export const SideNav: React.FC<SideNavProps> = observer(
     ({ isOpen, isPinned, onUpdate }) => {
         const { configStore } = useRootStore();
-        const location = useLocation();
+        const { pathname } = useLocation();
 
         const [viewSidebar, setViewSidebar] = useState(false);
         useEffect(() => {
@@ -182,23 +184,10 @@ export const SideNav: React.FC<SideNavProps> = observer(
             return {};
         }, [Object.keys(configStore.store.config).length]);
 
-        /**
-         * to determine if route is selected
-         */
-        const isSelected = (route: string) => {
-            if (route === '/') {
-                if (location.pathname === '/') {
-                    return true;
-                }
-                return false;
-            } else {
-                return location.pathname.includes(route);
-            }
-        };
-
         return (
             <StyledSideNav
                 variant={isPinned ? 'permanent' : 'temporary'}
+                anchor="left"
                 open={isOpen}
                 onClose={() => onUpdate(false, isPinned)}
                 PaperProps={{
@@ -228,11 +217,10 @@ export const SideNav: React.FC<SideNavProps> = observer(
                     <IconButton
                         size="small"
                         onClick={() => {
-                            console.log('start', isOpen, isPinned);
-                            if (isOpen && !isPinned) {
+                            if (!isPinned) {
                                 // if it is open and not pinned, pin it
                                 onUpdate(isOpen, true);
-                            } else if (isOpen && isPinned) {
+                            } else if (isPinned) {
                                 // if it is open, and pinned, close and unpin
                                 onUpdate(false, false);
                             } else {
@@ -244,65 +232,64 @@ export const SideNav: React.FC<SideNavProps> = observer(
                     </IconButton>
                 </StyledSideNavHeader>
                 <Divider />
-                <StyledSideNavContent direction={'column'} spacing={2}>
+                <StyledSideNavContent>
                     <StyledList dense={true} aria-label="main navigation">
-                        <Stack direction={'column'} spacing={2}>
-                            <StyledLink to={'/'} aria-label={'Home'}>
-                                <StyledListItemButton
-                                    selected={isSelected('/')}
-                                    dense={true}
-                                >
-                                    <StyledListItemIcon>
-                                        <HomeIcon />
-                                    </StyledListItemIcon>
-                                    <List.ItemText primary={'Home'} />
-                                </StyledListItemButton>
-                            </StyledLink>
-                        </Stack>
+                        <StyledLink to={'/'} aria-label={'Home'}>
+                            <StyledListItemButton
+                                selected={!!matchPath('/', pathname)}
+                                dense={true}
+                            >
+                                <StyledListItemIcon>
+                                    <HomeIcon />
+                                </StyledListItemIcon>
+                                <List.ItemText primary={'Home'} />
+                            </StyledListItemButton>
+                        </StyledLink>
                     </StyledList>
                 </StyledSideNavContent>
                 <Divider />
                 {viewSidebar ? (
                     <>
-                        <StyledSideNavContent
-                            direction={'column'}
-                            spacing={2}
-                            flex={1}
-                        >
+                        <StyledSideNavContent flex={1}>
                             <StyledList
                                 dense={true}
                                 aria-label="catalog navigation"
                             >
-                                <Stack direction={'column'} spacing={2}>
-                                    <StyledListItem>
-                                        <List.ItemText>Catalogs</List.ItemText>
-                                    </StyledListItem>
-
-                                    {CATALOG_ROUTES.map((r) => {
-                                        return (
-                                            <StyledLink
-                                                key={r.route}
-                                                to={r.route}
+                                <StyledListItem>
+                                    <ListItemText
+                                        primary={'Catalog'}
+                                        primaryTypographyProps={{
+                                            variant: 'subtitle2',
+                                        }}
+                                    ></ListItemText>
+                                </StyledListItem>
+                                {CATALOG_ROUTES.map((r) => {
+                                    return (
+                                        <StyledLink
+                                            key={r.route}
+                                            to={r.route}
+                                            aria-label={r.text}
+                                        >
+                                            <StyledListItemButton
+                                                selected={
+                                                    !!matchPath(
+                                                        `${r.route}/*`,
+                                                        pathname,
+                                                    )
+                                                }
                                                 aria-label={r.text}
+                                                dense={true}
                                             >
-                                                <StyledListItemButton
-                                                    selected={isSelected(
-                                                        r.route,
-                                                    )}
-                                                    aria-label={r.text}
-                                                    dense={true}
-                                                >
-                                                    <StyledListItemIcon>
-                                                        {r.icon}
-                                                    </StyledListItemIcon>
-                                                    <List.ItemText
-                                                        primary={r.text}
-                                                    />
-                                                </StyledListItemButton>
-                                            </StyledLink>
-                                        );
-                                    })}
-                                </Stack>
+                                                <StyledListItemIcon>
+                                                    {r.icon}
+                                                </StyledListItemIcon>
+                                                <List.ItemText
+                                                    primary={r.text}
+                                                />
+                                            </StyledListItemButton>
+                                        </StyledLink>
+                                    );
+                                })}
                             </StyledList>
                         </StyledSideNavContent>
                     </>
@@ -312,38 +299,31 @@ export const SideNav: React.FC<SideNavProps> = observer(
                 <Divider />
                 <StyledSideNavFooter>
                     <StyledList dense={true} aria-label="main navigation">
-                        <Stack direction={'column'} spacing={2}>
-                            <StyledLink
-                                to={'/settings'}
-                                aria-label={'Settings'}
+                        <StyledLink to={'/settings'} aria-label={'Settings'}>
+                            <StyledListItemButton
+                                selected={!!matchPath(`/settings/*`, pathname)}
+                                dense={true}
                             >
-                                <StyledListItemButton
-                                    selected={isSelected('/settings')}
-                                    dense={true}
-                                >
-                                    <StyledListItemIcon>
-                                        <SettingsIcon />
-                                    </StyledListItemIcon>
-                                    <List.ItemText primary={'Settings'} />
-                                </StyledListItemButton>
-                            </StyledLink>
+                                <StyledListItemIcon>
+                                    <SettingsIcon />
+                                </StyledListItemIcon>
+                                <List.ItemText primary={'Settings'} />
+                            </StyledListItemButton>
+                        </StyledLink>
 
-                            <LoginPopover>
-                                <StyledListItemButton
-                                    aria-label={'Login'}
-                                    dense={true}
-                                >
-                                    <StyledListItemIcon>
-                                        <PersonIcon />
-                                    </StyledListItemIcon>
-                                    <List.ItemText
-                                        primary={
-                                            configStore.store.user.name || ''
-                                        }
-                                    />
-                                </StyledListItemButton>
-                            </LoginPopover>
-                        </Stack>
+                        <LoginPopover>
+                            <StyledListItemButton
+                                aria-label={'Login'}
+                                dense={true}
+                            >
+                                <StyledListItemIcon>
+                                    <PersonIcon />
+                                </StyledListItemIcon>
+                                <List.ItemText
+                                    primary={configStore.store.user.name || ''}
+                                />
+                            </StyledListItemButton>
+                        </LoginPopover>
                     </StyledList>
                 </StyledSideNavFooter>
             </StyledSideNav>

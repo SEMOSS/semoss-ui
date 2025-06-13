@@ -11,42 +11,24 @@ import {
     styled,
     Stack,
     Typography,
-    useNotification,
     IconButton,
     Tooltip,
-    Drawer,
     Button,
 } from '@semoss/ui';
 import { Env } from '@semoss/sdk/react';
 
-import { THEME } from '@/constants';
 import { WorkspaceContext } from '@/contexts';
 import { WorkspaceStore, WorkspaceOptions } from '@/stores';
 import { useRootStore } from '@/hooks';
-import { LoginPopover } from '@/components/shared';
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
-import { WorkspaceTabs } from './WorkspaceTabs';
 
-const StyledViewport = styled('div')(() => ({
-    height: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-}));
-
-const StyledMain = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'drawerOpen',
-})<{
-    drawerOpen: boolean;
-}>(({ drawerOpen }) => ({
+const StyledMain = styled('div')(() => ({
     position: 'relative',
-    flex: '1',
     height: '100%',
+    width: '100%',
     display: 'flex',
     flexDirection: 'column',
-    width: drawerOpen ? 'calc(100% - 240px)' : '100%',
-    marginLeft: drawerOpen ? '240px' : '0',
-    transition: 'margin 0.3s ease, width 0.3s ease',
     overflow: 'hidden',
 }));
 
@@ -129,12 +111,11 @@ export const Workspace = observer((props: WorkspaceProps) => {
         factory = () => null,
     } = props;
     const { configStore } = useRootStore();
-    const notification = useNotification();
 
     const layoutRef = useRef<Layout>(null);
 
     // build the model from the layout
-    const model = workspace.selectedLayout?.model;
+    // const model = workspace.model;
 
     useEffect(() => {
         // default options if not loaded from cache
@@ -166,19 +147,11 @@ export const Workspace = observer((props: WorkspaceProps) => {
      */
     const resetWorkspace = () => {
         try {
-            // reset only the selected one
-            const selected = workspace.selectedLayout.id;
-            if (!selected) {
-                return;
-            }
-
             // copy the optoins
-            const layout = JSON.parse(
-                JSON.stringify(options.layout.available[selected]),
-            );
+            const layout = JSON.parse(JSON.stringify(options.layout));
 
             // update the layout
-            workspace.updateLayout(selected, layout);
+            workspace.updateLayout(layout);
         } catch (e) {
             //noop
         }
@@ -191,166 +164,87 @@ export const Workspace = observer((props: WorkspaceProps) => {
             }}
         >
             <WorkspaceOverlay />
-            <StyledViewport>
-                <StyledMain drawerOpen={workspace.drawer.isOpen}>
-                    <Stack
-                        direction={'row'}
-                        alignItems={'center'}
-                        padding={1}
-                        spacing={1}
-                    >
-                        <IconButton
-                            edge="start"
-                            color={'default'}
-                            aria-label="menu"
-                            size={'small'}
-                            onClick={() => {
-                                workspace.toggleDrawer();
-
-                                // save the workspace
-                                workspace.saveToCache();
-                            }}
-                        >
-                            {workspace.drawer.isOpen ? (
-                                <StyledMenuOpenIcon fontSize="inherit" />
-                            ) : (
-                                <StyledMenuIcon fontSize="inherit" />
-                            )}
-                        </IconButton>
-
-                        <Stack
-                            direction="row"
-                            alignItems={'center'}
-                            spacing={1}
-                        >
-                            <Avatar
-                                variant="rounded"
-                                src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
-                            />
-                            <Typography variant={'subtitle1'}>
-                                {workspace.metadata.project_name}
-                            </Typography>
-                        </Stack>
-
-                        <Stack
-                            flex={1}
-                            alignItems={'center'}
-                            justifyContent={'center'}
-                            overflow={'hidden'}
-                        >
-                            <div>{alert || <>&nbsp;</>}</div>
-                        </Stack>
-                        {endTopbar}
-                        <LoginPopover />
-                        <Button
-                            variant="contained"
-                            size={'small'}
-                            color="primary"
-                            disabled={
-                                !(
-                                    workspace.role === 'OWNER' ||
-                                    workspace.role === 'EDIT'
-                                )
-                            }
-                            endIcon={<Public fontSize="inherit" />}
-                            component={Link}
-                            //@ts-expect-error this is expected. props are forwarded
-                            to={`../../../app/${workspace.appId}`}
-                        >
-                            Show
-                        </Button>
-                    </Stack>
-                    <StyledContent>
-                        <WorkspaceLoading />
-                        <StyledSpacer>
-                            {model ? (
-                                <>
-                                    <Layout
-                                        ref={layoutRef}
-                                        model={model}
-                                        factory={(node) => {
-                                            return factory(
-                                                node,
-                                                layoutRef.current,
-                                            );
-                                        }}
-                                        onModelChange={() => {
-                                            workspace.saveToCache();
-                                        }}
-                                    />
-                                    <StyledActions
-                                        direction="column"
-                                        justifyContent={'center'}
-                                    >
-                                        <Tooltip title={'Reset workspace'}>
-                                            <IconButton
-                                                size={'small'}
-                                                color="default"
-                                                onClick={() => {
-                                                    resetWorkspace();
-                                                }}
-                                            >
-                                                <RestartAlt fontSize="inherit" />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </StyledActions>
-                                </>
-                            ) : null}
-                        </StyledSpacer>
-                    </StyledContent>
-                    {footer}
-                </StyledMain>
-            </StyledViewport>
-            <Drawer
-                anchor="left"
-                open={workspace.drawer.isOpen}
-                ModalProps={{
-                    hideBackdrop: true, // Hide the backdrop
-                }}
-                PaperProps={{
-                    sx: {
-                        position: 'absolute',
-                        height: '100%',
-                        width: '240px',
-                        borderRadius: 0,
-                    },
-                }}
-                variant="persistent"
-            >
-                <Stack direction="column" gap={1} height={'100%'} padding={2}>
-                    <StyledHeaderLogo to={'/'}>
-                        <Stack
-                            direction="row"
-                            alignItems={'center'}
-                            spacing={1}
-                        >
-                            {themeMap.isLogoUrl ? (
-                                <StyledHeaderLogoImg src={themeMap.logo} />
-                            ) : THEME.logo ? (
-                                <StyledHeaderLogoImg src={THEME.logo} />
-                            ) : null}
-                            <Typography variant={'subtitle2'}>
-                                {themeMap.name ? themeMap.name : THEME.name}
-                            </Typography>
-                        </Stack>
-                    </StyledHeaderLogo>
-                    <Stack flex={1} direction="column" overflow={'auto'}>
-                        <WorkspaceTabs />
-                    </Stack>
-                    <Stack
-                        direction="column"
-                        justifyContent={'center'}
-                        spacing={0.25}
-                    >
-                        <Typography
-                            variant={'caption'}
-                            sx={{ fontSize: '.625rem' }}
-                        >
-                            ID: {workspace.appId}
+            <StyledMain>
+                <Stack
+                    direction={'row'}
+                    alignItems={'center'}
+                    padding={1}
+                    spacing={1}
+                >
+                    <Stack direction="row" alignItems={'center'} spacing={1}>
+                        <Avatar
+                            variant="rounded"
+                            src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
+                        />
+                        <Typography variant={'subtitle1'}>
+                            {workspace.metadata.project_name}
                         </Typography>
                     </Stack>
+
+                    <Stack
+                        flex={1}
+                        alignItems={'center'}
+                        justifyContent={'center'}
+                        overflow={'hidden'}
+                    >
+                        <div>{alert || <>&nbsp;</>}</div>
+                    </Stack>
+                    {endTopbar}
+                    <Button
+                        variant="contained"
+                        size={'small'}
+                        color="primary"
+                        disabled={
+                            !(
+                                workspace.role === 'OWNER' ||
+                                workspace.role === 'EDIT'
+                            )
+                        }
+                        endIcon={<Public fontSize="inherit" />}
+                        component={Link}
+                        //@ts-expect-error this is expected. props are forwarded
+                        to={`../../../app/${workspace.appId}`}
+                    >
+                        Show
+                    </Button>
                 </Stack>
-            </Drawer>
+                <StyledContent>
+                    <WorkspaceLoading />
+                    <StyledSpacer>
+                        {workspace.model ? (
+                            <>
+                                <Layout
+                                    ref={layoutRef}
+                                    model={workspace.model}
+                                    factory={(node) => {
+                                        return factory(node, layoutRef.current);
+                                    }}
+                                    onModelChange={() => {
+                                        workspace.saveToCache();
+                                    }}
+                                />
+                                <StyledActions
+                                    direction="column"
+                                    justifyContent={'center'}
+                                >
+                                    <Tooltip title={'Reset workspace'}>
+                                        <IconButton
+                                            size={'small'}
+                                            color="default"
+                                            onClick={() => {
+                                                resetWorkspace();
+                                            }}
+                                        >
+                                            <RestartAlt fontSize="inherit" />
+                                        </IconButton>
+                                    </Tooltip>
+                                </StyledActions>
+                            </>
+                        ) : null}
+                    </StyledSpacer>
+                </StyledContent>
+                {footer}
+            </StyledMain>
         </WorkspaceContext.Provider>
     );
 });

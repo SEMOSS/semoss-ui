@@ -18,12 +18,12 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
 }));
 
 interface LoginPopoverProps {
-    color?: React.ComponentProps<typeof IconButton>['color'];
+    /** Content to popover */
     children?: React.ReactNode;
 }
 
 export const LoginPopover: React.FC<LoginPopoverProps> = (props) => {
-    const { color = 'default', children } = props;
+    const { children } = props;
 
     const { configStore } = useRootStore();
     const [popoverAnchorEle, setPopoverAnchorEl] = useState<HTMLElement | null>(
@@ -53,7 +53,7 @@ export const LoginPopover: React.FC<LoginPopoverProps> = (props) => {
             ) : (
                 <IconButton
                     size={'small'}
-                    color={color}
+                    color={'default'}
                     onClick={(e) => {
                         setPopoverAnchorEl(e.currentTarget);
                     }}

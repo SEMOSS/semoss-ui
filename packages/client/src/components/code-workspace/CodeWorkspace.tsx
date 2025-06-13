@@ -17,104 +17,71 @@ const DEFAULT_BORDER_SIZE = 300;
 
 const DEFAULT_OPTIONS: WorkspaceOptions = {
     version: '',
-    drawer: {
-        isOpen: false,
-    },
     layout: {
-        selected: 'code',
-        available: {
-            code: {
-                id: 'code',
-                name: 'Code',
-                data: {
-                    global: {
-                        tabEnableClose: false,
-                        tabEnableRename: false,
+        global: {
+            tabEnableClose: false,
+            tabEnableRename: false,
+        },
+        borders: [
+            {
+                type: 'border',
+                location: 'left',
+                selected: 0,
+                size: 400,
+                children: [
+                    {
+                        id: 'file-explorer',
+                        type: 'tab',
+                        name: 'Files',
+                        component: 'file-explorer',
+                        enableClose: false,
+                        config: {},
                     },
-                    borders: [
+                ],
+            },
+            {
+                type: 'border',
+                location: 'bottom',
+                size: DEFAULT_BORDER_SIZE,
+                children: [
+                    {
+                        id: 'terminal',
+                        type: 'tab',
+                        name: 'Terminal',
+                        component: 'terminal',
+                        enableClose: false,
+                        config: {},
+                    },
+                    {
+                        id: 'settings',
+                        type: 'tab',
+                        name: 'Settings',
+                        component: 'settings',
+                        config: {},
+                    },
+                ],
+            },
+        ],
+        layout: {
+            type: 'row',
+            weight: 100,
+            children: [
+                {
+                    type: 'tabset',
+                    weight: 50,
+                    selected: 0,
+                    enableTabStrip: true,
+                    children: [
                         {
-                            type: 'border',
-                            location: 'left',
-                            selected: 0,
-                            size: 400,
-                            children: [
-                                {
-                                    id: 'file-explorer',
-                                    type: 'tab',
-                                    name: 'Files',
-                                    component: 'file-explorer',
-                                    enableClose: false,
-                                    config: {},
-                                },
-                            ],
-                        },
-                        {
-                            type: 'border',
-                            location: 'bottom',
-                            size: DEFAULT_BORDER_SIZE,
-                            children: [
-                                {
-                                    id: 'terminal',
-                                    type: 'tab',
-                                    name: 'Terminal',
-                                    component: 'terminal',
-                                    enableClose: false,
-                                    config: {},
-                                },
-                            ],
+                            id: 'render',
+                            type: 'tab',
+                            name: 'App',
+                            component: 'renderer',
+                            config: {},
                         },
                     ],
-                    layout: {
-                        type: 'row',
-                        weight: 100,
-                        children: [
-                            {
-                                type: 'tabset',
-                                weight: 50,
-                                selected: 0,
-                                enableTabStrip: true,
-                                children: [
-                                    {
-                                        id: 'render',
-                                        type: 'tab',
-                                        name: 'App',
-                                        component: 'renderer',
-                                        config: {},
-                                    },
-                                ],
-                            },
-                        ],
-                    },
                 },
-            },
-            settings: {
-                id: 'settings',
-                name: 'Settings',
-                data: {
-                    global: { tabEnableClose: false },
-                    borders: [],
-                    layout: {
-                        type: 'row',
-                        weight: 100,
-                        children: [
-                            {
-                                type: 'tabset',
-                                weight: 100,
-                                selected: 0,
-                                enableTabStrip: false,
-                                children: [
-                                    {
-                                        type: 'tab',
-                                        name: 'Settings',
-                                        component: 'settings',
-                                        config: {},
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                },
-            },
+            ],
         },
     },
 };

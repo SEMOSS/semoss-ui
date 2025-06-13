@@ -8,9 +8,10 @@ import {
     AppCatalogPage,
     AppMarketplacePage,
     AppDetailPage,
-    AppPage,
+    ViewAppPage,
     NewPromptBuilderAppPage,
     CreateAppPage,
+    EditAppPage,
 } from './app';
 
 import { EngineRouter } from './engine';
@@ -25,8 +26,6 @@ import { SharePage } from './SharePage';
 
 import { CookieNotice } from './legal/CookieNotice';
 import { PrivacyNotice } from './legal/PrivacyNotice';
-
-import { WorkspacePage } from './WorkspacePage';
 
 import { PlatformMessages } from '../components/shared';
 import { LandingPage } from './LandingPage';
@@ -77,12 +76,8 @@ export const Router = observer(() => {
                             element={<NewPromptBuilderAppPage />}
                         />
                         <Route path=":appId" element={<AppDetailPage />} />
-                        <Route path=":appId/view/*" element={<AppPage />} />
-
-                        <Route
-                            path=":appId/edit/*"
-                            element={<WorkspacePage />}
-                        />
+                        <Route path=":appId/view/*" element={<ViewAppPage />} />
+                        <Route path=":appId/edit/*" element={<EditAppPage />} />
                         <Route
                             path="*"
                             element={<Navigate to={`/`} replace />}
@@ -97,7 +92,7 @@ export const Router = observer(() => {
                     path="workspace/:appId/*"
                     element={
                         <PlatformMessages>
-                            <WorkspacePage />
+                            <EditAppPage />
                         </PlatformMessages>
                     }
                 />
