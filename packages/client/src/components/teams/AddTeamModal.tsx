@@ -126,12 +126,10 @@ interface AddTeamModalProps {
     id?: string;
     type?: string;
     description?: string;
-    isCustomGroup?: boolean;
 }
 
 export const AddTeamModal = (props: AddTeamModalProps) => {
-    const { open, onClose, isEdit, id, type, description, isCustomGroup } =
-        props;
+    const { open, onClose, isEdit, id, type, description } = props;
 
     const navigate = useNavigate();
     const notification = useNotification();
@@ -154,8 +152,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
         defaultValues: {
             TEAM_NAME: id || '',
             TEAM_DESCRIPTION: description || '',
-            TEAM_TYPE:
-                (isCustomGroup || type === 'custom' ? 'Custom' : type) || '',
+            TEAM_TYPE: type,
         },
         mode: 'onChange', // Ensures validation updates on field changes
     });
@@ -164,14 +161,13 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
         reset({
             TEAM_NAME: id || '',
             TEAM_DESCRIPTION: description || '',
-            TEAM_TYPE:
-                (isCustomGroup || type === 'custom' ? 'Custom' : type) || '',
+            TEAM_TYPE: type,
         });
 
         // Update the previous team name when the modal is opened
         setPreviousTeamName(id);
-        setPreviousType(isCustomGroup ? 'Custom' : type);
-    }, [id, type, description, isCustomGroup, reset]);
+        setPreviousType(type);
+    }, [id, type, description, reset]);
 
     const selectedTeamType = watch('TEAM_TYPE');
 

@@ -749,7 +749,6 @@ export const TeamTileCard = (props: TeamCardProps) => {
                 type={type?.toLocaleLowerCase()}
                 id={id}
                 description={description}
-                isCustomGroup={isCustomGroup}
                 onClose={(team) => {
                     if (team) {
                         const updatedTeams = teams.map((t) =>
