@@ -746,7 +746,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
             <AddTeamModal
                 open={editTeam}
                 isEdit={true}
-                type={type?.toLocaleLowerCase()}
+                type={type}
                 id={id}
                 description={description}
                 onClose={(team) => {
