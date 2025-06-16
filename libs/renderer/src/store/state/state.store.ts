@@ -459,10 +459,13 @@ export class StateStore {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
-            } else if (
-                ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
-            ) {
-                this.dispatchOutputsEvent();
+            } else if (ActionMessages.RUN_MARKDOWN_CELL === action.message) {
+                const { queryId, cellId, marked } = action.payload;
+
+                this.runMarkdownCell(queryId, cellId, marked);
+            } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
+
+                this.dispatchOutputsEvent()
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { id, alias } = action.payload;
 
@@ -1702,6 +1705,12 @@ export class StateStore {
         this._utils.queryPromises[key] = p;
     };
 
+    private runMarkdownCell = (queryId: string, cellId: string, marked: boolean): void => {
+        const q = this._store.queries[queryId];
+        const c = q.getCell(cellId);
+        // make the cell as marked
+        this._store.queries[queryId].cells[cellId].parameters.marked = marked
+    }
     /**
      * Dispatch a custom event
      * @param name - name of the event
