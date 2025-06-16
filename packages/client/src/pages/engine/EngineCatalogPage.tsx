@@ -1,18 +1,12 @@
 import { useEffect, useState, useReducer, useRef, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
-    Avatar,
-    Collapse,
     styled,
     Stack,
     Typography,
     Button,
-    ToggleButtonGroup,
     ToggleTabsGroup,
     Grid,
-    List,
-    TextField,
-    InputAdornment,
 } from '@semoss/ui';
 import { SearchOff, Search as SearchIcon } from '@mui/icons-material';
 
@@ -21,7 +15,8 @@ import { useNavigate } from 'react-router-dom';
 import { ENGINE_TYPES } from '@/types';
 import { usePixel, useRootStore } from '@/hooks';
 import { EngineLandscapeCard } from '@/components/engine';
-import { Filterbox, Page } from '@/components/ui';
+import { Filterbox } from '@/components/ui';
+import { Page } from '../../components/shared';
 import { Help } from '@/components/help';
 import { ENGINE_ROUTES } from './engine.constants';
 import { removeUnderscores } from '@/utility';
@@ -477,60 +472,57 @@ export const EngineCatalogPage = observer(
         }
 
         return (
-            <Page
-                header={
-                    <Stack>
-                        <Stack
-                            direction="row"
-                            alignItems={'center'}
-                            justifyContent={'space-between'}
-                            spacing={4}
-                        >
-                            <Typography variant={'h4'}>
-                                {route ? route.name : ''} Catalog
-                            </Typography>
+            <Stack direction="column" gap={2}>
+                <Stack>
+                    <Stack
+                        direction="row"
+                        alignItems={'center'}
+                        justifyContent={'space-between'}
+                        spacing={4}
+                    >
+                        <Typography variant={'h4'}>
+                            {route ? route.name : ''} Catalog
+                        </Typography>
 
-                            {configStore.isEngineOperationAvailable(
-                                route.type,
-                                'add',
-                            ) && (
-                                <Stack
-                                    direction="row"
-                                    alignItems={'center'}
-                                    spacing={3}
+                        {configStore.isEngineOperationAvailable(
+                            route.type,
+                            'add',
+                        ) && (
+                            <Stack
+                                direction="row"
+                                alignItems={'center'}
+                                spacing={3}
+                            >
+                                <Button
+                                    size={'large'}
+                                    variant={'contained'}
+                                    onClick={() => {
+                                        navigate(
+                                            `/engine/${route.type.toLowerCase()}/new`,
+                                        );
+                                    }}
+                                    aria-label={`Navigate to import ${
+                                        route ? route.name : 'Engine'
+                                    }`}
+                                    data-testid={'engine-catalog-add-btn'}
                                 >
-                                    <Button
-                                        size={'large'}
-                                        variant={'contained'}
-                                        onClick={() => {
-                                            navigate(
-                                                `/engine/${route.type.toLowerCase()}/new`,
-                                            );
-                                        }}
-                                        aria-label={`Navigate to import ${
-                                            route ? route.name : 'Engine'
-                                        }`}
-                                        data-testid={'engine-catalog-add-btn'}
-                                    >
-                                        Add {route ? route.name : 'Engine'}
-                                    </Button>
-                                </Stack>
-                            )}
-                        </Stack>
-                        <Stack
-                            direction="row"
-                            alignItems={'center'}
-                            justifyContent={'space-between'}
-                            spacing={4}
-                            sx={{ paddingTop: '10px' }}
-                        >
-                            <Typography variant={'subtitle1'}>
-                                {route ? route.description : ''}
-                            </Typography>
-                        </Stack>
+                                    Add {route ? route.name : 'Engine'}
+                                </Button>
+                            </Stack>
+                        )}
                     </Stack>
-                }
-            >
+                    <Stack
+                        direction="row"
+                        alignItems={'center'}
+                        justifyContent={'space-between'}
+                        spacing={4}
+                        sx={{ paddingTop: '10px' }}
+                    >
+                        <Typography variant={'subtitle1'}>
+                            {route ? route.description : ''}
+                        </Typography>
+                    </Stack>
+                </Stack>
                 <StyledContainer>
                     <Filterbox
                         type={type}
@@ -708,7 +700,7 @@ export const EngineCatalogPage = observer(
                     </StyledContent>
                 </StyledContainer>
                 <Help />
-            </Page>
+            </Stack>
         );
     },
 );

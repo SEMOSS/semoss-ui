@@ -6,7 +6,6 @@ import { Stack, Container, Breadcrumbs, styled, Typography } from '@semoss/ui';
 
 import { useRootStore } from '../../hooks';
 import { BASE_PAGE_BLOCKS } from './app.constants';
-import { Page } from '../../components/ui';
 import {
     NewAppStep,
     AddAppModal,
@@ -71,20 +70,17 @@ export const CreateAppPage = () => {
     };
 
     return (
-        <Page
-            header={
-                <Stack>
-                    <Breadcrumbs>
-                        <StyledLink to={`..`}>App Catalog</StyledLink>
-                        <StyledLink to={`.`}>Create</StyledLink>
-                    </Breadcrumbs>
-                    <Stack direction="row" alignItems={'center'} width={'100%'}>
-                        <Typography variant="h4">Create New App</Typography>
-                        <Stack flex={1}> &nbsp;</Stack>
-                    </Stack>
+        <Stack direction="column" gap={2}>
+            <Stack>
+                <Breadcrumbs>
+                    <StyledLink to={`..`}>App Catalog</StyledLink>
+                    <StyledLink to={`.`}>Create</StyledLink>
+                </Breadcrumbs>
+                <Stack direction="row" alignItems={'center'} width={'100%'}>
+                    <Typography variant="h4">Create New App</Typography>
+                    <Stack flex={1}> &nbsp;</Stack>
                 </Stack>
-            }
-        >
+            </Stack>
             {isUploadOpen ? (
                 <AddAppModal
                     open={isUploadOpen}
@@ -136,6 +132,6 @@ export const CreateAppPage = () => {
                     />
                 </Stack>
             </Stack>
-        </Page>
+        </Stack>
     );
 };

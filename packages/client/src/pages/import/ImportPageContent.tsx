@@ -17,7 +17,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { Page } from '@/components/ui/';
+
 import {
     Avatar,
     Breadcrumbs,
@@ -31,11 +31,9 @@ import {
     Tab,
     Stack,
 } from '@semoss/ui';
-import { stepsOne } from './import.constants';
 
 import { UploadData } from '../../components/import/refactor/UploadData';
 import { CopyDatabaseForm } from '../../components/import/refactor/CopyDatabaseForm';
-import { Search as SearchIcon } from '@mui/icons-material/';
 import { BuildDb } from '@/assets/img/BuildDb';
 import { ConnectModel } from '@/assets/img/ConnectModel';
 import { ConnectDb } from '@/assets/img/ConnectDb';
@@ -643,64 +641,57 @@ export const ImportPageContent = (props: ImportPageContentProps) => {
         }
     };
     return (
-        <Page
-            header={
-                <StyledStack>
-                    {steps.length ? (
-                        <Breadcrumbs separator="/">
-                            <StyledSpan
-                                sx={
-                                    isModelPage
-                                        ? { color: '#212121' }
-                                        : undefined
+        <Stack direction="column" gap={2}>
+            <StyledStack>
+                {steps.length ? (
+                    <Breadcrumbs separator="/">
+                        <StyledSpan
+                            sx={isModelPage ? { color: '#212121' } : undefined}
+                            onClick={() => {
+                                setSteps([], -1);
+                                if (window.history.length > 1) {
+                                    navigate(-1);
+                                } else {
+                                    navigate('/');
                                 }
-                                onClick={() => {
-                                    setSteps([], -1);
-                                    if (window.history.length > 1) {
-                                        navigate(-1);
-                                    } else {
-                                        navigate('/');
-                                    }
-                                }}
-                            >
-                                Import
-                            </StyledSpan>
-                            {steps.map((step, i) => {
-                                return (
-                                    <StyledSpan
-                                        key={i}
-                                        onClick={() => {
-                                            const newSteps = [];
-                                            for (let j = 0; j < i + 1; j++) {
-                                                newSteps.push(steps[j]);
-                                            }
+                            }}
+                        >
+                            Import
+                        </StyledSpan>
+                        {steps.map((step, i) => {
+                            return (
+                                <StyledSpan
+                                    key={i}
+                                    onClick={() => {
+                                        const newSteps = [];
+                                        for (let j = 0; j < i + 1; j++) {
+                                            newSteps.push(steps[j]);
+                                        }
 
-                                            setSteps(newSteps, i + 1);
-                                        }}
-                                    >
-                                        {step.title}
-                                    </StyledSpan>
-                                );
-                            })}
-                        </Breadcrumbs>
-                    ) : (
-                        <div>&nbsp;</div>
-                    )}
-                    <Typography
-                        variant="h4"
-                        sx={isModelPage ? { fontWeight: 500 } : undefined}
-                    >
-                        {steps.length && steps[steps.length - 1].title}
-                    </Typography>
-                    <Typography
-                        variant="body1"
-                        color={isModelPage ? 'secondary' : 'inherit'}
-                    >
-                        {steps.length && steps[steps.length - 1].description}
-                    </Typography>
-                </StyledStack>
-            }
-        >
+                                        setSteps(newSteps, i + 1);
+                                    }}
+                                >
+                                    {step.title}
+                                </StyledSpan>
+                            );
+                        })}
+                    </Breadcrumbs>
+                ) : (
+                    <div>&nbsp;</div>
+                )}
+                <Typography
+                    variant="h4"
+                    sx={isModelPage ? { fontWeight: 500 } : undefined}
+                >
+                    {steps.length && steps[steps.length - 1].title}
+                </Typography>
+                <Typography
+                    variant="body1"
+                    color={isModelPage ? 'secondary' : 'inherit'}
+                >
+                    {steps.length && steps[steps.length - 1].description}
+                </Typography>
+            </StyledStack>
             <StyledContainer>
                 {/* Search Second Step: TODO - only one search */}
                 {steps.length === 1 &&
@@ -751,6 +742,6 @@ export const ImportPageContent = (props: ImportPageContentProps) => {
                 {steps.length === 3 && <EstablishConnectionPage />}
             </StyledContainer>
             <Help />
-        </Page>
+        </Stack>
     );
 };

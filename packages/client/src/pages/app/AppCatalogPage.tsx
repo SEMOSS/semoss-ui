@@ -14,7 +14,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 import { usePixel, useRootStore } from '@/hooks';
-import { Page } from '@/components/ui';
+import { Page } from '@/components/shared';
 import { AppMetadata, AppTileCard } from '@/components/app';
 import { Search } from '@mui/icons-material';
 import { Help } from '@/components/help';
@@ -299,46 +299,32 @@ export const AppCatalogPage = observer((): JSX.Element => {
     };
 
     return (
-        <Page
-            header={
-                <Stack>
-                    <Stack
-                        direction="row"
-                        alignItems={'center'}
-                        justifyContent={'space-between'}
-                        spacing={4}
-                    >
-                        {/* <Stack
-                            direction="row"
-                            alignItems={'center'}
-                            spacing={2}
-                        > */}
-                        <Typography
-                            data-tour="app-library-title"
-                            variant={'h4'}
+        <Stack direction="column" gap={2}>
+            <Stack>
+                <Stack
+                    direction="row"
+                    alignItems={'center'}
+                    justifyContent={'space-between'}
+                    spacing={4}
+                >
+                    <Typography data-tour="app-library-title" variant={'h4'}>
+                        Apps
+                    </Typography>
+                    {configStore.isEngineOperationAvailable('APP', 'add') && (
+                        <Button
+                            size={'large'}
+                            variant={'contained'}
+                            onClick={() => {
+                                navigate('/app/new');
+                            }}
+                            aria-label={`Open the App Model`}
+                            data-testid={'home-create-app-btn'}
                         >
-                            Apps
-                        </Typography>
-                        {configStore.isEngineOperationAvailable(
-                            'APP',
-                            'add',
-                        ) && (
-                            <Button
-                                size={'large'}
-                                variant={'contained'}
-                                onClick={() => {
-                                    navigate('/app/new');
-                                }}
-                                aria-label={`Open the App Model`}
-                                data-testid={'home-create-app-btn'}
-                            >
-                                Create New App
-                            </Button>
-                        )}
-                    </Stack>
+                            Create New App
+                        </Button>
+                    )}
                 </Stack>
-            }
-        >
+            </Stack>
             <StyledContainer>
                 {!configStore.store.config.adminOnlyViewMenuBarFlag &&
                     configStore.isEngineOperationAvailable('APP', 'add') && (
@@ -541,6 +527,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
                 </StyledContentContainer>
             </StyledContainer>
             <Help />
-        </Page>
+        </Stack>
     );
 });

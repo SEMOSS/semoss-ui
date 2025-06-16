@@ -13,7 +13,8 @@ import {
 } from '@semoss/ui';
 
 import { useRootStore, useEngine, usePixel } from '@/hooks';
-import { Page, LoadingScreen } from '@/components/ui';
+import { Page } from '../../components/shared';
+import { LoadingScreen } from '@/components/ui';
 import { EngineAccessButton, EditEngineDetails } from './';
 import { removeUnderscores } from '@/utility';
 import { Link } from 'react-router-dom';
@@ -144,8 +145,8 @@ export const EngineShell = (props: EngineShellProps) => {
     }
 
     return (
-        <Page
-            header={
+        <Page>
+            <Stack direction="column" gap={2}>
                 <Stack>
                     <Breadcrumbs>
                         <StyledLink to={`..`}>{name} Catalog</StyledLink>
@@ -239,56 +240,56 @@ export const EngineShell = (props: EngineShellProps) => {
                         </span>
                     </Stack>
                 </Stack>
-            }
-        >
-            <StyledInfo>
-                <StyledInfoLeft>
-                    <StyledInfoDescription variant={'subtitle1'}>
-                        {metaVals.description
-                            ? (metaVals.description as string)
-                            : canEdit
-                            ? `Please use the Edit button to provide a description for this ${name}. A description will help others find the ${name} and understand how to use it. To include more details associated with the ${name}, edit the markdown located in the Overview section.`
-                            : `This ${name} is currently awaiting a detailed description, which will be provided by the engine editor in the near future. As of now, the ${name} contains valuable and relevant information that pertains to its designated subject matter. Please check back later for a comprehensive overview of the contents and scope of this engine, as the editor will be updating it shortly`}
-                    </StyledInfoDescription>
+                <StyledInfo>
+                    <StyledInfoLeft>
+                        <StyledInfoDescription variant={'subtitle1'}>
+                            {metaVals.description
+                                ? (metaVals.description as string)
+                                : canEdit
+                                ? `Please use the Edit button to provide a description for this ${name}. A description will help others find the ${name} and understand how to use it. To include more details associated with the ${name}, edit the markdown located in the Overview section.`
+                                : `This ${name} is currently awaiting a detailed description, which will be provided by the engine editor in the near future. As of now, the ${name} contains valuable and relevant information that pertains to its designated subject matter. Please check back later for a comprehensive overview of the contents and scope of this engine, as the editor will be updating it shortly`}
+                        </StyledInfoDescription>
 
-                    <StyledChipContainer>
-                        {metaVals.tag &&
-                            (metaVals.tag as string[]).map((tag, i) => {
-                                if (i < 2) return <Chip key={i} label={tag} />;
-                            })}
-                    </StyledChipContainer>
-                </StyledInfoLeft>
-                <StyledInfoRight>
-                    <Stack
-                        alignItems={'flex-end'}
-                        spacing={1}
-                        marginBottom={2}
-                        sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
-                    >
-                        {data?.DATEADDED && data?.PERMISSIONGRANTEDBY ? (
-                            <div>
-                                <Typography variant={'body2'}>
-                                    {`Updated by ${data.PERMISSIONGRANTEDBY}`}
-                                </Typography>
-
+                        <StyledChipContainer>
+                            {metaVals.tag &&
+                                (metaVals.tag as string[]).map((tag, i) => {
+                                    if (i < 2)
+                                        return <Chip key={i} label={tag} />;
+                                })}
+                        </StyledChipContainer>
+                    </StyledInfoLeft>
+                    <StyledInfoRight>
+                        <Stack
+                            alignItems={'flex-end'}
+                            spacing={1}
+                            marginBottom={2}
+                            sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
+                        >
+                            {data?.DATEADDED && data?.PERMISSIONGRANTEDBY ? (
                                 <div>
                                     <Typography variant={'body2'}>
-                                        {`at ${data.DATEADDED}`}
+                                        {`Updated by ${data.PERMISSIONGRANTEDBY}`}
+                                    </Typography>
+
+                                    <div>
+                                        <Typography variant={'body2'}>
+                                            {`at ${data.DATEADDED}`}
+                                        </Typography>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    <Typography variant={'body2'}>
+                                        No updates since creation
                                     </Typography>
                                 </div>
-                            </div>
-                        ) : (
-                            <div>
-                                <Typography variant={'body2'}>
-                                    No updates since creation
-                                </Typography>
-                            </div>
-                        )}
-                    </Stack>
-                </StyledInfoRight>
-            </StyledInfo>
-            {children}
-            <Help />
+                            )}
+                        </Stack>
+                    </StyledInfoRight>
+                </StyledInfo>
+                {children}
+                <Help />
+            </Stack>
         </Page>
     );
 };

@@ -21,7 +21,7 @@ import {
 
 import { useRootStore } from '@/hooks';
 import { SettingsContext } from '@/contexts';
-import { Page } from '@/components/ui/';
+import { Page } from '@/components/shared';
 import { SETTINGS_ROUTES } from './settings.constants';
 import { observer } from 'mobx-react-lite';
 import {
@@ -125,8 +125,8 @@ export const SettingsLayout = observer(() => {
                 adminMode: adminMode,
             }}
         >
-            <Page
-                header={
+            <Page>
+                <Stack direction="column" gap={2}>
                     <Stack>
                         {matchedRoute.path && (
                             <StyledHeader>
@@ -220,14 +220,13 @@ export const SettingsLayout = observer(() => {
                                 : matchedRoute.adminDescription}
                         </Typography>
                     </Stack>
-                }
-            >
-                <Outlet />
+                    <Outlet />
 
-                <PrivacyPreferenceCenterModal
-                    isOpen={privacyCenterOpen}
-                    onClose={() => setPrivacyCenterOpen(false)}
-                />
+                    <PrivacyPreferenceCenterModal
+                        isOpen={privacyCenterOpen}
+                        onClose={() => setPrivacyCenterOpen(false)}
+                    />
+                </Stack>
             </Page>
         </SettingsContext.Provider>
     );

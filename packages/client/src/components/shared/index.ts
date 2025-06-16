@@ -1,4 +1,4 @@
 import { PlatformMessages } from './PlatformMessages';
 import { Search } from './Search';
-
-export { PlatformMessages, Search };
+import { Page } from './Page';
+export { Page, PlatformMessages, Search };

@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 
 import { Stack, Typography, styled } from '@semoss/ui';
 
-import { Page } from '@/components/ui';
-
 const StyledTypographyHome = styled(Typography)<
     React.ComponentProps<typeof Typography> & {
         onClick?: React.MouseEventHandler<any>;
@@ -59,32 +57,25 @@ export const NewAppStep = (props: NewAppStepProps) => {
     const { children } = props;
     const navigate = useNavigate();
     return (
-        <Page
-            header={
-                <Stack
-                    direction={'column'}
-                    alignItems={'flex-start'}
-                    spacing={1}
-                >
-                    <Stack direction="row" spacing={1} alignItems="center">
-                        <StyledTypographyHome
-                            variant="body1"
-                            onClick={() => navigate('/')}
-                        >
-                            Home
-                        </StyledTypographyHome>
-                        <StyledTypographySeperator variant="body1">
-                            /
-                        </StyledTypographySeperator>
-                        <StyledTypographyAgentBuilder variant="body1">
-                            Start from prompt
-                        </StyledTypographyAgentBuilder>
-                    </Stack>
-                    <Typography variant={'h4'}>Agent Builder</Typography>
+        <Stack>
+            <Stack direction={'column'} alignItems={'flex-start'} spacing={1}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                    <StyledTypographyHome
+                        variant="body1"
+                        onClick={() => navigate('/')}
+                    >
+                        Home
+                    </StyledTypographyHome>
+                    <StyledTypographySeperator variant="body1">
+                        /
+                    </StyledTypographySeperator>
+                    <StyledTypographyAgentBuilder variant="body1">
+                        Start from prompt
+                    </StyledTypographyAgentBuilder>
                 </Stack>
-            }
-        >
+                <Typography variant={'h4'}>Agent Builder</Typography>
+            </Stack>
             {children}
-        </Page>
+        </Stack>
     );
 };
