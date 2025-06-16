@@ -11,9 +11,7 @@ import {
     Typography,
     Breadcrumbs,
     Stack,
-    ToggleButton,
     Tooltip,
-    Paper,
     IconButton,
     Chip,
     Button,
@@ -21,7 +19,6 @@ import {
 
 import { useRootStore } from '@/hooks';
 import { SettingsContext } from '@/contexts';
-import { Page } from '@/components/shared';
 import { SETTINGS_ROUTES } from './settings.constants';
 import { observer } from 'mobx-react-lite';
 import {
@@ -125,109 +122,99 @@ export const SettingsLayout = observer(() => {
                 adminMode: adminMode,
             }}
         >
-            <Page>
-                <Stack direction="column" gap={2}>
-                    <Stack>
-                        {matchedRoute.path && (
-                            <StyledHeader>
-                                <Breadcrumbs separator="/">
-                                    <StyledLink to={'.'}>Settings</StyledLink>
-                                    {matchedRoute.history.map((link, i) => {
-                                        return (
-                                            <StyledLink
-                                                to={link.replace('<id>', id)}
-                                                key={i + link}
-                                                state={{ ...state }}
-                                            >
-                                                {link.includes('<id>')
-                                                    ? id
-                                                    : matchedRoute.title}
-                                            </StyledLink>
-                                        );
-                                    })}
-                                </Breadcrumbs>
-                            </StyledHeader>
-                        )}
-                        <StyledAdminContainer>
-                            <StyledAdminHeader>
-                                <Typography variant="h4">
-                                    {matchedRoute.history.length < 2
-                                        ? matchedRoute.title
-                                        : state
-                                        ? state.name
-                                        : matchedRoute.title}
-                                </Typography>
+            <Stack direction="column" gap={2}>
+                <Stack>
+                    {matchedRoute.path && (
+                        <StyledHeader>
+                            <Breadcrumbs separator="/">
+                                <StyledLink to={'.'}>Settings</StyledLink>
+                                {matchedRoute.history.map((link, i) => {
+                                    return (
+                                        <StyledLink
+                                            to={link.replace('<id>', id)}
+                                            key={i + link}
+                                            state={{ ...state }}
+                                        >
+                                            {link.includes('<id>')
+                                                ? id
+                                                : matchedRoute.title}
+                                        </StyledLink>
+                                    );
+                                })}
+                            </Breadcrumbs>
+                        </StyledHeader>
+                    )}
+                    <StyledAdminContainer>
+                        <StyledAdminHeader>
+                            <Typography variant="h4">
+                                {matchedRoute.history.length < 2
+                                    ? matchedRoute.title
+                                    : state
+                                    ? state.name
+                                    : matchedRoute.title}
+                            </Typography>
 
-                                <StyledAdminActionButtons>
-                                    <Button
-                                        variant="text"
-                                        onClick={() =>
-                                            setPrivacyCenterOpen(true)
-                                        }
-                                        data-testid={
-                                            'settings-layout-privacy-btn'
-                                        }
-                                    >
-                                        Privacy Center
-                                    </Button>
-
-                                    {configStore.store.user.admin && (
-                                        <StyledChip
-                                            adminMode={adminMode}
-                                            size="medium"
-                                            clickable
-                                            icon={
-                                                <AdminPanelSettingsOutlined
-                                                    color={
-                                                        adminMode
-                                                            ? 'success'
-                                                            : 'disabled'
-                                                    }
-                                                />
-                                            }
-                                            label={
-                                                adminMode
-                                                    ? 'Admin On'
-                                                    : 'Admin Off'
-                                            }
-                                            onClick={() =>
-                                                setAdminMode(!adminMode)
-                                            }
-                                        />
-                                    )}
-                                </StyledAdminActionButtons>
-                            </StyledAdminHeader>
-                        </StyledAdminContainer>
-                        {id ? (
-                            <IdContainer>
-                                <StyledId variant={'subtitle2'}>{id}</StyledId>
-                                <IconButton
-                                    size="small"
-                                    onClick={() => {
-                                        copy(id);
-                                    }}
-                                    data-testid={'settings-layout-copy-btn'}
+                            <StyledAdminActionButtons>
+                                <Button
+                                    variant="text"
+                                    onClick={() => setPrivacyCenterOpen(true)}
+                                    data-testid={'settings-layout-privacy-btn'}
                                 >
-                                    <Tooltip title={`Copy ID`}>
-                                        <ContentCopyOutlined fontSize="inherit" />
-                                    </Tooltip>
-                                </IconButton>
-                            </IdContainer>
-                        ) : null}
-                        <Typography variant="body1">
-                            {!adminMode || matchedRoute.path !== ''
-                                ? matchedRoute.description
-                                : matchedRoute.adminDescription}
-                        </Typography>
-                    </Stack>
-                    <Outlet />
+                                    Privacy Center
+                                </Button>
 
-                    <PrivacyPreferenceCenterModal
-                        isOpen={privacyCenterOpen}
-                        onClose={() => setPrivacyCenterOpen(false)}
-                    />
+                                {configStore.store.user.admin && (
+                                    <StyledChip
+                                        adminMode={adminMode}
+                                        size="medium"
+                                        clickable
+                                        icon={
+                                            <AdminPanelSettingsOutlined
+                                                color={
+                                                    adminMode
+                                                        ? 'success'
+                                                        : 'disabled'
+                                                }
+                                            />
+                                        }
+                                        label={
+                                            adminMode ? 'Admin On' : 'Admin Off'
+                                        }
+                                        onClick={() => setAdminMode(!adminMode)}
+                                    />
+                                )}
+                            </StyledAdminActionButtons>
+                        </StyledAdminHeader>
+                    </StyledAdminContainer>
+                    {id ? (
+                        <IdContainer>
+                            <StyledId variant={'subtitle2'}>{id}</StyledId>
+                            <IconButton
+                                size="small"
+                                onClick={() => {
+                                    copy(id);
+                                }}
+                                data-testid={'settings-layout-copy-btn'}
+                            >
+                                <Tooltip title={`Copy ID`}>
+                                    <ContentCopyOutlined fontSize="inherit" />
+                                </Tooltip>
+                            </IconButton>
+                        </IdContainer>
+                    ) : null}
+                    <Typography variant="body1">
+                        {!adminMode || matchedRoute.path !== ''
+                            ? matchedRoute.description
+                            : matchedRoute.adminDescription}
+                    </Typography>
                 </Stack>
-            </Page>
+                <Outlet />
+
+                <PrivacyPreferenceCenterModal
+                    isOpen={privacyCenterOpen}
+                    onClose={() => setPrivacyCenterOpen(false)}
+                />
+            </Stack>
         </SettingsContext.Provider>
     );
 });
