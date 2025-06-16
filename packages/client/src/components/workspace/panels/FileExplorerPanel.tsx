@@ -11,6 +11,7 @@ import {
     CoffeeRounded,
     CoffeeOutlined,
 } from '@mui/icons-material';
+import Typography from '@mui/material/Typography';
 
 import { useRootStore, useWorkspace } from '@/hooks';
 import {
@@ -20,6 +21,8 @@ import {
     DeleteFileOverlay,
 } from '@/components/common';
 import { Panel } from './Panel';
+import path from 'path';
+import { duplicate } from 'vega-lite';
 
 const EXPLORER_TYPE = 'app';
 
@@ -42,6 +45,26 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 
     // temporary fix for dead refresh button should be removed
     const [counter, setCounter] = useState(0);
+
+    // State for Delete Mode
+    const [deleteMode, setDeleteMode] = useState(false);
+    const [checkedPaths, setCheckedPaths] = useState<Set<string>>(new Set());
+    const [deleteRootPath, setDeleteRootPath] = useState<string | null>(null);
+    const [deletablePaths, setDeletablePaths] = useState<Set<string>>(
+        new Set(),
+    );
+
+    //state for duplicate Mode
+    const [duplicateMode, setDuplicateMode] = useState(false);
+    const [duplicateRootPath, setDuplicateRootPath] = useState<string | null>(
+        null,
+    );
+    const [duplicatablePaths, setDuplicatablePaths] = useState<Set<string>>(
+        new Set(),
+    );
+
+    const [allFolders, setAllFolders] = useState<string[]>([]);
+    const [allFiles, setAllFiles] = useState<string[]>([]);
 
     // set the uploadPath based on the selected item
     useEffect(() => {
@@ -220,7 +243,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
     /**
      * Open the delete modal
      */
-    const handleOnTrashClick = (fileDeletePath: string) => {
+    const handleOnTrashClick = (fileDeletePaths: string[]) => {
         workspace.openOverlay(() => (
             <DeleteFileOverlay
                 type={EXPLORER_TYPE}
@@ -228,7 +251,10 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
                 onClose={(success) => {
                     if (success) {
                         // trigger the delete file callback if successful
-                        removePanel(fileDeletePath);
+                        // removePanel(fileDeletePath);
+
+                        // we need to remove all panels for the files to be deleted
+                        fileDeletePaths.forEach(removePanel);
 
                         // refresh the content
                         refreshFiles();
@@ -236,9 +262,304 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
                     // close the overlay
                     workspace.closeOverlay();
                 }}
-                fileDeletePath={fileDeletePath}
+                // fileDeletePath={fileDeletePath}
+
+                // pass the array of file paths to be deleted(multiple files)
+                fileDeletePaths={fileDeletePaths}
+                onCancelDeleteMode={handleCancelDeleteMode}
             />
         ));
+    };
+
+    const handleRename = async (
+        oldPath: string,
+        newName: string,
+        isDirectory: boolean,
+    ) => {
+        try {
+            let newPath = '';
+            if (isDirectory && oldPath.slice(-1) === '/') {
+                const parts = oldPath.replace(/\/$/, '').split('/');
+                parts[parts.length - 1] = newName;
+                newPath = parts.join('/') + '/';
+            } else {
+                const parts = oldPath.split('/');
+                parts[parts.length - 1] = newName;
+                newPath = parts.join('/');
+            }
+
+            const response = await monolithStore.runQuery(
+                `RenameAsset(filePath=["${oldPath}"], newValue=["${newPath}"], space=["${workspace.appId}"]);`,
+            );
+
+            const pixelReturn = response.pixelReturn?.[0];
+            const output = pixelReturn?.output;
+            const type = pixelReturn?.operationType?.[0];
+
+            if (type.indexOf('ERROR') > -1) {
+                notification.add({
+                    color: 'error',
+                    message: output || 'Rename failed',
+                });
+                return;
+                // throw new Error(output.join(''));
+            }
+
+            notification.add({
+                color: 'success',
+                message: 'Successfully renamed file',
+            });
+
+            refreshFiles();
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: e.message || 'Rename failed',
+            });
+        }
+    };
+
+    // call this functionality when user select "Delete" in the context menu
+    const handleDeleteRequest = (
+        path: string,
+        isDirectory: boolean,
+        childrenPaths: string[] = [],
+    ) => {
+        setDeleteMode(true);
+        setDeleteRootPath(isDirectory ? path : null);
+
+        // if it is a directory, we need to checked all children paths
+        const paths = isDirectory ? [path, ...childrenPaths] : [path];
+        // setCheckedPaths(new Set([path, ...childrenPaths]));
+        setCheckedPaths(new Set(paths));
+        setDeletablePaths(new Set(paths));
+
+        // if it is a file, we need to checked the file path only
+        // setCheckedPaths(new Set([path]));
+    };
+
+    // handle Toggle checkbox
+    const handleToggleChecked = (path: string) => {
+        setCheckedPaths((prev) => {
+            const newSet = new Set(prev);
+            if (newSet.has(path)) {
+                newSet.delete(path);
+            } else {
+                newSet.add(path);
+            }
+            return newSet;
+        });
+    };
+
+    //  // call this functionality when user select "Duplicate" in the context menu
+    const handleCancelDeleteMode = () => {
+        setDeleteMode(false);
+        setCheckedPaths(new Set());
+        setDeleteRootPath(null);
+    };
+
+    // call this functionality when user select "Duplicate" in the context menu
+    const handleDuplicateRequest = (
+        path: string,
+        isDirectory: boolean,
+        childrenPaths: string[] = [],
+    ) => {
+        setDuplicateMode(true);
+        setDuplicateRootPath(isDirectory ? path : null);
+
+        // if it is a directory, we need to checked all children paths
+        const paths = isDirectory ? [path, ...childrenPaths] : [path];
+        // setCheckedPaths(new Set([path, ...childrenPaths]));
+        setCheckedPaths(new Set(paths));
+        setDuplicatablePaths(new Set(paths));
+    };
+
+    const fetchFileContent = async (filePath: string) => {
+        const pixel = `GetAsset(filePath=["${filePath}"], space=["${workspace.appId}"]);`;
+        const response = await monolithStore.runQuery(
+            pixel,
+            workspace.insightId,
+        );
+        return response.pixelReturn[0].output ?? '';
+    };
+
+    // handle duplicating files or folder and saving them to the workspace
+    const handleOnDuplicateClickFunc = async (
+        checkedPaths: Set<string>,
+        duplicateRootPath: string | null,
+    ) => {
+        try {
+            const checked = Array.from(checkedPaths);
+            const folderChecked = !!(
+                duplicateRootPath && checked.includes(duplicateRootPath)
+            );
+            const filesChecked = checked.filter((p) => p !== duplicateRootPath);
+
+            // Helper
+            const getNextFolderName = (
+                originalPath: string,
+                allFolders: string[],
+            ) => {
+                // originalPath: e.g. version/assets/ask-model/
+                const parts = originalPath.split('/');
+                const folderName = parts[parts.length - 2]; // e.g. ask-model
+                const parentPath = parts.slice(0, -2).join('/') + '/'; // e.g. version/assets/
+                // Find all folders in the parent
+                const siblings = allFolders
+                    .filter(
+                        (f) => f.startsWith(parentPath) && f !== originalPath,
+                    )
+                    .map((f) => f.replace(parentPath, '').replace(/\/$/, ''));
+                // Find max (N)
+                let maxN = 0;
+                const regex = new RegExp(`^${folderName} \\((\\d+)\\)$`);
+                siblings.forEach((name) => {
+                    const match = name.match(regex);
+                    if (match) {
+                        maxN = Math.max(maxN, parseInt(match[1], 10));
+                    }
+                });
+                const newName = `${folderName} (${maxN + 1})`;
+                const newPath = parentPath + newName + '/';
+                return { newName, newPath, parentPath, folderName };
+            };
+
+            let response = null;
+            // Only folder checked (no files)
+            if (folderChecked) {
+                const { newName, newPath } = getNextFolderName(
+                    duplicateRootPath,
+                    allFolders,
+                );
+                response = await monolithStore.runQuery(
+                    `MakeDirectory(filePath=["${newPath}"], space=["${workspace.appId}"]);`,
+                );
+
+                // If there are files checked, we need to duplicate them into the new folder
+                if (filesChecked.length > 0) {
+                    const fileContents = await Promise.all(
+                        filesChecked.map((p) => fetchFileContent(p)),
+                    );
+                    const newFileNames = filesChecked.map((p) => {
+                        const fileName = p.split('/').pop();
+                        return newPath + fileName;
+                    });
+                    response = await monolithStore.runQuery(
+                        `SaveAsset(fileName=[${newFileNames
+                            .map((p) => `"${p}"`)
+                            .join(',')}], content=[${fileContents
+                            .map((c) => `"<encode>${c}</encode>"`)
+                            .join(',')}], space=["${workspace.appId}"]);
+                        CommitAsset(filePath=[${newFileNames
+                            .map((p) => `"${p}"`)
+                            .join(
+                                ',',
+                            )}], comment=["Duplicating files"], space=["${
+                            workspace.appId
+                        }"]);`,
+                    );
+                }
+            }
+            // Only files checked (no folder)
+            else if (!folderChecked && filesChecked.length > 0) {
+                const fileContents = await Promise.all(
+                    filesChecked.map((p) => fetchFileContent(p)),
+                );
+
+                // Helper function to get all files in a folder when we checked files where the file name starts with the folder path
+                // and does not end with a slash (to avoid folders)
+                const getFilesInFolder = (folderPath: string) => {
+                    return allFiles.filter(
+                        (f) => f.startsWith(folderPath) && !f.endsWith('/'),
+                    );
+                };
+
+                // Generate new file names with counter at the end
+                const newFileNames = filesChecked.map((p) => {
+                    const parts = p.split('/');
+                    const fileName = parts.pop();
+                    if (!fileName) return p;
+                    const dotIdx = fileName.lastIndexOf('.');
+                    const baseName =
+                        dotIdx === -1 ? fileName : fileName.slice(0, dotIdx);
+                    const ext = dotIdx === -1 ? '' : fileName.slice(dotIdx);
+
+                    const folderPath = parts.join('/') + '/';
+                    const filesInFolder = getFilesInFolder(folderPath);
+
+                    // Find all duplicates of this file
+                    const regex = new RegExp(
+                        `^${baseName.replace(
+                            /[.*+?^${}()|[\]\\]/g,
+                            '\\$&',
+                        )}( \\((\\d+)\\))?${ext.replace('.', '\\.')}$`,
+                    );
+                    let maxN = 0;
+                    filesInFolder.forEach((f) => {
+                        const fName = f.split('/').pop() || '';
+                        const match = fName.match(regex);
+                        if (match && match[2]) {
+                            maxN = Math.max(maxN, parseInt(match[2], 10));
+                        } else if (fName === fileName) {
+                            maxN = Math.max(maxN, 0);
+                        }
+                    });
+
+                    const newName =
+                        maxN === 0
+                            ? `${baseName} (1)${ext}`
+                            : `${baseName} (${maxN + 1})${ext}`;
+                    return [...parts, newName].join('/');
+                });
+
+                response = await monolithStore.runQuery(
+                    `SaveAsset(fileName=[${newFileNames
+                        .map((p) => `"${p}"`)
+                        .join(',')}], content=[${fileContents
+                        .map((c) => `"<encode>${c}</encode>"`)
+                        .join(',')}], space=["${workspace.appId}"]);
+                    CommitAsset(filePath=[${newFileNames
+                        .map((p) => `"${p}"`)
+                        .join(',')}], comment=["Duplicating files"], space=["${
+                        workspace.appId
+                    }"]);`,
+                );
+            }
+
+            const pixelReturn = response.pixelReturn?.[0];
+            const output = pixelReturn?.output;
+            const type = pixelReturn?.operationType?.[0];
+
+            if (type.indexOf('ERROR') > -1) {
+                notification.add({
+                    color: 'error',
+                    message: output || 'Duplicate failed',
+                });
+                return;
+                // throw new Error(output.join(''));
+            }
+
+            notification.add({
+                color: 'success',
+                message: 'Successfully duplicated',
+            });
+
+            // refresh the content
+            refreshFiles();
+            handleCancelDuplicateMode();
+        } catch (error) {
+            notification.add({
+                color: 'error',
+                message: error.message || 'Duplicate failed',
+            });
+        }
+    };
+
+    // handle Cancel duplicate mode
+    const handleCancelDuplicateMode = () => {
+        setDuplicateMode(false);
+        setCheckedPaths(new Set());
+        setDuplicateRootPath(null);
     };
 
     /**
@@ -543,6 +864,16 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
                 </>
             }
         >
+            {deleteMode && (
+                <Typography variant="subtitle2" sx={{ px: 2, py: 1 }}>
+                    Select files to delete
+                </Typography>
+            )}
+            {duplicateMode && (
+                <Typography variant="subtitle2" sx={{ px: 2, py: 1 }}>
+                    Select files to duplicate
+                </Typography>
+            )}
             <FileExplorer
                 key={counter}
                 type={EXPLORER_TYPE}
@@ -551,12 +882,28 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
                 onSelect={(path) => {
                     handleOnSelect(path);
                 }}
-                onTrashClick={(e, path) => {
-                    handleOnTrashClick(path);
+                onTrashClick={(e, paths) => {
+                    handleOnTrashClick(paths);
                 }}
                 onDragStart={(e, path) => {
                     handleOnItemDragStart(e, path);
                 }}
+                onRenameSave={handleRename}
+                deleteMode={deleteMode}
+                checkedPaths={checkedPaths}
+                onToggleChecked={handleToggleChecked}
+                onDeleteRequest={handleDeleteRequest}
+                onCancelDeleteMode={handleCancelDeleteMode}
+                deleteRootPath={deleteRootPath}
+                deletablePaths={deletablePaths}
+                duplicateMode={duplicateMode}
+                onDuplicateRequest={handleDuplicateRequest}
+                onCancelDuplicateMode={handleCancelDuplicateMode}
+                duplicateRootPath={duplicateRootPath}
+                duplicatablePaths={duplicatablePaths}
+                onDuplicateClickFunc={handleOnDuplicateClickFunc}
+                onAllFoldersLoaded={setAllFolders}
+                onAllFilesLoaded={setAllFiles}
             />
         </Panel>
     );

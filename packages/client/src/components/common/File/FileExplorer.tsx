@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Icon, TreeView, styled } from '@semoss/ui';
-import { ExpandMore, ChevronRight } from '@mui/icons-material';
+import { ExpandMore, ChevronRight, Folder } from '@mui/icons-material';
 
 import { usePixel } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
 import { FileExplorerItem } from './FileExplorerItem';
+import { on } from 'events';
 
 const StyledTreeView = styled(TreeView)(({ theme }) => ({
     width: '100%',
@@ -39,8 +40,46 @@ interface FileExplorerProps {
     /** Triggered when the Track Icon is clicked */
     onTrashClick?: (
         event: React.MouseEvent<HTMLButtonElement>,
-        path: string,
+        paths: string[],
     ) => void;
+
+    onRenameSave?: (
+        oldPath: string,
+        newName: string,
+        isDirectory: boolean,
+    ) => Promise<void>;
+    deleteMode?: boolean;
+    checkedPaths?: Set<string>;
+    onToggleChecked?: (path: string) => void;
+    onDeleteRequest?: (
+        path: string,
+        isDirectory: boolean,
+        childrenPaths?: string[],
+    ) => void;
+    onCancelDeleteMode?: () => void;
+    deleteRootPath?: string | null;
+    deletablePaths?: Set<string>;
+
+    /** Additional props for duplicate mode */
+    duplicateMode?: boolean;
+    onDuplicateRequest?: (
+        path: string,
+        isDirectory: boolean,
+        childrenPaths?: string[],
+    ) => void;
+    onCancelDuplicateMode?: () => void;
+    duplicateRootPath?: string | null;
+    duplicatablePaths?: Set<string>;
+
+    /** Additional props for duplicating files */
+    onDuplicateClickFunc?: (
+        checkedPaths: Set<string>,
+        duplicateRootPath: string | null,
+    ) => void;
+
+    allFolders?: string[];
+    onAllFoldersLoaded?: (folders: string[]) => void;
+    onAllFilesLoaded?: (files: string[]) => void;
 }
 
 export const FileExplorer = (props: FileExplorerProps) => {
@@ -52,6 +91,22 @@ export const FileExplorer = (props: FileExplorerProps) => {
         onDragStart = () => null,
         onDragEnd = () => null,
         onTrashClick = () => null,
+        onRenameSave = () => Promise.resolve(),
+        deleteMode = false,
+        checkedPaths = new Set<string>(),
+        onToggleChecked = () => null,
+        onDeleteRequest = () => null,
+        onCancelDeleteMode = () => null,
+        deleteRootPath = null,
+        deletablePaths = new Set<string>(),
+        duplicateMode = false,
+        onDuplicateRequest = () => null,
+        onCancelDuplicateMode = () => null,
+        duplicateRootPath = null,
+        duplicatablePaths = new Set<string>(),
+        onDuplicateClickFunc = () => null,
+        onAllFoldersLoaded = () => null,
+        onAllFilesLoaded = () => null,
     } = props;
 
     const getAssets = usePixel<
@@ -67,6 +122,24 @@ export const FileExplorer = (props: FileExplorerProps) => {
             : '',
         {},
         insightId,
+    );
+
+    useEffect(() => {
+        if (getAssets.status === 'SUCCESS' && Array.isArray(getAssets.data)) {
+            const folderPaths = getAssets.data
+                .filter((item) => item.type === 'directory')
+                .map((item) => item.path);
+            props.onAllFoldersLoaded?.(folderPaths);
+        }
+    }, [getAssets.status, getAssets.data]);
+
+    const handleFilesLoaded = useCallback(
+        (folderPath: string, filesPaths: string[]) => {
+            if (onAllFilesLoaded) {
+                onAllFilesLoaded(filesPaths);
+            }
+        },
+        [onAllFilesLoaded],
     );
 
     const initLoadComplete = getAssets.status === 'SUCCESS';
@@ -146,9 +219,24 @@ export const FileExplorer = (props: FileExplorerProps) => {
                                 onDragEnd={(e, path) => {
                                     onDragEnd(e, path);
                                 }}
-                                onTrashClick={(e, path) => {
-                                    onTrashClick(e, path);
+                                onTrashClick={(e, paths) => {
+                                    onTrashClick(e, paths);
                                 }}
+                                onRenameSave={onRenameSave}
+                                deleteMode={deleteMode}
+                                checkedPaths={checkedPaths}
+                                onToggleChecked={onToggleChecked}
+                                onDeleteRequest={onDeleteRequest}
+                                onCancelDeleteMode={onCancelDeleteMode}
+                                deleteRootPath={deleteRootPath}
+                                deletablePaths={deletablePaths}
+                                duplicateMode={duplicateMode}
+                                onDuplicateRequest={onDuplicateRequest}
+                                onCancelDuplicateMode={onCancelDuplicateMode}
+                                duplicateRootPath={duplicateRootPath}
+                                duplicatablePaths={duplicatablePaths}
+                                onDuplicateClickFunc={onDuplicateClickFunc}
+                                onFilesLoaded={handleFilesLoaded}
                             />
                         );
                     })
