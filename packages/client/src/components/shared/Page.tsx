@@ -17,6 +17,21 @@ const StyledPage = styled('div')(() => ({
     overflow: 'hidden',
 }));
 
+const StyledPageHeader = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'stuck',
+})<{
+    /** Track if the page header is stuck */
+    stuck: boolean;
+}>(({ theme, stuck }) => ({
+    position: 'sticky',
+    top: '0',
+    paddingTop: theme.spacing(1),
+    paddingBottom: theme.spacing(1),
+    zIndex: 10,
+    borderBottom: stuck ? `solid ${theme.palette.divider}` : 'none',
+    backgroundColor: theme.palette.background.paper,
+}));
+
 const StyledContent = styled(Stack)(() => ({
     position: 'relative',
     flex: '1',
@@ -38,9 +53,6 @@ const StyledInner = styled('div')(({ theme }) => ({
 }));
 
 export interface PageProps {
-    /** Content to include in the header */
-    header?: React.ReactNode;
-
     /** Content to include in the main section of the page */
     children: React.ReactNode;
 }
@@ -76,14 +88,14 @@ export const Page: React.FC<PageProps> = observer(({ children }) => {
             <StyledContent direction={'column'}>
                 <TopNav />
                 <StyledInner>
-                    {/* {header && (
+                    {page.header && (
                         <StyledPageHeader
                             ref={(node) => setHeaderElement(node)}
                             stuck={stuck}
                         >
-                            {header}
+                            {page.header()}
                         </StyledPageHeader>
-                    )} */}
+                    )}
                     <PlatformMessages>{children}</PlatformMessages>
                 </StyledInner>
             </StyledContent>

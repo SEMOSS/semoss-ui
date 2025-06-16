@@ -10,7 +10,7 @@ import { UserLandingPage } from '../components/landing/UserlandingPage';
 import DevBanner from '@/assets/img/DevBanner.png';
 import playground from '@/assets/img/playground.png';
 import AIConductor from '@/assets/img/AIConductor.png';
-import { useRootStore } from '@/hooks';
+import { usePageSetup, useRootStore } from '@/hooks';
 import { AddAppModal, NewAppModal } from '@/components/app';
 import { BASE_PAGE_BLOCKS } from './app/app.constants';
 import { THEME } from '@/constants';
