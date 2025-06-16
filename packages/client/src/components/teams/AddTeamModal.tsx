@@ -35,6 +35,7 @@ import Saml from '@/assets/loginProviders/saml.png';
 import Siteminder from '@/assets/loginProviders/siteminder.png';
 import Surverymonkey from '@/assets/loginProviders/surveymonkey.png';
 import Twitter from '@/assets/loginProviders/x_twitter.png';
+import { T } from 'vitest/dist/chunks/reporters.d.C1ogPriE.js';
 
 const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
     width: '100%',
@@ -193,24 +194,28 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
         if (isEdit) {
             // Logic for editing the team
             try {
-                await monolithStore.editTeam(
+                const response = await monolithStore.editTeam(
                     data.TEAM_NAME,
                     data.TEAM_DESCRIPTION,
                     data.TEAM_TYPE,
                     previousTeamName,
                     previousType,
                 );
-                onClose({
-                    id: data.TEAM_NAME,
-                    type: data.TEAM_TYPE,
-                    description: data.TEAM_DESCRIPTION,
-                    previousTeamName: previousTeamName,
-                });
-                reset();
-                notification.add({
-                    color: 'success',
-                    message: 'Successfully updated team',
-                });
+                if (response.status === 200 && response.data) {
+                    onClose({
+                        id: data.TEAM_NAME,
+                        type: data.TEAM_TYPE,
+                        description: data.TEAM_DESCRIPTION,
+                        previousTeamName: previousTeamName,
+                    });
+                    reset();
+                    notification.add({
+                        color: 'success',
+                        message: 'Successfully updated team',
+                    });
+                } else {
+                    throw new Error('Failed to update team');
+                }
             } catch (e) {
                 console.error(e);
                 notification.add({
@@ -221,33 +226,36 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
         } else {
             // Logic for creating a new team
             try {
-                await monolithStore.addTeam(
+                const response = await monolithStore.addTeam(
                     data.TEAM_NAME,
                     data.TEAM_DESCRIPTION,
                     data.TEAM_TYPE,
                 );
-
-                onClose({
-                    id: data.TEAM_NAME,
-                    type: data.TEAM_TYPE,
-                    description: data.TEAM_DESCRIPTION,
-                });
-                reset();
-                notification.add({
-                    color: 'success',
-                    message: 'Successfully added group',
-                });
-                navigate(
-                    `${data.TEAM_NAME.toLowerCase()
-                        .replace(/['"]+/g, '')
-                        .replace(/\s/g, '-')}`,
-                    {
-                        state: {
-                            name: data.TEAM_NAME,
-                            type: data.TEAM_TYPE,
+                if (response.status === 200 && !response.data) {
+                    onClose({
+                        id: data.TEAM_NAME,
+                        type: data.TEAM_TYPE,
+                        description: data.TEAM_DESCRIPTION,
+                    });
+                    reset();
+                    notification.add({
+                        color: 'success',
+                        message: 'Successfully added group',
+                    });
+                    navigate(
+                        `${data.TEAM_NAME.toLowerCase()
+                            .replace(/['"]+/g, '')
+                            .replace(/\s/g, '-')}`,
+                        {
+                            state: {
+                                name: data.TEAM_NAME,
+                                type: data.TEAM_TYPE,
+                            },
                         },
-                    },
-                );
+                    );
+                } else {
+                    throw new Error('Failed to add team');
+                }
             } catch (e) {
                 console.error(e);
                 notification.add({
