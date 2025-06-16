@@ -77,6 +77,7 @@ import { ChangeOrientation } from '../dendrogram/ChangeOrientation';
 import { LegendDendrogram } from "../dendrogram/LegendDendrogram";
 import { LabelsDendrogram } from "../dendrogram/LabelsDendrogram";
 //upgraded visualization tool propsimport { EditXAxisScatterPlot } from '../ScatterPlot/EditXAxisScatterPlot';
+import { ColorByValue as ColorByValuePie } from "../pie-chart/ColorByValue";
 
 interface UpgradedVisualizationToolProps {
     id: string;
@@ -526,9 +527,37 @@ const StackChartTool = (({id})=>{
                 <ListItemButton
                     onClick={(e) =>
                         setStackChartSelection((prevList) =>
-                            prevList === "editxaxis"
-                                ? ""
-                                : "editxaxis",
+                            prevList === "colourbyvalue" ? "" : "colourbyvalue",
+                        )
+                    }
+                    selected={stackChartSelection === "colourbyvalue"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                stackChartSelection === "colourbyvalue"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Colour By Value" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {/* {stackChartSelection === "colourbyvalue" && (
+                    <ColourByValue
+                        id={id}
+                        // updateChart={updateChart}
+                        path="option"
+                    />
+                )} */}
+            </StyledListItem>
+            <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setStackChartSelection((prevList) =>
+                            prevList === "editxaxis" ? "" : "editxaxis",
                         )
                     }
                     selected={stackChartSelection === "editxaxis"}
@@ -547,162 +576,149 @@ const StackChartTool = (({id})=>{
                     <InfoOutlined />
                 </ListItemButton>
                 {stackChartSelection === "editxaxis" && (
-                        <EditXAxisStackChart
-                            id={id}
-                            path={"option"}
-                        ></EditXAxisStackChart>
+                    <EditXAxisStackChart
+                        id={id}
+                        path={"option"}
+                    ></EditXAxisStackChart>
                 )}
             </StyledListItem>
-                    <StyledListItem disablePadding>
-                            <ListItemButton
-                                onClick={(e) =>
-                                    setStackChartSelection((prevList) =>
-                                        prevList === "edityaxis"
-                                            ? ""
-                                            : "edityaxis",
-                                    )
-                                }
-                                selected={stackChartSelection === "edityaxis"}
-                            >
-                                <ListItemIcon>
-                                    <ImageIcon
-                                        fontSize="large"
-                                        color={
-                                            stackChartSelection === "edityaxis"
-                                                ? "primary"
-                                                : "disabled"
-                                        }
-                                    />
-                                </ListItemIcon>
-                                <ListItemText primary="Edit Y Axis" />
-                                <InfoOutlined />
-                            </ListItemButton>
-                        {stackChartSelection === "edityaxis" && (
-                                <EditYAxisStackChart
-                                    id={id}
-                                    path={"option"}
-                                ></EditYAxisStackChart>
-                            )}
-                    </StyledListItem>
-                    <StyledListItem disablePadding>
-                            <ListItemButton
-                                onClick={(e) =>
-                                    setStackChartSelection((prevList) =>
-                                        prevList === "valuelabel"
-                                            ? ""
-                                            : "valuelabel",
-                                    )
-                                }
-                                selected={stackChartSelection === "valuelabel"}
-                            >
-                                <ListItemIcon>
-                                    <ImageIcon
-                                        fontSize="large"
-                                        color={
-                                            stackChartSelection === "valuelabel"
-                                                ? "primary"
-                                                : "disabled"
-                                        }
-                                    />
-                                </ListItemIcon>
-                                <ListItemText primary="Value Label" />
-                                <InfoOutlined />
-                            </ListItemButton>
-                        {stackChartSelection === "valuelabel" && (
-                                <ValueLabelStackChart
-                                    id={id}
-                                    path={"option"}
-                                ></ValueLabelStackChart>
-                            )}
-                    </StyledListItem>
-                    <StyledListItem disablePadding>
-                        <ListItemButton
-                            onClick={(e) =>
-                                setStackChartSelection((prevList) =>
-                                    prevList === "tooltips"
-                                        ? ""
-                                        : "tooltips",
-                                )
+            <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setStackChartSelection((prevList) =>
+                            prevList === "edityaxis" ? "" : "edityaxis",
+                        )
+                    }
+                    selected={stackChartSelection === "edityaxis"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                stackChartSelection === "edityaxis"
+                                    ? "primary"
+                                    : "disabled"
                             }
-                            selected={stackChartSelection === "tooltips"}
-                        >
-                            <ListItemIcon>
-                                <ImageIcon
-                                    fontSize="large"
-                                    color={
-                                        stackChartSelection === "tooltips"
-                                            ? "primary"
-                                            : "disabled"
-                                    }
-                                />
-                            </ListItemIcon>
-                            <ListItemText primary="Tooltips" />
-                            <InfoOutlined />
-                        </ListItemButton>
-                        {
-                            stackChartSelection === "tooltips" && (
-                                <TooltipScatterPlot id={id} path="option" />
-                            )
-                        }
-                    </StyledListItem>
-                    <ResizingTool id={id}/>
-                    <StyledListItem disablePadding>
-                        <ListItemButton
-                                    onClick={(e) =>
-                                        setStackChartSelection((prevList) =>
-                                            prevList === "barstyle"
-                                                ? ""
-                                                : "barstyle",
-                                        )
-                                    }
-                                    selected={stackChartSelection === "barstyle"}
-                                >
-                                    <ListItemIcon>
-                                        <ImageIcon
-                                            fontSize="large"
-                                            color={
-                                                stackChartSelection === "barstyle"
-                                                    ? "primary"
-                                                    : "disabled"
-                                            }
-                                        />
-                                    </ListItemIcon>
-                                    <ListItemText primary="Bar Style" />
-                                    <InfoOutlined />
-                                </ListItemButton>
-                        {
-                            stackChartSelection === "barstyle" && (
-                                <StackChartBarStyle id={id} path="option" />
-                            )
-                        }
-                    </StyledListItem>
-                    <StyledListItem disablePadding>
-                            <ListItemButton
-                                onClick={(e) =>
-                                    setStackChartSelection((prevList) =>
-                                        prevList === "legend" ? "" : "legend",
-                                    )
-                                }
-                                selected={stackChartSelection === "legend"}
-                            >
-                                <ListItemIcon>
-                                    <ImageIcon
-                                        fontSize="large"
-                                        color={
-                                            stackChartSelection === "legend"
-                                                ? "primary"
-                                                : "disabled"
-                                        }
-                                    />
-                                </ListItemIcon>
-                                <ListItemText primary="Legend" />
-                                <InfoOutlined />
-                            </ListItemButton>
-                            {
-                            stackChartSelection === "legend" && (
-                                <LegendStackChart id={id} path={"option"} />
-                            )}
-                    </StyledListItem>
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Edit Y Axis" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {stackChartSelection === "edityaxis" && (
+                    <EditYAxisStackChart
+                        id={id}
+                        path={"option"}
+                    ></EditYAxisStackChart>
+                )}
+            </StyledListItem>
+            <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setStackChartSelection((prevList) =>
+                            prevList === "valuelabel" ? "" : "valuelabel",
+                        )
+                    }
+                    selected={stackChartSelection === "valuelabel"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                stackChartSelection === "valuelabel"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Value Label" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {stackChartSelection === "valuelabel" && (
+                    <ValueLabelStackChart
+                        id={id}
+                        path={"option"}
+                    ></ValueLabelStackChart>
+                )}
+            </StyledListItem>
+            <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setStackChartSelection((prevList) =>
+                            prevList === "tooltips" ? "" : "tooltips",
+                        )
+                    }
+                    selected={stackChartSelection === "tooltips"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                stackChartSelection === "tooltips"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Tooltips" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {stackChartSelection === "tooltips" && (
+                    <TooltipScatterPlot id={id} path="option" />
+                )}
+            </StyledListItem>
+            <ResizingTool id={id} />
+            <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setStackChartSelection((prevList) =>
+                            prevList === "barstyle" ? "" : "barstyle",
+                        )
+                    }
+                    selected={stackChartSelection === "barstyle"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                stackChartSelection === "barstyle"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Bar Style" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {stackChartSelection === "barstyle" && (
+                    <StackChartBarStyle id={id} path="option" />
+                )}
+            </StyledListItem>
+            <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setStackChartSelection((prevList) =>
+                            prevList === "legend" ? "" : "legend",
+                        )
+                    }
+                    selected={stackChartSelection === "legend"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                stackChartSelection === "legend"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Legend" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {stackChartSelection === "legend" && (
+                    <LegendStackChart id={id} path={"option"} />
+                )}
+            </StyledListItem>
         </>
     );
 });
@@ -739,11 +755,12 @@ const BarToolsList = (({id})=>{
                     <InfoOutlined />
                 </ListItemButton>
                 {barSelection === "colourbyvalue" && (
-                    <ColourByValue
-                        id={id}
-                        updateChart={updateChart}
-                        path="option"
-                    />
+                    // <ColourByValue
+                    //     id={id}
+                    //     // updateChart={updateChart}
+                    //     path="option"
+                    // />
+                    <ColourByValue id={id} path="option" chartType="bar" />
                 )}
             </StyledListItem>
             <StyledListItem disablePadding>
@@ -1493,6 +1510,40 @@ const LineChartTools = (({id})=>{
         return (
             <>
                 <ColorpalatteTool id={id} />
+                <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setPieSelection((prevList) =>
+                            prevList === "colourbyvalue"
+                                ? ""
+                                : "colourbyvalue",
+                        )
+                    }
+                    selected={pieSelection === "colourbyvalue"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                pieSelection === "colourbyvalue"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Colour By Value" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {pieSelection === "colourbyvalue" && (
+                    <ColourByValue
+                        id={id}
+                        chartType="pie"
+                        // updateChart={updateChart}
+                        path="option"
+                    />
+                    // <ColorByValuePie id={id} path="option" />
+                )}
+            </StyledListItem>
                 <StyledListItem disablePadding>
                     <ListItemButton
                         onClick={(e) =>

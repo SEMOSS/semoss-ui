@@ -11,7 +11,6 @@ import { useBlockSettings } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 
-//column comparision object
 const columnComparision = [
     {
         name: "is Equal To",
@@ -65,6 +64,7 @@ const StyledSpan = styled("span")(() => ({
 export interface ColourByValueProps {
     id: string;
     updateChart: (option: any) => void;
+    chartType?: string;
 }
 //initial new rules for managing the state and for restoring
 const INITIAL_NEW_RULES = {
@@ -80,7 +80,7 @@ const INITIAL_NEW_RULES = {
 };
 
 const ColourByValue = observer(
-    <D extends BlockDef = BlockDef>({ id, updateChart, path }) => {
+    <D extends BlockDef = BlockDef>({ id, path, chartType }) => {
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
         const [newRules, setNewRules] = useState(INITIAL_NEW_RULES);
@@ -93,9 +93,14 @@ const ColourByValue = observer(
             applyRulesToChart: false,
         });
         const updateTimeOutRef = useRef(null);
-        const columnData = data.columns
-            ? data.columns.filter((item) => item.label === "yAxis")
-            : [];
+        let columnData = [];
+        if (chartType === "bar") {
+            columnData = data.columns
+                ? data.columns.filter((item) => item.label === "yAxis")
+                : [];
+        } else if (chartType === "pie") {
+            columnData = data.columns;
+        }
         // get the value of the input (wrapped in usememo because of path prop)
         const computedValue = useMemo(() => {
             return computed(() => {
@@ -169,36 +174,48 @@ const ColourByValue = observer(
 
             if (column === "columnToColour") {
                 const option = data.option;
-                const name = Array.isArray(event.target.value.name)
-                    ? event.target.value.name[0]
-                    : event.target.value.name;
-                const pixelId = event.target.value.selector;
                 let valuesToColour = [];
-                if (option["xAxis"]["pixelvalue"].includes(pixelId)) {
-                    valuesToColour = option["xAxis"]["data"].map((item) => {
+                let name = "";
+                if (chartType === "pie") {
+                    name = event.target.value.name;
+                    valuesToColour = option["series"][0].data?.map((item) => {
                         return item.hasOwnProperty("value") ? item.value : item;
                     });
-                } else if (option["yAxis"]["pixelvalue"].includes(pixelId)) {
-                    valuesToColour = option["series"]
-                        .find((item) => item.name === name)
-                        ["data"].map((item) => {
+                } else if (chartType === "bar") {
+                    name = Array.isArray(event.target.value.name)
+                        ? event.target.value.name[0]
+                        : event.target.value.name;
+                    const pixelId = event.target.value.selector;
+                    if (option["xAxis"]["pixelvalue"].includes(pixelId)) {
+                        valuesToColour = option["xAxis"]["data"].map((item) => {
                             return item.hasOwnProperty("value")
                                 ? item.value
                                 : item;
                         });
+                    } else if (
+                        option["yAxis"]["pixelvalue"].includes(pixelId)
+                    ) {
+                        valuesToColour = option["series"]
+                            .find((item) => item.name === name)
+                            ["data"].map((item) => {
+                                return item.hasOwnProperty("value")
+                                    ? item.value
+                                    : item;
+                            });
+                    }
+                    valuesToColour = valuesToColour.map(
+                        convertSeriesDataToValue,
+                    );
                 }
-                const dataList = valuesToColour
-                    .map(convertSeriesDataToValue)
-                    .filter((item) => item > 0);
-                setValuesToColour(dataList);
+                setValuesToColour(valuesToColour.filter((item) => item > 0));
                 setNewRules((prevValues) => {
                     return {
                         ...prevValues,
                         ["column"]: name,
                         ["columnName"]: name,
                         ["columnNameToColour"]: name,
-                        ["filterMinValue"]: Math.min(...dataList),
-                        ["filterMaxValue"]: Math.max(...dataList),
+                        ["filterMinValue"]: Math.min(...valuesToColour),
+                        ["filterMaxValue"]: Math.max(...valuesToColour),
                     };
                 });
             }

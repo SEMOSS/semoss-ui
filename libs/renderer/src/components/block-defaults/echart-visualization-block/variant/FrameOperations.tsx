@@ -342,19 +342,43 @@ export const FrameOperations = observer(
                 firstColumn !== null &&
                 secondColumn !== null
             ) {
-                const tempValue = computedValue;
-
-                tempValue["_state"] = {};
-                tempValue["_state"]["fields"] = {};
-
-                tempValue["_state"]["fields"] = {
-                    ...tempValue["_state"]["fields"],
-                    Label: firstColumn?.values,
-                    Value: secondColumn?.values,
+                const columnsmerged = [];
+                const tempValue = {
+                    ...computedValue,
+                    series: computedValue["series"]
+                        ? computedValue["series"].map((s, i) =>
+                              i < columns[secondColumn?.label]?.length
+                                  ? {
+                                        ...s,
+                                        data: s?.data ?? [],
+                                        name: columns[secondColumn?.label][i]
+                                            ?.name,
+                                        type: "pie",
+                                    }
+                                  : { ...s },
+                          )
+                        : [],
+                    _state: {
+                        ...(computedValue["_state"] || {}),
+                        fields: {
+                            ...((computedValue["_state"] &&
+                                computedValue["_state"].fields) ||
+                                {}),
+                            Value: firstColumn?.values,
+                            Label: secondColumn?.values,
+                        },
+                    },
+                    customSettings: {
+                        ...(computedValue["customSettings"] ?? {}),
+                        toolsUpdated: false,
+                    },
                 };
-
-                // set the value
-                // setValue(JSON.stringify(tempValue));
+                columnsmerged.push({
+                    name: firstColumn?.values[0],
+                    selector: firstColumn.selectors?.[0],
+                    label: firstColumn?.values[0],
+                });
+                setData("columns", columnsmerged);
                 setData("option", tempValue);
             }
             if (variation === "echart-scatter-plots") {

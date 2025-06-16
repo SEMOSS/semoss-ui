@@ -16,6 +16,7 @@ import {
     useBlockSettings,
 } from "../../../../../hooks";
 import { EChartsOption } from "echarts";
+import { updateColorData } from "../shared/chart-utility";
 
 const StyledChartContainer = styled("div")(() => ({
     height: "inherit",
@@ -42,7 +43,7 @@ interface PieProps {
 }
 
 export const Pie = observer(({ id, updateJson }: PieProps) => {
-    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
 
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
@@ -101,33 +102,123 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
             if (typeof v === "undefined") {
                 return "";
             } else if (typeof v === "string") {
-                return v;
+                return JSON.parse(v);
             }
-            return JSON.stringify(v, null, 2);
+            return v; //JSON.stringify(v, null, 2);
         });
     }, [data, "option"]).get();
 
     /**
      * @description
      */
-    const parsedOption = useMemo(() => {
-        return typeof computedValue === "string"
-            ? JSON.parse(computedValue)
-            : computedValue;
-    }, [computedValue]);
+    // const parsedOption = useMemo(() => {
+    //     return typeof computedValue === "string"
+    //         ? JSON.parse(computedValue)
+    //         : computedValue;
+    // }, [computedValue]);
 
     /**
      * @description
      */
+
+    // const parsedOption = useMemo(() => {
+    //     let options = { ...computedValue };
+
+    //     if (
+    //         data.frame.name &&
+    //         frame.data.values.length > 0 &&
+    //         frame.isLoading === false
+    //     ) {
+    //         // options = receiveValueswithCorrections(computedValue);
+    //         if (Array.isArray(options.series)) {
+    //             options = {
+    //                 ...options,
+    //                 series: options.series.map((item) => {
+    //                     return {
+    //                         ...item,
+    //                         name: data.frame.name,
+    //                         ["data"]: frame.data.values.map(
+    //                             ([name, value]) => ({
+    //                                 value,
+    //                                 name,
+    //                             }),
+    //                         ),
+    //                         ["itemStyle"]: {
+    //                             ...item["itemStyle"],
+    //                             ["color"]: (seriesData) =>
+    //                                 updateColorData(
+    //                                     seriesData,
+    //                                     (
+    //                                         options.customSettings as {
+    //                                             appliedRules?: any;
+    //                                         }
+    //                                     )?.appliedRules,
+    //                                 ),
+    //                         },
+    //                     };
+    //                 }),
+    //             };
+    //         }
+    //     }
+    //     return { ...options };
+    // }, [computedValue, data.frame, frame.isLoading, frame.data.values]);
+    console.log("parse option ", computedValue);
+    console.log("  data option ", data.option);
     useEffect(() => {
         if (
-            data?.frame?.name &&
-            frame?.data?.values.length > 0 &&
-            frame?.isLoading === false
+            data.frame.name &&
+            frame.data.values.length > 0 &&
+            frame.isLoading === false &&
+            Array.isArray(computedValue.series)
         ) {
-            updateJson(parsedOption, "option");
+            let options = { ...computedValue };
+
+            if (
+                data.frame.name &&
+                frame.data.values.length > 0 &&
+                frame.isLoading === false
+            ) {
+                // options = receiveValueswithCorrections(computedValue);
+                if (Array.isArray(options.series)) {
+                    options = {
+                        ...options,
+                        series: options.series.map((item) => {
+                            return {
+                                ...item,
+                                name: frame.data.headers[1], //data.frame.name,
+                                ["data"]: frame.data.values.map(
+                                    ([value, name]) => ({
+                                        value,
+                                        name,
+                                    }),
+                                ),
+                                ["itemStyle"]: {
+                                    ...item["itemStyle"],
+                                    ["color"]: (seriesData) =>
+                                        updateColorData(
+                                            seriesData,
+                                            (
+                                                options as {
+                                                    customSettings?: {
+                                                        appliedRules?: any;
+                                                    };
+                                                }
+                                            )?.customSettings?.appliedRules,
+                                        ),
+                                },
+                            };
+                        }),
+                    };
+                }
+            }
+            setData("option", { ...options });
         }
-    }, [frame.data.values]);
+    }, [
+        data.frame.name,
+        frame.data.values,
+        frame.isLoading,
+        computedValue.customSettings?.appliedRules,
+    ]);
 
     /**
      * @description format the frame option data for echart
@@ -141,11 +232,11 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
                 let headersDataSet: string[] = JSON.parse(
                     JSON.stringify(frame.data.headers),
                 );
-                headersDataSet = headersDataSet.map((header: string) =>
+                headersDataSet = frame.data.headers.map((header: string) =>
                     header.replace("Average_", ""),
                 );
                 //format the data points to match the echart specification
-                resultData["series"][0]["data"] = valuesDataSet.map(
+                resultData["series"][0]["data"] = frame.data.values.map(
                     ([name, value]) => ({ name, value }),
                 );
                 valuesDataSet.map((x) => x.shift());
@@ -209,16 +300,16 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
             );
         }
     } else {
-        resultData =
-            data?.frame?.name &&
-            frame.data.values.length > 0 &&
-            frame.isLoading === false
-                ? formatDataPoints(parsedOption)
-                : parsedOption;
+        // const resultData =
+        //     data?.frame?.name &&
+        //     frame.data.values.length > 0 &&
+        //     frame.isLoading === false
+        //         ? formatDataPoints(parsedOption)
+        //         : parsedOption;
         return (
             <StyledChartContainer>
                 <ReactECharts
-                    option={resultData as EChartsOption}
+                    option={computedValue as EChartsOption}
                     onEvents={onClickChart}
                     style={{
                         height: "inherit",
