@@ -50,6 +50,7 @@ const StyledInner = styled('div')(({ theme }) => ({
     width: '100%',
     overflowX: 'hidden',
     overflowY: 'auto',
+    top: theme.spacing(7),
 }));
 
 export interface PageProps {

@@ -145,151 +145,148 @@ export const EngineShell = (props: EngineShellProps) => {
     }
 
     return (
-        <Page>
-            <Stack direction="column" gap={2}>
-                <Stack>
-                    <Breadcrumbs>
-                        <StyledLink to={`..`}>{name} Catalog</StyledLink>
-                        <StyledLink to={`.`}>
-                            {removeUnderscores(data.database_name)}
-                        </StyledLink>
-                    </Breadcrumbs>
-                    <Stack direction="row" alignItems={'center'} width={'100%'}>
-                        <Typography variant="h4">
-                            {removeUnderscores(data.database_name)}
-                        </Typography>
-                        <Stack flex={1}> &nbsp;</Stack>
-                        <Stack direction="row">
-                            <EngineAccessButton />
-                            {role === 'OWNER' && (
-                                <Button
-                                    disabled={exportLoading}
-                                    startIcon={
-                                        exportLoading ? (
-                                            <CircularProgress size="1em" />
-                                        ) : (
-                                            <SimCardDownload />
-                                        )
-                                    }
-                                    variant="outlined"
-                                    onClick={() => exportDB()}
-                                >
-                                    Export
-                                </Button>
-                            )}
-                            {canEdit && (
-                                <>
-                                    {edit && (
-                                        <EditEngineDetails
-                                            values={metaVals}
-                                            open={edit}
-                                            engineData={data}
-                                            onClose={(success) => {
-                                                // reload if successfully submitted
-                                                if (success) {
-                                                    refresh();
-                                                }
-
-                                                setEdit(false);
-                                            }}
-                                        />
-                                    )}
-                                    <Button
-                                        onClick={() => setEdit(!edit)}
-                                        startIcon={<EditRounded />}
-                                        variant={'contained'}
-                                    >
-                                        Edit
-                                    </Button>
-                                </>
-                            )}
-                        </Stack>
-                    </Stack>
-                    <Stack>
-                        <span>
-                            {id}
-                            <StyledIconButton
-                                aria-label={`copy ${name} ID`}
-                                size="small"
-                                onClick={(e) => {
-                                    // prevent the default action
-                                    e.preventDefault();
-
-                                    // copy
-                                    try {
-                                        navigator.clipboard.writeText(id);
-
-                                        notification.add({
-                                            color: 'success',
-                                            message: 'Successfully copied ID',
-                                        });
-                                    } catch (e) {
-                                        console.error(e);
-
-                                        notification.add({
-                                            color: 'error',
-                                            message: 'Error copyng ID',
-                                        });
-                                    }
-                                }}
+        <Stack direction="column" gap={2}>
+            <Stack>
+                <Breadcrumbs>
+                    <StyledLink to={`..`}>{name} Catalog</StyledLink>
+                    <StyledLink to={`.`}>
+                        {removeUnderscores(data.database_name)}
+                    </StyledLink>
+                </Breadcrumbs>
+                <Stack direction="row" alignItems={'center'} width={'100%'}>
+                    <Typography variant="h4">
+                        {removeUnderscores(data.database_name)}
+                    </Typography>
+                    <Stack flex={1}> &nbsp;</Stack>
+                    <Stack direction="row">
+                        <EngineAccessButton />
+                        {role === 'OWNER' && (
+                            <Button
+                                disabled={exportLoading}
+                                startIcon={
+                                    exportLoading ? (
+                                        <CircularProgress size="1em" />
+                                    ) : (
+                                        <SimCardDownload />
+                                    )
+                                }
+                                variant="outlined"
+                                onClick={() => exportDB()}
                             >
-                                <Tooltip title={`Copy ${name} ID`}>
-                                    <ContentCopyOutlined fontSize="inherit" />
-                                </Tooltip>
-                            </StyledIconButton>
-                        </span>
+                                Export
+                            </Button>
+                        )}
+                        {canEdit && (
+                            <>
+                                {edit && (
+                                    <EditEngineDetails
+                                        values={metaVals}
+                                        open={edit}
+                                        engineData={data}
+                                        onClose={(success) => {
+                                            // reload if successfully submitted
+                                            if (success) {
+                                                refresh();
+                                            }
+
+                                            setEdit(false);
+                                        }}
+                                    />
+                                )}
+                                <Button
+                                    onClick={() => setEdit(!edit)}
+                                    startIcon={<EditRounded />}
+                                    variant={'contained'}
+                                >
+                                    Edit
+                                </Button>
+                            </>
+                        )}
                     </Stack>
                 </Stack>
-                <StyledInfo>
-                    <StyledInfoLeft>
-                        <StyledInfoDescription variant={'subtitle1'}>
-                            {metaVals.description
-                                ? (metaVals.description as string)
-                                : canEdit
-                                ? `Please use the Edit button to provide a description for this ${name}. A description will help others find the ${name} and understand how to use it. To include more details associated with the ${name}, edit the markdown located in the Overview section.`
-                                : `This ${name} is currently awaiting a detailed description, which will be provided by the engine editor in the near future. As of now, the ${name} contains valuable and relevant information that pertains to its designated subject matter. Please check back later for a comprehensive overview of the contents and scope of this engine, as the editor will be updating it shortly`}
-                        </StyledInfoDescription>
+                <Stack>
+                    <span>
+                        {id}
+                        <StyledIconButton
+                            aria-label={`copy ${name} ID`}
+                            size="small"
+                            onClick={(e) => {
+                                // prevent the default action
+                                e.preventDefault();
 
-                        <StyledChipContainer>
-                            {metaVals.tag &&
-                                (metaVals.tag as string[]).map((tag, i) => {
-                                    if (i < 2)
-                                        return <Chip key={i} label={tag} />;
-                                })}
-                        </StyledChipContainer>
-                    </StyledInfoLeft>
-                    <StyledInfoRight>
-                        <Stack
-                            alignItems={'flex-end'}
-                            spacing={1}
-                            marginBottom={2}
-                            sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
+                                // copy
+                                try {
+                                    navigator.clipboard.writeText(id);
+
+                                    notification.add({
+                                        color: 'success',
+                                        message: 'Successfully copied ID',
+                                    });
+                                } catch (e) {
+                                    console.error(e);
+
+                                    notification.add({
+                                        color: 'error',
+                                        message: 'Error copyng ID',
+                                    });
+                                }
+                            }}
                         >
-                            {data?.DATEADDED && data?.PERMISSIONGRANTEDBY ? (
-                                <div>
-                                    <Typography variant={'body2'}>
-                                        {`Updated by ${data.PERMISSIONGRANTEDBY}`}
-                                    </Typography>
-
-                                    <div>
-                                        <Typography variant={'body2'}>
-                                            {`at ${data.DATEADDED}`}
-                                        </Typography>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div>
-                                    <Typography variant={'body2'}>
-                                        No updates since creation
-                                    </Typography>
-                                </div>
-                            )}
-                        </Stack>
-                    </StyledInfoRight>
-                </StyledInfo>
-                {children}
-                <Help />
+                            <Tooltip title={`Copy ${name} ID`}>
+                                <ContentCopyOutlined fontSize="inherit" />
+                            </Tooltip>
+                        </StyledIconButton>
+                    </span>
+                </Stack>
             </Stack>
-        </Page>
+            <StyledInfo>
+                <StyledInfoLeft>
+                    <StyledInfoDescription variant={'subtitle1'}>
+                        {metaVals.description
+                            ? (metaVals.description as string)
+                            : canEdit
+                            ? `Please use the Edit button to provide a description for this ${name}. A description will help others find the ${name} and understand how to use it. To include more details associated with the ${name}, edit the markdown located in the Overview section.`
+                            : `This ${name} is currently awaiting a detailed description, which will be provided by the engine editor in the near future. As of now, the ${name} contains valuable and relevant information that pertains to its designated subject matter. Please check back later for a comprehensive overview of the contents and scope of this engine, as the editor will be updating it shortly`}
+                    </StyledInfoDescription>
+
+                    <StyledChipContainer>
+                        {metaVals.tag &&
+                            (metaVals.tag as string[]).map((tag, i) => {
+                                if (i < 2) return <Chip key={i} label={tag} />;
+                            })}
+                    </StyledChipContainer>
+                </StyledInfoLeft>
+                <StyledInfoRight>
+                    <Stack
+                        alignItems={'flex-end'}
+                        spacing={1}
+                        marginBottom={2}
+                        sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
+                    >
+                        {data?.DATEADDED && data?.PERMISSIONGRANTEDBY ? (
+                            <div>
+                                <Typography variant={'body2'}>
+                                    {`Updated by ${data.PERMISSIONGRANTEDBY}`}
+                                </Typography>
+
+                                <div>
+                                    <Typography variant={'body2'}>
+                                        {`at ${data.DATEADDED}`}
+                                    </Typography>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <Typography variant={'body2'}>
+                                    No updates since creation
+                                </Typography>
+                            </div>
+                        )}
+                    </Stack>
+                </StyledInfoRight>
+            </StyledInfo>
+            {children}
+            <Help />
+        </Stack>
     );
 };

@@ -120,6 +120,7 @@ export const TopNav: React.FC = observer(() => {
             direction="row"
             alignItems={'center'}
             justifyContent={'space-between'}
+            width={'100%'}
         >
             <Stack direction="row" flex={1} alignItems={'center'} spacing={1}>
                 {!page.sideNav.pinned && (
