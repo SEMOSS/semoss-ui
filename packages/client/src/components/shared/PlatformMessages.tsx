@@ -5,7 +5,7 @@ import { Button, Modal } from '@semoss/ui';
 import { cookieName } from '@/components/cookies';
 
 interface PlatformMessagesProps {
-    children: React.ReactNode;
+    children?: React.ReactNode;
 }
 
 export const PlatformMessages = observer((props: PlatformMessagesProps) => {
@@ -48,13 +48,8 @@ export const PlatformMessages = observer((props: PlatformMessagesProps) => {
         setAcceptedTerms(true);
     };
 
-    if (acceptedTerms === null) {
-        return <>{children}</>;
-    }
-
     return (
         <>
-            {children}
             {!acceptedTerms && terms.header && terms.text && (
                 <Modal open={true}>
                     <Modal.Title sx={{ paddingBottom: '0' }}>

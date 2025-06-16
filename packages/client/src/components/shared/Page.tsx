@@ -83,21 +83,12 @@ export const Page: React.FC<PageProps> = observer(({ children }) => {
     }, [headerElement]);
 
     return (
-        <StyledPage id="home__content">
+        <StyledPage>
             <SideNav />
             <StyledContent direction={'column'}>
                 <TopNav />
-                <StyledInner>
-                    {page.header && (
-                        <StyledPageHeader
-                            ref={(node) => setHeaderElement(node)}
-                            stuck={stuck}
-                        >
-                            {page.header()}
-                        </StyledPageHeader>
-                    )}
-                    <PlatformMessages>{children}</PlatformMessages>
-                </StyledInner>
+                <StyledInner id="home__content">{children}</StyledInner>
+                <PlatformMessages />
             </StyledContent>
         </StyledPage>
     );
