@@ -22,12 +22,11 @@ import {
     useNotification,
     TextField,
     Select,
-    Grid,
 } from '@semoss/ui';
 
 import { ALL_TYPES } from '@/types';
 import { PERMISSION_DESCRIPTION_MAP } from '@/constants';
-import { useAPI, useDebounceValue, useRootStore, useSettings } from '@/hooks';
+import { useDebounceValue, useRootStore, useSettings } from '@/hooks';
 import { MembersAddOverlayUser } from './MembersAddOverlayUser';
 import { SETTINGS_ROLE } from './settings.types';
 import { permissionPriorityMapper } from '@/utility/general';
@@ -203,54 +202,91 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
         setSearch('');
     }, [open]);
 
-    // TODO: Implement Lazy Loading
-    // get the api
-    const getMembersApi: Parameters<typeof useAPI>[0] =
-        type === 'DATABASE' ||
-        type === 'STORAGE' ||
-        type === 'MODEL' ||
-        type === 'VECTOR' ||
-        type === 'FUNCTION'
-            ? [
-                  'getEngineUsersNoCredentials',
-                  adminMode,
-                  id,
-                  AUTOCOMPLETE_LIMIT, // limit
-                  offset, // offset
-                  debouncedSearch ? debouncedSearch : undefined,
-              ]
-            : type === 'APP'
-            ? [
-                  'getProjectUsersNoCredentials',
-                  adminMode,
-                  id,
-                  AUTOCOMPLETE_LIMIT, // limit
-                  offset, // offset
-                  debouncedSearch ? debouncedSearch : undefined,
-              ]
-            : null;
-
-    const getMembers = useAPI(open ? getMembersApi : null);
-
-    const isLoading =
-        getMembers.status === 'INITIAL' || getMembers.status === 'LOADING';
-
     useEffect(() => {
-        if (getMembers.status === 'SUCCESS') {
-            if (getMembers.data.data.length < AUTOCOMPLETE_LIMIT) {
-                setInfiniteOn(false);
+        if (!open) return;
+
+        const cancelled = false;
+        setSearchLoading(true);
+
+        const fetchUsers = async () => {
+            try {
+                let all = [];
+                if (type === 'APP') {
+                    const [noCred, cred] = await Promise.all([
+                        monolithStore.getProjectUsersNoCredentials(
+                            adminMode,
+                            id,
+                            AUTOCOMPLETE_LIMIT,
+                            offset,
+                            debouncedSearch || '',
+                        ),
+                        monolithStore.getProjectUsers(
+                            adminMode,
+                            id,
+                            debouncedSearch || '',
+                            '', // permission
+                            offset,
+                            AUTOCOMPLETE_LIMIT,
+                        ),
+                    ]);
+                    all = [...(noCred?.data || []), ...(cred?.members || [])];
+                } else if (
+                    type === 'DATABASE' ||
+                    type === 'STORAGE' ||
+                    type === 'MODEL' ||
+                    type === 'VECTOR' ||
+                    type === 'FUNCTION'
+                ) {
+                    const [noCred, cred] = await Promise.all([
+                        monolithStore.getEngineUsersNoCredentials(
+                            adminMode,
+                            id,
+                            AUTOCOMPLETE_LIMIT,
+                            offset,
+                            debouncedSearch || '',
+                        ),
+                        monolithStore.getEngineUsers(
+                            adminMode,
+                            id,
+                            debouncedSearch || '',
+                            '', // permission
+                            offset,
+                            AUTOCOMPLETE_LIMIT,
+                        ),
+                    ]);
+                    all = [...(noCred?.data || []), ...(cred?.members || [])];
+                } else {
+                    setSearchLoading(false);
+                    return;
+                }
+
+                if (!cancelled) {
+                    if (all.length < AUTOCOMPLETE_LIMIT) setInfiniteOn(false);
+                    if (
+                        renderedMembers.length >= AUTOCOMPLETE_LIMIT &&
+                        offset > 0
+                    ) {
+                        setRenderedMembers((prev) => [...prev, ...all]);
+                    } else {
+                        setRenderedMembers(all);
+                    }
+                    setSearchLoading(false);
+                }
+            } catch (e) {
+                if (!cancelled) {
+                    notification.add({
+                        color: 'error',
+                        message: String(e),
+                    });
+                    setSearchLoading(false);
+                }
             }
-            if (renderedMembers.length >= AUTOCOMPLETE_LIMIT && offset > 0) {
-                setRenderedMembers((prev) => {
-                    return [...prev, ...getMembers.data.data];
-                });
-                setSearchLoading(false);
-            } else {
-                setRenderedMembers(getMembers.data.data);
-                setSearchLoading(false);
-            }
-        }
-    }, [getMembers.status]);
+        };
+
+        fetchUsers();
+    }, [open, debouncedSearch, offset, adminMode, id, type]);
+
+    const isLoading = searchLoading;
 
     const getAdditionalMembers = () => {
         setOffset(offset + AUTOCOMPLETE_LIMIT);
@@ -290,16 +326,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 if (restriction === 'compute') {
                     json['maxResponseTime'] = Number(maxTime);
                 }
-
-                // usageRestriction:
-                //     restriction === 'null' ? null : restriction,
-                // usageFrequency: frequency,
-                // ...(restriction === 'token' && {
-                //     maxTokens: Number(maxTokens),
-                // }),
-                // ...(restriction === 'compute' && {
-                //     maxResponseTime: Number(maxTime),
-                // }),
 
                 return json;
             });
@@ -346,9 +372,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 });
 
                 success = true;
-
-                // refresh the members
-                getMembers.refresh();
 
                 onChange();
             } else {
@@ -552,16 +575,37 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                         onChange={(event, newValue) => {
                             setSelectedMembers(newValue || []);
                         }}
+                        getOptionDisabled={(option) => !!option.permission}
                         renderOption={(props, option) => {
                             const { ...optionProps } = props;
+                            const hasPermission = !!option.permission;
                             return (
                                 <li key={option.id} {...optionProps}>
-                                    <MembersAddOverlayUser
-                                        name={option.name}
-                                        id={option.id}
-                                        email={option.email}
-                                        type={option.type}
-                                    />
+                                    <div
+                                        style={{
+                                            maxWidth: '85%',
+                                            overflow: 'hidden',
+                                        }}
+                                    >
+                                        <MembersAddOverlayUser
+                                            name={option.name}
+                                            id={option.id}
+                                            email={option.email}
+                                            type={option.type}
+                                        />
+                                    </div>
+
+                                    {hasPermission && (
+                                        <div
+                                            style={{
+                                                whiteSpace: 'nowrap',
+                                                display: 'inline-block',
+                                                fontSize: '12px',
+                                            }}
+                                        >
+                                            Already Added
+                                        </div>
+                                    )}
                                 </li>
                             );
                         }}
@@ -673,6 +717,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                             value="Author"
                                             label=""
                                             disabled={
+                                                !adminMode &&
                                                 permissionPriorityMapper(
                                                     userPermission,
                                                 )?.priority > 1
@@ -727,6 +772,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                             value="Editor"
                                             label=""
                                             disabled={
+                                                !adminMode &&
                                                 permissionPriorityMapper(
                                                     userPermission,
                                                 )?.priority > 2
@@ -781,6 +827,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                             value="Read-Only"
                                             label=""
                                             disabled={
+                                                !adminMode &&
                                                 permissionPriorityMapper(
                                                     userPermission,
                                                 )?.priority > 3

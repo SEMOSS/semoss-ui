@@ -74,7 +74,11 @@ export const PlatformMessages = observer((props: PlatformMessagesProps) => {
                         />
                     </Modal.Content>
                     <Modal.Actions>
-                        <Button variant="contained" onClick={acceptTerms}>
+                        <Button
+                            variant="contained"
+                            onClick={acceptTerms}
+                            data-testid={'platform-messages-accept-btn'}
+                        >
                             Accept
                         </Button>
                     </Modal.Actions>

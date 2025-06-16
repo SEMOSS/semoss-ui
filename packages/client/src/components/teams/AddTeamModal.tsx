@@ -2,7 +2,7 @@ import { Controller, useForm } from 'react-hook-form';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import { Close } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-
+import React, { useEffect } from 'react';
 import {
     Stack,
     Modal,
@@ -100,6 +100,7 @@ type TeamReturn = {
     id: string;
     type: string;
     description: string;
+    previousTeamName?: string;
 };
 
 type NewTeamForm = {
@@ -121,15 +122,28 @@ interface AddTeamModalProps {
      */
     // eslint-disable-next-line no-unused-vars
     onClose: (team?: TeamReturn) => void;
+    isEdit?: boolean;
+    id?: string;
+    type?: string;
+    description?: string;
+    isCustomGroup?: boolean;
 }
 
 export const AddTeamModal = (props: AddTeamModalProps) => {
-    const { open, onClose } = props;
-    const navigate = useNavigate();
+    const { open, onClose, isEdit, id, type, description, isCustomGroup } =
+        props;
 
+    const navigate = useNavigate();
     const notification = useNotification();
     const { monolithStore, configStore } = useRootStore();
 
+    // State to track the previous team name, type
+    const [previousTeamName, setPreviousTeamName] = React.useState<
+        string | undefined
+    >(id);
+    const [previousType, setPreviousType] = React.useState<string | undefined>(
+        id,
+    );
     const {
         handleSubmit,
         control,
@@ -138,11 +152,26 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
         watch,
     } = useForm<NewTeamForm>({
         defaultValues: {
-            TEAM_NAME: '',
-            TEAM_DESCRIPTION: '',
-            TEAM_TYPE: '',
+            TEAM_NAME: id || '',
+            TEAM_DESCRIPTION: description || '',
+            TEAM_TYPE:
+                (isCustomGroup || type === 'custom' ? 'Custom' : type) || '',
         },
+        mode: 'onChange', // Ensures validation updates on field changes
     });
+
+    useEffect(() => {
+        reset({
+            TEAM_NAME: id || '',
+            TEAM_DESCRIPTION: description || '',
+            TEAM_TYPE:
+                (isCustomGroup || type === 'custom' ? 'Custom' : type) || '',
+        });
+
+        // Update the previous team name when the modal is opened
+        setPreviousTeamName(id);
+        setPreviousType(isCustomGroup ? 'Custom' : type);
+    }, [id, type, description, isCustomGroup, reset]);
 
     const selectedTeamType = watch('TEAM_TYPE');
 
@@ -166,49 +195,83 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
      */
     const onSubmit = handleSubmit(async (data: NewTeamForm) => {
         try {
-            const newResponse =
-                data.TEAM_TYPE === 'Custom'
-                    ? monolithStore.addTeam(
-                          data.TEAM_NAME,
-                          data.TEAM_DESCRIPTION,
-                          true,
-                      )
-                    : monolithStore.addTeam(
-                          data.TEAM_NAME,
-                          data.TEAM_DESCRIPTION,
-                          false,
-                          data.TEAM_TYPE,
-                      );
+            if (isEdit) {
+                // Logic for editing the team
+                const editResponse =
+                    data.TEAM_TYPE === 'Custom'
+                        ? monolithStore.editTeam(
+                              data.TEAM_NAME,
+                              data.TEAM_DESCRIPTION,
+                              true,
+                              'Custom',
+                              previousTeamName,
+                              previousType,
+                          )
+                        : monolithStore.editTeam(
+                              data.TEAM_NAME,
+                              data.TEAM_DESCRIPTION,
+                              false,
+                              data.TEAM_TYPE,
+                              previousTeamName,
+                              previousType,
+                          );
 
-            // create the team
-            newResponse.then(() => {
-                onClose({
-                    id: data.TEAM_NAME,
-                    type: data.TEAM_TYPE,
-                    description: data.TEAM_DESCRIPTION,
+                editResponse.then(() => {
+                    onClose({
+                        id: data.TEAM_NAME,
+                        type: data.TEAM_TYPE,
+                        description: data.TEAM_DESCRIPTION,
+                        previousTeamName: previousTeamName,
+                    });
+                    reset();
+                    notification.add({
+                        color: 'success',
+                        message: 'Successfully updated team',
+                    });
                 });
+            } else {
+                // Logic for creating a new team
+                const newResponse =
+                    data.TEAM_TYPE === 'Custom'
+                        ? monolithStore.addTeam(
+                              data.TEAM_NAME,
+                              data.TEAM_DESCRIPTION,
+                              true,
+                          )
+                        : monolithStore.addTeam(
+                              data.TEAM_NAME,
+                              data.TEAM_DESCRIPTION,
+                              false,
+                              data.TEAM_TYPE,
+                          );
 
-                reset();
-
-                notification.add({
-                    color: 'success',
-                    message: 'Successfully added group',
-                });
-                navigate(
-                    `${data.TEAM_NAME.toLowerCase()
-                        .replace(/['"]+/g, '')
-                        .replace(/\s/g, '-')}`,
-                    {
-                        state: {
-                            name: data.TEAM_NAME,
-                            type:
-                                data.TEAM_TYPE !== 'Custom'
-                                    ? data.TEAM_TYPE
-                                    : undefined,
+                newResponse.then(() => {
+                    onClose({
+                        id: data.TEAM_NAME,
+                        type: data.TEAM_TYPE,
+                        description: data.TEAM_DESCRIPTION,
+                    });
+                    reset();
+                    notification.add({
+                        color: 'success',
+                        message: 'Successfully added group',
+                    });
+                    navigate(
+                        `${data.TEAM_NAME.toLowerCase()
+                            .replace(/['"]+/g, '')
+                            .replace(/\s/g, '-')}`,
+                        {
+                            state: {
+                                name: data.TEAM_NAME,
+                                type:
+                                    data.TEAM_TYPE !== 'Custom'
+                                        ? data.TEAM_TYPE
+                                        : undefined,
+                            },
                         },
-                    },
-                );
-            });
+                    );
+                });
+            }
         } catch (e) {
             console.error(e);
             notification.add({
@@ -223,7 +286,13 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
     return (
         <Modal open={open} fullWidth>
             <StyledModalTitle>
-                <>Create New Team</>
+                {isEdit ? (
+                    <Typography sx={{ color: '#000000DE' }} variant="h6">
+                        Edit Team
+                    </Typography>
+                ) : (
+                    <>Create New Team</>
+                )}
                 <IconButton
                     onClick={() => {
                         onClose();
@@ -390,6 +459,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                     >
                         <Button
                             type="button"
+                            sx={{ color: '#212121' }}
                             onClick={() => {
                                 onClose();
                             }}
@@ -401,7 +471,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                             variant={'contained'}
                             disabled={!isValid}
                         >
-                            Add
+                            {isEdit ? 'Update' : 'Add'}
                         </Button>
                     </Stack>
                 </Modal.Actions>

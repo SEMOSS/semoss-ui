@@ -2,7 +2,7 @@ import { useRef, useState, Suspense, lazy, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { Code, KeyboardArrowDown } from "@mui/icons-material";
 
-import { styled, Button, Stack, Select, useNotification } from "@semoss/ui";
+import { styled, Button, Stack, Select, Markdown, useNotification } from "@semoss/ui";
 import { runPixel } from "@semoss/sdk/react";
 
 import {
@@ -13,7 +13,7 @@ import {
 } from "../../../store";
 import { useBlocks } from "../../../hooks";
 
-import { PythonIcon, RIcon } from "./icons";
+import { MarkdownIcon, PythonIcon, RIcon } from "./icons";
 
 const StyledSelect = styled(Select)(({ theme }) => ({
     "& .MuiSelect-select": {
@@ -62,6 +62,11 @@ interface EDITOR_TYPES {
         value: string;
         language: string;
     };
+    markdown: {
+        name: string;
+        value: string;
+        language: string;
+    };
 }
 const EDITOR_TYPE: EDITOR_TYPES = {
     py: {
@@ -79,16 +84,24 @@ const EDITOR_TYPE: EDITOR_TYPES = {
         value: "pixel",
         language: "pixel",
     },
+    markdown: {
+        name: "Markdown",
+        value: "markdown",
+        language: "Markdown",
+    },
 } as const;
 
 export interface CodeCellDef extends CellDef<"code"> {
     widget: "code";
     parameters: {
         /** Type of code in the cell */
-        type: "r" | "py" | "pixel";
+        type: "r" | "py" | "pixel" | "markdown";
 
         /** Code rendered in the cell */
         code: string | string[];
+
+        /** Cell is marked as a code cell */
+        marked?: boolean;
     };
 }
 
@@ -663,39 +676,61 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             )}
 
             <Stack direction="row" spacing={1}>
-                <StyledContainer>
+                <StyledContainer
+                    onDoubleClick={() =>
+                        EDITOR_TYPE[cell.parameters.type].language ===
+                            "Markdown" &&
+                        state.dispatch({
+                            message: ActionMessages.RUN_MARKDOWN_CELL,
+                            payload: {
+                                queryId: cell.query.id,
+                                cellId: cell.id,
+                                marked: false,
+                            },
+                        })
+                    }
+                >
                     {!isExpanded ? (
                         <Suspense fallback={<>...</>}>
-                            <Editor
-                                width="100%"
-                                height={getHeight()}
-                                language={
-                                    EDITOR_TYPE[cell.parameters.type].language
-                                }
-                                value={
-                                    typeof cell.parameters.code === "string"
+                            {EDITOR_TYPE[cell.parameters.type].language ===
+                                "Markdown" && cell.parameters.marked ? (
+                                <Markdown>
+                                    {typeof cell.parameters.code === "string"
                                         ? cell.parameters.code
-                                        : cell.parameters.code.join("\n")
-                                }
-                                options={{
-                                    scrollbar: {
-                                        alwaysConsumeMouseWheel: false,
-                                    },
-                                    lineNumbers: "on",
-                                    readOnly: false,
-                                    minimap: { enabled: false },
-                                    automaticLayout: true,
-                                    scrollBeyondLastLine: false,
-                                    lineHeight: EDITOR_LINE_HEIGHT,
-                                    overviewRulerBorder: false,
-                                    wordWrap: "on",
-                                    glyphMargin: false,
-                                    folding: false,
-                                    lineNumbersMinChars: 2,
-                                }}
-                                onChange={handleChange}
-                                onMount={handleMount}
-                            />
+                                        : cell.parameters.code.join("\n")}
+                                </Markdown>
+                            ) : (
+                                <Editor
+                                    width="100%"
+                                    height={getHeight()}
+                                    language={
+                                        EDITOR_TYPE[cell.parameters.type].language
+                                    }
+                                    value={
+                                        typeof cell.parameters.code === "string"
+                                            ? cell.parameters.code
+                                            : cell.parameters.code.join("\n")
+                                    }
+                                    options={{
+                                        scrollbar: {
+                                            alwaysConsumeMouseWheel: false,
+                                        },
+                                        lineNumbers: "on",
+                                        readOnly: false,
+                                        minimap: { enabled: false },
+                                        automaticLayout: true,
+                                        scrollBeyondLastLine: false,
+                                        lineHeight: EDITOR_LINE_HEIGHT,
+                                        overviewRulerBorder: false,
+                                        wordWrap: "on",
+                                        glyphMargin: false,
+                                        folding: false,
+                                        lineNumbersMinChars: 2,
+                                    }}
+                                    onChange={handleChange}
+                                    onMount={handleMount}
+                                />
+                            )}
                         </Suspense>
                     ) : diffEditMode ? (
                         <>
@@ -749,37 +784,46 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                         </>
                     ) : (
                         <Suspense fallback={<>...</>}>
-                            <Editor
-                                key={count}
-                                width="100%"
-                                height={getHeight()}
-                                language={
-                                    EDITOR_TYPE[cell.parameters.type].language
-                                }
-                                value={
-                                    typeof cell.parameters.code === "string"
+                            {EDITOR_TYPE[cell.parameters.type].language ===
+                                "Markdown" && cell.parameters.marked ? (
+                                <Markdown>
+                                    {typeof cell.parameters.code === "string"
                                         ? cell.parameters.code
-                                        : cell.parameters.code.join("\n")
-                                }
-                                options={{
-                                    scrollbar: {
-                                        alwaysConsumeMouseWheel: false,
-                                    },
-                                    lineNumbers: "on",
-                                    readOnly: false,
-                                    minimap: { enabled: false },
-                                    automaticLayout: true,
-                                    scrollBeyondLastLine: false,
-                                    lineHeight: EDITOR_LINE_HEIGHT,
-                                    overviewRulerBorder: false,
-                                    wordWrap: "on",
-                                    glyphMargin: false,
-                                    folding: false,
-                                    lineNumbersMinChars: 2,
-                                }}
-                                onChange={handleChange}
-                                onMount={handleMount}
-                            />
+                                        : cell.parameters.code.join("\n")}
+                                </Markdown>
+                            ) : (
+                                <Editor
+                                    key={count}
+                                    width="100%"
+                                    height={getHeight()}
+                                    language={
+                                        EDITOR_TYPE[cell.parameters.type].language
+                                    }
+                                    value={
+                                        typeof cell.parameters.code === "string"
+                                            ? cell.parameters.code
+                                            : cell.parameters.code.join("\n")
+                                    }
+                                    options={{
+                                        scrollbar: {
+                                            alwaysConsumeMouseWheel: false,
+                                        },
+                                        lineNumbers: "on",
+                                        readOnly: false,
+                                        minimap: { enabled: false },
+                                        automaticLayout: true,
+                                        scrollBeyondLastLine: false,
+                                        lineHeight: EDITOR_LINE_HEIGHT,
+                                        overviewRulerBorder: false,
+                                        wordWrap: "on",
+                                        glyphMargin: false,
+                                        folding: false,
+                                        lineNumbersMinChars: 2,
+                                    }}
+                                    onChange={handleChange}
+                                    onMount={handleMount}
+                                />
+                            )}
                         </Suspense>
                     )}
                 </StyledContainer>
@@ -831,6 +875,11 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                         />
                                     ) : language.value === "r" ? (
                                         <RIcon
+                                            color="inherit"
+                                            fontSize="small"
+                                        />
+                                    ) : language.value === "markdown" ? (
+                                        <MarkdownIcon
                                             color="inherit"
                                             fontSize="small"
                                         />

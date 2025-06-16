@@ -75,7 +75,6 @@ export const config: BlockConfig<UploadBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Value",
                     render: ({ id }) => (
@@ -134,11 +133,15 @@ export const config: BlockConfig<UploadBlockDef> = {
             ],
         },
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
         {
-            name: "on Change",
+            name: "On Change",
             children: [...buildListener("onChange")],
         },
     ],

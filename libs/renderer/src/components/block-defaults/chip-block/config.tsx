@@ -46,13 +46,9 @@ export const config: BlockConfig<ChipBlockDef> = {
     contentMenu: [
         {
             name: "General",
-            children: [...buildShowField()],
-        },
-        {
-            name: "Select Chip",
             children: [
                 {
-                    description: " Chip Type",
+                    description: "Chip Type",
                     render: ({ id }) => (
                         <ChipSettings
                             id={id}
@@ -98,13 +94,17 @@ export const config: BlockConfig<ChipBlockDef> = {
             ],
         },
         {
+            name: "Conditional",
+            children: [...buildShowField()],
+        },
+        {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
     ],
     styleMenu: [
         {
-            name: "",
+            name: "General",
             children: [
                 {
                     description: "Variant",
@@ -126,6 +126,11 @@ export const config: BlockConfig<ChipBlockDef> = {
                         />
                     ),
                 },
+            ],
+        },
+        {
+            name: "Color",
+            children: [
                 {
                     description: "Color",
                     render: ({ id }) => (
@@ -136,44 +141,11 @@ export const config: BlockConfig<ChipBlockDef> = {
                         />
                     ),
                 },
-                //     ],
-                // },
-                // {
-                //     description: "Color",
-                //     render: ({ id }) => (
-                //         <SelectInputSettings
-                //             id={id}
-                //             label="Color"
-                //             path="color"
-                //             options={[
-                //                 {
-                //                     value: "default",
-                //                     display: "default",
-                //                 },
-                //                 {
-                //                     value: "primary",
-                //                     display: "primary",
-                //                 },
-                //                 {
-                //                     value: "secondary",
-                //                     display: "secondary",
-                //                 },
-                //                 {
-                //                     value: "success",
-                //                     display: "success",
-                //                 },
-                //                 {
-                //                     value: "warning",
-                //                     display: "warning",
-                //                 },
-                //                 {
-                //                     value: "error",
-                //                     display: "error",
-                //                 },
-                //             ]}
-                //         />
-                //     ),
-                // },
+            ]
+        },
+        {
+            name: "Dimensions",
+            children: [
                 {
                     description: "Size",
                     render: ({ id }) => (
@@ -184,17 +156,17 @@ export const config: BlockConfig<ChipBlockDef> = {
                             options={[
                                 {
                                     value: "small",
-                                    display: "small",
+                                    display: "Small",
                                 },
                                 {
                                     value: "medium",
-                                    display: "medium",
+                                    display: "Medium",
                                 },
                             ]}
                         />
                     ),
                 },
-            ],
-        },
+            ]
+        }
     ],
 };

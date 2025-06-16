@@ -8,11 +8,9 @@ import { RootStoreContext } from '@/contexts';
 import { AppWrapper } from './AppWrapper';
 
 // use the environment variable to set the module if in development
-if (process.env.NODE_ENV === 'development') {
-    Env.update({
-        MODULE: process.env.MODULE || '',
-    });
-}
+Env.update({
+    MODULE: process.env.MODULE || '',
+});
 
 const CSRF = {
     isEnabled: false,
@@ -70,8 +68,8 @@ axios.interceptors.request.use(
             };
         }
 
-        // Check if CSRF is enabled and add the token
-        if (CSRF.isEnabled) {
+        // Check the CSRF before login or after the configStore is set, then add the token
+        if (CSRF.isEnabled || _store.configStore.store.config.csrf) {
             if (config.method === 'post') {
                 if (!CSRF.token) {
                     CSRF.token = await getToken();
@@ -158,6 +156,7 @@ export const App = () => {
         _store.configStore.initialize().then(() => {
             // set as enabled
             CSRF.isEnabled = _store.configStore.store.config.csrf;
+            Env.update({ CSRF: _store.configStore.store.config.csrf });
         });
     }, []);
 

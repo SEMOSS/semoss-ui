@@ -27,7 +27,7 @@ export const SECTION_ORDER = [
 
 // Development Environment Blocks
 const DEV_BLOCKS = [];
-
+// update the json structure also in VisualMapConstant.tsx
 if (process.env.NODE_ENV === 'development') {
     console.warn('PUSH DEV ENV BLOCKS');
 }
@@ -73,6 +73,406 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             slots: {
                 header: [],
                 content: [],
+            },
+        },
+    },
+
+    {
+        section: SECTION_LAYOUT,
+        name: 'Multi-Accordion Block',
+        activeImage: BLOCK_IMAGES['ACCORDION_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['ACCORDION_HOVER'],
+        helperText: 'Click to expand and collapse sections for more details',
+        json: {
+            widget: 'container',
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '16px',
+                },
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {
+                children: [
+                    {
+                        widget: 'accordion',
+                        data: {
+                            style: {
+                                borderBottom: '1px solid #ccc',
+                                borderRadius: '0',
+                                padding: '16px',
+                            },
+                            triggerBgColor: '',
+                            contentBgColor: '',
+                            showExpandIcon: false,
+                            show: 'true',
+                        },
+                        listeners: {
+                            preProcess: { type: 'sync', order: [] },
+                        },
+                        slots: {
+                            header: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            padding: '16px',
+                                            gap: '30%',
+                                        },
+                                    },
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                        padding: '16px',
+                                                    },
+                                                    text: 'Accordion 1',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '16px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                        color: '#9c9696',
+                                                        fontWeight: 'normal',
+                                                    },
+                                                    text: 'I am an accordion',
+                                                    variant: 'h4',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                            content: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            gap: '18px',
+                                        },
+                                    },
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '16px',
+                                                        paddingTop: '8px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                    },
+                                                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        widget: 'accordion',
+                        data: {
+                            style: {
+                                borderBottom: '1px solid #ccc',
+                                padding: '16px',
+                            },
+                            triggerBgColor: '',
+                            contentBgColor: '',
+                            showExpandIcon: false,
+                            show: 'true',
+                        },
+                        listeners: {
+                            preProcess: { type: 'sync', order: [] },
+                        },
+                        slots: {
+                            header: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            gap: '30%',
+                                            padding: '16px',
+                                        },
+                                    },
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '16px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                    },
+                                                    text: 'Accordion 2',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                        color: '#9c9696',
+                                                        fontWeight: 'normal',
+                                                        padding: '16px',
+                                                    },
+                                                    text: 'I am an accordion',
+                                                    variant: 'h4',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                            content: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            gap: '18px',
+                                            padding: '16px',
+                                        },
+                                    },
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '16px',
+                                                        paddingTop: '8px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                    },
+                                                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        widget: 'accordion',
+                        data: {
+                            style: {
+                                borderBottom: '1px solid #ccc',
+                                padding: '16px',
+                            },
+                            triggerBgColor: '',
+                            contentBgColor: '',
+                            showExpandIcon: false,
+                            show: 'true',
+                        },
+                        listeners: {
+                            preProcess: { type: 'sync', order: [] },
+                        },
+                        slots: {
+                            header: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            gap: '30%',
+                                            padding: '16px',
+                                        },
+                                    },
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '16px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                    },
+                                                    text: 'Accordion 3',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                        color: '#9c9696',
+                                                        fontWeight: 'normal',
+                                                        padding: '16px',
+                                                    },
+                                                    text: 'I am an accordion',
+                                                    variant: 'h4',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                            content: [
+                                {
+                                    widget: 'container',
+                                    data: {
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            gap: '18px',
+                                            padding: '16px',
+                                        },
+                                    },
+                                    listeners: {
+                                        preProcess: { type: 'sync', order: [] },
+                                    },
+                                    slots: {
+                                        children: [
+                                            {
+                                                widget: 'text',
+                                                data: {
+                                                    style: {
+                                                        padding: '16px',
+                                                        paddingTop: '8px',
+                                                        whiteSpace: 'pre-line',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                    },
+                                                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.',
+                                                    variant: 'p',
+                                                    show: 'true',
+                                                },
+                                                listeners: {
+                                                    preProcess: {
+                                                        type: 'sync',
+                                                        order: [],
+                                                    },
+                                                },
+                                                slots: {},
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
             },
         },
     },
@@ -184,7 +584,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_ELEMENT,
         name: 'Ratings ',
-        helperText: 'Rate on a scale',
+        helperText: 'Add an rating to your layout',
+        activeImage: BLOCK_IMAGES['RATING_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['RATING_HOVER'],
         json: {
             widget: 'ratings',
             data: {
@@ -381,7 +783,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
-                onSubmit: { type: 'sync', order: [] },
+                onClose: { type: 'sync', order: [] },
             },
             slots: {
                 content: [],
@@ -527,6 +929,13 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     flexWrap: 'wrap',
                 },
                 show: 'true',
+                boxShadowParts: {
+                    offsetX: '',
+                    offsetY: '',
+                    blurRadius: '',
+                    spreadRadius: '',
+                    color: '',
+                },
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
@@ -607,29 +1016,29 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
-    {
-        section: SECTION_ELEMENT,
-        name: 'PDF Viewer',
-        helperText: 'Embed a PDF for viewing',
-        activeImage: BLOCK_IMAGES['PDF_VIEWER_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['PDF_VIEWER_HOVER'],
-        json: {
-            widget: 'pdfViewer',
-            data: {
-                style: {
-                    width: '100%',
-                    height: '82%',
-                    padding: '8px',
-                },
-                selectedPdf: null,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
+    // {
+    //     section: SECTION_ELEMENT,
+    //     name: 'PDF Viewer',
+    //     helperText: 'Embed a PDF for viewing',
+    //     activeImage: BLOCK_IMAGES['PDF_VIEWER_ACTIVE'],
+    //     hoverImage: BLOCK_IMAGES['PDF_VIEWER_HOVER'],
+    //     json: {
+    //         widget: 'pdfViewer',
+    //         data: {
+    //             style: {
+    //                 width: '100%',
+    //                 height: '82%',
+    //                 padding: '8px',
+    //             },
+    //             selectedPdf: null,
+    //             show: 'true',
+    //         },
+    //         listeners: {
+    //             preProcess: { type: 'sync', order: [] },
+    //         },
+    //         slots: {} as BlockJSON['slots'],
+    //     },
+    // },
     {
         section: SECTION_ELEMENT,
         name: 'Image',
@@ -679,9 +1088,14 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     backgroundPosition: 'center center',
                     show: 'true',
                 },
+
+                icon: 'Home',
                 src: '',
                 title: '',
                 show: 'true',
+                badgeContent: 0,
+                color: 'default',
+                showBadge: false,
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -1205,7 +1619,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 ),
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1314,7 +1730,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1492,7 +1910,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1638,13 +2058,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     toolbox: {
                         feature: {
                             brush: {
-                                type: [
-                                    'rect',
-                                    'polygon',
-                                    'lineX',
-                                    'lineY',
-                                    'clear',
-                                ],
+                                type: ['rect', 'clear'],
                                 brushType: 'rect',
                                 xAxisIndex: 'all',
                                 yAxisIndex: 'all',
@@ -1674,7 +2088,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1887,7 +2303,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 },
                 show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -1992,8 +2410,11 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 frame: {
                     name: '',
                 },
+                show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -2073,8 +2494,11 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                         columnDetails: {},
                     },
                 },
+                show: 'true',
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -2173,7 +2597,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     facetList: [],
                 },
             },
-            listeners: {},
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
@@ -2200,9 +2626,18 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         json: {
             widget: 'grid',
             data: {
+                variation: 'grid-block',
                 frame: {
                     name: '',
                 },
+                style: {
+                    display: 'flex',
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    width: '450px',
+                    height: '350px',
+                },
+                option: {},
                 columns: [],
                 view: {
                     pagination: true,
@@ -2523,6 +2958,43 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 onChange: { type: 'sync', order: [] },
             },
             slots: {} as BlockJSON['slots'],
+        },
+    },
+    // -----------------------------------------------
+    // Grouped Components
+    // -----------------------------------------------
+    {
+        section: SECTION_CHARTS,
+        name: 'Visualization Filter',
+        helperText: 'Filter data based on set criteria',
+        activeImage: BLOCK_IMAGES['VISUALIZATION_FILTER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['VISUALIZATION_FILTER_HOVER'],
+        json: {
+            widget: 'visualization-filter',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                displayType: '',
+                frame: '',
+                column: '',
+                showPanelTitle: false,
+                searchable: false,
+                multipleSelection: false,
+                show: 'true',
+                listOptions: [],
+                selectedValues: [],
+                filterLabel: '',
+                sliderSensitivity: 0,
+                color: 'primary',
+                size: 'medium',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {},
         },
     },
 ];

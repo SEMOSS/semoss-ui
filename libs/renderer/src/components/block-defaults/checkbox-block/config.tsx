@@ -37,21 +37,30 @@ export const config: BlockConfig<CheckboxBlockDef> = {
         {
             name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Checked",
                     render: ({ id }) => (
                         <SwitchSettings id={id} label="Checked" path="value" />
                     ),
                 },
+                 {
+                    description: "Label",
+                    render: ({ id }) => (
+                        <InputSettings id={id} label="Label" path="label" />
+                    ),
+                },
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
         {
             name: "Pre Process",
             children: [...buildListener("preProcess")],
         },
         {
-            name: "on Change",
+            name: "On Change",
             children: [...buildListener("onChange")],
         },
     ],

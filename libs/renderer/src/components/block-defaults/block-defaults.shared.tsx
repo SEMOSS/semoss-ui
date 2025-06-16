@@ -1,7 +1,7 @@
 import { BlockDef } from "../../store";
 import { ListenerSettings, QueryInputSettings } from "../block-settings";
-import { FontSizeSettings } from "../block-settings/custom/FontSizeSettings";
 import { SizeSettings } from "../block-settings/shared/SizeSettings";
+import { SizeSpacingSettings } from "../block-settings/custom/SizeSpacingSettings";
 import { ColorSettings } from "../block-settings/shared/ColorSettings";
 import { BorderSettings } from "../block-settings/custom/BorderSettings";
 import { ButtonGroupSettings } from "../block-settings/shared/ButtonGroupSettings";
@@ -30,6 +30,8 @@ import {
     DEFAULT_TRUE_VARIABLE,
     DEFAULT_FALSE_VARIABLE,
 } from "./block-defaults.constants";
+import { BoxShadowSizeSettings } from "../block-settings/shared/BoxShadowSizeSetting";
+import { StandardColorSettings } from "../block-settings/shared/StandardColorSettings";
 
 const trueSegment = DEFAULT_TRUE_VARIABLE;
 const falseSegment = DEFAULT_FALSE_VARIABLE;
@@ -39,7 +41,6 @@ const falseSegment = DEFAULT_FALSE_VARIABLE;
 export const buildLayoutSection = () => ({
     name: "Layout",
     children: [
-        ...buildShowField(),
         {
             description: "Vertical Align",
             render: ({ id }) => (
@@ -185,13 +186,21 @@ export const buildSpacingSection = () => ({
         {
             description: "Margin",
             render: ({ id }) => (
-                <SizeSettings id={id} label="Margin" path="style.margin" />
+                <SizeSpacingSettings
+                    id={id}
+                    label="Margin"
+                    path="style.margin"
+                />
             ),
         },
         {
             description: "Padding",
             render: ({ id }) => (
-                <SizeSettings id={id} label="Padding" path="style.padding" />
+                <SizeSpacingSettings
+                    id={id}
+                    label="Padding"
+                    path="style.padding"
+                />
             ),
         },
     ],
@@ -245,7 +254,7 @@ export const buildColorSection = () => ({
         {
             description: "Background Color",
             render: ({ id }) => (
-                <ColorSettings
+                <StandardColorSettings
                     id={id}
                     label="Background Color"
                     path="style.backgroundColor"
@@ -552,3 +561,66 @@ export const buildShowField = <D extends BlockDef = BlockDef>() => [
         ),
     },
 ];
+
+/**
+ * Build the Box Shadow Section
+ * @returns a box shadow section
+ */
+
+export const buildShadowSection = () => ({
+    name: "Box Shadow",
+    children: [
+        {
+            description: "Offset-x",
+            render: ({ id }) => (
+                <BoxShadowSizeSettings
+                    id={id}
+                    label="Offset-x"
+                    path="boxShadowParts.offsetX"
+                    required={true}
+                />
+            ),
+        },
+        {
+            description: "Offset-y",
+            render: ({ id }) => (
+                <BoxShadowSizeSettings
+                    id={id}
+                    label="Offset-y"
+                    path="boxShadowParts.offsetY"
+                    required={true}
+                />
+            ),
+        },
+        {
+            description: "Blur Radius",
+            render: ({ id }) => (
+                <BoxShadowSizeSettings
+                    id={id}
+                    label="Blur Radius"
+                    path="boxShadowParts.blurRadius"
+                />
+            ),
+        },
+        {
+            description: "Spread Radius",
+            render: ({ id }) => (
+                <BoxShadowSizeSettings
+                    id={id}
+                    label="Spread Radius"
+                    path="boxShadowParts.spreadRadius"
+                />
+            ),
+        },
+        {
+            description: "Color",
+            render: ({ id }) => (
+                <StandardColorSettings
+                    id={id}
+                    label="Color"
+                    path="boxShadowParts.color"
+                />
+            ),
+        },
+    ],
+});

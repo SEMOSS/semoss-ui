@@ -1,7 +1,7 @@
 import { InsertEmoticon } from "@mui/icons-material";
 
 import { BlockConfig } from "../../../store";
-import { ColorSettings, SelectInputSettings } from "../../block-settings";
+import { ColorSettings, InputSettings, SelectInputSettings, SizeSettings } from "../../block-settings";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
 import { IconBlockDef, IconBlock } from "./IconBlock";
 import {
@@ -13,6 +13,7 @@ import {
     inputOptions,
     IconSelectSettings,
 } from "../../block-settings/custom/IconSelectSettings";
+import { IconGeneralSettings } from "./IconGeneralSettings";
 
 export const config: BlockConfig<IconBlockDef> = {
     widget: "icon",
@@ -26,11 +27,13 @@ export const config: BlockConfig<IconBlockDef> = {
             height: "200px",
             color: "black",
         },
-        icon: "Icon",
-
+        icon: "Home",
         src: "",
         title: "",
         show: "true",
+        badgeContent: 0,
+        color: "default",
+        showBadge: false,
     },
     listeners: {},
     slots: {},
@@ -38,9 +41,8 @@ export const config: BlockConfig<IconBlockDef> = {
     icon: InsertEmoticon,
     contentMenu: [
         {
-            name: "Select Icon",
+            name: "General",
             children: [
-                ...buildShowField(),
                 {
                     description: "Icon",
                     render: ({ id }) => (
@@ -52,7 +54,16 @@ export const config: BlockConfig<IconBlockDef> = {
                         />
                     ),
                 },
+                
+                 {
+                description: "Badge Settings",
+                render: ({ id }) => <IconGeneralSettings id={id} />,
+            }
             ],
+        },
+        {
+            name: "Conditional",
+            children: [...buildShowField()],
         },
     ],
     styleMenu: [

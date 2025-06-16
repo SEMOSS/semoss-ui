@@ -35,6 +35,7 @@ import {
     NotebookViewerPanel,
 } from './panels';
 import { DEFAULT_MENU } from './menus/default-menu';
+import { GraphPanel } from '../workspace/panels/GraphPanel';
 
 const DEFAULT_BORDER_SIZE = 300;
 
@@ -149,6 +150,13 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                         },
                                         enableClose: true,
                                     },
+                                    // {
+                                    //     type: 'tab',
+                                    //     name: 'Dependency Graph',
+                                    //     component: 'graph',
+                                    //     config: {},
+                                    //     helpText: 'How your app is connected',
+                                    // },
                                 ],
                             },
                         ],
@@ -216,6 +224,8 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
         return <NotebookViewerPanel id={config.id} />;
     } else if (component === 'terminal') {
         return <TerminalPanel />;
+    } else if (component === 'graph') {
+        return <GraphPanel />;
     }
 
     return <>{component}</>;
@@ -236,6 +246,22 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
     const notification = useNotification();
 
     const [state, setState] = useState<StateStore>();
+
+    //to throw a warning when the user tried to reload the page
+    // this is to prevent the user from losing their work
+    useEffect(() => {
+        if (process.env.NODE_ENV !== 'development') {
+            const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+                e.preventDefault();
+                e.returnValue = '';
+            };
+            window.addEventListener('beforeunload', handleBeforeUnload);
+
+            return () => {
+                window.removeEventListener('beforeunload', handleBeforeUnload);
+            };
+        }
+    }, []);
 
     useEffect(() => {
         // start the loading screen
