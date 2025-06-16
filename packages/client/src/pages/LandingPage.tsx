@@ -20,17 +20,13 @@ import CreateAppSection from '../components/landing/CreateAppSection';
 import { FanFavoritesSection } from '../components/landing/FanFavoritesSection';
 
 const StyledComponent = styled(Container)(({ theme }) => ({
-    position: 'absolute',
-    top: theme.spacing(5),
-    height: `calc(100vh - ${theme.spacing(5)})`, // Adjust height based on AppBar height
     gap: theme.spacing(3),
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
     flex: '1 0 0',
     alignSelf: 'stretch',
-    backgroundColor: theme.palette.background.default,
-    overflow: 'auto',
+
     /* Media query for screens with a minimum width of 600px */
     '@media (min-width: 600px)': {
         '&.MuiContainer-root': {

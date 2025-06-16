@@ -25,7 +25,7 @@ import {
 
 import { ModelBrain } from '@/assets/img/ModelBrain';
 import { Database } from '@/assets/img/Database';
-import { useRootStore } from '@/hooks';
+import { usePage, useRootStore } from '@/hooks';
 import { Logo } from '@/assets/img/Logo';
 import { THEME } from '@/constants';
 import { LoginPopover } from './LoginPopover';
@@ -53,6 +53,29 @@ const CATALOG_ROUTES = [
     },
 ];
 
+const StyledNavHeader = styled(Stack)(({ theme }) => ({
+    position: 'relative',
+    background: 'transparent',
+    paddingTop: theme.spacing(1.5),
+    paddingRight: theme.spacing(2),
+    paddingBottom: theme.spacing(1),
+    paddingLeft: theme.spacing(2),
+    zIndex: 0,
+}));
+
+const StyledNavHeaderLink = styled(Link)(({ theme }) => ({
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    color: 'inherit',
+    textDecoration: 'none',
+    cursor: 'pointer',
+    gap: theme.spacing(2),
+    '&:hover': {
+        background: theme.palette.action.hover,
+    },
+}));
+
 const StyledSideNav = styled(Drawer)(() => ({
     flexShrink: 0,
     whiteSpace: 'nowrap',
@@ -74,26 +97,6 @@ const StyledSideNav = styled(Drawer)(() => ({
             },
         },
     ],
-}));
-
-const StyledSideNavHeader = styled(Stack)(({ theme }) => ({
-    paddingTop: theme.spacing(1.5),
-    paddingRight: theme.spacing(2),
-    paddingBottom: theme.spacing(1.5),
-    paddingLeft: theme.spacing(2),
-}));
-
-const StyledSideNavHeaderLink = styled(Link)(({ theme }) => ({
-    flex: 1,
-    display: 'flex',
-    alignItems: 'center',
-    color: 'inherit',
-    textDecoration: 'none',
-    cursor: 'pointer',
-    gap: theme.spacing(2),
-    '&:hover': {
-        background: theme.palette.action.hover,
-    },
 }));
 
 const StyledSideNavContent = styled(Stack)(({ theme }) => ({
@@ -138,91 +141,83 @@ const StyledLink = styled(Link)(({ theme }) => ({
     cursor: 'pointer',
 }));
 
-interface SideNavProps {
-    /** Track if the nav is open */
-    isOpen: boolean;
+export const SideNav: React.FC = observer(() => {
+    const { configStore } = useRootStore();
+    const { page } = usePage();
 
-    /** Track if the nav is pinned open */
-    isPinned: boolean;
+    const { pathname } = useLocation();
 
-    /** Triggered when the state is upated */
-    onUpdate: (isOpen: boolean, isPinned: boolean) => void;
-}
+    const [viewSidebar, setViewSidebar] = useState(false);
+    useEffect(() => {
+        if (configStore.store.user.admin) {
+            setViewSidebar(true);
+        } else if (
+            !configStore.store.user.admin &&
+            !configStore.store.config.adminOnlyViewMenuBarFlag
+        ) {
+            setViewSidebar(true);
+        }
+    }, [
+        configStore.store.user.admin,
+        configStore.store.config.adminOnlyViewMenuBarFlag,
+    ]);
 
-export const SideNav: React.FC<SideNavProps> = observer(
-    ({ isOpen, isPinned, onUpdate }) => {
-        const { configStore } = useRootStore();
-        const { pathname } = useLocation();
+    // TODO: Load from a theme object
+    const themeMap = useMemo(() => {
+        const theme = configStore.store.config['theme'];
 
-        const [viewSidebar, setViewSidebar] = useState(false);
-        useEffect(() => {
-            if (configStore.store.user.admin) {
-                setViewSidebar(true);
-            } else if (
-                !configStore.store.user.admin &&
-                !configStore.store.config.adminOnlyViewMenuBarFlag
-            ) {
-                setViewSidebar(true);
+        if (theme && theme['THEME_MAP']) {
+            try {
+                return JSON.parse(theme['THEME_MAP'] as string);
+            } catch {
+                return {};
             }
-        }, [
-            configStore.store.user.admin,
-            configStore.store.config.adminOnlyViewMenuBarFlag,
-        ]);
+        }
 
-        // TODO: Load from a theme object
-        const themeMap = useMemo(() => {
-            const theme = configStore.store.config['theme'];
+        return {};
+    }, [Object.keys(configStore.store.config).length]);
 
-            if (theme && theme['THEME_MAP']) {
-                try {
-                    return JSON.parse(theme['THEME_MAP'] as string);
-                } catch {
-                    return {};
-                }
-            }
-
-            return {};
-        }, [Object.keys(configStore.store.config).length]);
-
-        return (
+    return (
+        <>
             <StyledSideNav
-                variant={isPinned ? 'permanent' : 'temporary'}
+                variant={page.sideNav.pinned ? 'permanent' : 'temporary'}
                 anchor="left"
-                open={isOpen}
-                onClose={() => onUpdate(false, isPinned)}
+                open={page.sideNav.open}
+                onClose={() => page.closeSideNav()}
                 PaperProps={{
                     onMouseLeave: () => {
                         // closes if it is not pinned
-                        if (isPinned) {
+                        if (page.sideNav.pinned) {
                             return;
                         }
 
-                        onUpdate(false, isPinned);
+                        page.closeSideNav();
                     },
                 }}
             >
-                <StyledSideNavHeader
+                <StyledNavHeader
                     direction={'row'}
                     alignItems={'center'}
                     justifyContent={'flex-start'}
                     spacing={1}
                 >
-                    <StyledSideNavHeaderLink to={'/'} aria-label={'Go Home'}>
+                    <StyledNavHeaderLink to={'/'} aria-label={'Go Home'}>
                         <Logo />
                         <Typography variant="h6" sx={{ fontWeight: 700 }}>
                             {themeMap.name ? themeMap.name : THEME.name}
                         </Typography>
-                    </StyledSideNavHeaderLink>
+                    </StyledNavHeaderLink>
 
                     <IconButton
                         size="small"
                         onClick={() => {
-                            if (!isPinned) {
+                            if (!page.sideNav.pinned) {
                                 // if it is open and not pinned, pin it
-                                onUpdate(isOpen, true);
-                            } else if (isPinned) {
+                                page.pinSideNav();
+                            } else if (page.sideNav.pinned) {
                                 // if it is open, and pinned, close and unpin
-                                onUpdate(false, false);
+                                page.unpinSideNav();
+                                page.closeSideNav();
                             } else {
                                 // noop
                             }
@@ -230,7 +225,7 @@ export const SideNav: React.FC<SideNavProps> = observer(
                     >
                         <MenuOpenRounded fontSize="medium" />
                     </IconButton>
-                </StyledSideNavHeader>
+                </StyledNavHeader>
                 <Divider />
                 <StyledSideNavContent>
                     <StyledList dense={true} aria-label="main navigation">
@@ -327,6 +322,6 @@ export const SideNav: React.FC<SideNavProps> = observer(
                     </StyledList>
                 </StyledSideNavFooter>
             </StyledSideNav>
-        );
-    },
-);
+        </>
+    );
+});

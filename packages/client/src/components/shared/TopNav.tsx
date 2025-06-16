@@ -1,101 +1,58 @@
-import { ChangeEvent, useEffect, useMemo, useState } from 'react';
-import SearchIcon from '@mui/icons-material/Search';
-import MenuIcon from '@mui/icons-material/Menu';
-import { Link, useLocation } from 'react-router-dom';
+import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
 import {
     styled,
-    AppBar,
     TextField,
     Typography,
     IconButton,
     InputAdornment,
     Switch,
-    Box,
     Container,
     Stack,
 } from '@semoss/ui';
 
 import { THEME } from '@/constants';
 import { Logo } from '@/assets/img/Logo';
-import { useRootStore } from '@/hooks';
+import { usePage, useRootStore } from '@/hooks';
 import { Search } from './Search';
+import { MenuRounded, Search as SearchIcon } from '@mui/icons-material';
 
-const StyledAppBar = styled(AppBar)(({ theme }) => ({
-    position: 'sticky',
+const StyledTopNav = styled(Stack)(({ theme }) => ({
+    position: 'absolute',
     top: '0',
     borderBottom: '1px solid #EAEAEE',
     background: '#FAFAFA', //"var(--Background-Paper-2, #FAFAFA)",
     color: '#666666', //"var(--Text-Primary-1, #212B36)",
-    padding: '8px 0px',
-    boxShadow: 'none',
-    transition: 'none',
-    height: '56px',
-    borderRadius: '0px',
-    display: 'flex',
-    alignItems: 'center',
+    height: theme.spacing(7),
 }));
 
-const StyledContainer = styled(Container)(({ theme }) => ({
+const StyledNavHeader = styled(Stack)(({ theme }) => ({
+    position: 'relative',
+    background: 'transparent',
+    paddingTop: theme.spacing(1.5),
+    paddingRight: theme.spacing(2),
+    paddingBottom: theme.spacing(1),
+    paddingLeft: theme.spacing(2),
+    zIndex: 0,
+}));
+
+const StyledNavHeaderLink = styled(Link)(({ theme }) => ({
+    flex: 1,
     display: 'flex',
-    flexDirection: 'row',
-    /* Media query for screens with a minimum width of 600px */
-    '@media (min-width: 600px)': {
-        '&.MuiContainer-root': {
-            paddingLeft: '0px',
-            paddingRight: '0px',
-        },
+    alignItems: 'center',
+    color: 'inherit',
+    textDecoration: 'none',
+    cursor: 'pointer',
+    gap: theme.spacing(2),
+    '&:hover': {
+        background: theme.palette.action.hover,
     },
 }));
 
-const StyledLeftSection = styled('div')(({ theme }) => ({
-    display: 'flex',
-    gap: '16px',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    width: '264px',
-    height: '40px !important',
-}));
-
-const StyledIconButton = styled(IconButton)(({ theme }) => ({
-    marginRight: 2,
-    borderRadius: '7px',
-    border: '0.938px solid #323232',
-    width: '30px',
-    height: '30px',
-}));
-
-const StyledAppTitle = styled('div')(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-}));
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-    fontFamily: 'Inter',
-    fontSize: '20px',
-    fontStyle: 'normal',
-    fontWeight: '500',
-    lineHeight: '160%' /* 32px */,
-    letterSpacing: '0.15px',
-    color: 'var(--Text-Primary, #212121)',
-    fontFeatureSettings: "'liga' off, 'clig' off",
-    height: 'auto',
-    maxWidth: '7.5em',
-    display: 'flex',
-    flexGrow: 1,
-}));
-
-const StyledSearchSection = styled('div')(({ theme }) => ({
-    display: 'flex',
-    gap: '18rem',
-    alignItems: 'center',
-    width: '720px',
-}));
-
 const StyledTextField = styled(TextField)(({ theme }) => ({
-    width: '720px',
+    width: '100%',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'stretch',
@@ -109,22 +66,6 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
         paddingLeft: '0px',
         paddingRight: '0px',
     },
-}));
-
-const StyledRightSection = styled('div')(({ theme }) => ({
-    display: 'flex',
-    gap: '8px',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    width: '264px',
-    height: '40px !important',
-}));
-
-const StyledAppBuilderSection = styled('div')(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    flexGrow: 1,
 }));
 
 const StyledAppBuilder = styled(Typography)(({ theme }) => ({
@@ -152,163 +93,113 @@ const StyledSwitch = styled(Switch)(({ theme }) => ({
     gap: '10px',
 }));
 
-const StyledHeaderLogo = styled(Link)(({ theme }) => ({
-    color: 'inherit',
-    textDecoration: 'none',
-    cursor: 'pointer',
-    ':hover': {
-        bacakground: theme.palette.action.hover,
-    },
-}));
+export const TopNav: React.FC = observer(() => {
+    const { configStore } = useRootStore();
+    const { page } = usePage();
 
-interface TopNavProps {
-    isPinned: boolean;
-    right?: React.ReactNode;
-    onOpen: () => void;
-}
-export const TopNav: React.FC<TopNavProps> = observer(
-    ({ isPinned, onOpen, right }) => {
-        const { configStore } = useRootStore();
-        const location = useLocation();
+    const themeMap = useMemo(() => {
+        const theme = configStore.store.config['theme'];
 
-        const [showAppBuilder, setShowAppBuilder] = useState(false);
-
-        const themeMap = useMemo(() => {
-            const theme = configStore.store.config['theme'];
-
-            if (theme && theme['THEME_MAP']) {
-                try {
-                    return JSON.parse(theme['THEME_MAP'] as string);
-                } catch {
-                    return {};
-                }
+        if (theme && theme['THEME_MAP']) {
+            try {
+                return JSON.parse(theme['THEME_MAP'] as string);
+            } catch {
+                return {};
             }
+        }
 
-            return {};
-        }, [Object.keys(configStore.store.config).length]);
+        return {};
+    }, [Object.keys(configStore.store.config).length]);
 
-        useEffect(() => {
-            setShowAppBuilder(configStore.store.isAppBuilder);
-        }, [configStore.store.isAppBuilder]);
+    if (!page.topNav) {
+        return null;
+    }
 
-        return (
-            <StyledAppBar>
-                <StyledContainer maxWidth={false} sx={{ maxWidth: '1440px' }}>
-                    <Stack
+    return (
+        <StyledTopNav
+            direction="row"
+            alignItems={'center'}
+            justifyContent={'space-between'}
+        >
+            <Stack direction="row" flex={1} alignItems={'center'} spacing={1}>
+                {!page.sideNav.pinned && (
+                    <StyledNavHeader
                         direction={'row'}
                         alignItems={'center'}
-                        pl={5}
-                        pr={5}
-                        width={'100%'}
-                        justifyContent={'space-between'}
+                        justifyContent={'flex-start'}
+                        onMouseOver={() => page.openSideNav()}
                     >
-                        {!isPinned && (
-                            <StyledLeftSection>
-                                <StyledIconButton
-                                    size="medium"
-                                    // edge="start"
-                                    color="inherit"
-                                    aria-label="menu"
-                                    onClick={() => onOpen()}
-                                >
-                                    <MenuIcon
-                                        sx={{
-                                            width: '22.5px',
-                                            height: '22.5px',
-                                        }}
-                                    />
-                                </StyledIconButton>
-                                <StyledHeaderLogo to={'/'}>
-                                    <StyledAppTitle>
-                                        <Logo />
-                                        <StyledTypography
-                                            variant="h6"
-                                            sx={{
-                                                /* Typography/H6 */
-                                                fontSize: '20px',
-                                                fontStyle: 'normal',
-                                                fontWeight: '500',
-                                                lineHeight: '160%',
-                                                letterSpacing: '0.15px',
-                                            }}
-                                        >
-                                            {themeMap.name
-                                                ? themeMap.name
-                                                : THEME.name}
-                                        </StyledTypography>
-                                    </StyledAppTitle>
-                                </StyledHeaderLogo>
-                            </StyledLeftSection>
+                        <IconButton
+                            size="small"
+                            onClick={() => page.openSideNav()}
+                        >
+                            <MenuRounded fontSize="medium" />
+                        </IconButton>
+
+                        <StyledNavHeaderLink to={'/'} aria-label={'Go Home'}>
+                            <Logo />
+                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                                {themeMap.name ? themeMap.name : THEME.name}
+                            </Typography>
+                        </StyledNavHeaderLink>
+                    </StyledNavHeader>
+                )}
+                {page.topNav.left ? page.topNav.left() : null}
+            </Stack>
+            <Container maxWidth={false} sx={{ maxWidth: '720px' }}>
+                {page.topNav && page.topNav.search ? (
+                    <Search
+                        renderInput={(params) => (
+                            <StyledTextField
+                                {...params}
+                                variant="outlined"
+                                size="small"
+                                placeholder="Search"
+                                label=""
+                                InputProps={{
+                                    ...params.InputProps,
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <SearchIcon />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        height: '40px !important',
+                                        border: 'none',
+                                        '& input': {
+                                            height: '40px !important',
+                                        },
+                                    },
+                                }}
+                            />
                         )}
-                        <StyledSearchSection>
-                            {((location.pathname === '/' && showAppBuilder) ||
-                                location.pathname !== '/') && (
-                                <Box
-                                    sx={{
-                                        width: '100%',
-                                        margin: 'auto',
-                                    }}
-                                >
-                                    <Search
-                                        renderInput={(params) => (
-                                            <StyledTextField
-                                                {...params}
-                                                variant="outlined"
-                                                size="small"
-                                                placeholder="Search"
-                                                label=""
-                                                InputProps={{
-                                                    ...params.InputProps,
-                                                    startAdornment: (
-                                                        <InputAdornment position="start">
-                                                            <SearchIcon />
-                                                        </InputAdornment>
-                                                    ),
-                                                }}
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root':
-                                                        {
-                                                            height: '40px !important',
-                                                            border: 'none',
-                                                            '& input': {
-                                                                height: '40px !important',
-                                                            },
-                                                        },
-                                                }}
-                                            />
-                                        )}
-                                    />
-                                </Box>
-                            )}
-                        </StyledSearchSection>
-                        <StyledRightSection>
-                            {right
-                                ? right
-                                : location.pathname === '/' && (
-                                      <StyledAppBuilderSection>
-                                          <StyledAppBuilder variant="h6">
-                                              App Builder
-                                          </StyledAppBuilder>
-                                          <StyledSwitch
-                                              checked={showAppBuilder}
-                                              size={'small'}
-                                              onChange={(
-                                                  e: ChangeEvent<HTMLInputElement>,
-                                              ) => {
-                                                  setShowAppBuilder(
-                                                      e.target.checked,
-                                                  );
-                                                  configStore.setAppBuilderMode(
-                                                      e.target.checked,
-                                                  );
-                                              }}
-                                          ></StyledSwitch>
-                                      </StyledAppBuilderSection>
-                                  )}
-                        </StyledRightSection>
+                    />
+                ) : (
+                    <>&nbsp;</>
+                )}
+            </Container>
+            <Stack direction="row" flex={1} alignItems={'center'} spacing={1}>
+                {/* {location.pathname === '/' ? (
+                    <Stack direction="row" alignItems={'center'} spacing={1}>
+                        <StyledAppBuilder variant="h6">
+                            App Builder
+                        </StyledAppBuilder>
+                        <StyledSwitch
+                            checked={showAppBuilder}
+                            size={'small'}
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                                setShowAppBuilder(e.target.checked);
+                                configStore.setAppBuilderMode(e.target.checked);
+                            }}
+                        ></StyledSwitch>
                     </Stack>
-                </StyledContainer>
-            </StyledAppBar>
-        );
-    },
-);
+                ) : (
+                    <>&nbsp;</>
+                )} */}
+                {page.topNav.right ? page.topNav.right() : null}
+            </Stack>
+        </StyledTopNav>
+    );
+});

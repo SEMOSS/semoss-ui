@@ -19,7 +19,7 @@ import { PromptRouter } from './prompt';
 import { SettingsRouter } from './settings';
 
 import { AuthenticatedLayout } from './AuthenticatedLayout';
-import { MainLayout } from './MainLayout';
+import { PageLayout } from './PageLayout';
 
 import { LoginPage } from './LoginPage';
 import { SharePage } from './SharePage';
@@ -61,7 +61,7 @@ export const Router = observer(() => {
     return (
         <Routes>
             <Route path="/" element={<AuthenticatedLayout />}>
-                <Route path="*" element={<MainLayout />}>
+                <Route path="*" element={<PageLayout />}>
                     <Route index element={<LandingPage />} />
 
                     <Route path="app/*">
