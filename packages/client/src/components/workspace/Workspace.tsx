@@ -134,39 +134,40 @@ export const Workspace = observer((props: WorkspaceProps) => {
 
     const layoutRef = useRef<Layout>(null);
 
-    const [model, setModel] = useState<Model | null>(null);
+    // const [model, setModel] = useState<Model | null>(null);
 
     // build the model from the layout
+    const model = workspace.selectedLayout?.model;
     const rawModel = workspace.selectedLayout?.model;
 
-    useEffect(() => {
-        if (!rawModel) return;
+    // useEffect(() => {
+    //     if (!rawModel) return;
 
-        const modelJson = rawModel.toJson();
+    //     const modelJson = rawModel.toJson();
 
-        if (!modelJson) {
-            setModel(rawModel);
-            return;
-        }
+    //     if (!modelJson) {
+    //         setModel(rawModel);
+    //         return;
+    //     }
 
-        // List of notebooks tied to app
-        const validNotebookIds = new Set(notebook.queriesList.map((q) => q.id));
+    //     // List of notebooks tied to app
+    //     const validNotebookIds = new Set(notebook.queriesList.map((q) => q.id));
 
-        const root = modelJson.layout.children?.[0];
-        if (!root || !Array.isArray(root.children)) return;
+    //     const root = modelJson.layout.children?.[0];
+    //     if (!root || !Array.isArray(root.children)) return;
 
-        // Remove notebooks that are on react flow model but not actually saved in state
-        const filteredLayoutArray = root.children.filter((layout: any) => {
-            const isNotebook = layout.component === 'notebook-viewer';
-            const layoutId = layout.config?.id;
-            return !isNotebook || validNotebookIds.has(layoutId);
-        });
+    //     // Remove notebooks that are on react flow model but not actually saved in state
+    //     const filteredLayoutArray = root.children.filter((layout: any) => {
+    //         const isNotebook = layout.component === 'notebook-viewer';
+    //         const layoutId = layout.config?.id;
+    //         return !isNotebook || validNotebookIds.has(layoutId);
+    //     });
 
-        root.children = filteredLayoutArray;
-        root['selected'] = filteredLayoutArray.length - 1;
+    //     root.children = filteredLayoutArray;
+    //     root['selected'] = filteredLayoutArray.length - 1;
 
-        setModel(Model.fromJson(modelJson));
-    }, [notebook.queriesList, rawModel]);
+    //     setModel(Model.fromJson(modelJson));
+    // }, [notebook.queriesList, rawModel]);
 
     useEffect(() => {
         // default options if not loaded from cache
@@ -335,7 +336,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
             </StyledViewport>
             <Drawer
                 anchor="left"
-                variant="persistent"
+                // variant="persistent"
                 open={workspace.drawer.isOpen}
                 ModalProps={{
                     hideBackdrop: true, // Hide the backdrop
