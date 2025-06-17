@@ -11,30 +11,30 @@ import {
 import type React from "react";
 
 interface MockProviderProps {
-    children: React.ReactNode;
-    blocks: Record<string, Block>;
-    queryConfig?: Record<string, QueryStateConfig>;
+	children: React.ReactNode;
+	blocks: Record<string, Block>;
+	queryConfig?: Record<string, QueryStateConfig>;
 	renderEngineId: string;
 }
 
 const MockProvider: React.FC<MockProviderProps> = ({
-    children,
+	children,
 	blocks,
 	renderEngineId,
-    queryConfig,
+	queryConfig,
 }) => {
-    const store = new StateStore({
-        state: {
-            executionOrder: [],
-            queries: queryConfig || {},
-            variables: {},
-            version: "",
-            blocks: blocks,
-        },
-    });
+	const store = new StateStore({
+		state: {
+			executionOrder: [],
+			queries: queryConfig || {},
+			variables: {},
+			version: "",
+			blocks: blocks,
+		},
+	});
 
-    return (
-        <Blocks state={store} registry={DefaultBlocks}>
+	return (
+		<Blocks state={store} registry={DefaultBlocks}>
 			<RendererEngine id={renderEngineId} />
 		</Blocks>
 	);
@@ -61,34 +61,32 @@ const MockHookProvider: React.FC<MockProviderProps> = ({
 		<Blocks state={store} registry={DefaultBlocks}>
 			<RendererEngine id={renderEngineId} />
 			{children && children}
-        </Blocks>
-    );
+		</Blocks>
+	);
 };
 
 // Define the type for the custom render function
 type CustomRenderOptions = {
-    blocks: Record<string, Block>;
-    queryConfig?: Record<string, QueryStateConfig>;
-    renderOptions?: RenderOptions<unknown>;
+	blocks: Record<string, Block>;
+	queryConfig?: Record<string, QueryStateConfig>;
+	renderOptions?: RenderOptions<unknown>;
 } & Omit<RenderOptions, "wrapper">;
 
 // Override render method from testing-library
 const customRender = (
-    ui: React.ReactElement,
-    options?: CustomRenderOptions,
+	ui: React.ReactElement,
+	options?: CustomRenderOptions,
 ): ReturnType<typeof render> => {
     const { blocks } = options || {}; // Destructure parameters from options
     const { queryConfig } = options || {};
-	const { id: renderEngineId } = ui.props; // Destructure ui block props and get its id prop to be used in renderEngine
-
+    const {id : renderEngineId} = ui.props // Destructure ui block props and get its id prop to be used in renderEngine
     return render(ui, {
         wrapper: (props) => (
             <MockProvider
                 {...props}
                 blocks={blocks}
                 queryConfig={queryConfig}
-				renderEngineId={renderEngineId}
-			/>
+            	renderEngineId={renderEngineId} />
         ),
         ...options,
     });
@@ -98,12 +96,13 @@ interface CustomHookRenderOptions<TProps> extends RenderHookOptions<TProps> {
 	blocks: Record<string, Block>;
 	queryConfig?: Record<string, QueryStateConfig>;
 	renderEngineId: string;
+	customChildren?: React.ReactNode
 }
 const customRenderHook = <TProps, TResult>(
 	callback: (props: TProps) => TResult,
 	options?: CustomHookRenderOptions<TProps>,
 ) => {
-	const { blocks, queryConfig, renderEngineId, ...hookOptions } = options;
+	const { blocks, queryConfig, renderEngineId, customChildren, ...hookOptions } = options;
 	// console.log({callback: callback})
 	return renderHook(callback, {
 		wrapper: ({ children, ...props }) => (
@@ -114,6 +113,7 @@ const customRenderHook = <TProps, TResult>(
 				renderEngineId={renderEngineId}
 			>
 				{children}
+				{customChildren && customChildren}
 			</MockHookProvider>
 		),
 		initialProps: {
