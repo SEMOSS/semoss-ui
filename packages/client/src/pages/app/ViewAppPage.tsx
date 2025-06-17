@@ -10,19 +10,9 @@ import { useRootStore } from '@/hooks';
 import { LoadingScreen, ShareOverlay } from '@/components/ui';
 import { CodeRenderer } from '@/components/code-workspace';
 
-const StyledViewport = styled('div')(() => ({
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100%',
-}));
-
 const StyledContent = styled('div')(({ theme }) => ({
     position: 'absolute',
-    top: '56px',
-    flex: '1',
-    height: '100%',
-    width: '100%',
+    inset: 0,
     overflow: 'hidden',
 }));
 
@@ -62,8 +52,8 @@ export const ViewAppPage = observer(() => {
     }
 
     return (
-        <StyledViewport>
-            <StyledContent sx={{ paddingLeft: '40px', paddingRight: '40px' }}>
+        <>
+            <StyledContent>
                 {workspace.type === 'BLOCKS' ? (
                     <Renderer appId={appId} insightId={workspace.insightId} />
                 ) : null}
@@ -78,6 +68,6 @@ export const ViewAppPage = observer(() => {
                     onClose={() => setIsShareOpen(false)}
                 />
             </Modal>
-        </StyledViewport>
+        </>
     );
 });

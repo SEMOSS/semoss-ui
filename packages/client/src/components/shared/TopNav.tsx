@@ -8,7 +8,6 @@ import {
     Typography,
     IconButton,
     InputAdornment,
-    Switch,
     Container,
     Stack,
 } from '@semoss/ui';
@@ -66,31 +65,6 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
         paddingLeft: '0px',
         paddingRight: '0px',
     },
-}));
-
-const StyledAppBuilder = styled(Typography)(({ theme }) => ({
-    color: 'var(--Text-Secondary, #666)',
-    fontFeatureSettings: "'liga' off, 'clig' off",
-    display: 'flex',
-    /* Typography/Caption */
-    fontFamily: 'Roboto',
-    fontSize: '12px',
-    fontStyle: 'normal',
-    fontWeight: '400',
-    lineHeight: '166%' /* 19.92px */,
-    letterSpacing: '0.4px',
-    flexDirection: 'column',
-    alignItems: 'flex-end',
-    flexGrow: 1,
-}));
-
-const StyledSwitch = styled(Switch)(({ theme }) => ({
-    display: 'flex',
-    // width: '3.125rem',
-    padding: '2px 0px',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: '10px',
 }));
 
 export const TopNav: React.FC = observer(() => {
@@ -181,24 +155,14 @@ export const TopNav: React.FC = observer(() => {
                     <>&nbsp;</>
                 )}
             </Container>
-            <Stack direction="row" flex={1} alignItems={'center'} spacing={1}>
-                {/* {location.pathname === '/' ? (
-                    <Stack direction="row" alignItems={'center'} spacing={1}>
-                        <StyledAppBuilder variant="h6">
-                            App Builder
-                        </StyledAppBuilder>
-                        <StyledSwitch
-                            checked={showAppBuilder}
-                            size={'small'}
-                            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                                setShowAppBuilder(e.target.checked);
-                                configStore.setAppBuilderMode(e.target.checked);
-                            }}
-                        ></StyledSwitch>
-                    </Stack>
-                ) : (
-                    <>&nbsp;</>
-                )} */}
+            <Stack
+                direction="row"
+                flex={1}
+                alignItems={'center'}
+                justifyContent={'flex-end'}
+                spacing={1}
+                paddingRight={2}
+            >
                 {page.topNav.right ? page.topNav.right() : null}
             </Stack>
         </StyledTopNav>

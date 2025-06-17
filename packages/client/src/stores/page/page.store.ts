@@ -43,11 +43,6 @@ export interface PageStoreInterface {
     };
 
     /**
-     * Header
-     **/
-    header: false | (() => React.ReactNode);
-
-    /**
      * Overlay information
      **/
     overlay: {
@@ -87,7 +82,6 @@ export class PageStore {
             open: false,
             pinned: false,
         },
-        header: false,
         overlay: {
             open: false,
             options: {
@@ -116,7 +110,6 @@ export class PageStore {
 
         // auto run and save to cache
         autorun(() => {
-            console.warn('AUTORUNNING');
             try {
                 const item: PageCache = {
                     sideNav: {
@@ -147,13 +140,6 @@ export class PageStore {
      */
     get sideNav() {
         return this._store.sideNav;
-    }
-
-    /**
-     * Get header information
-     */
-    get header() {
-        return this._store.header;
     }
 
     /**
@@ -206,13 +192,6 @@ export class PageStore {
      */
     unpinSideNav = () => {
         this._store.sideNav.pinned = false;
-    };
-
-    /**
-     * Set the header
-     */
-    setHeader = (header: PageStoreInterface['header'] = false) => {
-        this._store.header = header;
     };
 
     /**

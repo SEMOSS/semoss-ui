@@ -24,7 +24,6 @@ interface ConfigStoreInterface {
         admin: boolean;
     };
     /** App Builder mode (local storage, based on userEpoch) */
-    isAppBuilder: boolean;
     globalSearch: string;
     /** Config information */
     config: {
@@ -149,7 +148,6 @@ export class ConfigStore {
         authenticated: false,
         insightID: '',
         userEpoch: '',
-        isAppBuilder: false,
         globalSearch: '',
         user: {
             loggedIn: false,
@@ -298,9 +296,6 @@ export class ConfigStore {
         // get the user information
         await this.getUser();
 
-        // checks local storage if user is an app builder
-        await this.getAppBuilderMode();
-
         //set the reactors
         await this.setGeneralReactors();
     }
@@ -430,51 +425,9 @@ export class ConfigStore {
         }
     }
 
-    /**
-     * Checks if user is an app builder
-     */
-    private async getAppBuilderMode() {
-        let builderMode = false;
-        const item = localStorage.getItem(`builder--${this._store.userEpoch}`);
-
-        if (item) {
-            const d = JSON.parse(item);
-            builderMode = true;
-        } else {
-            builderMode = false;
-        }
-
-        runInAction(() => {
-            this._store.isAppBuilder = builderMode;
-        });
-    }
-
     setGlobalSearch(text = '') {
         runInAction(() => {
             this._store.globalSearch = text;
-        });
-    }
-
-    /**
-     * Switches App Builder on/off
-     * @param bool
-     */
-    async setAppBuilderMode(bool) {
-        const key = `builder--${this._store.userEpoch}`;
-
-        if (bool) {
-            localStorage.setItem(key, JSON.stringify({ state: true }));
-        } else {
-            const item = localStorage.getItem(
-                `builder--${this._store.userEpoch}`,
-            );
-            if (item) {
-                localStorage.removeItem(key);
-            }
-        }
-
-        runInAction(() => {
-            this._store.isAppBuilder = bool;
         });
     }
 

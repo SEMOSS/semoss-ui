@@ -1,209 +1,57 @@
-import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Navigate, useNavigate } from 'react-router-dom';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { styled, Stack, Typography, Switch } from '@semoss/ui';
 
-import { Box, Chip, Container, Typography, styled } from '@semoss/ui';
-import { STATE_VERSION } from '@semoss/renderer';
+import { useCacheState, usePageSetup } from '@/hooks';
+import { BusinessUserScreen, DeveloperUserScreen } from '@/components/landing';
 
-import { UserLandingPage } from '../components/landing/UserlandingPage';
-import DevBanner from '@/assets/img/DevBanner.png';
-import playground from '@/assets/img/playground.png';
-import AIConductor from '@/assets/img/AIConductor.png';
-import { usePageSetup, useRootStore } from '@/hooks';
-import { AddAppModal, NewAppModal } from '@/components/app';
-import { BASE_PAGE_BLOCKS } from './app/app.constants';
-import { THEME } from '@/constants';
-import { FeaturedAppCard } from '@/components/landing/FeaturedAppCard';
-import { BannerSection } from '@/components/landing/BannerSection';
-import CreateAppSection from '../components/landing/CreateAppSection';
-import { FanFavoritesSection } from '../components/landing/FanFavoritesSection';
-
-const StyledComponent = styled(Container)(({ theme }) => ({
-    gap: theme.spacing(3),
+const StyledAppBuilder = styled(Typography)(({ theme }) => ({
+    color: 'var(--Text-Secondary, #666)',
+    fontFeatureSettings: "'liga' off, 'clig' off",
     display: 'flex',
+    /* Typography/Caption */
+    fontFamily: 'Roboto',
+    fontSize: '12px',
+    fontStyle: 'normal',
+    fontWeight: '400',
+    lineHeight: '166%' /* 19.92px */,
+    letterSpacing: '0.4px',
     flexDirection: 'column',
-    alignItems: 'flex-start',
-    flex: '1 0 0',
-    alignSelf: 'stretch',
-
-    /* Media query for screens with a minimum width of 600px */
-    '@media (min-width: 600px)': {
-        '&.MuiContainer-root': {
-            paddingLeft: theme.spacing(0),
-            paddingRight: theme.spacing(0),
-        },
-    },
+    alignItems: 'flex-end',
+    flexGrow: 1,
 }));
 
-export const LandingPage = observer(() => {
-    const { configStore } = useRootStore();
-    const navigate = useNavigate();
+const StyledSwitch = styled(Switch)(({ theme }) => ({
+    display: 'flex',
+    // width: '3.125rem',
+    padding: '2px 0px',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '10px',
+}));
 
-    const [newAppOptions, setNewAppOptions] = useState<
-        React.ComponentProps<typeof NewAppModal>['options'] | null
-    >(null);
-    const [isUploadOpen, setIsUploadOpen] = useState(false);
+export const LandingPage: React.FC = observer(() => {
+    const [devMode, setDevMode] = useCacheState(false, `landing--devMode`);
 
-    const isNameOpen = !!newAppOptions;
-
-    const themeMap = useMemo(() => {
-        const theme = configStore.store.config['theme'];
-
-        if (theme && theme['THEME_MAP']) {
-            try {
-                return JSON.parse(theme['THEME_MAP'] as string);
-            } catch {
-                return {};
-            }
-        }
-
-        return {};
-    }, [Object.keys(configStore.store.config).length]);
-
-    /**
-     * Navigate to the app and open it
-     *
-     * appId - appId of the app
-     */
-    const navigateApp = (appId: string) => {
-        if (!appId) {
-            return;
-        }
-
-        navigate(`/workspace/${appId}`);
-    };
-
-    const isRestricted = !configStore.isEngineOperationAvailable('APP', 'add');
-    if (isRestricted) {
-        return <Navigate to="/" replace />;
-    }
-
-    /**
-     * @name setupApp
-     *
-     * @description Sets initial app meta based on tile click,
-     * in order to open the modal and gather more meta
-     *
-     * @param type - What type of app is user trying to create
-     * @returns void
-     */
-    const setupApp = (type: 'blocks' | 'code' | 'agent'): void => {
-        if (type === 'blocks') {
-            setNewAppOptions({
-                type: 'blocks',
-                state: {
-                    version: STATE_VERSION,
-                    variables: {},
-                    queries: {},
-                    blocks: BASE_PAGE_BLOCKS,
-                    executionOrder: [],
-                },
-            });
-        } else if (type === 'code') {
-            setNewAppOptions({
-                type: 'code',
-            });
-        } else if (type === 'agent') {
-            navigate('/app/new/prompt');
-        }
-    };
-
-    return (
-        <>
-            <StyledComponent
-                maxWidth={false}
-                sx={{
-                    maxWidth: '1440px',
-                    paddingLeft: '0px',
-                    paddingRight: '0px',
-                }}
-            >
-                {configStore.store.isAppBuilder ? (
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            paddingTop: '40px',
-                            paddingBottom: '40px',
-                            paddingLeft: '40px',
-                            paddingRight: '40px',
-                            gap: '24px',
-                            flexDirection: 'column',
+    usePageSetup({
+        topNav: {
+            left: () => null,
+            search: devMode,
+            right: () => (
+                <Stack direction="row" alignItems={'center'} spacing={1}>
+                    <StyledAppBuilder variant="h6">
+                        App Builder
+                    </StyledAppBuilder>
+                    <StyledSwitch
+                        checked={devMode}
+                        size={'small'}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            setDevMode(e.target.checked);
                         }}
-                    >
-                        <BannerSection
-                            imageUrl={DevBanner}
-                            tagline={`Empower your ideas with ${
-                                themeMap.name ? themeMap.name : THEME.name
-                            }`}
-                            description={
-                                'Build, automate, and innovate—all without coding. Harness the power of AI to transform your projects and workflows'
-                            }
-                            link={{
-                                label: 'Browse Templates',
-                                to: '/app/new/template',
-                            }}
-                        />
-                        <div
-                            style={{
-                                display: 'flex',
-                                width: '100%',
-                                gap: '24px',
-                                flexDirection: 'column',
-                            }}
-                        >
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    gap: '24px',
-                                    flexGrow: 1,
-                                    flexDirection: 'row',
-                                }}
-                            >
-                                <FeaturedAppCard
-                                    tagline={'Experiment in our Playground'}
-                                    description={`Chat with different LLMs and try out different prompts from our prompt library. Or chat with multiple LLMs in one room to hold a focus group or round table.`}
-                                    imageUrl={playground}
-                                    chip={{
-                                        label: 'FEATURED',
-                                        color: '#EBF4FE',
-                                    }}
-                                />
-                                <FeaturedAppCard
-                                    tagline={'Simplify tasks with AI Conductor'}
-                                    description={
-                                        'Use a chat interface to breakdown goals into subtasks that can be accomplished via an app, a routine, or another user. Simplify your workflows!'
-                                    }
-                                    imageUrl={AIConductor}
-                                    chip={{
-                                        label: 'NEW',
-                                        color: '#EBF4FE',
-                                    }}
-                                />
-                            </Box>
-                            {isNameOpen ? (
-                                <NewAppModal
-                                    open={isNameOpen}
-                                    options={newAppOptions}
-                                    onClose={(appId) => {
-                                        if (appId) {
-                                            navigateApp(appId);
-                                        } else {
-                                            // close the modal
-                                            setNewAppOptions(null);
-                                        }
-                                    }}
-                                />
-                            ) : null}
-                            <CreateAppSection setupApp={setupApp} />
-                        </div>
+                    ></StyledSwitch>
+                </Stack>
+            ),
+        },
+    });
 
-                        <FanFavoritesSection />
-                    </Box>
-                ) : (
-                    <UserLandingPage />
-                )}
-            </StyledComponent>
-        </>
-    );
+    return <>{devMode ? <DeveloperUserScreen /> : <BusinessUserScreen />}</>;
 });

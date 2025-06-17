@@ -1,11 +1,8 @@
-import { useState, useEffect } from 'react';
-
-import { styled, Stack } from '@semoss/ui';
+import { Container, styled } from '@semoss/ui';
 
 import { TopNav } from './TopNav';
 import { SideNav } from './SideNav';
 import { PlatformMessages } from './PlatformMessages';
-import { usePage } from '@/hooks';
 import { observer } from 'mobx-react-lite';
 
 const StyledPage = styled('div')(() => ({
@@ -17,40 +14,25 @@ const StyledPage = styled('div')(() => ({
     overflow: 'hidden',
 }));
 
-const StyledPageHeader = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'stuck',
-})<{
-    /** Track if the page header is stuck */
-    stuck: boolean;
-}>(({ theme, stuck }) => ({
-    position: 'sticky',
-    top: '0',
-    paddingTop: theme.spacing(1),
-    paddingBottom: theme.spacing(1),
-    zIndex: 10,
-    borderBottom: stuck ? `solid ${theme.palette.divider}` : 'none',
-    backgroundColor: theme.palette.background.paper,
-}));
-
-const StyledContent = styled(Stack)(() => ({
+const StyledContent = styled('div')(({ theme }) => ({
     position: 'relative',
-    flex: '1',
+    flex: 1,
     height: '100%',
     width: '100%',
     overflow: 'hidden',
+    paddingTop: theme.spacing(7), // nav height
 }));
 
-const StyledInner = styled('div')(({ theme }) => ({
+const StyledInner = styled('div')(() => ({
     position: 'relative',
-    display: 'flex',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    flex: '1',
     height: '100%',
     width: '100%',
     overflowX: 'hidden',
     overflowY: 'auto',
-    paddingTop: theme.spacing(7),
+}));
+
+const StyledContainer = styled(Container)(({ theme }) => ({
+    paddingTop: theme.spacing(3),
 }));
 
 export interface PageProps {
@@ -59,38 +41,18 @@ export interface PageProps {
 }
 
 export const Page: React.FC<PageProps> = observer(({ children }) => {
-    const [stuck, setStuck] = useState(false);
-    const [headerElement, setHeaderElement] = useState(null);
-
-    const { page } = usePage();
-
-    // if the header element, is scrolled, set it as sticky
-    useEffect(() => {
-        if (!headerElement) {
-            return;
-        }
-
-        const observer = new IntersectionObserver(
-            ([e]) => {
-                setStuck(e.intersectionRatio < 1);
-            },
-            { threshold: [1] },
-        );
-        observer.observe(headerElement);
-
-        return () => {
-            observer.unobserve(headerElement);
-        };
-    }, [headerElement]);
-
     return (
         <StyledPage>
             <SideNav />
-            <StyledContent direction={'column'}>
+            <StyledContent>
                 <TopNav />
-                <StyledInner id="home__content">{children}</StyledInner>
-                <PlatformMessages />
+                <StyledInner id="home__content">
+                    <StyledContainer sx={{ maxWidth: '1440px' }}>
+                        {children}
+                    </StyledContainer>
+                </StyledInner>
             </StyledContent>
+            <PlatformMessages />
         </StyledPage>
     );
 });

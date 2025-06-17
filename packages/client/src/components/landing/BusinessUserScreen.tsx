@@ -1,5 +1,4 @@
-import SearchIcon from '@mui/icons-material/Search';
-
+import { observer } from 'mobx-react-lite';
 import {
     Box,
     styled,
@@ -8,23 +7,15 @@ import {
     IconButton,
     InputAdornment,
 } from '@semoss/ui';
+import { Search as SearchIcon } from '@mui/icons-material';
 
 import { Search } from '../shared';
 import BusinessUserImage from '../../assets/img/BusinessUserLanding.svg';
 import businessUsercheckgrid from '../../assets/img/businessUsercheckgrid.svg';
 
-// Styled components for better reusability and cleaner JSX
-const GradientText = styled(Typography)(() => ({
-    background: 'linear-gradient(90deg, #6C53FF 0%, #86ECFF 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-    color: 'transparent',
-    fontWeight: 700,
-}));
-
-const BackgroundContainer = styled(Box)(({ theme }) => ({
-    minHeight: '100%',
+const StyledContainer = styled('div')(({ theme }) => ({
+    position: 'absolute',
+    inset: 0,
     backgroundImage: ` url(${BusinessUserImage}), linear-gradient(rgba(255,255,255,0.5), rgba(255,255,255,0.5)), url(${businessUsercheckgrid})`,
     backgroundRepeat: 'no-repeat',
     backgroundSize: '47%, 100%, 100%',
@@ -34,7 +25,15 @@ const BackgroundContainer = styled(Box)(({ theme }) => ({
     flexDirection: 'column',
     padding: theme.spacing(6, 9),
     gap: theme.spacing(4),
-    width: '100%',
+}));
+
+const GradientText = styled(Typography)(() => ({
+    background: 'linear-gradient(90deg, #6C53FF 0%, #86ECFF 100%)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    color: 'transparent',
+    fontWeight: 700,
 }));
 
 const ContentContainer = styled(Box)(({ theme }) => ({
@@ -82,9 +81,9 @@ const keyframes = `
 
 const subTitle = ['business apps', 'the power of models', 'knowledge repos'];
 
-const UserLandingPage = () => {
+export const BusinessUserScreen: React.FC = observer(() => {
     return (
-        <BackgroundContainer>
+        <StyledContainer>
             <ContentContainer sx={{ width: '100%' }}>
                 <Typography
                     variant="h2"
@@ -141,8 +140,6 @@ const UserLandingPage = () => {
                     )}
                 />
             </Box>
-        </BackgroundContainer>
+        </StyledContainer>
     );
-};
-
-export { UserLandingPage };
+});
