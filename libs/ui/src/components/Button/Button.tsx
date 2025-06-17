@@ -40,6 +40,14 @@ const StyledMuiButton = styled(MuiButton, {
                 backgroundColor: theme.palette.secondary.hover,
             },
         }),
+
+    ...(variant === "contained" && {
+        color: theme.palette.background.default,
+        backgroundColor: theme.palette.text.primary,
+        "&:hover": {
+            backgroundColor: theme.palette.text.primary,
+        },
+    }),
 }));
 
 export interface ButtonProps

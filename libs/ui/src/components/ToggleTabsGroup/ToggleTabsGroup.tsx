@@ -27,7 +27,7 @@ const StyledBox = styled(Box, {
                 ? "#0000000A"
                 : color === "primary"
                 ? `${theme.palette.primary.light}1D`
-                : "rgba(0, 0, 0, 0.04)",
+                : theme.palette.primary.selected,
         border: theme.palette.mode === "dark" ? "1px" : "0",
         borderRadius: "12px",
         width: "fit-content",

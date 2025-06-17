@@ -197,8 +197,8 @@ export const lightTheme: CustomThemeOptions = {
             dark: "#006500",
         },
         background: {
-            paper: "#FFFFFF", // Design references this color as "paper1"
-            default: "#FAFAFA", // Design references this color as "paper2"
+            paper: "#FAFAFA", // Design references this color as "paper1"
+            default: "#FFFFFF", // Design references this color as "paper2"
         },
         primaryContrast: {
             // SEMOSS BLUE
