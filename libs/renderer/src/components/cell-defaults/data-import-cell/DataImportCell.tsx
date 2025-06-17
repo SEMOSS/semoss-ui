@@ -208,7 +208,7 @@ export interface DataImportCellDef extends CellDef<"data-import"> {
         columnAliases: string[];
         tableNames: string[];
         joins: JoinObject[];
-
+        dataLimit: number;
         // TODO add filters and summaries
         // filters: FilterObject[];
         // summaries: FilterObject[];
@@ -230,6 +230,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
             display: {},
             ids: [],
         });
+        const [dataLimit, setDataLimit] = useState(cell.parameters.dataLimit || null);
 
         const myDbs = usePixel<{ app_id: string; app_name: string }[]>(
             `MyEngines(engineTypes=['DATABASE']);`,
@@ -383,6 +384,10 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
         const openEditModal = () => {
             setIsDataImportModalOpen(true);
         };
+
+        const updateDataLimit  = (query: string) :string => {
+            return query.replace(/Limit\s*\(\s*\-*\d+\s*\)/, `Limit ( ${cell.parameters.dataLimit || -1} )`);
+        }
 
         return (
             <StyledContent>
@@ -566,6 +571,40 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                             paddingTop={"0px"}
                             direction="row"
                         >
+                            <TextField 
+                                type="number"
+                                size="small"
+                                label="Data Limit"
+                                value={dataLimit}
+                                InputProps={{ inputProps: { min: 1, max: 10000 } }}
+                                onChange={(e) => {
+                                    let value = parseInt(e.target.value);
+                                    if (isNaN(value)) {
+                                        value = -1;
+                                    }
+                                    if(value===0){value=1;}
+                                    state.dispatch({
+                                        message: ActionMessages.UPDATE_CELL,
+                                        payload: {
+                                            path: "parameters.dataLimit",
+                                            queryId: cell.query.id,
+                                            cellId: cell.id,
+                                            value: value,
+                                        },
+                                    });
+                                let updatedSelectQuery = updateDataLimit(cell.parameters.selectQuery);
+                                    state.dispatch({
+                                        message: ActionMessages.UPDATE_CELL,
+                                        payload: {
+                                            path: "parameters.selectQuery",
+                                            queryId: cell.query.id,
+                                            cellId: cell.id,
+                                            value: updatedSelectQuery,
+                                        }
+                                    });
+                                    setDataLimit((prevValue)=> value===-1 ? null : value);
+                                }}
+                            />
                             <Button
                                 variant={"text"}
                                 color={"primary"}

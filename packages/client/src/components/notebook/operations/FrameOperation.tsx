@@ -31,7 +31,7 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
             values: (string | number | boolean)[][];
             headers: string[];
         };
-    }>(`Frame(frame=[${output.name}] )|QueryAll()|Limit(20)|CollectAll();`);
+    }>(`Frame(frame=[${output.name}] )|QueryAll()|CollectAll();`);
 
     // get the count of data in the frame
     const getCount = useBlocksPixel<number>(
