@@ -347,7 +347,7 @@ export class StateStore {
         Object.entries(this._store.variables).forEach((keyValue) => {
             const variable = keyValue[1];
 
-            if (variable.to === pointer && !cellId) {
+            if (variable.to === pointer && !cellId && !variable.cellId) {
                 alias = keyValue[0];
             } else if (variable.to === pointer && variable.cellId === cellId) {
                 alias = keyValue[0];
@@ -436,10 +436,10 @@ export class StateStore {
 
                 return this.runQuery(queryId);
             } else if (ActionMessages.NEW_CELL === action.message) {
-                const { queryId, cellId, config, previousCellId } =
+                const { queryId, config, previousCellId } =
                     action.payload;
 
-                this.newCell(queryId, cellId, config, previousCellId);
+                return this.newCell(queryId, config, previousCellId);
             } else if (ActionMessages.MOVE_CELL === action.message) {
                 const { queryId, activeCellId, overCellId } = action.payload;
 
@@ -460,6 +460,10 @@ export class StateStore {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
+            } else if (ActionMessages.RUN_MARKDOWN_CELL === action.message) {
+                const { queryId, cellId, marked } = action.payload;
+
+                this.runMarkdownCell(queryId, cellId, marked);
             } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
 
                 this.dispatchOutputsEvent()
@@ -528,7 +532,11 @@ export class StateStore {
                 }); 
                     
                 return await run();
-            }else if (ActionMessages.DISPATCH_EVENT === action.message) {
+            } else if (ActionMessages.RUN_CELL === action.message) {
+                const { queryId, cellId } = action.payload;
+
+                this.runCell(queryId, cellId);
+            } else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
@@ -595,7 +603,6 @@ export class StateStore {
                     if(expression.includes(".")) {
                         variable = expression.match(/\$(.*?)\./)[1];
                     } else {
-                        // debugger
                         variable = expression.match(/^\$(\w+)/)?.[1]
                     }
 
@@ -713,8 +720,6 @@ export class StateStore {
             // try to extract the variable
             const v = this.parseVariable(match);
 
-            // debugger
-
             // if it is not a string, convert to a string
             if (typeof v !== "string") {
                 return JSON.stringify(v);
@@ -825,7 +830,7 @@ export class StateStore {
             if (json.slots[slot]) {
                 block.slots[slot] = {
                     name: slot,
-                    children: json.slots[slot].map((child) => {
+                    children: (Array.isArray(json.slots[slot]) ? json.slots[slot] : json.slots[slot]['children']).map((child) => {
                         // form the parent object
                         const parent = { id: id, slot: slot };
 
@@ -1470,7 +1475,7 @@ export class StateStore {
         Object.entries(this._store.variables).forEach((keyValue) => {
             const id = keyValue[0];
             const variable = keyValue[1];
-            if (variable.type === "query") {
+            if (variable.type === "query" || variable.type === "cell") {
                 if (variable.to === queryId) {
                     delete this._store.variables[id];
                 }
@@ -1552,15 +1557,14 @@ export class StateStore {
      */
     private newCell = (
         queryId: string,
-        cellId: string,
         config: Omit<CellStateConfig, "id">,
         previousCellId: string,
-    ): void => {
+    ): string => {
         // get the query
         const q = this._store.queries[queryId];
 
         // add the cell
-        q._addCell(cellId, config, previousCellId);
+        return q._addCell(config, previousCellId) as string
     };
 
     /**
@@ -1602,11 +1606,8 @@ export class StateStore {
 
         // always have at least one cell
         if (q.list.length === 0) {
-            const newCellId = `${Math.floor(Math.random() * 100000)}`;
-
             this.newCell(
                 queryId,
-                newCellId,
                 {
                     parameters: {
                         code: "",
@@ -1674,6 +1675,12 @@ export class StateStore {
         this._utils.queryPromises[key] = p;
     };
 
+    private runMarkdownCell = (queryId: string, cellId: string, marked: boolean): void => {
+        const q = this._store.queries[queryId];
+        const c = q.getCell(cellId);
+        // make the cell as marked
+        this._store.queries[queryId].cells[cellId].parameters.marked = marked
+    }
     /**
      * Dispatch a custom event
      * @param name - name of the event
