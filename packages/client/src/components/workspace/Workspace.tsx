@@ -2,16 +2,8 @@ import React, { useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-import {
-    Menu,
-    MenuOpen,
-    PlayArrow,
-    Public,
-    RestartAlt,
-    SaveOutlined,
-    ShareRounded,
-} from '@mui/icons-material';
-import { Layout, TabNode } from 'flexlayout-react';
+import { Menu, MenuOpen, Public, RestartAlt } from '@mui/icons-material';
+import { Layout, TabNode, Model } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import './flexlayout.css';
 
@@ -23,20 +15,16 @@ import {
     IconButton,
     Tooltip,
     Button,
-    useNotification,
 } from '@semoss/ui';
 import { Env } from '@semoss/sdk/react';
 
 import { WorkspaceContext } from '@/contexts';
 import { WorkspaceStore, WorkspaceOptions } from '@/stores';
-import { usePageSetup, useRootStore } from '@/hooks';
+import { usePageSetup } from '@/hooks';
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
 import { CodeWorkspaceActions } from '../code-workspace/CodeWorkspaceActions';
 import { BlocksWorkspaceActions } from '../blocks-workspace/BlocksWorkspaceActions';
-import { useBlocks } from '@semoss/renderer';
-import { ShareOverlay } from '../ui';
-import { PreviewOverlay } from './PreviewOverlay';
 
 const StyledMain = styled('div')(() => ({
     position: 'relative',
@@ -64,7 +52,8 @@ const StyledSpacer = styled('div')(({ theme }) => ({
     left: theme.spacing(1.5),
     right: theme.spacing(1.5),
     bottom: theme.spacing(1.5),
-    overflow: 'hidden',
+    // overflow: 'hidden',
+    height: '100%',
 }));
 
 const StyledMenuOpenIcon = styled(MenuOpen)(() => ({

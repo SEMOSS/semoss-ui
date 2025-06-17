@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-import { useNotification } from '@semoss/ui';
+import { styled, useNotification } from '@semoss/ui';
 
 import { usePixel, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
@@ -10,6 +10,12 @@ import { BlocksWorkspace } from '@/components/blocks-workspace';
 import { CodeWorkspace } from '@/components/code-workspace';
 
 import { WorkspaceStore } from '@/stores';
+
+const StyledContent = styled('div')(({ theme }) => ({
+    position: 'absolute',
+    inset: 0,
+    overflow: 'hidden',
+}));
 
 export const EditAppPage = observer(() => {
     // App ID Needed for pixel calls
@@ -86,11 +92,19 @@ export const EditAppPage = observer(() => {
     }
 
     if (workspace.type === 'CODE') {
-        return <CodeWorkspace workspace={workspace} />;
+        return (
+            <StyledContent>
+                <CodeWorkspace workspace={workspace} />
+            </StyledContent>
+        );
     }
 
     if (workspace.type === 'BLOCKS') {
-        return <BlocksWorkspace workspace={workspace} />;
+        return (
+            <StyledContent>
+                <BlocksWorkspace workspace={workspace} />
+            </StyledContent>
+        );
     }
 
     return null;

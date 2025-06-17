@@ -119,7 +119,6 @@ export const CodeWorkspace = observer((props: CodeWorkspaceProps) => {
 
     return (
         <>
-            Code
             <Workspace
                 options={DEFAULT_OPTIONS}
                 workspace={workspace}

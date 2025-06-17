@@ -33,6 +33,9 @@ const StyledInner = styled('div')(() => ({
 
 const StyledContainer = styled(Container)(({ theme }) => ({
     paddingTop: theme.spacing(3),
+    width: '100%',
+    maxWidth: '1440px',
+    height: '100%',
 }));
 
 export interface PageProps {
@@ -47,9 +50,7 @@ export const Page: React.FC<PageProps> = observer(({ children }) => {
             <StyledContent>
                 <TopNav />
                 <StyledInner id="home__content">
-                    <StyledContainer sx={{ maxWidth: '1440px' }}>
-                        {children}
-                    </StyledContainer>
+                    <StyledContainer>{children}</StyledContainer>
                 </StyledInner>
             </StyledContent>
             <PlatformMessages />
