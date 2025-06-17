@@ -135,7 +135,17 @@ export const SettingsPanel = () => {
                                 name={workspace.metadata?.project_name || 'app'}
                                 direction="row"
                                 onDelete={() => {
-                                    navigate('/settings/app');
+                                    if (
+                                        location.pathname.startsWith(
+                                            '/settings/app/',
+                                        )
+                                    ) {
+                                        // If in app settings
+                                        navigate('/settings/app');
+                                    } else {
+                                        // If in App Library
+                                        navigate('/');
+                                    }
                                 }}
                             />
                         ) : null}

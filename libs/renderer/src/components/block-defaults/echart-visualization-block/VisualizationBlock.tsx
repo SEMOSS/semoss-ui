@@ -62,6 +62,7 @@ export interface EchartVisualizationBlockDef {
         };
         variation: undefined | string;
         columns: VisualizationColumns[];
+        aggregate: Record<string, any>;
         contextMenu: {
             hideUnfilter: boolean;
             hideFilter: boolean;
