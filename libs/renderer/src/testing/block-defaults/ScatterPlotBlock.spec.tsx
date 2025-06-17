@@ -2,8 +2,9 @@ import {
 	EchartVisualizationBlockDef,
 	VisualizationBlock,
 } from "@/components/block-defaults/echart-visualization-block/VisualizationBlock";
-import { act, render, renderHook, screen } from "../utils";
+import { act, fireEvent, render, renderHook, screen } from "../utils";
 import { useBlock, useBlockSettings } from "@/hooks";
+import { TooltipScatterPlot } from "@/components/block-defaults/echart-visualization-block/variant/scatter-plot/TooltipScatterPlot";
 
 const blocks = {
 	scatter: {
@@ -206,6 +207,24 @@ describe("Scatter Plot Block", async () => {
 		expect(variation).toBe("echart-scatter-plots");
 	});
 
+	// it("should use set Chart Title to be Hello", async () => {
+	// 	const { result } = renderHook(
+	// 		() => useBlock<EchartVisualizationBlockDef>("scatter"),
+	// 		{ blocks, renderEngineId: "scatter" },
+	// 	);
+
+	// 	expect(result.current).toBeDefined();
+
+	// 	act(() => {
+	// 		result.current.setData("option.title", { text: "Hello" });
+	// 		console.log({
+	// 			state: result.current.state.getBlock("scatter").data.option.title.text,
+	// 		});
+	// 	});
+
+	// 	const title = result.current.data.option.title.text;
+	// 	expect(title).toBe("Hello");
+	// });
 	it("should use set Chart Title to be Hello", async () => {
 		const { result } = renderHook(
 			() => useBlockSettings<EchartVisualizationBlockDef>("scatter"),
@@ -215,14 +234,58 @@ describe("Scatter Plot Block", async () => {
 		expect(result.current).toBeDefined();
 
 		act(() => {
-			result.current.setData("option", {
-				title: {
-					text: "Hello",
-				},
-			});
+			result.current.setData("option.title", { text: "Hello" });
 		});
 
 		const title = result.current.data.option.title.text;
 		expect(title).toBe("Hello");
+	});
+	it("should check Show Tooltip is enabled by default", async () => {
+		const { result } = renderHook(
+			() => useBlockSettings<EchartVisualizationBlockDef>("scatter"),
+			{
+				blocks,
+				renderEngineId: "scatter",
+				customChildren: <TooltipScatterPlot id="scatter" path={"option"} />,
+			},
+		);
+
+		const toggleTooltipSwitch = screen.getByRole("checkbox", { hidden: true });
+
+		expect(toggleTooltipSwitch).toBeChecked();
+		expect(result.current.data.option.tooltip.show).toBe(true)
+	});
+	it("should check Show Tooltip is toggled off", async () => {
+		const { result } = renderHook(
+			() => useBlockSettings<EchartVisualizationBlockDef>("scatter"),
+			{
+				blocks,
+				renderEngineId: "scatter",
+				customChildren: <TooltipScatterPlot id="scatter" path={"option"} />,
+			},
+		);
+
+		const toggleTooltipSwitch = screen.getByRole("checkbox", { hidden: true });
+
+		expect(toggleTooltipSwitch).toBeChecked();
+		fireEvent.click(toggleTooltipSwitch);
+		expect(toggleTooltipSwitch).not.toBeChecked();
+		expect(result.current.data.option.tooltip.show).toBe(false)
+	});
+	it("should toggle Show Tooltip", async () => {
+		const { result } = renderHook(
+			() => useBlockSettings<EchartVisualizationBlockDef>("scatter"),
+			{
+				blocks,
+				renderEngineId: "scatter",
+				customChildren: <TooltipScatterPlot id="scatter" path={"option"} />,
+			},
+		);
+
+		const toggleTooltipSwitch = screen.getByRole("checkbox", { hidden: true });
+
+		expect(toggleTooltipSwitch).toBeChecked();
+		fireEvent.click(toggleTooltipSwitch);
+		expect(toggleTooltipSwitch).not.toBeChecked();
 	});
 });
