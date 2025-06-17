@@ -21,7 +21,7 @@ const blocks = {
             views: ["hours", "minutes"],
         },
         id: "time-picker",
-        widget: "link",
+        widget: "timepicker",
         slots: {
             children: {
                 children: [],
@@ -49,7 +49,7 @@ const blocks = {
             views: ["hours", "minutes"],
         },
         id: "time-picker2",
-        widget: "link",
+        widget: "timepicker",
         slots: {
             children: {
                 children: [],
