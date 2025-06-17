@@ -113,7 +113,6 @@ export const TransformationCellTitle = (props: {
             message: ActionMessages.NEW_CELL,
             payload: {
                 queryId: cell.query.id,
-                cellId: cell.id,
                 previousCellId: previousCellId,
                 config: config as Omit<CellStateConfig, "id">,
             },

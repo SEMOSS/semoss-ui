@@ -1,26 +1,25 @@
-import { ChangeEvent, createElement, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { createElement, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { computed } from "mobx";
 import { Sync, Search } from "@mui/icons-material";
+import { computed } from "mobx";
 import { Tooltip, Checkbox } from "@mui/material";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Autocomplete, Button, Select, styled, TextField, InputAdornment, IconButton, Stack, Accordion, Typography } from "@semoss/ui";
 import {
     useBlockSettings,
     useBlocksPixel,
     useFrameHeaders,
-} from "../../../../../hooks";
-import { EChartColumns } from "./Bar";
-import { BlockDef } from "../../../../../store";
-import { PathValue } from "../../../../../types";
-import { getValueByPath } from "../../../../../utility";
-import { BAR_CHART_DATA } from "../../Visualization.constants";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
-import { DataTabStyling } from "./DataTabStyling";
-import StringIcon from '../../../../../assets/img/StringIcon.svg';
-import NumberIcon from '../../../../../assets/img/NumberIcon.svg';
-import { buildListener } from "../../../block-defaults.shared";
-import { ListenerSettings } from "../../../../block-settings";
+} from "../../../../hooks";
+import { BlockDef } from "../../../../store";
+import { PathValue } from "../../../../types";
+import { getValueByPath } from "../../../../utility";
+import { BAR_CHART_DATA } from "../Visualization.constants";
+import { EchartVisualizationBlockDef } from "../VisualizationBlock";
+import { DataTabStyling } from "./bar-chart/DataTabStyling";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import StringIcon from "../../../../assets/img/StringIcon.svg";
+import NumberIcon from "../../../../assets/img/NumberIcon.svg";
+import { buildListener } from "../../block-defaults.shared";
+import { ListenerSettings } from "../../../block-settings";
 import { ExpandMore } from '@mui/icons-material';
 
 //frame operations component props structure
@@ -80,15 +79,16 @@ interface AccordionSection {
     }
 };
 
+//data tab left section to show the data tab and the drag area for the selected columns
 export const FrameOperations = observer(
-    <D extends BlockDef = BlockDef>({ id, updateFrame, path, chart, storedColumns, handleStoreData }) => {
+    <D extends BlockDef = BlockDef>({ id, updateFrame, path, chart, storedColumns, handleStoreData, selectedItem }) => {
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
         const [columnsData, setColumnsData] = useState([]);
         const [search, setSearch] = useState("");
         const [isAdd, setIsAdd] = useState(false);
         const [addedColumnName, setAddedColumnName] = useState("");
-        const [droppedColumns, setDroppedColumns] = useState<Record<string, string[]>>({});
+        const [droppedColumns, setDroppedColumns] = useState<Record<string, any>>({});
         const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
         const [accordionSection, setAccordionSection] = useState<AccordionSection[]>([{
             ["preProcess"]:{
@@ -106,13 +106,6 @@ export const FrameOperations = observer(
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
         const [filteredColumns, setFilteredColumns] = useState([]);
         const [temp, setTemp] = useState(true);
-
-        const [frameOperationState, setFrameOperationState] = useState<
-            "initial" | "updated"
-        >("initial");
-
-        // options for the autocomplete
-        const options = getFrames.status === "SUCCESS" ? getFrames.data : [];
         // using frameheaders hook to get the header details for the selected frame
         const frameHeaders = useFrameHeaders(data.frame?.name);
         // fetch custom details about headers like alias, header, etc and assign to the variable for using it whenever required
@@ -136,7 +129,24 @@ export const FrameOperations = observer(
 
         useEffect(() => {
             setSelectedColumn(storedColumns);
+            const updatedColumns = { ...droppedColumns };
+            storedColumns.forEach((item, index) => {
+                const key = `data-tab-drop-area-${index}`;
+                if (item.values && item.values.length > 0) {
+                    updatedColumns[key] = {
+                        values: item.values,
+                        dataType: item.dataType,
+                    }
+                }
+            });
+            if (JSON.stringify(updatedColumns) !== JSON.stringify(droppedColumns)) {
+                setDroppedColumns(updatedColumns);
+            }
         }, [storedColumns]);
+
+        useEffect(() => {
+            setDroppedColumns({});
+        }, [data.variation]);
 
         const handleSearch = (searchValue: string) => {
             setSearch(searchValue); // Update the search state
@@ -193,7 +203,7 @@ export const FrameOperations = observer(
 
             const columnsDrop = [];
             for (let i = 0; i < columnsValue.length; i++) {
-                columnsDrop[i] = columnsValue[i].values.length > 0 ? columnsValue[i] : null;
+                columnsDrop[i] = columnsValue[i]?.values?.length > 0 ? columnsValue[i] : null;
             }
 
             const firstColumn = columnsDrop[0];
@@ -209,7 +219,6 @@ export const FrameOperations = observer(
             };
 
             const columns = { ...fieldsData };
-            console.log(columns, 'columns', columnsValue, 'columnsValue');
 
             if (variation === "echart-bar-graph") {
 
@@ -528,6 +537,14 @@ export const FrameOperations = observer(
             }
             if (variation === "echart-line-graph" && firstColumn !== null && secondColumn !== null) {
                 const tempValue = JSON.parse(computedValue);
+                tempValue["xAxis"] = {
+                    ...tempValue["xAxis"],
+                    name: firstColumn?.values,
+                };
+                tempValue["yAxis"] = {
+                    ...tempValue["yAxis"],
+                    name: secondColumn?.values,
+                };
 
                 tempValue["_state"] = {};
                 tempValue["_state"]["fields"] = {};
@@ -907,6 +924,22 @@ export const FrameOperations = observer(
                     setData("facet.facetSelected", []);
                 }
             }
+
+            const checkAggregate = (functionName) => ({ NUMBER: 'Average', STRING: 'Count' }[functionName] || functionName);
+            const formatAggregates = () => {
+                const formattedAggregates = {};
+                columnsValue.forEach((column, columnIndex) => {
+                    const valueMap = {};
+                    column?.values?.forEach((value, valueIndex) => {
+                        valueMap[value] = chart[columnIndex]?.aggregate
+                            ? checkAggregate(column?.dataType[valueIndex])
+                            : "";
+                    });
+                    formattedAggregates[column.label] = valueMap;
+                });
+                return formattedAggregates;
+            }
+            setData("aggregate", formatAggregates());
         }
         function dispatchData(option) {
             if (timeoutRef.current) {
@@ -946,18 +979,26 @@ export const FrameOperations = observer(
             const { source, destination, draggableId } = result;
             const dropId = destination.droppableId;
 
-            setDroppedColumns((prev) => {
-                const updated = { ...prev };
-                if (!updated[dropId]) updated[dropId] = [];
-                updated[dropId].push(draggableId);
-                return updated;
-            });
+            const updated = { ...droppedColumns };
+            if (!updated[dropId]) updated[dropId] = {values: [], dataType: []};
+            const dropCol = filteredColumns.find((col) => col?.name === draggableId);
+            updated[dropId] = {
+                ...updated[dropId],
+                values: [...updated[dropId]?.values, draggableId],
+                dataType: [...updated[dropId]?.dataType, dropCol?.dataType],
+            };
+            setDroppedColumns(updated);
         };
         const deleteDroppedColumn = (columnName: string) => {
             setDroppedColumns((prev) => {
                 const updated = { ...prev };
                 for (const key in updated) {
-                    updated[key] = updated[key].filter((col) => col !== columnName);
+                    let index = updated[key]["values"].indexOf(columnName);
+                    updated[key] = {
+                        ...updated[key],
+                        values: [...updated[key]["values"]?.slice(0, index), ...updated[key]["values"].slice(index + 1)],
+                        dataType: [...updated[key]["dataType"]?.slice(0, index), ...updated[key]["dataType"].slice(index + 1)],
+                    };
                 }
                 return updated;
             });
@@ -1015,6 +1056,23 @@ export const FrameOperations = observer(
             </>
         );
 
+        const handleChangeVisual = (value: boolean) => {
+            const tempValue = JSON.parse(computedValue);
+
+            tempValue["visual"] =
+                tempValue["visual"] &&
+                    Object.keys(tempValue["visual"]).length > 0
+                    ? tempValue["visual"]
+                    : {};
+            tempValue["visual"] = value;
+
+            setValue(JSON.stringify(tempValue));
+            setData("option", tempValue);
+        }
+        const handleSelectedItem = (item: any) => {
+            selectedItem(item);
+            setSelectedColumn([]);
+        };
         return (
             <>
                 <DragDropContext onDragEnd={handleDragEnd}>
@@ -1081,9 +1139,9 @@ export const FrameOperations = observer(
                                                     >
                                                         <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center" }}>
                                                             {col.dataType === "STRING" ? (
-                                                                <StyledLabelIcon src={StringIcon.toString()} />
+                                                                <StyledLabelIcon src={String(StringIcon)} />
                                                             ) : (
-                                                                <StyledLabelIcon src={NumberIcon.toString()} />
+                                                                <StyledLabelIcon src={String(NumberIcon)} />
                                                             )}
                                                         </div>
                                                         <div style={{ flex: "1 1 auto", display: "flex", alignItems: "center" }}>
@@ -1105,16 +1163,18 @@ export const FrameOperations = observer(
                                                                             const updated = { ...prev };
                                                                             if (e.target.checked) {
                                                                                 // Add the column name if checked
-                                                                                if (!updated[addedColumnName]) updated[addedColumnName] = [];
-                                                                                updated[addedColumnName].push(col.name);
+                                                                                if (!updated[addedColumnName]) updated[addedColumnName] = { values: [], dataType: [] };
+                                                                                updated[addedColumnName] = {
+                                                                                    values: [...updated[addedColumnName].values, col.name],
+                                                                                    dataType: [...updated[addedColumnName].dataType, col.dataType],
+                                                                                };
                                                                             } else {
                                                                                 // Remove the column name if unchecked
                                                                                 if (updated[addedColumnName]) {
-                                                                                    updated[addedColumnName] = updated[addedColumnName].filter(
-                                                                                        (name) => name !== col.name
-                                                                                    );
+                                                                                    let index = updated[addedColumnName]["values"].indexOf(col.name);
+                                                                                    updated[addedColumnName] = updated[addedColumnName].values.splice(index, 1);
                                                                                     // If the array becomes empty, you can optionally delete the key
-                                                                                    if (updated[addedColumnName].length === 0) {
+                                                                                    if (updated[addedColumnName]?.values?.length === 0) {
                                                                                         delete updated[addedColumnName];
                                                                                     }
                                                                                 }
@@ -1147,6 +1207,8 @@ export const FrameOperations = observer(
                                 isAdd={onClickAdd}
                                 chart={chart}
                                 storedColumns={selectedColumn}
+                                visual={handleChangeVisual}
+                                selectedItem={handleSelectedItem}
                             >
                             </DataTabStyling>
                         </StyledSubSection>
