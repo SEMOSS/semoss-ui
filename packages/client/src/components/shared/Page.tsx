@@ -4,6 +4,7 @@ import { TopNav } from './TopNav';
 import { SideNav } from './SideNav';
 import { PlatformMessages } from './PlatformMessages';
 import { observer } from 'mobx-react-lite';
+import { usePage } from '@/hooks';
 
 const StyledPage = styled('div')(() => ({
     position: 'relative',
@@ -31,10 +32,15 @@ const StyledInner = styled('div')(() => ({
     overflowY: 'auto',
 }));
 
-const StyledContainer = styled(Container)(({ theme }) => ({
-    paddingTop: theme.spacing(3),
+const StyledContainer = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'fullWidth',
+})<{
+    /** Track if the page header is stuck */
+    fullWidth: boolean;
+}>(({ theme, fullWidth }) => ({
+    padding: fullWidth ? '0px' : theme.spacing(3),
     width: '100%',
-    maxWidth: '1440px',
+    maxWidth: fullWidth ? '100%' : '1440px !important',
     height: '100%',
 }));
 
@@ -44,13 +50,16 @@ export interface PageProps {
 }
 
 export const Page: React.FC<PageProps> = observer(({ children }) => {
+    const { page } = usePage();
     return (
         <StyledPage>
             <SideNav />
             <StyledContent>
                 <TopNav />
                 <StyledInner id="home__content">
-                    <StyledContainer>{children}</StyledContainer>
+                    <StyledContainer fullWidth={page.content.fullWidth}>
+                        {children}
+                    </StyledContainer>
                 </StyledInner>
             </StyledContent>
             <PlatformMessages />

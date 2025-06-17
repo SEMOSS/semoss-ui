@@ -167,6 +167,9 @@ export const Workspace = observer((props: WorkspaceProps) => {
             search: true,
             right: null,
         },
+        content: {
+            fullWidth: true,
+        },
     });
 
     return (

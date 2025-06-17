@@ -42,6 +42,15 @@ export interface PageStoreInterface {
          */
         pinned: boolean;
     };
+    /**
+     * side navigation information
+     **/
+    content: {
+        /**
+         * Track if it is open or closed
+         */
+        fullWidth: boolean;
+    };
 
     /**
      * Overlay information
@@ -82,6 +91,9 @@ export class PageStore {
         sideNav: {
             open: false,
             pinned: false,
+        },
+        content: {
+            fullWidth: false,
         },
         overlay: {
             open: false,
@@ -144,6 +156,13 @@ export class PageStore {
     }
 
     /**
+     * Get content information
+     */
+    get content() {
+        return this._store.content;
+    }
+
+    /**
      * Get overlay information
      */
     get overlay() {
@@ -165,6 +184,13 @@ export class PageStore {
         },
     ) => {
         this._store.topNav = options;
+    };
+
+    /**
+     * Set the top navigation
+     */
+    setContent = (content: { fullWidth: boolean }) => {
+        this._store.content = content;
     };
 
     /**

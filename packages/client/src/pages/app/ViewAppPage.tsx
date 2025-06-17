@@ -112,6 +112,9 @@ export const ViewAppPage = observer(() => {
                 <></>
             ),
         },
+        content: {
+            fullWidth: true,
+        },
     });
 
     // hide the screen while it loads
