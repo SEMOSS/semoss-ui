@@ -35,7 +35,6 @@ import Saml from '@/assets/loginProviders/saml.png';
 import Siteminder from '@/assets/loginProviders/siteminder.png';
 import Surverymonkey from '@/assets/loginProviders/surveymonkey.png';
 import Twitter from '@/assets/loginProviders/x_twitter.png';
-import { T } from 'vitest/dist/chunks/reporters.d.C1ogPriE.js';
 
 const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
     width: '100%',
