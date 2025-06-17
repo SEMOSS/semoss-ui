@@ -123,7 +123,6 @@ export const CodeWorkspace = observer((props: CodeWorkspaceProps) => {
             <Workspace
                 options={DEFAULT_OPTIONS}
                 workspace={workspace}
-                endTopbar={<CodeWorkspaceActions />}
                 factory={FACTORY}
             />
         </>

@@ -280,11 +280,10 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                     designer: designer,
                 }}
             >
-                Blocks
                 <Workspace
                     options={DEFAULT_OPTIONS}
                     workspace={workspace}
-                    endTopbar={<BlocksWorkspaceActions />}
+                    // endTopbar={<BlocksWorkspaceActions />}
                     factory={FACTORY}
                 />
                 <BlocksWorkspaceDev />

@@ -1,6 +1,7 @@
 import { autorun, makeAutoObservable } from 'mobx';
 
 import { PageCache } from './page.types';
+import React from 'react';
 
 const CACHE_KEY = `PAGE_STORE_CACHE--1`;
 
@@ -13,7 +14,7 @@ export interface PageStoreInterface {
               /**
                * Content to display on the left side of the top nav
                */
-              left: (() => React.ReactNode) | null;
+              left: React.ReactNode | null;
 
               /**
                *  Show the search
@@ -23,7 +24,7 @@ export interface PageStoreInterface {
               /**
                * Content to display on the right side of the top nav
                */
-              right: (() => React.ReactNode) | null;
+              right: React.ReactNode | null;
           }
         | false;
 
@@ -158,9 +159,9 @@ export class PageStore {
      */
     setTopNav = (
         options: PageStoreInterface['topNav'] = {
-            left: () => null,
+            left: null,
             search: true,
-            right: () => null,
+            right: null,
         },
     ) => {
         this._store.topNav = options;

@@ -113,7 +113,7 @@ export const TopNav: React.FC = observer(() => {
                         </IconButton>
 
                         {page.topNav.left ? (
-                            page.topNav.left()
+                            page.topNav.left
                         ) : (
                             <StyledNavHeaderLink
                                 to={'/'}
@@ -166,6 +166,7 @@ export const TopNav: React.FC = observer(() => {
                 )}
             </Container>
             <Stack
+                id={'navbar-right'}
                 direction="row"
                 flex={1}
                 alignItems={'center'}
@@ -173,7 +174,7 @@ export const TopNav: React.FC = observer(() => {
                 spacing={1}
                 paddingRight={2}
             >
-                {page.topNav.right ? page.topNav.right() : null}
+                {page.topNav.right}
             </Stack>
         </StyledTopNav>
     );

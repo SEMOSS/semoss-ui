@@ -43,7 +43,7 @@ export const LandingPage: React.FC = observer(() => {
         topNav: {
             left: null,
             search: devMode,
-            right: () => (
+            right: (
                 <Stack direction="row" alignItems={'center'} spacing={1}>
                     {/* <StyledAppBuilder variant="h6">
                         App Builder

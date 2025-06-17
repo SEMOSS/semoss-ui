@@ -60,59 +60,57 @@ export const ViewAppPage = observer(() => {
 
     usePageSetup({
         topNav: {
-            left: () =>
-                workspace ? (
-                    <Stack direction="row" alignItems={'center'} spacing={1}>
-                        <Avatar
-                            variant="rounded"
-                            src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
-                        />
-                        <Typography variant={'subtitle1'}>
-                            {workspace.metadata.project_name}
-                        </Typography>
-                    </Stack>
-                ) : (
-                    <></>
-                ),
+            left: workspace ? (
+                <Stack direction="row" alignItems={'center'} spacing={1}>
+                    <Avatar
+                        variant="rounded"
+                        src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
+                    />
+                    <Typography variant={'subtitle1'}>
+                        {workspace.metadata.project_name}
+                    </Typography>
+                </Stack>
+            ) : (
+                <></>
+            ),
             search: true,
-            right: () =>
-                workspace ? (
-                    <Stack direction="row" alignItems={'center'} spacing={1}>
-                        <Tooltip title={'Share App'}>
-                            <IconButton
-                                size="small"
-                                color="default"
-                                onClick={() => {
-                                    setIsShareOpen(true);
-                                }}
-                                data-testid={'app-page-share-btn'}
-                            >
-                                <ShareRounded fontSize={'inherit'} />
-                            </IconButton>
-                        </Tooltip>
-
-                        <Button
-                            variant="contained"
-                            size={'small'}
-                            color="primary"
-                            disabled={
-                                !(
-                                    workspace.role === 'OWNER' ||
-                                    workspace.role === 'EDIT'
-                                )
-                            }
-                            endIcon={<EditOutlined fontSize="inherit" />}
-                            component={Link}
-                            //@ts-expect-error this is expected. props are forwarded
-                            to={`../../../app/${appId}/edit`}
-                            data-testid={'app-page-edit-btn'}
+            right: workspace ? (
+                <Stack direction="row" alignItems={'center'} spacing={1}>
+                    <Tooltip title={'Share App'}>
+                        <IconButton
+                            size="small"
+                            color="default"
+                            onClick={() => {
+                                setIsShareOpen(true);
+                            }}
+                            data-testid={'app-page-share-btn'}
                         >
-                            Edit
-                        </Button>
-                    </Stack>
-                ) : (
-                    <></>
-                ),
+                            <ShareRounded fontSize={'inherit'} />
+                        </IconButton>
+                    </Tooltip>
+
+                    <Button
+                        variant="contained"
+                        size={'small'}
+                        color="primary"
+                        disabled={
+                            !(
+                                workspace.role === 'OWNER' ||
+                                workspace.role === 'EDIT'
+                            )
+                        }
+                        endIcon={<EditOutlined fontSize="inherit" />}
+                        component={Link}
+                        //@ts-expect-error this is expected. props are forwarded
+                        to={`../../../app/${appId}/edit`}
+                        data-testid={'app-page-edit-btn'}
+                    >
+                        Edit
+                    </Button>
+                </Stack>
+            ) : (
+                <></>
+            ),
         },
     });
 

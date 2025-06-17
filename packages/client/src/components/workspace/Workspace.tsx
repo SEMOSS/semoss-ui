@@ -1,7 +1,16 @@
 import React, { useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-import { Menu, MenuOpen, Public, RestartAlt } from '@mui/icons-material';
+import {
+    Menu,
+    MenuOpen,
+    PlayArrow,
+    Public,
+    RestartAlt,
+    SaveOutlined,
+    ShareRounded,
+} from '@mui/icons-material';
 import { Layout, TabNode } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import './flexlayout.css';
@@ -14,6 +23,7 @@ import {
     IconButton,
     Tooltip,
     Button,
+    useNotification,
 } from '@semoss/ui';
 import { Env } from '@semoss/sdk/react';
 
@@ -24,6 +34,9 @@ import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
 import { CodeWorkspaceActions } from '../code-workspace/CodeWorkspaceActions';
 import { BlocksWorkspaceActions } from '../blocks-workspace/BlocksWorkspaceActions';
+import { useBlocks } from '@semoss/renderer';
+import { ShareOverlay } from '../ui';
+import { PreviewOverlay } from './PreviewOverlay';
 
 const StyledMain = styled('div')(() => ({
     position: 'relative',
@@ -84,9 +97,6 @@ const StyledActions = styled(Stack)(({ theme }) => ({
 }));
 
 type WorkspaceProps = {
-    /** End items to render in the top bar */
-    endTopbar?: React.ReactNode;
-
     /** Alert to display in topbar */
     alert?: React.ReactNode;
 
@@ -105,16 +115,15 @@ type WorkspaceProps = {
 
 export const Workspace = observer((props: WorkspaceProps) => {
     const {
-        endTopbar = null,
         alert,
         footer = null,
         workspace,
         options,
         factory = () => null,
     } = props;
-    const { configStore } = useRootStore();
 
     const layoutRef = useRef<Layout>(null);
+    const navbarRight = document.getElementById('navbar-right');
 
     // build the model from the layout
     // const model = workspace.model;
@@ -129,20 +138,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
             workspace.load(defaultOptions);
         }
     }, [options]);
-
-    const themeMap = useMemo(() => {
-        const theme = configStore.store.config['theme'];
-
-        if (theme && theme['THEME_MAP']) {
-            try {
-                return JSON.parse(theme['THEME_MAP'] as string);
-            } catch {
-                return {};
-            }
-        }
-
-        return {};
-    }, [Object.keys(configStore.store.config).length]);
 
     /**
      * reset the selected layout
@@ -159,54 +154,31 @@ export const Workspace = observer((props: WorkspaceProps) => {
         }
     };
 
-    // usePageSetup({
-    //     topNav: {
-    //         left: () => (
-    //             <Stack direction="row" alignItems={'center'} spacing={1}>
-    //                 <Avatar
-    //                     variant="rounded"
-    //                     src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
-    //                 />
-    //                 <Typography variant={'subtitle1'}>
-    //                     {workspace.metadata.project_name}
-    //                 </Typography>
-    //             </Stack>
-    //         ),
-    //         search: true,
-    //         right: null,
-    //         // right: workspace
-    //         //     ? () => (
-    //         //           <Stack direction="row" alignItems={'center'} spacing={1}>
-    //         //               {workspace.type === 'CODE' ? (
-    //         //                   <CodeWorkspaceActions />
-    //         //               ) : workspace.type === 'BLOCKS' ? (
-    //         //                 //   <BlocksWorkspaceActions />
-    //         //                   <>Blocks Workspace Actions</>
-    //         //               ) : (
-    //         //                   <></>
-    //         //               )}
-    //         //               <Button
-    //         //                   variant="contained"
-    //         //                   size={'small'}
-    //         //                   color="primary"
-    //         //                   disabled={
-    //         //                       !(
-    //         //                           workspace.role === 'OWNER' ||
-    //         //                           workspace.role === 'EDIT'
-    //         //                       )
-    //         //                   }
-    //         //                   endIcon={<Public fontSize="inherit" />}
-    //         //                   component={Link}
-    //         //                   //@ts-expect-error this is expected. props are forwarded
-    //         //                   to={`../../../app/${workspace.appId}/view`}
-    //         //               >
-    //         //                   Show
-    //         //               </Button>
-    //         //           </Stack>
-    //         //       )
-    //         //     : null,
-    //     },
-    // });
+    const endNavbarActions = () => {
+        if (workspace.type === 'CODE') {
+            return <CodeWorkspaceActions />;
+        } else if (workspace.type === 'BLOCKS') {
+            return <BlocksWorkspaceActions />;
+        }
+    };
+
+    usePageSetup({
+        topNav: {
+            left: (
+                <Stack direction="row" alignItems={'center'} spacing={1}>
+                    <Avatar
+                        variant="rounded"
+                        src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
+                    />
+                    <Typography variant={'subtitle1'}>
+                        {workspace.metadata.project_name}
+                    </Typography>
+                </Stack>
+            ),
+            search: true,
+            right: null,
+        },
+    });
 
     return (
         <WorkspaceContext.Provider
@@ -214,51 +186,32 @@ export const Workspace = observer((props: WorkspaceProps) => {
                 workspace: workspace,
             }}
         >
+            {navbarRight &&
+                createPortal(
+                    <Stack direction="row" alignItems={'center'} spacing={1}>
+                        {endNavbarActions()}
+                        <Button
+                            variant="contained"
+                            size={'small'}
+                            color="primary"
+                            disabled={
+                                !(
+                                    workspace.role === 'OWNER' ||
+                                    workspace.role === 'EDIT'
+                                )
+                            }
+                            endIcon={<Public fontSize="inherit" />}
+                            component={Link}
+                            //@ts-expect-error this is expected. props are forwarded
+                            to={`../../../app/${workspace.appId}/view`}
+                        >
+                            Show
+                        </Button>
+                    </Stack>,
+                    navbarRight,
+                )}
             <WorkspaceOverlay />
             <StyledMain>
-                {/* <Stack
-                    direction={'row'}
-                    alignItems={'center'}
-                    padding={1}
-                    spacing={1}
-                >
-                    <Stack direction="row" alignItems={'center'} spacing={1}>
-                        <Avatar
-                            variant="rounded"
-                            src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
-                        />
-                        <Typography variant={'subtitle1'}>
-                            {workspace.metadata.project_name}
-                        </Typography>
-                    </Stack>
-
-                    <Stack
-                        flex={1}
-                        alignItems={'center'}
-                        justifyContent={'center'}
-                        overflow={'hidden'}
-                    >
-                        <div>{alert || <>&nbsp;</>}</div>
-                    </Stack>
-                    {endTopbar}
-                    <Button
-                        variant="contained"
-                        size={'small'}
-                        color="primary"
-                        disabled={
-                            !(
-                                workspace.role === 'OWNER' ||
-                                workspace.role === 'EDIT'
-                            )
-                        }
-                        endIcon={<Public fontSize="inherit" />}
-                        component={Link}
-                        //@ts-expect-error this is expected. props are forwarded
-                        to={`../../../app/${workspace.appId}`}
-                    >
-                        Show
-                    </Button>
-                </Stack> */}
                 <StyledContent>
                     <WorkspaceLoading />
                     <StyledSpacer>
