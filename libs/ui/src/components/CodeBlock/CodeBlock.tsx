@@ -206,6 +206,7 @@ interface HasLength {
     >(null);
     const codeContainerRef = useRef<HTMLDivElement>(null);
     const highlighterRef = useRef(null);
+    //create the highlighter object and update the code content, then dispose the highligter when component unmounts
     useEffect(() => {
         const createHighlighterObj = async () => {
             highlighterRef.current = await createHighlighterCore({
@@ -248,17 +249,16 @@ interface HasLength {
         return () => {
             highlighterRef.current.dispose();
         };
-    }, []);
+    }, [theme, language]);
 
     const handleClipBoardClick = async () => {
         try {
             await navigator.clipboard.writeText(codeToBeUpdated);
             setClipboardStatus("success");
-            copyButtonClicked("success");
+            copyButtonClicked && copyButtonClicked("success");
         } catch (err) {
-            console.error("Failed to copy: ", err);
             setClipboardStatus("error");
-            copyButtonClicked("error");
+            copyButtonClicked && copyButtonClicked("error");
         }
     };
     function processLineNumbers(string) {
@@ -322,11 +322,17 @@ interface HasLength {
                 lineNumberSectionHtml.body.firstElementChild.outerHTML +
                 lineCodeSectionHtml.body.firstElementChild.outerHTML
             }</span>`;
-            codeContainerRef.current.innerHTML =
-                stringElement.getElementsByClassName("shiki")[0].outerHTML;
+            if (codeContainerRef.current) {
+                codeContainerRef.current.innerHTML =
+                    stringElement.getElementsByClassName("shiki")[0].outerHTML;
+            }
         }
     }
-    processLineNumbers(contentToUpdate);
+    // Process line numbers after the content is updated
+    useEffect(() => {
+        processLineNumbers(contentToUpdate);
+    }, [contentToUpdate]);
+
     const svgIcon =
         theme === "light" ? (
             <svg

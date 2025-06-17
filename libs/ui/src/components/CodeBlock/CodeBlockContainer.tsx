@@ -23,6 +23,5 @@ export const CodeBlockContainer: React.FC<CodeBlockContainerProps> = ({
     children,
     sx,
 }) => {
-    console.log(sx, children, "codeblockcontainer");
     return <StyledCodeContainer sx={sx}>{children}</StyledCodeContainer>;
 };
