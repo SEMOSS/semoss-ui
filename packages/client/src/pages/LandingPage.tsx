@@ -1,5 +1,12 @@
 import { observer } from 'mobx-react-lite';
-import { styled, Stack, Typography, Switch } from '@semoss/ui';
+import {
+    styled,
+    Stack,
+    Typography,
+    Switch,
+    ToggleButtonGroup,
+    ToggleButton,
+} from '@semoss/ui';
 
 import { useCacheState, usePageSetup } from '@/hooks';
 import { BusinessUserScreen, DeveloperUserScreen } from '@/components/landing';
@@ -34,11 +41,11 @@ export const LandingPage: React.FC = observer(() => {
 
     usePageSetup({
         topNav: {
-            left: () => null,
+            left: null,
             search: devMode,
             right: () => (
                 <Stack direction="row" alignItems={'center'} spacing={1}>
-                    <StyledAppBuilder variant="h6">
+                    {/* <StyledAppBuilder variant="h6">
                         App Builder
                     </StyledAppBuilder>
                     <StyledSwitch
@@ -47,7 +54,22 @@ export const LandingPage: React.FC = observer(() => {
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             setDevMode(e.target.checked);
                         }}
-                    ></StyledSwitch>
+                    ></StyledSwitch> */}
+                    <ToggleButtonGroup
+                        size="small"
+                        color={'primary'}
+                        value={devMode ? 'build' : ''}
+                    >
+                        <ToggleButton
+                            size="small"
+                            value={'build'}
+                            onClick={() => {
+                                setDevMode(!devMode);
+                            }}
+                        >
+                            Build
+                        </ToggleButton>
+                    </ToggleButtonGroup>
                 </Stack>
             ),
         },

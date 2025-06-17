@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-import { useNotification } from '@semoss/ui';
+import { Stack, useNotification } from '@semoss/ui';
 
-import { usePixel, useRootStore } from '@/hooks';
+import { usePageSetup, usePixel, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
 import { BlocksWorkspace } from '@/components/blocks-workspace';
@@ -79,6 +79,18 @@ export const EditAppPage = observer(() => {
             }
         }
     }, [validateDependencies.status, validateDependencies.data]);
+
+    usePageSetup({
+        topNav: {
+            left: () => <>App name and image</>,
+            search: true,
+            right: () => (
+                <Stack direction="row" alignItems={'center'} spacing={1}>
+                    bunch of stuff for editing
+                </Stack>
+            ),
+        },
+    });
 
     // hide the screen while it loads
     if (!workspace) {

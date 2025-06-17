@@ -13,7 +13,7 @@ export interface PageStoreInterface {
               /**
                * Content to display on the left side of the top nav
                */
-              left: () => React.ReactNode;
+              left: (() => React.ReactNode) | null;
 
               /**
                *  Show the search
@@ -23,7 +23,7 @@ export interface PageStoreInterface {
               /**
                * Content to display on the right side of the top nav
                */
-              right: () => React.ReactNode;
+              right: (() => React.ReactNode) | null;
           }
         | false;
 
@@ -74,9 +74,9 @@ export interface PageStoreInterface {
 export class PageStore {
     private _store: PageStoreInterface = {
         topNav: {
-            left: () => null,
+            left: null,
             search: true,
-            right: () => null,
+            right: null,
         },
         sideNav: {
             open: false,

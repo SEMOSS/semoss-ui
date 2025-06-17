@@ -10,6 +10,7 @@ import {
     InputAdornment,
     Container,
     Stack,
+    Button,
 } from '@semoss/ui';
 
 import { THEME } from '@/constants';
@@ -111,15 +112,24 @@ export const TopNav: React.FC = observer(() => {
                             <MenuRounded fontSize="medium" />
                         </IconButton>
 
-                        <StyledNavHeaderLink to={'/'} aria-label={'Go Home'}>
-                            <Logo />
-                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                                {themeMap.name ? themeMap.name : THEME.name}
-                            </Typography>
-                        </StyledNavHeaderLink>
+                        {page.topNav.left ? (
+                            page.topNav.left()
+                        ) : (
+                            <StyledNavHeaderLink
+                                to={'/'}
+                                aria-label={'Go Home'}
+                            >
+                                <Logo />
+                                <Typography
+                                    variant="h6"
+                                    sx={{ fontWeight: 700 }}
+                                >
+                                    {themeMap.name ? themeMap.name : THEME.name}
+                                </Typography>
+                            </StyledNavHeaderLink>
+                        )}
                     </StyledNavHeader>
                 )}
-                {page.topNav.left ? page.topNav.left() : null}
             </Stack>
             <Container maxWidth={false} sx={{ maxWidth: '720px' }}>
                 {page.topNav && page.topNav.search ? (

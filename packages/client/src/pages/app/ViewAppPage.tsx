@@ -1,14 +1,26 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
-import { styled, useNotification, Modal } from '@semoss/ui';
+import {
+    styled,
+    useNotification,
+    Modal,
+    Stack,
+    Tooltip,
+    IconButton,
+    Button,
+    Typography,
+    Avatar,
+} from '@semoss/ui';
 import { Renderer } from '@semoss/renderer';
 
 import { WorkspaceStore } from '@/stores';
-import { useRootStore } from '@/hooks';
+import { usePageSetup, useRootStore } from '@/hooks';
 import { LoadingScreen, ShareOverlay } from '@/components/ui';
 import { CodeRenderer } from '@/components/code-workspace';
+import { EditOutlined, ShareRounded } from '@mui/icons-material';
+import { Env } from '@semoss/sdk';
 
 const StyledContent = styled('div')(({ theme }) => ({
     position: 'absolute',
@@ -46,10 +58,70 @@ export const ViewAppPage = observer(() => {
             });
     }, [appId]);
 
+    usePageSetup({
+        topNav: {
+            left: () =>
+                workspace ? (
+                    <Stack direction="row" alignItems={'center'} spacing={1}>
+                        <Avatar
+                            variant="rounded"
+                            src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
+                        />
+                        <Typography variant={'subtitle1'}>
+                            {workspace.metadata.project_name}
+                        </Typography>
+                    </Stack>
+                ) : (
+                    <></>
+                ),
+            search: true,
+            right: () =>
+                workspace ? (
+                    <Stack direction="row" alignItems={'center'} spacing={1}>
+                        <Tooltip title={'Share App'}>
+                            <IconButton
+                                size="small"
+                                color="default"
+                                onClick={() => {
+                                    setIsShareOpen(true);
+                                }}
+                                data-testid={'app-page-share-btn'}
+                            >
+                                <ShareRounded fontSize={'inherit'} />
+                            </IconButton>
+                        </Tooltip>
+
+                        <Button
+                            variant="contained"
+                            size={'small'}
+                            color="primary"
+                            disabled={
+                                !(
+                                    workspace.role === 'OWNER' ||
+                                    workspace.role === 'EDIT'
+                                )
+                            }
+                            endIcon={<EditOutlined fontSize="inherit" />}
+                            component={Link}
+                            //@ts-expect-error this is expected. props are forwarded
+                            to={`../../../workspace/${appId}/edit`}
+                            data-testid={'app-page-edit-btn'}
+                        >
+                            Edit
+                        </Button>
+                    </Stack>
+                ) : (
+                    <></>
+                ),
+        },
+    });
+
     // hide the screen while it loads
     if (!workspace) {
         return <LoadingScreen.Trigger description="Initializing app" />;
     }
+
+    console.log('show renderer');
 
     return (
         <>

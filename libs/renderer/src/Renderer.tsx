@@ -207,6 +207,8 @@ const getCurrentPageId = (state: SerializedState) => {
     }
     Object?.entries(blocks).forEach(([_, block]) => {
         if (block?.widget === "page") {
+            debugger
+            console.log('match', match)
             if (currentRoute === block?.data.route) {
                 activePageID = block?.id;
             }

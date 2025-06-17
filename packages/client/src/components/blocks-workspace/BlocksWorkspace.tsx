@@ -269,6 +269,10 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         return <LoadingScreen.Trigger />;
     }
 
+    console.log('Block Workspace');
+    console.log(DEFAULT_OPTIONS);
+    console.log(workspace);
+
     return (
         <Blocks state={state} registry={DefaultBlocks}>
             <DesignerContext.Provider
