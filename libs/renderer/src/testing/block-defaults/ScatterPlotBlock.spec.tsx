@@ -307,25 +307,25 @@ describe("Scatter Plot Block", async () => {
 							{
 								value: [1, 1],
 								label: {
-									formatter: "123",
+									formatter: "Test1",
 								},
 							},
 							{
 								value: [6, 112.5],
 								label: {
-									formatter: "36C10G14D1004",
+									formatter: "Test2",
 								},
 							},
 							{
 								value: [2, 50],
 								label: {
-									formatter: "ghjh",
+									formatter: "Test3",
 								},
 							},
 							{
 								value: [1, 0],
 								label: {
-									formatter: "philtest123",
+									formatter: "Test4",
 								},
 							},
 						],
@@ -339,25 +339,25 @@ describe("Scatter Plot Block", async () => {
 			{
 				value: [1, 1],
 				label: {
-					formatter: "123",
+					formatter: "Test1",
 				},
 			},
 			{
 				value: [6, 112.5],
 				label: {
-					formatter: "36C10G14D1004",
+					formatter: "Test2",
 				},
 			},
 			{
 				value: [2, 50],
 				label: {
-					formatter: "ghjh",
+					formatter: "Test3",
 				},
 			},
 			{
 				value: [1, 0],
 				label: {
-					formatter: "philtest123",
+					formatter: "Test4",
 				},
 			},
 		]);
