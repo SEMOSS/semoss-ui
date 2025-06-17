@@ -57,7 +57,10 @@ const blocks = {
             },
         },
         listeners: {
-            onChange: [],
+            onChange: {
+                type: "sync",
+                order: [],
+            },
         },
     },
 };
