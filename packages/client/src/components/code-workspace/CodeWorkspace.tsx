@@ -1,17 +1,15 @@
 import { observer } from 'mobx-react-lite';
 
-import { WorkspaceOptions, WorkspaceStore } from '@/stores';
-
+import { CodeWorkspaceActions } from './CodeWorkspaceActions';
+import { RendererPanel } from './panels';
+import { WorkspaceOptions, WorkspaceStore } from '../../stores';
 import {
     Workspace,
     SettingsPanel,
     FileExplorerPanel,
     FileEditorPanel,
     TerminalPanel,
-} from '@/components/workspace';
-
-import { CodeWorkspaceActions } from './CodeWorkspaceActions';
-import { RendererPanel } from './panels';
+} from '../../components/workspace';
 
 const DEFAULT_BORDER_SIZE = 300;
 
@@ -121,6 +119,7 @@ export const CodeWorkspace = observer((props: CodeWorkspaceProps) => {
 
     return (
         <>
+            Code
             <Workspace
                 options={DEFAULT_OPTIONS}
                 workspace={workspace}

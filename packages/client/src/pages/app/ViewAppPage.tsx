@@ -104,7 +104,7 @@ export const ViewAppPage = observer(() => {
                             endIcon={<EditOutlined fontSize="inherit" />}
                             component={Link}
                             //@ts-expect-error this is expected. props are forwarded
-                            to={`../../../workspace/${appId}/edit`}
+                            to={`../../../app/${appId}/edit`}
                             data-testid={'app-page-edit-btn'}
                         >
                             Edit
@@ -120,8 +120,6 @@ export const ViewAppPage = observer(() => {
     if (!workspace) {
         return <LoadingScreen.Trigger description="Initializing app" />;
     }
-
-    console.log('show renderer');
 
     return (
         <>

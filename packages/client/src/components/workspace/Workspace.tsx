@@ -19,9 +19,11 @@ import { Env } from '@semoss/sdk/react';
 
 import { WorkspaceContext } from '@/contexts';
 import { WorkspaceStore, WorkspaceOptions } from '@/stores';
-import { useRootStore } from '@/hooks';
+import { usePageSetup, useRootStore } from '@/hooks';
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
+import { CodeWorkspaceActions } from '../code-workspace/CodeWorkspaceActions';
+import { BlocksWorkspaceActions } from '../blocks-workspace/BlocksWorkspaceActions';
 
 const StyledMain = styled('div')(() => ({
     position: 'relative',
@@ -157,6 +159,55 @@ export const Workspace = observer((props: WorkspaceProps) => {
         }
     };
 
+    // usePageSetup({
+    //     topNav: {
+    //         left: () => (
+    //             <Stack direction="row" alignItems={'center'} spacing={1}>
+    //                 <Avatar
+    //                     variant="rounded"
+    //                     src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
+    //                 />
+    //                 <Typography variant={'subtitle1'}>
+    //                     {workspace.metadata.project_name}
+    //                 </Typography>
+    //             </Stack>
+    //         ),
+    //         search: true,
+    //         right: null,
+    //         // right: workspace
+    //         //     ? () => (
+    //         //           <Stack direction="row" alignItems={'center'} spacing={1}>
+    //         //               {workspace.type === 'CODE' ? (
+    //         //                   <CodeWorkspaceActions />
+    //         //               ) : workspace.type === 'BLOCKS' ? (
+    //         //                 //   <BlocksWorkspaceActions />
+    //         //                   <>Blocks Workspace Actions</>
+    //         //               ) : (
+    //         //                   <></>
+    //         //               )}
+    //         //               <Button
+    //         //                   variant="contained"
+    //         //                   size={'small'}
+    //         //                   color="primary"
+    //         //                   disabled={
+    //         //                       !(
+    //         //                           workspace.role === 'OWNER' ||
+    //         //                           workspace.role === 'EDIT'
+    //         //                       )
+    //         //                   }
+    //         //                   endIcon={<Public fontSize="inherit" />}
+    //         //                   component={Link}
+    //         //                   //@ts-expect-error this is expected. props are forwarded
+    //         //                   to={`../../../app/${workspace.appId}/view`}
+    //         //               >
+    //         //                   Show
+    //         //               </Button>
+    //         //           </Stack>
+    //         //       )
+    //         //     : null,
+    //     },
+    // });
+
     return (
         <WorkspaceContext.Provider
             value={{
@@ -165,7 +216,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
         >
             <WorkspaceOverlay />
             <StyledMain>
-                <Stack
+                {/* <Stack
                     direction={'row'}
                     alignItems={'center'}
                     padding={1}
@@ -207,7 +258,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
                     >
                         Show
                     </Button>
-                </Stack>
+                </Stack> */}
                 <StyledContent>
                     <WorkspaceLoading />
                     <StyledSpacer>

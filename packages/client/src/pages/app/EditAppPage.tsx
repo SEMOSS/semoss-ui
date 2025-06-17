@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-import { Stack, useNotification } from '@semoss/ui';
+import { Avatar, Button, Stack, Typography, useNotification } from '@semoss/ui';
 
 import { usePageSetup, usePixel, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
@@ -10,6 +10,10 @@ import { BlocksWorkspace } from '@/components/blocks-workspace';
 import { CodeWorkspace } from '@/components/code-workspace';
 
 import { WorkspaceStore } from '@/stores';
+import { Env } from '@semoss/sdk';
+import { Public } from '@mui/icons-material';
+import { CodeWorkspaceActions } from '@/components/code-workspace/CodeWorkspaceActions';
+import { BlocksWorkspaceActions } from '@/components/blocks-workspace/BlocksWorkspaceActions';
 
 export const EditAppPage = observer(() => {
     // App ID Needed for pixel calls
@@ -26,6 +30,7 @@ export const EditAppPage = observer(() => {
             ? 'ValidateUserProjectDependencies(project="' + appId + '");'
             : '',
     );
+    console.log('Edit App Page');
 
     useEffect(() => {
         let isMounted = true;
@@ -80,22 +85,12 @@ export const EditAppPage = observer(() => {
         }
     }, [validateDependencies.status, validateDependencies.data]);
 
-    usePageSetup({
-        topNav: {
-            left: () => <>App name and image</>,
-            search: true,
-            right: () => (
-                <Stack direction="row" alignItems={'center'} spacing={1}>
-                    bunch of stuff for editing
-                </Stack>
-            ),
-        },
-    });
-
     // hide the screen while it loads
     if (!workspace) {
         return <LoadingScreen.Trigger description="Initializing app" />;
     }
+
+    console.log(workspace);
 
     if (workspace.type === 'CODE') {
         return <CodeWorkspace workspace={workspace} />;
