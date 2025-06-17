@@ -1,5 +1,5 @@
 import {
-	EchartVisualizationBlockDef,
+	type EchartVisualizationBlockDef,
 	VisualizationBlock,
 } from "@/components/block-defaults/echart-visualization-block/VisualizationBlock";
 import { act, fireEvent, render, renderHook, screen } from "../utils";
@@ -253,7 +253,7 @@ describe("Scatter Plot Block", async () => {
 		const toggleTooltipSwitch = screen.getByRole("checkbox", { hidden: true });
 
 		expect(toggleTooltipSwitch).toBeChecked();
-		expect(result.current.data.option.tooltip.show).toBe(true)
+		expect(result.current.data.option.tooltip.show).toBe(true);
 	});
 	it("should check Show Tooltip is toggled off", async () => {
 		const { result } = renderHook(
@@ -270,7 +270,7 @@ describe("Scatter Plot Block", async () => {
 		expect(toggleTooltipSwitch).toBeChecked();
 		fireEvent.click(toggleTooltipSwitch);
 		expect(toggleTooltipSwitch).not.toBeChecked();
-		expect(result.current.data.option.tooltip.show).toBe(false)
+		expect(result.current.data.option.tooltip.show).toBe(false);
 	});
 	it("should toggle Show Tooltip", async () => {
 		const { result } = renderHook(
@@ -287,5 +287,79 @@ describe("Scatter Plot Block", async () => {
 		expect(toggleTooltipSwitch).toBeChecked();
 		fireEvent.click(toggleTooltipSwitch);
 		expect(toggleTooltipSwitch).not.toBeChecked();
+	});
+	it("should set data", async () => {
+		const { result } = renderHook(
+			() => useBlockSettings<EchartVisualizationBlockDef>("scatter"),
+			{
+				blocks,
+				renderEngineId: "scatter",
+				customChildren: <TooltipScatterPlot id="scatter" path={"option"} />,
+			},
+		);
+
+		expect(result).toBeDefined();
+		act(() => {
+			result.current.setData("option", {
+				series: [
+					{
+						data: [
+							{
+								value: [1, 1],
+								label: {
+									formatter: "123",
+								},
+							},
+							{
+								value: [6, 112.5],
+								label: {
+									formatter: "36C10G14D1004",
+								},
+							},
+							{
+								value: [2, 50],
+								label: {
+									formatter: "ghjh",
+								},
+							},
+							{
+								value: [1, 0],
+								label: {
+									formatter: "philtest123",
+								},
+							},
+						],
+					},
+				],
+			});
+		});
+		const series = result.current.data.option.series[0].data;
+		// console.log({ series });
+		expect(series).toEqual([
+			{
+				value: [1, 1],
+				label: {
+					formatter: "123",
+				},
+			},
+			{
+				value: [6, 112.5],
+				label: {
+					formatter: "36C10G14D1004",
+				},
+			},
+			{
+				value: [2, 50],
+				label: {
+					formatter: "ghjh",
+				},
+			},
+			{
+				value: [1, 0],
+				label: {
+					formatter: "philtest123",
+				},
+			},
+		]);
 	});
 });
