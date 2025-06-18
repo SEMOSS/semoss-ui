@@ -81,9 +81,13 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     },
 }));
 
+export const NAVBAR_LEFT_ID = 'navbar--left';
+export const NAVBAR_MIDDLE_ID = 'navbar--middle';
+export const NAVBAR_RIGHT_ID = 'navbar--right';
+
 export const Navbar: React.FC = observer(() => {
     const { configStore } = useRootStore();
-    const { page } = usePage();
+    // const { page } = usePage();
 
     const themeMap = useMemo(() => {
         const theme = configStore.store.config['theme'];
@@ -100,8 +104,8 @@ export const Navbar: React.FC = observer(() => {
     }, [Object.keys(configStore.store.config).length]);
 
     return (
-        <StyledNavbar ref={(n) => page.setNavbarElement(n)}>
-            {!page.sidebar.pinned && (
+        <StyledNavbar>
+            {/* {!page.sidebar.pinned && (
                 <StyledNavbarHeader
                     direction={'row'}
                     alignItems={'center'}
@@ -121,50 +125,26 @@ export const Navbar: React.FC = observer(() => {
                         </StyledNavbarHeaderLink>
                     )}
                 </StyledNavbarHeader>
-            )}
+            )} */}
+
             <Stack
-                id={'navbar--left'}
+                id={NAVBAR_LEFT_ID}
                 direction="row"
                 alignItems={'center'}
                 justifyContent={'flex-start'}
                 spacing={1}
             ></Stack>
-            <Container maxWidth={false} sx={{ maxWidth: '720px' }}>
-                {page.navbar && page.navbar.search ? (
-                    <Search
-                        renderInput={(params) => (
-                            <StyledTextField
-                                {...params}
-                                variant="outlined"
-                                size="small"
-                                placeholder="Search"
-                                label=""
-                                InputProps={{
-                                    ...params.InputProps,
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <SearchIcon />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        height: '40px !important',
-                                        border: 'none',
-                                        '& input': {
-                                            height: '40px !important',
-                                        },
-                                    },
-                                }}
-                            />
-                        )}
-                    />
-                ) : (
-                    <>&nbsp;</>
-                )}
-            </Container>
+
             <Stack
-                id={'navbar--right'}
+                id={NAVBAR_MIDDLE_ID}
+                direction="row"
+                alignItems={'center'}
+                justifyContent={'flex-start'}
+                spacing={1}
+            ></Stack>
+
+            <Stack
+                id={NAVBAR_RIGHT_ID}
                 direction="row"
                 alignItems={'center'}
                 justifyContent={'flex-end'}
@@ -173,3 +153,40 @@ export const Navbar: React.FC = observer(() => {
         </StyledNavbar>
     );
 });
+
+{
+    /* <Container maxWidth={false} sx={{ maxWidth: '720px' }}>
+    {page.navbar && page.navbar.search ? (
+        <Search
+            renderInput={(params) => (
+                <StyledTextField
+                    {...params}
+                    variant="outlined"
+                    size="small"
+                    placeholder="Search"
+                    label=""
+                    InputProps={{
+                        ...params.InputProps,
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon />
+                            </InputAdornment>
+                        ),
+                    }}
+                    sx={{
+                        '& .MuiOutlinedInput-root': {
+                            height: '40px !important',
+                            border: 'none',
+                            '& input': {
+                                height: '40px !important',
+                            },
+                        },
+                    }}
+                />
+            )}
+        />
+    ) : (
+        <>&nbsp;</>
+    )}
+</Container> */
+}

@@ -1,10 +1,16 @@
 import { Container, styled } from '@semoss/ui';
 
-import { Navbar } from './Navbar';
+import {
+    Navbar,
+    NAVBAR_LEFT_ID,
+    NAVBAR_MIDDLE_ID,
+    NAVBAR_RIGHT_ID,
+} from './navbar/Navbar';
 import { Sidebar } from './Sidebar';
 import { PlatformMessages } from './PlatformMessages';
 import { observer } from 'mobx-react-lite';
 import { usePage } from '@/hooks';
+import { useEffect, useState } from 'react';
 
 const StyledPage = styled('div')(() => ({
     position: 'relative',
@@ -41,6 +47,28 @@ export interface PageProps {
     children: React.ReactNode;
 }
 
+const WaitForNav = ({ children }) => {
+    const [ready, setReady] = useState(false);
+
+    useEffect(() => {
+        const navbarLeft = document.getElementById(NAVBAR_LEFT_ID);
+        const navbarMiddle = document.getElementById(NAVBAR_MIDDLE_ID);
+        const navbarRight = document.getElementById(NAVBAR_RIGHT_ID);
+
+        const check = () => {
+            if (navbarLeft && navbarMiddle && navbarRight) {
+                setReady(true);
+            } else {
+                setTimeout(check, 10);
+            }
+        };
+        check();
+    }, []);
+
+    if (!ready) return null;
+    return children;
+};
+
 export const Page: React.FC<PageProps> = observer(({ children }) => {
     const { page } = usePage();
 
@@ -51,7 +79,7 @@ export const Page: React.FC<PageProps> = observer(({ children }) => {
                 <Navbar />
                 <StyledInner id="home__content">
                     <StyledContainer sx={{ maxWidth: '1440px' }}>
-                        {children}
+                        <WaitForNav>{children}</WaitForNav>
                     </StyledContainer>
                 </StyledInner>
             </StyledContent>

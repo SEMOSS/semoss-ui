@@ -148,6 +148,7 @@ export const Sidebar: React.FC = observer(() => {
     const { pathname } = useLocation();
 
     const [viewSidebar, setViewSidebar] = useState(false);
+
     useEffect(() => {
         if (configStore.store.user.admin) {
             setViewSidebar(true);

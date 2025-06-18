@@ -22,6 +22,7 @@ import { WorkspaceStore, WorkspaceOptions } from '@/stores';
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
 import { NavbarLeft, NavbarRight } from '@/components/shared';
+import { useNavbar } from '@/hooks/useNavbar';
 
 const StyledMain = styled('div')(() => ({
     position: 'relative',
@@ -106,24 +107,24 @@ export const Workspace = observer((props: WorkspaceProps) => {
         }
     };
 
-    return (
-        <WorkspaceContext.Provider
-            value={{
-                workspace: workspace,
-            }}
-        >
-            <NavbarLeft>
-                <Stack direction="row" alignItems={'center'} spacing={1}>
-                    <Avatar
-                        variant="rounded"
-                        src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
-                    />
-                    <Typography variant={'subtitle1'}>
-                        {workspace.metadata.project_name}
-                    </Typography>
-                </Stack>
-            </NavbarLeft>
-            <NavbarRight>
+    /**
+     *  What to display at top nav
+     */
+    useNavbar({
+        left: (
+            <Stack direction="row" alignItems={'center'} spacing={1}>
+                <Avatar
+                    variant="rounded"
+                    src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
+                />
+                <Typography variant={'subtitle1'}>
+                    {workspace.metadata.project_name}
+                </Typography>
+            </Stack>
+        ),
+        middle: <>Search</>,
+        right: (
+            <Stack>
                 {navbarActions}
                 <Button
                     variant="contained"
@@ -142,7 +143,47 @@ export const Workspace = observer((props: WorkspaceProps) => {
                 >
                     Show
                 </Button>
-            </NavbarRight>
+            </Stack>
+        ),
+    });
+
+    return (
+        <WorkspaceContext.Provider
+            value={{
+                workspace: workspace,
+            }}
+        >
+            {/* <NavbarLeft>
+                <Stack direction="row" alignItems={'center'} spacing={1}>
+                    <Avatar
+                        variant="rounded"
+                        src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
+                    />
+                    <Typography variant={'subtitle1'}>
+                        {workspace.metadata.project_name}
+                    </Typography>
+                </Stack>
+            </NavbarLeft> */}
+            {/* <NavbarRight>
+                {navbarActions}
+                <Button
+                    variant="contained"
+                    size={'small'}
+                    color="primary"
+                    disabled={
+                        !(
+                            workspace.role === 'OWNER' ||
+                            workspace.role === 'EDIT'
+                        )
+                    }
+                    endIcon={<Public fontSize="inherit" />}
+                    component={Link}
+                    //@ts-expect-error this is expected. props are forwarded
+                    to={`../../../app/${workspace.appId}/view`}
+                >
+                    Show
+                </Button>
+            </NavbarRight> */}
 
             <WorkspaceOverlay />
             <StyledMain>
