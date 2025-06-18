@@ -362,4 +362,36 @@ describe("Scatter Plot Block", async () => {
 			},
 		]);
 	});
+
+	it("should have default width and height 400 and 500 respectively", async () => {
+		const { result } = renderHook(
+			() => useBlockSettings<EchartVisualizationBlockDef>("scatter"),
+			{
+				blocks,
+				renderEngineId: "scatter",
+			},
+		);
+
+		expect(result.current.data.style.width).toBe(400);
+		expect(result.current.data.style.height).toBe(500);
+	});
+	it("should set width and height", async () => {
+		const { result } = renderHook(
+			() => useBlockSettings<EchartVisualizationBlockDef>("scatter"),
+			{
+				blocks,
+				renderEngineId: "scatter",
+			},
+		);
+
+		act(() => {
+			result.current.setData("style", {
+				width: 800,
+				height: 1000,
+			});
+		});
+
+		expect(result.current.data.style.width).toBe(800);
+		expect(result.current.data.style.height).toBe(1000);
+	});
 });
