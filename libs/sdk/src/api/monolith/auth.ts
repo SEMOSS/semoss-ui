@@ -1,4 +1,5 @@
 import { Env } from '../../env';
+import { Insight } from "../../";
 import { get, post, interceptors, UnauthorizedError } from "../../utility";
 
 
@@ -75,6 +76,14 @@ export const run = async <O extends unknown[] | []>(
         pixelReturn: response.data.pixelReturn,
     };
 };
+
+export const runQuery = async <O extends any[] | []>(
+    pixel: string,
+    insightId?: string,
+) => {
+    return run<O>(insightId ?? Insight["insightId"], pixel);
+};
+
 
 export const fileDownload = async (insightID: string, fileKey: string) => {
     return new Promise<void>((resolve) => {
@@ -281,7 +290,7 @@ export const monolithOauth = async (provider: string): Promise<boolean> => {
                     // close it
                     popUpWindow.close();
                     // try to get the info again
-                    const response = await oauth(provider);
+                    const response = await monolithOauth(provider);
                     // close it
                     resolve(response);
                 }

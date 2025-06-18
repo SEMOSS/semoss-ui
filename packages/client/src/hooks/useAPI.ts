@@ -2,23 +2,24 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNotification } from '@semoss/ui';
 
 import { useRootStore } from './useRootStore';
-import { MonolithStore } from '@/stores';
+import * as API from '../../../../libs/sdk/src/api';
 
-interface APIState<A extends keyof MonolithStore> {
+type ApiHookState = typeof API;
+interface APIState<A extends keyof ApiHookState> {
     /** Status of the api call */
     status: 'INITIAL' | 'LOADING' | 'SUCCESS' | 'ERROR';
     /** Data returned from the api call */
-    data?: Awaited<ReturnType<MonolithStore[A]>>;
+    data?: Awaited<ReturnType<ApiHookState[A]>>;
     /** Error returned from the api call */
     error?: Error;
 }
 
-interface APIConfig<A extends keyof MonolithStore> {
+interface APIConfig<A extends keyof ApiHookState> {
     /** Initial Data */
     data: APIState<A>['data'];
 }
 
-interface useAPI<A extends keyof MonolithStore> extends APIState<A> {
+interface useAPI<A extends keyof ApiHookState> extends APIState<A> {
     /** Refresh and reexecute the api */
     refresh: () => void;
     /** Update the data with new information */
@@ -32,8 +33,8 @@ interface useAPI<A extends keyof MonolithStore> extends APIState<A> {
  *
  * @returns Information about the api response
  */
-export function useAPI<A extends keyof MonolithStore>(
-    api: [A, ...Parameters<MonolithStore[A]>] | [] | undefined | null,
+export function useAPI<A extends keyof ApiHookState>(
+    api: [A, ...Parameters<ApiHookState[A]>] | [] | undefined | null,
     config?: Partial<APIConfig<A>>,
 ): useAPI<A> {
     const { monolithStore } = useRootStore();
@@ -104,7 +105,7 @@ export function useAPI<A extends keyof MonolithStore>(
             try {
                 const [func, ...args] = api;
 
-                const response = await monolithStore[func].apply(null, args);
+                const response = await API[func].apply(null, args);
 
                 // ignore if its cancelled
                 if (isCancelled) {

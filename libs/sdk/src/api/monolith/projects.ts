@@ -2,8 +2,6 @@ import { Env } from '../../env';
 import { get, post} from "../../utility";
 import { Role } from '@/types';
 
-import { off } from 'process';
-
 export const setProjectFavorite = async (
     projectId: string,
     favorite: boolean,
