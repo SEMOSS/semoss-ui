@@ -21,7 +21,7 @@ import { WorkspaceContext } from '@/contexts';
 import { WorkspaceStore, WorkspaceOptions } from '@/stores';
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
-import { NavbarLeft, NavbarRight } from '@/components/shared';
+import { NavbarLeft, NavbarRight, NavbarHeader } from '../shared';
 
 const StyledMain = styled('div')(() => ({
     position: 'relative',
@@ -113,15 +113,23 @@ export const Workspace = observer((props: WorkspaceProps) => {
             }}
         >
             <NavbarLeft>
-                <Stack direction="row" alignItems={'center'} spacing={1}>
-                    <Avatar
-                        variant="rounded"
-                        src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
-                    />
-                    <Typography variant={'subtitle1'}>
-                        {workspace.metadata.project_name}
-                    </Typography>
-                </Stack>
+                <NavbarHeader
+                    logo={
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            spacing={1}
+                        >
+                            <Avatar
+                                variant="rounded"
+                                src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
+                            />
+                            <Typography variant={'subtitle1'}>
+                                {workspace.metadata.project_name}
+                            </Typography>
+                        </Stack>
+                    }
+                />
             </NavbarLeft>
             <NavbarRight>
                 {navbarActions}

@@ -13,6 +13,7 @@ import {
     AppTemplates,
 } from '../../components/app';
 import CreateAppSection from '../../components/landing/CreateAppSection';
+import { NavbarLeft, NavbarHeader } from '../../components/shared';
 
 const StyledLink = styled(Link)(() => ({
     textDecoration: 'none',
@@ -70,68 +71,73 @@ export const CreateAppPage = () => {
     };
 
     return (
-        <Stack direction="column" gap={2}>
-            <Stack>
-                <Breadcrumbs>
-                    <StyledLink to={`..`}>App Catalog</StyledLink>
-                    <StyledLink to={`.`}>Create</StyledLink>
-                </Breadcrumbs>
-                <Stack direction="row" alignItems={'center'} width={'100%'}>
-                    <Typography variant="h4">Create New App</Typography>
-                    <Stack flex={1}> &nbsp;</Stack>
+        <>
+            <NavbarLeft>
+                <NavbarHeader />
+            </NavbarLeft>
+            <Stack direction="column" gap={2}>
+                <Stack>
+                    <Breadcrumbs>
+                        <StyledLink to={`..`}>App Catalog</StyledLink>
+                        <StyledLink to={`.`}>Create</StyledLink>
+                    </Breadcrumbs>
+                    <Stack direction="row" alignItems={'center'} width={'100%'}>
+                        <Typography variant="h4">Create New App</Typography>
+                        <Stack flex={1}> &nbsp;</Stack>
+                    </Stack>
                 </Stack>
-            </Stack>
-            {isUploadOpen ? (
-                <AddAppModal
-                    open={isUploadOpen}
-                    handleClose={(appId) => {
-                        // if there is an appId navigate to it
-                        if (appId) {
-                            navigateApp(appId);
-                        }
+                {isUploadOpen ? (
+                    <AddAppModal
+                        open={isUploadOpen}
+                        handleClose={(appId) => {
+                            // if there is an appId navigate to it
+                            if (appId) {
+                                navigateApp(appId);
+                            }
 
-                        // close it
-                        setIsUploadOpen(false);
-                    }}
-                />
-            ) : null}
-
-            {isNameOpen ? (
-                <NewAppModal
-                    open={isNameOpen}
-                    options={newAppOptions}
-                    onClose={(appId) => {
-                        if (appId) {
-                            navigateApp(appId);
-                        } else {
-                            // close the modal
-                            setNewAppOptions(null);
-                        }
-                    }}
-                />
-            ) : null}
-
-            <Stack gap={2}>
-                <CreateAppSection
-                    setupApp={setupApp}
-                    uploadApp={() => setIsUploadOpen(true)}
-                />
-
-                <Stack gap={2}>
-                    <Typography variant="h6" gutterBottom>
-                        Start build with a template
-                    </Typography>
-                    <AppTemplates
-                        randomCount={6}
-                        onUse={(t) => {
-                            setNewAppOptions({
-                                type: 'blocks',
-                                state: t.state,
-                            });
+                            // close it
+                            setIsUploadOpen(false);
                         }}
                     />
+                ) : null}
+
+                {isNameOpen ? (
+                    <NewAppModal
+                        open={isNameOpen}
+                        options={newAppOptions}
+                        onClose={(appId) => {
+                            if (appId) {
+                                navigateApp(appId);
+                            } else {
+                                // close the modal
+                                setNewAppOptions(null);
+                            }
+                        }}
+                    />
+                ) : null}
+
+                <Stack gap={2}>
+                    <CreateAppSection
+                        setupApp={setupApp}
+                        uploadApp={() => setIsUploadOpen(true)}
+                    />
+
+                    <Stack gap={2}>
+                        <Typography variant="h6" gutterBottom>
+                            Start build with a template
+                        </Typography>
+                        <AppTemplates
+                            randomCount={6}
+                            onUse={(t) => {
+                                setNewAppOptions({
+                                    type: 'blocks',
+                                    state: t.state,
+                                });
+                            }}
+                        />
+                    </Stack>
                 </Stack>
             </Stack>
-        </Stack>
+        </>
     );
 };

@@ -18,10 +18,10 @@ import { Renderer } from '@semoss/renderer';
 import { WorkspaceStore } from '@/stores';
 import { usePage, useRootStore } from '@/hooks';
 import { LoadingScreen, ShareOverlay } from '@/components/ui';
-import { NavbarLeft, NavbarRight } from '@/components/shared';
 import { CodeRenderer } from '@/components/code-workspace';
 import { EditOutlined, ShareRounded } from '@mui/icons-material';
 import { Env } from '@semoss/sdk';
+import { NavbarLeft, NavbarHeader, NavbarRight } from '../../components/shared';
 
 const StyledContent = styled('div')(({ theme }) => ({
     position: 'absolute',
@@ -72,15 +72,23 @@ export const ViewAppPage = observer(() => {
     return (
         <>
             <NavbarLeft>
-                <Stack direction="row" alignItems={'center'} spacing={1}>
-                    <Avatar
-                        variant="rounded"
-                        src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
-                    />
-                    <Typography variant={'subtitle1'}>
-                        {workspace.metadata.project_name}
-                    </Typography>
-                </Stack>
+                <NavbarHeader
+                    logo={
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            spacing={1}
+                        >
+                            <Avatar
+                                variant="rounded"
+                                src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
+                            />
+                            <Typography variant={'subtitle1'}>
+                                {workspace.metadata.project_name}
+                            </Typography>
+                        </Stack>
+                    }
+                />
             </NavbarLeft>
             <NavbarRight>
                 <Tooltip title={'Share App'}>

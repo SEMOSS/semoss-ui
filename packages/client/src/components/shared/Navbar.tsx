@@ -101,27 +101,6 @@ export const Navbar: React.FC = observer(() => {
 
     return (
         <StyledNavbar ref={(n) => page.setNavbarElement(n)}>
-            {!page.sidebar.pinned && (
-                <StyledNavbarHeader
-                    direction={'row'}
-                    alignItems={'center'}
-                    justifyContent={'flex-start'}
-                    onMouseOver={() => page.openSidebar()}
-                >
-                    <IconButton size="small" onClick={() => page.openSidebar()}>
-                        <MenuRounded fontSize="medium" />
-                    </IconButton>
-
-                    {page.navbar.logo && (
-                        <StyledNavbarHeaderLink to={'/'} aria-label={'Go Home'}>
-                            <Logo />
-                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                                {themeMap.name ? themeMap.name : THEME.name}
-                            </Typography>
-                        </StyledNavbarHeaderLink>
-                    )}
-                </StyledNavbarHeader>
-            )}
             <Stack
                 id={'navbar--left'}
                 direction="row"

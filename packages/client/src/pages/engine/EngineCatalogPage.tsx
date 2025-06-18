@@ -20,6 +20,7 @@ import { Page } from '../../components/shared';
 import { Help } from '@/components/help';
 import { ENGINE_ROUTES } from './engine.constants';
 import { removeUnderscores } from '@/utility';
+import { NavbarLeft, NavbarHeader } from '../../components/shared';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -472,235 +473,272 @@ export const EngineCatalogPage = observer(
         }
 
         return (
-            <Stack direction="column" gap={2}>
-                <Stack>
-                    <Stack
-                        direction="row"
-                        alignItems={'center'}
-                        justifyContent={'space-between'}
-                        spacing={4}
-                    >
-                        <Typography variant={'h4'}>
-                            {route ? route.name : ''} Catalog
-                        </Typography>
+            <>
+                <NavbarLeft>
+                    <NavbarHeader />
+                </NavbarLeft>
 
-                        {configStore.isEngineOperationAvailable(
-                            route.type,
-                            'add',
-                        ) && (
-                            <Stack
-                                direction="row"
-                                alignItems={'center'}
-                                spacing={3}
-                            >
-                                <Button
-                                    size={'large'}
-                                    variant={'contained'}
-                                    onClick={() => {
-                                        navigate(
-                                            `/engine/${route.type.toLowerCase()}/new`,
-                                        );
-                                    }}
-                                    aria-label={`Navigate to import ${
-                                        route ? route.name : 'Engine'
-                                    }`}
-                                    data-testid={'engine-catalog-add-btn'}
-                                >
-                                    Add {route ? route.name : 'Engine'}
-                                </Button>
-                            </Stack>
-                        )}
-                    </Stack>
-                    <Stack
-                        direction="row"
-                        alignItems={'center'}
-                        justifyContent={'space-between'}
-                        spacing={4}
-                        sx={{ paddingTop: '10px' }}
-                    >
-                        <Typography variant={'subtitle1'}>
-                            {route ? route.description : ''}
-                        </Typography>
-                    </Stack>
-                </Stack>
-                <StyledContainer>
-                    <Filterbox
-                        type={type}
-                        onChange={(filters: Record<string, unknown>) => {
-                            dispatch({
-                                type: 'field',
-                                field: 'databases',
-                                value: [],
-                            });
-                            setMetaFilters(filters);
-                            setOffset(0);
-                        }}
-                    />
-                    <StyledContent>
+                <Stack direction="column" gap={2}>
+                    <Stack>
                         <Stack
                             direction="row"
                             alignItems={'center'}
                             justifyContent={'space-between'}
+                            spacing={4}
                         >
-                            <StyledToggleTabsGroup
-                                value={mode}
-                                onChange={(e: React.SyntheticEvent, val) => {
-                                    dispatch({
-                                        type: 'field',
-                                        field: 'databases',
-                                        value: [],
-                                    });
-                                    setMode(val as MODE);
-                                    setOffset(0);
-                                }}
-                            >
-                                <StyledToggleTabsGroupItem
-                                    value="Mine"
-                                    label={`My ${
-                                        route ? `${route.name}s` : 'Engines'
-                                    }`}
-                                />
-                                <StyledToggleTabsGroupItem
-                                    value="Discoverable"
-                                    label={`Discoverable ${
-                                        route ? `${route.name}s` : 'Engines'
-                                    }`}
-                                />
-                            </StyledToggleTabsGroup>
+                            <Typography variant={'h4'}>
+                                {route ? route.name : ''} Catalog
+                            </Typography>
+
+                            {configStore.isEngineOperationAvailable(
+                                route.type,
+                                'add',
+                            ) && (
+                                <Stack
+                                    direction="row"
+                                    alignItems={'center'}
+                                    spacing={3}
+                                >
+                                    <Button
+                                        size={'large'}
+                                        variant={'contained'}
+                                        onClick={() => {
+                                            navigate(
+                                                `/engine/${route.type.toLowerCase()}/new`,
+                                            );
+                                        }}
+                                        aria-label={`Navigate to import ${
+                                            route ? route.name : 'Engine'
+                                        }`}
+                                        data-testid={'engine-catalog-add-btn'}
+                                    >
+                                        Add {route ? route.name : 'Engine'}
+                                    </Button>
+                                </Stack>
+                            )}
                         </Stack>
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            justifyContent={'space-between'}
+                            spacing={4}
+                            sx={{ paddingTop: '10px' }}
+                        >
+                            <Typography variant={'subtitle1'}>
+                                {route ? route.description : ''}
+                            </Typography>
+                        </Stack>
+                    </Stack>
+                    <StyledContainer>
+                        <Filterbox
+                            type={type}
+                            onChange={(filters: Record<string, unknown>) => {
+                                dispatch({
+                                    type: 'field',
+                                    field: 'databases',
+                                    value: [],
+                                });
+                                setMetaFilters(filters);
+                                setOffset(0);
+                            }}
+                        />
+                        <StyledContent>
+                            <Stack
+                                direction="row"
+                                alignItems={'center'}
+                                justifyContent={'space-between'}
+                            >
+                                <StyledToggleTabsGroup
+                                    value={mode}
+                                    onChange={(
+                                        e: React.SyntheticEvent,
+                                        val,
+                                    ) => {
+                                        dispatch({
+                                            type: 'field',
+                                            field: 'databases',
+                                            value: [],
+                                        });
+                                        setMode(val as MODE);
+                                        setOffset(0);
+                                    }}
+                                >
+                                    <StyledToggleTabsGroupItem
+                                        value="Mine"
+                                        label={`My ${
+                                            route ? `${route.name}s` : 'Engines'
+                                        }`}
+                                    />
+                                    <StyledToggleTabsGroupItem
+                                        value="Discoverable"
+                                        label={`Discoverable ${
+                                            route ? `${route.name}s` : 'Engines'
+                                        }`}
+                                    />
+                                </StyledToggleTabsGroup>
+                            </Stack>
 
-                        {'bi'.includes(search.toLowerCase()) &&
-                            Object.entries(metaFilters).length === 0 &&
-                            'terminal'.includes(search.toLowerCase()) &&
-                            !isDiscoverable &&
-                            favoritedDbs.length > 0 && (
-                                <StyledSectionLabel variant="subtitle1">
-                                    Bookmarked
-                                </StyledSectionLabel>
-                            )}
+                            {'bi'.includes(search.toLowerCase()) &&
+                                Object.entries(metaFilters).length === 0 &&
+                                'terminal'.includes(search.toLowerCase()) &&
+                                !isDiscoverable &&
+                                favoritedDbs.length > 0 && (
+                                    <StyledSectionLabel variant="subtitle1">
+                                        Bookmarked
+                                    </StyledSectionLabel>
+                                )}
 
-                        {!isDiscoverable &&
-                        favoritedDbs.length &&
-                        Object.entries(metaFilters).length === 0 ? (
-                            <Grid container spacing={3}>
-                                {favoritedDbs.map((db) => {
-                                    return (
-                                        <Grid item key={db.database_id} sm={12}>
-                                            <EngineLandscapeCard
-                                                name={removeUnderscores(
-                                                    db.database_name,
-                                                )}
-                                                type={db.database_type}
-                                                id={db.database_id}
-                                                tag={db.tag}
-                                                owner={db.database_created_by}
-                                                date={db.database_date_created}
-                                                description={db.description}
-                                                votes={db.upvotes}
-                                                views={db.views}
-                                                sub_type={db.database_subtype}
-                                                trending={db.trending}
-                                                isGlobal={db.database_global}
-                                                isUpvoted={db.hasUpvoted}
-                                                isFavorite={
-                                                    isDiscoverable
-                                                        ? false
-                                                        : isFavorited(
-                                                              db.database_id,
-                                                          )
-                                                }
-                                                isDiscoverable={isDiscoverable}
-                                                onClick={() => {
-                                                    navigate(
-                                                        `${db.database_id}`,
-                                                    );
-                                                }}
-                                                favorite={() => {
-                                                    favoriteDb(db);
-                                                }}
-                                                upvote={() => {
-                                                    upvoteDb(db);
-                                                }}
-                                                global={
-                                                    db.user_permission === 1
-                                                        ? () => {
-                                                              setGlobal(db);
-                                                          }
-                                                        : null
-                                                }
-                                            />
-                                        </Grid>
-                                    );
-                                })}
-                            </Grid>
-                        ) : null}
+                            {!isDiscoverable &&
+                            favoritedDbs.length &&
+                            Object.entries(metaFilters).length === 0 ? (
+                                <Grid container spacing={3}>
+                                    {favoritedDbs.map((db) => {
+                                        return (
+                                            <Grid
+                                                item
+                                                key={db.database_id}
+                                                sm={12}
+                                            >
+                                                <EngineLandscapeCard
+                                                    name={removeUnderscores(
+                                                        db.database_name,
+                                                    )}
+                                                    type={db.database_type}
+                                                    id={db.database_id}
+                                                    tag={db.tag}
+                                                    owner={
+                                                        db.database_created_by
+                                                    }
+                                                    date={
+                                                        db.database_date_created
+                                                    }
+                                                    description={db.description}
+                                                    votes={db.upvotes}
+                                                    views={db.views}
+                                                    sub_type={
+                                                        db.database_subtype
+                                                    }
+                                                    trending={db.trending}
+                                                    isGlobal={
+                                                        db.database_global
+                                                    }
+                                                    isUpvoted={db.hasUpvoted}
+                                                    isFavorite={
+                                                        isDiscoverable
+                                                            ? false
+                                                            : isFavorited(
+                                                                  db.database_id,
+                                                              )
+                                                    }
+                                                    isDiscoverable={
+                                                        isDiscoverable
+                                                    }
+                                                    onClick={() => {
+                                                        navigate(
+                                                            `${db.database_id}`,
+                                                        );
+                                                    }}
+                                                    favorite={() => {
+                                                        favoriteDb(db);
+                                                    }}
+                                                    upvote={() => {
+                                                        upvoteDb(db);
+                                                    }}
+                                                    global={
+                                                        db.user_permission === 1
+                                                            ? () => {
+                                                                  setGlobal(db);
+                                                              }
+                                                            : null
+                                                    }
+                                                />
+                                            </Grid>
+                                        );
+                                    })}
+                                </Grid>
+                            ) : null}
 
-                        {'bi'.includes(search.toLowerCase()) &&
-                            Object.entries(metaFilters).length === 0 &&
-                            'terminal'.includes(search.toLowerCase()) &&
-                            databases.length > 0 && (
-                                <StyledSectionLabel variant="subtitle1">
-                                    All {route.name}s
-                                </StyledSectionLabel>
-                            )}
+                            {'bi'.includes(search.toLowerCase()) &&
+                                Object.entries(metaFilters).length === 0 &&
+                                'terminal'.includes(search.toLowerCase()) &&
+                                databases.length > 0 && (
+                                    <StyledSectionLabel variant="subtitle1">
+                                        All {route.name}s
+                                    </StyledSectionLabel>
+                                )}
 
-                        {databases.length ? (
-                            <Grid container spacing={3}>
-                                {databases.map((db) => {
-                                    return (
-                                        <Grid item key={db.database_id} sm={12}>
-                                            <EngineLandscapeCard
-                                                name={removeUnderscores(
-                                                    db.database_name,
-                                                )}
-                                                type={db.database_type}
-                                                id={db.database_id}
-                                                tag={db.tag}
-                                                date={db.database_date_created}
-                                                owner={db.database_created_by}
-                                                description={db.description}
-                                                votes={db.upvotes}
-                                                views={db.views}
-                                                sub_type={db.database_subtype}
-                                                trending={db.trending}
-                                                isGlobal={db.database_global}
-                                                isUpvoted={db.hasUpvoted}
-                                                isFavorite={
-                                                    isDiscoverable
-                                                        ? false
-                                                        : isFavorited(
-                                                              db.database_id,
-                                                          )
-                                                }
-                                                isDiscoverable={isDiscoverable}
-                                                onClick={() => {
-                                                    navigate(
-                                                        `${db.database_id}`,
-                                                    );
-                                                }}
-                                                favorite={() => {
-                                                    favoriteDb(db);
-                                                }}
-                                                upvote={() => {
-                                                    upvoteDb(db);
-                                                }}
-                                                global={
-                                                    db.user_permission === 1
-                                                        ? () => {
-                                                              setGlobal(db);
-                                                          }
-                                                        : null
-                                                }
-                                            />
-                                        </Grid>
-                                    );
-                                })}
-                            </Grid>
-                        ) : null}
-                    </StyledContent>
-                </StyledContainer>
-                <Help />
-            </Stack>
+                            {databases.length ? (
+                                <Grid container spacing={3}>
+                                    {databases.map((db) => {
+                                        return (
+                                            <Grid
+                                                item
+                                                key={db.database_id}
+                                                sm={12}
+                                            >
+                                                <EngineLandscapeCard
+                                                    name={removeUnderscores(
+                                                        db.database_name,
+                                                    )}
+                                                    type={db.database_type}
+                                                    id={db.database_id}
+                                                    tag={db.tag}
+                                                    date={
+                                                        db.database_date_created
+                                                    }
+                                                    owner={
+                                                        db.database_created_by
+                                                    }
+                                                    description={db.description}
+                                                    votes={db.upvotes}
+                                                    views={db.views}
+                                                    sub_type={
+                                                        db.database_subtype
+                                                    }
+                                                    trending={db.trending}
+                                                    isGlobal={
+                                                        db.database_global
+                                                    }
+                                                    isUpvoted={db.hasUpvoted}
+                                                    isFavorite={
+                                                        isDiscoverable
+                                                            ? false
+                                                            : isFavorited(
+                                                                  db.database_id,
+                                                              )
+                                                    }
+                                                    isDiscoverable={
+                                                        isDiscoverable
+                                                    }
+                                                    onClick={() => {
+                                                        navigate(
+                                                            `${db.database_id}`,
+                                                        );
+                                                    }}
+                                                    favorite={() => {
+                                                        favoriteDb(db);
+                                                    }}
+                                                    upvote={() => {
+                                                        upvoteDb(db);
+                                                    }}
+                                                    global={
+                                                        db.user_permission === 1
+                                                            ? () => {
+                                                                  setGlobal(db);
+                                                              }
+                                                            : null
+                                                    }
+                                                />
+                                            </Grid>
+                                        );
+                                    })}
+                                </Grid>
+                            ) : null}
+                        </StyledContent>
+                    </StyledContainer>
+                    <Help />
+                </Stack>
+            </>
         );
     },
 );

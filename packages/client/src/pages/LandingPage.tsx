@@ -9,7 +9,7 @@ import {
 
 import { useCacheState, usePage } from '@/hooks';
 import { BusinessUserScreen, DeveloperUserScreen } from '@/components/landing';
-import { NavbarRight } from '@/components/shared';
+import { NavbarLeft, NavbarRight, NavbarHeader } from '../components/shared';
 
 const StyledAppBuilder = styled(Typography)(({ theme }) => ({
     color: 'var(--Text-Secondary, #666)',
@@ -46,17 +46,10 @@ export const LandingPage: React.FC = observer(() => {
 
     return (
         <>
+            <NavbarLeft>
+                <NavbarHeader />
+            </NavbarLeft>
             <NavbarRight>
-                {/* <StyledAppBuilder variant="h6">
-                        App Builder
-                    </StyledAppBuilder>
-                    <StyledSwitch
-                        checked={devMode}
-                        size={'small'}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            setDevMode(e.target.checked);
-                        }}
-                    ></StyledSwitch> */}
                 <ToggleButtonGroup
                     size="small"
                     color={'primary'}

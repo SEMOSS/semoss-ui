@@ -54,6 +54,7 @@ import {
     DetailsForm,
     AppDetailsRef,
 } from '@/components/app';
+import { NavbarLeft, NavbarHeader } from '../../components/shared';
 
 const OuterContainer = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
@@ -548,6 +549,9 @@ export const AppDetailPage = () => {
 
     return (
         <div>
+            <NavbarLeft>
+                <NavbarHeader />
+            </NavbarLeft>
             <OuterContainer>
                 <InnerContainer>
                     <Breadcrumbs separator="/">

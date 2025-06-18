@@ -14,12 +14,10 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 import { usePixel, useRootStore } from '@/hooks';
-import { Page } from '@/components/shared';
 import { AppMetadata, AppTileCard } from '@/components/app';
-import { Search } from '@mui/icons-material';
 import { Help } from '@/components/help';
-
 import { Filterbox } from '@/components/ui';
+import { NavbarLeft, NavbarHeader } from '../../components/shared';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
@@ -299,234 +297,255 @@ export const AppCatalogPage = observer((): JSX.Element => {
     };
 
     return (
-        <Stack direction="column" gap={2}>
-            <Stack>
-                <Stack
-                    direction="row"
-                    alignItems={'center'}
-                    justifyContent={'space-between'}
-                    spacing={4}
-                >
-                    <Typography data-tour="app-library-title" variant={'h4'}>
-                        Apps
-                    </Typography>
-                    {configStore.isEngineOperationAvailable('APP', 'add') && (
-                        <Button
-                            size={'large'}
-                            variant={'contained'}
-                            onClick={() => {
-                                navigate('/app/new');
-                            }}
-                            aria-label={`Open the App Model`}
-                            data-testid={'home-create-app-btn'}
-                        >
-                            Create New App
-                        </Button>
-                    )}
-                </Stack>
-            </Stack>
-            <StyledContainer>
-                {!configStore.store.config.adminOnlyViewMenuBarFlag &&
-                    configStore.isEngineOperationAvailable('APP', 'add') && (
-                        <div style={{ width: '355px' }}>
-                            <Filterbox
-                                type={'APP'}
-                                onChange={(
-                                    filters: Record<string, unknown>,
-                                ) => {
-                                    setMetaFilters(filters);
-                                }}
-                            />
-                        </div>
-                    )}
-                <StyledContentContainer>
+        <>
+            <NavbarLeft>
+                <NavbarHeader />
+            </NavbarLeft>
+            <Stack direction="column" gap={2}>
+                <Stack>
                     <Stack
                         direction="row"
                         alignItems={'center'}
                         justifyContent={'space-between'}
+                        spacing={4}
                     >
-                        <StyledToggleTabsGroup
-                            value={mode}
-                            onChange={(e: React.SyntheticEvent, val) => {
-                                dispatch({
-                                    type: 'field',
-                                    field: 'databases',
-                                    value: [],
-                                });
-                                setMode(val as MODE);
-                            }}
+                        <Typography
+                            data-tour="app-library-title"
+                            variant={'h4'}
                         >
-                            <StyledToggleTabsGroupItem
-                                label="My Apps"
-                                value={'Mine'}
-                            />
-                            <StyledToggleTabsGroupItem
-                                label="Discoverable"
-                                value={'Discoverable'}
-                            />
-                            <StyledToggleTabsGroupItem
-                                label="System Apps"
-                                value={'System'}
-                            />
-                        </StyledToggleTabsGroup>
+                            Apps
+                        </Typography>
+                        {configStore.isEngineOperationAvailable(
+                            'APP',
+                            'add',
+                        ) && (
+                            <Button
+                                size={'large'}
+                                variant={'contained'}
+                                onClick={() => {
+                                    navigate('/app/new');
+                                }}
+                                aria-label={`Open the App Model`}
+                                data-testid={'home-create-app-btn'}
+                            >
+                                Create New App
+                            </Button>
+                        )}
                     </Stack>
+                </Stack>
+                <StyledContainer>
+                    {!configStore.store.config.adminOnlyViewMenuBarFlag &&
+                        configStore.isEngineOperationAvailable(
+                            'APP',
+                            'add',
+                        ) && (
+                            <div style={{ width: '355px' }}>
+                                <Filterbox
+                                    type={'APP'}
+                                    onChange={(
+                                        filters: Record<string, unknown>,
+                                    ) => {
+                                        setMetaFilters(filters);
+                                    }}
+                                />
+                            </div>
+                        )}
+                    <StyledContentContainer>
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            justifyContent={'space-between'}
+                        >
+                            <StyledToggleTabsGroup
+                                value={mode}
+                                onChange={(e: React.SyntheticEvent, val) => {
+                                    dispatch({
+                                        type: 'field',
+                                        field: 'databases',
+                                        value: [],
+                                    });
+                                    setMode(val as MODE);
+                                }}
+                            >
+                                <StyledToggleTabsGroupItem
+                                    label="My Apps"
+                                    value={'Mine'}
+                                />
+                                <StyledToggleTabsGroupItem
+                                    label="Discoverable"
+                                    value={'Discoverable'}
+                                />
+                                <StyledToggleTabsGroupItem
+                                    label="System Apps"
+                                    value={'System'}
+                                />
+                            </StyledToggleTabsGroup>
+                        </Stack>
 
-                    {mode != 'System' && favoritedApps.length > 0 ? (
-                        <StyledSectionLabel variant="subtitle1">
-                            Bookmarked
-                        </StyledSectionLabel>
-                    ) : null}
+                        {mode != 'System' && favoritedApps.length > 0 ? (
+                            <StyledSectionLabel variant="subtitle1">
+                                Bookmarked
+                            </StyledSectionLabel>
+                        ) : null}
 
-                    {mode !== 'System' &&
-                        (getFavoritedApps.status === 'LOADING' ||
-                            favoritedApps.length > 0) && (
-                            <StyledSection>
-                                {getFavoritedApps.status === 'LOADING'
-                                    ? Array.from({ length: 3 }).map((_, i) => (
-                                          <AppTileSkeleton key={i}>
-                                              <Skeleton
-                                                  variant="rectangular"
-                                                  width={250}
-                                                  height={118}
-                                              />
-                                              <Skeleton
-                                                  width="100%"
-                                                  height={25}
-                                              />
-                                              <Skeleton
-                                                  width="60%"
-                                                  height={25}
-                                              />
-                                          </AppTileSkeleton>
-                                      ))
-                                    : favoritedApps.map((app) => (
-                                          <AppTileCard
-                                              key={app.project_id}
-                                              app={app}
-                                              systemApp={false}
-                                              href={
-                                                  mode === 'Discoverable'
-                                                      ? `#/app/${app.project_id}/detail`
-                                                      : `#/app/${app.project_id}/view`
-                                              }
-                                              onAction={() => {
-                                                  if (mode === 'Discoverable') {
-                                                      navigate(
-                                                          `/app/${app.project_id}/detail`,
-                                                      );
-                                                  } else {
-                                                      navigate(
-                                                          `/app/${app.project_id}/view`,
-                                                      );
+                        {mode !== 'System' &&
+                            (getFavoritedApps.status === 'LOADING' ||
+                                favoritedApps.length > 0) && (
+                                <StyledSection>
+                                    {getFavoritedApps.status === 'LOADING'
+                                        ? Array.from({ length: 3 }).map(
+                                              (_, i) => (
+                                                  <AppTileSkeleton key={i}>
+                                                      <Skeleton
+                                                          variant="rectangular"
+                                                          width={250}
+                                                          height={118}
+                                                      />
+                                                      <Skeleton
+                                                          width="100%"
+                                                          height={25}
+                                                      />
+                                                      <Skeleton
+                                                          width="60%"
+                                                          height={25}
+                                                      />
+                                                  </AppTileSkeleton>
+                                              ),
+                                          )
+                                        : favoritedApps.map((app) => (
+                                              <AppTileCard
+                                                  key={app.project_id}
+                                                  app={app}
+                                                  systemApp={false}
+                                                  href={
+                                                      mode === 'Discoverable'
+                                                          ? `#/app/${app.project_id}/detail`
+                                                          : `#/app/${app.project_id}/view`
                                                   }
-                                              }}
-                                              appType={app.project_type}
-                                              isFavorite={isFavorited(
-                                                  app.project_id,
-                                              )}
-                                              favorite={() => {
-                                                  favoriteApp(app);
-                                              }}
-                                          />
-                                      ))}
-                            </StyledSection>
+                                                  onAction={() => {
+                                                      if (
+                                                          mode ===
+                                                          'Discoverable'
+                                                      ) {
+                                                          navigate(
+                                                              `/app/${app.project_id}/detail`,
+                                                          );
+                                                      } else {
+                                                          navigate(
+                                                              `/app/${app.project_id}/view`,
+                                                          );
+                                                      }
+                                                  }}
+                                                  appType={app.project_type}
+                                                  isFavorite={isFavorited(
+                                                      app.project_id,
+                                                  )}
+                                                  favorite={() => {
+                                                      favoriteApp(app);
+                                                  }}
+                                              />
+                                          ))}
+                                </StyledSection>
+                            )}
+
+                        {mode == 'System' && (
+                            <StyledSectionLabel variant="subtitle1">
+                                All Apps
+                            </StyledSectionLabel>
                         )}
 
-                    {mode == 'System' && (
-                        <StyledSectionLabel variant="subtitle1">
-                            All Apps
-                        </StyledSectionLabel>
-                    )}
+                        {mode == 'System' && (
+                            <StyledSection>
+                                {'bi'.includes(search.toLowerCase()) && (
+                                    <AppTileCard
+                                        app={BUSINESS_INTELLIGENCE_APP}
+                                        background="#BADEFF"
+                                        href="../../../"
+                                        systemApp={true}
+                                        appType={'BI'}
+                                        isLoading={false}
+                                        showSkeleton={false}
+                                    />
+                                )}
 
-                    {mode == 'System' && (
-                        <StyledSection>
-                            {'bi'.includes(search.toLowerCase()) && (
-                                <AppTileCard
-                                    app={BUSINESS_INTELLIGENCE_APP}
-                                    background="#BADEFF"
-                                    href="../../../"
-                                    systemApp={true}
-                                    appType={'BI'}
-                                    isLoading={false}
-                                    showSkeleton={false}
-                                />
-                            )}
+                                {'terminal'.includes(search.toLowerCase()) && (
+                                    <AppTileCard
+                                        // image={UPDATED_TERMINAL}
+                                        app={TERMINAL_APP}
+                                        background="#BADEFF"
+                                        href="../../../#!/embed-terminal"
+                                        systemApp={true}
+                                        appType={'TERMINAL'}
+                                        isLoading={false}
+                                        showSkeleton={false}
+                                    />
+                                )}
+                            </StyledSection>
+                        )}
+                        {mode != 'System' && apps.length > 0 ? (
+                            <StyledSectionLabel variant="subtitle1">
+                                All Apps
+                            </StyledSectionLabel>
+                        ) : null}
 
-                            {'terminal'.includes(search.toLowerCase()) && (
-                                <AppTileCard
-                                    // image={UPDATED_TERMINAL}
-                                    app={TERMINAL_APP}
-                                    background="#BADEFF"
-                                    href="../../../#!/embed-terminal"
-                                    systemApp={true}
-                                    appType={'TERMINAL'}
-                                    isLoading={false}
-                                    showSkeleton={false}
-                                />
-                            )}
-                        </StyledSection>
-                    )}
-                    {mode != 'System' && apps.length > 0 ? (
-                        <StyledSectionLabel variant="subtitle1">
-                            All Apps
-                        </StyledSectionLabel>
-                    ) : null}
-
-                    {/* do not show favorited apps in all apps view */}
-                    {mode != 'System' && apps.length > 0 ? (
-                        <StyledSection>
-                            {apps
-                                .filter(
-                                    (app) =>
-                                        !favoritedApps.some(
-                                            (filterApp) =>
-                                                filterApp.project_id ===
-                                                app.project_id,
-                                        ),
-                                )
-                                .map((app, i) => {
-                                    return (
-                                        <AppTileCard
-                                            key={i}
-                                            app={app}
-                                            systemApp={false}
-                                            isDiscoverable={mode !== 'Mine'}
-                                            href={
-                                                mode === 'Discoverable'
-                                                    ? `#/app/${app.project_id}/detail`
-                                                    : `#/app/${app.project_id}/view`
-                                            }
-                                            onAction={() => {
-                                                if (mode === 'Discoverable') {
-                                                    navigate(
-                                                        `/app/${app.project_id}/detail`,
-                                                    );
-                                                } else {
-                                                    navigate(
-                                                        `/app/${app.project_id}/view`,
-                                                    );
+                        {/* do not show favorited apps in all apps view */}
+                        {mode != 'System' && apps.length > 0 ? (
+                            <StyledSection>
+                                {apps
+                                    .filter(
+                                        (app) =>
+                                            !favoritedApps.some(
+                                                (filterApp) =>
+                                                    filterApp.project_id ===
+                                                    app.project_id,
+                                            ),
+                                    )
+                                    .map((app, i) => {
+                                        return (
+                                            <AppTileCard
+                                                key={i}
+                                                app={app}
+                                                systemApp={false}
+                                                isDiscoverable={mode !== 'Mine'}
+                                                href={
+                                                    mode === 'Discoverable'
+                                                        ? `#/app/${app.project_id}/detail`
+                                                        : `#/app/${app.project_id}/view`
                                                 }
-                                            }}
-                                            appType={app.project_type}
-                                            isFavorite={isFavorited(
-                                                app.project_id,
-                                            )}
-                                            favorite={() => {
-                                                favoriteApp(app);
-                                            }}
-                                            onDelete={() => {
-                                                removeApp(app);
-                                            }}
-                                            isLoading={true}
-                                            showSkeleton={true}
-                                        />
-                                    );
-                                })}
-                        </StyledSection>
-                    ) : null}
-                </StyledContentContainer>
-            </StyledContainer>
-            <Help />
-        </Stack>
+                                                onAction={() => {
+                                                    if (
+                                                        mode === 'Discoverable'
+                                                    ) {
+                                                        navigate(
+                                                            `/app/${app.project_id}/detail`,
+                                                        );
+                                                    } else {
+                                                        navigate(
+                                                            `/app/${app.project_id}/view`,
+                                                        );
+                                                    }
+                                                }}
+                                                appType={app.project_type}
+                                                isFavorite={isFavorited(
+                                                    app.project_id,
+                                                )}
+                                                favorite={() => {
+                                                    favoriteApp(app);
+                                                }}
+                                                onDelete={() => {
+                                                    removeApp(app);
+                                                }}
+                                                isLoading={true}
+                                                showSkeleton={true}
+                                            />
+                                        );
+                                    })}
+                            </StyledSection>
+                        ) : null}
+                    </StyledContentContainer>
+                </StyledContainer>
+                <Help />
+            </Stack>
+        </>
     );
 });
