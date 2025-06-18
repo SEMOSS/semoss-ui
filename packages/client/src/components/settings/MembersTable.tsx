@@ -324,7 +324,7 @@ export const MembersTable = (props: MembersTableProps) => {
      * @param members The array of members to set the user details from
      */
     const setUserDetails = () => {
-        setUserData(userDetails.data.members[0]);
+        setUserData(userDetails.data?.['members'][0]);
         if (adminMode) {
             const adminPermissionPriority = 'Author';
             setUserPermission(
@@ -334,9 +334,9 @@ export const MembersTable = (props: MembersTableProps) => {
         } else {
             setUserPermission(
                 permissionPriorityMapper(
-                    userDetails.data.members[0].permission === 'OWNER'
+                    userDetails.data['members'][0].permission === 'OWNER'
                         ? 'Author'
-                        : userDetails.data.members[0].permission,
+                        : userDetails.data['members'][0].permission,
                 )?.permission as SETTINGS_ROLE,
             );
         }

@@ -19,7 +19,7 @@ export const getEngines = async (
     offset ? url += `&offset=${offset}` : '';
     limit ? url += `&limit=${limit}` : '';
     // get the response
-    const response = await get(url)
+    const response = await get<Record<string,any>[]>(url)
         .catch((error) => {
             throw Error(error);
         });
