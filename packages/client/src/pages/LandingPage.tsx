@@ -1,9 +1,10 @@
 import { observer } from 'mobx-react-lite';
 import {
-    styled, Typography,
+    styled,
+    Typography,
     Switch,
     ToggleButtonGroup,
-    ToggleButton
+    ToggleButton,
 } from '@semoss/ui';
 
 import { useCacheState, usePage } from '@/hooks';
@@ -38,7 +39,6 @@ const StyledSwitch = styled(Switch)(({ theme }) => ({
 export const LandingPage: React.FC = observer(() => {
     const [devMode, setDevMode] = useCacheState(false, `landing--devMode`);
 
-    console.log(devMode);
     // setup the page
     usePage({
         showNavbarSearch: devMode,

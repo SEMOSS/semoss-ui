@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { styled, useNotification } from '@semoss/ui';
 
-import { usePixel, useRootStore } from '@/hooks';
+import { usePage, usePixel, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
 import { BlocksWorkspace } from '@/components/blocks-workspace';
@@ -24,6 +24,11 @@ export const EditAppPage = observer(() => {
 
     const notification = useNotification();
     const navigate = useNavigate();
+
+    // setup the page
+    usePage({
+        showNavbarLogo: false,
+    });
 
     const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
 

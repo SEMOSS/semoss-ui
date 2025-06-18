@@ -19,7 +19,6 @@ import { Env } from '@semoss/sdk/react';
 
 import { WorkspaceContext } from '@/contexts';
 import { WorkspaceStore, WorkspaceOptions } from '@/stores';
-import { usePage } from '@/hooks';
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
 import { NavbarLeft, NavbarRight } from '@/components/shared';
@@ -80,11 +79,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
     const { navbarActions, workspace, options, factory = () => null } = props;
 
     const layoutRef = useRef<Layout>(null);
-
-    // setup the page
-    usePage({
-        showNavbarLogo: false,
-    });
 
     useEffect(() => {
         // default options if not loaded from cache

@@ -32,11 +32,11 @@ const StyledNavbar = styled('div')(({ theme }) => ({
     justifyContent: 'space-between',
     gap: 0,
 
-    '& > :first-child': {
+    '& > div:first-of-type': {
         paddingLeft: theme.spacing(2),
     },
 
-    '& > :last-child': {
+    '& > div:last-of-type': {
         paddingRight: theme.spacing(2),
     },
 }));
