@@ -1,9 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Link } from 'react-router-dom';
 
-import { Avatar, Button, Stack, Typography, useNotification } from '@semoss/ui';
-import { Env } from '@semoss/sdk';
+import { useNotification } from '@semoss/ui';
 import {
     StateStore,
     Blocks,
@@ -18,12 +16,9 @@ import { runPixelTwo } from '../../runPixelTwo';
 import { WorkspaceStore, DesignerStore, WorkspaceOptions } from '@/stores';
 import { DesignerContext } from '../../contexts';
 import { LoadingScreen } from '../../components/ui';
-import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
 import { DEFAULT_MENU } from './menus/default-menu';
 import { GraphPanel } from '../workspace/panels/GraphPanel';
-import { usePageSetup } from '../../hooks';
-import { Public } from '@mui/icons-material';
 import {
     Workspace,
     SettingsPanel,
@@ -40,6 +35,7 @@ import {
     NotebookExplorerPanel,
     NotebookViewerPanel,
 } from './panels';
+import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 
 const DEFAULT_BORDER_SIZE = 300;
 
@@ -281,9 +277,9 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                 }}
             >
                 <Workspace
+                    navbarActions={<BlocksWorkspaceActions />}
                     options={DEFAULT_OPTIONS}
                     workspace={workspace}
-                    // endTopbar={<BlocksWorkspaceActions />}
                     factory={FACTORY}
                 />
                 <BlocksWorkspaceDev />

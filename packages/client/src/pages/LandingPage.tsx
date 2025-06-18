@@ -1,15 +1,14 @@
 import { observer } from 'mobx-react-lite';
 import {
-    styled,
-    Stack,
-    Typography,
+    styled, Typography,
     Switch,
     ToggleButtonGroup,
-    ToggleButton,
+    ToggleButton
 } from '@semoss/ui';
 
-import { useCacheState, usePageSetup } from '@/hooks';
+import { useCacheState, usePage } from '@/hooks';
 import { BusinessUserScreen, DeveloperUserScreen } from '@/components/landing';
+import { NavbarRight } from '@/components/shared';
 
 const StyledAppBuilder = styled(Typography)(({ theme }) => ({
     color: 'var(--Text-Secondary, #666)',
@@ -39,13 +38,16 @@ const StyledSwitch = styled(Switch)(({ theme }) => ({
 export const LandingPage: React.FC = observer(() => {
     const [devMode, setDevMode] = useCacheState(false, `landing--devMode`);
 
-    usePageSetup({
-        topNav: {
-            left: null,
-            search: devMode,
-            right: (
-                <Stack direction="row" alignItems={'center'} spacing={1}>
-                    {/* <StyledAppBuilder variant="h6">
+    console.log(devMode);
+    // setup the page
+    usePage({
+        showNavbarSearch: devMode,
+    });
+
+    return (
+        <>
+            <NavbarRight>
+                {/* <StyledAppBuilder variant="h6">
                         App Builder
                     </StyledAppBuilder>
                     <StyledSwitch
@@ -55,25 +57,23 @@ export const LandingPage: React.FC = observer(() => {
                             setDevMode(e.target.checked);
                         }}
                     ></StyledSwitch> */}
-                    <ToggleButtonGroup
+                <ToggleButtonGroup
+                    size="small"
+                    color={'primary'}
+                    value={devMode ? 'build' : ''}
+                >
+                    <ToggleButton
                         size="small"
-                        color={'primary'}
-                        value={devMode ? 'build' : ''}
+                        value={'build'}
+                        onClick={() => {
+                            setDevMode(!devMode);
+                        }}
                     >
-                        <ToggleButton
-                            size="small"
-                            value={'build'}
-                            onClick={() => {
-                                setDevMode(!devMode);
-                            }}
-                        >
-                            Build
-                        </ToggleButton>
-                    </ToggleButtonGroup>
-                </Stack>
-            ),
-        },
-    });
-
-    return <>{devMode ? <DeveloperUserScreen /> : <BusinessUserScreen />}</>;
+                        Build
+                    </ToggleButton>
+                </ToggleButtonGroup>
+            </NavbarRight>
+            {devMode ? <DeveloperUserScreen /> : <BusinessUserScreen />}
+        </>
+    );
 });

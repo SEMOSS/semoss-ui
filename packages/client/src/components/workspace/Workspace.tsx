@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useMemo } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-import { Menu, MenuOpen, Public, RestartAlt } from '@mui/icons-material';
-import { Layout, TabNode, Model } from 'flexlayout-react';
+import { Public, RestartAlt } from '@mui/icons-material';
+import { Layout, TabNode } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import './flexlayout.css';
 
@@ -20,11 +19,10 @@ import { Env } from '@semoss/sdk/react';
 
 import { WorkspaceContext } from '@/contexts';
 import { WorkspaceStore, WorkspaceOptions } from '@/stores';
-import { usePageSetup } from '@/hooks';
+import { usePage } from '@/hooks';
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
-import { CodeWorkspaceActions } from '../code-workspace/CodeWorkspaceActions';
-import { BlocksWorkspaceActions } from '../blocks-workspace/BlocksWorkspaceActions';
+import { NavbarLeft, NavbarRight } from '@/components/shared';
 
 const StyledMain = styled('div')(() => ({
     position: 'relative',
@@ -56,27 +54,6 @@ const StyledSpacer = styled('div')(({ theme }) => ({
     height: '100%',
 }));
 
-const StyledMenuOpenIcon = styled(MenuOpen)(() => ({
-    color: 'rgba(0, 0, 0, 0.54)',
-}));
-
-const StyledMenuIcon = styled(Menu)(() => ({
-    color: 'rgba(0, 0, 0, 0.54)',
-}));
-
-const StyledHeaderLogo = styled(Link)(({ theme }) => ({
-    color: 'inherit',
-    textDecoration: 'none',
-    cursor: 'pointer',
-    ':hover': {
-        bacakground: theme.palette.action.hover,
-    },
-}));
-
-const StyledHeaderLogoImg = styled('img')(({ theme }) => ({
-    width: theme.spacing(3),
-}));
-
 const StyledActions = styled(Stack)(({ theme }) => ({
     position: 'absolute',
     bottom: '0',
@@ -86,11 +63,8 @@ const StyledActions = styled(Stack)(({ theme }) => ({
 }));
 
 type WorkspaceProps = {
-    /** Alert to display in topbar */
-    alert?: React.ReactNode;
-
-    /** Footer to render */
-    footer?: React.ReactNode;
+    /** Actions to render in the navbar */
+    navbarActions?: React.ReactNode;
 
     /** Workspace to render */
     workspace: WorkspaceStore;
@@ -103,19 +77,14 @@ type WorkspaceProps = {
 };
 
 export const Workspace = observer((props: WorkspaceProps) => {
-    const {
-        alert,
-        footer = null,
-        workspace,
-        options,
-        factory = () => null,
-    } = props;
+    const { navbarActions, workspace, options, factory = () => null } = props;
 
     const layoutRef = useRef<Layout>(null);
-    const navbarRight = document.getElementById('navbar-right');
 
-    // build the model from the layout
-    // const model = workspace.model;
+    // setup the page
+    usePage({
+        showNavbarLogo: false,
+    });
 
     useEffect(() => {
         // default options if not loaded from cache
@@ -143,17 +112,13 @@ export const Workspace = observer((props: WorkspaceProps) => {
         }
     };
 
-    const endNavbarActions = () => {
-        if (workspace.type === 'CODE') {
-            return <CodeWorkspaceActions />;
-        } else if (workspace.type === 'BLOCKS') {
-            return <BlocksWorkspaceActions />;
-        }
-    };
-
-    usePageSetup({
-        topNav: {
-            left: (
+    return (
+        <WorkspaceContext.Provider
+            value={{
+                workspace: workspace,
+            }}
+        >
+            <NavbarLeft>
                 <Stack direction="row" alignItems={'center'} spacing={1}>
                     <Avatar
                         variant="rounded"
@@ -163,45 +128,28 @@ export const Workspace = observer((props: WorkspaceProps) => {
                         {workspace.metadata.project_name}
                     </Typography>
                 </Stack>
-            ),
-            search: true,
-            right: null,
-        },
-        content: {
-            fullWidth: true,
-        },
-    });
+            </NavbarLeft>
+            <NavbarRight>
+                {navbarActions}
+                <Button
+                    variant="contained"
+                    size={'small'}
+                    color="primary"
+                    disabled={
+                        !(
+                            workspace.role === 'OWNER' ||
+                            workspace.role === 'EDIT'
+                        )
+                    }
+                    endIcon={<Public fontSize="inherit" />}
+                    component={Link}
+                    //@ts-expect-error this is expected. props are forwarded
+                    to={`../../../app/${workspace.appId}/view`}
+                >
+                    Show
+                </Button>
+            </NavbarRight>
 
-    return (
-        <WorkspaceContext.Provider
-            value={{
-                workspace: workspace,
-            }}
-        >
-            {navbarRight &&
-                createPortal(
-                    <Stack direction="row" alignItems={'center'} spacing={1}>
-                        {endNavbarActions()}
-                        <Button
-                            variant="contained"
-                            size={'small'}
-                            color="primary"
-                            disabled={
-                                !(
-                                    workspace.role === 'OWNER' ||
-                                    workspace.role === 'EDIT'
-                                )
-                            }
-                            endIcon={<Public fontSize="inherit" />}
-                            component={Link}
-                            //@ts-expect-error this is expected. props are forwarded
-                            to={`../../../app/${workspace.appId}/view`}
-                        >
-                            Show
-                        </Button>
-                    </Stack>,
-                    navbarRight,
-                )}
             <WorkspaceOverlay />
             <StyledMain>
                 <StyledContent>
@@ -239,7 +187,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
                         ) : null}
                     </StyledSpacer>
                 </StyledContent>
-                {footer}
             </StyledMain>
         </WorkspaceContext.Provider>
     );

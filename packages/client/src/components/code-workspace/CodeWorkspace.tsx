@@ -120,6 +120,7 @@ export const CodeWorkspace = observer((props: CodeWorkspaceProps) => {
     return (
         <>
             <Workspace
+                navbarActions={<CodeWorkspaceActions />}
                 options={DEFAULT_OPTIONS}
                 workspace={workspace}
                 factory={FACTORY}

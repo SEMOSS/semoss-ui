@@ -10,7 +10,6 @@ import {
     InputAdornment,
     Container,
     Stack,
-    Button,
 } from '@semoss/ui';
 
 import { THEME } from '@/constants';
@@ -19,16 +18,30 @@ import { usePage, useRootStore } from '@/hooks';
 import { Search } from './Search';
 import { MenuRounded, Search as SearchIcon } from '@mui/icons-material';
 
-const StyledTopNav = styled(Stack)(({ theme }) => ({
+const StyledNavbar = styled('div')(({ theme }) => ({
     position: 'absolute',
     top: '0',
+    height: theme.spacing(7),
+    width: '100%',
     borderBottom: '1px solid #EAEAEE',
     background: '#FAFAFA', //"var(--Background-Paper-2, #FAFAFA)",
     color: '#666666', //"var(--Text-Primary-1, #212B36)",
-    height: theme.spacing(7),
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 0,
+
+    '& > :first-child': {
+        paddingLeft: theme.spacing(2),
+    },
+
+    '& > :last-child': {
+        paddingRight: theme.spacing(2),
+    },
 }));
 
-const StyledNavHeader = styled(Stack)(({ theme }) => ({
+const StyledNavbarHeader = styled(Stack)(({ theme }) => ({
     position: 'relative',
     background: 'transparent',
     paddingTop: theme.spacing(1.5),
@@ -38,7 +51,7 @@ const StyledNavHeader = styled(Stack)(({ theme }) => ({
     zIndex: 0,
 }));
 
-const StyledNavHeaderLink = styled(Link)(({ theme }) => ({
+const StyledNavbarHeaderLink = styled(Link)(({ theme }) => ({
     flex: 1,
     display: 'flex',
     alignItems: 'center',
@@ -68,7 +81,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     },
 }));
 
-export const TopNav: React.FC = observer(() => {
+export const Navbar: React.FC = observer(() => {
     const { configStore } = useRootStore();
     const { page } = usePage();
 
@@ -86,53 +99,38 @@ export const TopNav: React.FC = observer(() => {
         return {};
     }, [Object.keys(configStore.store.config).length]);
 
-    if (!page.topNav) {
-        return null;
-    }
-
     return (
-        <StyledTopNav
-            direction="row"
-            alignItems={'center'}
-            justifyContent={'space-between'}
-            width={'100%'}
-        >
-            <Stack direction="row" flex={1} alignItems={'center'} spacing={1}>
-                {!page.sideNav.pinned && (
-                    <StyledNavHeader
-                        direction={'row'}
-                        alignItems={'center'}
-                        justifyContent={'flex-start'}
-                        onMouseOver={() => page.openSideNav()}
-                    >
-                        <IconButton
-                            size="small"
-                            onClick={() => page.openSideNav()}
-                        >
-                            <MenuRounded fontSize="medium" />
-                        </IconButton>
+        <StyledNavbar ref={(n) => page.setNavbarElement(n)}>
+            {!page.sidebar.pinned && (
+                <StyledNavbarHeader
+                    direction={'row'}
+                    alignItems={'center'}
+                    justifyContent={'flex-start'}
+                    onMouseOver={() => page.openSidebar()}
+                >
+                    <IconButton size="small" onClick={() => page.openSidebar()}>
+                        <MenuRounded fontSize="medium" />
+                    </IconButton>
 
-                        {page.topNav.left ? (
-                            page.topNav.left
-                        ) : (
-                            <StyledNavHeaderLink
-                                to={'/'}
-                                aria-label={'Go Home'}
-                            >
-                                <Logo />
-                                <Typography
-                                    variant="h6"
-                                    sx={{ fontWeight: 700 }}
-                                >
-                                    {themeMap.name ? themeMap.name : THEME.name}
-                                </Typography>
-                            </StyledNavHeaderLink>
-                        )}
-                    </StyledNavHeader>
-                )}
-            </Stack>
+                    {page.navbar.logo && (
+                        <StyledNavbarHeaderLink to={'/'} aria-label={'Go Home'}>
+                            <Logo />
+                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                                {themeMap.name ? themeMap.name : THEME.name}
+                            </Typography>
+                        </StyledNavbarHeaderLink>
+                    )}
+                </StyledNavbarHeader>
+            )}
+            <Stack
+                id={'navbar--left'}
+                direction="row"
+                alignItems={'center'}
+                justifyContent={'flex-start'}
+                spacing={1}
+            ></Stack>
             <Container maxWidth={false} sx={{ maxWidth: '720px' }}>
-                {page.topNav && page.topNav.search ? (
+                {page.navbar && page.navbar.search ? (
                     <Search
                         renderInput={(params) => (
                             <StyledTextField
@@ -166,16 +164,12 @@ export const TopNav: React.FC = observer(() => {
                 )}
             </Container>
             <Stack
-                id={'navbar-right'}
+                id={'navbar--right'}
                 direction="row"
-                flex={1}
                 alignItems={'center'}
                 justifyContent={'flex-end'}
                 spacing={1}
-                paddingRight={2}
-            >
-                {page.topNav.right}
-            </Stack>
-        </StyledTopNav>
+            ></Stack>
+        </StyledNavbar>
     );
 });

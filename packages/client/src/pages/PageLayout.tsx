@@ -16,6 +16,10 @@ export const PageLayout = observer(() => {
         return new PageStore();
     }, []);
 
+    if (!page) {
+        return null;
+    }
+
     return (
         <ErrorBoundary fallback={<ErrorPage />}>
             <PageContext.Provider

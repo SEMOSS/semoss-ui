@@ -1,37 +1,34 @@
 import { autorun, makeAutoObservable } from 'mobx';
 
 import { PageCache } from './page.types';
-import React from 'react';
 
 const CACHE_KEY = `PAGE_STORE_CACHE--1`;
 
 export interface PageStoreInterface {
     /**
-     * Top navigation information
+     * Navigation bar information
      **/
-    topNav:
-        | {
-              /**
-               * Content to display on the left side of the top nav
-               */
-              left: React.ReactNode | null;
+    navbar: {
+        /**
+         *  Save the element of the navbar
+         */
+        element: HTMLElement;
 
-              /**
-               *  Show the search
-               */
-              search: boolean;
+        /**
+         *  Show the logo
+         */
+        logo: boolean;
 
-              /**
-               * Content to display on the right side of the top nav
-               */
-              right: React.ReactNode | null;
-          }
-        | false;
+        /**
+         *  Show the search
+         */
+        search: boolean;
+    };
 
     /**
-     * side navigation information
+     * Sidebar information
      **/
-    sideNav: {
+    sidebar: {
         /**
          * Track if it is open or closed
          */
@@ -42,40 +39,6 @@ export interface PageStoreInterface {
          */
         pinned: boolean;
     };
-    /**
-     * side navigation information
-     **/
-    content: {
-        /**
-         * Track if it is open or closed
-         */
-        fullWidth: boolean;
-    };
-
-    /**
-     * Overlay information
-     **/
-    overlay: {
-        /**
-         * Track if the overlay is open or closed
-         */
-        open: boolean;
-
-        /**
-         * Options associated with the overlay
-         */
-        options: {
-            /**
-             * Set the maxWidth of the overlay
-             */
-            maxWidth: 'sm' | 'md' | 'lg' | 'xl' | null;
-        };
-
-        /**
-         * Content to display in the overlay
-         */
-        content: () => React.ReactNode;
-    };
 }
 
 /**
@@ -83,24 +46,14 @@ export interface PageStoreInterface {
  */
 export class PageStore {
     private _store: PageStoreInterface = {
-        topNav: {
-            left: null,
+        navbar: {
+            element: null,
+            logo: true,
             search: true,
-            right: null,
         },
-        sideNav: {
+        sidebar: {
             open: false,
             pinned: false,
-        },
-        content: {
-            fullWidth: false,
-        },
-        overlay: {
-            open: false,
-            options: {
-                maxWidth: 'sm',
-            },
-            content: () => null,
         },
     };
 
@@ -112,7 +65,7 @@ export class PageStore {
             ) as PageCache;
 
             if (cached) {
-                this._store.sideNav.pinned = cached.sideNav.pinned;
+                this._store.sidebar.pinned = cached.sidebar.pinned;
             }
         } catch (e) {
             // noop
@@ -125,8 +78,8 @@ export class PageStore {
         autorun(() => {
             try {
                 const item: PageCache = {
-                    sideNav: {
-                        pinned: this._store.sideNav.pinned,
+                    sidebar: {
+                        pinned: this._store.sidebar.pinned,
                     },
                 };
 
@@ -144,108 +97,75 @@ export class PageStore {
     /**
      * Get top navigation information
      */
-    get topNav() {
-        return this._store.topNav;
+    get navbar() {
+        return this._store.navbar;
     }
 
     /**
-     * Get side navigation information
+     * Get sidebar information
      */
-    get sideNav() {
-        return this._store.sideNav;
-    }
-
-    /**
-     * Get content information
-     */
-    get content() {
-        return this._store.content;
-    }
-
-    /**
-     * Get overlay information
-     */
-    get overlay() {
-        return this._store.overlay;
+    get sidebar() {
+        return this._store.sidebar;
     }
 
     /**
      * Actions
      */
+    /**
+     * Update the navbar logo
+     */
+    setNavbarElement = (ele: HTMLElement) => {
+        this._store.navbar.element = ele;
+    };
 
     /**
-     * Set the top navigation
+     * Update the navbar logo
      */
-    setTopNav = (
-        options: PageStoreInterface['topNav'] = {
-            left: null,
-            search: true,
-            right: null,
-        },
+    updateNavbarLogo = (logo = true) => {
+        this._store.navbar.logo = logo;
+    };
+
+    /**
+     * Update the navbar search
+     */
+    updateNavbarSearch = (search = true) => {
+        this._store.navbar.search = search;
+    };
+
+    /**
+     * Set the sidebar
+     */
+    setSidebar = (
+        content: PageStoreInterface['sidebar'] = { open: false, pinned: false },
     ) => {
-        this._store.topNav = options;
+        this._store.sidebar = content;
     };
 
     /**
-     * Set the top navigation
+     * Open the sidebar
      */
-    setContent = (content: { fullWidth: boolean }) => {
-        this._store.content = content;
+    openSidebar = () => {
+        this._store.sidebar.open = true;
     };
 
     /**
-     * Open the side navigation
+     * Close the sidebar
      */
-    openSideNav = () => {
-        this._store.sideNav.open = true;
+    closeSidebar = () => {
+        this._store.sidebar.open = false;
     };
 
     /**
-     * Close the side navigation
+     * Pin the sidebar
      */
-    closeSideNav = () => {
-        this._store.sideNav.open = false;
+    pinSidebar = () => {
+        this._store.sidebar.pinned = true;
     };
 
     /**
-     * Pin the side navigation
+     * Unpin the sidebar
      */
-    pinSideNav = () => {
-        this._store.sideNav.pinned = true;
-    };
-
-    /**
-     * Unpin the side navigation
-     */
-    unpinSideNav = () => {
-        this._store.sideNav.pinned = false;
-    };
-
-    /**
-     * Open the overlay
-     */
-    openOverlay = (
-        content: PageStoreInterface['overlay']['content'],
-        options: PageStoreInterface['overlay']['options'] = {
-            maxWidth: 'sm',
-        },
-    ) => {
-        // open the overlay
-        this._store.overlay.open = true;
-
-        // set the content
-        this._store.overlay.content = content;
-        this._store.overlay.options = options;
-    };
-
-    /**
-     * Close the overlay
-     */
-    closeOverlay = () => {
-        // close the overlay
-        this._store.overlay.open = false;
-
-        // clear the content
-        this._store.overlay.content = null;
+    unpinSidebar = () => {
+        this._store.sidebar.pinned = false;
     };
 }

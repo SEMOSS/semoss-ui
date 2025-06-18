@@ -12,7 +12,6 @@ import { useWorkspace } from './useWorkspace';
 import { useDebounce } from './useDebounce';
 import { useDebounceValue } from './useDebounceValue';
 import { usePage } from './usePage';
-import { usePageSetup } from './usePageSetup';
 
 export {
     useAPI,
@@ -29,5 +28,4 @@ export {
     useDebounce,
     useDebounceValue,
     usePage,
-    usePageSetup,
 };

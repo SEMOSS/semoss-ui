@@ -76,7 +76,7 @@ const StyledNavHeaderLink = styled(Link)(({ theme }) => ({
     },
 }));
 
-const StyledSideNav = styled(Drawer)(() => ({
+const StyledSidebar = styled(Drawer)(() => ({
     flexShrink: 0,
     whiteSpace: 'nowrap',
     boxSizing: 'border-box',
@@ -99,7 +99,7 @@ const StyledSideNav = styled(Drawer)(() => ({
     ],
 }));
 
-const StyledSideNavContent = styled(Stack)(({ theme }) => ({
+const StyledSidebarContent = styled(Stack)(({ theme }) => ({
     flexDirection: 'column',
     width: '100%',
     paddingRight: theme.spacing(2),
@@ -107,7 +107,7 @@ const StyledSideNavContent = styled(Stack)(({ theme }) => ({
     overflowY: 'auto',
 }));
 
-const StyledSideNavFooter = styled(Stack)(({ theme }) => ({
+const StyledSidebarFooter = styled(Stack)(({ theme }) => ({
     paddingRight: theme.spacing(2),
     paddingLeft: theme.spacing(2),
     overflowY: 'hidden',
@@ -141,7 +141,7 @@ const StyledLink = styled(Link)(({ theme }) => ({
     cursor: 'pointer',
 }));
 
-export const SideNav: React.FC = observer(() => {
+export const Sidebar: React.FC = observer(() => {
     const { configStore } = useRootStore();
     const { page } = usePage();
 
@@ -179,19 +179,19 @@ export const SideNav: React.FC = observer(() => {
 
     return (
         <>
-            <StyledSideNav
-                variant={page.sideNav.pinned ? 'permanent' : 'temporary'}
+            <StyledSidebar
+                variant={page.sidebar.pinned ? 'permanent' : 'temporary'}
                 anchor="left"
-                open={page.sideNav.open}
-                onClose={() => page.closeSideNav()}
+                open={page.sidebar.open}
+                onClose={() => page.closeSidebar()}
                 PaperProps={{
                     onMouseLeave: () => {
                         // closes if it is not pinned
-                        if (page.sideNav.pinned) {
+                        if (page.sidebar.pinned) {
                             return;
                         }
 
-                        page.closeSideNav();
+                        page.closeSidebar();
                     },
                 }}
             >
@@ -211,13 +211,13 @@ export const SideNav: React.FC = observer(() => {
                     <IconButton
                         size="small"
                         onClick={() => {
-                            if (!page.sideNav.pinned) {
+                            if (!page.sidebar.pinned) {
                                 // if it is open and not pinned, pin it
-                                page.pinSideNav();
-                            } else if (page.sideNav.pinned) {
+                                page.pinSidebar();
+                            } else if (page.sidebar.pinned) {
                                 // if it is open, and pinned, close and unpin
-                                page.unpinSideNav();
-                                page.closeSideNav();
+                                page.unpinSidebar();
+                                page.closeSidebar();
                             } else {
                                 // noop
                             }
@@ -227,7 +227,7 @@ export const SideNav: React.FC = observer(() => {
                     </IconButton>
                 </StyledNavHeader>
                 <Divider />
-                <StyledSideNavContent>
+                <StyledSidebarContent>
                     <StyledList dense={true} aria-label="main navigation">
                         <StyledLink to={'/'} aria-label={'Home'}>
                             <StyledListItemButton
@@ -241,11 +241,11 @@ export const SideNav: React.FC = observer(() => {
                             </StyledListItemButton>
                         </StyledLink>
                     </StyledList>
-                </StyledSideNavContent>
+                </StyledSidebarContent>
                 <Divider />
                 {viewSidebar ? (
                     <>
-                        <StyledSideNavContent flex={1}>
+                        <StyledSidebarContent flex={1}>
                             <StyledList
                                 dense={true}
                                 aria-label="catalog navigation"
@@ -286,13 +286,13 @@ export const SideNav: React.FC = observer(() => {
                                     );
                                 })}
                             </StyledList>
-                        </StyledSideNavContent>
+                        </StyledSidebarContent>
                     </>
                 ) : (
                     <Stack flex={1} />
                 )}
                 <Divider />
-                <StyledSideNavFooter>
+                <StyledSidebarFooter>
                     <StyledList dense={true} aria-label="main navigation">
                         <StyledLink to={'/settings'} aria-label={'Settings'}>
                             <StyledListItemButton
@@ -320,8 +320,8 @@ export const SideNav: React.FC = observer(() => {
                             </StyledListItemButton>
                         </LoginPopover>
                     </StyledList>
-                </StyledSideNavFooter>
-            </StyledSideNav>
+                </StyledSidebarFooter>
+            </StyledSidebar>
         </>
     );
 });

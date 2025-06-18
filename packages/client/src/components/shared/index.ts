@@ -1,4 +1,7 @@
 import { PlatformMessages } from './PlatformMessages';
 import { Search } from './Search';
 import { Page } from './Page';
-export { Page, PlatformMessages, Search };
+import { NavbarLeft } from './NavbarLeft';
+import { NavbarRight } from './NavbarRight';
+
+export { Page, PlatformMessages, Search, NavbarLeft, NavbarRight };

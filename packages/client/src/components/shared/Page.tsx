@@ -1,7 +1,7 @@
 import { Container, styled } from '@semoss/ui';
 
-import { TopNav } from './TopNav';
-import { SideNav } from './SideNav';
+import { Navbar } from './Navbar';
+import { Sidebar } from './Sidebar';
 import { PlatformMessages } from './PlatformMessages';
 import { observer } from 'mobx-react-lite';
 import { usePage } from '@/hooks';
@@ -32,16 +32,8 @@ const StyledInner = styled('div')(() => ({
     overflowY: 'auto',
 }));
 
-const StyledContainer = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'fullWidth',
-})<{
-    /** Track if the page header is stuck */
-    fullWidth: boolean;
-}>(({ theme, fullWidth }) => ({
-    padding: fullWidth ? '0px' : theme.spacing(3),
-    width: '100%',
-    maxWidth: fullWidth ? '100%' : '1440px !important',
-    height: '100%',
+const StyledContainer = styled(Container)(({ theme }) => ({
+    paddingTop: theme.spacing(3),
 }));
 
 export interface PageProps {
@@ -51,13 +43,14 @@ export interface PageProps {
 
 export const Page: React.FC<PageProps> = observer(({ children }) => {
     const { page } = usePage();
+
     return (
         <StyledPage>
-            <SideNav />
+            <Sidebar />
             <StyledContent>
-                <TopNav />
+                <Navbar />
                 <StyledInner id="home__content">
-                    <StyledContainer fullWidth={page.content.fullWidth}>
+                    <StyledContainer sx={{ maxWidth: '1440px' }}>
                         {children}
                     </StyledContainer>
                 </StyledInner>
