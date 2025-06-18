@@ -278,7 +278,7 @@ export const ImportPage = () => {
                             [
                                 ...steps,
                                 {
-                                    id: `${model.id}`,
+                                    id: model.id,
                                     title: model.name,
                                     description: `Fill out ${
                                         model.name
