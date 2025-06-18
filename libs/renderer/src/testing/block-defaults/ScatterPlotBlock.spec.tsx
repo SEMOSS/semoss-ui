@@ -2,9 +2,17 @@ import {
 	type EchartVisualizationBlockDef,
 	VisualizationBlock,
 } from "@/components/block-defaults/echart-visualization-block/VisualizationBlock";
-import { act, fireEvent, render, renderHook, screen } from "../utils";
+import {
+	act,
+	fireEvent,
+	render,
+	renderHook,
+	screen,
+	userEvent,
+} from "../utils";
 import { useBlock, useBlockSettings } from "@/hooks";
 import { TooltipScatterPlot } from "@/components/block-defaults/echart-visualization-block/variant/scatter-plot/TooltipScatterPlot";
+import { EditXAxisScatterPlot } from "@/components/block-defaults/echart-visualization-block/variant/scatter-plot/EditXAxisScatterPlot";
 
 const blocks = {
 	scatter: {
@@ -28,7 +36,7 @@ const blocks = {
 					position: "bottom",
 				},
 				xAxis: {
-					name: "",
+					name: "DemoX",
 					pixelName: "",
 					nameLocation: "middle",
 					show: true,
@@ -371,6 +379,7 @@ describe("Scatter Plot Block", async () => {
 				renderEngineId: "scatter",
 			},
 		);
+		expect(result.current).toBeDefined();
 
 		expect(result.current.data.style.width).toBe(400);
 		expect(result.current.data.style.height).toBe(500);
@@ -383,6 +392,7 @@ describe("Scatter Plot Block", async () => {
 				renderEngineId: "scatter",
 			},
 		);
+		expect(result.current).toBeDefined();
 
 		act(() => {
 			result.current.setData("style", {
@@ -393,5 +403,28 @@ describe("Scatter Plot Block", async () => {
 
 		expect(result.current.data.style.width).toBe(800);
 		expect(result.current.data.style.height).toBe(1000);
+	});
+
+	it("should set xAxis Label", async () => {
+		const { result } = renderHook(
+			() => useBlockSettings<EchartVisualizationBlockDef>("scatter"),
+			{
+				blocks,
+				renderEngineId: "scatter",
+				customChildren: <EditXAxisScatterPlot id="scatter" path={"option"} />,
+			},
+		);
+		expect(result.current).toBeDefined();
+
+		// Assume the label for the input is "Set X Axis Title"
+		// since there's no way to set test-id, use getElementById can be an alternative
+		const input = document.getElementById("xaxis-title") as HTMLInputElement;
+		// console.log({ input });
+
+		// Update the input field's value
+		fireEvent.change(input, { target: { value: "X-Axis Label" } });
+		// const input = screen.queryAllByRole("textbox");
+
+		expect(result.current.data.option.xAxis.name).toBe("X-Axis Label");
 	});
 });
