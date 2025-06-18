@@ -427,4 +427,32 @@ describe("Scatter Plot Block", async () => {
 
 		expect(result.current.data.option.xAxis.name).toBe("X-Axis Label");
 	});
+	it("should set xAxis font size", async () => {
+		const { result } = renderHook(
+			() => useBlockSettings<EchartVisualizationBlockDef>("scatter"),
+			{
+				blocks,
+				renderEngineId: "scatter",
+				customChildren: <EditXAxisScatterPlot id="scatter" path={"option"} />,
+			},
+		);
+		expect(result.current).toBeDefined();
+		expect(result.current.data.option.xAxis.nameTextStyle.fontSize).toBe(12);
+
+		// Assume the label for the input is "Set X Axis Title"
+		// since there's no way to set test-id, use getElementById can be an alternative
+		const input = document.getElementById(
+			"xaxis-edit-title-font-size",
+		) as HTMLInputElement;
+		// console.log({ input });
+
+		// Update the input field's value
+		fireEvent.change(input, { target: { value: 20 } });
+		// const input = screen.queryAllByRole("textbox");
+		const fontSize = Number(
+			result.current.data.option.xAxis.nameTextStyle.fontSize,
+		);
+
+		expect(fontSize).toBe(20);
+	});
 });
