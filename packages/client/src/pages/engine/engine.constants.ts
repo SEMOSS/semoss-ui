@@ -19,6 +19,7 @@ import { EngineQAPage } from './EngineQAPage';
 // import { EngineReplaceDataPage } from './EngineReplaceDataPage';
 import { EngineUsagePage } from './EngineUsagePage';
 import { EngineSmssPage } from './EngineSmssPage';
+import { EngineModelTestPage } from './EngineModelTestPage';
 
 export const ENGINE_ROUTES: {
     /** Name of the route */
@@ -101,6 +102,12 @@ export const ENGINE_ROUTES: {
                 path: '',
                 component: EngineIndexPage,
                 restrict: false,
+            },
+            {
+                name: 'Test',
+                path: 'test',
+                component: EngineModelTestPage,
+                restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
             },
             {
                 name: 'Usage',
