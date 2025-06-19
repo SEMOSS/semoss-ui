@@ -11,7 +11,7 @@ import { useBlockSettings } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 
-const columnComparision = [
+const columnComparisionList = [
     {
         name: "is Equal To",
         value: "==",
@@ -94,9 +94,11 @@ const ColourByValue = observer(
         });
         const updateTimeOutRef = useRef(null);
         let columnData = [];
-        if (chartType === "bar") {
+        if (chartType === "bar" || chartType === "stackchart") {
             columnData = data.columns
-                ? data.columns.filter((item) => item.label === "yAxis")
+                ? data.columns.filter(
+                      (item) => item.label?.toLowerCase() === "yaxis",
+                  )
                 : [];
         } else if (chartType === "pie") {
             columnData = data.columns;
@@ -158,7 +160,8 @@ const ColourByValue = observer(
             if (typeof item === "object" && item.hasOwnProperty("value")) {
                 return item.value;
             }
-            if (typeof item === "number") return item;
+            if (typeof item === "number" || (item && typeof item === "string"))
+                return item;
             if (isNaN(item)) return 0;
         }
 
@@ -174,20 +177,27 @@ const ColourByValue = observer(
 
             if (column === "columnToColour") {
                 const option = data.option;
-                let valuesToColour = [];
+                let valuesColor = [];
                 let name = "";
-                if (chartType === "pie") {
+                if (chartType === "pie" || chartType === "stackchart") {
                     name = event.target.value.name;
-                    valuesToColour = option["series"][0].data?.map((item) => {
-                        return item.hasOwnProperty("value") ? item.value : item;
-                    });
+                    valuesColor = option["series"].flatMap((item) =>
+                        item.data?.map((item) => {
+                            const isStr = typeof item === "string";
+                            return item.hasOwnProperty("value")
+                                ? parseFloat(item.value)
+                                : isStr
+                                ? parseFloat(item)
+                                : item;
+                        }),
+                    );
                 } else if (chartType === "bar") {
                     name = Array.isArray(event.target.value.name)
                         ? event.target.value.name[0]
                         : event.target.value.name;
                     const pixelId = event.target.value.selector;
                     if (option["xAxis"]["pixelvalue"].includes(pixelId)) {
-                        valuesToColour = option["xAxis"]["data"].map((item) => {
+                        valuesColor = option["xAxis"]["data"].map((item) => {
                             return item.hasOwnProperty("value")
                                 ? item.value
                                 : item;
@@ -195,7 +205,7 @@ const ColourByValue = observer(
                     } else if (
                         option["yAxis"]["pixelvalue"].includes(pixelId)
                     ) {
-                        valuesToColour = option["series"]
+                        valuesColor = option["series"]
                             .find((item) => item.name === name)
                             ["data"].map((item) => {
                                 return item.hasOwnProperty("value")
@@ -203,19 +213,27 @@ const ColourByValue = observer(
                                     : item;
                             });
                     }
-                    valuesToColour = valuesToColour.map(
-                        convertSeriesDataToValue,
-                    );
+                    valuesColor = valuesColor.map(convertSeriesDataToValue);
                 }
-                setValuesToColour(valuesToColour.filter((item) => item > 0));
+                const valuesColorSet = Array.from(
+                    new Set(
+                        valuesColor.filter(
+                            (item) =>
+                                item > 0 &&
+                                item !== null &&
+                                typeof item !== "object",
+                        ),
+                    ),
+                );
+                setValuesToColour(valuesColorSet);
                 setNewRules((prevValues) => {
                     return {
                         ...prevValues,
                         ["column"]: name,
                         ["columnName"]: name,
                         ["columnNameToColour"]: name,
-                        ["filterMinValue"]: Math.min(...valuesToColour),
-                        ["filterMaxValue"]: Math.max(...valuesToColour),
+                        ["filterMinValue"]: Math.min(...valuesColorSet),
+                        ["filterMaxValue"]: Math.max(...valuesColorSet),
                     };
                 });
             }
@@ -376,7 +394,7 @@ const ColourByValue = observer(
                         value={newRules.columnComparision}
                         onChange={(e) => updateFields("columnComparision", e)}
                     >
-                        {columnComparision.map((cols, index) => {
+                        {columnComparisionList.map((cols, index) => {
                             return (
                                 <Select.Item
                                     value={cols.value}

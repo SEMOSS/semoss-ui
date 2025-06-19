@@ -494,9 +494,9 @@ export const FrameOperations = observer(
                 }
             }
             if (variation === "echart-stack-chart") {
+                const tempValue = computedValue;
+                const columns = [];
                 if (firstColumn?.values) {
-                    const tempValue = computedValue;
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -512,11 +512,13 @@ export const FrameOperations = observer(
                     tempValue["xAxis"]["pixelName"] = firstColumn?.values;
                     tempValue["xAxis"]["flipAxisName"] = firstColumn?.values;
                     tempValue["xAxis"]["axisName"] = firstColumn?.values;
-
-                    setData("option", tempValue);
+                    columns.push({
+                        name: firstColumn?.values[0],
+                        selector: firstColumn?.selectors[0],
+                        label: firstColumn?.label,
+                    });
                 }
                 if (secondColumn?.values) {
-                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
@@ -533,11 +535,13 @@ export const FrameOperations = observer(
                     tempValue["yAxis"]["pixelName"] = secondColumn?.values;
                     tempValue["yAxis"]["flipAxisName"] = secondColumn?.values;
                     tempValue["yAxis"]["axisName"] = secondColumn?.values;
-
-                    setData("option", tempValue);
+                    columns.push({
+                        name: secondColumn?.values[0],
+                        selector: secondColumn?.selectors[0],
+                        label: secondColumn?.label,
+                    });
                 }
                 if (columnsDrop[2]?.values.length > 0) {
-                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
@@ -549,13 +553,9 @@ export const FrameOperations = observer(
                         category: columnsDrop[2]?.values,
                         categoryDataType: columnsDrop[2]?.dataType,
                     };
-
-                    setData("option", tempValue);
                 }
                 if (columnsDrop[3]?.values.length > 0) {
-                    const tempValue = computedValue;
-
-                    tempValue["_state"] =
+                   tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
@@ -565,9 +565,9 @@ export const FrameOperations = observer(
                         tooltip: columnsDrop[3]?.values,
                         tooltipDataType: columnsDrop[3]?.dataType,
                     };
-
-                    setData("option", tempValue);
                 }
+                setData("columns", columns);
+                setData("option", tempValue);
             }
             if (
                 variation === "echart-line-graph" &&

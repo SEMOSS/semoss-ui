@@ -518,8 +518,6 @@ const GanttToolsList = (({id})=>{
 
 const StackChartTool = (({id})=>{
     const [stackChartSelection, setStackChartSelection] = useState('');
-    const { data, setData } =
-            useBlockSettings<EchartVisualizationBlockDef>(id);
     return (
         <>
             <ColorpalatteTool id={id} />
@@ -545,13 +543,13 @@ const StackChartTool = (({id})=>{
                     <ListItemText primary="Colour By Value" />
                     <InfoOutlined />
                 </ListItemButton>
-                {/* {stackChartSelection === "colourbyvalue" && (
+                {stackChartSelection === "colourbyvalue" && (
                     <ColourByValue
                         id={id}
-                        // updateChart={updateChart}
+                        chartType={"stackchart"}
                         path="option"
                     />
-                )} */}
+                )}
             </StyledListItem>
             <StyledListItem disablePadding>
                 <ListItemButton

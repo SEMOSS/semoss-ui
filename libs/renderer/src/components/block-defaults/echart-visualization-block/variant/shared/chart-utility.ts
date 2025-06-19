@@ -24,19 +24,27 @@ const COLOUR_PALATTE_DATA = [
 // ];
 
 function updateColorData(seriesData, appliedRules = null) {
-    console.log("pi chart update color ", seriesData, appliedRules);
     const isPie = seriesData.seriesType === "pie";
-    if (appliedRules === null || appliedRules.length === 0) {
-        if (isPie) {
-            return COLOUR_PALATTE_DATA[
+    if (
+        appliedRules === null ||
+        appliedRules.length === 0 ||
+        seriesData.value === null ||
+        seriesData.value === undefined
+    ) {
+        return (
+            COLOUR_PALATTE_DATA[
                 seriesData.seriesIndex % COLOUR_PALATTE_DATA.length
-            ];
-        }
-        return COLOUR_PALATTE_DATA[seriesData.seriesIndex] || ECHART_BAR_COLOUR;
+            ] || ECHART_BAR_COLOUR
+        );
     }
+    const isStack =
+        seriesData.seriesType === "bar" &&
+        seriesData.data?.hasOwnProperty("category");
     let applyColor =
         seriesData.color ||
-        COLOUR_PALATTE_DATA[seriesData.seriesIndex] ||
+        (seriesData.seriesType === "bar"
+            ? COLOUR_PALATTE_DATA[seriesData.dataIndex]
+            : COLOUR_PALATTE_DATA[seriesData.seriesIndex]) ||
         ECHART_BAR_COLOUR;
     if (isPie) {
         applyColor =
@@ -52,50 +60,41 @@ function updateColorData(seriesData, appliedRules = null) {
             filterValue,
             valuesToColour,
         } = appliedRule;
-        if (columnComparision === "==") {
+        const isApply = columnName == seriesData.seriesName || isPie || isStack;
+        if (isApply) {
             if (
-                (columnName == seriesData.seriesName || isPie) &&
-                valuesToColour.includes(seriesData.value)
+                columnComparision === "==" &&
+                valuesToColour.includes(parseFloat(seriesData.value))
             ) {
                 applyColor = columnColour;
             }
-        }
-        if (columnComparision === "!=") {
             if (
-                (columnName == seriesData.seriesName || isPie) &&
-                !valuesToColour.includes(seriesData.value)
+                columnComparision === "!=" &&
+                !valuesToColour.includes(parseFloat(seriesData.value))
             ) {
                 applyColor = columnColour;
             }
-        }
-        if (columnComparision == "<=") {
             if (
-                (columnName == seriesData.seriesName || isPie) &&
+                columnComparision == "<=" &&
                 seriesData.value <= parseFloat(filterValue)
             ) {
                 applyColor = columnColour;
             }
-        }
 
-        if (columnComparision === "<") {
             if (
-                (columnName == seriesData.seriesName || isPie) &&
+                columnComparision === "<" &&
                 seriesData.value < parseFloat(filterValue)
             ) {
                 applyColor = columnColour;
             }
-        }
-        if (columnComparision === ">") {
             if (
-                (columnName == seriesData.seriesName || isPie) &&
+                columnComparision === ">" &&
                 seriesData.value > parseFloat(filterValue)
             ) {
                 applyColor = columnColour;
             }
-        }
-        if (columnComparision === ">=") {
             if (
-                (columnName == seriesData.seriesName || isPie) &&
+                columnComparision === ">=" &&
                 seriesData.value >= parseFloat(filterValue)
             ) {
                 applyColor = columnColour;
