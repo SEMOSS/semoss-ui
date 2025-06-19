@@ -2,7 +2,13 @@ import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { Menu, MenuOpen, Public, RestartAlt } from '@mui/icons-material';
-import { Layout, TabNode, Model } from 'flexlayout-react';
+import {
+    Layout,
+    TabNode,
+    Model,
+    Actions,
+    DockLocation,
+} from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import './flexlayout.css';
 
@@ -166,6 +172,79 @@ export const Workspace = observer((props: WorkspaceProps) => {
 
     //     setModel(Model.fromJson(modelJson));
     // }, [notebook.queriesList, rawModel]);
+
+    useEffect(() => {
+        const handler = (e: CustomEvent) => {
+            const { destinationType, destination } = e.detail;
+            if (destinationType === 'App Page') {
+                const layoutModel = workspace.selectedLayout?.model;
+                let selectedNode: TabNode | null = null;
+
+                // get the model
+                if (!layoutModel) {
+                    throw new Error('Missing model');
+                }
+
+                // visit the notes, and see if it exists
+                layoutModel.visitNodes((node) => {
+                    // check if it is a tabNode
+                    if (node instanceof TabNode) {
+                        // it needs to be a notebook-viewer
+                        const component = node.getComponent();
+                        if (component !== 'designer') {
+                            return;
+                        }
+
+                        // path and space need to match
+                        const config = node.getConfig();
+                        if (config.id !== destination) {
+                            return;
+                        }
+
+                        selectedNode = node;
+                    }
+                });
+
+                // create a new panel if there is no node
+                if (!selectedNode) {
+                    // get the name
+                    const name = destination;
+
+                    // where to add the node
+                    const addId =
+                        layoutModel.getActiveTabset()?.getId() ||
+                        layoutModel.getRoot().getChildren()[0]?.getId() ||
+                        '';
+
+                    // create and select the panel
+                    layoutModel.doAction(
+                        Actions.addNode(
+                            {
+                                type: 'tab',
+                                name: name,
+                                component: 'designer',
+                                config: {
+                                    id: destination,
+                                },
+                                enableClose: true,
+                            },
+                            addId,
+                            DockLocation.CENTER,
+                            -1,
+                            true,
+                        ),
+                    );
+                }
+
+                const selectedNodeId = selectedNode.getId();
+                layoutModel.doAction(Actions.selectTab(selectedNodeId));
+            }
+        };
+        window.addEventListener('OPEN_EVENT', handler as EventListener);
+        return () => {
+            window.removeEventListener('OPEN_EVENT', handler as EventListener);
+        };
+    }, []);
 
     useEffect(() => {
         // default options if not loaded from cache
