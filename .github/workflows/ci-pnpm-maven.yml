@@ -48,7 +48,7 @@ jobs:
                   rm -rf tmp/bi-main/playsheet/
                   ls -als tmp/bi-main/
                   echo "Remove zip file"
-                  rm tmp/bi-main/main.zip
+                  rm tmp/main.zip
             
             - name: Move SEMOSS/bi files into the legacy folder
               run: |
