@@ -105,6 +105,7 @@ export interface CustomPaletteOptions extends PaletteOptions {
     darkBlue?: CustomPaletteColor;
     pink?: CustomPaletteColor;
     purple?: CustomPaletteColor;
+    primaryBlack?: CustomSimplePaletteColorOptions;
 }
 
 export interface CustomShapeOptions {
@@ -273,6 +274,11 @@ export const lightTheme: CustomThemeOptions = {
             "700": "#6A32CE",
             "800": "#5D2BC7",
             "900": "#481EB8",
+        },
+        primaryBlack: {
+            light: "#A7A7A7",
+            main: "#000000",
+            dark: "#4A4949",
         },
     },
     shape: {
@@ -659,6 +665,11 @@ export const darkTheme: CustomThemeOptions = {
             "700": "6A32CE",
             "800": "5D2BC7",
             "900": "481EB8",
+        },
+        primaryBlack: {
+            light: "#A7A7A7",
+            main: "#000000",
+            dark: "#4A4949",
         },
     },
     shape: {
