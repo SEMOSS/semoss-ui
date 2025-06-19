@@ -130,8 +130,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
     } = props;
     const { configStore } = useRootStore();
 
-    const { notebook } = useBlocks();
-
     const layoutRef = useRef<Layout>(null);
 
     // const [model, setModel] = useState<Model | null>(null);
@@ -336,7 +334,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
             </StyledViewport>
             <Drawer
                 anchor="left"
-                // variant="persistent"
+                variant="persistent"
                 open={workspace.drawer.isOpen}
                 ModalProps={{
                     hideBackdrop: true, // Hide the backdrop
