@@ -26,3 +26,7 @@ packages/legacy/app.constants.js
 
 .nx/cache
 .nx/workspace-data
+
+# Ignore the generated files for vscode extension
+*.vsix
+out/
