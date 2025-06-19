@@ -295,6 +295,8 @@ export type CellComponent<D extends CellDef = CellDef> =
         cell: CellState<D>;
         /** Whether the content is expanded */
         isExpanded?: boolean;
+        /** Model to use for code help */
+        agentModelEngine?: string;
     }>;
 
 /**
