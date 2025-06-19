@@ -134,7 +134,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     const diffEditorRef = useRef(null);
 
-    const { cell, isExpanded, defaultModelId } = props;
+    const { cell, isExpanded, agentModelEngine } = props;
     const { state } = useBlocks();
     const notification = useNotification();
 
@@ -149,7 +149,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     const [isLLMRejected, setIsLLMRejected] = useState(false);
     const [count, setCount] = useState(0);
-    const [modelId, setModelId] = useState(defaultModelId);
+    const [modelId, setModelId] = useState(agentModelEngine);
     // const { workspace } = useWorkspace();
 
     /**
@@ -664,9 +664,9 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
     };
 
     useEffect(() => {
-        setModelId(defaultModelId);
+        setModelId(agentModelEngine);
         setCount(count + 1);
-    }, [defaultModelId]);
+    }, [agentModelEngine]);
 
     return (
         <StyledContent>
