@@ -467,6 +467,10 @@ export class StateStore {
             } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
 
                 this.dispatchOutputsEvent()
+            } else if(ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
+                const {destinationType, destination} = action.payload;
+
+                this.dispatchOpenEvent(destinationType, destination);
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { id, alias } = action.payload;
 
@@ -543,6 +547,10 @@ export class StateStore {
             } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
 
                 this.dispatchOutputsEvent()
+            } else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
+                const { destinationType, destination } = action.payload;
+
+                this.dispatchOpenEvent(destinationType, destination);
             }
         } catch (e) {
             console.error(e);
@@ -1697,6 +1705,30 @@ export class StateStore {
         // dispatch the event to the window
         window.dispatchEvent(event);
     };
+
+    private dispatchOpenEvent = (destinationType: string, destination: string): void => {
+        const event = new CustomEvent("OPEN_EVENT", { detail: {destinationType, destination}});
+
+        if(this.mode === "interactive"){
+            if(destinationType === "App Page"){
+                const currentUrl = window.location.href;
+                const pageIds = this.getAllBlocksOfType('page').map((page) => page.id);
+                const pageIdInUrl = pageIds.find((id) => currentUrl.includes(id));
+                let newUrl;
+                if (pageIdInUrl) 
+                    newUrl = currentUrl.replace(pageIdInUrl, destination);
+                else
+                    newUrl = currentUrl + `/${destination}`
+
+                window.location.href = newUrl
+            } else if(destinationType === "External"){
+                window.location.href = destination
+            }
+        }
+
+        // dispatch the event to the window
+        window.dispatchEvent(event);
+    }
 
     /**
      * 

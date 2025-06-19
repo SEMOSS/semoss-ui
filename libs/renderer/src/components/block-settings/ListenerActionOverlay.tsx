@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import {
@@ -64,6 +64,7 @@ export const ListenerActionOverlay = observer(
         const { state } = useBlocks();
         const { listeners, setListener } = useBlockSettings(id);
 
+        const destinationTypes = ["External", "App Page"];
         // get the queries as an array
         const queries = computed(() => {
             return Object.values(state.queries).sort((a, b) => {
@@ -102,6 +103,16 @@ export const ListenerActionOverlay = observer(
                                   },
                               },
                           }
+                        : lis.message === ActionMessages.DISPATCH_OPEN_EVENT
+                        ? {
+                              defaultValues: {
+                                  message: ActionMessages.DISPATCH_OPEN_EVENT,
+                                  payload: {
+                                      destinationType: "",
+                                      destination: "",
+                                  },
+                              },
+                          }
                         : {
                               defaultValues: {
                                   message: ActionMessages.RUN_QUERY,
@@ -122,6 +133,11 @@ export const ListenerActionOverlay = observer(
 
         // the type
         const message = watch("message");
+        const distinationType = watch("payload.destinationType");
+        
+        const pages = useMemo(() => {
+            return state.getAllBlocksOfType("page").map((page) => page.id);
+        }, [distinationType]);
 
         // TODO: can we make each action type its own component.  So we don't have to do this
         const queryId = watch("payload.queryId");
@@ -220,6 +236,19 @@ export const ListenerActionOverlay = observer(
                     }
                     setValue("message", ActionMessages.RUN_CELL);
                 }
+            } else if (message === ActionMessages.DISPATCH_OPEN_EVENT) {
+                if(listeners[listener].order[actionIdx]) {
+                    if (
+                        listeners[listener].order[actionIdx].message !==
+                        ActionMessages.DISPATCH_OPEN_EVENT
+                    ) {
+                        setValue("payload", {
+                            destinationType: "",
+                            destination: "",
+                        });
+                    }
+                    setValue("message", ActionMessages.DISPATCH_OPEN_EVENT);
+                }
             }
         }, [message]);
 
@@ -247,6 +276,7 @@ export const ListenerActionOverlay = observer(
                                             ActionMessages.RUN_CELL,
                                             ActionMessages.DISPATCH_EVENT,
                                             ActionMessages.DISPATCH_OUTPUTS_EVENT,
+                                            ActionMessages.DISPATCH_OPEN_EVENT,
                                         ].map((a, aIdx) => (
                                             <Select.Item key={aIdx} value={a}>
                                                 {ACTIONS_DISPLAY[a]}
@@ -404,6 +434,100 @@ export const ListenerActionOverlay = observer(
                                         );
                                     }}
                                 /> */}
+                            </>
+                        ) : null}
+
+                        {message === ActionMessages.DISPATCH_OPEN_EVENT ? (
+                            <>
+                                <Controller
+                                    name={"payload.destinationType"}
+                                    control={control}
+                                    render={({ field }) => {
+                                        return (
+                                            <Select
+                                                label="Destination"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ""
+                                                }
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                            >
+                                                {destinationTypes.map(
+                                                    (q, i) => (
+                                                        <Select.Item
+                                                            key={q + i + "--id"}
+                                                            value={q}
+                                                        >
+                                                            {q}
+                                                        </Select.Item>
+                                                    ),
+                                                )}
+                                            </Select>
+                                        );
+                                    }}
+                                />
+                                {distinationType && (
+                                    <Controller
+                                        name={"payload.destination"}
+                                        control={control}
+                                        render={({ field }) => {
+                                            return (
+                                                <>
+                                                    {distinationType ===
+                                                    "External" ? (
+                                                        <TextField
+                                                            label="URL"
+                                                            value={
+                                                                field.value
+                                                                    ? field.value
+                                                                    : ""
+                                                            }
+                                                            onChange={(value) =>
+                                                                field.onChange(
+                                                                    value,
+                                                                )
+                                                            }
+                                                        />
+                                                    ) : (
+                                                        <Select
+                                                            label="Page"
+                                                            value={
+                                                                field.value
+                                                                    ? field.value
+                                                                    : ""
+                                                            }
+                                                            onChange={(value) =>
+                                                                field.onChange(
+                                                                    value,
+                                                                )
+                                                            }
+                                                        >
+                                                            {pages.map(
+                                                                (q, i) => (
+                                                                    <Select.Item
+                                                                        key={
+                                                                            q +
+                                                                            i +
+                                                                            "--id"
+                                                                        }
+                                                                        value={
+                                                                            q
+                                                                        }
+                                                                    >
+                                                                        {q}
+                                                                    </Select.Item>
+                                                                ),
+                                                            )}
+                                                        </Select>
+                                                    )}
+                                                </>
+                                            );
+                                        }}
+                                    />
+                                )}
                             </>
                         ) : null}
                     </Stack>

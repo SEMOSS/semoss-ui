@@ -28,6 +28,7 @@ import {
     ToggleButtonGroup,
     ToggleButton,
     Stack,
+    Link,
 } from "@semoss/ui";
 
 import { useBlockSettings, useBlocks } from "../../hooks";
@@ -239,10 +240,12 @@ export const ListenerSettings = observer(
                     } else {
                        display = state.getAlias(item.payload["queryId"])
                     }
-
+                } else if (item.payload["destinationType"]) {
+                    if (item.payload["destination"])
+                        display = item.payload["destination"];
                 } else {
                     if(item.payload["name"]) {
-                        display = item.payload["name"]
+                        display = item.payload["name"];
                     }
                 }
 
@@ -253,6 +256,10 @@ export const ListenerSettings = observer(
                 };
             });
         }, [blockListeners]);
+
+        const isLink = (content:string) =>{
+            return content.match(/https?:\/\/[^\s/$.?#].[^\s]*/);
+        }
 
         return (
             <>
@@ -342,8 +349,22 @@ export const ListenerSettings = observer(
                                                         variant="caption"
                                                         noWrap={true}
                                                         title={content}
+                                                        sx={{
+                                                            display: "block",
+                                                            flex: "unset",
+                                                            width: "80%",
+                                                        }}
                                                     >
-                                                        {content}
+                                                        {isLink(content) ? (
+                                                            <Link
+                                                                target="_blank"
+                                                                href={content}
+                                                            >
+                                                                {content}
+                                                            </Link>
+                                                        ) : (
+                                                            content
+                                                        )}
                                                     </Typography>
                                                 }
                                             />

@@ -16,11 +16,24 @@ export const BlocksWorkspaceActions = observer(() => {
     const notification = useNotification();
     const { workspace } = useWorkspace();
 
+    const removePageIdsFromURL = () => {
+        const url = window.location.href;
+        const pages = state.getAllBlocksOfType('page').map((page) => page.id);
+        const matchedSubstring = pages.find((sub) => url.includes(sub));
+        if (matchedSubstring) {
+            const cleanedUrl = matchedSubstring
+                ? url.replace(matchedSubstring, '').replace(/\/+$/, '') // remove trailing slash if left
+                : url;
+            window.location.href = cleanedUrl;
+        }
+    };
     /**
      * Preview the current App
      */
     const previewApp = () => {
         try {
+            //before entering preview, remove page id's from the url if any exsist
+            removePageIdsFromURL();
             // get the current state
             const json = state.toJSON();
 
