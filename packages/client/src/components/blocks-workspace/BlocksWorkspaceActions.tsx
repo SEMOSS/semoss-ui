@@ -4,12 +4,13 @@ import { ShareRounded, SaveOutlined, PlayArrow } from '@mui/icons-material';
 
 import { IconButton, Stack, useNotification, Tooltip } from '@semoss/ui';
 import { useBlocks } from '@semoss/renderer';
+import { runPixel } from '@semoss/sdk/react';
 
 import { useWorkspace, useRootStore } from '@/hooks';
 import { PreviewOverlay } from '@/components/workspace';
-import { ShareOverlay, ModelOverlay } from '@/components/ui';
+import { ShareOverlay } from '@/components/ui';
 import { ModelBrain } from '@/assets/img/ModelBrain';
-import { runPixel } from '@semoss/sdk/react';
+import { LLMSelectOverlay } from '../llms';
 
 export const BlocksWorkspaceActions = observer(() => {
     const { state } = useBlocks();
@@ -20,6 +21,7 @@ export const BlocksWorkspaceActions = observer(() => {
 
     /**
      * Select default model
+     * TODO: We should probably just make this call in workspace so it persists across app
      */
     const selectModel = async () => {
         let modelList = [];
@@ -44,10 +46,9 @@ export const BlocksWorkspaceActions = observer(() => {
         }
         workspace.openOverlay(
             () => (
-                <ModelOverlay
-                    appId={workspace.appId}
-                    modelList={modelList || []}
-                    selectedModel={workspace.agentModelEngine || ''}
+                <LLMSelectOverlay
+                    llmList={modelList || []}
+                    selectedLLM={workspace.agentModelEngine || ''}
                     onSelect={(id: string) => {
                         workspace.setAgentModelEngine(id);
                     }}

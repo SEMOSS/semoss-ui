@@ -1,25 +1,27 @@
 import { observer } from 'mobx-react-lite';
-import { IconButton, Modal, Stack, Select, Autocomplete } from '@semoss/ui';
 import { Clear } from '@mui/icons-material';
 
-interface ModelOverlayProps {
-    /** Id of the app to share */
-    appId: string;
-    /** List of models to select from */
-    modelList: Record<string, string>[];
-    /** Id of the selected model */
-    selectedModel: string;
-    /** Method called when a model is selected */
+import { IconButton, Modal, Stack, Select, Autocomplete } from '@semoss/ui';
+
+interface LLMOverlayProps {
+    /** List of LLMs to select from */
+    llmList: Record<string, string>[];
+    /** Id of the selected LLM */
+    selectedLLM: string;
+    /** Method called when a LLM is selected */
     onSelect: (id: string) => void;
     /** Method called to close overlay  */
     onClose: () => void;
 }
 
-export const ModelOverlay = observer((props: ModelOverlayProps) => {
+/**
+ * TODO: If you dont pass llmList make call to get all models
+ */
+
+export const LLMSelectOverlay = observer((props: LLMOverlayProps) => {
     const {
-        appId,
-        modelList,
-        selectedModel,
+        llmList,
+        selectedLLM,
         onSelect = () => null,
         onClose = () => null,
     } = props;
@@ -28,7 +30,7 @@ export const ModelOverlay = observer((props: ModelOverlayProps) => {
         <>
             <Modal.Title>
                 <Stack direction="row" justifyContent="space-between">
-                    <span>Select default model</span>
+                    <span>Select model to use across builder</span>
                     <IconButton
                         size="small"
                         title="close"
@@ -43,15 +45,15 @@ export const ModelOverlay = observer((props: ModelOverlayProps) => {
                 <Select
                     fullWidth={true}
                     size="small"
-                    value={selectedModel}
+                    value={selectedLLM}
                     onChange={(e) => {
                         onSelect(e.target.value);
                         onClose();
                     }}
                 >
-                    {modelList.map((model) => (
-                        <Select.Item key={model.value} value={model.value}>
-                            {model.label}
+                    {llmList.map((LLM) => (
+                        <Select.Item key={LLM.value} value={LLM.value}>
+                            {LLM.label}
                         </Select.Item>
                     ))}
                 </Select>

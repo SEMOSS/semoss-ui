@@ -395,7 +395,7 @@ export const NotebookCell = observer(
             return createElement(cell.component, {
                 cell: cell,
                 isExpanded: contentExpanded,
-                defaultModelId: workspace.agentModelEngine,
+                agentModelEngine: workspace.agentModelEngine,
             });
         }, [
             cell.component ? cell.component : null,
