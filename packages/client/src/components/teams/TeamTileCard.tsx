@@ -138,8 +138,6 @@ interface TeamCardProps {
     teams;
 
     onClick?: (value: string) => void;
-
-    isCustomGroup?: boolean;
 }
 
 const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
@@ -150,16 +148,7 @@ const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
 }));
 
 export const TeamTileCard = (props: TeamCardProps) => {
-    const {
-        id,
-        description,
-        type,
-        tag,
-        dispatch,
-        teams,
-        onClick,
-        isCustomGroup,
-    } = props;
+    const { id, description, type, tag, dispatch, teams, onClick } = props;
     const AUTOCOMPLETE_OFFSET = 0;
     const AUTOCOMPLETE_LIMIT = 10;
 
@@ -331,7 +320,8 @@ export const TeamTileCard = (props: TeamCardProps) => {
             return;
         }
         setIsLoading(true);
-        if (isCustomGroup) {
+
+        if (type === 'CUSTOM') {
             try {
                 const response = await monolithStore.getNonTeamUsers(
                     id,
@@ -458,7 +448,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                         // transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                     >
                         <MenuList>
-                            {isCustomGroup && (
+                            {type === 'CUSTOM' && (
                                 <MenuItemTwo
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -756,10 +746,9 @@ export const TeamTileCard = (props: TeamCardProps) => {
             <AddTeamModal
                 open={editTeam}
                 isEdit={true}
-                type={type?.toLocaleLowerCase()}
+                type={type}
                 id={id}
                 description={description}
-                isCustomGroup={isCustomGroup}
                 onClose={(team) => {
                     if (team) {
                         const updatedTeams = teams.map((t) =>
