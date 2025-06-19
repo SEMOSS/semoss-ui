@@ -1,6 +1,18 @@
-import React, { useState, ChangeEvent } from 'react';
+import React, { useState, ChangeEvent,useEffect } from 'react';
 import { Select, MenuItem, styled, Button } from '@semoss/ui';
-
+import { useBlock, useBlocks, useBlockSettings } from "../../../hooks";
+import { observer } from "mobx-react-lite";
+import {
+    Block,
+    BlockDef,
+    CellState,
+    QueryState,
+    Variable,
+    INPUT_BLOCK_TYPES,
+    VariableType,
+    ActionMessages,
+} from "../../../store";
+import { Paths, PathValue } from "../../../types";
 
 const StyledDropdownContainer = styled('div')({
   display: 'flex',
@@ -20,54 +32,93 @@ const StyledSelect = styled(Select)({
   width: '200px',
 });
 
-export const JiraSettings: React.FC = () => {
-  const [dropdown1Value, setDropdown1Value] = useState<string>('');
-  const [dropdown2Value, setDropdown2Value] = useState<string>('');
+interface JiraSettingsProps<D extends BlockDef = BlockDef> {
+    /**
+     * Id of the block that is being worked with
+     */
+    id: string;
 
-  const handleDropdown1Change = (event: ChangeEvent<{ value: unknown }>): void => {
-    setDropdown1Value(event.target.value as string);
-  };
+    /**
+     * Path to update
+     */
+    paths: Paths<Block<D>["data"], 4>[];
+    userId?: string;
+}
 
-  const handleDropdown2Change = (event: ChangeEvent<{ value: unknown }>): void => {
-    setDropdown2Value(event.target.value as string);
-  };
+export const JiraSettings = observer(
+    <D extends BlockDef = BlockDef>({
+            id,
+            paths,
+            userId,
+        }: JiraSettingsProps<D>) =>{
+            const [dropdown1Value, setDropdown1Value] = useState<string>('');
+            const [dropdown2Value, setDropdown2Value] = useState<string>('');
+            const [jiraData, setJiraData] = useState<any>(null);
+            console.log("Block ID:", id);
+            const { state } = useBlocks();
+            const { data, setData } = useBlockSettings(id);
 
-  return (
-    <StyledDropdownContainer>
-      <div>Jira Reactor</div>  
-      <StyledDropdown>
-        <StyledSelect
-          id="dropdown1"
-          value={dropdown1Value}
-          label={"Jira Reactor"}
-          onChange={handleDropdown1Change}
-        >
-          <MenuItem value="Option1">JiraInsert</MenuItem>
-          <MenuItem value="Option2">JiraGet</MenuItem>
-          <MenuItem value="Option3">Jira</MenuItem>
-        </StyledSelect>
-      </StyledDropdown>
-      
-      <div>Jira Reactor options</div>
-      <StyledDropdown>
-        <StyledSelect
-          id="dropdown2"
-          value={dropdown2Value}
-          label={"Jira Reactor Options"}
-          onChange={handleDropdown2Change}
-        >
-          <MenuItem value="OptionA">List all tickets</MenuItem>
-          <MenuItem value="OptionB">Create new jira</MenuItem>
-          <MenuItem value="OptionC">Delete jira ticket</MenuItem>
-        </StyledSelect>
-      </StyledDropdown>
-      
-      <Button
-        style={{ backgroundColor: 'blue', color: 'white' }}
-        onClick={() => console.log('Add button clicked')}
-      >
-        Add
-      </Button>
-    </StyledDropdownContainer>
-  );
-};
+            const handleMouseDownChange = (event): void => {
+                console.log("Mouse down on dropdown2, event:",event.target.innerText);
+                console.log("Dropdown2 value:", dropdown2Value);
+                const dropDownOption = event.target.innerText === "Create new jira" ? "showCreateJiraForm" : "listAllTickets";
+                paths.map(path=>{
+                    const value = dropDownOption === path ? true : false;
+                    console.log(`Setting path ${path} to ${value}`);
+                    setData(path, value as PathValue<D["data"], typeof path>);
+                })
+                //setDropdown2Value(event.target.value as string);             
+            };
+
+            useEffect(()=>{
+                async function fetchData() {
+                    const pixelCommand = `META | JiraGet()`;
+                    const response = await state.runSideEffect(pixelCommand);
+                    const output1 = response.pixelReturn[0].output as { userId: string }[];
+                    console.log("Response from JiraGet:", output1);
+                    const userData = output1.map((item: any) => item.userId);
+                    const userDataId = output1.map((item: any) => item.primaryId);
+                    const finalData = userData.map((userId, index) => ({ user: userId, id: userDataId[index] }));
+                    console.log("Final data:", finalData);
+                    setJiraData(finalData);
+                    console.log("Response from JiraGet:", userData);
+                    console.log("Response from JiraGet IDs:", userDataId);
+                }
+                fetchData();
+            },[])
+
+            return (
+                <StyledDropdownContainer>
+                    <div>Jira Reactor</div>  
+                    <StyledDropdown>
+                        <StyledSelect
+                        id="dropdown1"
+                        value={dropdown1Value}
+                        label={"Jira Reactor"}
+                        onChange={(event) => {setDropdown1Value(event.target.value as string);setData(userId, event.target.value['id']);}}
+                        >
+                        {jiraData && jiraData.map((data: string) => (
+                            <MenuItem key={data['id']} value={data}>{data['user']}</MenuItem>
+                        ))}
+                        </StyledSelect>
+                    </StyledDropdown>
+                    
+                    <div>Jira Reactor options</div>
+                    <StyledDropdown>
+                        <StyledSelect
+                        id="dropdown2"
+                        value={dropdown2Value}
+                        label={"Jira Reactor Options"}
+                        onChange={(event) => setDropdown2Value(event.target.value as string)}
+                        //InputProps={{ onMouseDown: handleMouseDownChange }}
+                        >
+                        <MenuItem value="List all tickets" onClick={(event)=>handleMouseDownChange(event)}>List all tickets</MenuItem>
+                        <MenuItem value="Create new jira" onClick={(event)=>handleMouseDownChange(event)}>Create new jira</MenuItem>
+                        </StyledSelect>
+                    </StyledDropdown>              
+                    </StyledDropdownContainer>
+            );
+
+        }
+);
+

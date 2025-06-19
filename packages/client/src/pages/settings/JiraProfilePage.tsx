@@ -287,7 +287,7 @@ export const JiraProfilePage = () => {
                                                   {k.dateCreated}
                                               </Table.Cell>
                                               <Table.Cell align={'left'}>
-                                                  {k.lastUsed}
+                                                  {k.dateLastUsed}
                                               </Table.Cell>
                                               <Table.Cell align={'left'}>
                                                   {k.userId}

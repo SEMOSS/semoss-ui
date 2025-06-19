@@ -1446,6 +1446,11 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 text: 'Jira Block',
                 variant: 'p',
                 show: 'true',
+                showCreateJiraForm: false,
+                showCreatedJiraForm: false,
+                listAllTickets: false,
+                listedTickets: false,
+                userId: '',
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },

@@ -27,6 +27,11 @@ export const config: BlockConfig<JiraBlockDef> = {
         text: "Jira Block",
         isStreaming: false,
         show: "true",
+        showCreateJiraForm: false,
+        showCreatedJiraForm: false,
+        listAllTickets: false,
+        listedTickets: false,
+        userId: '',
     },
     listeners: {},
     slots: {},
@@ -39,7 +44,7 @@ export const config: BlockConfig<JiraBlockDef> = {
                 {
                     description: "Text",
                     render: ({ id }) => (
-                        <JiraSettings/>
+                        <JiraSettings id={id} paths={['showCreateJiraForm','showCreatedJiraForm','listAllTickets','listedTickets']} userId="userId"/>
                     ),
                 },
             ],
