@@ -922,7 +922,9 @@ export const LayersPanel = observer((): JSX.Element => {
                 onMouseOver={(e) => setPageHovered(block.id)}
                 onMouseLeave={(e) => setPageHovered('')}
             >
-                <Typography variant="subtitle1">/{id}</Typography>
+                <Typography variant="subtitle1">
+                    /{block.data.route as string}
+                </Typography>
                 {id == 'page-1' ? (
                     <StyledTreeItemIcon>
                         <Home />

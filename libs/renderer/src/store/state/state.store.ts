@@ -1710,7 +1710,7 @@ export class StateStore {
         const event = new CustomEvent("OPEN_EVENT", { detail: {destinationType, destination}});
 
         if(this.mode === "interactive"){
-            if(destinationType === "App Page"){
+            if(destinationType === "Internal"){
                 const currentUrl = window.location.href;
                 const pageIds = this.getAllBlocksOfType('page').map((page) => page.id);
                 const pageIdInUrl = pageIds.find((id) => currentUrl.includes(id));
@@ -1718,7 +1718,7 @@ export class StateStore {
                 if (pageIdInUrl) 
                     newUrl = currentUrl.replace(pageIdInUrl, destination);
                 else
-                    newUrl = currentUrl + `/${destination}`
+                    newUrl = currentUrl + `${destination}`
 
                 window.location.href = newUrl
             } else if(destinationType === "External"){

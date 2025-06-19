@@ -64,7 +64,7 @@ export const ListenerActionOverlay = observer(
         const { state } = useBlocks();
         const { listeners, setListener } = useBlockSettings(id);
 
-        const destinationTypes = ["External", "App Page"];
+        const destinationTypes = ["External", "Internal"];
         // get the queries as an array
         const queries = computed(() => {
             return Object.values(state.queries).sort((a, b) => {
@@ -88,7 +88,6 @@ export const ListenerActionOverlay = observer(
         // Each listener have its own useForm
         const lis = listeners[listener].order[actionIdx];
 
-        console.log(lis);
         // create a new form
         const { control, handleSubmit, reset, watch, setValue } =
             useForm<ListenerActionForm>(
@@ -134,28 +133,29 @@ export const ListenerActionOverlay = observer(
         // the type
         const message = watch("message");
         const distinationType = watch("payload.destinationType");
-        
+
         const pages = useMemo(() => {
-            return state.getAllBlocksOfType("page").map((page) => page.id);
+            return state.getAllBlocksOfType("page").map((page) => {
+                return { id: page.id, route: page.data.route };
+            });
         }, [distinationType]);
 
         // TODO: can we make each action type its own component.  So we don't have to do this
         const queryId = watch("payload.queryId");
 
-        console.log(state.queries[queryId])
+        console.log(state.queries[queryId]);
         // get the queries as an array
         const cells = computed(() => {
             if (queryId) {
-                const li = []
+                const li = [];
 
                 state.queries[queryId].list.forEach((iD) => {
-                    li.push(state.queries[queryId].cells[iD])
-                })
+                    li.push(state.queries[queryId].cells[iD]);
+                });
 
-                return li
+                return li;
 
-
-                return Object.values(state.queries[queryId].cells)
+                return Object.values(state.queries[queryId].cells);
             }
             return [];
         }).get();
@@ -237,7 +237,7 @@ export const ListenerActionOverlay = observer(
                     setValue("message", ActionMessages.RUN_CELL);
                 }
             } else if (message === ActionMessages.DISPATCH_OPEN_EVENT) {
-                if(listeners[listener].order[actionIdx]) {
+                if (listeners[listener].order[actionIdx]) {
                     if (
                         listeners[listener].order[actionIdx].message !==
                         ActionMessages.DISPATCH_OPEN_EVENT
@@ -366,20 +366,24 @@ export const ListenerActionOverlay = observer(
                                                 }
                                             >
                                                 {cells.map((c) => {
-                                                     const variableName = state.getAlias(queryId, c.id);
-                                                
+                                                    const variableName =
+                                                        state.getAlias(
+                                                            queryId,
+                                                            c.id,
+                                                        );
+
                                                     return (
                                                         <Select.Item
                                                             key={c.id}
                                                             value={c.id}
                                                         >
-                                                                <Typography
-                                                                    variant={
-                                                                        "body2"
-                                                                    }
-                                                                >
-                                                                    {variableName}
-                                                                </Typography>
+                                                            <Typography
+                                                                variant={
+                                                                    "body2"
+                                                                }
+                                                            >
+                                                                {variableName}
+                                                            </Typography>
                                                         </Select.Item>
                                                     );
                                                 })}
@@ -509,15 +513,15 @@ export const ListenerActionOverlay = observer(
                                                                 (q, i) => (
                                                                     <Select.Item
                                                                         key={
-                                                                            q +
+                                                                            q.id +
                                                                             i +
                                                                             "--id"
                                                                         }
                                                                         value={
-                                                                            q
+                                                                            q.route
                                                                         }
                                                                     >
-                                                                        {q}
+                                                                        {q.route as string}
                                                                     </Select.Item>
                                                                 ),
                                                             )}

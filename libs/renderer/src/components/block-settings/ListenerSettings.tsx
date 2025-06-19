@@ -357,6 +357,7 @@ export const ListenerSettings = observer(
                                                     >
                                                         {isLink(content) ? (
                                                             <Link
+                                                                // rel="noopener noreferrer"
                                                                 target="_blank"
                                                                 href={content}
                                                             >
