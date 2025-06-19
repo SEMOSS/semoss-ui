@@ -45,6 +45,10 @@
             {
                 "command": "semoss.createNewApp",
                 "title": "Semoss: Create New App"
+            },
+            {
+                "command": "semoss.openChatbot",
+                "title": "Semoss: Open Chatbot"
             }
         ],
         "menus": {
@@ -63,6 +67,32 @@
                     "command": "semoss.deployonly",
                     "when": "explorerResourceIsFolder && resourceFilename == 'client' || resourceFilename == 'portals' || resourceFilename == 'py'",
                     "group": "z_commands"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "semoss.openChatbot",
+                    "when": "view == explorer",
+                    "group": "navigation@1000"
+                }
+            ]
+        },
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "semossChatbotContainer",
+                    "title": "Semoss Assistant",
+                    "icon": "media/chatbot.svg"
+                }
+            ]
+        },
+        "views": {
+            "semossChatbotContainer": [
+                {
+                    "type": "webview",
+                    "id": "semossChatbotView",
+                    "name": "Chatbot",
+                    "icon": "media/chatbot.svg"
                 }
             ]
         }
