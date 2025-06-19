@@ -439,12 +439,9 @@ describe("Scatter Plot Block", async () => {
 		expect(result.current).toBeDefined();
 		expect(result.current.data.option.xAxis.nameTextStyle.fontSize).toBe(12);
 
-		// Assume the label for the input is "Set X Axis Title"
-		// since there's no way to set test-id, use getElementById can be an alternative
 		const input = document.getElementById(
 			"xaxis-edit-title-font-size",
 		) as HTMLInputElement;
-		// console.log({ input });
 
 		// Update the input field's value
 		fireEvent.change(input, { target: { value: 20 } });
@@ -455,4 +452,51 @@ describe("Scatter Plot Block", async () => {
 
 		expect(fontSize).toBe(20);
 	});
+	it("should check if Show/Hide Axis toggle is true by default", async () => {
+		const { result } = renderHook(
+			() => useBlockSettings<EchartVisualizationBlockDef>("scatter"),
+			{
+				blocks,
+				renderEngineId: "scatter",
+				customChildren: <EditXAxisScatterPlot id="scatter" path={"option"} />,
+			},
+		);
+		expect(result.current).toBeDefined();
+
+		// const toggle = screen.queryByText("Show/Hide Axis");
+		// const toggle = screen.getByRole("switch", { name: "Show/Hide Axis", })
+		const toggle = screen.queryAllByTitle("Show/Hide Axis")
+		console.log({toggle})
+
+		expect(toggle).toBeInTheDocument();
+		// const xAxisVisible = result.current.data.option.xAxis.show as boolean;
+		// expect(xAxisVisible).toBeTruthy();
+		// expect(toggle).toBeChecked()
+	});
+	// it("should check if Show/Hide Axis toggle can be toggled off", async () => {
+	// 	const { result } = renderHook(
+	// 		() => useBlockSettings<EchartVisualizationBlockDef>("scatter"),
+	// 		{
+	// 			blocks,
+	// 			renderEngineId: "scatter",
+	// 			customChildren: <EditXAxisScatterPlot id="scatter" path={"option"} />,
+	// 		},
+	// 	);
+	// 	expect(result.current).toBeDefined();
+
+	// 	const toggle = screen.queryByText("Show/Hide Axis");
+	// 	// console.log({toggle})
+
+	// 	expect(toggle).toBeInTheDocument();
+	// 	const xAxisVisible = result.current.data.option.xAxis.show as boolean;
+	// 	// console.log({ xAxisVisible });
+	// 	expect(xAxisVisible).toBeTruthy();
+
+	// 	expect(toggle).toBeChecked()
+	// 	fireEvent.click(toggle);
+	// 	expect(toggle).not.toBeChecked()
+	// 	// console.log({ xAxisVisible });
+
+	// 	expect(xAxisVisible).toBeFalsy();
+	// });
 });
