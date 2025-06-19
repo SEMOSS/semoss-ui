@@ -292,7 +292,6 @@ export const TeamsSettingsPage = observer(() => {
                                           description={team.description}
                                           dispatch={dispatch}
                                           teams={teams}
-                                          isCustomGroup={team.is_custom_group}
                                           onClick={() => {
                                               navigate(
                                                   `${team.id
@@ -330,12 +329,9 @@ export const TeamsSettingsPage = observer(() => {
                         if (team) {
                             const obj = {
                                 id: team.id,
+                                type: team.type,
                                 description: team.description,
                             };
-
-                            if (team.type != 'Custom') {
-                                obj['type'] = team.type;
-                            }
 
                             dispatch({
                                 type: 'field',
