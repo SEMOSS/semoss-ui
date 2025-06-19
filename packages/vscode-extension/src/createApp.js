@@ -5,6 +5,9 @@ const fs = require('fs');
 const unzipper = require('unzipper');
 const { setDeployConfig, deployProject } = require('./deploy');
 const ncp = require('ncp').ncp;
+const axios = require('axios');
+const https = require('https');
+const http = require('http');
 
 async function createNewApp(context, getSecretsWithValidation, args) {
     try {
@@ -74,7 +77,7 @@ async function createNewApp(context, getSecretsWithValidation, args) {
         await new Promise((resolve, reject) => {
             const file = fs.createWriteStream(filePath);
             const url = new URL(downloadUrl);
-            const protocol = url.protocol === 'https:' ? require('https') : require('http');
+            const protocol = url.protocol === 'https:' ? https : http;
             const options = {
                 hostname: url.hostname,
                 port: url.port || (url.protocol === 'https:' ? 443 : 80),
@@ -125,6 +128,7 @@ async function createNewApp(context, getSecretsWithValidation, args) {
         vscode.window.showInformationMessage(`App unzipped to ${unzipDir}`);
         vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(unzipDir), true);
 
+
         // Download from GitHub (if provided)
         if (!githubLink) return null;
         // Parse GitHub link
@@ -134,8 +138,6 @@ async function createNewApp(context, getSecretsWithValidation, args) {
         const repo = match[2];
         const branch = match[3] || 'main';
         const folderPath = match[4] || '';
-        const axios = require('axios');
-        const https = require('https');
         // Get default branch if not specified
         let usedBranch = branch;
         if (!match[3]) {

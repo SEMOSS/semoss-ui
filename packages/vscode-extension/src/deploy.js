@@ -143,7 +143,6 @@ async function deployProject(projectId) {
             params = new URLSearchParams();
             params.append('projectId', projectId)
             params.append('hasPortal', true);
-            params.append('projectId', "public");
 
             response = await axios.post(`${SEMOSS_URL}/Monolith/api/auth/project/setProjectPortal`, params, { headers });
         } catch (error) {
