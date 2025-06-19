@@ -465,13 +465,14 @@ describe("Scatter Plot Block", async () => {
 
 		// const toggle = screen.queryByText("Show/Hide Axis");
 		// const toggle = screen.getByRole("switch", { name: "Show/Hide Axis", })
-		const toggle = screen.queryAllByTitle("Show/Hide Axis")
-		console.log({toggle})
+		// const toggle = screen.queryAllByTitle("Show/Hide Axis")
+		const toggle = screen.queryAllByRole("checkbox",{name:"Show/Hide Axis"})
+		console.log({togggle: toggle[0].innerHTML})
 
-		expect(toggle).toBeInTheDocument();
-		// const xAxisVisible = result.current.data.option.xAxis.show as boolean;
-		// expect(xAxisVisible).toBeTruthy();
-		// expect(toggle).toBeChecked()
+		expect(toggle[0]).toBeInTheDocument();
+		const xAxisVisible = result.current.data.option.xAxis.show as boolean;
+		expect(xAxisVisible).toBeTruthy();
+		expect(toggle[0].innerHTML).toBeChecked()
 	});
 	// it("should check if Show/Hide Axis toggle can be toggled off", async () => {
 	// 	const { result } = renderHook(
