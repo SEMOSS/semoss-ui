@@ -249,5 +249,6 @@ module.exports = {
     selectInstance,
     getCurrentInstance,
     removeInstance,
-    getStoredInstances
+    getStoredInstances,
+    storeInstance
 };
