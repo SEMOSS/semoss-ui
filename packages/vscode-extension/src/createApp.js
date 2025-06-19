@@ -128,6 +128,7 @@ async function createNewApp(context, getSecretsWithValidation, args) {
         vscode.window.showInformationMessage(`App unzipped to ${unzipDir}`);
         vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(unzipDir), true);
 
+
         // Download from GitHub (if provided)
         if (!githubLink) return null;
         // Parse GitHub link
@@ -137,7 +138,6 @@ async function createNewApp(context, getSecretsWithValidation, args) {
         const repo = match[2];
         const branch = match[3] || 'main';
         const folderPath = match[4] || '';
-
         // Get default branch if not specified
         let usedBranch = branch;
         if (!match[3]) {
