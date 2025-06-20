@@ -1,10 +1,9 @@
-import { ActionMessages } from '@semoss/renderer';
+import React from 'react';
 
-import { Template } from './templates.types';
-import CHATAI from '@/assets/img/query.jpeg';
+export const test = () => {
+    return <div>test</div>;
+};
 
-// TODO:
-// 1. Make this a better looking intake form for a Patient
 export const CreateDiabetesRecordTemplate: Template = {
     name: 'Create Diabetes Record',
     description: 'Create a new diabetes record',
@@ -121,7 +120,7 @@ export const CreateDiabetesRecordTemplate: Template = {
                                 payload: {
                                     queryId: 'insert-diabetes-record',
                                 },
-                                message: ActionMessages.RUN_QUERY,
+                                message: 'RUN_QUERY',
                             },
                         ],
                     },
@@ -210,7 +209,10 @@ export const CreateDiabetesRecordTemplate: Template = {
                     },
                     preProcess: {
                         type: 'sync',
-                        order: [],
+                        order: {
+                            type: 'sync',
+                            order: [],
+                        },
                     },
                 },
                 id: 'page-1',
