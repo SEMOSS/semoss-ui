@@ -224,6 +224,7 @@ export const TeamsSettingsPage = observer(() => {
                             variant="contained"
                             startIcon={<Add />}
                             onClick={() => setAddModal(true)}
+                            data-testid={'teams-settings-add-btn'}
                         >
                             Add New
                         </StyledAddButton>
@@ -237,7 +238,10 @@ export const TeamsSettingsPage = observer(() => {
                         width: '100%',
                     }}
                 >
-                    <IconButton onClick={handleMenuClick}>
+                    <IconButton
+                        onClick={handleMenuClick}
+                        data-testid={'teams-settings-sort-btn'}
+                    >
                         <Typography
                             sx={{ color: '#212121', borderRadius: '0px' }}
                             variant="body2"
@@ -288,7 +292,6 @@ export const TeamsSettingsPage = observer(() => {
                                           description={team.description}
                                           dispatch={dispatch}
                                           teams={teams}
-                                          isCustomGroup={team.is_custom_group}
                                           onClick={() => {
                                               navigate(
                                                   `${team.id
@@ -326,12 +329,9 @@ export const TeamsSettingsPage = observer(() => {
                         if (team) {
                             const obj = {
                                 id: team.id,
+                                type: team.type,
                                 description: team.description,
                             };
-
-                            if (team.type != 'Custom') {
-                                obj['type'] = team.type;
-                            }
 
                             dispatch({
                                 type: 'field',

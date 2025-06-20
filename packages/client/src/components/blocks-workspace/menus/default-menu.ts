@@ -584,7 +584,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_ELEMENT,
         name: 'Ratings ',
-        helperText: 'Rate on a scale',
+        helperText: 'Add an rating to your layout',
+        activeImage: BLOCK_IMAGES['RATING_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['RATING_HOVER'],
         json: {
             widget: 'ratings',
             data: {
@@ -927,6 +929,13 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     flexWrap: 'wrap',
                 },
                 show: 'true',
+                boxShadowParts: {
+                    offsetX: '',
+                    offsetY: '',
+                    blurRadius: '',
+                    spreadRadius: '',
+                    color: '',
+                },
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
@@ -1007,29 +1016,29 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
-    {
-        section: SECTION_ELEMENT,
-        name: 'PDF Viewer',
-        helperText: 'Embed a PDF for viewing',
-        activeImage: BLOCK_IMAGES['PDF_VIEWER_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['PDF_VIEWER_HOVER'],
-        json: {
-            widget: 'pdfViewer',
-            data: {
-                style: {
-                    width: '100%',
-                    height: '82%',
-                    padding: '8px',
-                },
-                selectedPdf: null,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
+    // {
+    //     section: SECTION_ELEMENT,
+    //     name: 'PDF Viewer',
+    //     helperText: 'Embed a PDF for viewing',
+    //     activeImage: BLOCK_IMAGES['PDF_VIEWER_ACTIVE'],
+    //     hoverImage: BLOCK_IMAGES['PDF_VIEWER_HOVER'],
+    //     json: {
+    //         widget: 'pdfViewer',
+    //         data: {
+    //             style: {
+    //                 width: '100%',
+    //                 height: '82%',
+    //                 padding: '8px',
+    //             },
+    //             selectedPdf: null,
+    //             show: 'true',
+    //         },
+    //         listeners: {
+    //             preProcess: { type: 'sync', order: [] },
+    //         },
+    //         slots: {} as BlockJSON['slots'],
+    //     },
+    // },
     {
         section: SECTION_ELEMENT,
         name: 'Image',
@@ -1079,9 +1088,14 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     backgroundPosition: 'center center',
                     show: 'true',
                 },
+
+                icon: 'Home',
                 src: '',
                 title: '',
                 show: 'true',
+                badgeContent: 0,
+                color: 'default',
+                showBadge: false,
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -2044,13 +2058,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     toolbox: {
                         feature: {
                             brush: {
-                                type: [
-                                    'rect',
-                                    'polygon',
-                                    'lineX',
-                                    'lineY',
-                                    'clear',
-                                ],
+                                type: ['rect', 'clear'],
                                 brushType: 'rect',
                                 xAxisIndex: 'all',
                                 yAxisIndex: 'all',
@@ -2618,9 +2626,18 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         json: {
             widget: 'grid',
             data: {
+                variation: 'grid-block',
                 frame: {
                     name: '',
                 },
+                style: {
+                    display: 'flex',
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    width: '450px',
+                    height: '350px',
+                },
+                option: {},
                 columns: [],
                 view: {
                     pagination: true,
@@ -2947,193 +2964,37 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     // Grouped Components
     // -----------------------------------------------
     {
-        section: SECTION_LAYOUT,
-        name: '3x3 Grid',
-        helperText: 'A pre-built 3x3 grid container',
+        section: SECTION_CHARTS,
+        name: 'Visualization Filter',
+        helperText: 'Filter data based on set criteria',
+        activeImage: BLOCK_IMAGES['VISUALIZATION_FILTER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['VISUALIZATION_FILTER_HOVER'],
         json: {
-            widget: 'container',
-            parent: {
-                // can be null
-                id: 'page-1',
-                slot: 'content',
-            },
+            widget: 'visualization-filter',
             data: {
                 style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: 'px',
-                    gap: 'px',
-                    flexWrap: 'wrap',
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
                 },
-                type: 'custom',
+                displayType: '',
+                frame: '',
+                column: '',
+                showPanelTitle: false,
+                searchable: false,
+                multipleSelection: false,
+                show: 'true',
+                listOptions: [],
+                selectedValues: [],
+                filterLabel: '',
+                sliderSensitivity: 0,
+                color: 'primary',
+                size: 'medium',
             },
-            listeners: {},
-            slots: {
-                children: [
-                    {
-                        widget: 'container',
-                        data: {
-                            style: {
-                                display: 'flex',
-                                padding: '8px',
-                                gap: '8px',
-                                flexWrap: 'wrap',
-                                justifyContent: 'space-around',
-                                border: '2px dotted #4a4a4a',
-                            },
-                        },
-                        listeners: {},
-                        slots: {
-                            children: [
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            padding: '4px',
-                                            border: '1px solid #DEDEDE',
-                                            justifyContent: 'center',
-                                            flex: '0 0 32%',
-                                        },
-                                    },
-                                    listeners: {},
-                                    slots: {
-                                        children: [],
-                                    },
-                                },
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            padding: '4px',
-                                            border: '1px solid #DEDEDE',
-                                            justifyContent: 'center',
-                                            flex: '0 0 32%',
-                                        },
-                                    },
-                                    listeners: {},
-                                    slots: {
-                                        children: [],
-                                    },
-                                },
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            padding: '4px',
-                                            border: '1px solid #DEDEDE',
-                                            justifyContent: 'center',
-                                            flex: '0 0 32%',
-                                        },
-                                    },
-                                    listeners: {},
-                                    slots: {
-                                        children: [],
-                                    },
-                                },
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            padding: '4px',
-                                            border: '1px solid #DEDEDE',
-                                            justifyContent: 'center',
-                                            flex: '0 0 32%',
-                                        },
-                                    },
-                                    listeners: {},
-                                    slots: {
-                                        children: [],
-                                    },
-                                },
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            padding: '4px',
-                                            border: '1px solid #DEDEDE',
-                                            justifyContent: 'center',
-                                            flex: '0 0 32%',
-                                        },
-                                    },
-                                    listeners: {},
-                                    slots: {
-                                        children: [],
-                                    },
-                                },
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            padding: '4px',
-                                            border: '1px solid #DEDEDE',
-                                            justifyContent: 'center',
-                                            flex: '0 0 32%',
-                                        },
-                                    },
-                                    listeners: {},
-                                    slots: {
-                                        children: [],
-                                    },
-                                },
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            padding: '4px',
-                                            border: '1px solid #DEDEDE',
-                                            justifyContent: 'center',
-                                            flex: '0 0 32%',
-                                        },
-                                    },
-                                    listeners: {},
-                                    slots: {
-                                        children: [],
-                                    },
-                                },
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            padding: '4px',
-                                            border: '1px solid #DEDEDE',
-                                            justifyContent: 'center',
-                                            flex: '0 0 32%',
-                                        },
-                                    },
-                                    listeners: {},
-                                    slots: {
-                                        children: [],
-                                    },
-                                },
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            padding: '4px',
-                                            border: '1px solid #DEDEDE',
-                                            justifyContent: 'center',
-                                            flex: '0 0 32%',
-                                        },
-                                    },
-                                    listeners: {},
-                                    slots: {
-                                        children: [],
-                                    },
-                                },
-                            ],
-                        },
-                    },
-                ],
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
             },
+            slots: {},
         },
     },
 ];
