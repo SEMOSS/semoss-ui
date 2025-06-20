@@ -1,23 +1,15 @@
 import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
-    ChangeCircleOutlined,
     Code,
     ImportExport,
     KeyboardArrowDown,
     KeyboardArrowUp,
+    MoreVert,
     TextFields,
 } from '@mui/icons-material';
 
-import {
-    styled,
-    Button,
-    Divider,
-    MenuProps,
-    Menu,
-    Stack,
-    Modal,
-} from '@semoss/ui';
+import { styled, Button, MenuProps, Menu, Stack, Modal } from '@semoss/ui';
 import {
     useBlocks,
     ActionMessages,
@@ -33,17 +25,11 @@ import {
     DataImportFormModal,
     NewCellAction,
 } from '@semoss/renderer';
-import { MoreHoriz } from '@mui/icons-material';
-
 import { ModelBrain } from '@/assets/img/ModelBrain';
 
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
     backgroundColor: 'unset!important',
-}));
-
-const StyledDivider = styled(Divider)(() => ({
-    flexGrow: 1,
 }));
 
 const StyledMenu = styled((props: MenuProps) => (
@@ -61,6 +47,9 @@ const StyledMenu = styled((props: MenuProps) => (
 ))(({ theme }) => ({
     '& .MuiPaper-root': {
         marginTop: theme.spacing(1),
+        borderRadius: '0px',
+        maxHeight: '220px',
+        overflowY: 'auto',
     },
     '.MuiList-root': {
         padding: 0,
@@ -114,70 +103,29 @@ const OtherOptions = [
         defaultCellType: 'send-email',
     },
 ];
+const DataOptions = [
+    {
+        display: `Filter Data`,
+        defaultCellType: 'filter-data',
+    },
+    {
+        display: `UnFilter Data`,
+        defaultCellType: `unfilter-data`,
+    },
+    {
+        display: `Custom Import`,
+        defaultCellType: 'query-import',
+    },
+];
 
 const AddCellOptions: Record<string, AddCellOption> = {
-    filter: {
-        display: 'Filter Data',
-        defaultCellType: 'filter-data',
-        icon: (
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-            >
-                <g clipPath="url(#clip0_2378_103062)">
-                    <path
-                        fillRule="evenodd"
-                        clipRule="evenodd"
-                        d="M12 3C7.58 3 4 4.79 4 7V17C4 19.21 7.59 21 12 21C16.41 21 20 19.21 20 17V7C20 4.79 16.42 3 12 3ZM18 17C18 17.5 15.87 19 12 19C8.13 19 6 17.5 6 17V14.77C7.61 15.55 9.72 16 12 16C14.28 16 16.39 15.55 18 14.77V17ZM18 12.45C16.7 13.4 14.42 14 12 14C9.58 14 7.3 13.4 6 12.45V9.64C7.47 10.47 9.61 11 12 11C14.39 11 16.53 10.47 18 9.64V12.45ZM12 9C8.13 9 6 7.5 6 7C6 6.5 8.13 5 12 5C15.87 5 18 6.5 18 7C18 7.5 15.87 9 12 9Z"
-                        fill="#666666"
-                    ></path>
-                </g>
-                <defs>
-                    <clipPath id="clip0_2378_103062">
-                        <rect width="24" height="24" fill="#666666"></rect>
-                    </clipPath>
-                </defs>
-            </svg>
-        ),
-    },
-    unfilter: {
-        display: 'UnFilter Data',
-        defaultCellType: 'unfilter-data',
-        icon: (
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-            >
-                <g clipPath="url(#clip0_2378_103062)">
-                    <path
-                        fillRule="evenodd"
-                        clipRule="evenodd"
-                        d="M12 3C7.58 3 4 4.79 4 7V17C4 19.21 7.59 21 12 21C16.41 21 20 19.21 20 17V7C20 4.79 16.42 3 12 3ZM18 17C18 17.5 15.87 19 12 19C8.13 19 6 17.5 6 17V14.77C7.61 15.55 9.72 16 12 16C14.28 16 16.39 15.55 18 14.77V17ZM18 12.45C16.7 13.4 14.42 14 12 14C9.58 14 7.3 13.4 6 12.45V9.64C7.47 10.47 9.61 11 12 11C14.39 11 16.53 10.47 18 9.64V12.45ZM12 9C8.13 9 6 7.5 6 7C6 6.5 8.13 5 12 5C15.87 5 18 6.5 18 7C18 7.5 15.87 9 12 9Z"
-                        fill="#666666"
-                    ></path>
-                </g>
-                <defs>
-                    <clipPath id="clip0_2378_103062">
-                        <rect width="24" height="24" fill="#666666"></rect>
-                    </clipPath>
-                </defs>
-            </svg>
-        ),
-    },
     code: {
         display: 'Cell',
         defaultCellType: 'code',
         icon: <Code />,
     },
-    'query-import': {
-        display: 'Query Import',
-        defaultCellType: 'query-import',
+    data: {
+        display: 'Data',
         icon: (
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -201,10 +149,24 @@ const AddCellOptions: Record<string, AddCellOption> = {
                 </defs>
             </svg>
         ),
+        options: DataOptions,
     },
     transformation: {
         display: 'Transformation',
-        icon: <ChangeCircleOutlined />,
+        icon: (
+            <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <path
+                    d="M9.9987 3.33203V0.832031L6.66536 4.16536L9.9987 7.4987V4.9987C12.757 4.9987 14.9987 7.24036 14.9987 9.9987C14.9987 10.8404 14.7904 11.6404 14.4154 12.332L15.632 13.5487C16.282 12.5237 16.6654 11.307 16.6654 9.9987C16.6654 6.31536 13.682 3.33203 9.9987 3.33203ZM9.9987 14.9987C7.24036 14.9987 4.9987 12.757 4.9987 9.9987C4.9987 9.15703 5.20703 8.35703 5.58203 7.66536L4.36536 6.4487C3.71536 7.4737 3.33203 8.69036 3.33203 9.9987C3.33203 13.682 6.31536 16.6654 9.9987 16.6654V19.1654L13.332 15.832L9.9987 12.4987V14.9987Z"
+                    fill="#757575"
+                />
+            </svg>
+        ),
         options: Transformations,
     },
     'import-data': {
@@ -224,8 +186,8 @@ const AddCellOptions: Record<string, AddCellOption> = {
         icon: <ModelBrain color={'#666666'} width={'20'} height={'20'} />,
     },
     others: {
-        display: 'Others',
-        icon: <MoreHoriz />,
+        display: '',
+        icon: <MoreVert />,
         options: OtherOptions,
     },
 };
@@ -302,8 +264,12 @@ export const NotebookAddCell = observer(
             <>
                 {/* Dropdown for All Add Cell Option Sets */}
 
-                <Stack direction={'row'} alignItems={'center'} gap={1}>
-                    <StyledDivider />
+                <Stack
+                    direction={'row'}
+                    alignItems={'center'}
+                    gap={1}
+                    justifyContent={'center'}
+                >
                     <StyledBorderDiv>
                         {AddCellOptions &&
                             Object.entries(AddCellOptions).map((add, i) => {
@@ -329,13 +295,17 @@ export const NotebookAddCell = observer(
                                             }
                                         }}
                                         endIcon={
-                                            Array.isArray(value.options) &&
-                                            (selectedAddCell == add[0] &&
-                                            open ? (
+                                            add[0] === 'others' ||
+                                            add[0] ===
+                                                'code' ? null : Array.isArray(
+                                                  value.options,
+                                              ) &&
+                                              selectedAddCell === add[0] &&
+                                              open ? (
                                                 <KeyboardArrowDown />
                                             ) : (
                                                 <KeyboardArrowUp />
-                                            ))
+                                            )
                                         }
                                     >
                                         {value.display}
@@ -343,7 +313,6 @@ export const NotebookAddCell = observer(
                                 );
                             })}
                     </StyledBorderDiv>
-                    <StyledDivider />
                     <StyledMenu
                         anchorEl={anchorEl}
                         open={
@@ -354,6 +323,24 @@ export const NotebookAddCell = observer(
                             setAnchorEl(null);
                         }}
                     >
+                        {selectedAddCell === 'data' && // Ensure we are showing the options for "Data"
+                            DataOptions.map(
+                                ({ display, defaultCellType }, index) => {
+                                    return (
+                                        <StyledMenuItem
+                                            key={index}
+                                            value={display}
+                                            onClick={() => {
+                                                appendCell(defaultCellType); // Append selected cell
+                                                setAnchorEl(null); // Close the menu
+                                            }}
+                                        >
+                                            {display}
+                                        </StyledMenuItem>
+                                    );
+                                },
+                            )}
+
                         {selectedAddCell === 'transformation' &&
                             Array.from(
                                 AddCellOptions[selectedAddCell]?.options || [],
