@@ -9,6 +9,7 @@ import {
     TextField,
     styled,
     Alert,
+    Markdown
 } from '@semoss/ui';
 
 import { useEngine, useRootStore } from '@/hooks';
@@ -212,48 +213,6 @@ export const EngineModelTestPage = () => {
         }
     };
 
-    const formatMessage = (content: string) => {
-        // Check if content is JSON
-        try {
-            const parsed = JSON.parse(content);
-            return (
-                <pre style={{
-                    whiteSpace: 'pre-wrap',
-                    fontFamily: 'inherit',
-                    backgroundColor: 'rgba(0,0,0,0.05)',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    overflow: 'auto'
-                }}>
-                    {JSON.stringify(parsed, null, 2)}
-                </pre>
-            );
-        } catch {
-            // Not JSON, check for bullet points and format accordingly
-            const lines = content.split('\n');
-            return lines.map((line, index) => {
-                // Format bullet points
-                if (line.trim().startsWith('•') || line.trim().startsWith('*') || line.trim().startsWith('-')) {
-                    return (
-                        <div key={index} style={{ marginLeft: '16px', marginBottom: '4px' }}>
-                            {line}
-                        </div>
-                    );
-                }
-                // Format numbered lists
-                if (/^\d+\./.test(line.trim())) {
-                    return (
-                        <div key={index} style={{ marginLeft: '16px', marginBottom: '4px' }}>
-                            {line}
-                        </div>
-                    );
-                }
-                // Regular line
-                return <div key={index} style={{ marginBottom: line.trim() ? '8px' : '4px' }}>{line}</div>;
-            });
-        }
-    };
-
     return (
         <StyledLayout>
             <EngineModelTestSidebar
@@ -301,7 +260,7 @@ export const EngineModelTestPage = () => {
                                     messages.map((message, index) => (
                                         <div key={message.id}>
                                             <StyledMessageBubble isUser={message.isUser}>
-                                                <div>{formatMessage(message.content)}</div>
+                                                <div><Markdown>{message.content}</Markdown></div>
                                                 {message.tokens && (
                                                     <Typography variant="caption" sx={{ opacity: 0.7, mt: 1, display: 'block' }}>
                                                         Tokens: {message.tokens}
