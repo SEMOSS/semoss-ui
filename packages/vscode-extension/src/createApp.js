@@ -57,7 +57,7 @@ async function createNewApp(context, getSecretsWithValidation, args) {
         }
         const projectId = response.data.pixelReturn[0].output.project_id;
         vscode.window.showInformationMessage(`App "${appName}" created successfully! Project ID: ${projectId}`);
-            // Export project
+        // Export project
         const exportParams = new URLSearchParams();
         exportParams.append('expression', `ExportProjectApp(project=["${projectId}"]);`);
         exportParams.append('insightId', 'new');
@@ -104,7 +104,7 @@ async function createNewApp(context, getSecretsWithValidation, args) {
                 file.on('error', (err) => reject(err));
             });
             req.on('error', (err) => {
-                fs.unlink(filePath, () => {});
+                fs.unlink(filePath, () => { });
                 vscode.window.showErrorMessage('Download error: ' + err.message);
                 reject(err);
             });
@@ -113,7 +113,10 @@ async function createNewApp(context, getSecretsWithValidation, args) {
         try {
             const stats = fs.statSync(filePath);
             vscode.window.showInformationMessage(`Downloaded file size: ${stats.size} bytes`);
-        } catch (e) {}
+        } catch (e) {
+            console.error(`Failed to get file stats for ${filePath}:`, e);
+            vscode.window.showErrorMessage(`Could not get file size for ${filePath}.`);
+        }
         // Automatically unzip in the same folder as the zip
         const unzipDir = path.join(downloadsDir, `${appName}_unzipped_${Date.now()}`);
         if (!fs.existsSync(unzipDir)) {

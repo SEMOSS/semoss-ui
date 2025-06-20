@@ -79,9 +79,8 @@ class SemossChatbotViewProvider {
                 let resultMsg = 'Command received: ' + JSON.stringify(msg);
                 // Use msg.command if present, otherwise map from message
                 const command = msg.command || mapMessageToCommand(msg);
-                const folderCommands = [
-                    'semoss.deployonly'
-                ];
+                // Remove deployonly from folderCommands so it never prompts for a folder
+                const folderCommands = [];
                 if (!command) {
                     resultMsg = 'Sorry, I did not understand that command.';
                 } else {
@@ -160,27 +159,30 @@ class SemossChatbotViewProvider {
                                     }
                                 }
                                 default: {
-                                    // For folder commands, prompt for folder if not provided
+                                    // For folder commands, always use first workspace folder
                                     if (folderCommands.includes(command)) {
-                                        let uri = msg.inputs.uri;
+                                        let uri = msg.inputs && msg.inputs.uri;
                                         if (!uri) {
-                                            const folders = await vscode.window.showOpenDialog({
-                                                canSelectFolders: true,
-                                                canSelectFiles: false,
-                                                canSelectMany: false,
-                                                openLabel: 'Select folder for operation'
-                                            });
-                                            if (!folders || folders.length === 0) {
-                                                resultMsg = 'Operation cancelled: No folder selected.';
-                                                break;
+                                            if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                                                uri = vscode.workspace.workspaceFolders[0].uri;
+                                            } else {
+                                                resultMsg = 'No workspace folder found.';
+                                                // Always hide loading even on error
+                                                webviewView.webview.postMessage({ type: 'response', status: 'error', text: resultMsg, hideLoading: true });
+                                                return;
                                             }
-                                            uri = folders[0];
                                         }
                                         await vscode.commands.executeCommand(command, uri);
                                         resultMsg = `Action '${command}' executed on selected folder.`;
+                                        // Always hide loading after deploy
+                                        webviewView.webview.postMessage({ type: 'response', status: 'success', text: resultMsg, hideLoading: true });
+                                        return;
                                     } else {
                                         await vscode.commands.executeCommand(command, msg.inputs);
                                         resultMsg = `Action '${command}' executed with provided details.`;
+                                        // Always hide loading after any command
+                                        webviewView.webview.postMessage({ type: 'response', status: 'success', text: resultMsg, hideLoading: true });
+                                        return;
                                     }
                                 }
                             }
@@ -209,6 +211,30 @@ class SemossChatbotViewProvider {
                     }
                 }
                 webviewView.webview.postMessage({ type: 'response', text: resultMsg });
+            }
+            if (msg.type === 'getInstanceAliasesForRemoval') {
+                // Send aliases for removal
+                const instances = await getStoredInstances(this._context);
+                const aliases = Object.keys(instances);
+                webviewView.webview.postMessage({ type: 'instanceAliasesForRemoval', aliases });
+                return;
+            }
+            if (msg.type === 'removeInstanceByAlias') {
+                const { alias } = msg;
+                const instances = await getStoredInstances(this._context);
+                if (!instances[alias]) {
+                    webviewView.webview.postMessage({ type: 'response', status: 'error', text: `Instance "${alias}" not found.`, hideLoading: true });
+                    return;
+                }
+                delete instances[alias];
+                await this._context.secrets.store('SEMOSS_INSTANCES', JSON.stringify(instances));
+                // If this was the current instance, clear it
+                const currentAlias = await this._context.secrets.get('CURRENT_INSTANCE_ALIAS');
+                if (currentAlias === alias) {
+                    await this._context.secrets.delete('CURRENT_INSTANCE_ALIAS');
+                }
+                webviewView.webview.postMessage({ type: 'response', status: 'success', text: `Instance "${alias}" removed successfully!`, hideLoading: true });
+                return;
             }
         });
     }

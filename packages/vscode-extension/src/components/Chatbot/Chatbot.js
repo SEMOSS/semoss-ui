@@ -53,17 +53,28 @@ function getChatbotHtml(cssUri) {
                 window.addEventListener('message', event => {
                     const message = event.data;
                     if (message.type === 'response') {
-                        if (message.hideLoading) {
+                        // Always hide spinner for zip only, deploy only, and zip and deploy
+                        if (
+                            (message.text && (
+                                message.text.includes('Project zipped as assets.zip successfully!') ||
+                                message.text.toLowerCase().includes('deployed successfully') ||
+                                message.text.toLowerCase().includes('zip and deploy')
+                            )) || message.hideLoading
+                        ) {
                             showLoading(false);
                         }
-                        
+                        // Hide optionsArea buttons after a successful removal and show main options again
+                        if (message.status === 'success' && message.text && message.text.includes('removed successfully')) {
+                            optionsArea.innerHTML = '';
+                            showOptions();
+                        }
                         const messageClass = message.status === 'error' ? 'error' : 'bot';
                         appendMessage(message.text, messageClass);
-                        
                         // If authorization was successful, refresh the UI
                         if (message.status === 'success' && command === 'semoss.authorize') {
                             showOptions();
                         }
+                        return;
                     } else if (message.type === 'smssFileCheckResult') {
                         optionsArea.innerHTML = '';
                         let options;
@@ -100,14 +111,16 @@ function getChatbotHtml(cssUri) {
                                         appendMessage(key + ': ' + value, 'user');
                                     });
                                     showLoading(true);
-                                    // Debug: log the inputs being sent
-                                    // appendMessage('DEBUG: Sending inputs: ' + JSON.stringify(inputs), 'bot');
                                     vscode.postMessage({ type: 'chat', command: 'semoss.authorize', inputs: inputs });
                                     return;
                                 }
                                 if (opt.command === 'semoss.selectInstance') {
                                     showLoading(true);
                                     vscode.postMessage({ type: 'getInstanceAliases' });
+                                    return;
+                                }
+                                if (opt.command === 'semoss.removeInstance') {
+                                    vscode.postMessage({ type: 'getInstanceAliasesForRemoval' });
                                     return;
                                 }
                                 const requiredInputs = getRequiredInputs(opt.command);
@@ -118,11 +131,19 @@ function getChatbotHtml(cssUri) {
                                     Object.entries(inputs).forEach(([key, value]) => {
                                         appendMessage(key + ': ' + value, 'user');
                                     });
+                                    // Only show spinner for commands that require input
                                     showLoading(true);
                                     vscode.postMessage({ type: 'chat', command: opt.command, inputs: inputs });
                                 } else {
                                     appendMessage(opt.label, 'user');
-                                    showLoading(true);
+                                    // Do NOT show spinner for zip only, deploy only, zip and deploy
+                                    if (
+                                        opt.command !== 'semoss.ziponly' &&
+                                        opt.command !== 'semoss.deployonly' &&
+                                        opt.command !== 'semoss.zipanddeploy'
+                                    ) {
+                                        showLoading(true);
+                                    }
                                     vscode.postMessage({ type: 'chat', command: opt.command });
                                 }
                             };
@@ -158,6 +179,28 @@ function getChatbotHtml(cssUri) {
                         showLoading(false);
                         window.semossInstanceUrls = message.urls;
                         showInstanceSelection(message.aliases);
+                    } else if (message.type === 'instanceAliasesForRemoval') {
+                        // Show aliases as buttons for removal
+                        optionsArea.innerHTML = '';
+                        appendMessage('Select an instance to remove:', 'bot');
+                        message.aliases.forEach(alias => {
+                            const btn = document.createElement('button');
+                            btn.className = 'option-btn';
+                            btn.textContent = alias;
+                            btn.onclick = () => {
+                                // Show confirmation dialog in chatbot
+                                showRemoveInstanceConfirmation(alias);
+                            };
+                            optionsArea.appendChild(btn);
+                        });
+                        // Add Back button
+                        const backBtn = document.createElement('button');
+                        backBtn.className = 'option-btn';
+                        backBtn.textContent = 'Back';
+                        backBtn.style.background = '#333';
+                        backBtn.style.color = '#fff';
+                        backBtn.onclick = showOptions;
+                        optionsArea.appendChild(backBtn);
                     }
                 });
 
@@ -261,6 +304,24 @@ function getChatbotHtml(cssUri) {
                             resolve(null);
                         };
                     });
+                }
+
+                function showRemoveInstanceConfirmation(alias) {
+                    optionsArea.innerHTML = '';
+                    appendMessage('Are you sure you want to remove "' + alias + '"?', 'bot');
+                    const yesBtn = document.createElement('button');
+                    yesBtn.className = 'option-btn';
+                    yesBtn.textContent = 'Yes';
+                    yesBtn.onclick = () => {
+                        showLoading(true);
+                        vscode.postMessage({ type: 'removeInstanceByAlias', alias });
+                    };
+                    const noBtn = document.createElement('button');
+                    noBtn.className = 'option-btn';
+                    noBtn.textContent = 'No';
+                    noBtn.onclick = showOptions;
+                    optionsArea.appendChild(yesBtn);
+                    optionsArea.appendChild(noBtn);
                 }
 
                 if (startBtn) {

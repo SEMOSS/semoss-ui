@@ -120,9 +120,14 @@ async function activate(context) {
     const disposable2 = vscode.commands.registerCommand(
         "semoss.zipanddeploy",
         async (uri) => {
+            // If called from Chatbot UI, uri may be undefined. Use first workspace folder.
             if (!uri || !uri.fsPath) {
-                vscode.window.showErrorMessage('Please right-click a folder (client, portals, or py) and select "Semoss: Zip and deploy".');
-                return;
+                if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                    uri = vscode.workspace.workspaceFolders[0].uri;
+                } else {
+                    vscode.window.showErrorMessage('No workspace folder found.');
+                    return;
+                }
             }
             try {
                 const secrets = await getSecretsWithValidation(context);
@@ -136,10 +141,12 @@ async function activate(context) {
                     return;
                 }
 
-                // Zip the project
+                // Zip the project (json, smss, assets as assets.zip)
                 await zipProject();
 
-                // Configure deployment
+                // Configure deployment to use assets.zip
+                const path = require('path');
+                const outputZip = path.join(uri.fsPath, 'assets.zip');
                 const encoded = Buffer.from(secrets.accessKey + ':' + secrets.privateKey).toString('base64');
                 const headers = { 'Authorization': 'Basic ' + encoded };
 
@@ -147,7 +154,7 @@ async function activate(context) {
                     semossUrl: secrets.semossUrl,
                     authHeaders: headers,
                     base64Encoded: encoded,
-                    outputPath: getOutputFilePath()
+                    outputPath: outputZip
                 });
 
                 // Deploy the project
@@ -162,9 +169,14 @@ async function activate(context) {
     const disposable3 = vscode.commands.registerCommand(
         "semoss.ziponly",
         async (uri) => {
+            // If called from Chatbot UI, uri may be undefined. Use first workspace folder.
             if (!uri || !uri.fsPath) {
-                vscode.window.showErrorMessage('Please right-click a folder (client, portals, or py) and select "Semoss: Zip only".');
-                return;
+                if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                    uri = vscode.workspace.workspaceFolders[0].uri;
+                } else {
+                    vscode.window.showErrorMessage('No workspace folder found.');
+                    return;
+                }
             }
             try {
                 setFolderPaths(uri);
@@ -179,11 +191,23 @@ async function activate(context) {
     const disposable4 = vscode.commands.registerCommand(
         "semoss.deployonly",
         async (uri) => {
+            // Always deploy assets.zip from the selected or first workspace folder
             if (!uri || !uri.fsPath) {
-                vscode.window.showErrorMessage('Please right-click a folder (client, portals, or py) and select "Semoss: Deploy only".');
-                return;
+                if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                    uri = vscode.workspace.workspaceFolders[0].uri;
+                } else {
+                    vscode.window.showErrorMessage('No workspace folder found.');
+                    return;
+                }
             }
             try {
+                const path = require('path');
+                const fs = require('fs');
+                const outputZip = path.join(uri.fsPath, 'assets.zip');
+                if (!fs.existsSync(outputZip)) {
+                    vscode.window.showErrorMessage('No assets.zip present in the selected folder.');
+                    return;
+                }
                 const secrets = await getSecretsWithValidation(context);
                 if (!secrets) return;
 
@@ -195,7 +219,7 @@ async function activate(context) {
                     return;
                 }
 
-                // Configure deployment
+                // Configure deployment to use assets.zip
                 const encoded = Buffer.from(secrets.accessKey + ':' + secrets.privateKey).toString('base64');
                 const headers = { 'Authorization': 'Basic ' + encoded };
 
@@ -203,7 +227,7 @@ async function activate(context) {
                     semossUrl: secrets.semossUrl,
                     authHeaders: headers,
                     base64Encoded: encoded,
-                    outputPath: getOutputFilePath()
+                    outputPath: outputZip
                 });
 
                 await deployProject(projectId);
@@ -223,7 +247,7 @@ async function activate(context) {
 
 
         async (action, options = {}) => {
-             if (action === 'removeInstance') {
+            if (action === 'removeInstance') {
                 const { getStoredInstances } = require('./src/secrets');
                 const instances = await getStoredInstances(context);
                 const aliases = Object.keys(instances);
@@ -274,7 +298,7 @@ async function activate(context) {
 
     // Check if credentials are available and show status
     const secrets = await getSecrets(context);
-    
+
     if (secrets && secrets.semossUrl && secrets.accessKey && secrets.privateKey) {
         vscode.window.showInformationMessage(`Semoss: Connected to "${secrets.alias || 'Default'}" (${secrets.semossUrl})`);
         context.subscriptions.push(disposable1, disposable2, disposable3, disposable4, disposable5, disposable6);

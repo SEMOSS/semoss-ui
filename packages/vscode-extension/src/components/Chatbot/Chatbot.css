@@ -6,6 +6,7 @@ body {
     margin: 0;
     padding: 0;
 }
+
 #container {
     display: flex;
     flex-direction: column;
@@ -13,7 +14,9 @@ body {
     width: 100vw;
     max-width: 100vw;
     box-sizing: border-box;
+    border-right: 1px solid #333;
 }
+
 #chat {
     flex: 1;
     background: #252526;
@@ -24,13 +27,21 @@ body {
     overflow-y: auto;
     min-height: 200px;
 }
+
 .message {
     margin-bottom: 12px;
     display: flex;
     align-items: flex-end;
 }
-.user { justify-content: flex-end; }
-.bot { justify-content: flex-start; }
+
+.user {
+    justify-content: flex-end;
+}
+
+.bot {
+    justify-content: flex-start;
+}
+
 .bubble {
     max-width: 80%;
     padding: 10px 16px;
@@ -39,22 +50,27 @@ body {
     background: #2d2d2d;
     color: #d4d4d4;
 }
+
 .user .bubble {
     background: #0e639c;
     color: #fff;
 }
+
 .bot .bubble {
     background: #2d2d2d;
     color: #d4d4d4;
 }
+
 .error .bubble {
     background: #5a1d1d;
     color: #ffa7a7;
     border: 1px solid #6f3232;
 }
+
 #input-area {
     display: none;
 }
+
 #start-area {
     display: flex;
     flex-direction: column;
@@ -62,12 +78,14 @@ body {
     justify-content: center;
     padding: 32px 12px 16px 12px;
     text-align: center;
-    margin-top: 24px;
+    margin-top: 12px;
     background: #1e1e1e;
-    border-radius: 8px;
+    border-radius: 8px 8px 0px 0px;
+
     border: 1px solid #333;
-    
+
 }
+
 #start-btn {
     background: #0e639c;
     color: #fff;
@@ -80,19 +98,21 @@ body {
     margin-top: 20px;
     transition: background 0.2s;
 }
+
 #start-btn:hover {
     background: #1177bb;
 }
 
- #options-area {
+#options-area {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
-    margin: 20px 12px 0 12px;
+    margin: 12px 12px 5px 12px;
     max-height: 300px;
     overflow-y: auto;
 }
+
 .option-btn {
     background: #232323;
     color: #3794ff;
@@ -107,19 +127,25 @@ body {
     text-align: center;
     transition: background 0.18s, color 0.18s;
 }
+
 .option-btn:hover {
     background: #3794ff;
     color: #fff;
 }
+
 .input-dialog {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(30,30,30,0.7);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(30, 30, 30, 0.7);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
 }
+
 .dialog-content {
     background: #232323;
     border-radius: 8px;
@@ -127,20 +153,23 @@ body {
     width: 96%;
     max-width: 340px;
     min-width: 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.20);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.20);
     box-sizing: border-box;
     margin: 0 2vw;
 }
+
 .dialog-content h3 {
     margin-top: 0;
     margin-bottom: 12px;
     color: #3794ff;
-    font-size: 18px;
+    font-size: 12px;
     font-weight: 600;
 }
+
 .input-group {
     margin-bottom: 14px;
 }
+
 .input-group label {
     display: block;
     margin-bottom: 4px;
@@ -148,6 +177,7 @@ body {
     font-size: 14px;
     font-weight: 500;
 }
+
 .input-group input {
     width: 100%;
     min-width: 0;
@@ -163,16 +193,20 @@ body {
     margin: 0;
     display: block;
 }
+
 .input-group input:focus {
     border: 1px solid #3794ff;
 }
+
 .dialog-buttons {
     display: flex;
     gap: 10px;
     margin-top: 12px;
     justify-content: center;
 }
-.submit-btn, .cancel-btn {
+
+.submit-btn,
+.cancel-btn {
     padding: 8px 18px;
     border-radius: 4px;
     border: none;
@@ -180,30 +214,39 @@ body {
     font-size: 14px;
     font-weight: 500;
 }
+
 .submit-btn {
     background: #3794ff;
     color: #fff;
 }
+
 .submit-btn:hover {
     background: #1177bb;
 }
+
 .cancel-btn {
     background: #333;
     color: #d4d4d4;
 }
+
 .cancel-btn:hover {
     background: #232323;
 }
+
 #loader {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(30,30,30,0.5);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(30, 30, 30, 0.5);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     z-index: 1000;
 }
+
 .spinner {
     width: 32px;
     height: 32px;
@@ -212,18 +255,21 @@ body {
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
+
 .loader-text {
     color: #3794ff;
     margin-top: 12px;
     font-size: 14px;
     font-weight: 500;
 }
+
 .loading {
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 10px;
 }
+
 .loading::after {
     content: '';
     width: 20px;
@@ -233,22 +279,30 @@ body {
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
+
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
+
 @media (max-width: 480px) {
     .dialog-content {
         padding: 16px 6px 10px 6px;
         max-width: 98vw;
-        font-size: 15px;
+        font-size: 12px;
     }
+
     .dialog-content h3 {
         font-size: 16px;
     }
+
     .input-group input {
         font-size: 13px;
         padding: 7px;
     }
 }
-
