@@ -125,12 +125,29 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
          */
         const targetCell: CellState<QueryImportCellDef> = computed(() => {
             let c;
+            let cellId: number | null = null;
             Object.values(state.queries).forEach((query) => {
+                Object.entries(query.cells).forEach(([key, value], cellIndex)=> {
+                    let parsedId = (value['parameters']?.['frameVariableName'])|| null;
+                    if (cellId || parsedId === null) return;
+                    
+
+                    let target = (parsedId as String)?.match(/\d+/);
+                    const targetID = target ? target[0] : null;
+                    if(targetID && Number(targetID) === Number(cell.parameters.targetCell.id) && cellId === null) {
+                        cellId = parseInt(key, 10);
+                    }
+                });
+
                 if (query.cells[cell.parameters.targetCell.id]) {
                     c = query.cells[
                         cell.parameters.targetCell.id
                     ] as CellState<QueryImportCellDef>;
                 }
+                if(!query.cells[cell.parameters.targetCell.id] && cellId){
+                    c = query.cells[cellId] as CellState<QueryImportCellDef>;
+                }
+                cellId=null;
             });
             return c;
         }).get();
@@ -157,7 +174,7 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
             if (doesFrameExist && targetCell.isExecuted !== undefined) {
                 handleTargetCellChange();
             }
-        }, [targetCell?.isExecuted, doesFrameExist]);
+        }, [targetCell?.isExecuted, doesFrameExist, selectedFrame]);
         const myDbs =
             usePixel<{ app_id: string; app_name: string }[]>(`GetFrames();`);
         useEffect(() => {
@@ -1000,7 +1017,7 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
                                 disabled={cell.isLoading}
                                 value={selectedFrame}
                                 options={framelist}
-                                getOptionLabel={(option) => {
+                                getOptionLabel={(option) => {                                    console.log(option, 'option in dropdown');
                                     return option;
                                 }}
                                 onChange={(e, value) => {
