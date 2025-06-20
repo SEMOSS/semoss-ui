@@ -155,7 +155,7 @@ export const MultiPageTemplate: Template = {
                         whiteSpace: 'pre-line',
                         textOverflow: 'ellipsis',
                     },
-                    href: '/home',
+                    href: '/',
                     text: 'Go home',
                     show: 'true',
                 },
