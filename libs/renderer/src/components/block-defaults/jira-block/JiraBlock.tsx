@@ -69,9 +69,47 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
     const { setData } = useBlockSettings(id);
     const [showcreatedJiraData, setShowCreatedJiraData] = useState('');
     const [showListedTickets,setShowListedTickets] = useState([]);
+    const [projects, setProjects] = useState([]);
+    const [issueTypes, setIssueTypes] = useState<string[]>(['bug', 'task', 'story', 'epic']);
     const textContent =
         typeof data.text == "string" ? data.text : JSON.stringify(data.text);
     let displayTxt = useTypeWriter(data.isStreaming ? textContent : "");
+
+    useEffect(() => {
+        async function fetchJiraData() {
+            try {
+                const response = await runPixel<[string]>(
+                    `META | Jira ( command = "Get projects", userid="${data.userId}" ) ;`,
+                );
+                const outputProjects = response.pixelReturn[0].output;
+                const type = response.pixelReturn[0].operationType;
+                if (type.indexOf('ERROR') === -1) {
+                    console.log("Response from JiraGet:", outputProjects);
+                    setProjects(Array.isArray(outputProjects) ? outputProjects : [outputProjects]);
+                } else {
+                    throw new Error(response.errors[0]);
+                }
+            } catch (error) {
+                console.error("Error fetching Jira projects:", error);
+            }
+            try {
+                const response = await runPixel<[string]>(
+                    `META | Jira ( command = "Get issue types", userid="${data.userId}" ) ;`,
+                );
+                const outputIssues = response.pixelReturn[0].output;
+                const type = response.pixelReturn[0].operationType;
+                if (type.indexOf('ERROR') === -1) {
+                    console.log("Response from JiraGet:", outputIssues);
+                    //setIssueTypes(Array.isArray(outputIssues) ? outputIssues : [outputIssues]);
+                } else {
+                    throw new Error(response.errors[0]);
+                }
+            } catch (error) {
+                console.error("Error fetching Jira issue types:", error);
+            }
+        }
+        fetchJiraData();
+    },[]);
 
     if (!data.isStreaming) displayTxt = textContent;
     const { getValues, handleSubmit, control, watch,reset } = useForm<CreateNewJiraForm>({
@@ -199,6 +237,30 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                                                 />
                                             );
                                         }}
+                                    />
+                                    <Controller
+                                        name={'JIRA_ISSUE_TYPE'}
+                                        control={control}
+                                        rules={{ required: true }}
+                                        render={({ field }) => (
+                                            <Autocomplete
+                                                options={issueTypes}
+                                                getOptionLabel={(option) => (typeof option === "string" ? option : String(option))}
+                                                value={ [] }
+                                                onChange={(event, newValue) => field.onChange(newValue)}
+                                                renderInput={(params) => (
+                                                    <TextField
+                                                        {...params}
+                                                        label="Issue Type"
+                                                        fullWidth
+                                                        inputProps={{
+                                                            ...params.inputProps,
+                                                            'data-testid': 'newAppModal-dropdown-issueType',
+                                                        }}
+                                                    />
+                                                )}
+                                            />
+                                        )}
                                     />
                                     <Controller
                                         name={'JIRA_SUMMARY'}
