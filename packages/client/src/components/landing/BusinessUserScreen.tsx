@@ -23,7 +23,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'flex-start',
     flexDirection: 'column',
-    padding: theme.spacing(6, 9),
+    padding: theme.spacing(0, 9),
     gap: theme.spacing(4),
 }));
 
