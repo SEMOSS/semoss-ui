@@ -155,7 +155,51 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                     {displayTxt}
                     {data.showCreateJiraForm && (
                         <form onSubmit={onSubmit}>
-                                <Stack direction="column" spacing={1}>
+                                <Stack direction="column" spacing={1} style={{ paddingTop: '10px' }}>
+                                    <Controller
+                                        name={'JIRA_PROJECT'}
+                                        control={control}
+                                        rules={{ required: true }}
+                                        render={({ field }) => {
+                                            return (
+                                                <TextField
+                                                    label="Project"
+                                                    value={field.value ? field.value : ''}
+                                                    disabled={false}
+                                                    onChange={(value) =>
+                                                        field.onChange(value)
+                                                    }
+                                                    fullWidth={true}
+                                                    inputProps={{
+                                                        'data-testid':
+                                                            'newAppModal-textField-name',
+                                                    }}
+                                                />
+                                            );
+                                        }}
+                                    />
+                                    <Controller
+                                        name={'JIRA_ISSUE_TYPE'}
+                                        control={control}
+                                        rules={{ required: true }}
+                                        render={({ field }) => {
+                                            return (
+                                                <TextField
+                                                    label="Issue Type"
+                                                    value={field.value ? field.value : ''}
+                                                    disabled={false}
+                                                    onChange={(value) =>
+                                                        field.onChange(value)
+                                                    }
+                                                    fullWidth={true}
+                                                    inputProps={{
+                                                        'data-testid':
+                                                            'newAppModal-textField-name',
+                                                    }}
+                                                />
+                                            );
+                                        }}
+                                    />
                                     <Controller
                                         name={'JIRA_SUMMARY'}
                                         control={control}
@@ -196,51 +240,6 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                                             );
                                         }}
                                     />
-                                    <Controller
-                                        name={'JIRA_ISSUE_TYPE'}
-                                        control={control}
-                                        rules={{ required: true }}
-                                        render={({ field }) => {
-                                            return (
-                                                <TextField
-                                                    label="Issue Type"
-                                                    value={field.value ? field.value : ''}
-                                                    disabled={false}
-                                                    onChange={(value) =>
-                                                        field.onChange(value)
-                                                    }
-                                                    fullWidth={true}
-                                                    inputProps={{
-                                                        'data-testid':
-                                                            'newAppModal-textField-name',
-                                                    }}
-                                                />
-                                            );
-                                        }}
-                                    />
-
-                                    <Controller
-                                        name={'JIRA_PROJECT'}
-                                        control={control}
-                                        rules={{ required: true }}
-                                        render={({ field }) => {
-                                            return (
-                                                <TextField
-                                                    label="Project"
-                                                    value={field.value ? field.value : ''}
-                                                    disabled={false}
-                                                    onChange={(value) =>
-                                                        field.onChange(value)
-                                                    }
-                                                    fullWidth={true}
-                                                    inputProps={{
-                                                        'data-testid':
-                                                            'newAppModal-textField-name',
-                                                    }}
-                                                />
-                                            );
-                                        }}
-                                    />
                                 </Stack>
 
                                 <Stack
@@ -276,7 +275,7 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                     )}
                     {data.listAllTickets && (
                         <form onSubmit={onSubmit1}>
-                            <Stack direction="column" spacing={1}>
+                            <Stack direction="column" spacing={1} style={{ paddingTop: '10px' }}>
                                 <Controller
                                     name={'JIRA_PROJECT_ID'}
                                     control={control1}

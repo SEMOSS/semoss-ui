@@ -136,6 +136,8 @@ export const JiraProfilePage = () => {
                     });
 
                     getSavedApiKeysQuery();
+                    setAddModal(false);
+                    reset({});
                 } else {
                     throw new Error(response.errors[0]);
                 }
@@ -254,7 +256,7 @@ export const JiraProfilePage = () => {
                         }}
                         data-testid={'my-jira-profile-new-key-btn'}
                     >
-                        Save Key
+                        Add Key
                     </Button>
                 </Stack>
 
@@ -337,7 +339,11 @@ export const JiraProfilePage = () => {
             <Modal open={addModal} onClose={() => closeModel()} maxWidth="lg">
                 <Modal.Title>Save Key</Modal.Title>
                 <Modal.Content>
-                    <Stack sx={{ width: '800px' }} spacing={4}>
+                    <Stack
+                        sx={{ width: '800px' }}
+                        spacing={4}
+                        style={{ paddingTop: '10px' }}
+                    >
                         <form
                             onSubmit={handleSubmit(SaveAPIKey)}
                             className="my-jira-profile-page__generate-key-form"
@@ -347,29 +353,6 @@ export const JiraProfilePage = () => {
                                     Note: Your private key will only be
                                     generated once
                                 </Alert> */}
-
-                                <Controller
-                                    name={'APIKEY'}
-                                    control={control}
-                                    rules={{ required: true }}
-                                    render={({ field }) => {
-                                        return (
-                                            <TextField
-                                                required
-                                                label="API Key"
-                                                value={
-                                                    field.value
-                                                        ? field.value
-                                                        : ''
-                                                }
-                                                onChange={(value) =>
-                                                    field.onChange(value)
-                                                }
-                                                inputProps={{ maxLength: 255 }}
-                                            ></TextField>
-                                        );
-                                    }}
-                                />
 
                                 <Controller
                                     name={'USERID'}
@@ -412,6 +395,29 @@ export const JiraProfilePage = () => {
                                                     field.onChange(value)
                                                 }
                                                 inputProps={{ maxLength: 500 }}
+                                            ></TextField>
+                                        );
+                                    }}
+                                />
+
+                                <Controller
+                                    name={'APIKEY'}
+                                    control={control}
+                                    rules={{ required: true }}
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                required
+                                                label="API Key"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                                inputProps={{ maxLength: 255 }}
                                             ></TextField>
                                         );
                                     }}

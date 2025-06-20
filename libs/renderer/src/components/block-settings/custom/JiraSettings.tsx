@@ -61,7 +61,7 @@ export const JiraSettings = observer(
             const handleMouseDownChange = (event): void => {
                 console.log("Mouse down on dropdown2, event:",event.target.innerText);
                 console.log("Dropdown2 value:", dropdown2Value);
-                const dropDownOption = event.target.innerText === "Create new jira" ? "showCreateJiraForm" : "listAllTickets";
+                const dropDownOption = event.target.innerText === "Create new ticket" ? "showCreateJiraForm" : "listAllTickets";
                 paths.map(path=>{
                     const value = dropDownOption === path ? true : false;
                     console.log(`Setting path ${path} to ${value}`);
@@ -89,12 +89,12 @@ export const JiraSettings = observer(
 
             return (
                 <StyledDropdownContainer>
-                    <div>Jira Reactor</div>  
+                    <div>Connections</div>  
                     <StyledDropdown>
                         <StyledSelect
                         id="dropdown1"
                         value={dropdown1Value}
-                        label={"Jira Reactor"}
+                        label={"Connections"}
                         onChange={(event) => {setDropdown1Value(event.target.value as string);setData(userId, event.target.value['id']);}}
                         >
                         {jiraData && jiraData.map((data: string) => (
@@ -103,17 +103,17 @@ export const JiraSettings = observer(
                         </StyledSelect>
                     </StyledDropdown>
                     
-                    <div>Jira Reactor options</div>
+                    <div>Actions</div>
                     <StyledDropdown>
                         <StyledSelect
                         id="dropdown2"
                         value={dropdown2Value}
-                        label={"Jira Reactor Options"}
+                        label={"Actions"}
                         onChange={(event) => setDropdown2Value(event.target.value as string)}
                         //InputProps={{ onMouseDown: handleMouseDownChange }}
                         >
                         <MenuItem value="List all tickets" onClick={(event)=>handleMouseDownChange(event)}>List all tickets</MenuItem>
-                        <MenuItem value="Create new jira" onClick={(event)=>handleMouseDownChange(event)}>Create new jira</MenuItem>
+                        <MenuItem value="Create new jira" onClick={(event)=>handleMouseDownChange(event)}>Create new ticket</MenuItem>
                         </StyledSelect>
                     </StyledDropdown>              
                     </StyledDropdownContainer>
