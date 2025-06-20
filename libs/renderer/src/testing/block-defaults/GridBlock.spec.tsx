@@ -1,6 +1,6 @@
 import { render } from "../utils";
 import { expect, vi } from "vitest";
-import { fireEvent, waitFor, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import * as useFrameHook from "@/hooks/useFrame";
 import { GridBlock } from "@/components/block-defaults/grid-block";
