@@ -1017,7 +1017,7 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
                                 disabled={cell.isLoading}
                                 value={selectedFrame}
                                 options={framelist}
-                                getOptionLabel={(option) => {                                    console.log(option, 'option in dropdown');
+                                getOptionLabel={(option) => {
                                     return option;
                                 }}
                                 onChange={(e, value) => {
