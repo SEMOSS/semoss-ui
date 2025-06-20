@@ -28,6 +28,7 @@ import {
     ToggleButtonGroup,
     ToggleButton,
     Stack,
+    Link,
 } from "@semoss/ui";
 
 import { useBlockSettings, useBlocks } from "../../hooks";
@@ -78,8 +79,8 @@ export const ListenerSettings = observer(
         const { listeners, setListener } = useBlockSettings(id);
         const notification = useNotification();
         const blockListeners: ListenerActions[] =
-            toJS(listeners)[listener].order;
-        const type = toJS(listeners)[listener].type;
+            toJS(listeners)[listener]?.order;
+        const type = toJS(listeners)[listener]?.type;
 
         const [actionIndex, setActionIndex] = useState(-1);
         const [openModal, setOpenModal] = useState(false);
@@ -226,22 +227,39 @@ export const ListenerSettings = observer(
 
         // Transform items for sortable list
         const transformedItems = useMemo(() => {
-            return (blockListeners ? blockListeners : []).map(
-                (item, index) => ({
+            return (blockListeners ? blockListeners : []).map((item, index) => {
+                console.log(item)
+                let display = ""
+
+                if(item.payload["queryId"]) {
+                    if(item.payload["cellId"]) {
+                        display = state.getAlias(
+                              item.payload["queryId"],
+                              item.payload["cellId"]
+                          )
+                    } else {
+                       display = state.getAlias(item.payload["queryId"])
+                    }
+                } else if (item.payload["destinationType"]) {
+                    if (item.payload["destination"])
+                        display = item.payload["destination"];
+                } else {
+                    if(item.payload["name"]) {
+                        display = item.payload["name"];
+                    }
+                }
+
+                return {
                     id: index.toString(),
-                    content: item.payload["queryId"]
-                        ? `${item.payload["queryId"]}${
-                              "." +
-                              getCellNumber(
-                                  item.payload["queryId"],
-                                  item.payload["cellId"],
-                              )
-                          }`
-                        : item.payload["name"],
+                    content: display,
                     original: item, // Keep reference to the original item
-                }),
-            );
+                };
+            });
         }, [blockListeners]);
+
+        const isLink = (content:string) =>{
+            return content.match(/https?:\/\/[^\s/$.?#].[^\s]*/);
+        }
 
         return (
             <>
@@ -331,8 +349,23 @@ export const ListenerSettings = observer(
                                                         variant="caption"
                                                         noWrap={true}
                                                         title={content}
+                                                        sx={{
+                                                            display: "block",
+                                                            flex: "unset",
+                                                            width: "80%",
+                                                        }}
                                                     >
-                                                        {content}
+                                                        {isLink(content) ? (
+                                                            <Link
+                                                                // rel="noopener noreferrer"
+                                                                target="_blank"
+                                                                href={content}
+                                                            >
+                                                                {content}
+                                                            </Link>
+                                                        ) : (
+                                                            content
+                                                        )}
                                                     </Typography>
                                                 }
                                             />

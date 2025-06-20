@@ -1845,7 +1845,7 @@ export const CONNECTION_OPTIONS = {
                     ],
                 },
                 {
-                    name: 'Gemini 1.5 pro',
+                    name: 'Gemini',
                     disable: false,
                     icon: VERTEX,
                     fields: [
@@ -1892,9 +1892,19 @@ export const CONNECTION_OPTIONS = {
                             label: 'Model',
                             defaultValue: 'gemini-1.5-pro-002',
                             options: {
-                                component: 'text-field',
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'gemini-1.5-pro-002',
+                                        value: 'gemini-1.5-pro-002',
+                                    },
+                                    {
+                                        display: 'gemini-2.0-flash-001',
+                                        value: 'gemini-2.0-flash-001',
+                                    },
+                                ],
                             },
-                            disabled: true,
+                            disabled: false,
                             rules: { required: true },
                         },
                         {
@@ -6598,6 +6608,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'DESCRIPTION',
+                        label: 'Description',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'TAGS',
+                        label: 'Tags',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
                         fieldName: 'EMBEDDER_ENGINE_ID',
                         label: 'Embedder',
                         defaultValue: '',
@@ -6807,6 +6837,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: true,
                         hidden: true,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'DESCRIPTION',
+                        label: 'Description',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'TAGS',
+                        label: 'Tags',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
                     },
                     {
                         fieldName: 'EMBEDDER_ENGINE_ID',
@@ -7120,6 +7170,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'DESCRIPTION',
+                        label: 'Description',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'TAGS',
+                        label: 'Tags',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
                         fieldName: 'EMBEDDER_ENGINE_ID',
                         label: 'Embedder',
                         defaultValue: '',
@@ -7295,6 +7365,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: true,
                         hidden: true,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'DESCRIPTION',
+                        label: 'Description',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'TAGS',
+                        label: 'Tags',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
                     },
                     {
                         fieldName: 'EMBEDDER_ENGINE_ID',
@@ -7562,6 +7652,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: true,
                         hidden: true,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'DESCRIPTION',
+                        label: 'Description',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'TAGS',
+                        label: 'Tags',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
                     },
                     {
                         fieldName: 'EMBEDDER_ENGINE_ID',
@@ -7849,6 +7959,16 @@ export const CONNECTION_OPTIONS = {
                                     'This Catalog name has already been used, please try another.',
                             },
                         },
+                    },
+                    {
+                        fieldName: 'DESCRIPTION',
+                        label: 'Description',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
                     },
                     {
                         fieldName: 'DATABASE_TAGS',
@@ -8172,6 +8292,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'DESCRIPTION',
+                        label: 'Description',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'TAGS',
+                        label: 'Tags',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
                         fieldName: 'EMBEDDER_ENGINE_ID',
                         label: 'Embedder',
                         defaultValue: '',
@@ -8383,6 +8523,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: true,
                         hidden: true,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'DESCRIPTION',
+                        label: 'Description',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'TAGS',
+                        label: 'Tags',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
                     },
                     {
                         fieldName: 'EMBEDDER_ENGINE_ID',
