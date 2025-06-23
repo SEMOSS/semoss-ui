@@ -7218,7 +7218,6 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'select',
-                            options: [],
                             pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
                             optionDisplay: 'database_name',
                             optionValue: 'database_id',

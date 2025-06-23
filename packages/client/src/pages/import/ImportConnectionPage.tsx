@@ -147,13 +147,17 @@ export const ImportConnectionPage = () => {
 
                 if (values.secondaryFields['EMBEDDINGS']) {
                     const upload = await monolithStore.uploadFile(
-                        [values.secondaryFields['EMBEDDINGS']],
+                        values.secondaryFields['EMBEDDINGS'],
                         configStore.store.insightID,
                     );
 
+                    const fileLocations = upload.map(
+                        (file) => file.fileLocation,
+                    );
+
                     const secondaryPixel = `CreateEmbeddingsFromDocuments(
-                        engine="${output.database_id}", 
-                        filePaths=["${upload[0].fileLocation}"]
+                    engine="${output.database_id}",
+                    filePaths=${JSON.stringify(fileLocations)}
                     );`;
 
                     monolithStore.runQuery(secondaryPixel).then((response) => {
