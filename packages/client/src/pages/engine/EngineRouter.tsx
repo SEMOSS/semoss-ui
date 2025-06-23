@@ -42,7 +42,12 @@ export const EngineRouter = observer(() => {
                                     </Route>
                                     <Route
                                         path="new"
-                                        element={<ImportPage type={g.type} />}
+                                        element={
+                                            <ImportPage
+                                                name={g.name}
+                                                type={g.type}
+                                            />
+                                        }
                                     />
                                 </>
                             ) : null}

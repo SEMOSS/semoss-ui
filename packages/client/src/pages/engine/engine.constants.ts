@@ -1,7 +1,5 @@
 import {
-    Functions,
     Inventory2Outlined,
-    Polyline,
     SwitchAccessShortcutOutlined,
     TokenOutlined,
 } from '@mui/icons-material';

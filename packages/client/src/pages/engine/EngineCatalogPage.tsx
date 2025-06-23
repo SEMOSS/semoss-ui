@@ -8,7 +8,6 @@ import {
     ToggleTabsGroup,
     Grid,
 } from '@semoss/ui';
-import { SearchOff, Search as SearchIcon } from '@mui/icons-material';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -16,7 +15,6 @@ import { ENGINE_TYPES } from '@/types';
 import { usePixel, useRootStore } from '@/hooks';
 import { EngineLandscapeCard } from '@/components/engine';
 import { Filterbox } from '@/components/ui';
-import { Page } from '../../components/shared';
 import { Help } from '@/components/help';
 import { ENGINE_ROUTES } from './engine.constants';
 import { removeUnderscores } from '@/utility';

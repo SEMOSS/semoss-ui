@@ -18,6 +18,7 @@ import { LoadingScreen } from '@/components/ui';
 import { EngineShell } from '@/components/engine';
 
 import { ENGINE_ROUTES } from './engine.constants';
+import { NavbarLeft, NavbarHeader } from '../../components/shared';
 
 const StyledDocument = styled('div')(({ theme }) => ({
     width: '100%',
@@ -206,50 +207,56 @@ export const EngineLayout = (props: EngineLayoutProps) => {
     }
 
     return (
-        <EngineContext.Provider
-            value={{
-                id: id,
-                type: route.type,
-                name: route.name,
-                role: getUserEnginePermission.data.permission,
-                refresh: engineMetaRefresh,
-                metaVals: values, // Needed so edit button can be in header
-                llmModels: llmModels,
-            }}
-        >
-            <EngineShell>
-                {tabs.length > 0 && (
-                    <StyledDiv>
-                        <StyledToggleTabsGroup
-                            boxSx={{
-                                borderRadius: '12px 12px 0px 0px',
-                                width: '100%',
-                            }}
-                            value={activeTabIdx}
-                            onChange={(e: SyntheticEvent, idx: number) => {
-                                // get the specific route
-                                const r = tabs[idx];
+        <>
+            <NavbarLeft>
+                <NavbarHeader />
+            </NavbarLeft>
 
-                                // navigate to it
-                                navigate(`${r.path}`);
-                            }}
-                        >
-                            {tabs.map((t) => {
-                                return (
-                                    <StyledToggleTabsGroupItem
-                                        key={t.path}
-                                        label={t.name}
-                                    ></StyledToggleTabsGroupItem>
-                                );
-                            })}
-                        </StyledToggleTabsGroup>
-                    </StyledDiv>
-                )}
+            <EngineContext.Provider
+                value={{
+                    id: id,
+                    type: route.type,
+                    name: route.name,
+                    role: getUserEnginePermission.data.permission,
+                    refresh: engineMetaRefresh,
+                    metaVals: values, // Needed so edit button can be in header
+                    llmModels: llmModels,
+                }}
+            >
+                <EngineShell>
+                    {tabs.length > 0 && (
+                        <StyledDiv>
+                            <StyledToggleTabsGroup
+                                boxSx={{
+                                    borderRadius: '12px 12px 0px 0px',
+                                    width: '100%',
+                                }}
+                                value={activeTabIdx}
+                                onChange={(e: SyntheticEvent, idx: number) => {
+                                    // get the specific route
+                                    const r = tabs[idx];
 
-                <StyledDocument>
-                    <Outlet />
-                </StyledDocument>
-            </EngineShell>
-        </EngineContext.Provider>
+                                    // navigate to it
+                                    navigate(`${r.path}`);
+                                }}
+                            >
+                                {tabs.map((t) => {
+                                    return (
+                                        <StyledToggleTabsGroupItem
+                                            key={t.path}
+                                            label={t.name}
+                                        ></StyledToggleTabsGroupItem>
+                                    );
+                                })}
+                            </StyledToggleTabsGroup>
+                        </StyledDiv>
+                    )}
+
+                    <StyledDocument>
+                        <Outlet />
+                    </StyledDocument>
+                </EngineShell>
+            </EngineContext.Provider>
+        </>
     );
 };

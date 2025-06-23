@@ -48,6 +48,7 @@ import { CONNECTION_OPTIONS } from './import.constants';
 import { EstablishConnectionPage, ImportConnectionPage } from '.';
 import { Help } from '@/components/help';
 import Tooltip from '@mui/material/Tooltip';
+import { ENGINE_TYPES } from '@/types';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -241,10 +242,18 @@ interface ImportPageContentProps {
     /**
      * What engine are you trying to import
      */
-    type: string;
+    name: string;
+
+    /**
+     * What engine are you trying to import
+     */
+    type: ENGINE_TYPES;
 }
-export const ImportPageContent = (props: ImportPageContentProps) => {
-    const { type } = props;
+
+export const ImportPageContent: React.FC<ImportPageContentProps> = ({
+    name,
+    type,
+}) => {
     const { steps, activeStep, setSteps, setIsLoading, isLoading } =
         useStepper();
 
@@ -656,7 +665,7 @@ export const ImportPageContent = (props: ImportPageContentProps) => {
                                 }
                             }}
                         >
-                            Import
+                            {name} Catalog
                         </StyledSpan>
                         {steps.map((step, i) => {
                             return (
