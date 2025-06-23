@@ -656,7 +656,7 @@ export const ImportPage = () => {
                                     }
                                 }}
                             >
-                                Import
+                                Home
                             </StyledSpan>
                             {steps.map((step, i) => {
                                 return (
