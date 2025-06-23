@@ -3892,7 +3892,7 @@ function formDirective($compile, $timeout, semossCoreService) {
 
                 groupData = getGroupingData(root.children[childIdx].attributes);
                 htmlArr.push({
-                    html: root.children[childIdx].outerHTML,
+                    html: convertOuterHTML(root.children[childIdx].outerHTML),
                     class: tempClass,
                     style: tempStyle,
                     data: selectedData,
@@ -3966,7 +3966,7 @@ function formDirective($compile, $timeout, semossCoreService) {
                 }
 
                 // now this outerHTML will have the styles appended back into the html.
-                tempSrc += root.children[0].outerHTML + '\n';
+                tempSrc += convertOuterHTML(root.children[0].outerHTML) + '\n';
                 root.innerHTML = ''; // reset the HTML
             }
 
@@ -5916,6 +5916,15 @@ overflow: inherit;
             } else {
                 scope.form.themes.selected = 'Blank';
             }
+        }
+
+        /**
+         * Convert OuterHTML to include the < >
+         * @param {string} html 
+         * @returns 
+         */
+        function convertOuterHTML(html) {
+            return html.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
         }
 
         /** Initialize */
