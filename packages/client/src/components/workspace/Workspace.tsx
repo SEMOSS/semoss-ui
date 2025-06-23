@@ -2,12 +2,7 @@ import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { InfoOutlined, Menu, RestartAlt } from '@mui/icons-material';
-import {
-    Actions,
-    DockLocation,
-    Layout,
-    TabNode,
-} from 'flexlayout-react';
+import { Actions, DockLocation, Layout, TabNode } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import './flexlayout.css';
 import {
@@ -173,7 +168,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
     useEffect(() => {
         openTab();
     }, [designer.selected]);
-    
+
     function getIdByName(iMap, targetName: string): string | null {
         for (const [key, value] of iMap.entries()) {
             if (value?.attributes?.name === targetName) {
@@ -387,7 +382,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 
         return true;
     };
-    
+
     const handleOnSelect = (blockData) => {
         const id = blockData.id;
         if (blockData.widget !== 'page') {
@@ -400,7 +395,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
             createPanel(id);
         }
     };
-    
+
     return (
         <WorkspaceContext.Provider
             value={{
@@ -431,9 +426,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
                             <StyledHeaderLogo
                                 to={`/app/${workspace.metadata.project_id}`}
                             >
-                                <StyledAppTypography
-                                    variant={'subtitle1'}
-                                >
+                                <StyledAppTypography variant={'subtitle1'}>
                                     {workspace.metadata.project_name}
                                 </StyledAppTypography>
                             </StyledHeaderLogo>
@@ -469,7 +462,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
                                 <>
                                     {}
                                     <Layout
-                                    key={layoutRefeshKey}
+                                        key={layoutRefeshKey}
                                         ref={layoutRef}
                                         model={model}
                                         factory={(node) => {
@@ -479,9 +472,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
                                             );
                                         }}
                                         icons={{
-                                            close: (
-                                                <ClosePage/>
-                                            ),
+                                            close: <ClosePage />,
                                         }}
                                         onRenderTabSet={handleRenderTabSet}
                                         onModelChange={() => {

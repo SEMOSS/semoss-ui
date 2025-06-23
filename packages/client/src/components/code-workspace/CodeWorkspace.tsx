@@ -119,12 +119,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
     },
 };
 
-function hideMiddlePanel() {
-   
-
-}
-
-
 interface CodeWorkspaceProps {
     /** Workspace to render */
     workspace: WorkspaceStore;
@@ -141,7 +135,7 @@ export const CodeWorkspace = observer((props: CodeWorkspaceProps) => {
     ) => {
         const component = node.getComponent();
         const config = node.getConfig();
-    
+
         if (component === 'file-explorer') {
             return <FileExplorerPanel title={'Files'} layout={layout} />;
         } else if (component === 'file-editor') {
@@ -149,11 +143,11 @@ export const CodeWorkspace = observer((props: CodeWorkspaceProps) => {
         } else if (component === 'renderer') {
             return <RendererPanel />;
         } else if (component === 'settings') {
-            return <SettingsPanel/>;
+            return <SettingsPanel />;
         } else if (component === 'terminal') {
             return <TerminalPanel />;
         }
-    
+
         return <>{component}</>;
     };
     return (

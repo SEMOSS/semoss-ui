@@ -246,9 +246,8 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
             return <DesignerPanel id={config.id} />;
         } else if (component === 'variables') {
             return <VariablesPanel title={'Variables'} />;
-        }
-          else if (component === 'settingspanel') {
-            return <SettingsPanel  />;
+        } else if (component === 'settingspanel') {
+            return <SettingsPanel />;
         } else if (component === 'settings') {
             return <SettingsPanel />;
         } else if (component === 'layers') {
@@ -256,7 +255,13 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         } else if (component === 'selected') {
             return <SelectedBlockPanel title="Block Settings" />;
         } else if (component === 'blocks') {
-            return <BlocksMenuPanel title={'Add Blocks'} items={DEFAULT_MENU} name={component}/>;
+            return (
+                <BlocksMenuPanel
+                    title={'Add Blocks'}
+                    items={DEFAULT_MENU}
+                    name={component}
+                />
+            );
         } else if (component === 'file-explorer') {
             return <FileExplorerPanel title={'Files'} layout={layout} />;
         } else if (component === 'file-editor') {
