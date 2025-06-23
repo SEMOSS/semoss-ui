@@ -14,6 +14,8 @@ import { useBlockSettings, useBlocksPixel, useFrameHeaders} from "../../../../..
 import { BlockDef } from "../../../../../store";
 import { VisualMapConstant } from "../../VisualMapConstant";
 import { VisualMap } from "../../VisualMap";
+import { computed } from "mobx";
+import { getValueByPath } from '@/utility';
 
 const AGGREGATE_OPTIONS = {
     NUMBER: [
@@ -121,6 +123,22 @@ export const DataTabStyling = observer(
             });
         }, [frameHeaders]);
 
+        // get the value of the input (wrapped in usememo because of path prop)
+        const computedValue = useMemo(() => {
+            return computed(() => {
+                if (!data) {
+                    return "";
+                }
+                const v = getValueByPath(data, path);
+                if (typeof v === "undefined") {
+                    return "";
+                } else if (typeof v === "string") {
+                    return v;
+                }
+                return JSON.stringify(v, null, 2);
+            });
+        }, [data, path]).get();
+
         const matchedVisualMap = getMatchingVisualMapRow(data);
 
         function getMatchingVisualMapRow(data: any) {
@@ -181,7 +199,6 @@ export const DataTabStyling = observer(
                     };
                 }
             });
-
             if (Object.keys(updatedColumns).length > 0) {
                 setSelectedColumns({ ...updatedColumns });
             }
@@ -191,28 +208,36 @@ export const DataTabStyling = observer(
             if (!columnsSelector || columnsSelector.length === 0) {
                 return;
             }
+            let parsedValue = JSON.parse(computedValue);
             const formattedArray = chart.map((item, index) => {
                 let value;
                 if (data.variation === "echart-bar-graph") {
-                    value = data.option[chart[index].label]?.pixelname;
+                    value = parsedValue[chart[index].label]?.pixelname;
                 }
                 else if (data.variation === "echart-gantt-chart") {
-                    value = data.option["customSettings"]?.["columnDetails"]?.[chart[index].label]?.name;
+                    value = parsedValue["customSettings"]?.["columnDetails"]?.[chart[index].label]?.name;
                 }
                 else {
-                    value = data.option["_state"]?.["fields"]?.[chart[index].label];
+                    value = parsedValue["_state"]?.["fields"]?.[chart[index].label];
                 }
-                const matchedColumns = (Array.isArray(value) ? value : [value]).map((item) => {
-                    return columnsSelector.find(
-                        (column) => column.name === item,
-                    );
+                value = value ? (Array.isArray(value) ? value : [value]) : [];
+                let selectorsList = [];
+                let dataTypeList = [];
+                let valueList = [];
+                value.forEach(col => {
+                    let selector = columnsSelector.find(column => column.name === col);
+                    if(selector){
+                        selectorsList.push(selector.selector);
+                        dataTypeList.push(selector.dataType);
+                        valueList.push(selector.name);
+                    }
                 });
                 return {
                     name: item.name,
                     label: item.label,
-                    values: value ? (Array.isArray(value) ? value : [value]) : [],
-                    selectors: matchedColumns?.map((column) => column?.selector),
-                    dataType: matchedColumns?.map((column) => column?.dataType),
+                    values: value,
+                    selectors: selectorsList,
+                    dataType: dataTypeList,
                 };
             });
             formmattedColumns(formattedArray, data.variation);
@@ -224,21 +249,25 @@ export const DataTabStyling = observer(
             }
             const formattedArray = chart.map((item, index) => {
                 const key = `data-tab-drop-area-${index}`;
-                const matchedColumns = selectedColumns[key]?.values?.map((item, index) => {
-                    let found = columnsSelector.find(
-                        (column) => column.name === item,
-                    );
-                    if(found.dataType!==selectedColumns[key]?.dataType[index]){
-                        found.dataType = selectedColumns[key]?.dataType[index];
+                let value = selectedColumns[key]?.values ?? [];
+                let selectorsList = [];
+                let dataTypeList = [];
+                let valueList = [];
+                
+                value.forEach(col => {
+                    let selector = columnsSelector.find(column => column.name === col);
+                    if(selector){
+                        selectorsList.push(selector.selector);
+                        dataTypeList.push(selector.dataType);
+                        valueList.push(selector.name);
                     }
-                    return found;
                 });
                 return {
                     name: item.name,
                     label: item.label,
-                    values: selectedColumns[key]?.values || [],
-                    selectors: matchedColumns?.map((column) => column?.selector),
-                    dataType: matchedColumns?.map((column) => column.dataType),
+                    values: selectedColumns[key] || [],
+                    selectors: selectorsList || [],
+                    dataType: dataTypeList || [],
                 };
             });
             formmattedColumns(formattedArray, data.variation);
@@ -291,7 +320,9 @@ export const DataTabStyling = observer(
                         getOptionLabel={(option) => option}
                         onChange={(_, value) => {
                             setData("frame.name", value);
-                            syncHeader(value);
+                            setSelectedColumns({});
+                            syncHeader(value, true); //resets selected columns, stored columns, and block's field data in frameoperations
+                            setData("columns", []); // Reset columns when frame changes
                         }}
                         freeSolo={false}
                         renderInput={(params) => (
