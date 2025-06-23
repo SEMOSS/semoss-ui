@@ -2,10 +2,7 @@ import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { InfoOutlined, Menu, RestartAlt } from '@mui/icons-material';
-import { Actions, DockLocation,
-    Layout,
-    TabNode,
-} from 'flexlayout-react';
+import { Actions, DockLocation, Layout, TabNode } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import './flexlayout.css';
 import {

@@ -1005,7 +1005,9 @@ export const LayersPanel = observer(
                                 </StyledTreeItemIcon>
                             )}
                         </StyledHomePageChildDiv>
-                        <Typography variant="subtitle1">/{block.data.route as string}</Typography>
+                        <Typography variant="subtitle1">
+                            /{block.data.route as string}
+                        </Typography>
                     </StyledHomePageDiv>
                     {id !== 'page-1' && pageHovered === block.id && (
                         <StyledTreeItemIcon>
