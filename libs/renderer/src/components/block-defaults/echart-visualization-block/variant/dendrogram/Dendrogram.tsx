@@ -265,7 +265,6 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
             },
     };
     const showDendrogramChartField = data.facet.facetSelected.length ? true : false;
-    console.log(dataOption, 'dendrogram option');
     return (
         <StyledMainContainer id={id}>
             <EChartsReact

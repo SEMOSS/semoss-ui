@@ -170,6 +170,23 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
     const { workspace } = props;
     const notification = useNotification();
     const [state, setState] = useState<StateStore>();
+
+    //to throw a warning when the user tried to reload the page
+    // this is to prevent the user from losing their work
+    useEffect(() => {
+        if (process.env.NODE_ENV !== 'development') {
+            const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+                e.preventDefault();
+                e.returnValue = '';
+            };
+            window.addEventListener('beforeunload', handleBeforeUnload);
+
+            return () => {
+                window.removeEventListener('beforeunload', handleBeforeUnload);
+            };
+        }
+    }, []);
+
     useEffect(() => {
         // start the loading screen
         workspace.setLoading(true);

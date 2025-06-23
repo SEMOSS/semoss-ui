@@ -12,6 +12,7 @@ import {
     DeleteDiabetesRecordTemplate,
     UpdateDiabetesRecordTemplate,
     ReadDiabetesRecordTemplate,
+    MultiPageTemplate,
 } from './templates';
 
 const DEFAULT_TEMPLATE = [
@@ -19,6 +20,7 @@ const DEFAULT_TEMPLATE = [
     AskLLMTemplate,
     AskCSVTemplate,
     BlocksGuideTemplate,
+    MultiPageTemplate,
     CreateDiabetesRecordTemplate,
     ReadDiabetesRecordTemplate,
     UpdateDiabetesRecordTemplate,
@@ -89,6 +91,7 @@ export const AppTemplates = (props: AppTemplatesProps) => {
             project_global: '',
             project_catalog_name: '',
             project_created_by: 'SYSTEM',
+            project_date_last_edited: '',
             project_created_by_type: '',
             project_date_created: '',
             project_has_portal: false,

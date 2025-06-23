@@ -17,12 +17,16 @@ import {
     Collapse,
     useNotification,
     ToggleTabsGroup,
+    AlertTitle,
 } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
-import { BlockAvatar, SelectedMenuSection } from '@/components/designer';
+import { SelectedMenuSection } from '@/components/designer';
 import { AddVariableModal } from '@/components/notebook';
 import { Panel } from '@/components/workspace';
+import MultiBlockIcon from '../../../assets/img/Multiple_Block.svg';
+import GroupIcon from '../../../assets/img/Group.svg';
+import VariationIcon from '../../../assets/img/VariationLogo.svg';
 
 const StyledTitle = styled(Typography)(() => ({
     textTransform: 'capitalize',
@@ -75,6 +79,35 @@ const StyledMessage = styled('div')(({ theme }) => ({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: '6px 0px',
+}));
+const StyledMultiBlockMessage = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    padding: '8px 0px',
+    flex: '1 0 0',
+}));
+const StyledAlertTitle = styled(AlertTitle)(({ theme }) => ({
+    alignSelf: 'stretch',
+    color: '#666',
+    fontFamily: 'Inter',
+    fontSize: '16px',
+    fontStyle: 'normal',
+    fontWeight: 500,
+    lineHeight: '150%',
+    letterSpacing: '0.15px',
+}));
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    alignSelf: 'stretch',
+    color: '#666',
+    fontFamily: 'Inter',
+    fontSize: '14px',
+    fontStyle: 'normal',
+    fontWeight: 400,
+    lineHeight: '150%',
+    letterSpacing: '0.17px',
 }));
 //Tab group with custom style with width and margin
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
@@ -115,6 +148,32 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
     },
 }));
 const StyledCustomTabPanel = styled('div')(({ theme }) => ({}));
+
+const StyledParentDiv = styled('div')(({ theme }) => ({
+    padding: '16px 8px',
+}));
+
+const StyledDiv = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    padding: '6px 16px',
+    gap: '12px',
+    alignSelf: 'stretch',
+    borderRadius: '4px',
+    background: '#F5F5F5',
+}));
+
+const StyledImgDiv = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'flex-start',
+    width: '22px',
+    height: '22px',
+}));
+
+const StyledVariationIcon = styled('img')(({ theme }) => ({
+    width: theme.spacing(4),
+    height: theme.spacing(4),
+}));
 export interface SelectedBlocksProps {
     /** Title to render in the menu */
     title: string;
@@ -298,16 +357,50 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
             return '';
         }
     };
+    if (designer.selectedBlocks.length > 1) {
+        return (
+            <Panel>
+                <StyledParentDiv>
+                    <StyledDiv>
+                        <StyledImgDiv>
+                            <img
+                                src={MultiBlockIcon}
+                                alt="Multiple Blocks Selected"
+                            ></img>
+                        </StyledImgDiv>
+                        <StyledMultiBlockMessage>
+                            <StyledAlertTitle>
+                                Multiple Blocks Selected
+                            </StyledAlertTitle>
+                            <StyledTypography variant="body2">
+                                Select a single block to view its setting
+                            </StyledTypography>
+                        </StyledMultiBlockMessage>
+                    </StyledDiv>
+                </StyledParentDiv>
+            </Panel>
+        );
+    }
 
     // ignore if there is no menu
     if (!block) {
         return (
             <Panel>
-                <StyledMessage>
-                    <Typography variant="caption">
-                        Select a block to update
-                    </Typography>
-                </StyledMessage>
+                <StyledParentDiv>
+                    <StyledDiv>
+                        <StyledImgDiv>
+                            <img src={GroupIcon} alt="No Blocks Selected"></img>
+                        </StyledImgDiv>
+                        <StyledMessage>
+                            <StyledAlertTitle>
+                                No Block Selected
+                            </StyledAlertTitle>
+                            <StyledTypography variant="body2">
+                                Select a block to view its setting
+                            </StyledTypography>
+                        </StyledMessage>
+                    </StyledDiv>
+                </StyledParentDiv>
             </Panel>
         );
     }
@@ -327,7 +420,7 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
                         direction="row"
                         alignItems="center"
                     >
-                        <BlockAvatar icon={icon} />
+                        <StyledVariationIcon src={VariationIcon} />
                         <Stack
                             direction={'row'}
                             spacing={0.5}

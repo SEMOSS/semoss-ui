@@ -147,6 +147,7 @@ export class WorkspaceStore {
             project_global: '',
             project_catalog_name: '',
             project_created_by: '',
+            project_date_last_edited: '',
             project_created_by_type: '',
             project_date_created: '',
         },
@@ -503,4 +504,11 @@ export class WorkspaceStore {
     get overlay() {
         return this._store.overlay;
     }
+
+    /**
+     * Set the agentModelEngine
+     */
+    setAgentModelEngine = (id: string) => {
+        this._store.agentModelEngine = id;
+    };
 }
