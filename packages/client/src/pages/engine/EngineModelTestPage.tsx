@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
+
 import {
     Stack,
     Typography,
@@ -10,9 +11,11 @@ import {
     styled,
     Alert,
 } from '@semoss/ui';
+import { v4 as uuidv4 } from 'uuid';
 
 import { useEngine, useRootStore } from '@/hooks';
 import { EngineModelTestSidebar } from '@/components/settings';
+import { runPixelTwo } from '../../runPixelTwo';
 
 const StyledLayout = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -96,6 +99,8 @@ export const EngineModelTestPage = () => {
     });
     const [temperature, setTemperature] = useState<number>(0.1);
     const [maxTokens, setMaxTokens] = useState<number>(2000);
+    const [insightId, setInsightId] = useState<string>("");
+    const [isInsightLoading, setIsInsightLoading] = useState<boolean>(true);
 
     const { control, handleSubmit, reset, watch } = useForm({
         defaultValues: {
@@ -106,12 +111,26 @@ export const EngineModelTestPage = () => {
     const { monolithStore } = useRootStore();
     const promptValue = watch('prompt');
 
-    // Initialize with current model
+    // Helper to create a new insight from backend
+    const createNewInsight = async () => {
+        setIsInsightLoading(true);
+        try {
+            const { insightId: newId } = await runPixelTwo('1+1;', 'new');
+            setInsightId(newId);
+        } catch (e) {
+            setError(e.message || 'Failed to create new chat session.');
+        } finally {
+            setIsInsightLoading(false);
+        }
+    };
+
     useEffect(() => {
         setSelectedModel({
             database_id: id,
             database_name: '',
         });
+        setMessages([]);
+        createNewInsight(); // Get a new insightId from backend
     }, [id]);
 
     const validateTokenLimit = (prompt: string): boolean => {
@@ -129,26 +148,19 @@ export const EngineModelTestPage = () => {
     const continueGeneration = async (lastMessage: Message) => {
         setIsLoading(true);
         setError('');
-
         try {
-            // Use the last response as context and ask to continue
             const continuePrompt = "Please continue your previous response.";
             const pixel = `LLM(engine="${selectedModel.database_id}", command=["<encode>${continuePrompt}</encode>"], paramValues=[{"temperature":${temperature}, "max_tokens":${maxTokens}}])`;
-
-            const response = await monolithStore.runQuery(pixel);
+            const response = await monolithStore.runQuery(pixel, insightId);
             const { output, operationType } = response.pixelReturn[0];
-
             if (operationType.indexOf('ERROR') > -1) {
                 throw new Error(output.response || 'An error occurred while continuing the response');
             }
-
-            // Update the last message with continued content
             setMessages(prev => prev.map(msg =>
                 msg.id === lastMessage.id
                     ? { ...msg, content: msg.content + '\n\n' + (output.response || '') }
                     : msg
             ));
-
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unexpected error occurred while continuing');
         } finally {
@@ -158,15 +170,11 @@ export const EngineModelTestPage = () => {
 
     const sendMessage = async (data: { prompt: string }) => {
         if (!data.prompt.trim()) return;
-        
         if (!validateTokenLimit(data.prompt)) {
             return;
         }
-
         setError('');
         setIsLoading(true);
-
-        // Add user message
         const userMessage: Message = {
             id: `user-${Date.now()}`,
             content: data.prompt,
@@ -174,16 +182,11 @@ export const EngineModelTestPage = () => {
             timestamp: new Date(),
         };
         setMessages(prev => [...prev, userMessage]);
-
         try {
-            // Call LLM using the LLM reactor
             const pixel = `LLM(engine="${selectedModel.database_id}", command=["<encode>${data.prompt}</encode>"], paramValues=[{"temperature":${temperature}, "max_tokens":${maxTokens}}])`;
-
-            const response = await monolithStore.runQuery(pixel);
+            const response = await monolithStore.runQuery(pixel, insightId);
             const { output, operationType } = response.pixelReturn[0];
-
             if (operationType.indexOf('ERROR') > -1) {
-                // Handle specific error types
                 const errorMessage = output.response || output || 'An error occurred while processing your request';
                 if (errorMessage.toLowerCase().includes('token limit') || errorMessage.toLowerCase().includes('context length')) {
                     throw new Error('Prompt is larger than the token limit, please shorten/break it into multiple prompts');
@@ -193,8 +196,6 @@ export const EngineModelTestPage = () => {
                     throw new Error(errorMessage);
                 }
             }
-
-            // Add assistant message
             const assistantMessage: Message = {
                 id: `assistant-${Date.now()}`,
                 content: output.response || 'No response received',
@@ -203,7 +204,6 @@ export const EngineModelTestPage = () => {
                 tokens: output.numberOfTokensInResponse || 0,
             };
             setMessages(prev => [...prev, assistantMessage]);
-
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unexpected error occurred');
         } finally {
@@ -273,8 +273,11 @@ export const EngineModelTestPage = () => {
                                 <Button
                                     variant="outlined"
                                     size="small"
-                                    onClick={() => setMessages([])}
-                                    disabled={isLoading}
+                                    onClick={() => {
+                                        setMessages([]);
+                                        createNewInsight(); // Get a new insightId from backend
+                                    }}
+                                    disabled={isLoading || isInsightLoading}
                                 >
                                     Clear Chat
                                 </Button>
@@ -284,16 +287,18 @@ export const EngineModelTestPage = () => {
                             Test and interact with this LLM model. Ask questions, experiment with different prompts,
                             and adjust parameters to see how the model responds. Chat history is not retained across sessions.
                         </Typography>
-
                         {error && (
                             <Alert severity="error" onClose={() => setError('')}>
                                 {error}
                             </Alert>
                         )}
-
                         <StyledChatContainer>
                             <StyledMessagesContainer>
-                                {messages.length === 0 ? (
+                                {isInsightLoading ? (
+                                    <Typography variant="body2" color="secondary" sx={{ textAlign: 'center', mt: 4 }}>
+                                        Initializing chat session...
+                                    </Typography>
+                                ) : messages.length === 0 ? (
                                     <Typography variant="body2" color="secondary" sx={{ textAlign: 'center', mt: 4 }}>
                                         Start a conversation by typing a message below
                                     </Typography>
@@ -308,18 +313,6 @@ export const EngineModelTestPage = () => {
                                                     </Typography>
                                                 )}
                                             </StyledMessageBubble>
-                                            {!message.isUser && index === messages.length - 1 && !isLoading && (
-                                                <Stack direction="row" spacing={1} sx={{ mt: 1, mb: 2 }}>
-                                                    <Button
-                                                        size="small"
-                                                        variant="outlined"
-                                                        onClick={() => continueGeneration(message)}
-                                                        disabled={isLoading}
-                                                    >
-                                                        Continue
-                                                    </Button>
-                                                </Stack>
-                                            )}
                                         </div>
                                     ))
                                 )}
@@ -332,7 +325,6 @@ export const EngineModelTestPage = () => {
                                     </StyledMessageBubble>
                                 )}
                             </StyledMessagesContainer>
-
                             <form onSubmit={handleSubmit(sendMessage)}>
                                 <StyledInputContainer>
                                     <Controller
@@ -346,14 +338,14 @@ export const EngineModelTestPage = () => {
                                                 placeholder="Enter your prompt here..."
                                                 variant="outlined"
                                                 fullWidth
-                                                disabled={isLoading}
+                                                disabled={isLoading || isInsightLoading}
                                             />
                                         )}
                                     />
                                     <Button
                                         type="submit"
                                         variant="contained"
-                                        disabled={isLoading || !promptValue?.trim()}
+                                        disabled={isLoading || !promptValue?.trim() || isInsightLoading}
                                         sx={{ minWidth: '100px' }}
                                     >
                                         {isLoading ? <CircularProgress size={20} /> : 'Send'}
