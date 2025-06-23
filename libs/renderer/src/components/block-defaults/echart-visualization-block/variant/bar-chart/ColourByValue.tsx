@@ -10,33 +10,7 @@ import { BlockDef } from "../../../../../store";
 import { useBlockSettings } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
-
-const columnComparisionList = [
-    {
-        name: "is Equal To",
-        value: "==",
-    },
-    {
-        name: "is Not Equal To",
-        value: "!=",
-    },
-    {
-        name: "is Less than",
-        value: "<",
-    },
-    {
-        name: "is greater than",
-        value: ">",
-    },
-    {
-        name: "is Lesser than or Equal to",
-        value: "<=",
-    },
-    {
-        name: "is greater than or Equal to",
-        value: ">=",
-    },
-];
+import { columnComparisionList } from "../shared/chart-utility";
 
 // styled main section with custom styling
 const StyledMainSection = styled("div")(() => ({
@@ -102,7 +76,12 @@ const ColourByValue = observer(
                 : [];
         } else if (chartType === "pie") {
             columnData = data.columns;
+        } else if (chartType === "map") {
+            columnData = data.columns;
         }
+        // const columnToColour = columnData.find(
+        //     (item) => item?.label?.toLowerCase() === "yaxis",
+        // );
         // get the value of the input (wrapped in usememo because of path prop)
         const computedValue = useMemo(() => {
             return computed(() => {
@@ -191,6 +170,11 @@ const ColourByValue = observer(
                                 : item;
                         }),
                     );
+                } else if (chartType === "map") {
+                    name = event.target.value.name;
+                    valuesColor = option["series"][0]?.["data"].map((item) => {
+                        return parseFloat(item[name]);
+                    });
                 } else if (chartType === "bar") {
                     name = Array.isArray(event.target.value.name)
                         ? event.target.value.name[0]

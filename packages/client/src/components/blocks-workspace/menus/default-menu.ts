@@ -2324,23 +2324,36 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     width: 400,
                 },
                 option: {
+                    geo: {
+                        map: 'world',
+                        roam: true,
+                        zoom: 1,
+                        center: [0, 0],
+                    },
                     series: [
                         {
-                            data: [],
-                            name: '',
-                            label: {
-                                show: false,
-                                rotate: 0,
-                                name: '',
-                                position: 'top',
-                                fontFamily: 'sans-serif',
-                                fontSize: 12,
-                                color: '#000000',
-                            },
-                            symbolSize: 15,
-                            symbol: 'circle',
+                            type: 'scatter',
+                            // name: 'Scatters Plot',
+                            coordinateSystem: 'geo',
                         },
                     ],
+                    // series: [
+                    //     {
+                    //         data: [],
+                    //         name: '',
+                    //         label: {
+                    //             show: false,
+                    //             rotate: 0,
+                    //             name: '',
+                    //             position: 'top',
+                    //             fontFamily: 'sans-serif',
+                    //             fontSize: 12,
+                    //             color: '#000000',
+                    //         },
+                    //         symbolSize: 15,
+                    //         symbol: 'circle',
+                    //     },
+                    // ],
                     symbolSize: 15,
                     tooltip: {
                         show: true,

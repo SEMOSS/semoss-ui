@@ -1413,6 +1413,36 @@ const LineChartTools = (({id})=>{
             <>
                 <ColorpalatteTool id={id} />
                 <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setMapSelection((prevList) =>
+                            prevList === "colourbyvalue" ? "" : "colourbyvalue",
+                        )
+                    }
+                    selected={mapSelection === "colourbyvalue"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                mapSelection === "colourbyvalue"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Colour By Value" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {mapSelection === "colourbyvalue" && (
+                    <ColourByValue
+                        id={id}
+                        chartType={"map"}
+                        path="option"
+                    />
+                )}
+            </StyledListItem>
+                <StyledListItem disablePadding>
                     <ListItemButton
                         onClick={(e) =>
                             setMapSelection((prevList) =>

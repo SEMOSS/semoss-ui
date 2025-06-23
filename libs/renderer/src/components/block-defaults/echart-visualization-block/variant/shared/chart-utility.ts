@@ -23,6 +23,33 @@ const COLOUR_PALATTE_DATA = [
 //     "#deeaee",
 // ];
 
+const columnComparisionList = [
+    {
+        name: "is Equal To",
+        value: "==",
+    },
+    {
+        name: "is Not Equal To",
+        value: "!=",
+    },
+    {
+        name: "is Less than",
+        value: "<",
+    },
+    {
+        name: "is greater than",
+        value: ">",
+    },
+    {
+        name: "is Lesser than or Equal to",
+        value: "<=",
+    },
+    {
+        name: "is greater than or Equal to",
+        value: ">=",
+    },
+];
+
 function updateColorData(seriesData, appliedRules = null) {
     const isPie = seriesData.seriesType === "pie";
     if (
@@ -40,6 +67,7 @@ function updateColorData(seriesData, appliedRules = null) {
     const isStack =
         seriesData.seriesType === "bar" &&
         seriesData.data?.hasOwnProperty("category");
+    const isMapScatt = seriesData.seriesType === "scatter";
     let applyColor =
         seriesData.color ||
         (seriesData.seriesType === "bar"
@@ -60,42 +88,49 @@ function updateColorData(seriesData, appliedRules = null) {
             filterValue,
             valuesToColour,
         } = appliedRule;
-        const isApply = columnName == seriesData.seriesName || isPie || isStack;
+        const isApply =
+            columnName == seriesData.seriesName ||
+            isPie ||
+            isStack ||
+            isMapScatt;
+        const compareValue = isMapScatt
+            ? seriesData.data[columnName]
+            : seriesData.value;
         if (isApply) {
             if (
                 columnComparision === "==" &&
-                valuesToColour.includes(parseFloat(seriesData.value))
+                valuesToColour.includes(parseFloat(compareValue))
             ) {
                 applyColor = columnColour;
             }
             if (
                 columnComparision === "!=" &&
-                !valuesToColour.includes(parseFloat(seriesData.value))
+                !valuesToColour.includes(parseFloat(compareValue))
             ) {
                 applyColor = columnColour;
             }
             if (
                 columnComparision == "<=" &&
-                seriesData.value <= parseFloat(filterValue)
+                compareValue <= parseFloat(filterValue)
             ) {
                 applyColor = columnColour;
             }
 
             if (
                 columnComparision === "<" &&
-                seriesData.value < parseFloat(filterValue)
+                compareValue < parseFloat(filterValue)
             ) {
                 applyColor = columnColour;
             }
             if (
                 columnComparision === ">" &&
-                seriesData.value > parseFloat(filterValue)
+                compareValue > parseFloat(filterValue)
             ) {
                 applyColor = columnColour;
             }
             if (
                 columnComparision === ">=" &&
-                seriesData.value >= parseFloat(filterValue)
+                compareValue >= parseFloat(filterValue)
             ) {
                 applyColor = columnColour;
             }
@@ -121,4 +156,4 @@ export function updateSeriesColor(
     return option;
 }
 
-export { updateColorData };
+export { updateColorData, columnComparisionList };

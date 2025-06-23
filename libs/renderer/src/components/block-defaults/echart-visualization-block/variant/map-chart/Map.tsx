@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { styled } from "@mui/material";
 import EChartsReact from "echarts-for-react";
@@ -7,12 +7,15 @@ import { BarChart } from "echarts/charts";
 import { CanvasRenderer } from "echarts/renderers";
 import { TooltipComponent } from "echarts/components";
 import { useBlock, useBlockSettings, useFrame } from "../../../../../hooks";
+import { computed } from "mobx";
 import { BlockComponent } from "../../../../../store";
 import fetchWorldMap from "./map-utility";
 import { getSelector } from "./MapSelector";
 import { processData } from "./MapChartProcessData";
 import { formatdatapoints } from "./MapChartTooltipData";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
+import { getValueByPath } from "../../../../../utility";
+import { updateColorData } from "../shared/chart-utility";
 
 const StyledChartContainer = styled("div")(() => ({
     width: "fit-content",
@@ -37,7 +40,30 @@ export interface EChartColumns {
 export interface EchartVisualizationBlockDef {
     widget: "e-chart";
     data: {
-        option: {};
+        option: {
+            customSettings: any;
+            series: {
+                type: string;
+                name: string;
+                label: any;
+                // {
+                //     show: boolean;
+                //     rotate: number;
+                //     name: string;
+                //     position: string;
+                //     fontFamily: string;
+                //     fontSize: number;
+                //     color: string;
+                //     symbolSize: number;
+                //     symbol: string;
+                // };
+                symbolSize: number;
+                symbol: string;
+                data: any[];
+                coordinateSystem: string;
+            }[];
+            tooltip:{}
+        };
         frame: {
             name: string;
         };
@@ -55,21 +81,18 @@ export interface EchartVisualizationBlockDef {
 }
 
 export const Map: BlockComponent = observer(({ id }) => {
-    const { data } = useBlock<EchartVisualizationBlockDef>(id);
-    const mapRef: any = useRef({});
+    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
     echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
         mouseY: number;
         value: unknown;
     } | null>(null);
+    const worldJson: any = fetchWorldMap("");
+    const [mapIsLoaded, setMapIsLoaded] = useState(false);
     const frame = useFrame(data?.frame?.name, {
         selector: getSelector(data, data?.aggregate),
     });
-    const updatedOption =
-        mapRef.current && typeof mapRef.current.getOption === "function"
-            ? mapRef.current.getOption()
-            : {};
 
     function debounce(fn, delay) {
         let timer;
@@ -86,10 +109,7 @@ export const Map: BlockComponent = observer(({ id }) => {
     }, 1000);
 
     const echartsLoaded = debounce((chart) => {
-        mapRef.current = chart;
         const option = data.option;
-        data.option = option;
-
         chart.setOption(option);
         chart.resize();
         chart.on("contextmenu", (params) => {
@@ -97,15 +117,15 @@ export const Map: BlockComponent = observer(({ id }) => {
         });
         chart.on("brushselected", (params) => {
             const selectedData = params.batch[0]?.selected[0]?.dataIndex;
-            const currentOption = chart.getOption();
-            const labelData = currentOption.series[0]?.data;
+            const option = chart.getOption();
+            const labelData = option.series[0]?.data;
             const filteredLabels = selectedData?.map(
                 (index) => labelData[index]?.label?.formatter,
             );
             if (filteredLabels?.length > 0) {
                 handleSelection(
                     filteredLabels,
-                    currentOption["_state"]["fields"]["label"],
+                    option["_state"]["fields"]["label"],
                     chart,
                 );
             }
@@ -126,46 +146,73 @@ export const Map: BlockComponent = observer(({ id }) => {
         });
     };
 
-    const worldJson: any = fetchWorldMap("");
-
     useEffect(() => {
-        let option = data.option;
         echarts.registerMap("world", worldJson);
-        option = {
-            geo: {
-                map: "world",
-                roam: true,
-                zoom: 1,
-                center: [0, 0],
-            },
-            series: [
-                {
-                    type: "scatter",
-                    // name: 'Scatters Plot',
-                    coordinateSystem: "geo",
-                },
-            ],
-        };
-
-        data.option = option;
-        // mapRef.current?.setOption(option);
+        setMapIsLoaded(true);
     }, []);
 
-    const processedFrameData = processData(frame.data, data);
-    if (processedFrameData && processedFrameData.length > 0) {
-        data.option["series"][0]["data"] = processedFrameData;
-    }
-
-    if (!data.option["tooltip"].hasOwnProperty("formatter")) {
-        data.option["tooltip"] = {
-            ...data.option["tooltip"],
-            formatter: formatdatapoints(frame.data, data),
-        };
-    }
+    useEffect(() => {
+        if (mapIsLoaded && frame.data?.values?.length > 0) {
+            const processedFrameData = processData(frame.data, data) ?? [];
+            const headers = frame.data.headers;
+            const n = data.option["_state"]["fields"].hasOwnProperty("size")
+                ? 4
+                : 3;
+            const series = [
+                {
+                    name: headers[0],
+                    data: processedFrameData.map((item: any) => {
+                        return {
+                            [headers[0]]: item.label.formatter,
+                            [headers[1]]: item.value[0],
+                            [headers[2]]: item.value[1],
+                            ...item,
+                        };
+                    }),
+                    coordinateSystem: "geo",
+                    type: "scatter",
+                    label: {
+                        show: false,
+                        rotate: 0,
+                        name: "",
+                        position: "top",
+                        fontFamily: "sans-serif",
+                        fontSize: 12,
+                        color: "#000000",
+                    },
+                    symbolSize: data.option["symbolSize"],
+                    symbol: "circle",
+                    itemStyle: {
+                        // ...item?.itemStyle,
+                        color: (seriesData) =>
+                            updateColorData(
+                                seriesData,
+                                data.option?.customSettings?.appliedRules,
+                            ),
+                    },
+                },
+            ];
+            setData("option", {
+                ...data.option,
+                series: series,
+                tooltip: {
+                    ...data.option.tooltip,
+                    formatter: formatdatapoints(frame.data, data),
+                },
+            });
+        }
+    }, [
+        mapIsLoaded,
+        frame.data.values,
+        frame.data.headers,
+        data.option.customSettings?.appliedRules,
+    ]);
 
     // Calculate bounding box
-    const lats = data.option["series"][0]["data"].map((d) => d.value[0]);
-    const lons = data.option["series"][0]["data"].map((d) => d.value[1]);
+    const lats =
+        data.option["series"][0]?.["data"]?.map((d) => d.value[0]) ?? [];
+    const lons =
+        data.option["series"][0]?.["data"]?.map((d) => d.value[1]) ?? [];
     const minLat = Math.min(...lats);
     const maxLat = Math.max(...lats);
     const minLon = Math.min(...lons);
@@ -188,20 +235,18 @@ export const Map: BlockComponent = observer(({ id }) => {
     else if (maxDiff < 20) zoomLevel = 4;
     else zoomLevel = 1;
 
-    if (frame.data.values.length > 0) {
-        updatedOption["geo"][0]["center"] = [
+    if (frame.data.values.length > 0 && data.option["geo"][0]) {
+        data.option["geo"][0]["center"] = [
             centerLat ? centerLat : 0,
             centerLon ? centerLon : 0,
         ];
-        updatedOption["geo"][0]["zoom"] = zoomLevel ? zoomLevel : 4;
+        data.option["geo"][0]["zoom"] = zoomLevel ? zoomLevel : 4;
     }
 
     if (frame.data.values.length > 0) {
         if (data.option.hasOwnProperty("_state")) {
             if (data.option["_state"].hasOwnProperty("fields")) {
                 if (data.option["_state"]["fields"].hasOwnProperty("label")) {
-                    const seriesData = data.option["series"][0]["data"];
-
                     if (
                         data.option["_state"]["fields"].hasOwnProperty("color")
                     ) {
@@ -210,42 +255,14 @@ export const Map: BlockComponent = observer(({ id }) => {
                         ].hasOwnProperty("size")
                             ? 4
                             : 3;
-                        const test = frame.data.values
-                            .map((item: any) => item[n])
-                            .map(String);
-
-                        data.option["series"] = [];
-
-                        data.option["series"] = test.map((name, index) => ({
-                            name: String(name),
-                            data: seriesData,
-                            coordinateSystem: "geo",
-                            type: "scatter",
-                            label: {
-                                show: false,
-                                rotate: 0,
-                                name: "",
-                                position: "top",
-                                fontFamily: "sans-serif",
-                                fontSize: 12,
-                                color: "#000000",
-                            },
-                            symbolSize: data.option["symbolSize"],
-                            symbol: "circle",
-                        }));
-
-                        data.option["legend"]["data"] = test;
-                    } else {
-                        mapRef.current.clear();
-
-                        updatedOption["series"] = updatedOption["series"][0];
-                        mapRef.current.setOption(updatedOption);
-
-                        data.option["series"][0]["name"] =
-                            data.option["_state"]["fields"]["label"];
-                        data.option["legend"]["data"] = [
-                            data.option["_state"]["fields"]["label"],
-                        ];
+                        const test = n
+                            ? frame.data.values
+                                  .map((item: any) => item[n])
+                                  .map(String)
+                            : [];
+                        if (data.option["legend"]) {
+                            data.option["legend"]["data"] = test;
+                        }
                     }
                 }
             }
@@ -271,7 +288,6 @@ export const Map: BlockComponent = observer(({ id }) => {
             params.event.event.preventDefault();
         }
     };
-
     return (
         <StyledNoDataContainer data-block-id={id}>
             <EChartsReact

@@ -62,7 +62,6 @@ const StyledSpanDimension = styled("span")(() => ({
     position: "relative",
 }));
 
-
 interface AccordionSection {
     [key: string]: {
         expanded: boolean;
@@ -629,9 +628,9 @@ export const FrameOperations = observer(
                 setData("option", tempValue);
             }
             if (variation === "echart-world-map-chart") {
+                const tempValue = computedValue;
+                const columns = [];
                 if (firstColumn?.values) {
-                    const tempValue = computedValue;
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -642,12 +641,13 @@ export const FrameOperations = observer(
                         label: firstColumn?.values?.[0],
                         labelDataType: firstColumn?.dataType?.[0],
                     };
-
-                    setData("option", tempValue);
+                    columns.push({
+                        name: firstColumn?.values[0],
+                        selector: firstColumn?.selectors[0],
+                        label: firstColumn?.label,
+                    });
                 }
                 if (secondColumn?.values) {
-                    const tempValue = computedValue;
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -658,12 +658,13 @@ export const FrameOperations = observer(
                         Latitude: secondColumn?.values?.[0],
                         LatitudeDataType: secondColumn?.dataType?.[0],
                     };
-
-                    setData("option", tempValue);
+                    columns.push({
+                        name: secondColumn?.values[0],
+                        selector: secondColumn?.selectors[0],
+                        label: secondColumn?.label,
+                    });
                 }
                 if (columnsDrop[2]?.values.length > 0) {
-                    const tempValue = computedValue;
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -674,12 +675,13 @@ export const FrameOperations = observer(
                         Longitude: columnsDrop[2]?.values?.[0],
                         LongitudeDataType: columnsDrop[2]?.dataType?.[0],
                     };
-
-                    setData("option", tempValue);
+                    columns.push({
+                        name: columnsDrop[2]?.values[0],
+                        selector: columnsDrop[2]?.selectors[0],
+                        label: columnsDrop[2]?.label,
+                    });
                 }
                 if (columnsDrop[3]?.values.length > 0) {
-                    const tempValue = computedValue;
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -690,12 +692,8 @@ export const FrameOperations = observer(
                         size: columnsDrop[3]?.values?.[0],
                         sizeDataType: columnsDrop[3]?.dataType?.[0],
                     };
-
-                    setData("option", tempValue);
                 }
                 if (columnsDrop[4]?.values.length > 0) {
-                    const tempValue = computedValue;
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -706,8 +704,6 @@ export const FrameOperations = observer(
                         color: columnsDrop[4]?.values?.[0],
                         colorDataType: columnsDrop[4]?.dataType?.[0],
                     };
-
-                    setData("option", tempValue);
                 }
                 if (columnsDrop[5]?.values.length > 0) {
                     const tempValue = computedValue;
@@ -722,9 +718,9 @@ export const FrameOperations = observer(
                         tooltip: columnsDrop[5]?.values?.[0],
                         tooltipDataType: columnsDrop[5]?.dataType?.[0],
                     };
-
-                    setData("option", tempValue);
                 }
+                setData("columns", columns);
+                setData("option", tempValue);
             }
             if (variation == "echart-gantt-chart") {
                 let columnsToSet = [];
