@@ -19,8 +19,6 @@ import {
     DefaultCellDefinitions,
     TransformationCells,
     QueryImportCellConfig,
-    FilterDataCellConfig,
-    UnFilterDataCellConfig,
     CodeCellConfig,
     DataImportFormModal,
     NewCellAction,
@@ -88,32 +86,32 @@ const Transformations = Array.from(Object.values(TransformationCells)).map(
 
 const DataImportDropdownOptions = [
     {
-        display: `From Data Catalog`,
+        display: 'From Data Catalog',
         defaultCellType: null,
     },
     {
-        display: `From CSV`,
+        display: 'From CSV',
         defaultCellType: null,
     },
 ];
 
 const OtherOptions = [
     {
-        display: `Send Email`,
+        display: 'Send Email',
         defaultCellType: 'send-email',
     },
 ];
 const DataOptions = [
     {
-        display: `Filter Data`,
+        display: 'Filter Data',
         defaultCellType: 'filter-data',
     },
     {
-        display: `UnFilter Data`,
+        display: 'UnFilter Data',
         defaultCellType: `unfilter-data`,
     },
     {
-        display: `Custom Import`,
+        display: 'Custom Import',
         defaultCellType: 'query-import',
     },
 ];
