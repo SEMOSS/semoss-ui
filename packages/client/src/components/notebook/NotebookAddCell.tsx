@@ -302,9 +302,9 @@ export const NotebookAddCell = observer(
                                               ) &&
                                               selectedAddCell === add[0] &&
                                               open ? (
-                                                <KeyboardArrowDown />
-                                            ) : (
                                                 <KeyboardArrowUp />
+                                            ) : (
+                                                <KeyboardArrowDown />
                                             )
                                         }
                                     >
