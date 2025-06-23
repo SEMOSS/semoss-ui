@@ -223,6 +223,10 @@ export const ListenerActionOverlay = observer(
                 });
             } else if (message === ActionMessages.DISPATCH_OUTPUTS_EVENT) {
                 setValue("payload", {});
+            } else if (message === ActionMessages.COPY_TO_CLIPBOARD) {
+                setValue("payload", {
+                    text: "",
+                });
             } else if (message === ActionMessages.RUN_CELL) {
                 if (listeners[listener].order[actionIdx]) {
                     if (
@@ -252,6 +256,7 @@ export const ListenerActionOverlay = observer(
             }
         }, [message]);
 
+        console.log(cells)
         return (
             <>
                 <Modal.Title>
@@ -277,6 +282,7 @@ export const ListenerActionOverlay = observer(
                                             ActionMessages.DISPATCH_EVENT,
                                             ActionMessages.DISPATCH_OUTPUTS_EVENT,
                                             ActionMessages.DISPATCH_OPEN_EVENT,
+                                            ActionMessages.COPY_TO_CLIPBOARD,
                                         ].map((a, aIdx) => (
                                             <Select.Item key={aIdx} value={a}>
                                                 {ACTIONS_DISPLAY[a]}
@@ -369,7 +375,7 @@ export const ListenerActionOverlay = observer(
                                                     const variableName =
                                                         state.getAlias(
                                                             queryId,
-                                                            c.id,
+                                                            c.id
                                                         );
 
                                                     return (
@@ -377,13 +383,13 @@ export const ListenerActionOverlay = observer(
                                                             key={c.id}
                                                             value={c.id}
                                                         >
-                                                            <Typography
-                                                                variant={
-                                                                    "body2"
-                                                                }
-                                                            >
-                                                                {variableName}
-                                                            </Typography>
+                                                                <Typography
+                                                                    variant={
+                                                                        "body2"
+                                                                    }
+                                                                >
+                                                                    {variableName}
+                                                                </Typography>
                                                         </Select.Item>
                                                     );
                                                 })}
@@ -532,6 +538,34 @@ export const ListenerActionOverlay = observer(
                                         }}
                                     />
                                 )}
+                            </>
+                        ) : null}
+
+                        {message === ActionMessages.COPY_TO_CLIPBOARD ? (
+                            <>
+                                <Controller
+                                    name={"payload.text"}
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Select
+                                            label="Variable"
+                                            value={
+                                                field.value
+                                                    ? field.value
+                                                    : ""
+                                            }
+                                            onChange={(value) =>
+                                                field.onChange(value)
+                                            }
+                                        >
+                                            {Object.keys(state.variables).map(variableName => (
+                                                <Select.Item key={variableName} value={variableName}>
+                                                    {variableName}
+                                                </Select.Item>
+                                            ))}
+                                        </Select>
+                                    )}
+                                />
                             </>
                         ) : null}
                     </Stack>
