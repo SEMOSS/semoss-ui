@@ -19,7 +19,7 @@ export const DeleteDiabetesRecordTemplate: Template = {
                 id: 'delete-record',
                 cells: [
                     {
-                        id: '13836',
+                        id: '53371',
                         widget: 'code',
                         parameters: {
                             code: 'from gaas_gpt_database import DatabaseEngine;databaseEngine = DatabaseEngine(engine_id = "950eb187-e352-444d-ad6a-6476ed9390af", insight_id = \'${i}\');',
@@ -40,7 +40,7 @@ export const DeleteDiabetesRecordTemplate: Template = {
                 id: 'on-page-load',
                 cells: [
                     {
-                        id: '22910',
+                        id: '36924',
                         widget: 'query-import',
                         parameters: {
                             frameVariableName: 'FRAME_22910',
@@ -58,7 +58,7 @@ export const DeleteDiabetesRecordTemplate: Template = {
                         },
                     },
                     {
-                        id: '3274',
+                        id: '36925',
                         widget: 'code',
                         parameters: {
                             code: 'unique_row_id',
@@ -86,7 +86,12 @@ export const DeleteDiabetesRecordTemplate: Template = {
                     },
                     text: ' {{delete-id.output}} ',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--2655',
             },
             'page-1': {
@@ -162,6 +167,10 @@ export const DeleteDiabetesRecordTemplate: Template = {
                         type: 'sync',
                         order: [],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'select--9490',
             },
@@ -183,7 +192,12 @@ export const DeleteDiabetesRecordTemplate: Template = {
                     },
                     text: 'Delete Diabetes Record',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--7810',
             },
             'button--601': {
@@ -220,6 +234,10 @@ export const DeleteDiabetesRecordTemplate: Template = {
                             },
                         ],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'button--601',
             },
@@ -234,17 +252,32 @@ export const DeleteDiabetesRecordTemplate: Template = {
                 to: 'select--9490',
                 type: 'block',
             },
+            'page-load-query': {
+                to: 'on-page-load',
+                type: 'query',
+            },
             unique_row_id: {
                 to: 'on-page-load',
                 type: 'cell',
-                cellId: '3274',
+                cellId: '36925',
             },
-            'page-load-query': {
-                type: 'query',
+            'delete-record--53371': {
+                type: 'cell',
+                to: 'delete-record',
+                cellId: '53371',
+            },
+            'on-page-load--36924': {
+                type: 'cell',
                 to: 'on-page-load',
+                cellId: '36924',
+            },
+            'on-page-load--36923': {
+                type: 'cell',
+                to: 'on-page-load',
+                cellId: '36923',
             },
         },
         executionOrder: ['on-page-load', 'delete-record'],
-        version: '1.0.0-alpha.4',
+        version: '1.0.0-alpha.10',
     },
 };
