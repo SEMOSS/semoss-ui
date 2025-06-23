@@ -1,4 +1,3 @@
-import React from 'react';
 import { ImportPageContent } from './ImportPageContent';
 import { ImportLayout } from './ImportLayout';
 

@@ -1,5 +1,8 @@
-import { ProgressBlock } from "@/components/block-defaults/progress-block/ProgressBlock";
-import { render, screen } from "../utils";
+import { ProgressBlock, ProgressBlockDef } from "@/components/block-defaults/progress-block/ProgressBlock";
+import { act, render, renderHook, screen, waitFor } from "../utils";
+// import { useBlock } from "../../hooks/useBlock";
+import { useBlocks } from "../../hooks/useBlocks";
+import { useBlock } from "@/hooks";
 
 const blocks = {
 	"progress-id": {
@@ -25,6 +28,25 @@ const blocks = {
 };
 
 describe("Progress Block", async () => {
+	it("use useBlock", async () => {
+		const { result } = renderHook(
+			() => useBlock<ProgressBlockDef>("progress-id"),
+			{
+				blocks: blocks,
+				renderEngineId: "progress-id",
+			},
+		);
+		console.log({ result });
+
+		expect(result.current).toBeDefined();
+		expect(result.current.data.type).toBe("linear")
+		// screen.debug()
+
+		// await console.log({ result: result });
+		// await act(async () => {
+		// 	await waitFor(() => console.log({result}))
+		// });
+	});
 	it("Should render the Progress Block", async () => {
 		const { container } = render(
 			<ProgressBlock data-testid="progressId" id="progress-id" />,
@@ -33,8 +55,8 @@ describe("Progress Block", async () => {
 			},
 		);
 
-		const element = screen.queryByRole("progressbar")
-        // screen.debug()
+		const element = screen.queryByRole("progressbar");
+		// screen.debug()
 		expect(element).toBeInTheDocument();
 	});
 	it("Should not render the Progress Block", async () => {
@@ -54,7 +76,7 @@ describe("Progress Block", async () => {
 			blocks: localBlocks,
 		});
 		// screen.debug();
-        const element = screen.queryByRole("progressbar");
+		const element = screen.queryByRole("progressbar");
 		expect(element).not.toBeInTheDocument();
 	});
 	it("Should do not include label", async () => {

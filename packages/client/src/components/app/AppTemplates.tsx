@@ -12,6 +12,7 @@ import {
     DeleteDiabetesRecordTemplate,
     UpdateDiabetesRecordTemplate,
     ReadDiabetesRecordTemplate,
+    MultiPageTemplate,
 } from './templates';
 import { BrowseTemplateTileCard } from './BrowseTempateTitleCard';
 
@@ -20,6 +21,7 @@ const DEFAULT_TEMPLATE = [
     AskLLMTemplate,
     AskCSVTemplate,
     BlocksGuideTemplate,
+    MultiPageTemplate,
     CreateDiabetesRecordTemplate,
     ReadDiabetesRecordTemplate,
     UpdateDiabetesRecordTemplate,

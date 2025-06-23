@@ -11,6 +11,8 @@ export interface DesignerStoreInterface {
     selected: string;
     /** Current hovered block */
     hovered: string;
+    /** Current selected multiple block ids */
+    selectedBlocks: string[];
     /** drag information */
     drag: {
         /** Is the drag active? */
@@ -74,6 +76,7 @@ export class DesignerStore {
             placeholderSize: null,
             placeholderAction: null,
         },
+        selectedBlocks: [],
     };
 
     constructor(state: StateStore, config: DesignerConfigInterface) {
@@ -97,6 +100,15 @@ export class DesignerStore {
      */
     get selected() {
         return this._store.selected;
+    }
+
+    /**
+     * Getter for retrieving the currently selected IDs from the store.
+     *
+     * @returns An array of selected IDs from the internal store.
+     */
+    get selectedBlocks() {
+        return this._store.selectedBlocks;
     }
 
     /**
@@ -132,6 +144,18 @@ export class DesignerStore {
      */
     setSelected(id: string) {
         this._store.selected = id;
+    }
+
+    /**
+     * Set the multi-selected block IDs
+     * @param id - id of the block to add to the multi-selected list, or "clear" to reset the list
+     */
+    addBlockToSelected(id?: string) {
+        if (id === 'clear') {
+            this._store.selectedBlocks = [];
+        } else {
+            this._store.selectedBlocks.push(id);
+        }
     }
 
     /**
