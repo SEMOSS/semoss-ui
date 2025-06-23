@@ -48,18 +48,43 @@ export const UnFilterDataCell: CellComponent<UnFilterDataCellDef> = observer(
             handleFrame();
             setSelectedFrame(cell.parameters.frameName);
         }, [myDbs.status]);
+
+        /**
+         * 
+         */
         const targetCell: CellState<QueryImportCellDef> = computed(() => {
             let c;
+            let cellId: number | null = null;
+
             Object.values(state.queries).forEach((query) => {
+                Object.entries(query.cells).forEach(([key, value], cellIndex)=> {
+
+                    let parsedId = (value['parameters']?.['frameVariableName'])|| null;
+                    if (cellId || parsedId === null) return;
+
+
+                    let target = (parsedId as String)?.match(/\d+/);
+                    const targetID = target ? target[0] : null;
+                    if(targetID && Number(targetID) === Number(cell.parameters.targetCell.id) && cellId === null) {
+                        cellId = parseInt(key, 10);
+                    }
+                });
+
                 if (query.cells[cell.parameters.targetCell.id]) {
                     c = query.cells[
                         cell.parameters.targetCell.id
                     ] as CellState<QueryImportCellDef>;
                 }
+
+                if(!query.cells[cell.parameters.targetCell.id] && cellId){
+                    c = query.cells[cellId] as CellState<QueryImportCellDef>;
+                }
+                cellId=null;
             });
 
             return c;
         }).get();
+
         /**
          * Determines if Target Cell is a frame and is executed
          */
@@ -68,11 +93,13 @@ export const UnFilterDataCell: CellComponent<UnFilterDataCellDef> = observer(
                 !!targetCell && (targetCell.isExecuted || !!targetCell.output)
             );
         }).get();
+
         useEffect(() => {
             if (doesFrameExist && targetCell.isExecuted !== undefined) {
                 handleFrame();
             }
-        }, [targetCell?.isExecuted, doesFrameExist]);
+        }, [targetCell?.isExecuted, doesFrameExist, selectedFrame]);
+
         async function handleFrame() {
             const getFrames = await state.runSideEffect("GetFrames();");
             let list = getFrames["pixelReturn"][0]["output"] as string[];
