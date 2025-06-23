@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Add } from '@mui/icons-material';
+import { Add, Search } from '@mui/icons-material';
 import { Actions, DockLocation, Layout, TabNode } from 'flexlayout-react';
 
 import { ActionMessages, useBlocks } from '@semoss/renderer';
@@ -11,6 +11,7 @@ import {
     styled,
     Typography,
     TextField,
+    InputAdornment,
 } from '@semoss/ui';
 
 import { useWorkspace } from '@/hooks';
@@ -93,6 +94,9 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
         // temporary fix for dead refresh button should be removed
         const [counter, setCounter] = useState(0);
 
+        // filter word for the search
+        const [filterWord, setFilterWord] = useState<string>('');
+
         /**
          * Refresh the notebooks
          */
@@ -138,6 +142,21 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
             // set the path
             setSelected(id);
         };
+
+        /**
+         * Filter the notebooks based on the filter word
+         * This is done by filtering the queries in the notebook
+         */
+        const filteredNotebooks = useMemo(() => {
+            // get the queries
+            const queries = notebook.queriesList;
+            // filter the queries
+            return queries.filter((query) => {
+                return query.id
+                    .toLowerCase()
+                    .includes(filterWord.toLowerCase());
+            });
+        }, [notebook.queriesList, filterWord]);
 
         /**
          * Open the delete modal
@@ -429,39 +448,20 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
                         <StyledTitle>
                             <StyledTitleSpan>{title}</StyledTitleSpan>
                         </StyledTitle>
-                        {/* TODO : Implement search  */}
-                        {/* <StyledTextField
-                                    placeholder="Search"
-                                    size="small"
-                                    fullWidth
-                                    // value={search}
-                                    // onChange={(e) => setSearch(e.target.value)}
-                                    InputProps={{
-                                        startAdornment: (
-                                            <InputAdornment position="start">
-                                                <Search />
-                                            </InputAdornment>
-                                        ),
-                                        // endAdornment: (
-                                        //     <InputAdornment position="end">
-                                        //         <IconButton
-                                        //             size="small"
-                                        //             onClick={(e) =>
-                                        //                 setMenuAnchorEl(e.currentTarget)
-                                        //             }
-                                        //         >
-                                        //             <Badge
-                                        //                 variant="dot"
-                                        //                 invisible={!anyEnabledFilter}
-                                        //                 color="primary"
-                                        //             >
-                                        //                 <Tune />
-                                        //             </Badge>
-                                        //         </IconButton>
-                                        //     </InputAdornment>
-                                        // ),
-                                    }}
-                                /> */}
+                        <StyledTextField
+                            placeholder="Search"
+                            size="small"
+                            fullWidth
+                            value={filterWord}
+                            onChange={(e) => setFilterWord(e.target.value)}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <Search />
+                                    </InputAdornment>
+                                ),
+                            }}
+                        />
                         <StyledNotebookStack
                             direction="row"
                             alignItems={'center'}
@@ -490,7 +490,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
                     height={'100%'}
                     overflow={'auto'}
                 >
-                    {notebook.queriesList.map((q) => {
+                    {filteredNotebooks.map((q) => {
                         return (
                             <NotebookExplorerItem
                                 key={q.id}
