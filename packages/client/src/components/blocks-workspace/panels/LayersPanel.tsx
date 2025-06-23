@@ -23,10 +23,9 @@ import {
     ExpandMore,
     LibraryAdd,
     Search,
-    SearchOff,
-    Home,
     Delete,
     MoreVert,
+    HomeOutlined,
 } from '@mui/icons-material/';
 
 import {
@@ -34,7 +33,6 @@ import {
     INPUT_BLOCK_TYPES,
     ActionMessages,
     BlockJSON,
-    Block,
 } from '@semoss/renderer';
 import {
     Divider,
@@ -49,6 +47,7 @@ import {
     useNotification,
     Grid,
     Menu,
+    InputAdornment,
 } from '@semoss/ui';
 
 import { AddVariableModal } from '@/components/notebook';
@@ -121,7 +120,11 @@ const StyledLabelSubtitleText = styled('div')(({ theme }) => ({
 }));
 
 const StyledTreeItemIcon = styled(Icon)(() => ({
-    color: 'rgba(0, 0, 0, .3)',
+    color: '#757575',
+}));
+
+const StyledDuplicateImage = styled('img')(() => ({
+    marginRight: '8px',
 }));
 
 const StyledTreeItemIconButton = styled(IconButton)(() => ({
@@ -166,10 +169,67 @@ const StyledPageItem = styled('div', {
     justifyContent: 'space-between',
     padding: theme.spacing(1) + ' ' + theme.spacing(2),
     color: search ? theme.palette.primary.main : '',
-    backgroundColor: isselected == 'true' ? 'rgba(25, 118, 210, 0.2)' : '',
+    backgroundColor: isselected == 'true' ? '#EBF4FE' : '',
 }));
 
-const PAGE_BLOCK: BlockJSON = {
+const StyledTitle = styled('div')(({ theme }) => ({
+    borderRadius: '16px',
+    background: ' #EBF4FE',
+    width: 'fit-content',
+    marginTop: '8px',
+    paddingRight: theme.spacing(2),
+    paddingLeft: theme.spacing(2),
+    marginBottom: '8px',
+    backgroundColor: theme.palette.primary.selected,
+    color: theme.palette.info.dark,
+}));
+
+const StyledTitleSpan = styled('span')(() => ({
+    color: 'var(--Primary-Dark, #1260DD)',
+    fontFeatureSettings: "'liga' off, 'clig' off",
+    fontSize: '13px',
+    fontFamily: 'Inter',
+    fontWeight: 400,
+    fontStyle: 'normal',
+    letterSpacing: '0.16px',
+    lineHeight: '18px',
+}));
+
+const StyledStack = styled(Stack)(() => ({
+    marginLeft: '16px',
+    marginTop: '8px',
+}));
+
+const StyledTextFiled = styled(TextField)(() => ({
+    marginRight: '8px',
+    width: '95%',
+    borderRadius: '8px',
+}));
+
+const StyledTypography = styled(Typography)(() => ({
+    color: 'var(--Text-Primary, #212121)',
+    fontFeatureSettings: '"liga" off, "clig" off',
+    fontFamily: 'Inter, sans-serif',
+    fontStyle: 'normal',
+    fontSize: '16px',
+    lineHeight: '150%',
+    fontWeight: 500,
+    letterSpacing: '0.15px',
+}));
+
+const StyledHomePageDiv = styled('div')(() => ({
+    display: 'flex',
+    alignItems: 'center',
+}));
+
+const StyledHomePageChildDiv = styled('div')(() => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '24px',
+}));
+
+export const PAGE_BLOCK: BlockJSON = {
     widget: 'page',
     data: {
         style: {
@@ -232,31 +292,36 @@ const findNode = (
     return null;
 };
 
+export interface AddBlocksLayersProps {
+    /** Title to render in the menu */
+    title: string;
+}
+
 /**
  * Render the Layers
  */
-export const LayersPanel = observer((): JSX.Element => {
-    // get the store
-    const { registry, state } = useBlocks();
-    const { designer } = useDesigner();
-    const notification = useNotification();
-    const { workspace } = useWorkspace();
-    const [expanded, setExpanded] = useState<string[]>([]);
-    const [selectedLayers, setSelectedLayers] = useState<string[]>([]);
-    const [selectedPages, setSelectedPages] = useState<string>('page-1');
-    const [selectedLayer, setSelectedLayer] = useState([]);
-    const [pageHovered, setPageHovered] = useState<string>('');
-    const [showSearch, setShowSearch] = useState<boolean>(false);
-    const [search, setSearch] = useState<string>('');
-    const [variableModal, setVariableModal] = useState('');
-    // const [allPages, setAllPage] = useState(state.getAllBlocksOfType('page'));
-    const allPages = state.getAllBlocksOfType('page');
-    const [globalDropPositions, setGlobalDropPositions] = useState<
-        'top' | 'bottom' | 'inside' | null
-    >(null);
-    const accordionRefs = useRef({});
+export const LayersPanel = observer(
+    (props: AddBlocksLayersProps): JSX.Element => {
+        const { title } = props;
+        // get the store
+        const { registry, state } = useBlocks();
+        const { designer } = useDesigner();
+        const notification = useNotification();
+        const { workspace } = useWorkspace();
+        const [expanded, setExpanded] = useState<string[]>([]);
+        const [selectedLayers, setSelectedLayers] = useState<string[]>([]);
+        const [selectedPages, setSelectedPages] = useState<string>('page-1');
+        const [selectedLayer, setSelectedLayer] = useState([]);
+        const [pageHovered, setPageHovered] = useState<string>('');
+        const [search, setSearch] = useState<string>('');
+        const [variableModal, setVariableModal] = useState('');
+        const allPages = state.getAllBlocksOfType('page');
+        const [globalDropPositions, setGlobalDropPositions] = useState<
+            'top' | 'bottom' | 'inside' | null
+        >(null);
+        const accordionRefs = useRef({});
 
-    const [activeNode, setActiveNode] = useState<TreeNode | null>(null);
+        const [activeNode, setActiveNode] = useState<TreeNode | null>(null);
 
     const sensors = useSensors(
         useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -764,75 +829,75 @@ export const LayersPanel = observer((): JSX.Element => {
                         </StyledTreeItemIconButton>
                     ) : null}
 
-                    {/* 3-dot menu button */}
-                    <IconButton
-                        size="small"
-                        aria-label="more"
-                        onClick={(e) => handleMenuOpen(e, block.id)}
+                        {/* 3-dot menu button */}
+                        <IconButton
+                            size="small"
+                            aria-label="more"
+                            onClick={(e) => handleMenuOpen(e, block.id)}
+                        >
+                            <MoreVert fontSize="small" />
+                        </IconButton>
+                    </StyledTreeItemLabel>
+                    <Menu
+                        anchorEl={menuAnchorEl}
+                        open={Boolean(menuAnchorEl)}
+                        onClose={handleMenuClose}
+                        anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'right',
+                        }}
+                        transformOrigin={{
+                            vertical: 'top',
+                            horizontal: 'right',
+                        }}
+                        sx={{
+                            '.MuiPopover-paper': {
+                                borderRadius: '4px',
+                                padding: '8px 0px',
+                                boxShadow:
+                                    '0px 5px 24px 0px rgba(0, 0, 0, 0.32)',
+                            },
+                        }}
                     >
-                        <MoreVert fontSize="small" />
-                    </IconButton>
-                </StyledTreeItemLabel>
-                <Menu
-                    anchorEl={menuAnchorEl}
-                    open={Boolean(menuAnchorEl)}
-                    onClose={handleMenuClose}
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'right',
-                    }}
-                    transformOrigin={{
-                        vertical: 'top',
-                        horizontal: 'right',
-                    }}
-                    sx={{
-                        '.MuiPopover-paper': {
-                            borderRadius: '4px',
-                            padding: '8px 0px',
-                            boxShadow: '0px 5px 24px 0px rgba(0, 0, 0, 0.32)',
-                        },
-                    }}
-                >
-                    <MenuItem
-                        value="duplicate"
-                        sx={{ display: 'flex' }}
-                        onClick={(e: React.MouseEvent<HTMLElement>) =>
-                            handleDuplicate(e, block.id)
-                        }
-                    >
-                        <img
-                            src={DuplicateIcon}
-                            alt="Duplicate Icon"
-                            style={{ marginRight: '8px' }}
-                        />{' '}
-                        Duplicate
-                    </MenuItem>
-                    <MenuItem
-                        value="delete"
-                        sx={{ display: 'flex' }}
-                        onClick={() => handleDelete(block.id)}
-                    >
-                        <DeleteOutlineOutlinedIcon
-                            style={{ color: '#757575', marginRight: '6px' }}
-                        />{' '}
-                        Delete
-                    </MenuItem>
-                </Menu>
-            </>
-        );
-    };
-    const renderBlock = (id: string) => {
-        const block = state.blocks[id];
-        if (!block) {
-            return null;
-        }
-        const variableName = state.getAlias(id);
-        const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
-        const WidgetIcon = registry[block.widget].icon;
-        const children = [];
-        for (const s in block.slots) {
-            children.push(...block.slots[s].children);
-        }
+                        <MenuItem
+                            value="duplicate"
+                            sx={{ display: 'flex' }}
+                            onClick={(e: React.MouseEvent<HTMLElement>) =>
+                                handleDuplicate(e, block.id)
+                            }
+                        >
+                            <StyledDuplicateImage
+                                src={DuplicateIcon}
+                                alt="Duplicate Icon"
+                            />{' '}
+                            Duplicate
+                        </MenuItem>
+                        <MenuItem
+                            value="delete"
+                            sx={{ display: 'flex' }}
+                            onClick={() => handleDelete(block.id)}
+                        >
+                            <DeleteOutlineOutlinedIcon
+                                style={{ color: '#757575', marginRight: '6px' }}
+                            />{' '}
+                            Delete
+                        </MenuItem>
+                    </Menu>
+                </>
+            );
+        };
+        const renderBlock = (id: string) => {
+            const block = state.blocks[id];
+            if (!block) {
+                return null;
+            }
+            const variableName = state.getAlias(id);
+            const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
+            const WidgetIcon = registry[block.widget].icon;
+            const children = [];
+            for (const s in block.slots) {
+                children.push(...block.slots[s].children);
+            }
 
         return (
             <>
@@ -922,12 +987,17 @@ export const LayersPanel = observer((): JSX.Element => {
                 onMouseOver={(e) => setPageHovered(block.id)}
                 onMouseLeave={(e) => setPageHovered('')}
             >
-                <Typography variant="subtitle1">/{id}</Typography>
-                {id == 'page-1' ? (
-                    <StyledTreeItemIcon>
-                        <Home />
-                    </StyledTreeItemIcon>
-                ) : pageHovered === block.id ? (
+                    <StyledHomePageDiv>
+                        <StyledHomePageChildDiv>
+                            {id == 'page-1' && (
+                                <StyledTreeItemIcon>
+                                    <HomeOutlined />
+                                </StyledTreeItemIcon>
+                            )}
+                        </StyledHomePageChildDiv>
+                <Typography variant="subtitle1">{id}</Typography>
+                    </StyledHomePageDiv>
+                    {id !== 'page-1' && pageHovered === block.id && (
                     <StyledTreeItemIcon>
                         <Delete
                             onClick={(e) => {
@@ -937,8 +1007,6 @@ export const LayersPanel = observer((): JSX.Element => {
                             style={{ cursor: 'pointer' }}
                         />
                     </StyledTreeItemIcon>
-                ) : (
-                    <></>
                 )}
             </StyledPageItem>
         );
@@ -1199,7 +1267,6 @@ export const LayersPanel = observer((): JSX.Element => {
         });
 
         if (typeof newPageId === 'string') {
-            console.log('newPageId', newPageId);
             const block = state.blocks[newPageId];
             handlePageSelection(block);
         } else {
@@ -1209,6 +1276,27 @@ export const LayersPanel = observer((): JSX.Element => {
 
     return (
         <Panel>
+                <Stack spacing={undefined}>
+                    <StyledTitle>
+                        <StyledTitleSpan>{title}</StyledTitleSpan>
+                    </StyledTitle>
+                    <StyledStack>
+                        <StyledTextFiled
+                            placeholder="Search"
+                            size="small"
+                            fullWidth
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <Search />
+                                    </InputAdornment>
+                                ),
+                            }}
+                        />
+                    </StyledStack>
+                </Stack>
             <Grid
                 container
                 direction="column"
@@ -1218,7 +1306,7 @@ export const LayersPanel = observer((): JSX.Element => {
                 }}
             >
                 <Grid item xs={12} width={'100%'} height={'100%'}>
-                    <Grid item xs={12} height={'30%'}>
+                    <Grid item xs={12}>
                         <StyledMenu>
                             <StyledMenuHeader>
                                 <Stack
@@ -1231,9 +1319,9 @@ export const LayersPanel = observer((): JSX.Element => {
                                         justifyContent="space-between"
                                         alignItems={'center'}
                                     >
-                                        <Typography variant="h6">
+                                        <StyledTypography variant="h6">
                                             Pages
-                                        </Typography>
+                                        </StyledTypography>
                                         <IconButton
                                             className="layers-menu__add-layer-button"
                                             onClick={(e) => {
@@ -1281,43 +1369,9 @@ export const LayersPanel = observer((): JSX.Element => {
                                             justifyContent="space-between"
                                             alignItems={'center'}
                                         >
-                                            <Typography variant="h6">
-                                                Layers
-                                            </Typography>
-                                            {showSearch ? (
-                                                <TextField
-                                                    placeholder="Search"
-                                                    size="small"
-                                                    sx={{
-                                                        width: '100%',
-                                                        maxWidth: '200px',
-                                                    }}
-                                                    value={search}
-                                                    variant="outlined"
-                                                    onChange={(e) =>
-                                                        setSearch(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                />
-                                            ) : (
-                                                <>&nbsp;</>
-                                            )}
-                                            <IconButton
-                                                color="default"
-                                                size="small"
-                                                onClick={() => {
-                                                    setShowSearch(!showSearch);
-                                                    setSearch('');
-                                                }}
-                                                style={{ padding: '0px' }}
-                                            >
-                                                {showSearch ? (
-                                                    <SearchOff fontSize="medium" />
-                                                ) : (
-                                                    <Search fontSize="medium" />
-                                                )}
-                                            </IconButton>
+                                            <StyledTypography variant="h6">
+                                                    Layers
+                                                </StyledTypography>
                                         </Stack>
                                     </Stack>
                                 </StyledMenuHeader>

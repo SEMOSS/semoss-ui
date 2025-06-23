@@ -119,27 +119,11 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
     },
 };
 
-const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
-    node,
-    layout,
-) => {
-    const component = node.getComponent();
-    const config = node.getConfig();
+function hideMiddlePanel() {
+   
 
-    if (component === 'file-explorer') {
-        return <FileExplorerPanel layout={layout} />;
-    } else if (component === 'file-editor') {
-        return <FileEditorPanel path={config.path} />;
-    } else if (component === 'renderer') {
-        return <RendererPanel />;
-    } else if (component === 'settings') {
-        return <SettingsPanel />;
-    } else if (component === 'terminal') {
-        return <TerminalPanel />;
-    }
+}
 
-    return <>{component}</>;
-};
 
 interface CodeWorkspaceProps {
     /** Workspace to render */
@@ -151,7 +135,27 @@ interface CodeWorkspaceProps {
  */
 export const CodeWorkspace = observer((props: CodeWorkspaceProps) => {
     const { workspace } = props;
-
+    const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
+        node,
+        layout,
+    ) => {
+        const component = node.getComponent();
+        const config = node.getConfig();
+    
+        if (component === 'file-explorer') {
+            return <FileExplorerPanel title={'Files'} layout={layout} />;
+        } else if (component === 'file-editor') {
+            return <FileEditorPanel path={config.path} />;
+        } else if (component === 'renderer') {
+            return <RendererPanel />;
+        } else if (component === 'settings') {
+            return <SettingsPanel/>;
+        } else if (component === 'terminal') {
+            return <TerminalPanel />;
+        }
+    
+        return <>{component}</>;
+    };
     return (
         <>
             <Workspace

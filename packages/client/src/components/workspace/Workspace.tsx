@@ -1,32 +1,37 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-import { Menu, MenuOpen, Public, RestartAlt } from '@mui/icons-material';
-import { Layout, TabNode } from 'flexlayout-react';
+import { InfoOutlined, Menu, RestartAlt } from '@mui/icons-material';
+import {
+    Actions,
+    DockLocation,
+    Layout,
+    TabNode,
+} from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import './flexlayout.css';
-
 import {
-    Avatar,
     styled,
     Stack,
     Typography,
     useNotification,
     IconButton,
     Tooltip,
-    Drawer,
-    Button,
+    Breadcrumbs,
 } from '@semoss/ui';
-import { Env } from '@semoss/sdk/react';
 
-import { THEME } from '@/constants';
 import { WorkspaceContext } from '@/contexts';
-import { WorkspaceStore, WorkspaceOptions } from '@/stores';
-import { useRootStore } from '@/hooks';
-import { LoginPopover } from '@/components/ui';
+import { WorkspaceStore, WorkspaceOptions, getBlockElement } from '@/stores';
+import { useDesigner, useRootStore } from '@/hooks';
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
-import { WorkspaceTabs } from './WorkspaceTabs';
+
+import { SIDEBAR_MENU } from '@/pages/import/import.constants';
+import SEMOSS_BLACK_LOGO from '@/assets/img/SEMOSS_BLACK_LOGO.png';
+import { ActionMessages, useBlocks } from '@semoss/renderer';
+import { PAGE_BLOCK } from '../blocks-workspace/panels/LayersPanel';
+import { AddPage } from '@/assets/img/AddPage';
+import { ClosePage } from '@/assets/img/ClosePage';
 
 const StyledViewport = styled('div')(() => ({
     height: '100vh',
@@ -70,12 +75,28 @@ const StyledSpacer = styled('div')(({ theme }) => ({
     overflow: 'hidden',
 }));
 
-const StyledMenuOpenIcon = styled(MenuOpen)(() => ({
-    color: 'rgba(0, 0, 0, 0.54)',
+const StyledAppTypography = styled(Typography)(() => ({
+    color: 'rgb(0, 0, 0)',
 }));
 
-const StyledMenuIcon = styled(Menu)(() => ({
-    color: 'rgba(0, 0, 0, 0.54)',
+const StyledSemossImage = styled('img')(() => ({
+    padding: '8px 16px',
+}));
+
+const StyledLetTabImage = styled('img')(() => ({
+    width: 50,
+    height: 40,
+    display: 'block',
+    margin: 'auto',
+    transition: 'all 0.2s ease',
+}));
+
+const StyledRenderTabSet = styled('div')(() => ({
+    padding: '0 8px',
+    cursor: 'pointer',
+    display: 'flex',
+    fontSize: '1.2rem',
+    alignItems: 'center',
 }));
 
 const StyledHeaderLogo = styled(Link)(({ theme }) => ({
@@ -93,8 +114,8 @@ const StyledHeaderLogoImg = styled('img')(({ theme }) => ({
 
 const StyledActions = styled(Stack)(({ theme }) => ({
     position: 'absolute',
-    bottom: '0',
-    left: '0',
+    bottom: '8px',
+    left: '8px',
     width: '32px', // from flexlayout
     zIndex: 1,
 }));
@@ -128,24 +149,49 @@ export const Workspace = observer((props: WorkspaceProps) => {
         options,
         factory = () => null,
     } = props;
+
     const { configStore } = useRootStore();
     const notification = useNotification();
-
-    const layoutRef = useRef<Layout>(null);
-
+    const accordionRefs = useRef({});
+    const { state } = useBlocks();
+    const { designer } = useDesigner();
+    const [layoutRefeshKey, setLayoutRefeshKey] = useState(0);
+    const layoutRef = useRef<Layout | null>(null);
     // build the model from the layout
     const model = workspace.selectedLayout?.model;
-
+    //const [model,setModel] = useState(workspace.selectedLayout?.model)
     useEffect(() => {
         // default options if not loaded from cache
         const defaultOptions = JSON.parse(JSON.stringify(options));
-
+        // set the workspace options
         // try to load from cache
         const isLoaded = workspace.loadFromCache();
         if (!isLoaded) {
             workspace.load(defaultOptions);
         }
     }, [options]);
+    useEffect(() => {
+        openTab();
+    }, [designer.selected]);
+    
+    function getIdByName(iMap, targetName: string): string | null {
+        for (const [key, value] of iMap.entries()) {
+            if (value?.attributes?.name === targetName) {
+                if (!value?.visible) {
+                    return key;
+                }
+            }
+        }
+        return null;
+    }
+
+    const openTab = () => {
+        const layout = layoutRef.current;
+        if (!layout) return;
+        const model = workspace.selectedLayout?.model;
+        const tabId = getIdByName(model['idMap'], 'Block Settings');
+        model.doAction(Actions.selectTab(tabId));
+    };
 
     const themeMap = useMemo(() => {
         const theme = configStore.store.config['theme'];
@@ -183,7 +229,178 @@ export const Workspace = observer((props: WorkspaceProps) => {
             //noop
         }
     };
+    const handleRenderTabSet = (tabSetNode, renderValues) => {
+        if (
+            tabSetNode.getId() === 'border_left' ||
+            tabSetNode.getId() === 'border_right'
+        ) {
+            return;
+        }
+        renderValues.buttons.unshift(
+            <StyledRenderTabSet
+                key="custom-add-button"
+                title="Add Tab"
+                onClick={() => handlePageAdd()}
+            >
+                <AddPage />
+            </StyledRenderTabSet>,
+        );
+    };
 
+    const handlePageAdd = async () => {
+        const newPageId = await state.dispatch({
+            message: ActionMessages.ADD_BLOCK,
+            payload: {
+                json: PAGE_BLOCK,
+            },
+        });
+        if (typeof newPageId === 'string') {
+            const block = state.blocks[newPageId];
+            handlePageSelection(block);
+        } else {
+            console.error('Invalid newPageId:', newPageId);
+        }
+    };
+    const handlePageSelection = (block) => {
+        accordionRefs.current = {};
+        designer.setSelected(block.id);
+        handleOnSelect(block);
+    };
+    const scrollIntoView = (
+        element: Element | null,
+        {
+            behavior = 'smooth' as ScrollBehavior,
+            block = 'center' as ScrollLogicalPosition,
+            inline = 'start' as ScrollLogicalPosition,
+        } = {},
+    ) => {
+        (element as HTMLElement)?.scrollIntoView({
+            behavior,
+            block,
+            inline,
+        });
+    };
+    const getNodeInfo = (id, model) => {
+        let returnedNode: TabNode | null = null;
+        // visit the notes, and see if it exists
+        model.visitNodes((node) => {
+            // check if it is a tabNode
+            if (node instanceof TabNode) {
+                // it needs to be a notebook-viewer
+                const component = node.getComponent();
+                if (component !== 'designer') {
+                    return;
+                }
+
+                // path and space need to match
+                const config = node.getConfig();
+                if (config.id !== id) {
+                    return;
+                }
+
+                returnedNode = node;
+            }
+        });
+
+        return returnedNode;
+    };
+    const selectPanel = (id: string): boolean => {
+        try {
+            if (!id) {
+                return false;
+            }
+
+            let selectedNode: TabNode | null = null;
+
+            // get the model
+            const model = workspace.selectedLayout?.model;
+            if (!model) {
+                throw new Error('Missing model');
+            }
+
+            selectedNode = getNodeInfo(id, model);
+
+            // create a new panel if there is no node
+            if (!selectedNode) {
+                return false;
+            }
+            const selectedNodeId = selectedNode.getId();
+            model.doAction(Actions.selectTab(selectedNodeId));
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: e,
+            });
+
+            return false;
+        }
+
+        return true;
+    };
+    const createPanel = (id: string): boolean => {
+        try {
+            if (!id) {
+                return false;
+            }
+
+            // get the model
+            const model = workspace.selectedLayout?.model;
+            if (!model) {
+                throw new Error('Missing model');
+            }
+
+            // get the name
+            const name = id;
+
+            // where to add the node
+            const addId =
+                model.getActiveTabset()?.getId() ||
+                model.getRoot().getChildren()[0]?.getId() ||
+                '';
+
+            // create and select the panel
+            model.doAction(
+                Actions.addNode(
+                    {
+                        type: 'tab',
+                        name: name,
+                        component: 'designer',
+                        config: {
+                            id: id,
+                        },
+                        enableClose: true,
+                    },
+                    addId,
+                    DockLocation.CENTER,
+                    -1,
+                    true,
+                ),
+            );
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: e,
+            });
+
+            return false;
+        }
+
+        return true;
+    };
+    
+    const handleOnSelect = (blockData) => {
+        const id = blockData.id;
+        if (blockData.widget !== 'page') {
+            scrollIntoView(getBlockElement(id));
+            return;
+        }
+        // try to select a panel, if it doesn't exist create it. Save the path
+        const IsSelected = selectPanel(id);
+        if (!IsSelected) {
+            createPanel(id);
+        }
+    };
+    
     return (
         <WorkspaceContext.Provider
             value={{
@@ -199,39 +416,42 @@ export const Workspace = observer((props: WorkspaceProps) => {
                         padding={1}
                         spacing={1}
                     >
-                        <IconButton
-                            edge="start"
-                            color={'default'}
-                            aria-label="menu"
-                            size={'small'}
-                            onClick={() => {
-                                workspace.toggleDrawer();
-
-                                // save the workspace
-                                workspace.saveToCache();
-                            }}
-                        >
-                            {workspace.drawer.isOpen ? (
-                                <StyledMenuOpenIcon fontSize="inherit" />
-                            ) : (
-                                <StyledMenuIcon fontSize="inherit" />
-                            )}
-                        </IconButton>
-
-                        <Stack
-                            direction="row"
-                            alignItems={'center'}
-                            spacing={1}
-                        >
-                            <Avatar
-                                variant="rounded"
-                                src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
-                            />
-                            <Typography variant={'subtitle1'}>
-                                {workspace.metadata.project_name}
-                            </Typography>
-                        </Stack>
-
+                        <Breadcrumbs separator=" /">
+                            <StyledHeaderLogo to={'/'}>
+                                <Stack direction={'row'} alignItems={'center'}>
+                                    <StyledSemossImage
+                                        src={SEMOSS_BLACK_LOGO}
+                                        alt="SEMOSS"
+                                    ></StyledSemossImage>
+                                    <StyledAppTypography variant={'subtitle1'}>
+                                        App Library
+                                    </StyledAppTypography>
+                                </Stack>
+                            </StyledHeaderLogo>
+                            <StyledHeaderLogo
+                                to={`/app/${workspace.metadata.project_id}`}
+                            >
+                                <StyledAppTypography
+                                    variant={'subtitle1'}
+                                >
+                                    {workspace.metadata.project_name}
+                                </StyledAppTypography>
+                            </StyledHeaderLogo>
+                            <StyledHeaderLogo to={''}>
+                                <Typography
+                                    variant={'subtitle1'}
+                                    sx={{ display: 'inline', mr: 0.5 }}
+                                >
+                                    {workspace.metadata.project_name} - Editor
+                                </Typography>
+                                {/*TODO : Info icon requires the text*/}
+                                {/* <IconButton size={'small'}>
+                                    <InfoOutlined
+                                        sx={{ color: '#666', fontSize: 16 }}
+                                    />
+                                </IconButton> */}
+                            </StyledHeaderLogo>
+                        </Breadcrumbs>
                         <Stack
                             flex={1}
                             alignItems={'center'}
@@ -241,31 +461,15 @@ export const Workspace = observer((props: WorkspaceProps) => {
                             <div>{alert || <>&nbsp;</>}</div>
                         </Stack>
                         {endTopbar}
-                        <LoginPopover />
-                        <Button
-                            variant="contained"
-                            size={'small'}
-                            color="primary"
-                            disabled={
-                                !(
-                                    workspace.role === 'OWNER' ||
-                                    workspace.role === 'EDIT'
-                                )
-                            }
-                            endIcon={<Public fontSize="inherit" />}
-                            component={Link}
-                            //@ts-expect-error this is expected. props are forwarded
-                            to={`../../../app/${workspace.appId}`}
-                        >
-                            Show
-                        </Button>
                     </Stack>
                     <StyledContent>
                         <WorkspaceLoading />
                         <StyledSpacer>
                             {model ? (
                                 <>
+                                    {}
                                     <Layout
+                                    key={layoutRefeshKey}
                                         ref={layoutRef}
                                         model={model}
                                         factory={(node) => {
@@ -274,8 +478,38 @@ export const Workspace = observer((props: WorkspaceProps) => {
                                                 layoutRef.current,
                                             );
                                         }}
+                                        icons={{
+                                            close: (
+                                                <ClosePage/>
+                                            ),
+                                        }}
+                                        onRenderTabSet={handleRenderTabSet}
                                         onModelChange={() => {
                                             workspace.saveToCache();
+                                        }}
+                                        onRenderTab={(
+                                            tabNode,
+                                            renderValues,
+                                        ) => {
+                                            const item = SIDEBAR_MENU.MENU.find(
+                                                (menuItem) =>
+                                                    menuItem.name ===
+                                                    tabNode.getName(),
+                                            );
+                                            const isSelected =
+                                                tabNode.isSelected();
+                                            if (item && item.icon) {
+                                                const iconSrc = isSelected
+                                                    ? item.icon.active
+                                                    : item.icon.default;
+                                                renderValues.content = (
+                                                    <StyledLetTabImage
+                                                        src={iconSrc}
+                                                        alt={tabNode.getName()}
+                                                    />
+                                                );
+                                            }
+                                            return renderValues;
                                         }}
                                     />
                                     <StyledActions
@@ -301,56 +535,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
                     {footer}
                 </StyledMain>
             </StyledViewport>
-            <Drawer
-                anchor="left"
-                open={workspace.drawer.isOpen}
-                ModalProps={{
-                    hideBackdrop: true, // Hide the backdrop
-                }}
-                PaperProps={{
-                    sx: {
-                        position: 'absolute',
-                        height: '100%',
-                        width: '240px',
-                        borderRadius: 0,
-                    },
-                }}
-                variant="persistent"
-            >
-                <Stack direction="column" gap={1} height={'100%'} padding={2}>
-                    <StyledHeaderLogo to={'/'}>
-                        <Stack
-                            direction="row"
-                            alignItems={'center'}
-                            spacing={1}
-                        >
-                            {themeMap.isLogoUrl ? (
-                                <StyledHeaderLogoImg src={themeMap.logo} />
-                            ) : THEME.logo ? (
-                                <StyledHeaderLogoImg src={THEME.logo} />
-                            ) : null}
-                            <Typography variant={'subtitle2'}>
-                                {themeMap.name ? themeMap.name : THEME.name}
-                            </Typography>
-                        </Stack>
-                    </StyledHeaderLogo>
-                    <Stack flex={1} direction="column" overflow={'auto'}>
-                        <WorkspaceTabs />
-                    </Stack>
-                    <Stack
-                        direction="column"
-                        justifyContent={'center'}
-                        spacing={0.25}
-                    >
-                        <Typography
-                            variant={'caption'}
-                            sx={{ fontSize: '.625rem' }}
-                        >
-                            ID: {workspace.appId}
-                        </Typography>
-                    </Stack>
-                </Stack>
-            </Drawer>
         </WorkspaceContext.Provider>
     );
 });

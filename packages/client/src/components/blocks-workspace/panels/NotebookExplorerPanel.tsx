@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { NoteAddOutlined, Refresh } from '@mui/icons-material';
+import { Add } from '@mui/icons-material';
 import { Actions, DockLocation, Layout, TabNode } from 'flexlayout-react';
 
 import { ActionMessages, useBlocks } from '@semoss/renderer';
-import { useNotification, IconButton, Stack } from '@semoss/ui';
+import {
+    useNotification,
+    IconButton,
+    Stack,
+    styled,
+    Typography,
+    TextField,
+} from '@semoss/ui';
 
 import { useWorkspace } from '@/hooks';
 import { Panel } from '@/components/workspace';
@@ -12,13 +19,68 @@ import { NewQueryOverlay, DeleteNotebookOverlay } from '@/components/notebook';
 import { NotebookExplorerItem } from './NotebookExplorerPanelItem';
 
 interface NotebookExplorerPanelProps {
+    title: string;
     /** Current layoutobject */
     layout: Layout;
 }
+const StyledTitle = styled('div')(({ theme }) => ({
+    borderRadius: '16px',
+    background: ' #EBF4FE',
+    width: 'fit-content',
+    marginTop: '4px',
+    paddingRight: theme.spacing(2),
+    paddingLeft: theme.spacing(2),
+    marginBottom: '8px',
+    backgroundColor: theme.palette.primary.selected,
+    color: theme.palette.info.dark,
+}));
+
+const StyledTitleSpan = styled('span')(() => ({
+    color: 'var(--Primary-Dark, #1260DD)',
+    fontFamily: 'Inter',
+    fontFeatureSettings: "'liga' off, 'clig' off",
+    fontStyle: 'normal',
+    fontSize: '13px',
+    lineHeight: '18px',
+    fontWeight: 400,
+    marginTop: '8px',
+    letterSpacing: '0.16px',
+    marginBottom: '8px',
+}));
+
+const StyledStack = styled(Stack)(() => ({
+    backgroundColor: '#FFF',
+    width: '100%',
+    padding: '0px',
+}));
+
+const StyledNotebookListStack = styled(Stack)(() => ({
+    backgroundColor: '#FFF',
+}));
+
+const StyledIconsButton = styled(IconButton)(() => ({
+    justifyContent: 'flex-end',
+}));
+
+const StyledNotebookStack = styled(Stack)(() => ({
+    backgroundColor: '#FFF',
+    paddingLeft: '16px',
+    paddingRight: '16px',
+    paddingTop: '16px',
+    paddingBottom: '8px',
+}));
+
+const StyledTextField = styled(TextField)(() => ({
+    paddingRight: '16px',
+    marginTop: '8px',
+    paddingLeft: '16px',
+    borderRadius: '8px',
+    width: '100%',
+}));
 
 export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
     observer((props) => {
-        const { layout } = props;
+        const { title, layout } = props;
 
         const { workspace } = useWorkspace();
         const { state, notebook } = useBlocks();
@@ -363,39 +425,66 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
         return (
             <Panel
                 actions={
-                    <>
-                        <IconButton
-                            size={'small'}
-                            color={'default'}
-                            title={'Refresh'}
-                            onClick={() => {
-                                refreshNotebooks();
-                            }}
-                        >
-                            <Refresh fontSize="inherit" />
-                        </IconButton>
-                        <Stack flex={1}>&nbsp;</Stack>
-                        <Stack
+                    <StyledStack direction="column" spacing={0}>
+                        <StyledTitle>
+                            <StyledTitleSpan>{title}</StyledTitleSpan>
+                        </StyledTitle>
+                        {/* TODO : Implement search  */}
+                        {/* <StyledTextField
+                                    placeholder="Search"
+                                    size="small"
+                                    fullWidth
+                                    // value={search}
+                                    // onChange={(e) => setSearch(e.target.value)}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <Search />
+                                            </InputAdornment>
+                                        ),
+                                        // endAdornment: (
+                                        //     <InputAdornment position="end">
+                                        //         <IconButton
+                                        //             size="small"
+                                        //             onClick={(e) =>
+                                        //                 setMenuAnchorEl(e.currentTarget)
+                                        //             }
+                                        //         >
+                                        //             <Badge
+                                        //                 variant="dot"
+                                        //                 invisible={!anyEnabledFilter}
+                                        //                 color="primary"
+                                        //             >
+                                        //                 <Tune />
+                                        //             </Badge>
+                                        //         </IconButton>
+                                        //     </InputAdornment>
+                                        // ),
+                                    }}
+                                /> */}
+                        <StyledNotebookStack
                             direction="row"
                             alignItems={'center'}
-                            spacing={0}
+                            justifyContent={'space-between'}
                         >
-                            <IconButton
+                            <Typography align="left" variant="body1">
+                                Notebook
+                            </Typography>
+                            <StyledIconsButton
                                 title={`Create new notebook`}
                                 size={'small'}
-                                color={'default'}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleOpenCreateNotebook();
                                 }}
                             >
-                                <NoteAddOutlined fontSize="inherit" />
-                            </IconButton>
-                        </Stack>
-                    </>
+                                <Add fontSize="inherit" />
+                            </StyledIconsButton>
+                        </StyledNotebookStack>
+                    </StyledStack>
                 }
             >
-                <Stack
+                <StyledNotebookListStack
                     key={counter}
                     direction="column"
                     height={'100%'}
@@ -418,7 +507,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
                             />
                         );
                     })}
-                </Stack>
+                </StyledNotebookListStack>
             </Panel>
         );
     });

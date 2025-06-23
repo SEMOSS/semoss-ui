@@ -45,11 +45,11 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
         isOpen: false,
     },
     layout: {
-        selected: 'dev',
+        selected: 'main',
         available: {
-            dev: {
-                id: 'dev',
-                name: 'Dev',
+            main: {
+                id: 'main',
+                name: 'Main Layout',
                 data: {
                     global: { tabEnableClose: false },
                     borders: [
@@ -60,43 +60,51 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                             children: [
                                 {
                                     type: 'tab',
+                                    id: 'blocks',
                                     name: 'Blocks',
                                     component: 'blocks',
                                     config: {},
-                                    helpText:
-                                        'UI components that can be used to display for your app',
+                                    helpText: 'Blocks',
                                 },
                                 {
                                     type: 'tab',
+                                    id: 'layers',
                                     name: 'Layers',
                                     component: 'layers',
                                     config: {},
-                                    helpText:
-                                        'Hierarchy for UI elements within the designer',
+                                    helpText: 'Layers',
                                 },
                                 {
                                     type: 'tab',
+                                    id: 'variables',
                                     name: 'Variables',
                                     component: 'variables',
                                     config: {},
-                                    helpText:
-                                        'Parameters that are used within blocks and notebooks',
+                                    helpText: 'Variables',
                                 },
                                 {
                                     type: 'tab',
+                                    id: 'filexplorer',
                                     name: 'Files',
                                     component: 'file-explorer',
                                     config: {},
-                                    helpText:
-                                        'Files that are stored at app level',
+                                    helpText: 'Files',
                                 },
                                 {
                                     type: 'tab',
+                                    id: 'notebook-explorer',
                                     name: 'Notebooks',
                                     component: 'notebook-explorer',
                                     config: {},
-                                    helpText:
-                                        'Notebooks associated with the app',
+                                    helpText: 'Notebooks',
+                                },
+                                {
+                                    type: 'tab',
+                                    id: 'settings',
+                                    name: 'Settings',
+                                    component: 'settings',
+                                    config: {},
+                                    helpText: 'Settings',
                                 },
                             ],
                         },
@@ -107,39 +115,27 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                             children: [
                                 {
                                     type: 'tab',
+                                    id: 'block-settings',
                                     name: 'Block Settings',
                                     component: 'selected',
-                                    config: {},
-                                    helpText:
-                                        'Settings for UI component you have selected',
-                                    // icon: '@/assets/favicon.svg',
+                                    config: {
+                                        className: 'selected_block',
+                                    },
+                                    helpText: 'Block Settings',
                                 },
                             ],
                         },
-                        // {
-                        //     type: 'border',
-                        //     location: 'bottom',
-                        //     size: DEFAULT_BORDER_SIZE,
-                        //     children: [
-                        //         {
-                        //             id: 'terminal',
-                        //             type: 'tab',
-                        //             name: 'Terminal',
-                        //             component: 'terminal',
-                        //             enableClose: false,
-                        //             config: {},
-                        //         },
-                        //     ],
-                        // },
                     ],
                     layout: {
                         type: 'row',
-                        weight: 100,
+                        weight: 0,
                         children: [
                             {
                                 type: 'tabset',
+                                id: 'main-tabset',
                                 weight: 100,
                                 selected: 0,
+                                enableMaximize: true,
                                 children: [
                                     {
                                         type: 'tab',
@@ -150,41 +146,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                         },
                                         enableClose: true,
                                     },
-                                    // {
-                                    //     type: 'tab',
-                                    //     name: 'Dependency Graph',
-                                    //     component: 'graph',
-                                    //     config: {},
-                                    //     helpText: 'How your app is connected',
-                                    // },
-                                ],
-                            },
-                        ],
-                    },
-                },
-            },
-            settings: {
-                id: 'settings',
-                name: 'Settings',
-                data: {
-                    global: { tabEnableClose: false },
-                    borders: [],
-                    layout: {
-                        type: 'row',
-                        weight: 100,
-                        children: [
-                            {
-                                type: 'tabset',
-                                weight: 100,
-                                selected: 0,
-                                enableTabStrip: false,
-                                children: [
-                                    {
-                                        type: 'tab',
-                                        name: 'Settings',
-                                        component: 'settings',
-                                        config: {},
-                                    },
                                 ],
                             },
                         ],
@@ -193,42 +154,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
             },
         },
     },
-};
-
-const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
-    node,
-    layout,
-) => {
-    const component = node.getComponent();
-    const config = node.getConfig();
-
-    if (component === 'designer') {
-        return <DesignerPanel id={config.id} />;
-    } else if (component === 'variables') {
-        return <VariablesPanel />;
-    } else if (component === 'settings') {
-        return <SettingsPanel />;
-    } else if (component === 'layers') {
-        return <LayersPanel />;
-    } else if (component === 'selected') {
-        return <SelectedBlockPanel />;
-    } else if (component === 'blocks') {
-        return <BlocksMenuPanel title={'Add Blocks'} items={DEFAULT_MENU} />;
-    } else if (component === 'file-explorer') {
-        return <FileExplorerPanel layout={layout} />;
-    } else if (component === 'file-editor') {
-        return <FileEditorPanel path={config.path} />;
-    } else if (component === 'notebook-explorer') {
-        return <NotebookExplorerPanel layout={layout} />;
-    } else if (component === 'notebook-viewer') {
-        return <NotebookViewerPanel id={config.id} />;
-    } else if (component === 'terminal') {
-        return <TerminalPanel />;
-    } else if (component === 'graph') {
-        return <GraphPanel />;
-    }
-
-    return <>{component}</>;
 };
 
 const ACTIVE = 'page-1';
@@ -244,9 +169,7 @@ interface BlocksWorkspaceProps {
 export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
     const { workspace } = props;
     const notification = useNotification();
-
     const [state, setState] = useState<StateStore>();
-
     useEffect(() => {
         // start the loading screen
         workspace.setLoading(true);
@@ -312,6 +235,43 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
     if (!state) {
         return <LoadingScreen.Trigger />;
     }
+
+    const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
+        node,
+        layout,
+    ) => {
+        const component = node.getComponent();
+        const config = node.getConfig();
+        if (component === 'designer') {
+            return <DesignerPanel id={config.id} />;
+        } else if (component === 'variables') {
+            return <VariablesPanel title={'Variables'} />;
+        }
+          else if (component === 'settingspanel') {
+            return <SettingsPanel  />;
+        } else if (component === 'settings') {
+            return <SettingsPanel />;
+        } else if (component === 'layers') {
+            return <LayersPanel title={'Layers'} />;
+        } else if (component === 'selected') {
+            return <SelectedBlockPanel title="Block Settings" />;
+        } else if (component === 'blocks') {
+            return <BlocksMenuPanel title={'Add Blocks'} items={DEFAULT_MENU} name={component}/>;
+        } else if (component === 'file-explorer') {
+            return <FileExplorerPanel title={'Files'} layout={layout} />;
+        } else if (component === 'file-editor') {
+            return <FileEditorPanel path={config.path} />;
+        } else if (component === 'notebook-explorer') {
+            return <NotebookExplorerPanel title={'Notebook'} layout={layout} />;
+        } else if (component === 'notebook-viewer') {
+            return <NotebookViewerPanel id={config.id} />;
+        } else if (component === 'terminal') {
+            return <TerminalPanel />;
+        } else if (component === 'graph') {
+            return <GraphPanel />;
+        }
+        return <>{component}</>;
+    };
 
     return (
         <Blocks state={state} registry={DefaultBlocks}>

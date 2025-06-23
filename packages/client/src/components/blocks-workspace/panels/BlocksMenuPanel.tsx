@@ -15,7 +15,6 @@ import {
     IconButton,
 } from '@semoss/ui';
 
-import { runPixelTwo } from '../../../runPixelTwo';
 import { Panel } from '@/components/workspace';
 import { CLIENT_BLOCKS_MENU, SECTION_ORDER } from '../menus/default-menu';
 import { AddBlocksMenuCard } from '@/components/designer';
@@ -27,13 +26,15 @@ import {
 } from '../menus/menu-types';
 
 const StyledTitle = styled('div')(({ theme }) => ({
-    paddingTop: theme.spacing(1.5),
+    borderRadius: '16px',
+    background: ' #EBF4FE',
+    width: 'fit-content',
+    marginTop: '8px',
     paddingRight: theme.spacing(2),
-    paddingBottom: theme.spacing(1.5),
     paddingLeft: theme.spacing(2),
+    marginBottom: '8px',
     backgroundColor: theme.palette.primary.selected,
     color: theme.palette.info.dark,
-    width: '100%',
 }));
 
 const StyledHeader = styled('div')(({ theme }) => ({
@@ -85,6 +86,27 @@ const StyledTypography = styled(Typography)({
     userSelect: 'none',
 });
 
+const StyledTitleSpan = styled('span')({
+    color: 'var(--Primary-Dark, #1260DD)',
+    fontFeatureSettings: "'liga' off, 'clig' off",
+    fontFamily: 'Inter',
+    fontSize: '13px',
+    fontStyle: 'normal',
+    fontWeight: 400,
+    lineHeight: '18px',
+    letterSpacing: '0.16px',
+});
+
+const StyledStack = styled(Stack)({
+    marginLeft: '16px',
+    marginTop: '8px',
+});
+
+const StyledTextFiled = styled(TextField)({
+    marginRight: '8px',
+    width: '95%',
+    borderRadius: '8px',
+});
 type MODE = 'CLIENT' | 'SYSTEM';
 export interface AddBlocksMenuProps {
     /** Title to render in the menu */
@@ -92,6 +114,8 @@ export interface AddBlocksMenuProps {
 
     /** Items to add to show in the menu.  */
     items: DesignerMenuItem[];
+
+    name?: string;
 }
 
 const defaultSection = 'Miscellaneous';
@@ -100,7 +124,7 @@ const defaultSection = 'Miscellaneous';
  * Add Blocks to the UI
  */
 export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
-    const { title, items } = props;
+    const { title, items, name } = props;
 
     const [search, setSearch] = useState('');
     const [clientBlock, setClientBlock] = useState([]);
@@ -250,13 +274,13 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 
     return (
         <Panel>
-            <Stack height="100%">
+            <Stack height="100%" spacing={undefined}>
                 <StyledTitle>
-                    <Typography variant={'h6'}>{title}</Typography>
+                    <StyledTitleSpan>{title}</StyledTitleSpan>
                 </StyledTitle>
-                <Stack paddingTop={2} paddingLeft={2} paddingRight={2}>
-                    <TextField
-                        placeholder="Search Components"
+                <StyledStack>
+                    <StyledTextFiled
+                        placeholder="Search"
                         size="small"
                         fullWidth
                         value={search}
@@ -305,7 +329,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                             value={'CLIENT'}
                         />
                     </StyledToggleTabsGroup>
-                </Stack>
+                </StyledStack>
 
                 {renderedItems.length ? (
                     <StyledMenu>

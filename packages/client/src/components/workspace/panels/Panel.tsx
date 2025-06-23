@@ -3,14 +3,13 @@ import { styled, Stack } from '@semoss/ui';
 
 const StyledPanel = styled(Stack)(({ theme }) => ({
     height: '100%',
-    width: '100%',
-    background: theme.palette.background.paper,
+    width: '98%',
     overflow: 'hidden',
 }));
 
 const StyledPanelActions = styled(Stack)(({ theme }) => ({
     width: '100%',
-    backgroundColor: theme.palette.secondary.light,
+    backgroundColor: '#FFF',
     padding: theme.spacing(0.5),
 }));
 
@@ -18,12 +17,12 @@ const StyledPanelContent = styled(Stack)(({ theme }) => ({
     height: '100%',
     width: '100%',
     overflow: 'hidden',
-    backgroundColor: theme.palette.background.paper,
+    backgroundColor: '#FFF',
 }));
 
 const StyledPanelFooter = styled(Stack)(({ theme }) => ({
     width: '100%',
-    backgroundColor: theme.palette.secondary.light,
+    backgroundColor: '#FFF',
     padding: theme.spacing(0.5),
 }));
 
