@@ -69,9 +69,48 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
     const { setData } = useBlockSettings(id);
     const [showcreatedJiraData, setShowCreatedJiraData] = useState('');
     const [showListedTickets,setShowListedTickets] = useState([]);
+    const [projects, setProjects] = useState(['JIRADEMO', 'JiraTest']);
+    const [issueTypes, setIssueTypes] = useState([]);
     const textContent =
         typeof data.text == "string" ? data.text : JSON.stringify(data.text);
     let displayTxt = useTypeWriter(data.isStreaming ? textContent : "");
+
+    useEffect(() => {
+        console.log("userId:", data.userId);
+        async function fetchJiraData() {
+            try {
+                const response = await runPixel<[string]>(
+                    `META | Jira ( command = "get all projects", userid="${data.userId}" ) ;`,
+                );
+                const outputProjects = response.pixelReturn[0].output;
+                const type = response.pixelReturn[0].operationType;
+                if (type.indexOf('ERROR') === -1) {
+
+                    setProjects(Array.isArray(outputProjects) ? outputProjects : [outputProjects]);
+                } else {
+                    throw new Error(response.errors[0]);
+                }
+            } catch (error) {
+                console.error("Error fetching Jira projects:", error);
+            }
+            try {
+                const response = await runPixel<[string]>(
+                    `META | Jira ( command = "type of issue", userid="${data.userId}" ) ;`,
+                );
+                const outputIssues = response.pixelReturn[0].output;
+                const type = response.pixelReturn[0].operationType;
+                if (type.indexOf('ERROR') === -1) {
+                    console.log("Response from JiraGetIssues:", response);
+                    setIssueTypes(Array.isArray(outputIssues) ? outputIssues : [outputIssues]);
+                } else {
+                    throw new Error(response.errors[0]);
+                }
+            } catch (error) {
+                console.error("Error fetching Jira issue types:", error);
+            }
+        }
+        fetchJiraData();
+    },[data.userId]);
 
     if (!data.isStreaming) displayTxt = textContent;
     const { getValues, handleSubmit, control, watch,reset } = useForm<CreateNewJiraForm>({
@@ -93,12 +132,11 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
         const inputValues = getValues();
         try{
             const response = await runPixel<[string]>(
-                `META | Jira(command = "Create new jira", summary = "${inputValues.JIRA_SUMMARY}",description = "${inputValues.JIRA_DESCRIPTION}",issuetype = "${inputValues.JIRA_ISSUE_TYPE}",project="${inputValues.JIRA_PROJECT}",userid="${data.userId}");`,
+                `META | Jira(command = "Create new ticket", summary = "${inputValues.JIRA_SUMMARY}",description = "${inputValues.JIRA_DESCRIPTION}",issuetype = "${inputValues.JIRA_ISSUE_TYPE}",project="${inputValues.JIRA_PROJECT}",userid="${data.userId}");`,
             );
             const output1 = response.pixelReturn[0].output;
             const type = response.pixelReturn[0].operationType;
             if (type.indexOf('ERROR') === -1) {
-                console.log("Response from JiraGet:", output1);
                 setData("showCreateJiraForm", false as PathValue<JiraBlockDef["data"], "showCreateJiraForm">);
                 setData("showCreatedJiraForm", true as PathValue<JiraBlockDef["data"], "showCreatedJiraForm">);
                 setShowCreatedJiraData(output1);
@@ -119,15 +157,12 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                 `META | Jira ( command = "List all tickets" , userid="${data.userId}",project="${inputValues.JIRA_PROJECT_ID}" ) ;`,
             );
             const output2 = response.pixelReturn[0].output;
-            console.log("Output from JiraGet:", output2);
             const type = response.pixelReturn[0].operationType;
             if (type.indexOf('ERROR') === -1) {
-                console.log("Response from JiraGet:", output2);
                 setData("listAllTickets", false as PathValue<JiraBlockDef["data"], "listAllTickets">);
                 setData("listedTickets", true as PathValue<JiraBlockDef["data"], "listedTickets">);
                 const tickets = Array.isArray(output2) ? output2 : [output2];
-                setShowListedTickets(tickets);
-                console.log("Listed Tickets:", tickets);
+                setShowListedTickets(tickets)
                 reset1();
             }else {
                 throw new Error(response.errors[0]);
@@ -160,45 +195,53 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                                         name={'JIRA_PROJECT'}
                                         control={control}
                                         rules={{ required: true }}
-                                        render={({ field }) => {
-                                            return (
-                                                <TextField
-                                                    label="Project"
-                                                    value={field.value ? field.value : ''}
-                                                    disabled={false}
-                                                    onChange={(value) =>
-                                                        field.onChange(value)
-                                                    }
-                                                    fullWidth={true}
-                                                    inputProps={{
-                                                        'data-testid':
-                                                            'newAppModal-textField-name',
-                                                    }}
-                                                />
-                                            );
-                                        }}
+                                        render={({ field }) => (
+                                            <Autocomplete
+                                                options={projects}
+                                                multiple={false}
+                                                getOptionLabel={(option) => option} // Directly use the string option
+                                                value={field.value || null} // Ensure the value is a string or null
+                                                onChange={(event, newValue) => field.onChange(newValue)} // Update the field value
+                                                isOptionEqualToValue={(option, value) => option === value} // Ensure equality behavior
+                                                renderInput={(params) => (
+                                                    <TextField
+                                                        {...params}
+                                                        label="Project"
+                                                        fullWidth
+                                                        inputProps={{
+                                                            ...params.inputProps,
+                                                            'data-testid': 'newAppModal-dropdown-issueType',
+                                                        }}
+                                                    />
+                                                )}
+                                            />
+                                        )}
                                     />
                                     <Controller
                                         name={'JIRA_ISSUE_TYPE'}
                                         control={control}
                                         rules={{ required: true }}
-                                        render={({ field }) => {
-                                            return (
-                                                <TextField
-                                                    label="Issue Type"
-                                                    value={field.value ? field.value : ''}
-                                                    disabled={false}
-                                                    onChange={(value) =>
-                                                        field.onChange(value)
-                                                    }
-                                                    fullWidth={true}
-                                                    inputProps={{
-                                                        'data-testid':
-                                                            'newAppModal-textField-name',
-                                                    }}
-                                                />
-                                            );
-                                        }}
+                                        render={({ field }) => (
+                                            <Autocomplete
+                                                options={issueTypes}
+                                                multiple={false}
+                                                getOptionLabel={(option) => option} // Directly use the string option
+                                                value={field.value || null} // Ensure the value is a string or null
+                                                onChange={(event, newValue) => field.onChange(newValue)} // Update the field value
+                                                isOptionEqualToValue={(option, value) => option === value} // Ensure equality behavior
+                                                renderInput={(params) => (
+                                                    <TextField
+                                                        {...params}
+                                                        label="Issue Type"
+                                                        fullWidth
+                                                        inputProps={{
+                                                            ...params.inputProps,
+                                                            'data-testid': 'newAppModal-dropdown-issueType',
+                                                        }}
+                                                    />
+                                                )}
+                                            />
+                                        )}
                                     />
                                     <Controller
                                         name={'JIRA_SUMMARY'}

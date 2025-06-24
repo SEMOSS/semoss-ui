@@ -42,7 +42,7 @@ interface JiraSettingsProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     paths: Paths<Block<D>["data"], 4>[];
-    userId?: string;
+    userId: Paths<Block<D>["data"], 4>;
 }
 
 export const JiraSettings = observer(
@@ -95,7 +95,7 @@ export const JiraSettings = observer(
                         id="dropdown1"
                         value={dropdown1Value}
                         label={"Connections"}
-                        onChange={(event) => {setDropdown1Value(event.target.value as string);setData(userId, event.target.value['id']);}}
+                        onChange={(event) => {setDropdown1Value(event.target.value as string);setData(userId, event.target.value['id'] as PathValue<D["data"], typeof userId>)}}
                         >
                         {jiraData && jiraData.map((data: string) => (
                             <MenuItem key={data['id']} value={data}>{data['user']}</MenuItem>
