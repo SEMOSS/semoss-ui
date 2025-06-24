@@ -73,6 +73,7 @@ interface SaveAPIKeyForm {
     APIKEY: string;
     USERID: string;
     URL: string;
+    NAME: string;
 }
 
 export const JiraProfilePage = () => {
@@ -93,6 +94,7 @@ export const JiraProfilePage = () => {
                 APIKEY: '',
                 USERID: '',
                 URL: '',
+                NAME: '',
             },
         });
 
@@ -107,12 +109,8 @@ export const JiraProfilePage = () => {
             .then((response) => {
                 const type = response.pixelReturn[0].operationType;
                 const output = response.pixelReturn[0].output;
-                //setSavedApiKeys((current)=>[...current,{URL: 'https://example.com', DATECREATED: '2023-10-01', LASTUSED: '2023-10-02', USERID: '12345'}]); // Mock data for testing
+                console.log('output', output);
                 if (type.indexOf('ERROR') === -1 && output.length > 0) {
-                    // notification.add({
-                    //     color: 'success',
-                    //     message: 'Successfully inserted Jira credentials.',
-                    // });
                     setSavedApiKeys(output);
                 } else {
                     throw new Error(response.errors[0]);
@@ -123,7 +121,7 @@ export const JiraProfilePage = () => {
             });
     };
     const SaveAPIKey = async (data: SaveAPIKeyForm) => {
-        const pixel = `META | JiraInsert(username="${data.USERID}",apikey="${data.APIKEY}",url="${data.URL}")`;
+        const pixel = `META | JiraInsert(username="${data.USERID}",apikey="${data.APIKEY}",url="${data.URL}",alias="${data.NAME}")`;
         monolithStore
             .runQuery(pixel)
             .then((response) => {
@@ -148,62 +146,36 @@ export const JiraProfilePage = () => {
                     message: error.message,
                 });
             });
-        // try {
-        //     console.log('Saving API Key', data);
-        //     const output = await monolithStore.saveUserApiKey(
-        //         data.APIKEY,
-        //         data.USERID,
-        //     );
-
-        //     getSavedApiKeys.refresh();
-
-        //     // add a new one
-        //     notification.add({
-        //         color: 'success',
-        //         message: 'Successfully Saved key',
-        //     });
-        // } catch (e) {
-        //     if (e instanceof Error) {
-        //         notification.add({
-        //             color: 'error',
-        //             message: e.message,
-        //         });
-        //     }
-        // }
     };
 
-    /**
-     * Delete an accesskey
-     * @param accessKey - delete an access key
-     */
-    const deleteAccessKey = async (accessKey: string) => {
-        try {
-            const response = await monolithStore.deleteUserAccessKeys(
-                accessKey,
-            );
+    const DeleteAPIKey = async (primaryId: string) => {
+        const pixel = `META | Jira(command= "delete record for userid",userid="${primaryId}")`;
+        monolithStore
+            .runQuery(pixel)
+            .then((response) => {
+                const type = response.pixelReturn[0].operationType;
+                const output = response.pixelReturn[0].output;
+                if (
+                    type.indexOf('ERROR') === -1 &&
+                    output.includes('Record deleted succesfully by user')
+                ) {
+                    notification.add({
+                        color: 'success',
+                        message: 'Successfully deleted the API key.',
+                    });
 
-            if (!response) {
-                throw new Error('Error deleting key');
-            }
-
-            // refresh the keys
-            //getSavedApiKeys.refresh();
-
-            // add a new one
-            notification.add({
-                color: 'success',
-                message: 'Successfully deleted key',
-            });
-        } catch (e) {
-            if (e instanceof Error) {
+                    getSavedApiKeysQuery();
+                } else {
+                    throw new Error(response.errors[0]);
+                }
+            })
+            .catch((error) => {
                 notification.add({
                     color: 'error',
-                    message: e.message,
+                    message: error.message,
                 });
-            }
-        }
+            });
     };
-
     /**
      * Callback that is triggered when the add modal closes
      */
@@ -235,13 +207,6 @@ export const JiraProfilePage = () => {
         }
     };
 
-    // if (
-    //     getSavedApiKeys.status === 'INITIAL' ||
-    //     getSavedApiKeys.status === 'LOADING'
-    // ) {
-    //     return <LoadingScreen.Trigger description="Getting access keys" />;
-    // }
-
     return (
         <Stack gap={3} className="my-jira-profile-page">
             <StyledAccessTokensPaper>
@@ -265,8 +230,9 @@ export const JiraProfilePage = () => {
                         <Table.Head>
                             <Table.Row>
                                 <LeftHeaderCell align={'left'}>
-                                    Url
+                                    Name
                                 </LeftHeaderCell>
+                                <HeaderCell align={'left'}>Url</HeaderCell>
                                 <HeaderCell align={'left'}>
                                     Date Created
                                 </HeaderCell>
@@ -283,6 +249,9 @@ export const JiraProfilePage = () => {
                                       return (
                                           <Table.Row key={idx}>
                                               <Table.Cell align={'left'}>
+                                                  {k.name}
+                                              </Table.Cell>
+                                              <Table.Cell align={'left'}>
                                                   {k.url}
                                               </Table.Cell>
                                               <Table.Cell align={'left'}>
@@ -295,23 +264,12 @@ export const JiraProfilePage = () => {
                                                   {k.userId}
                                               </Table.Cell>
                                               <Table.Cell align={'right'}>
-                                                  {/* <IconButton
-                                                      title="Copy"
-                                                      onClick={() => {
-                                                          //copy(k.ACCESSKEY);
-                                                      }}
-                                                      data-testid={
-                                                          'my-jira-profile-access-key-copy-btn'
-                                                      }
-                                                  >
-                                                      <ContentCopyOutlined />
-                                                  </IconButton> */}
                                                   <IconButton
                                                       title="Delete"
                                                       onClick={() => {
-                                                          //   deleteAccessKey(
-                                                          //       k.ACCESSKEY,
-                                                          //   );
+                                                          DeleteAPIKey(
+                                                              k.primaryId,
+                                                          );
                                                       }}
                                                       data-testid={
                                                           'my-jira-profile-access-key-delete-btn'
@@ -363,6 +321,29 @@ export const JiraProfilePage = () => {
                                             <TextField
                                                 required
                                                 label="User Id"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                                inputProps={{ maxLength: 500 }}
+                                            ></TextField>
+                                        );
+                                    }}
+                                />
+
+                                <Controller
+                                    name={'NAME'}
+                                    control={control}
+                                    rules={{ required: true }}
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                required
+                                                label="Name"
                                                 value={
                                                     field.value
                                                         ? field.value
