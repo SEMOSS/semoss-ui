@@ -12,7 +12,6 @@ import {
     Alert,
     Markdown
 } from '@semoss/ui';
-import { v4 as uuidv4 } from 'uuid';
 
 import { useEngine, useRootStore } from '@/hooks';
 import { EngineModelTestSidebar } from '@/components/settings';
@@ -144,29 +143,6 @@ export const EngineModelTestPage = () => {
             return false;
         }
         return true;
-    };
-
-    const continueGeneration = async (lastMessage: Message) => {
-        setIsLoading(true);
-        setError('');
-        try {
-            const continuePrompt = "Please continue your previous response.";
-            const pixel = `LLM(engine="${selectedModel.database_id}", command=["<encode>${continuePrompt}</encode>"], paramValues=[{"temperature":${temperature}, "max_tokens":${maxTokens}}])`;
-            const response = await monolithStore.runQuery(pixel, insightId);
-            const { output, operationType } = response.pixelReturn[0];
-            if (operationType.indexOf('ERROR') > -1) {
-                throw new Error(output.response || 'An error occurred while continuing the response');
-            }
-            setMessages(prev => prev.map(msg =>
-                msg.id === lastMessage.id
-                    ? { ...msg, content: msg.content + '\n\n' + (output.response || '') }
-                    : msg
-            ));
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An unexpected error occurred while continuing');
-        } finally {
-            setIsLoading(false);
-        }
     };
 
     const sendMessage = async (data: { prompt: string }) => {
