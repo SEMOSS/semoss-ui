@@ -28,7 +28,7 @@ import { Env } from '@semoss/sdk/react';
 
 import BRAIN from '@/assets/img/BRAIN.png';
 import GOOGLE from '@/assets/img/google.png';
-import { ENGINE_IMAGES } from '../../pages/import/import.constants';
+import { ENGINE_IMAGES } from '@/pages/import';
 import { TruncatedText } from '../../../../../libs/ui/src/components/TruncatedText';
 
 const StyledCardImg = styled('img')({

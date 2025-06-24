@@ -132,18 +132,39 @@ export const SettingsLayout = observer(() => {
                         {matchedRoute.path && (
                             <StyledHeader>
                                 <Breadcrumbs separator="/">
-                                    <StyledLink to={'.'}>Settings</StyledLink>
-                                    {matchedRoute.history.map((link, i) => {
+                                    <Breadcrumbs.Item
+                                        //@ts-expect-error: TODO FIX Type
+                                        as={Link}
+                                        to={`..`}
+                                        underline="none"
+                                        color="inherit"
+                                        variant="body1"
+                                    >
+                                        Settings
+                                    </Breadcrumbs.Item>
+                                    {matchedRoute.history.map((link, idx) => {
                                         return (
-                                            <StyledLink
+                                            <Breadcrumbs.Item
+                                                //@ts-expect-error: TODO FIX Type
+                                                as={Link}
+                                                key={idx + link}
                                                 to={link.replace('<id>', id)}
-                                                key={i + link}
+                                                underline="none"
+                                                color={
+                                                    matchedRoute.history
+                                                        .length -
+                                                        1 ===
+                                                    idx
+                                                        ? 'text.disabled'
+                                                        : 'inherit'
+                                                }
+                                                variant="body1"
                                                 state={{ ...state }}
                                             >
                                                 {link.includes('<id>')
                                                     ? id
                                                     : matchedRoute.title}
-                                            </StyledLink>
+                                            </Breadcrumbs.Item>
                                         );
                                     })}
                                 </Breadcrumbs>

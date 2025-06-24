@@ -1,22 +1,16 @@
-import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
 import {
     styled,
     TextField,
-    Typography,
-    IconButton,
     InputAdornment,
     Container,
     Stack,
 } from '@semoss/ui';
 
-import { THEME } from '@/constants';
-import { Logo } from '@/assets/img/Logo';
-import { usePage, useRootStore } from '@/hooks';
+import { usePage } from '@/hooks';
 import { Search } from './Search';
-import { MenuRounded, Search as SearchIcon } from '@mui/icons-material';
+import { Search as SearchIcon } from '@mui/icons-material';
 
 const StyledNavbar = styled('div')(({ theme }) => ({
     position: 'absolute',
@@ -25,7 +19,7 @@ const StyledNavbar = styled('div')(({ theme }) => ({
     width: '100%',
     borderBottom: '1px solid #EAEAEE',
     background: '#FAFAFA', //"var(--Background-Paper-2, #FAFAFA)",
-    color: '#666666', //"var(--Text-Primary-1, #212B36)",
+    color: theme.palette.text.primary,
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
@@ -34,30 +28,7 @@ const StyledNavbar = styled('div')(({ theme }) => ({
     padding: theme.spacing(0, 2),
 }));
 
-const StyledNavbarHeader = styled(Stack)(({ theme }) => ({
-    position: 'relative',
-    background: 'transparent',
-    paddingTop: theme.spacing(1.5),
-    paddingRight: theme.spacing(2),
-    paddingBottom: theme.spacing(1),
-    paddingLeft: theme.spacing(2),
-    zIndex: 0,
-}));
-
-const StyledNavbarHeaderLink = styled(Link)(({ theme }) => ({
-    flex: 1,
-    display: 'flex',
-    alignItems: 'center',
-    color: 'inherit',
-    textDecoration: 'none',
-    cursor: 'pointer',
-    gap: theme.spacing(2),
-    '&:hover': {
-        background: theme.palette.action.hover,
-    },
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
+const StyledTextField = styled(TextField)(() => ({
     width: '100%',
     display: 'flex',
     flexDirection: 'column',
@@ -75,22 +46,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 }));
 
 export const Navbar: React.FC = observer(() => {
-    const { configStore } = useRootStore();
     const { page } = usePage();
-
-    const themeMap = useMemo(() => {
-        const theme = configStore.store.config['theme'];
-
-        if (theme && theme['THEME_MAP']) {
-            try {
-                return JSON.parse(theme['THEME_MAP'] as string);
-            } catch {
-                return {};
-            }
-        }
-
-        return {};
-    }, [Object.keys(configStore.store.config).length]);
 
     return (
         <StyledNavbar ref={(n) => page.setNavbarElement(n)}>

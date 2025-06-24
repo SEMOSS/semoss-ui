@@ -19,7 +19,6 @@
 import React, { useEffect, useRef } from 'react';
 
 import {
-    Avatar,
     Breadcrumbs,
     Card,
     styled,
@@ -30,6 +29,7 @@ import {
     Tabs,
     Tab,
     Stack,
+    Link,
 } from '@semoss/ui';
 
 import { UploadData } from '../../components/import/refactor/UploadData';
@@ -38,11 +38,10 @@ import { BuildDb } from '@/assets/img/BuildDb';
 import { ConnectModel } from '@/assets/img/ConnectModel';
 import { ConnectDb } from '@/assets/img/ConnectDb';
 import { CopyDb } from '@/assets/img/CopyDb';
-import { UploadDb } from '@/assets/img/UploadDb';
 import { ConnectStorage } from '@/assets/img/ConnectStorage';
 
 import { useStepper } from '@/hooks';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { CONNECTION_OPTIONS } from './import.constants';
 import { EstablishConnectionPage, ImportConnectionPage } from '.';
@@ -654,8 +653,12 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
             <StyledStack>
                 {steps.length ? (
                     <Breadcrumbs separator="/">
-                        <StyledSpan
-                            sx={isModelPage ? { color: '#212121' } : undefined}
+                        <Breadcrumbs.Item
+                            //@ts-expect-error: TODO FIX Type
+                            as={Link}
+                            underline="none"
+                            color="inherit"
+                            variant="body1"
                             onClick={() => {
                                 setSteps([], -1);
                                 if (window.history.length > 1) {
@@ -666,10 +669,19 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
                             }}
                         >
                             {name} Catalog
-                        </StyledSpan>
+                        </Breadcrumbs.Item>
                         {steps.map((step, i) => {
                             return (
-                                <StyledSpan
+                                <Breadcrumbs.Item
+                                    //@ts-expect-error: TODO FIX Type
+                                    as={Link}
+                                    underline="none"
+                                    color={
+                                        steps.length - 1 === i
+                                            ? 'text.disabled'
+                                            : 'inherit'
+                                    }
+                                    variant="body1"
                                     key={i}
                                     onClick={() => {
                                         const newSteps = [];
@@ -681,7 +693,7 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
                                     }}
                                 >
                                     {step.title}
-                                </StyledSpan>
+                                </Breadcrumbs.Item>
                             );
                         })}
                     </Breadcrumbs>

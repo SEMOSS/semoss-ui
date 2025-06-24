@@ -2,23 +2,13 @@ import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 
 import { STATE_VERSION } from '@semoss/renderer';
-import { Stack, Container, Breadcrumbs, styled, Typography } from '@semoss/ui';
+import { Stack, Breadcrumbs, Typography } from '@semoss/ui';
 
 import { useRootStore } from '../../hooks';
 import { BASE_PAGE_BLOCKS } from './app.constants';
-import {
-    NewAppStep,
-    AddAppModal,
-    NewAppModal,
-    AppTemplates,
-} from '../../components/app';
+import { AddAppModal, NewAppModal, AppTemplates } from '../../components/app';
 import CreateAppSection from '../../components/landing/CreateAppSection';
 import { NavbarLeft, NavbarHeader } from '../../components/shared';
-
-const StyledLink = styled(Link)(() => ({
-    textDecoration: 'none',
-    color: 'inherit',
-}));
 
 export const CreateAppPage = () => {
     const navigate = useNavigate();
@@ -77,9 +67,27 @@ export const CreateAppPage = () => {
             </NavbarLeft>
             <Stack direction="column" gap={2}>
                 <Stack>
-                    <Breadcrumbs>
-                        <StyledLink to={`..`}>App Catalog</StyledLink>
-                        <StyledLink to={`.`}>Create</StyledLink>
+                    <Breadcrumbs separator="/">
+                        <Breadcrumbs.Item
+                            //@ts-expect-error: TODO FIX Type
+                            as={Link}
+                            to={`../../..`}
+                            underline="none"
+                            color="inherit"
+                            variant="body1"
+                        >
+                            App Catalog
+                        </Breadcrumbs.Item>
+                        <Breadcrumbs.Item
+                            //@ts-expect-error: TODO FIX Type
+                            as={Link}
+                            to={`.`}
+                            underline="none"
+                            color="text.disabled"
+                            variant="body1"
+                        >
+                            Create
+                        </Breadcrumbs.Item>
                     </Breadcrumbs>
                     <Stack direction="row" alignItems={'center'} width={'100%'}>
                         <Typography variant="h4">Create New App</Typography>

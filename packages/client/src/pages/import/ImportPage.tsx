@@ -1,7 +1,6 @@
 import { ImportPageContent } from './ImportPageContent';
 import { ImportLayout } from './ImportLayout';
 
-import { NavbarLeft, NavbarHeader } from '../../components/shared';
 import { ENGINE_TYPES } from '@/types';
 
 /** TODO: Refactor */
@@ -19,10 +18,6 @@ interface ImportPageProps {
 export const ImportPage: React.FC<ImportPageProps> = ({ name, type }) => {
     return (
         <>
-            <NavbarLeft>
-                <NavbarHeader />
-            </NavbarLeft>
-
             <ImportLayout>
                 <ImportPageContent name={name} type={type} />
             </ImportLayout>

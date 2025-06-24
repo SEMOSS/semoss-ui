@@ -12,8 +12,6 @@ Where it is consumed, and why it is needed on that particular workflow/component
     useStepper:
 
 2. SPECIFIC WORKFLOW HOOKS
-   useEngine:
-
     useImport:
 
     useMetamodel:

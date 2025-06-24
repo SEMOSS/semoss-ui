@@ -9,7 +9,7 @@ import { EngineContext, EngineContextType } from '@/contexts';
 export function useEngine(): EngineContextType {
     const context = useContext(EngineContext);
     if (context === undefined) {
-        throw new Error('useEngine must be used within EngineContext Provider');
+        throw new Error('useEngine must be used within EngineContext.Provider');
     }
 
     return context;

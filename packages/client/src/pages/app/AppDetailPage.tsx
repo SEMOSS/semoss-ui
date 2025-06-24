@@ -77,20 +77,6 @@ const InnerContainer = styled('div')(({ theme }) => ({
     width: '100%',
 }));
 
-const StyledLink = styled(Link)(({ theme }) => ({
-    textDecoration: 'none',
-}));
-
-const StyledCrumb = styled(Typography, {
-    shouldForwardProp: (prop) => prop !== 'disabled',
-})<{ disabled?: true }>(({ theme, disabled }) => ({
-    color: theme.palette.text.primary,
-
-    ...(disabled && {
-        color: theme.palette.text.disabled,
-    }),
-}));
-
 const ActionBar = styled('div')(({ theme }) => ({
     display: 'flex',
     gap: theme.spacing(1),
@@ -159,19 +145,6 @@ const StyledMenuItem = styled(Menu.Item)(({ theme }) => ({
     gap: theme.spacing(0.5),
     alignItems: 'center',
     height: '48px',
-}));
-
-const StyledBox = styled(Box)(({ theme }) => ({
-    background: '#FAFAFA',
-    flexGrow: 1,
-    position: 'sticky',
-    top: 0,
-    zIndex: 1000,
-    display: 'flex',
-    justifyContent: 'center',
-    '& .MuiPaper-root > .MuiToolbar-root': {
-        gap: '8px',
-    },
 }));
 
 export const AppDetailPage = () => {
@@ -555,14 +528,26 @@ export const AppDetailPage = () => {
             <OuterContainer>
                 <InnerContainer>
                     <Breadcrumbs separator="/">
-                        <StyledLink to="../../..">
-                            <StyledCrumb variant="body1">
-                                App Library
-                            </StyledCrumb>
-                        </StyledLink>
-                        <StyledCrumb variant="body1" disabled>
+                        <Breadcrumbs.Item
+                            //@ts-expect-error: TODO FIX Type
+                            as={Link}
+                            to={`../../..`}
+                            underline="none"
+                            color="inherit"
+                            variant="body1"
+                        >
+                            App Catalog
+                        </Breadcrumbs.Item>
+                        <Breadcrumbs.Item
+                            //@ts-expect-error: TODO FIX Type
+                            as={Link}
+                            to={`.`}
+                            underline="none"
+                            color="text.disabled"
+                            variant="body1"
+                        >
                             {appInfo?.project_name}
-                        </StyledCrumb>
+                        </Breadcrumbs.Item>
                     </Breadcrumbs>
 
                     <div>

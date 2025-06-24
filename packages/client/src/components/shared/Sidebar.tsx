@@ -70,7 +70,7 @@ const StyledNavHeaderLink = styled(Link)(({ theme }) => ({
     color: 'inherit',
     textDecoration: 'none',
     cursor: 'pointer',
-    gap: theme.spacing(2),
+    gap: theme.spacing(1),
     '&:hover': {
         background: theme.palette.action.hover,
     },
@@ -199,7 +199,7 @@ export const Sidebar: React.FC = observer(() => {
                     direction={'row'}
                     alignItems={'center'}
                     justifyContent={'flex-start'}
-                    spacing={1}
+                    spacing={2}
                 >
                     <StyledNavHeaderLink to={'/'} aria-label={'Go Home'}>
                         <Logo />

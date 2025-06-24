@@ -7,6 +7,7 @@ import { usePage, useRootStore } from '@/hooks';
 import { MenuRounded } from '@mui/icons-material';
 import { Logo } from '@/assets/img/Logo';
 import { THEME } from '@/constants';
+import { observer } from 'mobx-react-lite';
 
 const StyledNavbarHeader = styled(Stack)(({ theme }) => ({
     position: 'relative',
@@ -25,7 +26,7 @@ const StyledNavbarHeaderLink = styled(Link)(({ theme }) => ({
     color: 'inherit',
     textDecoration: 'none',
     cursor: 'pointer',
-    gap: theme.spacing(2),
+    gap: theme.spacing(1),
     '&:hover': {
         background: theme.palette.action.hover,
     },
@@ -37,7 +38,7 @@ interface NavbarHeaderProps {
      */
     logo?: React.ReactNode | null;
 }
-export const NavbarHeader = (props: NavbarHeaderProps) => {
+export const NavbarHeader = observer((props: NavbarHeaderProps) => {
     const { logo } = props;
     const { page } = usePage();
     const { configStore } = useRootStore();
@@ -61,6 +62,7 @@ export const NavbarHeader = (props: NavbarHeaderProps) => {
             alignItems={'center'}
             justifyContent={'flex-start'}
             onMouseOver={() => page.openSidebar()}
+            spacing={2}
         >
             <IconButton size="small" onClick={() => page.openSidebar()}>
                 <MenuRounded fontSize="medium" />
@@ -80,4 +82,4 @@ export const NavbarHeader = (props: NavbarHeaderProps) => {
     ) : (
         <></>
     );
-};
+});
