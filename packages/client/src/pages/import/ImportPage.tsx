@@ -30,6 +30,7 @@ import {
     Tabs,
     Tab,
     Stack,
+    Tooltip,
 } from '@semoss/ui';
 import { stepsOne } from './import.constants';
 
@@ -49,7 +50,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { CONNECTION_OPTIONS } from './import.constants';
 import { EstablishConnectionPage, ImportConnectionPage } from './';
 import { Help } from '@/components/help';
-import Tooltip from '@mui/material/Tooltip';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',

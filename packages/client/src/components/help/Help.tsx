@@ -1,11 +1,8 @@
 import { useState, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Button, styled } from '@semoss/ui';
+import { Button, Menu, MenuItem, styled } from '@semoss/ui';
 
 import { WelcomeModal } from '@/components/welcome';
-
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 
 import { HelpRounded } from '@mui/icons-material';
 import { useRootStore } from '@/hooks';
