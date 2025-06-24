@@ -2,30 +2,20 @@ import React, { CSSProperties, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 
 import { useBlock, useTypeWriter, useBlocks, useBlockSettings } from "../../../hooks";
-import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
+import { BlockDef, BlockComponent} from "../../../store";
 import { showBlock } from "../../blocks/RendererEngine";
 import { Controller, useForm } from 'react-hook-form';
-import { Env, runPixel } from "@semoss/sdk/react";
+import { runPixel } from "@semoss/sdk/react";
 import {
     Button,
     TextField,
-    Modal,
-    LinearProgress,
     Stack,
-    useNotification,
     TextArea,
     styled,
     Autocomplete,
 } from '@semoss/ui';
 
-import { Paths, PathValue } from "../../../types";
-
-const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing(2),
-    paddingTop: `${theme.spacing(1)}!important`,
-}));
+import { PathValue } from "../../../types";
 
 const StyledButton = styled(Button)(({ theme }) => ({
     marginTop: '20px !important',
@@ -62,10 +52,9 @@ export interface JiraBlockDef extends BlockDef<"jiratext"> {
 }
 
 export const JiraBlock: BlockComponent = observer(({ id }) => {
-    // const { attrs, data } = useBlock<TextBlockDef>(id);
     const block = useBlock<JiraBlockDef>(id);
     const state = useBlocks();
-    const { attrs, data, listeners } = block;
+    const { data} = block;
     const { setData } = useBlockSettings(id);
     const [showcreatedJiraData, setShowCreatedJiraData] = useState('');
     const [showListedTickets,setShowListedTickets] = useState([]);
@@ -76,7 +65,6 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
     let displayTxt = useTypeWriter(data.isStreaming ? textContent : "");
 
     useEffect(() => {
-        console.log("userId:", data.userId);
         async function fetchJiraData() {
             try {
                 const response = await runPixel<[string]>(
@@ -173,10 +161,6 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
         }
     });
 
-    function onClose() {
-    };
-
-    // TODO: Why?
     return (
         <div data-block = {id} style={{ position: "relative", ...data.style }}>
             {showBlock(block, state) ? (
@@ -199,10 +183,10 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                                             <Autocomplete
                                                 options={projects}
                                                 multiple={false}
-                                                getOptionLabel={(option) => option} // Directly use the string option
-                                                value={field.value || null} // Ensure the value is a string or null
-                                                onChange={(event, newValue) => field.onChange(newValue)} // Update the field value
-                                                isOptionEqualToValue={(option, value) => option === value} // Ensure equality behavior
+                                                getOptionLabel={(option) => option} 
+                                                value={field.value || null} 
+                                                onChange={(event, newValue) => field.onChange(newValue)} 
+                                                isOptionEqualToValue={(option, value) => option === value} 
                                                 renderInput={(params) => (
                                                     <TextField
                                                         {...params}
@@ -225,10 +209,10 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                                             <Autocomplete
                                                 options={issueTypes}
                                                 multiple={false}
-                                                getOptionLabel={(option) => option} // Directly use the string option
-                                                value={field.value || null} // Ensure the value is a string or null
-                                                onChange={(event, newValue) => field.onChange(newValue)} // Update the field value
-                                                isOptionEqualToValue={(option, value) => option === value} // Ensure equality behavior
+                                                getOptionLabel={(option) => option}
+                                                value={field.value || null}
+                                                onChange={(event, newValue) => field.onChange(newValue)}
+                                                isOptionEqualToValue={(option, value) => option === value} 
                                                 renderInput={(params) => (
                                                     <TextField
                                                         {...params}
@@ -294,7 +278,7 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                                     <StyledButton
                                         type="button"
                                         disabled={false}
-                                        onClick={() => onClose()}
+                                        onClick={() => reset()}
                                     >
                                         Cancel
                                     </StyledButton>
@@ -352,7 +336,7 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                                 <StyledButton
                                     type="button"
                                     disabled={false}
-                                    onClick={() => onClose()}
+                                    onClick={() => reset1()}
                                 >
                                     Cancel
                                 </StyledButton>
@@ -383,7 +367,7 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                         marginBlockEnd: "0px",
                     }}
                 >
-                    hello
+                    Jira Block
                 </p>
             )}
         </div>

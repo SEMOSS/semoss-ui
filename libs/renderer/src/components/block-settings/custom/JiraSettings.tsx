@@ -1,16 +1,10 @@
-import React, { useState, ChangeEvent,useEffect } from 'react';
+import React, { useState,useEffect } from 'react';
 import { Select, MenuItem, styled, Button } from '@semoss/ui';
-import { useBlock, useBlocks, useBlockSettings } from "../../../hooks";
+import { useBlocks, useBlockSettings } from "../../../hooks";
 import { observer } from "mobx-react-lite";
 import {
     Block,
     BlockDef,
-    CellState,
-    QueryState,
-    Variable,
-    INPUT_BLOCK_TYPES,
-    VariableType,
-    ActionMessages,
 } from "../../../store";
 import { Paths, PathValue } from "../../../types";
 
@@ -33,14 +27,7 @@ const StyledSelect = styled(Select)({
 });
 
 interface JiraSettingsProps<D extends BlockDef = BlockDef> {
-    /**
-     * Id of the block that is being worked with
-     */
     id: string;
-
-    /**
-     * Path to update
-     */
     paths: Paths<Block<D>["data"], 4>[];
     userId: Paths<Block<D>["data"], 4>;
 }
@@ -54,7 +41,6 @@ export const JiraSettings = observer(
             const [dropdown1Value, setDropdown1Value] = useState<string>('');
             const [dropdown2Value, setDropdown2Value] = useState<string>('');
             const [jiraData, setJiraData] = useState<any>(null);
-            console.log("Block ID:", id);
             const { state } = useBlocks();
             const { data, setData } = useBlockSettings(id);
 
@@ -66,8 +52,7 @@ export const JiraSettings = observer(
                     const value = dropDownOption === path ? true : false;
                     console.log(`Setting path ${path} to ${value}`);
                     setData(path, value as PathValue<D["data"], typeof path>);
-                })
-                //setDropdown2Value(event.target.value as string);             
+                })             
             };
 
             useEffect(()=>{
@@ -75,14 +60,10 @@ export const JiraSettings = observer(
                     const pixelCommand = `META | JiraGet()`;
                     const response = await state.runSideEffect(pixelCommand);
                     const output1 = response.pixelReturn[0].output as { userId: string }[];
-                    console.log("Response from JiraGet:", output1);
                     const userData = output1.map((item: any) => item.userId);
                     const userDataId = output1.map((item: any) => item.primaryId);
                     const finalData = userData.map((userId, index) => ({ user: userId, id: userDataId[index] }));
-                    console.log("Final data:", finalData);
                     setJiraData(finalData);
-                    console.log("Response from JiraGet:", userData);
-                    console.log("Response from JiraGet IDs:", userDataId);
                 }
                 fetchData();
             },[])
@@ -110,7 +91,6 @@ export const JiraSettings = observer(
                         value={dropdown2Value}
                         label={"Actions"}
                         onChange={(event) => setDropdown2Value(event.target.value as string)}
-                        //InputProps={{ onMouseDown: handleMouseDownChange }}
                         >
                         <MenuItem value="List all tickets" onClick={(event)=>handleMouseDownChange(event)}>List all tickets</MenuItem>
                         <MenuItem value="Create new jira" onClick={(event)=>handleMouseDownChange(event)}>Create new ticket</MenuItem>

@@ -1,10 +1,4 @@
-import {
-    Add,
-    Delete,
-    ContentCopyOutlined,
-    KeyboardArrowDown,
-    KeyboardArrowUp,
-} from '@mui/icons-material';
+import { Add, Delete } from '@mui/icons-material';
 
 import { useForm, Controller } from 'react-hook-form';
 import {
@@ -16,16 +10,12 @@ import {
     Button,
     Typography,
     TextField,
-    Avatar,
     Paper,
     Modal,
     Grid,
-    Alert,
-    Collapse,
 } from '@semoss/ui';
 
-import { useAPI, useRootStore } from '@/hooks';
-import { LoadingScreen } from '@/components/ui';
+import { useRootStore } from '@/hooks';
 import { useState, useEffect } from 'react';
 
 const StyledAccessTokensPaper = styled(Paper)(({ theme }) => ({
@@ -65,10 +55,6 @@ const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
     marginTop: '20px',
 }));
 
-const GridItem = styled(Grid)(({ theme }) => ({
-    padding: 0,
-}));
-
 interface SaveAPIKeyForm {
     APIKEY: string;
     USERID: string;
@@ -78,15 +64,10 @@ interface SaveAPIKeyForm {
 
 export const JiraProfilePage = () => {
     const notification = useNotification();
-    const { configStore, monolithStore } = useRootStore();
+    const { monolithStore } = useRootStore();
 
-    // track the models
     const [addModal, setAddModal] = useState(false);
-
     const [savedApiKeys, setSavedApiKeys] = useState([]);
-
-    // get the keys
-    //const getSavedApiKeys = useAPI(['getSavedApiKeys']);
 
     const { control, reset, setValue, handleSubmit, watch } =
         useForm<SaveAPIKeyForm>({
@@ -100,7 +81,7 @@ export const JiraProfilePage = () => {
 
     useEffect(() => {
         getSavedApiKeysQuery();
-    }, []); // Empty dependency array ensures the call is made only once when the component mounts
+    }, []);
 
     const getSavedApiKeysQuery = async () => {
         const pixel = `META | JiraGet()`;
@@ -176,21 +157,12 @@ export const JiraProfilePage = () => {
                 });
             });
     };
-    /**
-     * Callback that is triggered when the add modal closes
-     */
-    const closeModel = () => {
-        // close it
-        setAddModal(false);
 
-        // reset the form
+    const closeModel = () => {
+        setAddModal(false);
         reset({});
     };
 
-    /**
-     * Copy text and add it to the clipboard
-     * @param text - text to copy
-     */
     const copy = async (text: string) => {
         try {
             await navigator.clipboard.writeText(text);
@@ -211,7 +183,7 @@ export const JiraProfilePage = () => {
         <Stack gap={3} className="my-jira-profile-page">
             <StyledAccessTokensPaper>
                 <Stack direction="row" justifyContent={'space-between'} mb={1}>
-                    <Typography variant="h6">Personal Access Tokens</Typography>
+                    <Typography variant="h6">Personal API Keys</Typography>
 
                     <Button
                         variant="contained"
@@ -307,11 +279,6 @@ export const JiraProfilePage = () => {
                             className="my-jira-profile-page__generate-key-form"
                         >
                             <Stack direction="column" spacing={2}>
-                                {/* <Alert severity="info">
-                                    Note: Your private key will only be
-                                    generated once
-                                </Alert> */}
-
                                 <Controller
                                     name={'USERID'}
                                     control={control}
