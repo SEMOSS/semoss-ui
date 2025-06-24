@@ -460,9 +460,17 @@ export class StateStore {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
+            } else if (ActionMessages.RUN_MARKDOWN_CELL === action.message) {
+                const { queryId, cellId, marked } = action.payload;
+
+                this.runMarkdownCell(queryId, cellId, marked);
             } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
 
                 this.dispatchOutputsEvent()
+            } else if(ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
+                const {destinationType, destination} = action.payload;
+
+                this.dispatchOpenEvent(destinationType, destination);
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { id, alias } = action.payload;
 
@@ -539,6 +547,10 @@ export class StateStore {
             } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
 
                 this.dispatchOutputsEvent()
+            } else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
+                const { destinationType, destination } = action.payload;
+
+                this.dispatchOpenEvent(destinationType, destination);
             }
         } catch (e) {
             console.error(e);
@@ -1671,6 +1683,12 @@ export class StateStore {
         this._utils.queryPromises[key] = p;
     };
 
+    private runMarkdownCell = (queryId: string, cellId: string, marked: boolean): void => {
+        const q = this._store.queries[queryId];
+        const c = q.getCell(cellId);
+        // make the cell as marked
+        this._store.queries[queryId].cells[cellId].parameters.marked = marked
+    }
     /**
      * Dispatch a custom event
      * @param name - name of the event
@@ -1687,6 +1705,30 @@ export class StateStore {
         // dispatch the event to the window
         window.dispatchEvent(event);
     };
+
+    private dispatchOpenEvent = (destinationType: string, destination: string): void => {
+        const event = new CustomEvent("OPEN_EVENT", { detail: {destinationType, destination}});
+
+        if(this.mode === "interactive"){
+            if(destinationType === "Internal"){
+                const currentUrl = window.location.href;
+                const pageIds = this.getAllBlocksOfType('page').map((page) => page.id);
+                const pageIdInUrl = pageIds.find((id) => currentUrl.includes(id));
+                let newUrl;
+                if (pageIdInUrl) 
+                    newUrl = currentUrl.replace(pageIdInUrl, destination);
+                else
+                    newUrl = currentUrl + `${destination}`
+
+                window.location.href = newUrl
+            } else if(destinationType === "External"){
+                window.location.href = destination
+            }
+        }
+
+        // dispatch the event to the window
+        window.dispatchEvent(event);
+    }
 
     /**
      * 
