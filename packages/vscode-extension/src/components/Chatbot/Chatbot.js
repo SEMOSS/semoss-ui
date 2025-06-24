@@ -1,5 +1,5 @@
 // src/components/Chatbot/Chatbot.js
-function getChatbotHtml(cssUri) {
+export function getChatbotHtml(cssUri) {
     return `
         <!DOCTYPE html>
         <html lang="en">
@@ -232,13 +232,13 @@ function getChatbotHtml(cssUri) {
                     backBtn.onclick = showOptions;
                     optionsArea.appendChild(backBtn);
                 }
-
                 function getRequiredInputs(command) {
                     switch (command) {
                         case 'semoss.createNewApp':
                             return [
                                 { name: 'appName', label: 'App Name', placeholder: 'Enter app name' },
-                                { name: 'description', label: 'Description', placeholder: 'Enter app description (optional)' }
+                                { name: 'description', label: 'Description  (optional)', placeholder: 'Enter app description (optional)' },
+                                { name: 'githubLink', label: 'GitHub Link (optional)', placeholder: 'https://github.com/user/repo' }
                             ];
                         case 'semoss.authorize':
                             return [
@@ -264,9 +264,7 @@ function getChatbotHtml(cssUri) {
                         existingLoader.remove();
                         optionsArea.style.opacity = '1';
                     }
-                }
-
-                async function showInputDialog(inputs) {
+                }                async function showInputDialog(inputs) {
                     const dialog = document.createElement('div');
                     dialog.className = 'input-dialog';
                     dialog.innerHTML = '<div class="dialog-content"><h3>Required Information</h3><form id="inputForm">' +
@@ -275,7 +273,7 @@ function getChatbotHtml(cssUri) {
                             '<input type="' + (input.name.toLowerCase().includes('key') ? 'password' : 'text') + '" ' +
                             'id="' + input.name + '" ' +
                             'placeholder="' + input.placeholder + '"' +
-                            (input.name !== 'description' ? ' required' : '') + '>' +
+                            (input.name !== 'description' && input.name !== 'githubLink' ? ' required' : '') + '>' +
                             '</div>'
                         ).join('') +
                         '<div class="dialog-buttons">' +
@@ -333,6 +331,27 @@ function getChatbotHtml(cssUri) {
     `;
 }
 
-module.exports = {
-    getChatbotHtml
-};
+export function handleChatbotAction(action, options, context) {
+    // Need to implementation
+    // You can add your logic here to handle chatbot actions
+    // console.log('handleChatbotAction called with:', action, options);
+}
+
+/**
+ * Maps a chat message to a VS Code command string.
+ * @param {object} msg - The chat message object
+ * @returns {string|null} The command string or null if not recognized
+ */
+export function mapMessageToCommand(msg) {
+    if (!msg || !msg.text) return null;
+    const text = msg.text.toLowerCase();
+    if (text.includes('authorize')) return 'semoss.authorize';
+    if (text.includes('create') && text.includes('app')) return 'semoss.createNewApp';
+    if (text.includes('zip') && text.includes('deploy')) return 'semoss.zipanddeploy';
+    if (text.includes('zip')) return 'semoss.ziponly';
+    if (text.includes('deploy')) return 'semoss.deployonly';
+    if (text.includes('remove') && text.includes('instance')) return 'semoss.removeInstance';
+    if (text.includes('select') && text.includes('instance')) return 'semoss.selectInstance';
+    if (text.includes('chatbot')) return 'semoss.openChatbot';
+    return null;
+}

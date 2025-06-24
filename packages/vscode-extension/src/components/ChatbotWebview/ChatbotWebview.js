@@ -1,10 +1,12 @@
-// src/components/ChatbotWebview/ChatbotWebview.js
-// (Stub for ChatbotWebview component logic)
-const vscode = require('vscode');
-const path = require('path');
-const { getChatbotHtml, mapMessageToCommand } = require('../Chatbot/Chatbot');
-const { getSecrets, getStoredInstances, storeInstance } = require('../../secrets');
-const { createNewApp } = require('../../createApp');
+import * as vscode from "vscode";
+import { fileURLToPath } from 'url';
+import path from "path";
+import { getChatbotHtml, mapMessageToCommand } from "../Chatbot/Chatbot.js";
+import { getSecrets, getStoredInstances, storeInstance } from "../../utils/secrets.js";
+import { createNewApp } from "../../utils/createApp.js";
+import fs from "fs";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function getWebviewContent(webview) {
     // Get the URI for the CSS file in a way the webview can load
@@ -53,7 +55,6 @@ class SemossChatbotViewProvider {
             }
             if (msg.type === 'checkSmssFile') {
                 // Check for .smss file in the workspace root
-                const fs = require('fs');
                 let hasSmss = false;
                 let folderPath = undefined;
                 if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
@@ -138,16 +139,15 @@ class SemossChatbotViewProvider {
                                         });
                                     }
                                     return;
-                                }
-                                case 'semoss.createNewApp': {
-                                    const { appName, description } = msg.inputs;
+                                } case 'semoss.createNewApp': {
+                                    const { appName, description, githubLink } = msg.inputs;
                                     try {
                                         const secrets = await getSecrets(this._context);
                                         if (!secrets) {
                                             resultMsg = 'Please authorize an instance first.';
                                             break;
                                         }
-                                        await createNewApp(this._context, async () => secrets, { appName, description });
+                                        await createNewApp(this._context, async () => secrets, { appName, description, githubLink });
                                         resultMsg = `App \"${appName}\" created successfully!`;
                                         // Always send hideLoading to stop spinner
                                         webviewView.webview.postMessage({ type: 'response', status: 'success', text: resultMsg, hideLoading: true });
@@ -240,7 +240,7 @@ class SemossChatbotViewProvider {
     }
 }
 
-function registerChatbotWebview(context) {
+export function registerChatbotWebview(context) {
     const provider = new SemossChatbotViewProvider(context);
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
@@ -250,5 +250,3 @@ function registerChatbotWebview(context) {
     );
     vscode.window.showInformationMessage('If you do not see the Semoss Chatbot sidebar, click the Semoss Chatbot icon in the Activity Bar or use the command: Semoss: Open Chatbot.');
 }
-
-module.exports = { registerChatbotWebview };

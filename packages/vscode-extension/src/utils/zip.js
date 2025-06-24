@@ -1,14 +1,14 @@
-const vscode = require("vscode");
-const fs = require("fs");
-const path = require("path");
-const archiver = require('archiver');
+import * as vscode from "vscode";
+import fs from "fs";
+import path from "path";
+import archiver from "archiver";
 
 /**
  * Zip only the assets folder as assets.zip in its parent directory
  * Automatically uses the current workspace folder as the base
  * @returns {Promise<void>}
  */
-async function zipProject() {
+export async function zipProject() {
     return vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: "Zipping Assets Folder",
@@ -61,7 +61,3 @@ async function zipProject() {
         });
     });
 }
-
-module.exports = {
-    zipProject
-};

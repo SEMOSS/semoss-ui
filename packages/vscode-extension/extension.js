@@ -1,12 +1,13 @@
-// Required modules and project imports
-const vscode = require("vscode");
-const { storeSecrets, getSecrets, selectInstance, removeInstance } = require('./src/secrets');
-const { setFolderPaths, getProjectId, getOutputFilePath } = require('./src/projectUtils');
-const { setDeployConfig, deployProject } = require('./src/deploy');
-const { zipProject } = require('./src/zip');
-const { createNewApp } = require('./src/createApp');
-const { handleChatbotAction } = require('./src/components/Chatbot/Chatbot');
-const { registerChatbotWebview } = require('./src/components/ChatbotWebview/ChatbotWebview');
+// ES6 module imports
+import * as vscode from "vscode";
+import fs from "fs";
+import { storeSecrets, getSecrets, selectInstance, removeInstance, storeInstance, getStoredInstances } from './src/utils/secrets.js';
+import { setFolderPaths, getProjectId } from './src/utils/projectUtils.js';
+import { setDeployConfig, deployProject } from './src/utils/deploy.js';
+import { zipProject } from './src/utils/zip.js';
+import { createNewApp } from './src/utils/createApp.js';
+import { handleChatbotAction } from './src/components/Chatbot/Chatbot.js';
+import { registerChatbotWebview } from './src/components/ChatbotWebview/ChatbotWebview.js';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -24,8 +25,6 @@ async function activate(context) {
         async (args) => {
             // If called from chatbot, use args; otherwise, prompt
             if (args && args.alias && args.url && args.accessKey && args.privateKey) {
-                // Store instance directly
-                const { storeInstance } = require('./src/secrets');
                 await storeInstance(context, args.alias, {
                     semossUrl: args.url,
                     accessKey: args.accessKey,
@@ -63,7 +62,6 @@ async function activate(context) {
         "semoss.removeInstance",
         async (args) => {
             if (args && args.alias) {
-                const { getStoredInstances } = require('./src/secrets');
                 const instances = await getStoredInstances(context);
                 if (instances[args.alias]) {
                     delete instances[args.alias];
@@ -80,9 +78,7 @@ async function activate(context) {
                 await removeInstance(context);
             }
         }
-    );
-
-    // Register create new project command
+    );    // Register create new project command
     const disposableCreateApp = vscode.commands.registerCommand(
         "semoss.createNewApp",
         async (args) => {
@@ -96,8 +92,6 @@ async function activate(context) {
                     }
                     return secrets;
                 };
-                // Patch createNewApp to accept args
-                const { createNewApp } = require('./src/createApp');
                 await createNewApp(context, getSecretsWithValidation, args);
             } else {
                 await createNewApp(context, getSecretsWithValidation);
@@ -145,8 +139,7 @@ async function activate(context) {
                 await zipProject();
 
                 // Configure deployment to use assets.zip
-                const path = require('path');
-                const outputZip = path.join(uri.fsPath, 'assets.zip');
+                const outputZip = uri.fsPath + '/assets.zip';
                 const encoded = Buffer.from(secrets.accessKey + ':' + secrets.privateKey).toString('base64');
                 const headers = { 'Authorization': 'Basic ' + encoded };
 
@@ -201,9 +194,7 @@ async function activate(context) {
                 }
             }
             try {
-                const path = require('path');
-                const fs = require('fs');
-                const outputZip = path.join(uri.fsPath, 'assets.zip');
+                const outputZip = uri.fsPath + '/assets.zip';
                 if (!fs.existsSync(outputZip)) {
                     vscode.window.showErrorMessage('No assets.zip present in the selected folder.');
                     return;
@@ -240,15 +231,8 @@ async function activate(context) {
     // Register chatbot action command for programmatic use
     const disposableChatbot = vscode.commands.registerCommand(
         "semoss.chatbotAction",
-        /**
-         * @param {string} action - The action to perform (zipanddeploy, ziponly, deployonly, authorize, selectInstance, removeInstance, createNewApp)
-         * @param {object} options - Additional options (e.g., uri)
-         */
-
-
         async (action, options = {}) => {
             if (action === 'removeInstance') {
-                const { getStoredInstances } = require('./src/secrets');
                 const instances = await getStoredInstances(context);
                 const aliases = Object.keys(instances);
                 if (aliases.length === 0) {
@@ -311,7 +295,4 @@ async function activate(context) {
 // This method is called when your extension is deactivated
 function deactivate() { }
 
-module.exports = {
-    activate,
-    deactivate,
-};
+export { activate, deactivate };

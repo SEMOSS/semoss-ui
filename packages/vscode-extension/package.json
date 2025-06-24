@@ -6,8 +6,9 @@
     "version": "0.0.1",
     "license": "UNLICENSED",
     "private": true,
+    "type": "module",
     "engines": {
-        "vscode": "^1.76.0"
+        "vscode": "^1.90.0"
     },
     "categories": [
         "Other"

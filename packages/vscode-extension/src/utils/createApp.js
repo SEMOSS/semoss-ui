@@ -1,25 +1,25 @@
-// src/createApp.js
-const vscode = require("vscode");
-const path = require('path');
-const fs = require('fs');
-const unzipper = require('unzipper');
-const { setDeployConfig, deployProject } = require('./deploy');
-const ncp = require('ncp').ncp;
-const axios = require('axios');
-const https = require('https');
-const http = require('http');
+import * as vscode from "vscode";
+import path from "path";
+import fs from "fs";
+import { setDeployConfig, deployProject } from "./deploy.js";
+import unzipper from "unzipper";
+import axios from "axios";
+import http from "http";
+import https from "https";
+import { processGithubAssets } from "./githubAssets.js";
 
-async function createNewApp(context, getSecretsWithValidation, args) {
+export async function createNewApp(context, getSecretsWithValidation, args) {
     try {
         let appName, description, githubLink;
         if (args && args.appName) {
             appName = args.appName;
             description = args.description || '';
+            githubLink = args.githubLink || '';
         } else {
             appName = await vscode.window.showInputBox({ prompt: 'Enter app name' });
             if (!appName) return;
             description = await vscode.window.showInputBox({ prompt: 'Enter app description (optional)' });
-            githubLink = await vscode.window.showInputBox({ prompt: 'GitHub link for marketplace app (optional)' });
+            githubLink = await vscode.window.showInputBox({ prompt: 'GitHub link for assets (optional)' });
         }
 
         // 2. Select download folder
@@ -129,96 +129,15 @@ async function createNewApp(context, getSecretsWithValidation, args) {
                 .on('error', reject);
         });
         vscode.window.showInformationMessage(`App unzipped to ${unzipDir}`);
+
+        // Process GitHub assets if a link was provided
+        if (githubLink) {
+            vscode.window.showInformationMessage(`Processing GitHub assets from: ${githubLink}`);
+            await processGithubAssets(githubLink, downloadsDir, appName, unzipDir);
+        }
+
+        // Open the folder in VS Code
         vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(unzipDir), true);
-
-
-        // Download from GitHub (if provided)
-        if (!githubLink) return null;
-        // Parse GitHub link
-        const match = githubLink.match(/github\.com\/([^\/]+)\/([^\/]+)(?:\/tree\/([^\/]+)\/(.+))?/);
-        if (!match) throw new Error('Invalid GitHub link format.');
-        const owner = match[1];
-        const repo = match[2];
-        const branch = match[3] || 'main';
-        const folderPath = match[4] || '';
-        // Get default branch if not specified
-        let usedBranch = branch;
-        if (!match[3]) {
-            const apiUrl = `https://api.github.com/repos/${owner}/${repo}`;
-            const res = await axios.get(apiUrl, { headers: { 'User-Agent': 'node.js' } });
-            usedBranch = res.data.default_branch;
-        }
-        // Download repo as zip with redirect support
-        const zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/${usedBranch}.zip`;
-        const zipPath = path.join(downloadsDir, `${appName}_github.zip`);
-        const extractPath = path.join(downloadsDir, `${appName}_github_unzipped_${Date.now()}`);
-        // Helper to follow redirects
-        const downloadZipWithRedirect = (url, dest) => {
-            return new Promise((resolve, reject) => {
-                https.get(url, (res) => {
-                    if (res.statusCode === 302 && res.headers.location) {
-                        https.get(res.headers.location, (res2) => {
-                            if (res2.statusCode !== 200) {
-                                reject(new Error(`Failed to download repo zip: ${res2.statusCode}`));
-                                return;
-                            }
-                            const file = fs.createWriteStream(dest);
-                            res2.pipe(file);
-                            file.on('finish', () => file.close(resolve));
-                            file.on('error', reject);
-                        }).on('error', reject);
-                    } else if (res.statusCode === 200) {
-                        const file = fs.createWriteStream(dest);
-                        res.pipe(file);
-                        file.on('finish', () => file.close(resolve));
-                        file.on('error', reject);
-                    } else {
-                        reject(new Error(`Failed to download repo zip: ${res.statusCode}`));
-                    }
-                }).on('error', reject);
-            });
-        };
-        await downloadZipWithRedirect(zipUrl, zipPath);
-        // Unzip
-        await new Promise((resolve, reject) => {
-            fs.createReadStream(zipPath)
-                .pipe(unzipper.Extract({ path: extractPath }))
-                .on('close', resolve)
-                .on('error', reject);
-        });
-        // Find the extracted top-level folder
-        const [topFolder] = fs.readdirSync(extractPath);
-        let finalDir = path.join(extractPath, topFolder);
-        // If a folderPath is specified, use that subfolder
-        if (folderPath) {
-            finalDir = path.join(finalDir, folderPath);
-        }
-        // Check if finalDir exists and is a directory
-        if (!fs.existsSync(finalDir) || !fs.lstatSync(finalDir).isDirectory()) {
-            throw new Error(`The specified folderPath (${folderPath}) does not exist in the repo.`);
-        }
-        // Log contents for debugging
-        const files = fs.readdirSync(finalDir);
-        if (files.length === 0) {
-            vscode.window.showWarningMessage(`The folder ${finalDir} is empty.`);
-        } else {
-            vscode.window.showInformationMessage(`The folder ${finalDir} contains: ${files.join(', ')}`);
-        }
-
-        // 7. If GitHub app, copy files into SEMOSS app's assets (replace everything)
-        const assetsDir = path.join(unzipDir, 'assets');
-        // Remove existing assets directory and recreate it
-        if (fs.existsSync(assetsDir)) {
-            fs.rmSync(assetsDir, { recursive: true, force: true });
-        }
-        fs.mkdirSync(assetsDir, { recursive: true });
-        // Copy all files and folders from finalDir to assetsDir
-        await new Promise((resolve, reject) => {
-            ncp(finalDir, assetsDir, function (err) {
-                if (err) reject(err);
-                else resolve();
-            });
-        });
 
         // 8. Deploy the package
         // Prepare deploy config
@@ -235,5 +154,3 @@ async function createNewApp(context, getSecretsWithValidation, args) {
         vscode.window.showErrorMessage(`Error: ${err.message}`);
     }
 }
-
-module.exports = { createNewApp };
