@@ -753,11 +753,6 @@ const BarToolsList = (({id})=>{
                     <InfoOutlined />
                 </ListItemButton>
                 {barSelection === "colourbyvalue" && (
-                    // <ColourByValue
-                    //     id={id}
-                    //     // updateChart={updateChart}
-                    //     path="option"
-                    // />
                     <ColourByValue id={id} path="option" chartType="bar" />
                 )}
             </StyledListItem>
@@ -1002,6 +997,36 @@ const ScatterToolsList = (({id})=>{
     return (
         <>
             <ColorpalatteTool id={id} />
+            <StyledListItem disablePadding>
+                <ListItemButton
+                    onClick={(e) =>
+                        setScatterSelection((prevList) =>
+                            prevList === "colourbyvalue" ? "" : "colourbyvalue",
+                        )
+                    }
+                    selected={scatterSelection === "colourbyvalue"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                scatterSelection === "colourbyvalue"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Colour By Value" />
+                    <InfoOutlined />
+                </ListItemButton>
+                {scatterSelection === "colourbyvalue" && (
+                    <ColourByValue
+                        id={id}
+                        chartType={"scatterplot"}
+                        path="option"
+                    />
+                )}
+            </StyledListItem>
             <StyledListItem disablePadding>                
                     <ListItemButton
                         onClick={(e) =>

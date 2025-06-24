@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { styled } from "@mui/material";
 import * as echarts from "echarts/core";
@@ -14,6 +14,7 @@ import { processData } from "./ScatterPlotProcessData";
 import { formatdatapoints } from "./ScatterPlotTooltipData";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 import { EChartsOption } from "echarts";
+import { updateColorData } from "../shared/chart-utility";
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -30,7 +31,11 @@ export interface EChartColumns {
 export interface EchartVisualizationBlockDef {
     widget: "e-chart";
     data: {
-        option: {};
+        option: {
+            series:any[];
+            customSettings?:any;
+            tooltip:any;
+        };
         frame: {
             name: string;
         };
@@ -48,7 +53,7 @@ export interface EchartVisualizationBlockDef {
 }
 
 export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
-    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
     echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
@@ -66,6 +71,46 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
             timer = setTimeout(() => fn(...args), delay);
         };
     }
+
+    useEffect(() => {
+        if (frame.data?.values?.length > 0) {
+            const processedFrameData = processData(frame.data, data);
+            const headers = frame.data.headers;
+            setData("option", {
+                ...data.option,
+                series: [
+                    {
+                        ...data.option["series"][0],
+                        itemStyle: {
+                            // ...item?.itemStyle,
+                            color: (seriesData) =>
+                                updateColorData(
+                                    seriesData,
+                                    data.option?.customSettings?.appliedRules,
+                                ),
+                        },
+                        data: processedFrameData.map((item: any) => {
+                            return {
+                                [headers[0]]: item.label.formatter,
+                                [headers[1]]: item.value[0],
+                                [headers[2]]: item.value[1],
+                                ...item,
+                            };
+                        }),
+                    },
+                ],
+                tooltip: {
+                    ...data.option.tooltip,
+                    formatter: formatdatapoints(frame.data, data),
+                },
+            });
+        }
+    }, [
+        frame.data.values,
+        frame.data.headers,
+        data.option.customSettings?.appliedRules,
+    ]);
+
     const echartsLoaded = debounce((chart) => {
         chart.on("brushSelected", (params) => {
             const selectedData = params.batch[0].selected[0].dataIndex;
@@ -117,88 +162,22 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
             </StyledNoDataContainer>
         );
     }
-    if (typeof data.option === "string") {
-        try {
-            const processedFrameData = processData(frame.data, data);
-            if (processedFrameData && processedFrameData.length > 0) {
-                data.option["series"][0]["data"] = processedFrameData;
-            }
-            if (!data.option["tooltip"].hasOwnProperty("formatter")) {
-                data.option["tooltip"] = {
-                    ...data.option["tooltip"],
-                    formatter: formatdatapoints(frame.data, data),
-                };
-            }
-            return (
-                <StyledNoDataContainer>
-                    <EChartsReact
-                        option={data.option as unknown as EChartsOption}
-                        onChartReady={(chart) => {
-                            echartsLoaded(chart);
-                        }}
-                        style={{ height: "inherit", width: "inherit" }}
-                        onEvents={onClickChart}
-                    />
-                    <VizBlockContextMenu
-                        id={id}
-                        frame={frame}
-                        contextMenu={contextMenu}
-                        onClose={() => setContextMenu(null)}
-                    />
-                </StyledNoDataContainer>
-            );
-        } catch (e) {
-            return (
-                <StyledNoDataContainer error>
-                    There was an issue parsing your JSON.
-                </StyledNoDataContainer>
-            );
-        }
-    } else {
-        if (data.option.hasOwnProperty("_state")) {
-            if (data.option["_state"].hasOwnProperty("fields")) {
-                if (
-                    data.option["_state"]["fields"].hasOwnProperty("label") &&
-                    data.option["_state"]["fields"].hasOwnProperty("XAxis") &&
-                    data.option["_state"]["fields"].hasOwnProperty("YAxis")
-                ) {
-                    const processedFrameData = processData(frame.data, data);
-                    if (processedFrameData && processedFrameData.length > 0) {
-                        data.option["series"][0]["data"] = processedFrameData;
-                    }
-                    if (frame.data.values.length > 0) {
-                        if (
-                            !data.option["tooltip"].hasOwnProperty(
-                                "formatter",
-                            ) ||
-                            data.option["tooltip"]["formatter"] === ""
-                        ) {
-                            data.option["tooltip"] = {
-                                ...data.option["tooltip"],
-                                formatter: formatdatapoints(frame.data, data),
-                            };
-                        }
-                    }
-                }
-            }
-        }
-        return (
-            <StyledNoDataContainer>
-                <EChartsReact
-                    option={data.option as EChartsOption}
-                    onChartReady={(chart) => {
-                        echartsLoaded(chart);
-                    }}
-                    style={{ height: "inherit", width: "inherit" }}
-                    onEvents={onClickChart}
-                />
-                <VizBlockContextMenu
-                    id={id}
-                    frame={frame}
-                    contextMenu={contextMenu}
-                    onClose={() => setContextMenu(null)}
-                />
-            </StyledNoDataContainer>
-        );
-    }
+    return (
+        <StyledNoDataContainer>
+            <EChartsReact
+                option={data.option as EChartsOption}
+                onChartReady={(chart) => {
+                    echartsLoaded(chart);
+                }}
+                style={{ height: "inherit", width: "inherit" }}
+                onEvents={onClickChart}
+            />
+            <VizBlockContextMenu
+                id={id}
+                frame={frame}
+                contextMenu={contextMenu}
+                onClose={() => setContextMenu(null)}
+            />
+        </StyledNoDataContainer>
+    );
 });

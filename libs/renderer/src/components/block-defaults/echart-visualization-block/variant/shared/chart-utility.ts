@@ -50,13 +50,18 @@ const columnComparisionList = [
     },
 ];
 
-function updateColorData(seriesData, appliedRules = null) {
+function updateColorData(seriesData: any, appliedRules: any[] = null): string {
     const isPie = seriesData.seriesType === "pie";
+    const isStack =
+        seriesData.seriesType === "bar" &&
+        seriesData.data?.hasOwnProperty("category");
+    const isScatter = seriesData.seriesType === "scatter";
+
+    // Fallback to palette if no rules or value is invalid
     if (
-        appliedRules === null ||
+        !appliedRules ||
         appliedRules.length === 0 ||
-        seriesData.value === null ||
-        seriesData.value === undefined
+        seriesData.value == null
     ) {
         return (
             COLOUR_PALATTE_DATA[
@@ -64,78 +69,77 @@ function updateColorData(seriesData, appliedRules = null) {
             ] || ECHART_BAR_COLOUR
         );
     }
-    const isStack =
-        seriesData.seriesType === "bar" &&
-        seriesData.data?.hasOwnProperty("category");
-    const isMapScatt = seriesData.seriesType === "scatter";
+
     let applyColor =
         seriesData.color ||
         (seriesData.seriesType === "bar"
             ? COLOUR_PALATTE_DATA[seriesData.dataIndex]
             : COLOUR_PALATTE_DATA[seriesData.seriesIndex]) ||
         ECHART_BAR_COLOUR;
+
     if (isPie) {
         applyColor =
             COLOUR_PALATTE_DATA[
                 seriesData.seriesIndex % COLOUR_PALATTE_DATA.length
             ];
     }
-    appliedRules?.forEach((appliedRule) => {
+
+    for (const rule of appliedRules) {
         const {
             columnColour,
             columnComparision,
             columnName,
             filterValue,
             valuesToColour,
-        } = appliedRule;
+        } = rule;
+
         const isApply =
-            columnName == seriesData.seriesName ||
+            columnName === seriesData.seriesName ||
             isPie ||
             isStack ||
-            isMapScatt;
-        const compareValue = isMapScatt
+            isScatter;
+
+        const compareValue = isScatter
             ? seriesData.data[columnName]
             : seriesData.value;
-        if (isApply) {
-            if (
-                columnComparision === "==" &&
-                valuesToColour.includes(parseFloat(compareValue))
-            ) {
-                applyColor = columnColour;
-            }
-            if (
-                columnComparision === "!=" &&
-                !valuesToColour.includes(parseFloat(compareValue))
-            ) {
-                applyColor = columnColour;
-            }
-            if (
-                columnComparision == "<=" &&
-                compareValue <= parseFloat(filterValue)
-            ) {
-                applyColor = columnColour;
-            }
 
-            if (
-                columnComparision === "<" &&
-                compareValue < parseFloat(filterValue)
-            ) {
-                applyColor = columnColour;
-            }
-            if (
-                columnComparision === ">" &&
-                compareValue > parseFloat(filterValue)
-            ) {
-                applyColor = columnColour;
-            }
-            if (
-                columnComparision === ">=" &&
-                compareValue >= parseFloat(filterValue)
-            ) {
-                applyColor = columnColour;
-            }
+        if (!isApply) continue;
+
+        switch (columnComparision) {
+            case "==":
+                if (valuesToColour.includes(parseFloat(compareValue))) {
+                    applyColor = columnColour;
+                }
+                break;
+            case "!=":
+                if (!valuesToColour.includes(parseFloat(compareValue))) {
+                    applyColor = columnColour;
+                }
+                break;
+            case "<=":
+                if (compareValue <= parseFloat(filterValue)) {
+                    applyColor = columnColour;
+                }
+                break;
+            case "<":
+                if (compareValue < parseFloat(filterValue)) {
+                    applyColor = columnColour;
+                }
+                break;
+            case ">":
+                if (compareValue > parseFloat(filterValue)) {
+                    applyColor = columnColour;
+                }
+                break;
+            case ">=":
+                if (compareValue >= parseFloat(filterValue)) {
+                    applyColor = columnColour;
+                }
+                break;
+            default:
+                break;
         }
-    });
+    }
 
     return applyColor;
 }

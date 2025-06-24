@@ -76,7 +76,7 @@ const ColourByValue = observer(
                 : [];
         } else if (chartType === "pie") {
             columnData = data.columns;
-        } else if (chartType === "map") {
+        } else if (chartType === "map" || chartType === "scatterplot") {
             columnData = data.columns;
         }
         // const columnToColour = columnData.find(
@@ -170,7 +170,7 @@ const ColourByValue = observer(
                                 : item;
                         }),
                     );
-                } else if (chartType === "map") {
+                } else if (chartType === "map" || chartType === "scatterplot") {
                     name = event.target.value.name;
                     valuesColor = option["series"][0]?.["data"].map((item) => {
                         return parseFloat(item[name]);

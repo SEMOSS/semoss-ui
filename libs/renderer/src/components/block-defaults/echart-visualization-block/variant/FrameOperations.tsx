@@ -381,8 +381,9 @@ export const FrameOperations = observer(
                 setData("option", tempValue);
             }
             if (variation === "echart-scatter-plots") {
+                const tempValue = computedValue;
+                const columnsmerged = [];
                 if (firstColumn?.values) {
-                    const tempValue = computedValue;
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
@@ -398,13 +399,13 @@ export const FrameOperations = observer(
                     // Update the series label name
                     tempValue["series"][0]["label"]["name"] =
                         firstColumn?.values;
-
-                    // setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
+                    columnsmerged.push({
+                        name: firstColumn?.values[0],
+                        selector: firstColumn?.selectors[0],
+                        label: firstColumn?.label,
+                    });
                 }
                 if (secondColumn?.values) {
-                    const tempValue = computedValue;
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -418,13 +419,13 @@ export const FrameOperations = observer(
                     // Update the series xAxis name
                     tempValue["xAxis"]["name"] = secondColumn?.values;
                     tempValue["xAxis"]["pixelName"] = secondColumn?.values;
-
-                    // setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
+                    columnsmerged.push({
+                        name: secondColumn?.values[0],
+                        selector: secondColumn?.selectors[0],
+                        label: secondColumn?.label,
+                    });
                 }
                 if (columnsDrop[2]?.values.length > 0) {
-                    const tempValue = computedValue;
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -438,13 +439,13 @@ export const FrameOperations = observer(
 
                     tempValue["yAxis"]["name"] = columnsDrop[2]?.values;
                     tempValue["yAxis"]["pixelName"] = columnsDrop[2]?.values;
-
-                    // setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
+                    columnsmerged.push({
+                        name: columnsDrop[2]?.values[0],
+                        selector: columnsDrop[2]?.selectors[0],
+                        label: columnsDrop[2]?.label,
+                    });
                 }
                 if (columnsDrop[3]?.values.length > 0) {
-                    const tempValue = computedValue;
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -455,13 +456,8 @@ export const FrameOperations = observer(
                         size: columnsDrop[3]?.values,
                         sizeDataType: columnsDrop[3]?.dataType,
                     };
-
-                    // setValue(JSON.stringify(tempValue));
-                    setData("option", tempValue);
                 }
                 if (columnsDrop[4]?.values.length > 0) {
-                    const tempValue = computedValue;
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -472,12 +468,8 @@ export const FrameOperations = observer(
                         color: columnsDrop[4]?.values,
                         colorDataType: columnsDrop[4]?.dataType,
                     };
-
-                    setData("option", tempValue);
                 }
                 if (columnsDrop[5]?.values.length > 0) {
-                    const tempValue = computedValue;
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -488,9 +480,9 @@ export const FrameOperations = observer(
                         tooltip: columnsDrop[5]?.values,
                         tooltipDataType: columnsDrop[5]?.dataType,
                     };
-
-                    setData("option", tempValue);
                 }
+                setData("option", tempValue);
+                setData("columns", columnsmerged);
             }
             if (variation === "echart-stack-chart") {
                 const tempValue = computedValue;

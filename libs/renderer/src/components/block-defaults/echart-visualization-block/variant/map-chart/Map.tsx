@@ -155,9 +155,6 @@ export const Map: BlockComponent = observer(({ id }) => {
         if (mapIsLoaded && frame.data?.values?.length > 0) {
             const processedFrameData = processData(frame.data, data) ?? [];
             const headers = frame.data.headers;
-            const n = data.option["_state"]["fields"].hasOwnProperty("size")
-                ? 4
-                : 3;
             const series = [
                 {
                     name: headers[0],
@@ -288,7 +285,12 @@ export const Map: BlockComponent = observer(({ id }) => {
             params.event.event.preventDefault();
         }
     };
-    return (
+
+    return !mapIsLoaded ? (
+        <StyledNoDataContainer error>
+            <p>Loading map data...</p>
+        </StyledNoDataContainer>
+    ) : (
         <StyledNoDataContainer data-block-id={id}>
             <EChartsReact
                 option={data.option}
