@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import path from "path";
 import fs from "fs";
 import { setDeployConfig, deployProject } from "./deploy.js";
+import { zipProject } from "./zip.js";
 import unzipper from "unzipper";
 import axios from "axios";
 import http from "http";
@@ -57,6 +58,26 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
         }
         const projectId = response.data.pixelReturn[0].output.project_id;
         vscode.window.showInformationMessage(`App "${appName}" created successfully! Project ID: ${projectId}`);
+
+        // Add a placeholder asset (index.html) to the project using SaveAsset ONLY if githubLink is NOT provided
+        if (!githubLink) {
+            const saveAssetParams = new URLSearchParams();
+            saveAssetParams.append(
+                'expression',
+                `SaveAsset(fileName=["version/assets/portals/index.html"], content=["<encode><html><style>html {font-family: sans-serif; padding: 30px;}</style><h1>${appName}</h1><p>This is placeholder text for your new Application.</p><p>You can add new files and edit this text using the Code Editor.</p></html></encode>"], space=["${projectId}"]);`
+            );
+            saveAssetParams.append('insightId', 'new');
+            try {
+                await axios.post(
+                    `${secrets.semossUrl}/Monolith/api/engine/runPixel`,
+                    saveAssetParams,
+                    { headers }
+                );
+                vscode.window.showInformationMessage('Placeholder asset (index.html) added to the project.');
+            } catch (err) {
+                vscode.window.showWarningMessage('Could not add placeholder asset: ' + (err.message || 'Unknown error'));
+            }
+        }
         // Export project
         const exportParams = new URLSearchParams();
         exportParams.append('expression', `ExportProjectApp(project=["${projectId}"]);`);
@@ -139,17 +160,19 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
         // Open the folder in VS Code
         vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(unzipDir), true);
 
-        // 8. Deploy the package
-        // Prepare deploy config
+        await zipProject();
+        const zipOutputPath = path.join(unzipDir, 'assets.zip');
+
+        // Deploy the zipped app using your deploy logic
         setDeployConfig({
             semossUrl: secrets.semossUrl,
             authHeaders: headers,
             base64Encoded: encoded,
-            outputPath: path.join(downloadsDir, `${appName}.zip`)
+            outputPath: zipOutputPath
         });
         await deployProject(projectId);
 
-        vscode.window.showInformationMessage('App created, assets copied, and deployed successfully!');
+        vscode.window.showInformationMessage('App created, zipped and deployed successfully!');
     } catch (err) {
         vscode.window.showErrorMessage(`Error: ${err.message}`);
     }
