@@ -18,13 +18,13 @@ export const Pie = [
         name: "Value",
         multiLabel: false,
         label: "Value",
-        aggregate: false,
+        aggregate: true,
     },
     {
         name: "Label",
         multiLabel: false,
         label: "Label",
-        aggregate: true,
+        aggregate: false,
     },
 ];
 
