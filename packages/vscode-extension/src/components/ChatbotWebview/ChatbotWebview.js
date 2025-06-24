@@ -1,17 +1,20 @@
 import * as vscode from "vscode";
-import { fileURLToPath } from 'url';
 import path from "path";
 import { getChatbotHtml, mapMessageToCommand } from "../Chatbot/Chatbot.js";
 import { getSecrets, getStoredInstances, storeInstance } from "../../utils/secrets.js";
 import { createNewApp } from "../../utils/createApp.js";
 import fs from "fs";
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
-function getWebviewContent(webview) {
-    // Get the URI for the CSS file in a way the webview can load
+// Hard-coded relative path from this file to the Chatbot.css file
+// This is a simpler solution that avoids using __dirname or import.meta.url
+
+function getWebviewContent(webview, context) {
+    // Use the extension's file system path instead of __dirname
+    const extensionPath = context.extensionPath;
+
+    // Path to the CSS file relative to the extension root
     const cssPath = vscode.Uri.file(
-        path.join(__dirname, '..', 'Chatbot', 'Chatbot.css')
+        path.join(extensionPath, 'src', 'components', 'Chatbot', 'Chatbot.css')
     );
     const cssUri = webview.asWebviewUri(cssPath);
     return getChatbotHtml(cssUri);
@@ -27,19 +30,18 @@ class SemossChatbotViewProvider {
 
     /**
      * @param {vscode.WebviewView} webviewView
-     */
-    resolveWebviewView(webviewView) {
+     */    resolveWebviewView(webviewView) {
         webviewView.webview.options = {
             enableScripts: true,
             localResourceRoots: [
-                vscode.Uri.file(path.join(__dirname, '..', 'Chatbot'))
+                vscode.Uri.file(path.join(this._context.extensionPath, 'src', 'components', 'Chatbot'))
             ]
 
         };
 
 
 
-        webviewView.webview.html = getWebviewContent(webviewView.webview);
+        webviewView.webview.html = getWebviewContent(webviewView.webview, this._context);
         webviewView.webview.onDidReceiveMessage(async (msg) => {
             if (msg.type === 'getInstanceAliases') {
                 // Fetch aliases and send to webview, including URLs
