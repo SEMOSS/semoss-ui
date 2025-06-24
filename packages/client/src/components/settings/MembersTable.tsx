@@ -263,16 +263,9 @@ export const MembersTable = (props: MembersTableProps) => {
     // get the api
     let getMembersApi: Parameters<typeof useAPI>[0] = null;
     let getUserDataApi: Parameters<typeof useAPI>[0] = null;
+    let getAllAuthorsApi: Parameters<typeof useAPI>[0] = null;
     if (type === 'APP') {
-        getUserDataApi = [
-            'getProjectUsers',
-            adminMode,
-            id,
-            configStore.store.user.id,
-            permissionPriorityMapper(permissionFilter)?.permission,
-            0, // offset
-            1, // limit
-        ];
+        getUserDataApi = ['getUserProjectPermission', id];
         getMembersApi = [
             'getProjectUsers',
             adminMode,
@@ -281,6 +274,15 @@ export const MembersTable = (props: MembersTableProps) => {
             permissionPriorityMapper(permissionFilter)?.permission,
             (page + 1) * rowsPerPage - rowsPerPage, // offset
             rowsPerPage, // limit
+        ];
+        getAllAuthorsApi = [
+            'getProjectUsers',
+            adminMode,
+            id,
+            undefined, // no search
+            'OWNER', // OWNER Permission Filter
+            undefined, // offset
+            undefined, // limit
         ];
     } else if (
         type === 'DATABASE' ||
@@ -289,15 +291,7 @@ export const MembersTable = (props: MembersTableProps) => {
         type === 'VECTOR' ||
         type === 'FUNCTION'
     ) {
-        getUserDataApi = [
-            'getEngineUsers',
-            adminMode,
-            id,
-            configStore.store.user.id,
-            permissionPriorityMapper(permissionFilter)?.permission,
-            0, // offset
-            1, // limit
-        ];
+        getUserDataApi = ['getUserEnginePermission', id];
         getMembersApi = [
             'getEngineUsers',
             adminMode,
@@ -307,10 +301,34 @@ export const MembersTable = (props: MembersTableProps) => {
             (page + 1) * rowsPerPage - rowsPerPage, // offset
             rowsPerPage, // limit
         ];
+        getAllAuthorsApi = [
+            'getEngineUsers',
+            adminMode,
+            id,
+            undefined, // no search
+            'OWNER', // OWNER Permission Filter
+            undefined, // offset
+            undefined, // limit
+        ];
     }
 
     const getMembers = useAPI(getMembersApi);
     const userDetails = useAPI(getUserDataApi);
+    const allAuthorsResponse = useAPI(getAllAuthorsApi);
+    const [allAuthors, setAllAuthors] = useState<SETTINGS_PROVISIONED_USER[]>(
+        [],
+    );
+
+    useEffect(() => {
+        if (
+            allAuthorsResponse.status === 'SUCCESS' &&
+            allAuthorsResponse.data
+        ) {
+            setAllAuthors(allAuthorsResponse.data['members']);
+        } else {
+            setAllAuthors([]);
+        }
+    }, [allAuthorsResponse.status, allAuthorsResponse.data]);
 
     //Below UseEffect has been added so that search supersedes pagination , when the user goes to a different page and searches any user the pagination is set 0 and the user is being displayed.
     useEffect(() => {
@@ -324,7 +342,10 @@ export const MembersTable = (props: MembersTableProps) => {
      * @param members The array of members to set the user details from
      */
     const setUserDetails = () => {
-        setUserData(userDetails.data.members[0]);
+        if (!userDetails.data) {
+            return;
+        }
+        setUserData(userDetails.data);
         if (adminMode) {
             const adminPermissionPriority = 'Author';
             setUserPermission(
@@ -334,16 +355,16 @@ export const MembersTable = (props: MembersTableProps) => {
         } else {
             setUserPermission(
                 permissionPriorityMapper(
-                    userDetails.data.members[0].permission === 'OWNER'
+                    userDetails.data.permission === 'OWNER'
                         ? 'Author'
-                        : userDetails.data.members[0].permission,
+                        : userDetails.data.permission,
                 )?.permission as SETTINGS_ROLE,
             );
         }
     };
 
     /**
-     * When
+     * Updates user details when userDetails API call succeeds.
      **/
     useEffect(() => {
         if (userDetails.status !== 'SUCCESS' || !userDetails.data) {
@@ -442,6 +463,7 @@ export const MembersTable = (props: MembersTableProps) => {
 
                 // refresh the members
                 getMembers.refresh();
+                allAuthorsResponse.refresh();
 
                 onChange();
             } else {
@@ -463,9 +485,11 @@ export const MembersTable = (props: MembersTableProps) => {
      *
      * @param members - members that will be deleted
      */
-    const openDeleteMembersModal = (members: SETTINGS_PROVISIONED_USER[]) => {
+    const openDeleteMembersModal = (
+        selectedMembers: SETTINGS_PROVISIONED_USER[],
+    ) => {
         // notify if no members
-        if (members.length === 0) {
+        if (selectedMembers.length === 0) {
             notification.add({
                 color: 'warning',
                 message: `No permissions to change`,
@@ -474,8 +498,23 @@ export const MembersTable = (props: MembersTableProps) => {
             return;
         }
 
+        const authorsToDelete = selectedMembers.filter(
+            (m) =>
+                permissionPriorityMapper(m.permission)?.permission === 'Author',
+        );
+        if (
+            allAuthors.length > 0 &&
+            authorsToDelete.length === allAuthors.length
+        ) {
+            notification.add({
+                color: 'error',
+                message: `You cannot delete all the admins(Authors) from the table.`,
+            });
+            return;
+        }
+
         // set the pending members
-        setPendingDeletedMembers(members);
+        setPendingDeletedMembers(selectedMembers);
 
         // close the model
         setDeleteMembersModal(true);
@@ -592,6 +631,18 @@ export const MembersTable = (props: MembersTableProps) => {
 
         return avatarList;
     }, [renderedMembers.length]);
+    const isLastAuthor = (user) => {
+        const authors = allAuthors.filter(
+            (m) =>
+                permissionPriorityMapper(m.permission)?.permission === 'Author',
+        );
+        return (
+            permissionPriorityMapper(user.permission)?.permission ===
+                'Author' &&
+            authors.length === 1 &&
+            authors[0].id === user.id
+        );
+    };
 
     return (
         <StyledMemberContent>
@@ -916,6 +967,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     value="Editor"
                                                                     label="Editor"
                                                                     disabled={
+                                                                        isLastAuthor(
+                                                                            user,
+                                                                        ) ||
                                                                         (userPermission ===
                                                                             'Editor' &&
                                                                             user.permission ===
@@ -935,6 +989,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     value="Read-Only"
                                                                     label="Read-Only"
                                                                     disabled={
+                                                                        isLastAuthor(
+                                                                            user,
+                                                                        ) ||
                                                                         (userPermission ===
                                                                             'Editor' &&
                                                                             user.permission ===
@@ -1126,6 +1183,7 @@ export const MembersTable = (props: MembersTableProps) => {
 
                         // refresh
                         getMembers.refresh();
+                        allAuthorsResponse.refresh();
                     }
                 }}
             />
@@ -1146,6 +1204,7 @@ export const MembersTable = (props: MembersTableProps) => {
                         onChange();
 
                         getMembers.refresh();
+                        allAuthorsResponse.refresh();
                     }
                 }}
                 onChange={() => onChange()}
