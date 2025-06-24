@@ -12,6 +12,7 @@ import {
     DeleteDiabetesRecordTemplate,
     UpdateDiabetesRecordTemplate,
     ReadDiabetesRecordTemplate,
+    MultiPageTemplate,
 } from './templates';
 
 const DEFAULT_TEMPLATE = [
@@ -19,6 +20,7 @@ const DEFAULT_TEMPLATE = [
     AskLLMTemplate,
     AskCSVTemplate,
     BlocksGuideTemplate,
+    MultiPageTemplate,
     CreateDiabetesRecordTemplate,
     ReadDiabetesRecordTemplate,
     UpdateDiabetesRecordTemplate,
