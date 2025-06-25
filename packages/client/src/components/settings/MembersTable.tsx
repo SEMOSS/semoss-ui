@@ -11,6 +11,7 @@ import {
     IconButton,
     AvatarGroup,
     Avatar,
+    Skeleton,
     RadioGroup,
     Typography,
     Search,
@@ -59,7 +60,6 @@ const StyledMemberLoading = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    height: '160px',
 }));
 
 const StyledMemberTable = styled(Table)({
@@ -742,9 +742,52 @@ export const MembersTable = (props: MembersTableProps) => {
 
                     {isLoading ? (
                         <StyledMemberLoading>
-                            <LoadingScreen relative={true}>
-                                <LoadingScreen.Trigger description="Getting members" />
-                            </LoadingScreen>
+                            <StyledMemberTable>
+                                <Table.Body>
+                                    {[...Array(rowsPerPage)].map((_, idx) => (
+                                        <Table.Row key={idx}>
+                                            <Table.Cell
+                                                size="medium"
+                                                padding="checkbox"
+                                            >
+                                                <Skeleton
+                                                    variant="rectangular"
+                                                    width={20}
+                                                    height={20}
+                                                />
+                                            </Table.Cell>
+                                            <Table.Cell size="medium">
+                                                <Skeleton
+                                                    variant="text"
+                                                    width={160}
+                                                    height={35}
+                                                />
+                                            </Table.Cell>
+                                            <Table.Cell size="medium">
+                                                <Skeleton
+                                                    variant="text"
+                                                    width={240}
+                                                    height={35}
+                                                />
+                                            </Table.Cell>
+                                            <Table.Cell size="medium">
+                                                <Skeleton
+                                                    variant="text"
+                                                    width={160}
+                                                    height={35}
+                                                />
+                                            </Table.Cell>
+                                            <Table.Cell size="medium">
+                                                <Skeleton
+                                                    variant="text"
+                                                    width={80}
+                                                    height={35}
+                                                />
+                                            </Table.Cell>
+                                        </Table.Row>
+                                    ))}
+                                </Table.Body>
+                            </StyledMemberTable>
                         </StyledMemberLoading>
                     ) : (
                         <>
