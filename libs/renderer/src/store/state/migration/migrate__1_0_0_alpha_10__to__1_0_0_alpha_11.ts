@@ -25,7 +25,6 @@ const config: Migration = {
                         };
                     }
                 });
-                console.log("Migrating from 1 >", formattedColumns, inputData);
                 return formattedColumns;
             }
             return {};
@@ -43,7 +42,6 @@ const config: Migration = {
                         });
                     },
                 );
-                console.log("Migrating from 2 >", formatedData);
                 return formatedData;
             }
             return {};
@@ -68,7 +66,6 @@ const config: Migration = {
                         }
                     },
                 );
-                console.log("Migrating from 3 >", formatedData);
                 return formatedData;
             }
             return {};
