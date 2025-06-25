@@ -1,12 +1,4 @@
-import {
-    ActionMessages,
-    ButtonBlockConfig,
-    ContainerBlockConfig,
-    UploadBlockConfig,
-    InputBlockConfig,
-    PageBlockConfig,
-    TextBlockConfig,
-} from '@semoss/renderer';
+import { ActionMessages } from '@semoss/renderer';
 
 import { Template } from './templates.types';
 import QUERY from '@/assets/img/query.jpeg';
@@ -19,178 +11,127 @@ export const AskCSVTemplate: Template = {
     lastUpdatedDate: new Date().toISOString(),
     tags: ['NLP', 'SQL', 'LLM'],
     state: {
-        version: '1.0.0-alpha.4',
-        executionOrder: ['ask-model'],
-        variables: {
-            file: {
-                to: 'file',
-                type: 'block',
-                isInput: true,
-                isOutput: false,
-            },
-            question: {
-                to: 'question',
-                type: 'block',
-                isInput: true,
-                isOutput: false,
-            },
-            model: {
-                type: 'model',
-                isInput: true,
-                isOutput: false,
-                value: '17753d59-4536-4415-a6ac-f673b1a90a87',
-            },
-            'ask-model': {
-                to: 'ask-model',
-                type: 'query',
-                isInput: false,
-                isOutput: true,
-            },
-        },
         queries: {
-            ['ask-model']: {
+            'ask-model': {
                 id: 'ask-model',
                 cells: [
                     {
                         id: 'file-read',
                         widget: 'code',
                         parameters: {
+                            code: 'FileRead ( filePath = ["{{file}}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ PY ] , override = [ true ] ) .as ( [ "NLP_FRAME" ] ) ] );',
                             type: 'pixel',
-                            code: `FileRead ( filePath = ["{{file}}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ PY ] , override = [ true ] ) .as ( [ "NLP_FRAME" ] ) ] );`,
                         },
                     },
                     {
                         id: 'py-query-function',
                         widget: 'code',
                         parameters: {
+                            code: 'NLPQuery2(engine=["{{model}}"], command=["{{question}}"]);',
                             type: 'pixel',
-                            code: `NLPQuery2(engine=["{{model}}"], command=["{{question}}"]);`,
                         },
                     },
                 ],
             },
         },
         blocks: {
-            'page-1': {
-                id: 'page-1',
-                widget: 'page',
-                parent: null,
-                data: {
-                    route: '',
-                    style: PageBlockConfig.data.style,
-                },
-                listeners: {
-                    onPageLoad: {
-                        type: 'sync',
-                        order: [],
-                    },
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: ['container'],
-                    },
-                },
-            },
-            ['container']: {
-                id: 'container',
-                widget: 'container',
+            container: {
                 parent: {
                     id: 'page-1',
                     slot: 'content',
                 },
-                data: {
-                    style: ContainerBlockConfig.data.style,
-                },
-                listeners: {},
                 slots: {
                     children: {
-                        name: 'children',
                         children: ['title', 'description', 'form', 'response'],
-                    },
-                },
-            },
-            ['title']: {
-                id: 'title',
-                widget: 'text',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        fontSize: '1.5rem',
-                        ...TextBlockConfig.data.style,
-                    },
-                    text: 'CSV Query',
-                },
-                listeners: {},
-                slots: {},
-            },
-            ['description']: {
-                id: 'description',
-                widget: 'text',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        fontSize: '1.25rem',
-                        ...TextBlockConfig.data.style,
-                    },
-                    text: 'Upload a csv file and ask a question',
-                },
-                listeners: {},
-                slots: {},
-            },
-            ['form']: {
-                id: 'form',
-                widget: 'container',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: ContainerBlockConfig.data.style,
-                },
-                listeners: {},
-                slots: {
-                    children: {
                         name: 'children',
-                        children: ['file', 'question', 'submit'],
                     },
                 },
-            },
-            ['file']: {
-                id: 'file',
-                widget: 'upload',
-                parent: {
-                    id: 'form',
-                    slot: 'children',
-                },
+                widget: 'container',
                 data: {
-                    style: UploadBlockConfig.data.style,
-                    label: 'Upload',
-                    required: true,
+                    style: {
+                        padding: '4px',
+                        flexWrap: 'wrap',
+                        flexDirection: 'column',
+                        display: 'flex',
+                        gap: '8px',
+                    },
                 },
                 listeners: {
-                    onClick: {
+                    preProcess: {
                         type: 'sync',
                         order: [],
                     },
                 },
-                slots: {},
+                id: 'container',
             },
-            ['question']: {
-                id: 'question',
-                widget: 'input',
+            file: {
                 parent: {
                     id: 'form',
                     slot: 'children',
                 },
+                slots: {},
+                widget: 'upload',
                 data: {
-                    style: InputBlockConfig.data.style,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    label: 'Upload',
+                    required: true,
+                },
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                    onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
+                id: 'file',
+            },
+            form: {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {
+                    children: {
+                        children: ['file', 'question', 'submit'],
+                        name: 'children',
+                    },
+                },
+                widget: 'container',
+                data: {
+                    style: {
+                        padding: '4px',
+                        flexWrap: 'wrap',
+                        flexDirection: 'column',
+                        display: 'flex',
+                        gap: '8px',
+                    },
+                },
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
+                id: 'form',
+            },
+            question: {
+                parent: {
+                    id: 'form',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'input',
+                data: {
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
                     label: 'Question',
                     rows: 3,
                     type: 'text',
@@ -201,51 +142,180 @@ export const AskCSVTemplate: Template = {
                         type: 'sync',
                         order: [],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
-                slots: {},
+                id: 'question',
             },
-            ['submit']: {
-                id: 'submit',
-                widget: 'button',
+            submit: {
                 parent: {
                     id: 'form',
                     slot: 'children',
                 },
+                slots: {},
+                widget: 'button',
                 data: {
-                    style: ButtonBlockConfig.data.style,
+                    variant: 'contained',
+                    style: {},
                     label: 'Ask',
                     loading: '{{ask-model.isLoading}}',
-                    variant: 'contained',
                 },
                 listeners: {
                     onClick: {
                         type: 'sync',
                         order: [
                             {
-                                message: ActionMessages.RUN_QUERY,
                                 payload: {
                                     queryId: 'ask-model',
                                 },
+                                message: ActionMessages.RUN_QUERY,
                             },
                         ],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
-                slots: {},
+                id: 'submit',
             },
-            ['response']: {
-                id: 'response',
-                widget: 'text',
+            'page-1': {
+                slots: {
+                    content: {
+                        children: ['container'],
+                        name: 'content',
+                    },
+                },
+                widget: 'page',
+                data: {
+                    route: '',
+                    style: {
+                        padding: '24px',
+                        fontFamily: 'roboto',
+                        flexDirection: 'column',
+                        display: 'flex',
+                        gap: '8px',
+                    },
+                },
+                listeners: {
+                    onPageLoad: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
+                id: 'page-1',
+            },
+            response: {
                 parent: {
                     id: 'container',
                     slot: 'children',
                 },
+                slots: {},
+                widget: 'text',
                 data: {
-                    style: TextBlockConfig.data.style,
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        textOverflow: 'ellipsis',
+                    },
                     text: '{{ask-model.output.output.Query}}',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
+                id: 'response',
+            },
+            description: {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
                 slots: {},
+                widget: 'text',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        fontSize: '1.25rem',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: 'Upload a csv file and ask a question',
+                },
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
+                id: 'description',
+            },
+            title: {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        fontSize: '1.5rem',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: 'CSV Query',
+                },
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
+                id: 'title',
             },
         },
+        variables: {
+            file: {
+                isInput: true,
+                isOutput: false,
+                to: 'file',
+                type: 'block',
+            },
+            question: {
+                isInput: true,
+                isOutput: false,
+                to: 'question',
+                type: 'block',
+            },
+            model: {
+                isInput: true,
+                isOutput: false,
+                type: 'model',
+                value: '17753d59-4536-4415-a6ac-f673b1a90a87',
+            },
+            'ask-model': {
+                isInput: false,
+                isOutput: true,
+                to: 'ask-model',
+                type: 'query',
+            },
+            'ask-model--file-read': {
+                type: 'cell',
+                to: 'ask-model',
+                cellId: 'file-read',
+            },
+            'ask-model--py-query-function': {
+                type: 'cell',
+                to: 'ask-model',
+                cellId: 'py-query-function',
+            },
+        },
+        executionOrder: ['ask-model'],
+        version: '1.0.0-alpha.10',
     },
 };

@@ -193,7 +193,7 @@ export const Gantt = [
     },
     {
         name: "Tooltip",
-        multiLabel: false,
+        multiLabel: true,
         label: "tooltip",
         aggregate: true,
     },

@@ -4,6 +4,18 @@ import { Search } from "@mui/icons-material";
 import { computed } from "mobx";
 import { Tooltip, Checkbox } from "@mui/material";
 import {
+    Autocomplete,
+    Button,
+    Select,
+    styled,
+    TextField,
+    InputAdornment,
+    IconButton,
+    Stack,
+    Accordion,
+    Typography,
+} from "@semoss/ui";
+import {
     styled,
     TextField,
     InputAdornment,
@@ -23,6 +35,9 @@ import StringIcon from "../../../../assets/img/StringIcon.svg";
 import NumberIcon from "../../../../assets/img/NumberIcon.svg";
 import { ExpandMore } from "@mui/icons-material";
 import { buildListener } from "../../block-defaults.shared";
+import { ListenerSettings } from "../../../block-settings";
+import { ExpandMore } from "@mui/icons-material";
+import { parse } from "path";
 
 //frame operations component props structure
 export interface FrameOperationsProps {
@@ -68,9 +83,20 @@ interface AccordionSection {
         title: string;
     };
 }
+    };
+}
 
 //data tab left section to show the data tab and the drag area for the selected columns
 export const FrameOperations = observer(
+    <D extends BlockDef = BlockDef>({
+        id,
+        updateFrame,
+        path,
+        chart,
+        storedColumns,
+        handleStoreData,
+        selectedItem,
+    }) => {
     <D extends BlockDef = BlockDef>({
         id,
         updateFrame,
@@ -89,6 +115,16 @@ export const FrameOperations = observer(
             Record<string, any>
         >({});
         const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
+        const [accordionSection, setAccordionSection] = useState<
+            AccordionSection[]
+        >([
+            {
+                ["preProcess"]: {
+                    expanded: true,
+                    title: "PRE PROCESS",
+                },
+            },
+        ]);
         const [accordionSection, setAccordionSection] = useState<
             AccordionSection[]
         >([
@@ -119,12 +155,17 @@ export const FrameOperations = observer(
         }, [frameHeaders]);
 
         useEffect(() => {
-            if (columnsSelector.length > 0 && temp) {
+            let filteredColumnsString = JSON.stringify(filteredColumns);
+            let columnsSelectorString = JSON.stringify(columnsSelector);
+            console.log(filteredColumnsString, columnsSelectorString, 'string comparision');
+            if (
+                columnsSelector.length > 0 &&
+                filteredColumnsString !== columnsSelectorString
+            ) {
                 setFilteredColumns(columnsSelector);
-                setTemp(false);
             }
         }, [columnsSelector]);
-
+        //to be removed in the later part, when chart's data section is working fine
         useEffect(() => {
             setSelectedColumn(storedColumns);
             const updatedColumns = { ...droppedColumns };
@@ -154,12 +195,100 @@ export const FrameOperations = observer(
             const lowerCaseSearch = searchValue.toLowerCase();
             const filtered = columnsSelector.filter((col) =>
                 col.name.toLowerCase().includes(lowerCaseSearch),
+                col.name.toLowerCase().includes(lowerCaseSearch),
             );
             setFilteredColumns(filtered); // Update the filtered columns
         };
+        //Resets the block data related to fields so the frame change operation removes all data related to old frame
+        function resetBlockData() {
+            let parsedValue = JSON.parse(computedValue) || {};
+            if (data.variation === "echart-bar-graph") {
+                parsedValue = {
+                    ...parsedValue,
+                    ["xAxis"]: {
+                        ...parsedValue["xAxis"],
+                        name: [],
+                        pixelname: [],
+                        pixelvalue: [],
+                    },
+                    ["yAxis"]: {
+                        ...parsedValue["yAxis"],
+                        name: "",
+                        pixelname: [],
+                        pixelvalue: [],
+                    },
+                };
+            } else if (data.variation === "echart-pie-chart") {
+                const { _state, ...mainParsedData } = parsedValue;
+                parsedValue = {
+                    ...mainParsedData,
+                };
+            } else if (data.variation === "echart-gantt-chart") {
+                parsedValue = {
+                    ...parsedValue,
+                    "customSettings": {
+                        "columnDetails": {
+                            "task": {
+                                "name": "",
+                                "selector": "",
+                            }
+                        },
+                        "columnIndexDetails": {}
+                    },
+                };
+            } else if (data.variation === "echart-dendrogram-chart") {
+                parsedValue = {
+                    ...parsedValue,
+                    ['_state']:{
+                        ...parsedValue['_state'],
+                        ['dimensions']:[],
+                        ['facet']:[],
+                    }
+                };
+            } else if (data.variation === "echart-line-graph") {
+                const { _state, ...mainParsedData } = parsedValue;
+                parsedValue = {
+                    ...mainParsedData,
+                };
+            } else if(data.variation === 'echart-world-map-chart'){
+                parsedValue = {
+                    ...parsedValue,
+                    ['_state']:{
+                        ['fields']:{},
+                    }
+                };
+            }
+            else if(data.variation === 'echart-scatter-plots'){
+                parsedValue = {
+                    ...parsedValue,
+                    ['_state']:{
+                        ['fields']:{},
+                    }
+                };
+            }
+            else if(data.variation === 'echart-stack-chart'){
+                parsedValue = {
+                    ...parsedValue,
+                    ['_state']:{
+                        ['fields']:{},
+                    }
+                };
+            }
+             else {
+                //to be used for special case if nothing matches
+            }
+            //all the stored and dropped columns are resetted to empty
+            storedColumns = {};
+            setDroppedColumns({});
+            try {
+                setData("option", parsedValue);
+            } catch (e) {
+                console.log("error: ", e);
+            }
+        }
 
         //additional function to trigger a sync, when a frame is newly selected
-        function syncHeaders(value: any) {
+        function syncHeaders(value: any, frameChanged: boolean) {
             if (!value) return;
             const columns = frameHeaders.data.list.map((item) => {
                 return {
@@ -169,6 +298,14 @@ export const FrameOperations = observer(
                     dataType: item.dataType,
                 };
             });
+            setColumnsData((prevColumns) => {
+                return columns;
+            });
+            if (frameChanged) {
+                storedColumns = [];
+                setSelectedColumn([]);
+                resetBlockData();
+            }
         }
 
         // get the value of the input (wrapped in usememo because of path prop)
@@ -177,7 +314,7 @@ export const FrameOperations = observer(
                 if (!data) {
                     return "";
                 }
-                const v = getValueByPath(data, path);
+                const v = getValueByPath(data, "option");
                 if (typeof v === "undefined") {
                     return "";
                 } else if (typeof v === "string") {
@@ -192,7 +329,11 @@ export const FrameOperations = observer(
             const hasValues = columnsValue.some(
                 (item) => item?.values && item?.values.length > 0,
             );
+            const hasValues = columnsValue.some(
+                (item) => item?.values && item?.values.length > 0,
+            );
             if (hasValues) {
+                // console.log("selected column to set with ", columnsValue);
                 setSelectedColumn(columnsValue);
                 handleStoreData(columnsValue);
             }
@@ -207,7 +348,6 @@ export const FrameOperations = observer(
 
             const firstColumn = columnsDrop[0];
             const secondColumn = columnsDrop[1];
-
             let fieldsData = {
                 [firstColumn?.label]: [],
                 [secondColumn?.label]: [],
@@ -238,6 +378,8 @@ export const FrameOperations = observer(
                     };
                     selectedValues = {
                         ...selectedValues,
+                        [firstColumn?.label]:
+                            columns[firstColumn?.label][0]["selector"],
                         [firstColumn?.label]:
                             columns[firstColumn?.label][0]["selector"],
                     };
@@ -332,7 +474,7 @@ export const FrameOperations = observer(
                             ["toolsUpdated"]: false,
                         },
                     };
-                    dispatchData(tempVal);
+                    setData("option", tempVal);
                     setData("columns", columnsmerged);
                 }
             }
@@ -549,6 +691,7 @@ export const FrameOperations = observer(
                    tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -578,6 +721,7 @@ export const FrameOperations = observer(
                 tempValue["_state"] = {};
                 tempValue["_state"]["fields"] = {};
                 let tempSeries = tempValue["series"] || [];
+                let tempSeries = tempValue["series"] || [];
                 tempValue["_state"]["fields"] = {
                     ...tempValue["_state"]["fields"],
                     xAxis: firstColumn?.values,
@@ -585,10 +729,14 @@ export const FrameOperations = observer(
                     tooltip: columnsDrop[2]?.values
                         ? columnsDrop[2]?.values
                         : [],
+                    tooltip: columnsDrop[2]?.values
+                        ? columnsDrop[2]?.values
+                        : [],
                 };
                 if (secondColumn?.values.length > 1) {
                     const seriesListToAdd = [];
                     //Adding newly added field to the state
+                    for (let i = 0; i < secondColumn.values.length; i++) {
                     for (let i = 0; i < secondColumn.values.length; i++) {
                         seriesListToAdd[i] = {
                             ...tempSeries[i],
@@ -605,6 +753,8 @@ export const FrameOperations = observer(
                                 show: tempSeries[i]?.label?.show ?? true,
                                 position:
                                     tempSeries[i]?.label?.position ?? "top",
+                                position:
+                                    tempSeries[i]?.label?.position ?? "top",
                                 rotate: tempSeries[i]?.label?.rotate ?? 45,
                                 fontSize: tempSeries[i]?.label?.fontSize ?? 12,
                                 color: tempSeries[i]?.label?.color ?? "#000000",
@@ -613,7 +763,9 @@ export const FrameOperations = observer(
                     }
                     tempSeries = seriesListToAdd;
                 } else {
+                } else {
                     //Removing the field from the state if it is not selected
+                    tempSeries = tempSeries.slice(0, 1);
                     tempSeries = tempSeries.slice(0, 1);
                 }
                 tempValue["series"] = tempSeries;
@@ -625,6 +777,7 @@ export const FrameOperations = observer(
                 if (firstColumn?.values) {
                     tempValue["_state"] =
                         tempValue["_state"] &&
+                        Object.keys(tempValue["_state"]).length > 0
                         Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
@@ -643,6 +796,7 @@ export const FrameOperations = observer(
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -659,6 +813,7 @@ export const FrameOperations = observer(
                 if (columnsDrop[2]?.values.length > 0) {
                     tempValue["_state"] =
                         tempValue["_state"] &&
+                        Object.keys(tempValue["_state"]).length > 0
                         Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
@@ -677,6 +832,7 @@ export const FrameOperations = observer(
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
+                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -688,6 +844,7 @@ export const FrameOperations = observer(
                 if (columnsDrop[4]?.values.length > 0) {
                     tempValue["_state"] =
                         tempValue["_state"] &&
+                        Object.keys(tempValue["_state"]).length > 0
                         Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
@@ -702,6 +859,7 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
+                        Object.keys(tempValue["_state"]).length > 0
                         Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
@@ -722,17 +880,26 @@ export const FrameOperations = observer(
                 const tempValue = computedValue;
 
                 for (let i = 0; i < columnsValue.length; i++) {
-                    if (columnsValue[i]?.values.length > 0) {
+                    if (columnsValue[i]?.values.length == 1) {
+                        if(formattedArray.some((item)=> item.name === columnsValue[i]?.values?.[0])) continue;
                         formattedArray.push({
                             name: columnsValue[i]?.values?.[0] || "",
                             selector: columnsValue[i]?.selectors?.[0] || "",
                             width: columnsValue[i]?.width?.[0] || undefined,
                         });
                     }
+                    else{
+                        for (let j=0;j<columnsValue[i]?.values.length;j++){
+                            if(formattedArray.some((item)=> item.name === columnsValue[i]?.values?.[j])) continue;
+                            formattedArray.push({
+                                name: columnsValue[i]?.values?.[j] || "",
+                                selector: columnsValue[i]?.selectors?.[j] || "",
+                                width: columnsValue[i]?.width?.[j] || undefined,
+                            });
+                        }
+                    }
                 }
-
-                setData("columns", formattedArray);
-
+                // console.log('columnsValue', columnsValue, columnsDrop);
                 if (firstColumn?.values) {
                     columnsToSet.push(firstColumn?.values);
                     columnsObject["task"] = firstColumn?.values;
@@ -769,6 +936,7 @@ export const FrameOperations = observer(
                             name: secondColumn?.values?.[0],
                             selector: secondColumn?.selectors?.[0],
                         },
+                    };
                     };
 
                     setData("option", tempValue);
@@ -850,12 +1018,17 @@ export const FrameOperations = observer(
                             selector: columnsDrop[5]?.selectors?.[0],
                         },
                     };
+                    };
 
                     setData("option", tempValue);
                 }
                 if (columnsDrop[6]?.values.length > 0) {
-                    columnsToSet.push(columnsDrop[6]?.values);
-                    columnsObject["tooltip"] = columnsDrop[6]?.values;
+                    if(Array.isArray(columnsDrop[6]?.values)){
+                        columnsToSet = [...columnsToSet, ...columnsDrop[6]?.values];
+                    }else{
+                        columnsToSet.push(columnsDrop[6]?.values);
+                    }
+                    columnsObject["tooltip"] = Array.isArray(columnsDrop[6]?.values) ? columnsDrop[6]?.values : [columnsDrop[6]?.values];
 
                     tempValue["customSettings"] =
                         tempValue["customSettings"] &&
@@ -880,6 +1053,15 @@ export const FrameOperations = observer(
                     columnsObject,
                     columnsToSet,
                 );
+                console.log(tooltip, columnsToSet, 'tooltipIndexToSetTest');
+                let tooltipIndexToSet = tooltip.reduce((acc,item)=>{
+                    columnsToSet.forEach((colSetItem, colSetIndex) => {
+                        if (colSetItem.includes(item)) {
+                            acc = [...acc, colSetIndex];
+                        }
+                    });
+                    return acc;
+                },[]);
 
                 if (columnsIndexToSet) {
                     tempValue["customSettings"]["columnIndexDetails"] = {
@@ -889,7 +1071,9 @@ export const FrameOperations = observer(
 
                     setData("option", tempValue);
                 }
+                setData("columns", formattedArray);
             }
+            if (variation == "echart-dendrogram-chart") {
             if (variation == "echart-dendrogram-chart") {
                 let columnsToPush = [];
                 const dimensionElement = columnsValue.find(
@@ -915,6 +1099,7 @@ export const FrameOperations = observer(
                     setData("columns", columnsToPush);
                 } else {
                     setData("columns", []);
+                    setData("option", parsedJson);
                 }
                 if (
                     facetElement.label === "facet" &&
@@ -939,10 +1124,12 @@ export const FrameOperations = observer(
                             value: 0,
                             isFacet: true,
                         },
+                        },
                     ];
                     setData("columns", columnsToPush);
                 } else {
                     setData("facet.facetSelected", []);
+                    setData("option", parsedJson);
                 }
             }
 
@@ -953,12 +1140,18 @@ export const FrameOperations = observer(
                 const formattedAggregates = {};
                 columnsValue.forEach((column, columnIndex) => {
                     const valueMap = {};
-                    column?.values?.forEach((value, valueIndex) => {
-                        valueMap[value] = chart[columnIndex]?.aggregate
-                            ? checkAggregate(column?.dataType[valueIndex])
-                            : "";
-                    });
-                    formattedAggregates[column.label] = valueMap;
+                    if(
+                        column.hasOwnProperty('values') &&
+                        column['values'].hasOwnProperty('values')
+                    ){
+                        let columnValues = column?.values?.values || [];
+                        columnValues.forEach((value, valueIndex) => {
+                            valueMap[value] = chart[columnIndex]?.aggregate
+                                ? checkAggregate(column?.dataType[valueIndex])
+                                : "";
+                        });
+                        formattedAggregates[column.label] = valueMap;
+                    }
                 });
                 return formattedAggregates;
             };
@@ -1034,6 +1227,7 @@ export const FrameOperations = observer(
                 }
                 return updated;
             });
+        };
         };
         const onClickAdd = (value: boolean, id: any) => {
             setIsAdd(value);

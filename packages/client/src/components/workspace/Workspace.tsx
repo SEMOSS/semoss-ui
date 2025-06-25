@@ -1,8 +1,14 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { Menu, MenuOpen, Public, RestartAlt } from '@mui/icons-material';
-import { Layout, TabNode } from 'flexlayout-react';
+import {
+    Layout,
+    TabNode,
+    Model,
+    Actions,
+    DockLocation,
+} from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import './flexlayout.css';
 
@@ -11,12 +17,12 @@ import {
     styled,
     Stack,
     Typography,
-    useNotification,
     IconButton,
     Tooltip,
     Drawer,
     Button,
 } from '@semoss/ui';
+import { useBlocks } from '@semoss/renderer';
 import { Env } from '@semoss/sdk/react';
 
 import { THEME } from '@/constants';
@@ -129,12 +135,116 @@ export const Workspace = observer((props: WorkspaceProps) => {
         factory = () => null,
     } = props;
     const { configStore } = useRootStore();
-    const notification = useNotification();
 
     const layoutRef = useRef<Layout>(null);
 
+    // const [model, setModel] = useState<Model | null>(null);
+
     // build the model from the layout
     const model = workspace.selectedLayout?.model;
+    const rawModel = workspace.selectedLayout?.model;
+
+    // useEffect(() => {
+    //     if (!rawModel) return;
+
+    //     const modelJson = rawModel.toJson();
+
+    //     if (!modelJson) {
+    //         setModel(rawModel);
+    //         return;
+    //     }
+
+    //     // List of notebooks tied to app
+    //     const validNotebookIds = new Set(notebook.queriesList.map((q) => q.id));
+
+    //     const root = modelJson.layout.children?.[0];
+    //     if (!root || !Array.isArray(root.children)) return;
+
+    //     // Remove notebooks that are on react flow model but not actually saved in state
+    //     const filteredLayoutArray = root.children.filter((layout: any) => {
+    //         const isNotebook = layout.component === 'notebook-viewer';
+    //         const layoutId = layout.config?.id;
+    //         return !isNotebook || validNotebookIds.has(layoutId);
+    //     });
+
+    //     root.children = filteredLayoutArray;
+    //     root['selected'] = filteredLayoutArray.length - 1;
+
+    //     setModel(Model.fromJson(modelJson));
+    // }, [notebook.queriesList, rawModel]);
+
+    useEffect(() => {
+        const handler = (e: CustomEvent) => {
+            const { destinationType, destination } = e.detail;
+            if (destinationType === 'App Page') {
+                const layoutModel = workspace.selectedLayout?.model;
+                let selectedNode: TabNode | null = null;
+
+                // get the model
+                if (!layoutModel) {
+                    throw new Error('Missing model');
+                }
+
+                // visit the notes, and see if it exists
+                layoutModel.visitNodes((node) => {
+                    // check if it is a tabNode
+                    if (node instanceof TabNode) {
+                        // it needs to be a notebook-viewer
+                        const component = node.getComponent();
+                        if (component !== 'designer') {
+                            return;
+                        }
+
+                        // path and space need to match
+                        const config = node.getConfig();
+                        if (config.id !== destination) {
+                            return;
+                        }
+
+                        selectedNode = node;
+                    }
+                });
+
+                // create a new panel if there is no node
+                if (!selectedNode) {
+                    // get the name
+                    const name = destination;
+
+                    // where to add the node
+                    const addId =
+                        layoutModel.getActiveTabset()?.getId() ||
+                        layoutModel.getRoot().getChildren()[0]?.getId() ||
+                        '';
+
+                    // create and select the panel
+                    layoutModel.doAction(
+                        Actions.addNode(
+                            {
+                                type: 'tab',
+                                name: name,
+                                component: 'designer',
+                                config: {
+                                    id: destination,
+                                },
+                                enableClose: true,
+                            },
+                            addId,
+                            DockLocation.CENTER,
+                            -1,
+                            true,
+                        ),
+                    );
+                }
+
+                const selectedNodeId = selectedNode.getId();
+                layoutModel.doAction(Actions.selectTab(selectedNodeId));
+            }
+        };
+        window.addEventListener('OPEN_EVENT', handler as EventListener);
+        return () => {
+            window.removeEventListener('OPEN_EVENT', handler as EventListener);
+        };
+    }, []);
 
     useEffect(() => {
         // default options if not loaded from cache
@@ -303,6 +413,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
             </StyledViewport>
             <Drawer
                 anchor="left"
+                variant="persistent"
                 open={workspace.drawer.isOpen}
                 ModalProps={{
                     hideBackdrop: true, // Hide the backdrop
@@ -315,7 +426,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
                         borderRadius: 0,
                     },
                 }}
-                variant="persistent"
             >
                 <Stack direction="column" gap={1} height={'100%'} padding={2}>
                     <StyledHeaderLogo to={'/'}>
