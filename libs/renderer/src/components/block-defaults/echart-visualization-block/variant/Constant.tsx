@@ -213,3 +213,14 @@ export const Dendrogram = [
         aggregate: false,
     },
 ];
+
+export const ChartTypes = {
+    bar: "bar",
+    pie: "pie",
+    scatterplot: "scatterplot",
+    stackchart: "stackchart",
+    map: "map",
+    line: "line",
+    gantt: "gantt",
+    dendrogram: "dendrogram",
+};

@@ -6,11 +6,12 @@ import { computed } from "mobx";
 
 import { Button, Select, Stack, styled, Table, TextField } from "@semoss/ui";
 
-import { BlockDef } from "../../../../../store";
-import { useBlockSettings } from "../../../../../hooks";
-import { getValueByPath } from "../../../../../utility";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
-import { columnComparisionList } from "../shared/chart-utility";
+import { BlockDef } from "../../../../store";
+import { useBlockSettings } from "../../../../hooks";
+import { getValueByPath } from "../../../../utility";
+import { EchartVisualizationBlockDef } from "../VisualizationBlock";
+import { columnComparisionList } from "./shared/chart-utility";
+import { ChartTypes } from "./Constant";
 
 // styled main section with custom styling
 const StyledMainSection = styled("div")(() => ({
@@ -53,7 +54,7 @@ const INITIAL_NEW_RULES = {
     index: -1,
 };
 
-const ColourByValue = observer(
+const ColorByValue = observer(
     <D extends BlockDef = BlockDef>({ id, path, chartType }) => {
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
@@ -68,15 +69,21 @@ const ColourByValue = observer(
         });
         const updateTimeOutRef = useRef(null);
         let columnData = [];
-        if (chartType === "bar" || chartType === "stackchart") {
+        if (
+            chartType === ChartTypes.bar ||
+            chartType === ChartTypes.stackchart
+        ) {
             columnData = data.columns
                 ? data.columns.filter(
                       (item) => item.label?.toLowerCase() === "yaxis",
                   )
                 : [];
-        } else if (chartType === "pie") {
+        } else if (chartType === ChartTypes.pie) {
             columnData = data.columns;
-        } else if (chartType === "map" || chartType === "scatterplot") {
+        } else if (
+            chartType === ChartTypes.map ||
+            chartType === ChartTypes.scatterplot
+        ) {
             columnData = data.columns;
         }
         // const columnToColour = columnData.find(
@@ -158,7 +165,10 @@ const ColourByValue = observer(
                 const option = data.option;
                 let valuesColor = [];
                 let name = "";
-                if (chartType === "pie" || chartType === "stackchart") {
+                if (
+                    chartType === ChartTypes.pie ||
+                    chartType === ChartTypes.stackchart
+                ) {
                     name = event.target.value.name;
                     valuesColor = option["series"].flatMap((item) =>
                         item.data?.map((item) => {
@@ -170,12 +180,15 @@ const ColourByValue = observer(
                                 : item;
                         }),
                     );
-                } else if (chartType === "map" || chartType === "scatterplot") {
+                } else if (
+                    chartType === ChartTypes.map ||
+                    chartType === ChartTypes.scatterplot
+                ) {
                     name = event.target.value.name;
                     valuesColor = option["series"][0]?.["data"].map((item) => {
                         return parseFloat(item[name]);
                     });
-                } else if (chartType === "bar") {
+                } else if (chartType === ChartTypes.bar) {
                     name = Array.isArray(event.target.value.name)
                         ? event.target.value.name[0]
                         : event.target.value.name;
@@ -477,4 +490,4 @@ const ColourByValue = observer(
         return <>{accordionDetails}</>;
     },
 );
-export default ColourByValue;
+export default ColorByValue;

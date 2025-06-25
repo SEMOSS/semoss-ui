@@ -17,7 +17,7 @@ import { useBlockSettings } from "../../../../../hooks";
 import { Legend } from "./Legend";
 import { EditXAxis } from "./Edit-X-Axis";
 import { EditYAxis } from "./Edit-Y-Axis";
-import ColourByValue from "./ColourByValue";
+import ColorByValue from "../ColorByValue";
 import { ChartStyling } from "./ChartStyling";
 import { PieTitle } from "../pie-chart/PieTitle";
 import { PieLegend } from "../pie-chart/PieLegend";
@@ -77,7 +77,7 @@ import { ChangeOrientation } from '../dendrogram/ChangeOrientation';
 import { LegendDendrogram } from "../dendrogram/LegendDendrogram";
 import { LabelsDendrogram } from "../dendrogram/LabelsDendrogram";
 //upgraded visualization tool propsimport { EditXAxisScatterPlot } from '../ScatterPlot/EditXAxisScatterPlot';
-import { ColorByValue as ColorByValuePie } from "../pie-chart/ColorByValue";
+import { ChartTypes } from "../Constant";
 
 interface UpgradedVisualizationToolProps {
     id: string;
@@ -544,9 +544,9 @@ const StackChartTool = (({id})=>{
                     <InfoOutlined />
                 </ListItemButton>
                 {stackChartSelection === "colourbyvalue" && (
-                    <ColourByValue
+                    <ColorByValue
                         id={id}
-                        chartType={"stackchart"}
+                        chartType={ChartTypes.stackchart}
                         path="option"
                     />
                 )}
@@ -732,9 +732,7 @@ const BarToolsList = (({id})=>{
                 <ListItemButton
                     onClick={(e) =>
                         setBarSelection((prevList) =>
-                            prevList === "colourbyvalue"
-                                ? ""
-                                : "colourbyvalue",
+                            prevList === "colourbyvalue" ? "" : "colourbyvalue",
                         )
                     }
                     selected={barSelection === "colourbyvalue"}
@@ -753,16 +751,18 @@ const BarToolsList = (({id})=>{
                     <InfoOutlined />
                 </ListItemButton>
                 {barSelection === "colourbyvalue" && (
-                    <ColourByValue id={id} path="option" chartType="bar" />
+                    <ColorByValue
+                        id={id}
+                        path="option"
+                        chartType={ChartTypes.bar}
+                    />
                 )}
             </StyledListItem>
             <StyledListItem disablePadding>
                 <ListItemButton
                     onClick={(e) =>
                         setBarSelection((prevList) =>
-                            prevList === "editxaxis"
-                                ? ""
-                                : "editxaxis",
+                            prevList === "editxaxis" ? "" : "editxaxis",
                         )
                     }
                     selected={barSelection === "editxaxis"}
@@ -781,20 +781,14 @@ const BarToolsList = (({id})=>{
                     <InfoOutlined />
                 </ListItemButton>
                 {barSelection === "editxaxis" && (
-                    <EditXAxis
-                        id={id}
-                        option={data.option}
-                        path="option"
-                    />
+                    <EditXAxis id={id} option={data.option} path="option" />
                 )}
             </StyledListItem>
             <StyledListItem disablePadding>
                 <ListItemButton
                     onClick={(e) =>
                         setBarSelection((prevList) =>
-                            prevList === "edityaxis"
-                                ? ""
-                                : "edityaxis",
+                            prevList === "edityaxis" ? "" : "edityaxis",
                         )
                     }
                     selected={barSelection === "edityaxis"}
@@ -813,20 +807,14 @@ const BarToolsList = (({id})=>{
                     <InfoOutlined />
                 </ListItemButton>
                 {barSelection === "edityaxis" && (
-                    <EditYAxis
-                        id={id}
-                        option={data.option}
-                        path="option"
-                    />
+                    <EditYAxis id={id} option={data.option} path="option" />
                 )}
             </StyledListItem>
             <StyledListItem disablePadding>
                 <ListItemButton
                     onClick={(e) =>
                         setBarSelection((prevList) =>
-                            prevList === "valuelabel"
-                                ? ""
-                                : "valuelabel",
+                            prevList === "valuelabel" ? "" : "valuelabel",
                         )
                     }
                     selected={barSelection === "valuelabel"}
@@ -845,21 +833,19 @@ const BarToolsList = (({id})=>{
                     <InfoOutlined />
                 </ListItemButton>
                 {barSelection === "valuelabel" && (
-                        <CustomizeValueLabels
-                            id={id}
-                            option={data.option}
-                            chartType={BAR_CHART_DATA.JSONVALUE[0]}
-                            path="option"
-                        />
-                    )}
+                    <CustomizeValueLabels
+                        id={id}
+                        option={data.option}
+                        chartType={BAR_CHART_DATA.JSONVALUE[0]}
+                        path="option"
+                    />
+                )}
             </StyledListItem>
             <StyledListItem disablePadding>
                 <ListItemButton
                     onClick={(e) =>
                         setBarSelection((prevList) =>
-                            prevList === "barstyle"
-                                ? ""
-                                : "barstyle",
+                            prevList === "barstyle" ? "" : "barstyle",
                         )
                     }
                     selected={barSelection === "barstyle"}
@@ -878,22 +864,20 @@ const BarToolsList = (({id})=>{
                     <InfoOutlined />
                 </ListItemButton>
                 {barSelection === "barstyle" && (
-                        <VisualizationStyles
-                            id={id}
-                            option={data.option}
-                            path="option"
-                            chartType={BAR_CHART_DATA.JSONVALUE[0]}
-                            updateChart={updateChart}
-                        />
-                    )}
+                    <VisualizationStyles
+                        id={id}
+                        option={data.option}
+                        path="option"
+                        chartType={BAR_CHART_DATA.JSONVALUE[0]}
+                        updateChart={updateChart}
+                    />
+                )}
             </StyledListItem>
             <StyledListItem disablePadding>
                 <ListItemButton
                     onClick={(e) =>
                         setBarSelection((prevList) =>
-                            prevList === "chartstyle"
-                                ? ""
-                                : "chartstyle",
+                            prevList === "chartstyle" ? "" : "chartstyle",
                         )
                     }
                     selected={barSelection === "chartstyle"}
@@ -911,40 +895,38 @@ const BarToolsList = (({id})=>{
                     <ListItemText primary="Chart Style" />
                     <InfoOutlined />
                 </ListItemButton>
-                        {barSelection === "chartstyle" && (
-                            <ChartStyling
-                                option={data.option}
-                                id={id}
-                                updateChart={updateChart}
-                                path="option"
-                            />
-                        )}
+                {barSelection === "chartstyle" && (
+                    <ChartStyling
+                        option={data.option}
+                        id={id}
+                        updateChart={updateChart}
+                        path="option"
+                    />
+                )}
             </StyledListItem>
             <ResizingTool id={id} />
             <StyledListItem disablePadding>
-                    <ListItemButton
-                        onClick={(e) =>
-                            setBarSelection((prevList) =>
-                                prevList === "trendlines"
-                                    ? ""
-                                    : "trendlines",
-                            )
-                        }
-                        selected={barSelection === "trendlines"}
-                    >
-                        <ListItemIcon>
-                            <ImageIcon
-                                fontSize="large"
-                                color={
-                                    barSelection === "trendlines"
-                                        ? "primary"
-                                        : "disabled"
-                                }
-                            />
-                        </ListItemIcon>
-                        <ListItemText primary="Trendlines" />
-                        <InfoOutlined />
-                    </ListItemButton>
+                <ListItemButton
+                    onClick={(e) =>
+                        setBarSelection((prevList) =>
+                            prevList === "trendlines" ? "" : "trendlines",
+                        )
+                    }
+                    selected={barSelection === "trendlines"}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                barSelection === "trendlines"
+                                    ? "primary"
+                                    : "disabled"
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Trendlines" />
+                    <InfoOutlined />
+                </ListItemButton>
                 {barSelection === "trendlines" && (
                     <ToggleTrendline
                         id={id}
@@ -960,9 +942,7 @@ const BarToolsList = (({id})=>{
                     <ListItemButton
                         onClick={(e) =>
                             setBarSelection((prevList) =>
-                                prevList === "barlegend"
-                                    ? ""
-                                    : "barlegend",
+                                prevList === "barlegend" ? "" : "barlegend",
                             )
                         }
                         selected={barSelection === "barlegend"}
@@ -1020,9 +1000,9 @@ const ScatterToolsList = (({id})=>{
                     <InfoOutlined />
                 </ListItemButton>
                 {scatterSelection === "colourbyvalue" && (
-                    <ColourByValue
+                    <ColorByValue
                         id={id}
-                        chartType={"scatterplot"}
+                        chartType={ChartTypes.scatterplot}
                         path="option"
                     />
                 )}
@@ -1460,9 +1440,9 @@ const LineChartTools = (({id})=>{
                     <InfoOutlined />
                 </ListItemButton>
                 {mapSelection === "colourbyvalue" && (
-                    <ColourByValue
+                    <ColorByValue
                         id={id}
-                        chartType={"map"}
+                        chartType={ChartTypes.map}
                         path="option"
                     />
                 )}
@@ -1588,13 +1568,11 @@ const LineChartTools = (({id})=>{
                     <InfoOutlined />
                 </ListItemButton>
                 {pieSelection === "colourbyvalue" && (
-                    <ColourByValue
+                    <ColorByValue
                         id={id}
-                        chartType="pie"
-                        // updateChart={updateChart}
+                        chartType={ChartTypes.pie}
                         path="option"
                     />
-                    // <ColorByValuePie id={id} path="option" />
                 )}
             </StyledListItem>
                 <StyledListItem disablePadding>
