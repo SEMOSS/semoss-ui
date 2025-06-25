@@ -16,85 +16,110 @@ const config: Migration = {
          * @returns An array of tuples representing the field and its aggregation method.
          */
         const aggregateFormatter1 = (inputData) => {
-            if(inputData){
+            if (inputData) {
                 const formattedColumns = {};
                 inputData.forEach((column, index) => {
-                    if(column.selector){
+                    if (column.selector) {
                         formattedColumns[index] = {
-                            [column.selector]: index!=0 ? "Average" : "",
-                        }
+                            [column.selector]: index != 0 ? "Average" : "",
+                        };
                     }
                 });
-                console.log("Migrating from 1 >", formattedColumns, inputData)
+                console.log("Migrating from 1 >", formattedColumns, inputData);
                 return formattedColumns;
             }
             return {};
-        }
+        };
 
         const aggregateFormatter2 = (inputData) => {
-            if(inputData){
+            if (inputData) {
                 const formatedData = {};
-                Object.entries(inputData).forEach(([key, value]: [string, string[]], index) => {
-                    formatedData[key] = {};
-                    value.forEach((field) => {
-                        formatedData[key][field] = index !== 0 ? "Average" : "";
-                    });
-                });
-                console.log("Migrating from 2 >", formatedData)
+                Object.entries(inputData).forEach(
+                    ([key, value]: [string, string[]], index) => {
+                        formatedData[key] = {};
+                        value.forEach((field) => {
+                            formatedData[key][field] =
+                                index !== 0 ? "Average" : "";
+                        });
+                    },
+                );
+                console.log("Migrating from 2 >", formatedData);
                 return formatedData;
             }
             return {};
-        }
+        };
 
         const aggregateFormatter3 = (inputData) => {
-            if(inputData){
+            if (inputData) {
                 const formatedData = {};
-                Object.entries(inputData).forEach(([key, value]: [string, string[]], index) => {
-                    if(!key.includes("DataType")) {
-                        formatedData[key] = {};
-                        value.forEach((field, idx) => {
-                            formatedData[key][field] = index !== 0 ? inputData[`${key}DataType`][idx] === "NUMBER" ? "Average" : "Count" : "";
-                        });
-                    }
-                });
-                console.log("Migrating from 3 >", formatedData)
+                Object.entries(inputData).forEach(
+                    ([key, value]: [string, string[]], index) => {
+                        if (!key.includes("DataType")) {
+                            formatedData[key] = {};
+                            value.forEach((field, idx) => {
+                                formatedData[key][field] =
+                                    index !== 0
+                                        ? inputData[`${key}DataType`][idx] ===
+                                          "NUMBER"
+                                            ? "Average"
+                                            : "Count"
+                                        : "";
+                            });
+                        }
+                    },
+                );
+                console.log("Migrating from 3 >", formatedData);
                 return formatedData;
             }
             return {};
-        }
-        if(state.blocks) {
+        };
+        if (state.blocks) {
             Object.values(state.blocks).forEach((b) => {
-                if(b.widget === "e-chart") {
-                    if(b.data.variation === "echart-bar-graph") {
-                        b.data.aggregate = b.data.aggregate || aggregateFormatter1(b.data.columns);
-                    }
-                    else if(b.data.variation === "echart-gantt-chart"){
-                        let columns = Object.values(b.data.option['customSettings']['columnDetails']);
-                        b.data.aggregate = b.data.aggregate || aggregateFormatter1(columns);
-                    }
-                    else if(b.data.variation === "echart-pie-chart") {
+                if (b.widget === "e-chart") {
+                    if (b.data.variation === "echart-bar-graph") {
+                        b.data.aggregate =
+                            b.data.aggregate ||
+                            aggregateFormatter1(b.data.columns);
+                    } else if (b.data.variation === "echart-gantt-chart") {
+                        let columns = Object.values(
+                            b.data.option["customSettings"]["columnDetails"],
+                        );
+                        b.data.aggregate =
+                            b.data.aggregate || aggregateFormatter1(columns);
+                    } else if (b.data.variation === "echart-pie-chart") {
                         let fields = {
-                            "Label": [b.data.option['_state']['fields']['Label']],
-                            "Value": [b.data.option['_state']['fields']['Value']],
-                        }
-                        b.data.aggregate = b.data.aggregate || aggregateFormatter2(fields);
+                            Label: [b.data.option["_state"]["fields"]["Label"]],
+                            Value: [b.data.option["_state"]["fields"]["Value"]],
+                        };
+                        b.data.aggregate =
+                            b.data.aggregate || aggregateFormatter2(fields);
+                    } else if (b.data.variation === "echart-line-graph") {
+                        b.data.aggregate =
+                            b.data.aggregate ||
+                            aggregateFormatter2(
+                                b.data.option["_state"]["fields"],
+                            );
+                    } else if (
+                        b.data.variation === "echart-scatter-plots" ||
+                        b.data.variation === "echart-stack-chart"
+                    ) {
+                        b.data.aggregate =
+                            b.data.aggregate ||
+                            aggregateFormatter3(
+                                b.data.option["_state"]["fields"],
+                            );
+                    } else if (b.data.variation === "echart-world-map-chart") {
+                        let fields = {};
+                        Object.entries(
+                            b.data.option["_state"]["fields"],
+                        ).forEach(([key, value]) => {
+                            fields[key] = [value];
+                        });
+                        b.data.aggregate =
+                            b.data.aggregate || aggregateFormatter3(fields);
                     }
-                    else if(b.data.variation === "echart-line-graph"){
-                        b.data.aggregate = b.data.aggregate || aggregateFormatter2(b.data.option['_state']['fields']);
-                    }
-                    else if(b.data.variation === "echart-scatter-plots" || b.data.variation === "echart-stack-chart") {
-                        b.data.aggregate = b.data.aggregate || aggregateFormatter3(b.data.option['_state']['fields']);
-                    }
-                    /** MAP chart migration WIP */
-                    // else if(b.data.variation === "echart-world-map-chart"){
-                    //     let fields = {};
-                    //     Object.entries(b.data.option['_state']['fields']).forEach(([key, value]) => {
-                    //         fields[key] = [value]
-                    //     });
-                    //     b.data.aggregate = b.data.aggregate || aggregateFormatter3(fields);
-                    // }
                 }
-            })
+            });
         }
 
         return newState;
