@@ -1,13 +1,11 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
+import { observer } from 'mobx-react-lite';
+import { MenuRounded } from '@mui/icons-material';
 
 import { IconButton, Stack, styled, Typography } from '@semoss/ui';
 
 import { usePage, useRootStore } from '@/hooks';
-import { MenuRounded } from '@mui/icons-material';
-import { Logo } from '@/assets/img/Logo';
-import { THEME } from '@/constants';
-import { observer } from 'mobx-react-lite';
 
 const StyledNavbarHeader = styled(Stack)(({ theme }) => ({
     position: 'relative',
@@ -43,19 +41,6 @@ export const NavbarHeader = observer((props: NavbarHeaderProps) => {
     const { page } = usePage();
     const { configStore } = useRootStore();
 
-    const themeMap = useMemo(() => {
-        const theme = configStore.store.config['theme'];
-
-        if (theme && theme['THEME_MAP']) {
-            try {
-                return JSON.parse(theme['THEME_MAP'] as string);
-            } catch {
-                return {};
-            }
-        }
-
-        return {};
-    }, [Object.keys(configStore.store.config).length]);
     return !page.sidebar.pinned ? (
         <StyledNavbarHeader
             direction={'row'}
@@ -70,9 +55,11 @@ export const NavbarHeader = observer((props: NavbarHeaderProps) => {
 
             {!logo ? (
                 <StyledNavbarHeaderLink to={'/'} aria-label={'Go Home'}>
-                    <Logo />
+                    {configStore.theme.logo ? (
+                        <img src={configStore.theme.logo} />
+                    ) : null}
                     <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                        {themeMap.name ? themeMap.name : THEME.name}
+                        {configStore.theme.name}
                     </Typography>
                 </StyledNavbarHeaderLink>
             ) : (

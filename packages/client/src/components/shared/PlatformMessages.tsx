@@ -2,7 +2,6 @@ import { observer } from 'mobx-react-lite';
 import React, { useEffect, useState } from 'react';
 import { useRootStore } from '@/hooks/';
 import { Button, Modal } from '@semoss/ui';
-import { cookieName } from '@/components/cookies';
 
 interface PlatformMessagesProps {
     children?: React.ReactNode;
@@ -12,7 +11,11 @@ export const PlatformMessages = observer((props: PlatformMessagesProps) => {
     const { children } = props;
     const { configStore } = useRootStore();
     const [acceptedTerms, setAcceptedTerms] = useState<boolean | null>(null);
-    const [terms, setTerms] = useState({ header: '', text: '' });
+
+    const terms = {
+        header: configStore.theme.termsHeaderReact,
+        text: configStore.theme.termsHeaderReact,
+    };
 
     useEffect(() => {
         if (configStore.store.userEpoch) {
@@ -24,19 +27,6 @@ export const PlatformMessages = observer((props: PlatformMessagesProps) => {
             } else {
                 setAcceptedTerms(false);
             }
-        }
-
-        const theme = configStore.store.config['theme'];
-        try {
-            if (theme && theme['THEME_MAP']) {
-                const themeMap = JSON.parse(theme['THEME_MAP'] as string);
-                setTerms({
-                    header: themeMap['termsHeaderReact'] || 'Attention',
-                    text: themeMap['termsReact'] || '',
-                });
-            }
-        } catch {
-            console.error('Error parsing theme data');
         }
     }, [configStore.store.userEpoch, configStore.store.config]);
 
