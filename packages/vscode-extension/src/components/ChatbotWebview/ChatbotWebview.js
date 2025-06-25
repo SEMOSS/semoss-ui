@@ -26,11 +26,15 @@ class SemossChatbotViewProvider {
      */
     constructor(context) {
         this._context = context;
+        this._chatHistory = [];
+        this._currentState = 'start'; // 'start', 'options', 'authorized'
     }
 
     /**
      * @param {vscode.WebviewView} webviewView
-     */    resolveWebviewView(webviewView) {
+     */
+    resolveWebviewView(webviewView) {
+        this._webviewView = webviewView;
         webviewView.webview.options = {
             enableScripts: true,
             localResourceRoots: [
@@ -39,10 +43,44 @@ class SemossChatbotViewProvider {
 
         };
 
-
-
         webviewView.webview.html = getWebviewContent(webviewView.webview, this._context);
+
+        // Restore chat history and state when webview becomes visible
+        webviewView.onDidChangeVisibility(() => {
+            if (webviewView.visible) {
+                this._restoreChatState();
+            }
+        });
+
+        // Initial restore when webview is first created
+        this._restoreChatState();
+
         webviewView.webview.onDidReceiveMessage(async (msg) => {
+            // Handle history-related messages
+            if (msg.type === 'saveMessage') {
+                this._addMessageToHistory(msg.message.text, msg.message.from, msg.status);
+                return;
+            }
+
+            if (msg.type === 'saveState') {
+                this._currentState = msg.state;
+                return;
+            }
+
+            if (msg.type === 'getHistory') {
+                webviewView.webview.postMessage({
+                    type: 'restoreHistory',
+                    history: this._chatHistory,
+                    state: this._currentState
+                });
+                return;
+            }
+
+            if (msg.type === 'clearHistory') {
+                this._chatHistory = [];
+                this._currentState = 'start';
+                return;
+            }
             if (msg.type === 'getInstanceAliases') {
                 // Fetch aliases and send to webview, including URLs
                 const instances = await getStoredInstances(this._context);
@@ -139,6 +177,7 @@ class SemossChatbotViewProvider {
                                             text: 'Instance "' + alias + '" authorized successfully!',
                                             hideLoading: true
                                         });
+                                        this._addMessageToHistory('Instance "' + alias + '" authorized successfully!', 'bot', 'success');
                                     } catch (e) {
                                         webviewView.webview.postMessage({
                                             type: 'response',
@@ -146,6 +185,7 @@ class SemossChatbotViewProvider {
                                             text: 'Error authorizing instance: ' + e.message,
                                             hideLoading: true
                                         });
+                                        this._addMessageToHistory('Error authorizing instance: ' + e.message, 'bot', 'error');
                                     }
                                     return;
                                 } case 'semoss.createNewApp': {
@@ -161,50 +201,48 @@ class SemossChatbotViewProvider {
                                         if (result === false) {
                                             resultMsg = `Cancelled: No folder selected.`;
                                             webviewView.webview.postMessage({ type: 'response', status: 'warning', text: resultMsg, hideLoading: true });
+                                            this._addMessageToHistory(resultMsg, 'bot', 'warning');
                                             return;
                                         }
                                         resultMsg = `App \"${appName}\" created successfully!`;
                                         // Always send hideLoading to stop spinner
                                         webviewView.webview.postMessage({ type: 'response', status: 'success', text: resultMsg, hideLoading: true });
+                                        this._addMessageToHistory(resultMsg, 'bot', 'success');
                                         return;
                                     } catch (e) {
                                         resultMsg = `Error creating app: ${e.message}`;
                                         webviewView.webview.postMessage({ type: 'response', status: 'error', text: resultMsg, hideLoading: true });
+                                        this._addMessageToHistory(resultMsg, 'bot', 'error');
                                         return;
                                     }
                                 }
                                 default: {
                                     // For folder commands, always use first workspace folder
-                                    try {
-                                        if (folderCommands.includes(command)) {
-                                            let uri = msg.inputs && msg.inputs.uri;
-                                            if (!uri) {
-                                                if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
-                                                    uri = vscode.workspace.workspaceFolders[0].uri;
-                                                } else {
-                                                    resultMsg = 'No workspace folder found.';
-                                                    // Always hide loading even on error
-                                                    webviewView.webview.postMessage({ type: 'response', status: 'error', text: resultMsg, hideLoading: true });
-                                                    return;
-                                                }
+                                    if (folderCommands.includes(command)) {
+                                        let uri = msg.inputs && msg.inputs.uri;
+                                        if (!uri) {
+                                            if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                                                uri = vscode.workspace.workspaceFolders[0].uri;
+                                            } else {
+                                                resultMsg = 'No workspace folder found.';                                        // Always hide loading even on error
+                                                webviewView.webview.postMessage({ type: 'response', status: 'error', text: resultMsg, hideLoading: true });
+                                                this._addMessageToHistory(resultMsg, 'bot', 'error');
+                                                return;
                                             }
-                                            await vscode.commands.executeCommand(command, uri);
-                                            resultMsg = `Action '${command}' executed on selected folder.`;
-                                            // Always hide loading after deploy
-                                            webviewView.webview.postMessage({ type: 'response', status: 'success', text: resultMsg, hideLoading: true });
-                                            return;
-                                        } else {
-                                            await vscode.commands.executeCommand(command, msg.inputs);
-                                            resultMsg = `Action '${command}' executed with provided details.`;
-                                            // Always hide loading after any command
-                                            webviewView.webview.postMessage({ type: 'response', status: 'success', text: resultMsg, hideLoading: true });
-                                            return;
                                         }
-                                    }catch (e) {
-                                        resultMsg = `Error executing command '${command}': ${e.message}`;
-                                        // Always hide loading on error
-                                        webviewView.webview.postMessage({ type: 'response', status: 'error', text: resultMsg, hideLoading: true });
-                                        return; 
+                                        await vscode.commands.executeCommand(command, uri);
+                                        resultMsg = `Action '${command}' executed on selected folder.`;
+                                        // Always hide loading after deploy
+                                        webviewView.webview.postMessage({ type: 'response', status: 'success', text: resultMsg, hideLoading: true });
+                                        this._addMessageToHistory(resultMsg, 'bot', 'success');
+                                        return;
+                                    } else {
+                                        await vscode.commands.executeCommand(command, msg.inputs);
+                                        resultMsg = `Action '${command}' executed with provided details.`;
+                                        // Always hide loading after any command
+                                        webviewView.webview.postMessage({ type: 'response', status: 'success', text: resultMsg, hideLoading: true });
+                                        this._addMessageToHistory(resultMsg, 'bot', 'success');
+                                        return;
                                     }
                                 }
                             }
@@ -230,14 +268,19 @@ class SemossChatbotViewProvider {
                         }
                     } catch (e) {
                         resultMsg = `Error: ${e.message}`;
+                        // Save error to history
+                        this._addMessageToHistory(resultMsg, 'bot', 'error');
                     }
                 }
-                webviewView.webview.postMessage({ type: 'response', text: resultMsg });
+                // Ensure resultMsg is always a string before sending
+                const finalMsg = typeof resultMsg === 'string' ? resultMsg : String(resultMsg);
+                webviewView.webview.postMessage({ type: 'response', text: finalMsg });
             }
             if (msg.type === 'getInstanceAliasesForRemoval') {
                 // Send aliases for removal
                 const instances = await getStoredInstances(this._context);
                 const aliases = Object.keys(instances);
+
 
                 // Build a map of alias to URL
                 const urls = {};
@@ -260,6 +303,7 @@ class SemossChatbotViewProvider {
                 const instances = await getStoredInstances(this._context);
                 if (!instances[alias]) {
                     webviewView.webview.postMessage({ type: 'response', status: 'error', text: `Instance "${alias}" not found.`, hideLoading: true });
+                    this._addMessageToHistory(`Instance "${alias}" not found.`, 'bot', 'error');
                     return;
                 }
                 delete instances[alias];
@@ -270,9 +314,50 @@ class SemossChatbotViewProvider {
                     await this._context.secrets.delete('CURRENT_INSTANCE_ALIAS');
                 }
                 webviewView.webview.postMessage({ type: 'response', status: 'success', text: `Instance "${alias}" removed successfully!`, hideLoading: true });
+                this._addMessageToHistory(`Instance "${alias}" removed successfully!`, 'bot', 'success');
                 return;
             }
         });
+    }
+
+    /**
+     * Add a message to the chat history
+     * @param {string} text - The message text
+     * @param {string} from - Who sent the message ('user', 'bot', 'error')
+     * @param {string} status - The status of the message ('success', 'error', 'warning')
+     */
+    _addMessageToHistory(text, from, status = null) {
+        // Ensure text is always a string
+        const messageText = typeof text === 'string' ? text : String(text);
+
+        const message = {
+            text: messageText,
+            from,
+            status,
+            timestamp: Date.now()
+        };
+        this._chatHistory.push(message);
+
+        // Keep only last 100 messages to prevent memory issues
+        if (this._chatHistory.length > 100) {
+            this._chatHistory = this._chatHistory.slice(-100);
+        }
+    }
+
+    /**
+     * Restore the chat state when webview becomes visible
+     */
+    _restoreChatState() {
+        if (this._webviewView && this._webviewView.visible) {
+            // Send a small delay to ensure webview is fully loaded
+            setTimeout(() => {
+                this._webviewView.webview.postMessage({
+                    type: 'restoreHistory',
+                    history: this._chatHistory,
+                    state: this._currentState
+                });
+            }, 100);
+        }
     }
 }
 

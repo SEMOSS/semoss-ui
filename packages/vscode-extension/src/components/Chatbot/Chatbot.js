@@ -13,7 +13,13 @@ export function getChatbotHtml(cssUri) {
         </head>
         <body>
             <div id="container">
-                <div id="chat"></div>
+                <div id="chat-container">
+                    <div id="chat-header">
+                        <span id="chat-title">Chat</span>
+                        <button id="clear-chat-btn" title="Clear chat history">🗑️</button>
+                    </div>
+                    <div id="chat"></div>
+                </div>
                 <div id="start-area">
                     <div style="font-size:22px;font-weight:bold;margin-bottom:12px;">Welcome to Semoss Chatbot</div>
                     <div style="font-size:15px;opacity:0.8;">How can I help you today?</div>
@@ -29,8 +35,19 @@ export function getChatbotHtml(cssUri) {
                 const startBtn = document.getElementById('start-btn');
                 const optionsArea = document.getElementById('options-area');
                 const inputArea = document.getElementById('input-area');
+                const clearChatBtn = document.getElementById('clear-chat-btn');
 
-                function appendMessage(text, from) {
+                let chatStarted = false;
+                let currentState = 'start';
+                let lastCommand = null;
+
+                // Request history restoration when page loads
+                setTimeout(() => {
+                    vscode.postMessage({ type: 'getHistory' });
+                    updateChatHeaderVisibility(); // Initial header visibility check
+                }, 100);
+
+                function appendMessage(text, from, saveToHistory = true) {
                     const msgDiv = document.createElement('div');
                     msgDiv.className = 'message ' + from;
                     const bubble = document.createElement('div');
@@ -39,12 +56,89 @@ export function getChatbotHtml(cssUri) {
                     msgDiv.appendChild(bubble);
                     chat.appendChild(msgDiv);
                     chat.scrollTop = chat.scrollHeight;
+                    
+                    // Update header visibility when message is added
+                    updateChatHeaderVisibility();
+                    
+                    // Save to backend history
+                    if (saveToHistory) {
+                        vscode.postMessage({ 
+                            type: 'saveMessage', 
+                            message: { text, from, timestamp: Date.now() }
+                        });
+                    }
+                }
+
+                function restoreHistory(history) {
+                    // Clear existing chat
+                    chat.innerHTML = '';
+                    
+                    // Restore all messages
+                    history.forEach(msg => {
+                        appendMessage(msg.text, msg.from || 'bot', false); // Don't save again
+                    });
+                    
+                    // If we have history, show that chat has started
+                    if (history.length > 0) {
+                        chatStarted = true;
+                        startArea.style.display = 'none';
+                    }
+                    
+                    // Update header visibility
+                    updateChatHeaderVisibility();
+                }
+
+                function saveState(state) {
+                    currentState = state;
+                    vscode.postMessage({ type: 'saveState', state: state });
+                }
+
+                function clearChat() {
+                    // Clear the chat display
+                    chat.innerHTML = '';
+                    
+                    // Reset state
+                    chatStarted = false;
+                    currentState = 'start';
+                    
+                    // Show start area again
+                    startArea.style.display = 'flex';
+                    optionsArea.style.display = 'none';
+                    
+                    // Clear backend history
+                    vscode.postMessage({ type: 'clearHistory' });
+                    
+                    // Save the new state
+                    saveState('start');
+                    
+                    // Update header visibility
+                    updateChatHeaderVisibility();
+                }
+
+                function updateChatHeaderVisibility() {
+                    const chatHeader = document.getElementById('chat-header');
+                    const chatContainer = document.getElementById('chat-container');
+                    if (chatStarted || chat.children.length > 0) {
+                        chatHeader.style.display = 'flex';
+                        chatContainer.style.display = 'flex';
+                    } else {
+                        chatHeader.style.display = 'none';
+                        chatContainer.style.display = 'none';
+                    }
                 }
 
                 function showOptions() {
+                    if (!chatStarted) {
+                        chatStarted = true;
+                        saveState('options');
+                    }
                     startArea.style.display = 'none';
                     optionsArea.style.display = 'flex';
                     optionsArea.innerHTML = '';
+                    
+                    // Update header visibility
+                    updateChatHeaderVisibility();
+                    
                     // Request backend to check for .smss file in the workspace
                     vscode.postMessage({ type: 'checkSmssFile' });
                 }
@@ -52,6 +146,18 @@ export function getChatbotHtml(cssUri) {
                 // Listen for backend response
                 window.addEventListener('message', event => {
                     const message = event.data;
+                    
+                    if (message.type === 'restoreHistory') {
+                        restoreHistory(message.history);
+                        currentState = message.state || 'start';
+                        
+                        // Restore UI state based on current state
+                        if (currentState === 'options' && chatStarted) {
+                            showOptions();
+                        }
+                        return;
+                    }
+                    
                     if (message.type === 'response') {
                         // Always hide spinner for zip only, deploy only, and zip and deploy
                         if (
@@ -71,7 +177,8 @@ export function getChatbotHtml(cssUri) {
                         const messageClass = message.status === 'error' ? 'error' : 'bot';
                         appendMessage(message.text, messageClass);
                         // If authorization was successful, refresh the UI
-                        if (message.status === 'success' && command === 'semoss.authorize') {
+                        if (message.status === 'success' && lastCommand === 'semoss.authorize') {
+                            saveState('authorized');
                             showOptions();
                         }
                         return;
@@ -111,6 +218,7 @@ export function getChatbotHtml(cssUri) {
                                         appendMessage(key + ': ' + value, 'user');
                                     });
                                     showLoading(true);
+                                    lastCommand = 'semoss.authorize';
                                     vscode.postMessage({ type: 'chat', command: 'semoss.authorize', inputs: inputs });
                                     return;
                                 }
@@ -133,6 +241,7 @@ export function getChatbotHtml(cssUri) {
                                     });
                                     // Only show spinner for commands that require input
                                     showLoading(true);
+                                    lastCommand = opt.command;
                                     vscode.postMessage({ type: 'chat', command: opt.command, inputs: inputs });
                                 } else {
                                     appendMessage(opt.label, 'user');
@@ -144,6 +253,7 @@ export function getChatbotHtml(cssUri) {
                                     ) {
                                         showLoading(true);
                                     }
+                                    lastCommand = opt.command;
                                     vscode.postMessage({ type: 'chat', command: opt.command });
                                 }
                             };
@@ -157,10 +267,10 @@ export function getChatbotHtml(cssUri) {
                                 if (!inputs) return;
                                 appendMessage('Create New App with details:', 'user');
                                 Object.entries(inputs).forEach(([key, value]) => {
-                                    appendMessage(key + ': ' + value, 'user');
-                                });
-                                showLoading(true);
-                                vscode.postMessage({ type: 'chat', command: 'semoss.createNewApp', inputs: inputs });
+                                    appendMessage(key + ': ' + value, 'user');                                    });
+                                    showLoading(true);
+                                    lastCommand = 'semoss.createNewApp';
+                                    vscode.postMessage({ type: 'chat', command: 'semoss.createNewApp', inputs: inputs });
                             });
                         } else {
                             appendMessage('Please authorize an instance first.', 'bot');
@@ -237,6 +347,7 @@ export function getChatbotHtml(cssUri) {
                         btn.onclick = () => {
                             appendMessage('Switch to instance: ' + alias, 'user');
                             showLoading(true);
+                            lastCommand = 'semoss.selectInstance';
                             vscode.postMessage({ type: 'chat', command: 'semoss.selectInstance', inputs: { alias } });
                         };
                         optionsArea.appendChild(btn);
@@ -349,13 +460,17 @@ export function getChatbotHtml(cssUri) {
                 if (startBtn) {
                     startBtn.onclick = showOptions;
                 }
+                
+                if (clearChatBtn) {
+                    clearChatBtn.onclick = clearChat;
+                }
             </script>
         </body>
         </html>
     `;
 }
 
-export function handleChatbotAction(action, options, context) {
+export function handleChatbotAction(/* action, options, context */) {
     // Need to implementation
     // You can add your logic here to handle chatbot actions
     // console.log('handleChatbotAction called with:', action, options);
