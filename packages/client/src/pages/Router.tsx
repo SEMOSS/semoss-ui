@@ -38,25 +38,8 @@ export const Router = observer(() => {
         return <LoadingScreen.Trigger message={'Initializing'} />;
     }
 
-    const parseThemeMapForValue = (value: string): boolean => {
-        const theme = configStore.store.config.theme;
-        if (theme && theme['THEME_MAP']) {
-            try {
-                const map = JSON.parse(theme['THEME_MAP'] as string);
-
-                return !!map['cookiePolicyNoticePage'];
-            } catch {
-                console.error(
-                    `Unable to parse theme for the Router for ${value}`,
-                );
-                return false;
-            }
-        } else {
-            return false;
-        }
-    };
-    const showCookieNotice = parseThemeMapForValue('cookiePolicyNoticePage');
-    const showPrivacyNotice = parseThemeMapForValue('privacyNoticePage');
+    const showCookieNotice = !!configStore.theme.cookiePolicyNoticePage;
+    const showPrivacyNotice = !!configStore.theme.privacyNoticePage;
 
     return (
         <Routes>

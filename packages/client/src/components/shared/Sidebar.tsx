@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Link, matchPath, useLocation } from 'react-router-dom';
 import {
@@ -26,8 +26,6 @@ import {
 import { ModelBrain } from '@/assets/img/ModelBrain';
 import { Database } from '@/assets/img/Database';
 import { usePage, useRootStore } from '@/hooks';
-import { Logo } from '@/assets/img/Logo';
-import { THEME } from '@/constants';
 import { LoginPopover } from './LoginPopover';
 
 const DRAWER_OPEN_WIDTH = 288;
@@ -162,21 +160,6 @@ export const Sidebar: React.FC = observer(() => {
         configStore.store.config.adminOnlyViewMenuBarFlag,
     ]);
 
-    // TODO: Load from a theme object
-    const themeMap = useMemo(() => {
-        const theme = configStore.store.config['theme'];
-
-        if (theme && theme['THEME_MAP']) {
-            try {
-                return JSON.parse(theme['THEME_MAP'] as string);
-            } catch {
-                return {};
-            }
-        }
-
-        return {};
-    }, [Object.keys(configStore.store.config).length]);
-
     return (
         <>
             <StyledSidebar
@@ -202,9 +185,11 @@ export const Sidebar: React.FC = observer(() => {
                     spacing={2}
                 >
                     <StyledNavHeaderLink to={'/'} aria-label={'Go Home'}>
-                        <Logo />
+                        {configStore.theme.logo ? (
+                            <img src={configStore.theme.logo} />
+                        ) : null}
                         <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                            {themeMap.name ? themeMap.name : THEME.name}
+                            {configStore.theme.name}
                         </Typography>
                     </StyledNavHeaderLink>
 

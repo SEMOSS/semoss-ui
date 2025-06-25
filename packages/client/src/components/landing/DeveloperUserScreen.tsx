@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Navigate, useNavigate } from 'react-router-dom';
 
@@ -12,7 +12,6 @@ import { useRootStore } from '@/hooks';
 import { NewAppModal } from '@/components/app';
 import { BASE_PAGE_BLOCKS } from '../../pages/app/app.constants';
 
-import { THEME } from '@/constants';
 import { FeaturedAppCard } from '@/components/landing/FeaturedAppCard';
 import { BannerSection } from '@/components/landing/BannerSection';
 import CreateAppSection from './CreateAppSection';
@@ -27,20 +26,6 @@ export const DeveloperUserScreen = observer(() => {
     >(null);
 
     const isNameOpen = !!newAppOptions;
-
-    const themeMap = useMemo(() => {
-        const theme = configStore.store.config['theme'];
-
-        if (theme && theme['THEME_MAP']) {
-            try {
-                return JSON.parse(theme['THEME_MAP'] as string);
-            } catch {
-                return {};
-            }
-        }
-
-        return {};
-    }, [Object.keys(configStore.store.config).length]);
 
     /**
      * Navigate to the app and open it
@@ -94,9 +79,7 @@ export const DeveloperUserScreen = observer(() => {
         <Stack direction="column" spacing={3}>
             <BannerSection
                 imageUrl={DevBanner}
-                tagline={`Empower your ideas with ${
-                    themeMap.name ? themeMap.name : THEME.name
-                }`}
+                tagline={`Empower your ideas with ${configStore.theme.name}`}
                 description={
                     'Build, automate, and innovate—all without coding. Harness the power of AI to transform your projects and workflows'
                 }

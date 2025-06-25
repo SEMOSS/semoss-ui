@@ -2,6 +2,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 
 // TODO: Pull from sdk
 import { runPixelTwo } from '../../runPixelTwo';
+import { THEME } from '@/constants';
 import { RootStore, WorkspaceStore, WorkspaceConfigInterface } from '@/stores';
 import { AppMetadata } from '@/components/app';
 import { ALL_TYPES } from '@/types';
@@ -236,6 +237,62 @@ export class ConfigStore {
      */
     get config() {
         return this._store.config;
+    }
+
+    /**
+     * Get the config
+     */
+    get theme(): {
+        name: string;
+        logo: string;
+        isLogoUrl: boolean;
+        cookiePolicyBannerReact: string;
+        cookiePolicyOrderReact: string[];
+        cookiePoliciesReact: unknown;
+        cookiePolicyModalBodyReact: string;
+        cookiePolicyModalHeaderReact: string;
+        cookiePolicyNoticePage: string;
+        helpBannerOrder: string[];
+        helpBannerValues: unknown;
+        privacyNoticePage: string;
+        termsHeaderReact: string;
+        termsReact: string;
+        materialTheme: unknown;
+    } {
+        const defaultTheme = {
+            name: THEME.name,
+            logo: THEME.logo,
+            isLogoUrl: false,
+            cookiePolicyBannerReact: '',
+            cookiePolicyOrderReact: [],
+            cookiePoliciesReact: {},
+            cookiePolicyModalBodyReact: '',
+            cookiePolicyModalHeaderReact: '',
+            cookiePolicyNoticePage: '',
+            helpBannerOrder: [],
+            helpBannerValues: {},
+            privacyNoticePage: '',
+            termsHeaderReact: '',
+            termsReact: '',
+            materialTheme: {},
+        };
+
+        let customTheme = {};
+        try {
+            if (
+                this._store.config.theme &&
+                this._store.config.theme['THEME_MAP']
+            ) {
+                customTheme = JSON.parse(
+                    this._store.config.theme['THEME_MAP'] as string,
+                );
+            }
+        } catch {}
+
+        return {
+            ...customTheme,
+            ...defaultTheme,
+        };
     }
 
     /**
