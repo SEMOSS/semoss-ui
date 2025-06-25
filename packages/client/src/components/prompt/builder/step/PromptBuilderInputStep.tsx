@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { TOKEN_TYPE_TEXT, TOKEN_TYPE_INPUT } from '../../prompt.constants';
 import { Builder, Token } from '../../prompt.types';
 import { StyledStepPaper, StyledTextPaper } from '../../prompt.styled';
@@ -12,6 +12,7 @@ export const PromptBuilderInputStep = (props: {
     const [tokens, setTokens] = useState<Token[]>([]);
     // Tokens in input, necessary to accomodate multiple word inputs
     const [selectedInputTokens, setSelectedInputTokens] = useState([]);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     // PromptBuilderInputSettings
     const builderInputSettings = props.builder.inputs.value as Token[];
@@ -35,9 +36,10 @@ export const PromptBuilderInputStep = (props: {
             const selection = window.getSelection();
             if (!selection || selection.isCollapsed) return;
 
-            const tokenSpans = Array.from(
-                document.querySelectorAll('[data-token-index]'),
-            );
+            const wrapper = containerRef.current;
+            const tokenSpans = wrapper
+                ? Array.from(wrapper.querySelectorAll('[data-token-index]'))
+                : [];
             if (tokenSpans.length === 0) return;
 
             const selectedIndices: number[] = [];
@@ -57,8 +59,12 @@ export const PromptBuilderInputStep = (props: {
             }
         }
 
-        document.addEventListener('mouseup', handleMouseUp);
-        return () => document.removeEventListener('mouseup', handleMouseUp);
+        const container = containerRef.current;
+        if (container) {
+            container.addEventListener('mouseup', handleMouseUp);
+            return () =>
+                container.removeEventListener('mouseup', handleMouseUp);
+        }
     }, [tokens]);
     useEffect(() => {
         // updates after user changes input tokens
@@ -374,7 +380,10 @@ export const PromptBuilderInputStep = (props: {
             <StyledTextPaper>
                 {Array.from(tokens, (token: Token) => (
                     <React.Fragment key={token.index}>
-                        <span data-token-index={token.index}>
+                        <span
+                            style={{ display: 'inline-block' }}
+                            data-token-index={token.index}
+                        >
                             <PromptSetToken
                                 token={token}
                                 selectedInputTokens={selectedInputTokens}
