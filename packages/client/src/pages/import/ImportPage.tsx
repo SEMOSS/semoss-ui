@@ -43,13 +43,15 @@ import { CopyDb } from '@/assets/img/CopyDb';
 import { UploadDb } from '@/assets/img/UploadDb';
 import { ConnectStorage } from '@/assets/img/ConnectStorage';
 
-import { useStepper } from '@/hooks';
+import { useStepper ,useRootStore} from '@/hooks';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import { CONNECTION_OPTIONS } from './import.constants';
 import { EstablishConnectionPage, ImportConnectionPage } from './';
 import { Help } from '@/components/help';
 import Tooltip from '@mui/material/Tooltip';
+import { ConfigStore } from '@/stores';
+import { config } from 'process';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -258,6 +260,8 @@ export const ImportPage = () => {
 
     const isModelPage = steps.length > 0 && steps[0].data === 'MODEL';
 
+    const { configStore } = useRootStore();
+
     const ModelCard = ({ model, setSteps, steps }) => {
         const textRef = useRef<HTMLParagraphElement>(null);
         const [isTruncated, setIsTruncated] = React.useState(false);
@@ -461,7 +465,11 @@ export const ImportPage = () => {
     }, [steps.length]);
 
     useEffect(() => {
-        setUniqueIdsOnConnectionOptions();
+         if (configStore.store.config.adminOnlyNonApprovedFlag) {
+            getFilterObj();
+        } else {
+            setConnectionOptions(CONNECTION_OPTIONS);
+        }
     }, []);
 
     const setUniqueIdsOnConnectionOptions = async () => {
@@ -500,7 +508,106 @@ export const ImportPage = () => {
             }
         }
     }
+   function getFilterObj() {
+       setConnectionOptions(filterNonProdItem(CONNECTION_OPTIONS));              
+    }
+   function filterNonProdItem(obj) {
+     
+      const nonApprovedProductList = configStore.store.config.nonApprovedList;
+        if ( 
+            obj?.MODEL?.['Commercially Hosted'] && (
+                'OpenAI' in obj.MODEL['Commercially Hosted'])
+        ) {
+            delete obj.MODEL['Commercially Hosted'].OpenAI;
+            delete obj.MODEL['Commercially Hosted']['AWS Bedrock'];
+            delete obj.MODEL['Commercially Hosted']['NVIDIA NIM Models'];
 
+        }
+        if (
+            obj?.MODEL?.['Locally Hosted']) {
+            delete obj.MODEL['Locally Hosted'];
+        }
+        if (obj?.MODEL?.['File Uploads']) {
+            delete obj.MODEL['File Uploads'];
+        }
+      
+         if (
+            obj?.MODEL?.['Embedded'] ) {
+                for(let k=0;k<=obj.MODEL['Embedded'].length;k++){
+                    if(!(obj.MODEL['Embedded'][k]?.name  === "AWS TITAN TEXT EMBEDDINGS")){
+
+                     delete obj.MODEL['Embedded'][k];
+                    }
+                  
+                }
+        }
+       
+        //Function
+       if (obj.FUNCTION.Function.length > 0) {
+             for (let k = 0; k <= obj.FUNCTION.Function.length; k++) {
+                for(let m=0;m<configStore.store.config.nonApprovedList.FUNCTION.length;m++){
+                    if (obj.FUNCTION.Function[k]?.name === configStore.store.config.nonApprovedList.FUNCTION[m]) {
+                        delete obj.FUNCTION.Function[k];
+                    }
+
+                }
+             }  
+        }
+       //Vector
+
+       if(obj.VECTOR.Connections.length>0){
+             for (let k = 0; k <= obj.VECTOR.Connections.length; k++) {
+                for(let n=0;n<configStore.store.config.nonApprovedList.VECTOR.length;n++){
+                if (obj.VECTOR.Connections[k]?.name === configStore.store.config.nonApprovedList.VECTOR[n]) {
+                    delete obj.VECTOR.Connections[k];
+                }
+                
+               }
+           }
+        }
+
+        
+         //Storage 
+        if (obj.STORAGE.Storage.length > 0) {
+              for (let k = 0; k <= obj.STORAGE.Storage.length; k++) {
+                for (let l = 0; l < configStore.store.config.nonApprovedList.STORAGE.length; l++) {
+                    if (obj.STORAGE.Storage[k]?.name === configStore.store.config.nonApprovedList.STORAGE[l]) {
+                        delete obj.STORAGE.Storage[k];
+                    }
+                }
+
+            }
+        }
+         if (obj?.STORAGE?.['File Uploads']) {
+              delete obj.STORAGE['File Uploads'];
+          }
+        //DataBase 
+         if (obj?.DATABASE?.Connections.length > 0) {
+            for (let i = 0; i < obj.DATABASE.Connections.length; i++) {
+                for (let r = 0; r < configStore.store.config.nonApprovedList.DATABASE.length; r++) {
+                    if (obj.DATABASE.Connections[i]?.name === configStore.store.config.nonApprovedList.DATABASE[r]) {
+                        delete obj.DATABASE.Connections[i];
+                    }
+                }
+            }
+              
+        }
+          
+        //DataBase file Uploads
+
+           if(obj?.DATABASE?.['File Uploads'].length>0){ 
+             for(let i=0;i<obj.DATABASE['File Uploads'].length;i++){
+                for(let b=0;b<configStore.store.config.nonApprovedList.DATABASE.length;b++){
+               if(obj.DATABASE['File Uploads'][i]?.name === configStore.store.config.nonApprovedList.DATABASE[b]){
+                    delete obj.DATABASE['File Uploads'][i];
+                }
+               }
+            }
+         }
+       
+        console.log("After Function Removal",obj);
+        return obj; 
+    }
     const renderModelsGrid = (models) => (
         <Grid container columns={6} columnSpacing={2} rowSpacing={2}>
             {models

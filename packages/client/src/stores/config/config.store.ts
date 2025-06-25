@@ -95,6 +95,20 @@ interface ConfigStoreInterface {
          * sidemenubar if adminOnlyViewMenuBarFlag is enabled
          */
         adminOnlyViewMenuBarFlag: boolean;
+         /*
+         * nonapprovedproduct catalog is enabled
+         */
+        adminOnlyNonApprovedFlag: boolean;
+
+         /*
+         * List of nonapprovedproduct would be retrieved from DB
+         */
+        nonApprovedList:{
+         FUNCTION :[],
+         STORAGE :[],
+         DATABASE:[],
+         VECTOR:[]
+        };
         /**
          * Flags
          */
@@ -165,6 +179,13 @@ export class ConfigStore {
             r: true,
             python: true,
             csrf: false,
+            adminOnlyNonApprovedFlag: false,
+            nonApprovedList :{
+                FUNCTION :[],
+                STORAGE :[],
+                DATABASE:[],
+                VECTOR:[]
+            },
             adminOnlyViewMenuBarFlag: false,
             adminOnlyDbAdd: false,
             adminOnlyDbAddAccess: false,
