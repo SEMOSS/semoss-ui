@@ -15,17 +15,17 @@ export const Bar = [
 
 export const Pie = [
     {
-        name: "Value",
-        multiLabel: false,
-        label: "Value",
-        aggregate: true,
-    },
-    {
         name: "Label",
         multiLabel: false,
         label: "Label",
         aggregate: false,
     },
+    {
+        name: "Value",
+        multiLabel: false,
+        label: "Value",
+        aggregate: true,
+    }
 ];
 
 export const ScatterPlot = [

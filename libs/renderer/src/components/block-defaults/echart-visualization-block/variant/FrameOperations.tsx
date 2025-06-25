@@ -811,8 +811,8 @@ export const FrameOperations = observer(
 
                 tempValue["_state"]["fields"] = {
                     ...tempValue["_state"]["fields"],
-                    Value: firstColumn?.values || [],
-                    Label: secondColumn?.values || [],
+                    Value: secondColumn?.values || [],
+                    Label: firstColumn?.values || [],
                 };
 
                 // set the value
