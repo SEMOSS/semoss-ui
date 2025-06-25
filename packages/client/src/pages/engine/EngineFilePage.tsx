@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Table, styled, Typography } from '@semoss/ui';
 import { useEngine } from '@/hooks';
 import { FileTable } from '@/components/settings';
+import StorageTest from './StorageTest';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
@@ -36,7 +37,8 @@ export const EngineFilePage = () => {
             </StyledTopDiv>
 
             <StyledTableContainer>
-                <FileTable id={id} />
+                {/* <FileTable id={id}/> */}
+                <StorageTest id={id}/>
             </StyledTableContainer>
         </StyledContainer>
     );
