@@ -4,18 +4,6 @@ import { Search } from "@mui/icons-material";
 import { computed } from "mobx";
 import { Tooltip, Checkbox } from "@mui/material";
 import {
-    Autocomplete,
-    Button,
-    Select,
-    styled,
-    TextField,
-    InputAdornment,
-    IconButton,
-    Stack,
-    Accordion,
-    Typography,
-} from "@semoss/ui";
-import {
     styled,
     TextField,
     InputAdornment,
@@ -26,18 +14,14 @@ import {
 } from "@semoss/ui";
 import { useBlockSettings, useFrameHeaders } from "../../../../hooks";
 import { BlockDef } from "../../../../store";
-import { PathValue } from "../../../../types";
 import { getValueByPath } from "../../../../utility";
 import { EchartVisualizationBlockDef } from "../VisualizationBlock";
 import { DataTabStyling } from "./bar-chart/DataTabStyling";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import StringIcon from "../../../../assets/img/StringIcon.svg";
 import NumberIcon from "../../../../assets/img/NumberIcon.svg";
-import { ExpandMore } from "@mui/icons-material";
 import { buildListener } from "../../block-defaults.shared";
-import { ListenerSettings } from "../../../block-settings";
 import { ExpandMore } from "@mui/icons-material";
-import { parse } from "path";
 
 //frame operations component props structure
 export interface FrameOperationsProps {
@@ -83,20 +67,9 @@ interface AccordionSection {
         title: string;
     };
 }
-    };
-}
 
 //data tab left section to show the data tab and the drag area for the selected columns
 export const FrameOperations = observer(
-    <D extends BlockDef = BlockDef>({
-        id,
-        updateFrame,
-        path,
-        chart,
-        storedColumns,
-        handleStoreData,
-        selectedItem,
-    }) => {
     <D extends BlockDef = BlockDef>({
         id,
         updateFrame,
@@ -115,16 +88,6 @@ export const FrameOperations = observer(
             Record<string, any>
         >({});
         const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
-        const [accordionSection, setAccordionSection] = useState<
-            AccordionSection[]
-        >([
-            {
-                ["preProcess"]: {
-                    expanded: true,
-                    title: "PRE PROCESS",
-                },
-            },
-        ]);
         const [accordionSection, setAccordionSection] = useState<
             AccordionSection[]
         >([
@@ -155,9 +118,8 @@ export const FrameOperations = observer(
         }, [frameHeaders]);
 
         useEffect(() => {
-            let filteredColumnsString = JSON.stringify(filteredColumns);
-            let columnsSelectorString = JSON.stringify(columnsSelector);
-            console.log(filteredColumnsString, columnsSelectorString, 'string comparision');
+            const filteredColumnsString = JSON.stringify(filteredColumns);
+            const columnsSelectorString = JSON.stringify(columnsSelector);
             if (
                 columnsSelector.length > 0 &&
                 filteredColumnsString !== columnsSelectorString
@@ -165,26 +127,6 @@ export const FrameOperations = observer(
                 setFilteredColumns(columnsSelector);
             }
         }, [columnsSelector]);
-        //to be removed in the later part, when chart's data section is working fine
-        useEffect(() => {
-            setSelectedColumn(storedColumns);
-            const updatedColumns = { ...droppedColumns };
-            storedColumns.forEach((item, index) => {
-                const key = `data-tab-drop-area-${index}`;
-                if (item.values && item.values.length > 0) {
-                    updatedColumns[key] = {
-                        values: item.values,
-                        dataType: item.dataType,
-                    };
-                }
-            });
-            if (
-                JSON.stringify(updatedColumns) !==
-                JSON.stringify(droppedColumns)
-            ) {
-                setDroppedColumns(updatedColumns);
-            }
-        }, [storedColumns]);
 
         useEffect(() => {
             setDroppedColumns({});
@@ -195,13 +137,12 @@ export const FrameOperations = observer(
             const lowerCaseSearch = searchValue.toLowerCase();
             const filtered = columnsSelector.filter((col) =>
                 col.name.toLowerCase().includes(lowerCaseSearch),
-                col.name.toLowerCase().includes(lowerCaseSearch),
             );
             setFilteredColumns(filtered); // Update the filtered columns
         };
         //Resets the block data related to fields so the frame change operation removes all data related to old frame
         function resetBlockData() {
-            let parsedValue = JSON.parse(computedValue) || {};
+            let parsedValue = computedValue || {};
             if (data.variation === "echart-bar-graph") {
                 parsedValue = {
                     ...parsedValue,
@@ -219,63 +160,64 @@ export const FrameOperations = observer(
                     },
                 };
             } else if (data.variation === "echart-pie-chart") {
-                const { _state, ...mainParsedData } = parsedValue;
+                const { _state, ...mainParsedData } = parsedValue as {
+                    _state?: any;
+                    [key: string]: any;
+                };
                 parsedValue = {
                     ...mainParsedData,
                 };
             } else if (data.variation === "echart-gantt-chart") {
                 parsedValue = {
                     ...parsedValue,
-                    "customSettings": {
-                        "columnDetails": {
-                            "task": {
-                                "name": "",
-                                "selector": "",
-                            }
+                    customSettings: {
+                        columnDetails: {
+                            task: {
+                                name: "",
+                                selector: "",
+                            },
                         },
-                        "columnIndexDetails": {}
+                        columnIndexDetails: {},
                     },
                 };
             } else if (data.variation === "echart-dendrogram-chart") {
                 parsedValue = {
                     ...parsedValue,
-                    ['_state']:{
-                        ...parsedValue['_state'],
-                        ['dimensions']:[],
-                        ['facet']:[],
-                    }
+                    ["_state"]: {
+                        ...parsedValue["_state"],
+                        ["dimensions"]: [],
+                        ["facet"]: [],
+                    },
                 };
             } else if (data.variation === "echart-line-graph") {
-                const { _state, ...mainParsedData } = parsedValue;
+                const { _state, ...mainParsedData } = parsedValue as {
+                    _state?: any;
+                    [key: string]: any;
+                };
                 parsedValue = {
                     ...mainParsedData,
                 };
-            } else if(data.variation === 'echart-world-map-chart'){
+            } else if (data.variation === "echart-world-map-chart") {
                 parsedValue = {
                     ...parsedValue,
-                    ['_state']:{
-                        ['fields']:{},
-                    }
+                    ["_state"]: {
+                        ["fields"]: {},
+                    },
                 };
-            }
-            else if(data.variation === 'echart-scatter-plots'){
+            } else if (data.variation === "echart-scatter-plots") {
                 parsedValue = {
                     ...parsedValue,
-                    ['_state']:{
-                        ['fields']:{},
-                    }
+                    ["_state"]: {
+                        ["fields"]: {},
+                    },
                 };
-            }
-            else if(data.variation === 'echart-stack-chart'){
+            } else if (data.variation === "echart-stack-chart") {
                 parsedValue = {
                     ...parsedValue,
-                    ['_state']:{
-                        ['fields']:{},
-                    }
+                    ["_state"]: {
+                        ["fields"]: {},
+                    },
                 };
-            }
-             else {
-                //to be used for special case if nothing matches
             }
             //all the stored and dropped columns are resetted to empty
             storedColumns = {};
@@ -290,17 +232,6 @@ export const FrameOperations = observer(
         //additional function to trigger a sync, when a frame is newly selected
         function syncHeaders(value: any, frameChanged: boolean) {
             if (!value) return;
-            const columns = frameHeaders.data.list.map((item) => {
-                return {
-                    name: item.alias,
-                    selector: item.header,
-                    width: undefined,
-                    dataType: item.dataType,
-                };
-            });
-            setColumnsData((prevColumns) => {
-                return columns;
-            });
             if (frameChanged) {
                 storedColumns = [];
                 setSelectedColumn([]);
@@ -329,9 +260,6 @@ export const FrameOperations = observer(
             const hasValues = columnsValue.some(
                 (item) => item?.values && item?.values.length > 0,
             );
-            const hasValues = columnsValue.some(
-                (item) => item?.values && item?.values.length > 0,
-            );
             if (hasValues) {
                 // console.log("selected column to set with ", columnsValue);
                 setSelectedColumn(columnsValue);
@@ -340,19 +268,22 @@ export const FrameOperations = observer(
 
             const columnsDrop = [];
             for (let i = 0; i < columnsValue.length; i++) {
-                columnsDrop[i] =
-                    columnsValue[i]?.values?.length > 0
-                        ? columnsValue[i]
-                        : null;
+                let tempColumns = null;
+                if (columnsValue[i].hasOwnProperty("values")) {
+                    tempColumns = columnsValue[i];
+                    if (columnsValue[i]["values"].hasOwnProperty("values")) {
+                        tempColumns = {
+                            ...columnsValue[i],
+                            values: columnsValue[i]?.["values"]?.["values"],
+                        };
+                    }
+                }
+                columnsDrop[i] = tempColumns;
             }
 
             const firstColumn = columnsDrop[0];
             const secondColumn = columnsDrop[1];
             let fieldsData = {
-                [firstColumn?.label]: [],
-                [secondColumn?.label]: [],
-            };
-            let selectedValues = {
                 [firstColumn?.label]: [],
                 [secondColumn?.label]: [],
             };
@@ -376,13 +307,6 @@ export const FrameOperations = observer(
                         ...fieldsData,
                         [firstColumn?.label]: columns[firstColumn?.label],
                     };
-                    selectedValues = {
-                        ...selectedValues,
-                        [firstColumn?.label]:
-                            columns[firstColumn?.label][0]["selector"],
-                        [firstColumn?.label]:
-                            columns[firstColumn?.label][0]["selector"],
-                    };
                 }
                 if (secondColumn?.label) {
                     columns[secondColumn?.label] = [];
@@ -399,11 +323,9 @@ export const FrameOperations = observer(
                         [secondColumn?.label]: columns[secondColumn?.label],
                     };
                     let LabelData = [];
-                    columns[secondColumn?.label].forEach(
-                        (labelItem, labelIndex) => {
-                            LabelData = [...LabelData, labelItem.selector];
-                        },
-                    );
+                    columns[secondColumn?.label].forEach((labelItem) => {
+                        LabelData = [...LabelData, labelItem.selector];
+                    });
                 }
 
                 if (
@@ -526,7 +448,6 @@ export const FrameOperations = observer(
                 const tempValue = computedValue;
                 const columnsmerged = [];
                 if (firstColumn?.values) {
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -646,13 +567,12 @@ export const FrameOperations = observer(
                     tempValue["xAxis"]["flipAxisName"] = firstColumn?.values;
                     tempValue["xAxis"]["axisName"] = firstColumn?.values;
                     columns.push({
-                        name: firstColumn?.values[0],
-                        selector: firstColumn?.selectors[0],
+                        name: firstColumn?.values,
+                        selector: firstColumn?.selectors,
                         label: firstColumn?.label,
                     });
                 }
                 if (secondColumn?.values) {
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -675,7 +595,6 @@ export const FrameOperations = observer(
                     });
                 }
                 if (columnsDrop[2]?.values.length > 0) {
-
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
@@ -688,12 +607,12 @@ export const FrameOperations = observer(
                     };
                 }
                 if (columnsDrop[3]?.values.length > 0) {
-                   tempValue["_state"] =
+                    tempValue["_state"] =
                         tempValue["_state"] &&
-                        Object.keys(tempValue["_state"]).length > 0
-                        Object.keys(tempValue["_state"]).length > 0
-                            ? tempValue["_state"]
-                            : {};
+                        Object.keys(tempValue["_state"]).length > 0;
+                    Object.keys(tempValue["_state"]).length > 0
+                        ? tempValue["_state"]
+                        : {};
                     tempValue["_state"]["fields"] = {
                         ...tempValue["_state"]["fields"],
                         tooltip: columnsDrop[3]?.values,
@@ -721,7 +640,6 @@ export const FrameOperations = observer(
                 tempValue["_state"] = {};
                 tempValue["_state"]["fields"] = {};
                 let tempSeries = tempValue["series"] || [];
-                let tempSeries = tempValue["series"] || [];
                 tempValue["_state"]["fields"] = {
                     ...tempValue["_state"]["fields"],
                     xAxis: firstColumn?.values,
@@ -729,14 +647,10 @@ export const FrameOperations = observer(
                     tooltip: columnsDrop[2]?.values
                         ? columnsDrop[2]?.values
                         : [],
-                    tooltip: columnsDrop[2]?.values
-                        ? columnsDrop[2]?.values
-                        : [],
                 };
                 if (secondColumn?.values.length > 1) {
                     const seriesListToAdd = [];
                     //Adding newly added field to the state
-                    for (let i = 0; i < secondColumn.values.length; i++) {
                     for (let i = 0; i < secondColumn.values.length; i++) {
                         seriesListToAdd[i] = {
                             ...tempSeries[i],
@@ -753,8 +667,6 @@ export const FrameOperations = observer(
                                 show: tempSeries[i]?.label?.show ?? true,
                                 position:
                                     tempSeries[i]?.label?.position ?? "top",
-                                position:
-                                    tempSeries[i]?.label?.position ?? "top",
                                 rotate: tempSeries[i]?.label?.rotate ?? 45,
                                 fontSize: tempSeries[i]?.label?.fontSize ?? 12,
                                 color: tempSeries[i]?.label?.color ?? "#000000",
@@ -763,13 +675,10 @@ export const FrameOperations = observer(
                     }
                     tempSeries = seriesListToAdd;
                 } else {
-                } else {
                     //Removing the field from the state if it is not selected
                     tempSeries = tempSeries.slice(0, 1);
-                    tempSeries = tempSeries.slice(0, 1);
                 }
-                tempValue["series"] = tempSeries;
-                setData("option", tempValue);
+                setData("option", { ...tempValue, series: tempSeries });
             }
             if (variation === "echart-world-map-chart") {
                 const tempValue = computedValue;
@@ -777,7 +686,6 @@ export const FrameOperations = observer(
                 if (firstColumn?.values) {
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                        Object.keys(tempValue["_state"]).length > 0
                         Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
@@ -796,7 +704,6 @@ export const FrameOperations = observer(
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
-                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -813,7 +720,6 @@ export const FrameOperations = observer(
                 if (columnsDrop[2]?.values.length > 0) {
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                        Object.keys(tempValue["_state"]).length > 0
                         Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
@@ -832,7 +738,6 @@ export const FrameOperations = observer(
                     tempValue["_state"] =
                         tempValue["_state"] &&
                         Object.keys(tempValue["_state"]).length > 0
-                        Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
                     tempValue["_state"]["fields"] = {
@@ -844,7 +749,6 @@ export const FrameOperations = observer(
                 if (columnsDrop[4]?.values.length > 0) {
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                        Object.keys(tempValue["_state"]).length > 0
                         Object.keys(tempValue["_state"]).length > 0
                             ? tempValue["_state"]
                             : {};
@@ -859,10 +763,10 @@ export const FrameOperations = observer(
 
                     tempValue["_state"] =
                         tempValue["_state"] &&
-                        Object.keys(tempValue["_state"]).length > 0
-                        Object.keys(tempValue["_state"]).length > 0
-                            ? tempValue["_state"]
-                            : {};
+                        Object.keys(tempValue["_state"]).length > 0;
+                    Object.keys(tempValue["_state"]).length > 0
+                        ? tempValue["_state"]
+                        : {};
                     tempValue["_state"]["fields"] = {
                         ...tempValue["_state"]["fields"],
                         tooltip: columnsDrop[5]?.values?.[0],
@@ -874,7 +778,7 @@ export const FrameOperations = observer(
             }
             if (variation == "echart-gantt-chart") {
                 let columnsToSet = [];
-                const columnsObject = {};
+                const columnsObject = { tooltip: [] };
                 const formattedArray = [];
 
                 const tempValue = computedValue;
@@ -936,7 +840,6 @@ export const FrameOperations = observer(
                             name: secondColumn?.values?.[0],
                             selector: secondColumn?.selectors?.[0],
                         },
-                    };
                     };
 
                     setData("option", tempValue);
@@ -1018,7 +921,6 @@ export const FrameOperations = observer(
                             selector: columnsDrop[5]?.selectors?.[0],
                         },
                     };
-                    };
 
                     setData("option", tempValue);
                 }
@@ -1044,29 +946,30 @@ export const FrameOperations = observer(
                         },
                     };
 
-                    setData("option", tempValue);
+                    setData("option", { ...tempValue });
                 }
 
                 const tempDataSet = new Set(columnsToSet);
                 columnsToSet = Array.from(tempDataSet);
+                const { tooltip, ...columnsObj } = columnsObject;
                 const columnsIndexToSet = getColumnIndexToSetData(
-                    columnsObject,
+                    columnsObj,
                     columnsToSet,
                 );
-                console.log(tooltip, columnsToSet, 'tooltipIndexToSetTest');
-                let tooltipIndexToSet = tooltip.reduce((acc,item)=>{
+                const tooltipIndexToSet = tooltip.reduce((acc, item) => {
                     columnsToSet.forEach((colSetItem, colSetIndex) => {
                         if (colSetItem.includes(item)) {
                             acc = [...acc, colSetIndex];
                         }
                     });
                     return acc;
-                },[]);
+                }, []);
 
                 if (columnsIndexToSet) {
                     tempValue["customSettings"]["columnIndexDetails"] = {
                         ...tempValue["customSettings"]["columnIndexDetails"],
                         ...columnsIndexToSet,
+                        ...{ tooltip: tooltipIndexToSet },
                     };
 
                     setData("option", tempValue);
@@ -1074,14 +977,22 @@ export const FrameOperations = observer(
                 setData("columns", formattedArray);
             }
             if (variation == "echart-dendrogram-chart") {
-            if (variation == "echart-dendrogram-chart") {
                 let columnsToPush = [];
-                const dimensionElement = columnsValue.find(
+                let dimensionElement = columnsValue.find(
                     (element) => element.label === "dimensions",
                 );
-                const facetElement = columnsValue.find(
+                let facetElement = columnsValue.find(
                     (element) => element.label === "facet",
                 );
+                dimensionElement = {
+                    ...dimensionElement,
+                    ['values']: dimensionElement['values']?.['values'] || [],
+                };
+                facetElement = {
+                    ...facetElement,
+                    ['values']: facetElement['values']?.['values'] || [],
+                };
+                let parsedJson = computedValue || {};
                 if (
                     dimensionElement.label === "dimensions" &&
                     dimensionElement.values.length
@@ -1097,7 +1008,22 @@ export const FrameOperations = observer(
                         ];
                     });
                     setData("columns", columnsToPush);
+                    parsedJson = {
+                        ...parsedJson,
+                        ["_state"]: {
+                            ...parsedJson["_state"],
+                            ["dimensions"]: columnsToPush,
+                        },
+                    };
+                    setData("option", parsedJson);
                 } else {
+                    parsedJson = {
+                        ...parsedJson,
+                        ["_state"]: {
+                            ...parsedJson["_state"],
+                            ["dimensions"]: [],
+                        },
+                    };
                     setData("columns", []);
                     setData("option", parsedJson);
                 }
@@ -1107,7 +1033,6 @@ export const FrameOperations = observer(
                 ) {
                     if (!facetElement.values[0] || !facetElement.selectors[0])
                         return;
-
                     setData("facet.facetSelected", [
                         {
                             name: facetElement.values[0],
@@ -1115,7 +1040,6 @@ export const FrameOperations = observer(
                             value: 0,
                         },
                     ]);
-
                     columnsToPush = [
                         ...columnsToPush,
                         {
@@ -1124,10 +1048,30 @@ export const FrameOperations = observer(
                             value: 0,
                             isFacet: true,
                         },
-                        },
                     ];
                     setData("columns", columnsToPush);
+                    parsedJson = {
+                        ...parsedJson,
+                        ["_state"]: {
+                            ...parsedJson["_state"],
+                            ["facet"]: [
+                                {
+                                    name: facetElement.values[0],
+                                    selector: facetElement.selectors[0],
+                                    value: 0,
+                                },
+                            ],
+                        },
+                    };
+                    setData("option", parsedJson);
                 } else {
+                    parsedJson = {
+                        ...parsedJson,
+                        ["_state"]: {
+                            ...parsedJson["_state"],
+                            ["facet"]: [],
+                        },
+                    };
                     setData("facet.facetSelected", []);
                     setData("option", parsedJson);
                 }
@@ -1140,11 +1084,11 @@ export const FrameOperations = observer(
                 const formattedAggregates = {};
                 columnsValue.forEach((column, columnIndex) => {
                     const valueMap = {};
-                    if(
-                        column.hasOwnProperty('values') &&
-                        column['values'].hasOwnProperty('values')
-                    ){
-                        let columnValues = column?.values?.values || [];
+                    if (
+                        column.hasOwnProperty("values") &&
+                        column["values"].hasOwnProperty("values")
+                    ) {
+                        const columnValues = column?.values?.values || [];
                         columnValues.forEach((value, valueIndex) => {
                             valueMap[value] = chart[columnIndex]?.aggregate
                                 ? checkAggregate(column?.dataType[valueIndex])
@@ -1157,20 +1101,7 @@ export const FrameOperations = observer(
             };
             setData("aggregate", formatAggregates());
         };
-        function dispatchData(option) {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-                timeoutRef.current = null;
-            }
-            timeoutRef.current = setTimeout(() => {
-                try {
-                    // set the value
-                    setData("option", option as PathValue<any, typeof path>);
-                } catch (e) {
-                    console.log(e);
-                }
-            }, 100);
-        }
+
         function getColumnIndexToSetData(columnsObject, columnsToSet) {
             const colIndex = {};
             Object.keys(columnsObject).forEach((key) => {
@@ -1227,7 +1158,6 @@ export const FrameOperations = observer(
                 }
                 return updated;
             });
-        };
         };
         const onClickAdd = (value: boolean, id: any) => {
             setIsAdd(value);
