@@ -25,7 +25,7 @@ async function activate(context) {
     registerChatbotWebview(context);
 
     // Register authorize command (add new instance)
-    const disposable1 = vscode.commands.registerCommand(
+    const disposableAuthorize = vscode.commands.registerCommand(
         "semoss.authorize",
         async (args) => {
             // If called from chatbot, use args; otherwise, prompt
@@ -47,7 +47,7 @@ async function activate(context) {
     );
 
     // Register select instance command
-    const disposable5 = vscode.commands.registerCommand(
+    const disposableSelectInstance = vscode.commands.registerCommand(
         "semoss.selectInstance",
         async (args) => {
             if (args && args.alias) {
@@ -66,7 +66,7 @@ async function activate(context) {
     );
 
     // Register remove instance command
-    const disposable6 = vscode.commands.registerCommand(
+    const disposableRemoveInstance = vscode.commands.registerCommand(
         "semoss.removeInstance",
         async (args) => {
             if (args && args.alias) {
@@ -121,7 +121,7 @@ async function activate(context) {
     };
 
     // Register zip and deploy command
-    const disposable2 = vscode.commands.registerCommand(
+    const disposableZipDeploy = vscode.commands.registerCommand(
         "semoss.zipanddeploy",
         async (uri) => {
             // If called from Chatbot UI, uri may be undefined. Use first workspace folder.
@@ -169,7 +169,7 @@ async function activate(context) {
     );
 
     // Register zip only command
-    const disposable3 = vscode.commands.registerCommand(
+    const disposableZip = vscode.commands.registerCommand(
         "semoss.ziponly",
         async (uri) => {
             // If called from Chatbot UI, uri may be undefined. Use first workspace folder.
@@ -191,7 +191,7 @@ async function activate(context) {
     );
 
     // Register deploy only command
-    const disposable4 = vscode.commands.registerCommand(
+    const disposableDeploy = vscode.commands.registerCommand(
         "semoss.deployonly",
         async (uri) => {
             // Always deploy assets.zip from the selected or first workspace folder
@@ -296,10 +296,10 @@ async function activate(context) {
 
     if (secrets && secrets.semossUrl && secrets.accessKey && secrets.privateKey) {
         vscode.window.showInformationMessage(`Semoss: Connected to "${secrets.alias || 'Default'}" (${secrets.semossUrl})`);
-        context.subscriptions.push(disposable1, disposable2, disposable3, disposable4, disposable5, disposable6);
+        context.subscriptions.push(disposableAuthorize, disposableZipDeploy, disposableZip, disposableDeploy, disposableSelectInstance, disposableRemoveInstance);
     } else {
         vscode.window.showErrorMessage('Semoss: No instance configured. Use "Semoss: Authorize New Instance" to get started.');
-        context.subscriptions.push(disposable1, disposable5, disposable6); // Add instance management commands even if not authenticated
+        context.subscriptions.push(disposableAuthorize, disposableSelectInstance, disposableRemoveInstance); // Add instance management commands even if not authenticated
     }
 }
 

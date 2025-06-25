@@ -31,8 +31,7 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
             openLabel: 'Select download folder'
         });
         if (!uri || uri.length === 0) {
-            vscode.window.showWarningMessage('Cancelled: No folder selected.');
-            return;
+            throw new Error('No folder selected');
         }
         const downloadsDir = uri[0].fsPath;
 
@@ -53,8 +52,7 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
             { headers }
         );
         if (!response.data || !response.data.pixelReturn || !response.data.pixelReturn[0] || !response.data.pixelReturn[0].output || !response.data.pixelReturn[0].output.project_id) {
-            vscode.window.showErrorMessage('App creation failed: Invalid response from server.');
-            return;
+            throw new Error('App creation failed: Invalid response from server.');
         }
         const projectId = response.data.pixelReturn[0].output.project_id;
         vscode.window.showInformationMessage(`App "${appName}" created successfully! Project ID: ${projectId}`);
@@ -75,7 +73,7 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
                 );
                 vscode.window.showInformationMessage('Placeholder asset (index.html) added to the project.');
             } catch (err) {
-                vscode.window.showWarningMessage('Could not add placeholder asset: ' + (err.message || 'Unknown error'));
+               throw new Error('Failed to add placeholder asset: ' + ( err.message || 'Unknown error'));
             }
         }
         // Export project
@@ -88,8 +86,7 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
             { headers }
         );
         if (!exportResponse.data || !exportResponse.data.pixelReturn || !exportResponse.data.pixelReturn[0] || !exportResponse.data.pixelReturn[0].output) {
-            vscode.window.showErrorMessage('Export failed: Invalid response from server.');
-            return;
+            throw new Error('Export failed: Invalid response from server.');
         }
         const fileKey = exportResponse.data.pixelReturn[0].output;
         const insightId = exportResponse.data.insightID;
@@ -113,7 +110,6 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
                     let errorMsg = `Download failed with status code: ${response.statusCode}`;
                     response.on('data', chunk => errorMsg += chunk.toString());
                     response.on('end', () => {
-                        vscode.window.showErrorMessage(errorMsg);
                         reject(new Error(errorMsg));
                     });
                     return;
@@ -126,7 +122,6 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
             });
             req.on('error', (err) => {
                 fs.unlink(filePath, () => { });
-                vscode.window.showErrorMessage('Download error: ' + err.message);
                 reject(err);
             });
             req.end();
@@ -136,7 +131,7 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
             vscode.window.showInformationMessage(`Downloaded file size: ${stats.size} bytes`);
         } catch (e) {
             console.error(`Failed to get file stats for ${filePath}:`, e);
-            vscode.window.showErrorMessage(`Could not get file size for ${filePath}.`);
+            throw new Error(`Could not get file size for ${filePath}.`);
         }
         // Automatically unzip in the same folder as the zip
         const unzipDir = path.join(downloadsDir, `${appName}_unzipped_${Date.now()}`);
@@ -177,6 +172,6 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
 
         vscode.window.showInformationMessage('App created, zipped and deployed successfully!');
     } catch (err) {
-        vscode.window.showErrorMessage(`Error: ${err.message}`);
+        throw new Error(`Failed to create app: ${err.message || err}`);
     }
 }

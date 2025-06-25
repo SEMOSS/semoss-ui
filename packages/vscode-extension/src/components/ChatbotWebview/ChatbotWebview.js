@@ -175,29 +175,36 @@ class SemossChatbotViewProvider {
                                 }
                                 default: {
                                     // For folder commands, always use first workspace folder
-                                    if (folderCommands.includes(command)) {
-                                        let uri = msg.inputs && msg.inputs.uri;
-                                        if (!uri) {
-                                            if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
-                                                uri = vscode.workspace.workspaceFolders[0].uri;
-                                            } else {
-                                                resultMsg = 'No workspace folder found.';
-                                                // Always hide loading even on error
-                                                webviewView.webview.postMessage({ type: 'response', status: 'error', text: resultMsg, hideLoading: true });
-                                                return;
+                                    try {
+                                        if (folderCommands.includes(command)) {
+                                            let uri = msg.inputs && msg.inputs.uri;
+                                            if (!uri) {
+                                                if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                                                    uri = vscode.workspace.workspaceFolders[0].uri;
+                                                } else {
+                                                    resultMsg = 'No workspace folder found.';
+                                                    // Always hide loading even on error
+                                                    webviewView.webview.postMessage({ type: 'response', status: 'error', text: resultMsg, hideLoading: true });
+                                                    return;
+                                                }
                                             }
+                                            await vscode.commands.executeCommand(command, uri);
+                                            resultMsg = `Action '${command}' executed on selected folder.`;
+                                            // Always hide loading after deploy
+                                            webviewView.webview.postMessage({ type: 'response', status: 'success', text: resultMsg, hideLoading: true });
+                                            return;
+                                        } else {
+                                            await vscode.commands.executeCommand(command, msg.inputs);
+                                            resultMsg = `Action '${command}' executed with provided details.`;
+                                            // Always hide loading after any command
+                                            webviewView.webview.postMessage({ type: 'response', status: 'success', text: resultMsg, hideLoading: true });
+                                            return;
                                         }
-                                        await vscode.commands.executeCommand(command, uri);
-                                        resultMsg = `Action '${command}' executed on selected folder.`;
-                                        // Always hide loading after deploy
-                                        webviewView.webview.postMessage({ type: 'response', status: 'success', text: resultMsg, hideLoading: true });
-                                        return;
-                                    } else {
-                                        await vscode.commands.executeCommand(command, msg.inputs);
-                                        resultMsg = `Action '${command}' executed with provided details.`;
-                                        // Always hide loading after any command
-                                        webviewView.webview.postMessage({ type: 'response', status: 'success', text: resultMsg, hideLoading: true });
-                                        return;
+                                    }catch (e) {
+                                        resultMsg = `Error executing command '${command}': ${e.message}`;
+                                        // Always hide loading on error
+                                        webviewView.webview.postMessage({ type: 'response', status: 'error', text: resultMsg, hideLoading: true });
+                                        return; 
                                     }
                                 }
                             }
