@@ -174,42 +174,60 @@ export function getChatbotHtml(cssUri) {
                             showInstanceSelection(message.aliases);
                         } else {
                             appendMessage('No stored instances found. Please authorize a new instance first.', 'bot');
-                        }
-                    } else if (message.type === 'instanceAliasesWithUrls') {
+                        }                    
+                            } else if (message.type === 'instanceAliasesWithUrls') {
                         showLoading(false);
                         window.semossInstanceUrls = message.urls;
-                        showInstanceSelection(message.aliases);
-                    } else if (message.type === 'instanceAliasesForRemoval') {
+                        window.currentInstance = message.currentInstance;
+                        showInstanceSelection(message.aliases);                    } else if (message.type === 'instanceAliasesForRemoval') {
+                        window.semossInstanceUrls = message.urls;
+                        window.currentInstance = message.currentInstance;
                         // Show aliases as buttons for removal
                         optionsArea.innerHTML = '';
                         appendMessage('Select an instance to remove:', 'bot');
                         message.aliases.forEach(alias => {
                             const btn = document.createElement('button');
                             btn.className = 'option-btn';
-                            btn.textContent = alias;
+                            // Highlight current instance
+                            if (window.currentInstance && window.currentInstance === alias) {
+                                btn.classList.add('selected-instance');
+                            }
+                            // Show alias and URL if available
+                            let label = alias;
+                            if (window.semossInstanceUrls && window.semossInstanceUrls[alias]) {
+                                label += ' (' + window.semossInstanceUrls[alias] + ')';
+                            }
+                            btn.textContent = label;
                             btn.onclick = () => {
                                 // Show confirmation dialog in chatbot
                                 showRemoveInstanceConfirmation(alias);
                             };
                             optionsArea.appendChild(btn);
-                        });
+                        });                        
                         // Add Back button
                         const backBtn = document.createElement('button');
                         backBtn.className = 'option-btn';
                         backBtn.textContent = 'Back';
                         backBtn.style.background = '#333';
                         backBtn.style.color = '#fff';
-                        backBtn.onclick = showOptions;
+                        backBtn.onclick = () => {
+                            appendMessage('Instance removal cancelled. No instances were removed.', 'bot');
+                            showOptions();
+                        };
                         optionsArea.appendChild(backBtn);
                     }
-                });
-
+                });                
+                
                 function showInstanceSelection(aliases) {
                     optionsArea.innerHTML = '';
                     appendMessage('Select an instance:', 'bot');
                     aliases.forEach(alias => {
                         const btn = document.createElement('button');
                         btn.className = 'option-btn';
+                        // Highlight current instance
+                        if (window.currentInstance && window.currentInstance === alias) {
+                            btn.classList.add('selected-instance');
+                        }
                         // Show alias and URL if available
                         let label = alias;
                         if (window.semossInstanceUrls && window.semossInstanceUrls[alias]) {
@@ -229,7 +247,10 @@ export function getChatbotHtml(cssUri) {
                     backBtn.textContent = 'Back';
                     backBtn.style.background = '#333';
                     backBtn.style.color = '#fff';
-                    backBtn.onclick = showOptions;
+                    backBtn.onclick = () => {
+                        appendMessage('Instance selection cancelled. No changes were made.', 'bot');
+                        showOptions();
+                    };
                     optionsArea.appendChild(backBtn);
                 }
                 function getRequiredInputs(command) {
@@ -243,7 +264,7 @@ export function getChatbotHtml(cssUri) {
                         case 'semoss.authorize':
                             return [
                                 { name: 'alias', label: 'Instance Alias', placeholder: 'e.g., Production, Development' },
-                                { name: 'url', label: 'Semoss Instance URL', placeholder: 'https://your-semoss-instance.com' },
+                                { name: 'url', label: 'Semoss Instance URL', placeholder: 'Enter only the part before /semoss' },
                                 { name: 'accessKey', label: 'Access Key', placeholder: 'Your access key' },
                                 { name: 'privateKey', label: 'Private Key', placeholder: 'Your private key' }
                             ];
@@ -313,11 +334,14 @@ export function getChatbotHtml(cssUri) {
                     yesBtn.onclick = () => {
                         showLoading(true);
                         vscode.postMessage({ type: 'removeInstanceByAlias', alias });
-                    };
+                    };                    
                     const noBtn = document.createElement('button');
                     noBtn.className = 'option-btn';
-                    noBtn.textContent = 'No';
-                    noBtn.onclick = showOptions;
+                    noBtn.textContent = 'No';                    
+                    noBtn.onclick = () => {
+                        appendMessage('Cancelled removal of instance "' + alias + '".', 'bot');
+                        showOptions();
+                    };
                     optionsArea.appendChild(yesBtn);
                     optionsArea.appendChild(noBtn);
                 }

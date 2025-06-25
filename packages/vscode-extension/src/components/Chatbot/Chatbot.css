@@ -44,9 +44,9 @@ body {
 
 .bubble {
     max-width: 80%;
-    padding: 10px 16px;
+    padding: 8px 12px;
     border-radius: 12px;
-    font-size: 15px;
+    font-size: 12px;
     background: #2d2d2d;
     color: #d4d4d4;
 }
@@ -126,6 +126,12 @@ body {
     max-width: 260px;
     text-align: center;
     transition: background 0.18s, color 0.18s;
+}
+
+.option-btn.selected-instance {
+    background: #0e639c;
+    color: #ffffff;
+    border: 1px solid #ffffff;
 }
 
 .option-btn:hover {

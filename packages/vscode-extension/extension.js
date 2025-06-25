@@ -6,6 +6,7 @@ import { setFolderPaths, getProjectId } from './src/utils/projectUtils.js';
 import { setDeployConfig, deployProject } from './src/utils/deploy.js';
 import { zipProject } from './src/utils/zip.js';
 import { createNewApp } from './src/utils/createApp.js';
+import { initStatusBar, updateStatusBar } from './src/utils/statusBar.js';
 import { handleChatbotAction } from './src/components/Chatbot/Chatbot.js';
 import { registerChatbotWebview } from './src/components/ChatbotWebview/ChatbotWebview.js';
 
@@ -16,6 +17,10 @@ import { registerChatbotWebview } from './src/components/ChatbotWebview/ChatbotW
  * @param {vscode.ExtensionContext} context
  */
 async function activate(context) {
+    // Initialize the status bar
+    initStatusBar(context);
+    await updateStatusBar(context);
+
     // Register the chatbot webview
     registerChatbotWebview(context);
 
@@ -31,6 +36,7 @@ async function activate(context) {
                     privateKey: args.privateKey
                 });
                 await context.secrets.store('CURRENT_INSTANCE_ALIAS', args.alias);
+                await updateStatusBar(context);
                 vscode.window.showInformationMessage(`Instance "${args.alias}" saved successfully!`);
                 vscode.commands.executeCommand('workbench.action.reloadWindow');
             } else {
@@ -46,11 +52,13 @@ async function activate(context) {
         async (args) => {
             if (args && args.alias) {
                 await context.secrets.store('CURRENT_INSTANCE_ALIAS', args.alias);
+                await updateStatusBar(context);
                 vscode.window.showInformationMessage(`Switched to instance: ${args.alias}`);
                 vscode.commands.executeCommand('workbench.action.reloadWindow');
             } else {
                 const selected = await selectInstance(context);
                 if (selected) {
+                    await updateStatusBar(context);
                     vscode.commands.executeCommand('workbench.action.reloadWindow');
                 }
             }
@@ -69,6 +77,7 @@ async function activate(context) {
                     const currentAlias = await context.secrets.get('CURRENT_INSTANCE_ALIAS');
                     if (currentAlias === args.alias) {
                         await context.secrets.delete('CURRENT_INSTANCE_ALIAS');
+                        await updateStatusBar(context);
                     }
                     vscode.window.showInformationMessage(`Instance "${args.alias}" removed successfully!`);
                 } else {
@@ -76,6 +85,7 @@ async function activate(context) {
                 }
             } else {
                 await removeInstance(context);
+                await updateStatusBar(context);
             }
         }
     );    // Register create new project command
@@ -257,6 +267,7 @@ async function activate(context) {
                         const currentAlias = await context.secrets.get('CURRENT_INSTANCE_ALIAS');
                         if (currentAlias === selected.label) {
                             await context.secrets.delete('CURRENT_INSTANCE_ALIAS');
+                            await updateStatusBar(context);
                         }
                         vscode.window.showInformationMessage(`Instance "${selected.label}" removed successfully!`);
                     }

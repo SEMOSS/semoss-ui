@@ -52,7 +52,14 @@ class SemossChatbotViewProvider {
                 for (const alias of aliases) {
                     urls[alias] = (instances[alias] && instances[alias].semossUrl) ? instances[alias].semossUrl : '';
                 }
-                webviewView.webview.postMessage({ type: 'instanceAliasesWithUrls', aliases, urls });
+                // Get current instance alias
+                const currentAlias = await this._context.secrets.get('CURRENT_INSTANCE_ALIAS');
+                webviewView.webview.postMessage({
+                    type: 'instanceAliasesWithUrls',
+                    aliases,
+                    urls,
+                    currentInstance: currentAlias
+                });
                 return;
             }
             if (msg.type === 'checkSmssFile') {
@@ -147,9 +154,15 @@ class SemossChatbotViewProvider {
                                         const secrets = await getSecrets(this._context);
                                         if (!secrets) {
                                             resultMsg = 'Please authorize an instance first.';
-                                            break;
+                                            webviewView.webview.postMessage({ type: 'response', status: 'error', text: resultMsg, hideLoading: true });
+                                            return;
                                         }
-                                        await createNewApp(this._context, async () => secrets, { appName, description, githubLink });
+                                        const result = await createNewApp(this._context, async () => secrets, { appName, description, githubLink });
+                                        if (result === false) {
+                                            resultMsg = `Cancelled: No folder selected.`;
+                                            webviewView.webview.postMessage({ type: 'response', status: 'warning', text: resultMsg, hideLoading: true });
+                                            return;
+                                        }
                                         resultMsg = `App \"${appName}\" created successfully!`;
                                         // Always send hideLoading to stop spinner
                                         webviewView.webview.postMessage({ type: 'response', status: 'success', text: resultMsg, hideLoading: true });
@@ -218,7 +231,21 @@ class SemossChatbotViewProvider {
                 // Send aliases for removal
                 const instances = await getStoredInstances(this._context);
                 const aliases = Object.keys(instances);
-                webviewView.webview.postMessage({ type: 'instanceAliasesForRemoval', aliases });
+
+                // Build a map of alias to URL
+                const urls = {};
+                for (const alias of aliases) {
+                    urls[alias] = (instances[alias] && instances[alias].semossUrl) ? instances[alias].semossUrl : '';
+                }
+
+                // Get current instance alias
+                const currentAlias = await this._context.secrets.get('CURRENT_INSTANCE_ALIAS');
+                webviewView.webview.postMessage({
+                    type: 'instanceAliasesForRemoval',
+                    aliases,
+                    urls,
+                    currentInstance: currentAlias
+                });
                 return;
             }
             if (msg.type === 'removeInstanceByAlias') {
