@@ -160,8 +160,11 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
         // Open the folder in VS Code
         vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(unzipDir), true);
 
-        await zipProject();
-        const zipOutputPath = path.join(unzipDir, 'assets.zip');
+        let zipOutputPath;
+        await zipProject(unzipDir); // Pass the folder path explicitly
+        zipOutputPath = path.join(unzipDir, 'assets.zip');
+        vscode.window.showInformationMessage(`GitHub App zipped to ${zipOutputPath}`);
+            
 
         // Deploy the zipped app using your deploy logic
         setDeployConfig({

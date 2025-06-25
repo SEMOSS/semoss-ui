@@ -8,24 +8,26 @@ import archiver from "archiver";
  * Automatically uses the current workspace folder as the base
  * @returns {Promise<void>}
  */
-export async function zipProject() {
+export async function zipProject(baseFolder) {
     return vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: "Zipping Assets Folder",
         cancellable: false
     }, async () => {
-        // Get the current workspace folder
-        const folders = vscode.workspace.workspaceFolders;
-        if (!folders || folders.length === 0) {
-            vscode.window.showErrorMessage('No workspace folder open.');
-            throw new Error('No workspace folder open.');
+        let folderPath = baseFolder;
+        if (!folderPath) {
+            const folders = vscode.workspace.workspaceFolders;
+            if (!folders || folders.length === 0) {
+                vscode.window.showErrorMessage('No workspace folder open and no folder path provided.');
+                throw new Error('No workspace folder open and no folder path provided.');
+            }
+            folderPath = folders[0].uri.fsPath;
         }
-        const folderPath = folders[0].uri.fsPath;
 
         // Path to the assets folder
         const assetsFolder = path.join(folderPath, 'assets');
         if (!fs.existsSync(assetsFolder) || !fs.lstatSync(assetsFolder).isDirectory()) {
-            vscode.window.showErrorMessage('No assets folder found in the workspace folder.');
+            vscode.window.showErrorMessage('No assets folder found in the specified folder.');
             throw new Error('No assets folder found.');
         }
 
