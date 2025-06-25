@@ -221,7 +221,7 @@ export const JiraProfilePage = () => {
                                       return (
                                           <Table.Row key={idx}>
                                               <Table.Cell align={'left'}>
-                                                  {k.name}
+                                                  {k.alias}
                                               </Table.Cell>
                                               <Table.Cell align={'left'}>
                                                   {k.url}

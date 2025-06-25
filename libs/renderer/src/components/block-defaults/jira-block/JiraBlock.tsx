@@ -307,23 +307,27 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                                     name={'JIRA_PROJECT_ID'}
                                     control={control1}
                                     rules={{ required: true }}
-                                    render={({ field }) => {
-                                        return (
-                                            <TextField
-                                                label="Project"
-                                                value={field.value ? field.value : ''}
-                                                disabled={false}
-                                                onChange={(value) =>
-                                                    field.onChange(value)
-                                                }
-                                                fullWidth={true}
-                                                inputProps={{
-                                                    'data-testid':
-                                                        'newAppModal-textField-name',
-                                                }}
-                                            />
-                                        );
-                                    }}
+                                    render={({ field }) => (
+                                        <Autocomplete
+                                            options={projects}
+                                            multiple={false}
+                                            getOptionLabel={(option) => option} 
+                                            value={field.value || null} 
+                                            onChange={(event, newValue) => field.onChange(newValue)} 
+                                            isOptionEqualToValue={(option, value) => option === value} 
+                                            renderInput={(params) => (
+                                                <TextField
+                                                    {...params}
+                                                    label="Project"
+                                                    fullWidth
+                                                    inputProps={{
+                                                        ...params.inputProps,
+                                                        'data-testid': 'newAppModal-dropdown-issueType',
+                                                    }}
+                                                />
+                                            )}
+                                        />
+                                    )}
                                 />
                             </Stack>
 

@@ -60,7 +60,7 @@ export const JiraSettings = observer(
                     const pixelCommand = `META | JiraGet()`;
                     const response = await state.runSideEffect(pixelCommand);
                     const output1 = response.pixelReturn[0].output as { userId: string }[];
-                    const userData = output1.map((item: any) => item.userId);
+                    const userData = output1.map((item: any) => item.alias);
                     const userDataId = output1.map((item: any) => item.primaryId);
                     const finalData = userData.map((userId, index) => ({ user: userId, id: userDataId[index] }));
                     setJiraData(finalData);
