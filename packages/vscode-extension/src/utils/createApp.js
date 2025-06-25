@@ -110,6 +110,7 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
                     let errorMsg = `Download failed with status code: ${response.statusCode}`;
                     response.on('data', chunk => errorMsg += chunk.toString());
                     response.on('end', () => {
+                        vscode.window.showErrorMessage(errorMsg);
                         reject(new Error(errorMsg));
                     });
                     return;
@@ -122,6 +123,7 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
             });
             req.on('error', (err) => {
                 fs.unlink(filePath, () => { });
+                vscode.window.showErrorMessage(`Download failed: ${err.message}`);
                 reject(err);
             });
             req.end();
