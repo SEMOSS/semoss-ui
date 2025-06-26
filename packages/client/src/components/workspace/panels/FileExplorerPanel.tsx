@@ -95,6 +95,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
     // files to add
     const [selectedPath, setSelectedPath] = useState<string>('');
     const [fileUploadPath, setFileUploadPath] = useState<string>('');
+    const [filterWord, setFilterWord] = useState<string>('');
 
     // temporary fix for dead refresh button should be removed
     const [counter, setCounter] = useState(0);
@@ -541,38 +542,20 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
                             <StyledTitleSpan>{title}</StyledTitleSpan>
                         </StyledTitle>
                         {/* TODO: Implement Search functionality and remove the comments */}
-                        {/* <StyledTextField
+                        <StyledTextField
                             placeholder="Search"
                             size="small"
                             fullWidth
-                            // value={search}
-                            // onChange={(e) => setSearch(e.target.value)}
+                            value={filterWord}
+                            onChange={(e) => setFilterWord(e.target.value)}
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
                                         <Search />
                                     </InputAdornment>
                                 ),
-                                // endAdornment: (
-                                //     <InputAdornment position="end">
-                                //         <IconButton
-                                //             size="small"
-                                //             onClick={(e) =>
-                                //                 setMenuAnchorEl(e.currentTarget)
-                                //             }
-                                //         >
-                                //             <Badge
-                                //                 variant="dot"
-                                //                 invisible={!anyEnabledFilter}
-                                //                 color="primary"
-                                //             >
-                                //                 <Tune />
-                                //             </Badge>
-                                //         </IconButton>
-                                //     </InputAdornment>
-                                // ),
                             }}
-                        /> */}
+                        />
                         <Stack
                             direction={'row'}
                             alignItems={'center'}
@@ -672,6 +655,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
                 }}
                 expandedPaths={expandedPaths}
                 onToggleExpand={handleToggleExpand}
+                filterWord={filterWord}
             />
         </Panel>
     );

@@ -73,6 +73,8 @@ interface FileExplorerItemProps {
         event: React.MouseEvent<HTMLButtonElement>,
         path: string,
     ) => void;
+
+    filterWord?: string;
 }
 
 export const FileExplorerItem = (props: FileExplorerItemProps) => {
@@ -87,6 +89,7 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
         onDragStart = () => null,
         onDragEnd = () => null,
         onTrashClick = () => null,
+        filterWord = '',
     } = props;
     const [isHovered, setIsHovered] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -113,6 +116,8 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
             e.stopImmediatePropagation();
         });
     }, []);
+
+    console.log('filterWord', filterWord);
 
     return (
         <StyledNode

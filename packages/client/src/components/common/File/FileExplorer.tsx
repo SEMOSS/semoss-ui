@@ -43,6 +43,8 @@ interface FileExplorerProps {
         event: React.MouseEvent<HTMLButtonElement>,
         path: string,
     ) => void;
+
+    filterWord?: string;
 }
 
 export const FileExplorer = (props: FileExplorerProps) => {
@@ -56,6 +58,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
         onTrashClick = () => null,
         expandedPaths,
         onToggleExpand,
+        filterWord = '',
     } = props;
 
     const getAssets = usePixel<
@@ -73,8 +76,15 @@ export const FileExplorer = (props: FileExplorerProps) => {
         insightId,
     );
 
+    if (filterWord.length > 0) {
+        // Api needed to add here
+        console.log('filterWord', filterWord);
+    }
+
     const initLoadComplete = getAssets.status === 'SUCCESS';
     const [selected, setSelected] = React.useState<string[]>([]);
+
+    console.log('filterWord', filterWord);
 
     /**
      * Triggered when a node is selected
@@ -152,6 +162,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
                                 onTrashClick={(e, path) => {
                                     onTrashClick(e, path);
                                 }}
+                                filterWord={filterWord}
                             />
                         );
                     })
