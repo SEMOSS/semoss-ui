@@ -108,6 +108,7 @@ const IconMapper = {
     'Teams Management': <GroupRounded />,
     'Team Permissions': <Diversity3 />,
     'My Profile': <PersonRounded />,
+    'Google Spreadsheet Profile': <PersonRounded />,
     Theming: <PaintRounded />,
     Jobs: <Jobs />,
 };

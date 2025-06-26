@@ -200,4 +200,12 @@ export const SETTINGS_ROUTES: {
         history: ['settings/'],
         admin: false,
     },
+    {
+        title: 'Google Spreadsheet Profile',
+        path: 'googlespreadsheet-profile',
+        description: 'Update settings related to your Google Spreadsheet profile.',
+        icon: mdiDatabase,
+        history: ['settings/'],
+        admin: false,
+    },
 ];
