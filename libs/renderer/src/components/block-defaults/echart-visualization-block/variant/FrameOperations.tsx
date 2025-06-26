@@ -1091,7 +1091,7 @@ export const FrameOperations = observer(
                         const columnValues = column?.values?.values || [];
                         columnValues.forEach((value, valueIndex) => {
                             valueMap[value] = chart[columnIndex]?.aggregate
-                                ? checkAggregate(column?.dataType[valueIndex])
+                                ? checkAggregate(column?.values?.dataType[valueIndex])
                                 : "";
                         });
                         formattedAggregates[column.label] = valueMap;
