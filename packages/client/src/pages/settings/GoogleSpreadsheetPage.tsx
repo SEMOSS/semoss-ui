@@ -202,7 +202,9 @@ export const GoogleSpreadsheetPage = () => {
                                 <LeftHeaderCell align={'left'}>
                                     Name
                                 </LeftHeaderCell>
-                                <HeaderCell align={'left'}>Spreadsheet Id</HeaderCell>
+                                <HeaderCell align={'left'}>
+                                    Spreadsheet Id
+                                </HeaderCell>
                                 <HeaderCell align={'left'}>
                                     Date Created
                                 </HeaderCell>
@@ -276,7 +278,7 @@ export const GoogleSpreadsheetPage = () => {
                             onSubmit={handleSubmit(SaveAPIKey)}
                             className="my-jira-profile-page__generate-key-form"
                         >
-                            <Stack direction="column" spacing={2}>                             
+                            <Stack direction="column" spacing={2}>
                                 <Controller
                                     name={'NAME'}
                                     control={control}

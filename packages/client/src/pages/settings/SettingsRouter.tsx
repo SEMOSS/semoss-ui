@@ -20,7 +20,7 @@ import { MemberSettingsPage } from './MemberSettingsPage';
 import { ConfigurationsPage } from './ConfigurationsPage';
 import { AdminQueryPage } from './AdminQueryPage';
 import { MyProfilePage } from './MyProfilePage';
-import {GoogleSpreadsheetPage} from './GoogleSpreadsheetPage';
+import { GoogleSpreadsheetPage } from './GoogleSpreadsheetPage';
 import { JobsPage } from '../jobs/JobsPage';
 
 // map each route to a component
