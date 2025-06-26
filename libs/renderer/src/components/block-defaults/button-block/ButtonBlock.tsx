@@ -64,7 +64,6 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
             listeners.preProcess();
         }
     }, []);
-    console.log("ButtonBlock", data);
     return (
         <StyledContainer {...attrs}>
             <StyledButton
