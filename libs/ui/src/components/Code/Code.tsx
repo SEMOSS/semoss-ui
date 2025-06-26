@@ -20,6 +20,7 @@ import shikiLangJSON from "@shikijs/langs/json";
 import shikiLangJava from "@shikijs/langs/java";
 import gitHubDark from "@shikijs/themes/github-dark";
 import minLight from "@shikijs/themes/min-light";
+import { useTheme } from "@mui/material";
 
 const StyledCode = styled("code")(({ theme }) => ({
     ...theme.typography.body2,
@@ -76,6 +77,7 @@ export const Code: React.FC<CodeProps> = ({
     theme = "light",
     sx,
 }) => {
+    const { palette } = useTheme();
     // store the highlighted coe
     const [highlightedHtml, setHighlightedHTML] = useState<string>("");
     const highlighterRef = useRef(null);
@@ -107,9 +109,9 @@ export const Code: React.FC<CodeProps> = ({
             });
 
             const html = await highlighterRef.current.codeToHtml(code, {
-                theme: theme === "dark" ? "github-dark" : "min-light",
+                theme: palette.mode === "dark" ? "github-dark" : "min-light",
                 lang: language,
-                // structure: "inline",
+                structure: "inline",
             });
 
             if (isMounted) {
