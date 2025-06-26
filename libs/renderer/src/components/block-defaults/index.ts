@@ -36,6 +36,10 @@ import {
 } from "./flip-card-block";
 
 import { config as GridBlockConfig, GridBlockDef } from "./grid-block";
+import {
+    config as GridDynamicFrameBlockConfig,
+    GridDynamicFrameBlockDef,
+} from "./grid-dynamic-frame-block";
 
 import { config as HTMLBlockConfig, HTMLBlockDef } from "./html-block";
 
@@ -101,11 +105,6 @@ import {
     config as VisualizationFilterBlockConfig,
     VisualizationFilterBlockDef,
 } from "./visualization-filter-block";
-
-import {
-    config as GridDynamicFrameBlockConfig,
-    GridDynamicFrameBlockDef,
-} from "./grid-dynamic-grame-block";
 
 // import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
 // import { config as BodyBlockConfig, BodyBlockDef } from "./body-block";

@@ -1,16 +1,10 @@
-import { TableChart } from "@mui/icons-material";
+import { Autocomplete, Stack, TextField } from "@mui/material";
 
-import { Autocomplete, Stack, TextField } from "@semoss/ui";
+import { GridDynamicFrameBlockDef } from "../../../../../components/block-defaults/grid-dynamic-frame-block";
+import { useBlockSettings, useBlocksPixel } from "../../../../../hooks";
+import { BlockComponent } from "../../../../../store";
 
-import { BLOCK_TYPE_DATA } from "../block-defaults.constants";
-import { BlockComponent, BlockConfig } from "../../../store";
-import { useBlock, useBlockSettings, useBlocksPixel } from "../../../hooks";
-import {
-    GridDynamicFrameBlockDef,
-    GridDynamicFrameBlock,
-} from "./GridDynamicFrameBlock";
-
-const DynamicGridMenu: BlockComponent = ({ id }) => {
+export const DynamicGridMenu: BlockComponent = ({ id }) => {
     const { data, setData } = useBlockSettings<GridDynamicFrameBlockDef>(id);
     // get all of the frames
     const getFrames = useBlocksPixel<string[]>("GetFrames();", {
@@ -47,22 +41,4 @@ const DynamicGridMenu: BlockComponent = ({ id }) => {
             />
         </Stack>
     );
-};
-
-// export the config for the block
-export const config: BlockConfig<GridDynamicFrameBlockDef> = {
-    widget: "grid-dynamic-frame",
-    type: BLOCK_TYPE_DATA,
-    data: {
-        frame: {
-            name: "",
-        },
-        show: true,
-    },
-
-    listeners: {},
-    slots: {},
-    render: GridDynamicFrameBlock,
-    icon: TableChart,
-    menu: DynamicGridMenu,
 };

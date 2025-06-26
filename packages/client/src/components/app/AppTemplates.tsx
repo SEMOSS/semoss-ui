@@ -13,6 +13,7 @@ import {
     UpdateDiabetesRecordTemplate,
     ReadDiabetesRecordTemplate,
     MultiPageTemplate,
+    VisualizeCSVTemplate,
 } from './templates';
 
 const DEFAULT_TEMPLATE = [
@@ -25,6 +26,7 @@ const DEFAULT_TEMPLATE = [
     ReadDiabetesRecordTemplate,
     UpdateDiabetesRecordTemplate,
     DeleteDiabetesRecordTemplate,
+    VisualizeCSVTemplate,
 ];
 
 // const StyledFilter = styled('div')(({ theme }) => ({

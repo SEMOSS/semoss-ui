@@ -1,5 +1,6 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
+import { Delete, Edit } from "@mui/icons-material";
 import {
     Autocomplete,
     IconButton,
@@ -9,15 +10,13 @@ import {
     TableHead,
     TableRow,
 } from "@mui/material";
-import { Delete, Edit } from "@mui/icons-material";
 
-import { GridBlockDef } from "../GridBlockDuplicate";
 import { Button, styled, Switch, TextField, Typography } from "@semoss/ui";
 
-import { useBlockSettings, useFrame } from "../../../../hooks";
-import { Paths } from "@/types";
+import { Paths } from "../../../../types";
 import { Block } from "../../../../store";
-import { ColorRule } from "../GridBlockDuplicate";
+import { GridBlockDef, ColorRule } from "../GridBlock";
+import { useBlockSettings, useFrame } from "../../../../hooks";
 import { ColorPickerWithSwatch } from "../../../block-settings/shared/ColorPickerWithSwatch";
 
 export interface ColorByValueProps {
