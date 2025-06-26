@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { styled } from "@mui/material";
 import { DataGrid, GridToolbarContainer } from "@mui/x-data-grid";
 
-import { useBlock, useFrame } from "../../../hooks";
+import { useBlock, useFrame, useFrameHeaders } from "../../../hooks";
 import { BlockComponent, BlockDef } from "../../../store";
 
 import { GridBlockColumn } from "./grid-block.types";
@@ -113,7 +113,7 @@ export interface GridBlockDef extends BlockDef<"grid"> {
 }
 
 export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
-    const { attrs, data } = useBlock<GridBlockDef>(id);
+    const { attrs, data, setData } = useBlock<GridBlockDef>(id);
     const [paginationModel, setPaginationModel] = useState({
         page: 0,
         pageSize: 50,
@@ -144,7 +144,30 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
         limit: paginationModel.pageSize,
         enableCount: true,
     });
-
+    const frameHeaders = useFrameHeaders(data.frame.name);
+    
+    const syncFrameHeaders = (synData) => {
+        const columns: GridBlockColumn[] = synData.data.list.map((h) => {
+            return {
+                name: h.alias,
+                width: undefined,
+                selector: h.header,
+            };
+        });
+        // update the data
+        setData("columns", columns);
+    };
+    useEffect(() => {
+        if (data.columns.length === 0 && !frameHeaders.isLoading) {
+            // If no columns are defined, fetch the frame headers
+            if (frameHeaders.data.list.length > 0) {
+                console.log(" hitting sync")
+                syncFrameHeaders(frameHeaders);
+            } else {
+                console.warn("No headers found for the selected frame.");
+            }
+        }
+    }, [frameHeaders.data.list]);
     /**
      * Handle the callback for the context menu
      * @param event - triggered event
