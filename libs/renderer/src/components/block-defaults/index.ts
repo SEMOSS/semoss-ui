@@ -97,7 +97,15 @@ import {
     config as VegaVisualizationBlockConfig,
     VegaVisualizationBlockDef,
 } from "./vega-visualization-block";
-import { config as VisualizationFilterBlockConfig, VisualizationFilterBlockDef } from "./visualization-filter-block";
+import {
+    config as VisualizationFilterBlockConfig,
+    VisualizationFilterBlockDef,
+} from "./visualization-filter-block";
+
+import {
+    config as GridDynamicFrameBlockConfig,
+    GridDynamicFrameBlockDef,
+} from "./grid-dynamic-grame-block";
 
 // import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
 // import { config as BodyBlockConfig, BodyBlockDef } from "./body-block";
@@ -149,6 +157,7 @@ export type DefaultBlockDefinitions =
     | RadioBlockDef
     | TimePickerBlockDef
     | VisualizationFilterBlockDef
+    | GridDynamicFrameBlockDef;
 // | BodyBlockDef
 // | DividerBlockDef
 // | FooterBlockDef
@@ -199,6 +208,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [VisualizationFilterBlockConfig.widget]: VisualizationFilterBlockConfig,
+    [GridDynamicFrameBlockConfig.widget]: GridDynamicFrameBlockConfig
     // [StepperBlockConfig.widget]: StepperBlockConfig,
     // [QueryBlockConfig.widget]: QueryBlockConfig,
 };
@@ -242,4 +252,5 @@ export {
     TimePickerBlockConfig,
     FlipCardBlockConfig,
     VisualizationFilterBlockConfig,
+    GridDynamicFrameBlockConfig
 };

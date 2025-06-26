@@ -2619,6 +2619,23 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_CHARTS,
+        name: 'Dynamic Data Grid',
+        helperText: 'Organize and display data in a tabular format',
+        activeImage: BLOCK_IMAGES['DATA_GRID_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['DATA_GRID_HOVER'],
+        json: {
+            widget: 'grid-dynamic-frame',
+            data: {
+                frame: {
+                    name: '',
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
         name: 'Data Grid',
         helperText: 'Organize and display data in a tabular format',
         activeImage: BLOCK_IMAGES['DATA_GRID_ACTIVE'],
