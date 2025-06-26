@@ -52,6 +52,9 @@ import {
 
 import { LLMCellDef, LLMCellConfig } from "./llm-cell";
 
+import { TextToSqlCellDef, TextToSqlCellConfig } from "./text-to-sql-cell";
+
+
 import { TransformationCellDef } from "./shared";
 
 export type DefaultCellDefinitions =
@@ -71,7 +74,8 @@ export type DefaultCellDefinitions =
     | CumulativeSumTransformationCellDef
     | EncodeColumnTransformationCellDef
     | CollapseTransformationCellDef
-    | SendEmailCellDef;
+    | SendEmailCellDef
+    | TextToSqlCellDef;
 
 export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     [CodeCellConfig.widget]: CodeCellConfig,
@@ -97,6 +101,7 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     [CollapseTransformationCellConfig.widget]: CollapseTransformationCellConfig,
     [LLMCellConfig.widget]: LLMCellConfig,
     [SendEmailCellConfig.widget]: SendEmailCellConfig,
+    [TextToSqlCellConfig.widget]: TextToSqlCellConfig,
 } as const;
 
 const filteredTransformations: Partial<CellRegistry<DefaultCellDefinitions>> =

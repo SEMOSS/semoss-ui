@@ -62,6 +62,7 @@ export { FilterDataCellConfig } from "./components/cell-defaults/filter-data-cel
 export { UnFilterDataCellConfig } from "./components/cell-defaults/unfilter-data-cell";
 export { CodeCellConfig } from "./components/cell-defaults/code-cell";
 export { DataImportCellConfig } from "./components/cell-defaults/data-import-cell";
+export { TextToSqlCellConfig } from "./components/cell-defaults/text-to-sql-cell";
 
 export { DataImportFormModal } from "./components/shared/DataImportFormModal";
 

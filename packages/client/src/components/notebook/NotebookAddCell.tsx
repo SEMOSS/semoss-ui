@@ -32,6 +32,7 @@ import {
     CodeCellConfig,
     DataImportFormModal,
     NewCellAction,
+    TextToSqlCellConfig,
 } from '@semoss/renderer';
 import { MoreHoriz } from '@mui/icons-material';
 
@@ -213,6 +214,11 @@ const AddCellOptions: Record<string, AddCellOption> = {
         options: DataImportDropdownOptions,
         disabled: false,
     },
+    'text-to-sql': {
+        display: 'Text to SQL',
+        icon: <ImportExport />,
+        defaultCellType: 'text-to-sql',
+    },
     text: {
         display: 'Text',
         icon: <TextFields />,
@@ -249,6 +255,14 @@ export const NotebookAddCell = observer(
                 };
 
                 if (widget === QueryImportCellConfig.widget) {
+                    config.parameters = {
+                        ...DefaultCells[widget].parameters,
+                        frameVariableName: `FRAME_${Math.floor(
+                            Math.random() * 100000,
+                        )}`,
+                    };
+                }
+                if (widget === TextToSqlCellConfig.widget) {
                     config.parameters = {
                         ...DefaultCells[widget].parameters,
                         frameVariableName: `FRAME_${Math.floor(
