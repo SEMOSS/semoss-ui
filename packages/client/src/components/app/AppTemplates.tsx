@@ -13,18 +13,20 @@ import {
     UpdateDiabetesRecordTemplate,
     ReadDiabetesRecordTemplate,
     MultiPageTemplate,
+    VisualizeCSVTemplate,
 } from './templates';
 
 const DEFAULT_TEMPLATE = [
     LandingPageTemplate,
     AskLLMTemplate,
-    AskCSVTemplate,
+    VisualizeCSVTemplate,
     BlocksGuideTemplate,
     MultiPageTemplate,
     CreateDiabetesRecordTemplate,
     ReadDiabetesRecordTemplate,
     UpdateDiabetesRecordTemplate,
     DeleteDiabetesRecordTemplate,
+    // AskCSVTemplate,
 ];
 
 // const StyledFilter = styled('div')(({ theme }) => ({
