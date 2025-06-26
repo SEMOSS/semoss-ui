@@ -37,8 +37,8 @@ export const EngineFilePage = () => {
             </StyledTopDiv>
 
             <StyledTableContainer>
-                {/* <FileTable id={id}/> */}
-                <StorageTest id={id}/>
+                <FileTable id={id} mode='storage'/>
+                {/* <StorageTest id={id}/> */}
             </StyledTableContainer>
         </StyledContainer>
     );
