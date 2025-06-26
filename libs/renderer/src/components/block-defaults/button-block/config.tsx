@@ -31,6 +31,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
         variant: "contained",
         color: "primary",
         show: "true",
+        type: "button"
     },
     listeners: {
         onClick: {
@@ -63,6 +64,30 @@ export const config: BlockConfig<ButtonBlockDef> = {
                             label="Loading"
                             path="loading"
                             queryPath="isLoading"
+                        />
+                    ),
+                },
+                  {
+                    description: "Type",
+                    render: ({ id }) => (
+                        <SelectInputSettings
+                            id={id}
+                            label="Type"
+                            path="type"
+                            options={[
+                                {
+                                    value: "submit",
+                                    display: "Submit",
+                                },
+                                {
+                                    value: "button",
+                                    display: "Button",
+                                },
+                                {
+                                    value: "reset",
+                                    display: "Reset",
+                                },
+                            ]}
                         />
                     ),
                 },

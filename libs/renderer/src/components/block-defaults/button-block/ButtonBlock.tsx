@@ -38,6 +38,7 @@ export interface ButtonBlockDef extends BlockDef<"button"> {
         variant: "contained" | "outlined" | "text";
         color: "primary" | "secondary" | "success" | "warning" | "error";
         show: string;
+        type:  "button" | "submit" | "reset";
     };
     listeners: {
         onClick: {
@@ -63,6 +64,7 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
             listeners.preProcess();
         }
     }, []);
+    console.log("ButtonBlock", data);
     return (
         <StyledContainer {...attrs}>
             <StyledButton
@@ -71,6 +73,7 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
                 variant={data.variant}
                 loading={data?.loading}
                 disabled={data?.disabled || data?.loading}
+                type={data?.type}
                 sx={{
                     ...data.style,
                 }}
