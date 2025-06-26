@@ -162,8 +162,6 @@ export const GridBlockDuplicate: BlockComponent = observer(({ id }) => {
             // If no columns are defined, fetch the frame headers
             if (frameHeaders.data.list.length > 0) {
                 syncFrameHeaders(frameHeaders);
-            } else {
-                console.warn("No headers found for the selected frame.");
             }
         }
     }, [frameHeaders.data.list]);
