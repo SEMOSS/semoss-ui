@@ -19,14 +19,14 @@ import {
 const DEFAULT_TEMPLATE = [
     LandingPageTemplate,
     AskLLMTemplate,
-    AskCSVTemplate,
+    VisualizeCSVTemplate,
     BlocksGuideTemplate,
     MultiPageTemplate,
     CreateDiabetesRecordTemplate,
     ReadDiabetesRecordTemplate,
     UpdateDiabetesRecordTemplate,
     DeleteDiabetesRecordTemplate,
-    VisualizeCSVTemplate,
+    // AskCSVTemplate,
 ];
 
 // const StyledFilter = styled('div')(({ theme }) => ({
