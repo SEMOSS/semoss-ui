@@ -135,10 +135,14 @@ describe("Migration Manager starting from Alpha 04", () => {
         );
 
         const migrationManager = new MigrationManager();
+
+        expect(currentState.version).toBe("1.0.0-alpha.8");
+
         currentState = await migrationManager.run(currentState);
+
         expect(currentState.version).toBe("1.0.0-alpha.9");
     });
-    it("should migrate from 1.0.0-alpha.9 to 1.0.0-alpha-10", async () => {
+    it("should migrate from 1.0.0-alpha.9 to 1.0.0-alpha.10", async () => {
         vi.doMock("@/store/state/migration/StateVersion", () => {
             return {
                 STATE_VERSION: "1.0.0-alpha.10", // default mock value
@@ -151,6 +155,8 @@ describe("Migration Manager starting from Alpha 04", () => {
             "@/store/state/migration/StateVersion"
         );
         const migrationManager = new MigrationManager();
+
+        expect(currentState.version).toBe("1.0.0-alpha.9");
 
         currentState = await migrationManager.run(currentState);
 
