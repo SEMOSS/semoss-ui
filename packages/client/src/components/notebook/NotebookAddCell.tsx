@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     Code,
@@ -7,9 +7,22 @@ import {
     KeyboardArrowUp,
     MoreVert,
     TextFields,
+    Close,
+    SearchOutlined,
 } from '@mui/icons-material';
 
-import { styled, Button, MenuProps, Menu, Stack, Modal } from '@semoss/ui';
+import {
+    styled,
+    Button,
+    MenuProps,
+    Menu,
+    Stack,
+    Modal,
+    TextField,
+    InputAdornment,
+    IconButton,
+    Typography,
+} from '@semoss/ui';
 import {
     useBlocks,
     ActionMessages,
@@ -46,8 +59,6 @@ const StyledMenu = styled((props: MenuProps) => (
     '& .MuiPaper-root': {
         marginTop: theme.spacing(1),
         borderRadius: '0px',
-        maxHeight: '220px',
-        overflowY: 'auto',
     },
     '.MuiList-root': {
         padding: 0,
@@ -56,6 +67,7 @@ const StyledMenu = styled((props: MenuProps) => (
 
 const StyledMenuItem = styled(Menu.Item)(() => ({
     textTransform: 'capitalize',
+    fontSize: '16px',
 }));
 
 const StyledBorderDiv = styled('div')(({ theme }) => ({
@@ -63,6 +75,9 @@ const StyledBorderDiv = styled('div')(({ theme }) => ({
     padding: '8px 16px',
     borderRadius: '8px',
 }));
+const MenuSectionRoot = styled('li')({
+    listStyle: 'none',
+});
 
 interface AddCellOption {
     display: string;
@@ -199,6 +214,67 @@ export const NotebookAddCell = observer(
         const open = Boolean(anchorEl);
         const { query, previousCellId = '' } = props;
         const { state, notebook } = useBlocks();
+        const [searchQuery, setSearchQuery] = useState('');
+
+        const TransformationCategories = useMemo(() => {
+            const categories = {
+                Text: [],
+                'Data & Time': [],
+                Numeric: [],
+                Column: [],
+            } as Record<string, typeof Transformations>;
+
+            Transformations.forEach((transformation) => {
+                switch (transformation.display) {
+                    case 'Uppercase':
+                        categories.Text.push(transformation);
+                        break;
+                    case 'Date Difference':
+                    case 'Timestamp':
+                        categories['Data & Time'].push(transformation);
+                        break;
+                    case 'Cumulative Sum':
+                    case 'Encode Column':
+                        categories.Numeric.push(transformation);
+                        break;
+                    case 'Update Row':
+                    case 'Change Column Type':
+                    case 'Join':
+                    case 'Collapse':
+                        categories.Column.push(transformation);
+                        break;
+                    default:
+                        break;
+                }
+            });
+
+            return categories;
+        }, [TransformationCells]);
+
+        const filteredCategories = Object.entries(TransformationCategories)
+            .map(([category, transformations]) => {
+                const filteredTransformations = searchQuery
+                    ? transformations.filter((t) =>
+                          t.display
+                              .toLowerCase()
+                              .includes(searchQuery.toLowerCase()),
+                      )
+                    : transformations;
+
+                return {
+                    category,
+                    transformations: filteredTransformations,
+                };
+            })
+            .filter(({ transformations }) => transformations.length > 0);
+
+        const handleSearchChange = (event) => {
+            setSearchQuery(event.target.value);
+        };
+
+        const clearSearch = () => {
+            setSearchQuery('');
+        };
 
         /** Create a New Cell and Add to Notebook */
         const appendCell = (widget: string) => {
@@ -290,7 +366,19 @@ export const NotebookAddCell = observer(
                                                 appendCell(
                                                     value.defaultCellType,
                                                 );
+                                                setSelectedAddCell(add[0]);
                                             }
+                                        }}
+                                        sx={{
+                                            ...((value.options
+                                                ? selectedAddCell === add[0] &&
+                                                  open
+                                                : selectedAddCell ===
+                                                  add[0]) && {
+                                                backgroundColor:
+                                                    '#EBF4FE !important',
+                                                color: '#212121 !important',
+                                            }),
                                         }}
                                         endIcon={
                                             add[0] === 'others' ||
@@ -339,24 +427,98 @@ export const NotebookAddCell = observer(
                                 },
                             )}
 
-                        {selectedAddCell === 'transformation' &&
-                            Array.from(
-                                AddCellOptions[selectedAddCell]?.options || [],
-                                ({ display, defaultCellType }, index) => {
-                                    return (
-                                        <StyledMenuItem
-                                            key={index}
-                                            value={display}
-                                            onClick={() => {
-                                                appendCell(defaultCellType);
-                                                setAnchorEl(null);
-                                            }}
-                                        >
-                                            {display}
-                                        </StyledMenuItem>
-                                    );
-                                },
-                            )}
+                        {selectedAddCell === 'transformation' && (
+                            <>
+                                {/* Search Input with Clear Icon */}
+
+                                <TextField
+                                    placeholder="Search"
+                                    size="small"
+                                    sx={{
+                                        padding: '8px',
+                                        borderRadius: '8px',
+                                        width: '211px',
+                                    }}
+                                    value={searchQuery}
+                                    onChange={handleSearchChange}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <SearchOutlined />
+                                            </InputAdornment>
+                                        ),
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={clearSearch}
+                                                >
+                                                    <Close />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                                <Stack
+                                    sx={{
+                                        maxHeight: '300px',
+                                        overflowY: 'auto',
+                                    }}
+                                >
+                                    {/* Menu Section */}
+                                    {filteredCategories.map(
+                                        (
+                                            { category, transformations },
+                                            index,
+                                        ) => (
+                                            <MenuSectionRoot key={index}>
+                                                <StyledMenuItem
+                                                    value={category}
+                                                    disabled
+                                                >
+                                                    <Typography
+                                                        variant={'button'}
+                                                        sx={{
+                                                            fontSize: '14px',
+                                                        }}
+                                                    >
+                                                        {category}
+                                                    </Typography>
+                                                </StyledMenuItem>
+                                                {transformations.map(
+                                                    (
+                                                        transformation,
+                                                        tIndex,
+                                                    ) => (
+                                                        <StyledMenuItem
+                                                            value={
+                                                                transformation.display
+                                                            }
+                                                            key={tIndex}
+                                                            onClick={() => {
+                                                                appendCell(
+                                                                    transformation.defaultCellType,
+                                                                );
+                                                                setAnchorEl(
+                                                                    null,
+                                                                );
+                                                                setSearchQuery(
+                                                                    '',
+                                                                );
+                                                            }}
+                                                        >
+                                                            {
+                                                                transformation.display
+                                                            }
+                                                        </StyledMenuItem>
+                                                    ),
+                                                )}
+                                            </MenuSectionRoot>
+                                        ),
+                                    )}
+                                </Stack>
+                            </>
+                        )}
                         {selectedAddCell === 'others' &&
                             Array.from(
                                 AddCellOptions[selectedAddCell]?.options || [],
