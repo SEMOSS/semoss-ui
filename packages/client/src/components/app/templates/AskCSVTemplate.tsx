@@ -42,7 +42,7 @@ export const AskCSVTemplate: Template = {
                 },
                 slots: {
                     children: {
-                        children: ['title', 'description', 'form', 'response'],
+                        children: ['title', 'description', 'form'],
                         name: 'children',
                     },
                 },
@@ -78,13 +78,14 @@ export const AskCSVTemplate: Template = {
                     },
                     label: 'Upload',
                     required: true,
+                    value: '\\diabetes.csv',
                 },
                 listeners: {
-                    preProcess: {
+                    onChange: {
                         type: 'sync',
                         order: [],
                     },
-                    onChange: {
+                    preProcess: {
                         type: 'sync',
                         order: [],
                     },
@@ -98,7 +99,12 @@ export const AskCSVTemplate: Template = {
                 },
                 slots: {
                     children: {
-                        children: ['file', 'question', 'submit'],
+                        children: [
+                            'file',
+                            'question',
+                            'submit',
+                            'container--2124',
+                        ],
                         name: 'children',
                     },
                 },
@@ -207,29 +213,6 @@ export const AskCSVTemplate: Template = {
                 },
                 id: 'page-1',
             },
-            response: {
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                slots: {},
-                widget: 'text',
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        textOverflow: 'ellipsis',
-                    },
-                    text: '{{ask-model.output.output.Query}}',
-                },
-                listeners: {
-                    preProcess: {
-                        type: 'sync',
-                        order: [],
-                    },
-                },
-                id: 'response',
-            },
             description: {
                 parent: {
                     id: 'container',
@@ -278,6 +261,70 @@ export const AskCSVTemplate: Template = {
                 },
                 id: 'title',
             },
+            'container--2124': {
+                id: 'container--2124',
+                widget: 'container',
+                parent: {
+                    id: 'form',
+                    slot: 'children',
+                },
+                data: {
+                    style: {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        padding: '4px',
+                        gap: '8px',
+                        flexWrap: 'wrap',
+                    },
+                    show: 'true',
+                    boxShadowParts: {
+                        offsetX: '',
+                        offsetY: '',
+                        blurRadius: '10px',
+                        spreadRadius: '0px',
+                        color: '#d0d5fc',
+                    },
+                },
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
+                slots: {
+                    children: {
+                        name: 'children',
+                        children: ['grid-dynamic-frame--537'],
+                    },
+                },
+            },
+            'grid-dynamic-frame--537': {
+                id: 'grid-dynamic-frame--537',
+                widget: 'grid-dynamic-frame',
+                parent: {
+                    id: 'container--2124',
+                    slot: 'children',
+                },
+                data: {
+                    frame: {
+                        name: 'NLP_FRAME',
+                    },
+                    option: {},
+                    columns: [],
+                    view: {
+                        pagination: true,
+                    },
+                    style: {
+                        display: 'flex',
+                        flexDirection: 'row',
+                        flexWrap: 'wrap',
+                        width: '100%',
+                        height: 'auto%',
+                    },
+                },
+                listeners: {},
+                slots: {},
+            },
         },
         variables: {
             file: {
@@ -292,11 +339,16 @@ export const AskCSVTemplate: Template = {
                 to: 'question',
                 type: 'block',
             },
+            'ask-model--py-query-function': {
+                to: 'ask-model',
+                type: 'cell',
+                cellId: 'py-query-function',
+            },
             model: {
                 isInput: true,
                 isOutput: false,
                 type: 'model',
-                value: '17753d59-4536-4415-a6ac-f673b1a90a87',
+                value: '4acbe913-df40-4ac0-b28a-daa5ad91b172',
             },
             'ask-model': {
                 isInput: false,
@@ -305,17 +357,12 @@ export const AskCSVTemplate: Template = {
                 type: 'query',
             },
             'ask-model--file-read': {
-                type: 'cell',
                 to: 'ask-model',
+                type: 'cell',
                 cellId: 'file-read',
-            },
-            'ask-model--py-query-function': {
-                type: 'cell',
-                to: 'ask-model',
-                cellId: 'py-query-function',
             },
         },
         executionOrder: ['ask-model'],
-        version: '1.0.0-alpha.10',
+        version: '1.0.0-alpha.11',
     },
 };

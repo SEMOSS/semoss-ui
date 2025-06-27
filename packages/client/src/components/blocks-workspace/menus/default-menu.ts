@@ -2620,8 +2620,39 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_CHARTS,
+        name: 'Dynamic Data Grid',
+        helperText: 'Organize and display dynamic data in a tabular format',
+        activeImage: BLOCK_IMAGES['DATA_GRID_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['DATA_GRID_HOVER'],
+        json: {
+            widget: 'grid-dynamic-frame',
+            data: {
+                frame: {
+                    name: '',
+                },
+                option: {},
+                columns: [],
+                view: {
+                    pagination: true,
+                },
+                style: {
+                    display: 'flex',
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    width: '450px',
+                    height: '350px',
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
         name: 'Data Grid',
-        helperText: 'Organize and display data in a tabular format',
+        recentChanges:
+            'If you are looking to build a table with unstructured headers, please use the Dynamic Data Grid block.',
+        helperText: 'Organize and display known data in a tabular format',
         activeImage: BLOCK_IMAGES['DATA_GRID_ACTIVE'],
         hoverImage: BLOCK_IMAGES['DATA_GRID_HOVER'],
         json: {
