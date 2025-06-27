@@ -13,13 +13,17 @@ import ncp from 'ncp';
  * @param {string} downloadsDir - Directory to download files to
  * @param {string} appName - Name of the app being created
  * @param {string} unzipDir - Directory where the SEMOSS app was unzipped
+ * @param {boolean} isPrivateRepo - Whether the repository is private
+ * @param {string} accessToken - GitHub access token for private repositories
  * @returns {Promise<boolean>} - True if successful, false otherwise
  */
 export async function processGithubAssets(
     githubLink,
     downloadsDir,
     appName,
-    unzipDir
+    unzipDir,
+    isPrivateRepo = false,
+    accessToken = ''
 ) {
     if (!githubLink) return false;
 
@@ -45,15 +49,40 @@ export async function processGithubAssets(
         // Get default branch if not specified
         let usedBranch = branch;
         if (!match[3]) {
-            const apiUrl = `https://api.github.com/repos/${owner}/${repo}`;
-            const res = await axios.get(apiUrl, {
-                headers: { 'User-Agent': 'node.js' },
-            });
-            usedBranch = res.data.default_branch;
+            try {
+                const apiUrl = `https://api.github.com/repos/${owner}/${repo}`;
+                const headers = { 'User-Agent': 'node.js' };
+
+                // Add authorization header for private repositories OR if we have a token
+                if ((isPrivateRepo && accessToken) || (accessToken && accessToken.startsWith('ghp_'))) {
+                    headers['Authorization'] = `token ${accessToken}`;
+                }
+
+                const res = await axios.get(apiUrl, { headers });
+                usedBranch = res.data.default_branch;
+            } catch (apiError) {
+                if (apiError.response && apiError.response.status === 404) {
+                    throw new Error(`Repository not found: ${owner}/${repo}. Please check the URL and access permissions.`);
+                } else if (apiError.response && apiError.response.status === 401) {
+                    throw new Error(`Unauthorized access to ${owner}/${repo}. Please check your access token.`);
+                } else {
+                    // If API call fails, try with default branch
+                    usedBranch = 'main';
+                    vscode.window.showWarningMessage(`Could not fetch repository info, using default branch: ${usedBranch}`);
+                }
+            }
         }
 
-        // Download repo as zip with redirect support
-        const zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/${usedBranch}.zip`;
+        // For private repositories, use the GitHub API zipball URL instead of the public archive URL
+        let zipUrl;
+        const shouldUsePrivateUrl = (isPrivateRepo && accessToken) || (!isPrivateRepo && accessToken && accessToken.startsWith('ghp_'));
+
+        if (shouldUsePrivateUrl) {
+            // Use the same format as your working PowerShell command
+            zipUrl = `https://api.github.com/repos/${owner}/${repo}/zipball/${usedBranch}`;
+        } else {
+            zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/${usedBranch}.zip`;
+        }
         zipPath = path.join(downloadsDir, `${appName}_github.zip`);
         extractPath = path.join(
             downloadsDir,
@@ -61,11 +90,30 @@ export async function processGithubAssets(
         );
 
         vscode.window.showInformationMessage(
-            `Downloading repository from ${zipUrl}...`
+            `Downloading ${isPrivateRepo ? 'private' : 'public'} repository from GitHub...`
         );
 
-        // Download GitHub repo
-        await downloadZipWithRedirect(zipUrl, zipPath);
+        // Download GitHub repo - Always use downloadPrivateRepo for private repos        
+        // Temporary workaround: If we have an access token but isPrivateRepo is false, force private repo logic
+        const shouldUsePrivateLogic = (isPrivateRepo && accessToken) || (!isPrivateRepo && accessToken && accessToken.startsWith('ghp_'));
+
+        if (shouldUsePrivateLogic) {
+            await downloadPrivateRepo(zipUrl, zipPath, accessToken);
+        } else {
+            await downloadZipWithRedirect(zipUrl, zipPath, null);
+        }
+
+        // Verify the download was successful before proceeding
+        if (!fs.existsSync(zipPath)) {
+            throw new Error('Repository download failed: ZIP file was not created');
+        }
+
+        const stats = fs.statSync(zipPath);
+        if (stats.size === 0) {
+            throw new Error('Repository download failed: ZIP file is empty');
+        }
+
+        vscode.window.showInformationMessage(`Repository downloaded successfully. File size: ${stats.size} bytes`);
 
         // Unzip GitHub repo
         await new Promise((resolve, reject) => {
@@ -87,7 +135,7 @@ export async function processGithubAssets(
         // Check if finalDir exists and is a directory
         if (!fs.existsSync(finalDir) || !fs.lstatSync(finalDir).isDirectory()) {
             throw new Error(
-                `The specified folderPath (${folderPath}) does not exist in the repo.`
+                `The specified path (${folderPath || 'repository root'}) does not exist in the repo.`
             );
         }
 
@@ -178,14 +226,56 @@ export async function processGithubAssets(
     }
 }
 
+// Helper to download private repositories using axios
+const downloadPrivateRepo = async (url, dest, accessToken) => {
+    try {
+        const response = await axios({
+            method: 'GET',
+            url: url,
+            headers: {
+                'Authorization': `token ${accessToken}`,
+                'User-Agent': 'node.js'
+            },
+            responseType: 'stream',
+            maxRedirects: 5,
+            timeout: 30000
+        });
+
+        const writer = fs.createWriteStream(dest);
+        response.data.pipe(writer);
+
+        return new Promise((resolve, reject) => {
+            writer.on('finish', () => {
+                resolve();
+            });
+            writer.on('error', reject);
+            response.data.on('error', reject);
+        });
+    } catch (error) {
+        const status = error.response && error.response.status ? error.response.status : 'unknown';
+        const statusText = error.response && error.response.statusText ? error.response.statusText : error.message;
+        vscode.window.showErrorMessage(`Download failed - Status: ${status}, Message: ${statusText}`);
+        throw new Error(`Failed to download private repository: ${status} - ${statusText}`);
+    }
+};
+
 // Helper to follow redirects
-const downloadZipWithRedirect = (url, dest) => {
+const downloadZipWithRedirect = (url, dest, accessToken = null) => {
     return new Promise((resolve, reject) => {
+        const headers = {};
+
+        // Add authorization header for private repositories
+        if (accessToken) {
+            headers['Authorization'] = `token ${accessToken}`;
+            headers['User-Agent'] = 'node.js';
+        }
+
         https
-            .get(url, (res) => {
+            .get(url, { headers }, (res) => {
                 if (res.statusCode === 302 && res.headers.location) {
+                    // For redirects, preserve the authorization header if present
                     https
-                        .get(res.headers.location, (res2) => {
+                        .get(res.headers.location, { headers }, (res2) => {
                             if (res2.statusCode !== 200) {
                                 reject(
                                     new Error(
@@ -206,6 +296,7 @@ const downloadZipWithRedirect = (url, dest) => {
                     file.on('finish', () => file.close(resolve));
                     file.on('error', reject);
                 } else {
+                    vscode.window.showErrorMessage(`Download failed with status: ${res.statusCode} for URL: ${url}`);
                     reject(
                         new Error(
                             `Failed to download repo zip: ${res.statusCode}`

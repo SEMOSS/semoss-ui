@@ -214,8 +214,22 @@ export function getChatbotHtml(cssUri) {
                                     const inputs = await showInputDialog(requiredInputs);
                                     if (!inputs) return;
                                     appendMessage('Authorize New Instance with details:', 'user');
+                                    
+                                    // Create a mapping for user-friendly field names
+                                    const fieldLabels = {
+                                        'alias': 'Instance Alias',
+                                        'url': 'Semoss Instance URL',
+                                        'accessKey': 'Access Key',
+                                        'privateKey': 'Private Key'
+                                    };
+                                    
                                     Object.entries(inputs).forEach(([key, value]) => {
-                                        appendMessage(key + ': ' + value, 'user');
+                                        const displayLabel = fieldLabels[key] || key;
+                                        
+                                        // Only show non-empty values
+                                        if (value !== '' && value !== null && value !== undefined) {
+                                            appendMessage(displayLabel + ': ' + value, 'user');
+                                        }
                                     });
                                     showLoading(true);
                                     lastCommand = 'semoss.authorize';
@@ -266,11 +280,34 @@ export function getChatbotHtml(cssUri) {
                             showInputDialog(requiredInputs).then(inputs => {
                                 if (!inputs) return;
                                 appendMessage('Create New App with details:', 'user');
+                                
+                                // Create a mapping for user-friendly field names
+                                const fieldLabels = {
+                                    'appName': 'App Name',
+                                    'description': 'Description',
+                                    'githubLink': 'GitHub Link',
+                                    'isPrivateRepo': 'Private Repository',
+                                    'accessToken': 'Access Token'
+                                };
+                                
                                 Object.entries(inputs).forEach(([key, value]) => {
-                                    appendMessage(key + ': ' + value, 'user');                                    });
-                                    showLoading(true);
-                                    lastCommand = 'semoss.createNewApp';
-                                    vscode.postMessage({ type: 'chat', command: 'semoss.createNewApp', inputs: inputs });
+                                    const displayLabel = fieldLabels[key] || key;
+                                    let displayValue = value;
+                                    
+                                    // Format boolean values to be more user-friendly
+                                    if (typeof value === 'boolean') {
+                                        displayValue = value ? 'Yes' : 'No';
+                                    }
+                                    
+                                    // Only show non-empty values
+                                    if (value !== '' && value !== null && value !== undefined) {
+                                        appendMessage(displayLabel + ': ' + displayValue, 'user');
+                                    }
+                                });
+                                
+                                showLoading(true);
+                                lastCommand = 'semoss.createNewApp';
+                                vscode.postMessage({ type: 'chat', command: 'semoss.createNewApp', inputs: inputs });
                             });
                         } else {
                             appendMessage('Please authorize an instance first.', 'bot');
@@ -370,7 +407,9 @@ export function getChatbotHtml(cssUri) {
                             return [
                                 { name: 'appName', label: 'App Name', placeholder: 'Enter app name' },
                                 { name: 'description', label: 'Description  (optional)', placeholder: 'Enter app description (optional)' },
-                                { name: 'githubLink', label: 'GitHub Link (optional)', placeholder: 'https://github.com/user/repo' }
+                                { name: 'githubLink', label: 'GitHub Link (optional)', placeholder: 'https://github.com/user/repo' },
+                                { name: 'isPrivateRepo', label: 'Private Repository', type: 'toggle', defaultValue: false, description: 'Toggle ON for private repositories (requires access token)' },
+                                { name: 'accessToken', label: 'GitHub Access Token (for private repos)', placeholder: 'ghp_...', conditional: 'isPrivateRepo' }
                             ];
                         case 'semoss.authorize':
                             return [
@@ -399,31 +438,96 @@ export function getChatbotHtml(cssUri) {
                 }                async function showInputDialog(inputs) {
                     const dialog = document.createElement('div');
                     dialog.className = 'input-dialog';
-                    dialog.innerHTML = '<div class="dialog-content"><h3>Required Information</h3><form id="inputForm">' +
-                        inputs.map(input => '<div class="input-group">' +
-                            '<label for="' + input.name + '">' + input.label + ':</label>' +
-                            '<input type="' + (input.name.toLowerCase().includes('key') ? 'password' : 'text') + '" ' +
-                            'id="' + input.name + '" ' +
-                            'placeholder="' + input.placeholder + '"' +
-                            (input.name !== 'description' && input.name !== 'githubLink' ? ' required' : '') + '>' +
-                            '</div>'
-                        ).join('') +
-                        '<div class="dialog-buttons">' +
+                    
+                    // Build form HTML with support for toggles and conditional fields
+                    let formHTML = '<div class="dialog-content"><h3>Required Information</h3><form id="inputForm">';
+                    
+                    inputs.forEach(input => {
+                        let inputHTML = '<div class="input-group';
+                        
+                        // Add conditional class if this field depends on another
+                        if (input.conditional) {
+                            inputHTML += ' conditional-field" data-depends-on="' + input.conditional + '" style="display: none;';
+                        }
+                        inputHTML += '">';
+                        
+                        if (input.type === 'toggle') {
+                            inputHTML += '<label class="toggle-label">' +
+                                '<div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">' +
+                                '<span class="toggle-text">' + input.label + '</span>' +
+                                '<label class="toggle-switch">' +
+                                '<input type="checkbox" id="' + input.name + '" ' +
+                                (input.defaultValue ? 'checked' : '') + '>' +
+                                '<span class="toggle-slider"></span>' +
+                                '</label>' +
+                                '</div>' +
+                                (input.description ? '<div class="toggle-description">' + input.description + '</div>' : '') +
+                                '</label>';
+                        } else {
+                            inputHTML += '<label for="' + input.name + '">' + input.label + ':</label>' +
+                                '<input type="' + (input.name.toLowerCase().includes('key') || input.name.toLowerCase().includes('token') ? 'password' : 'text') + '" ' +
+                                'id="' + input.name + '" ' +
+                                'placeholder="' + input.placeholder + '"' +
+                                (input.name !== 'description' && input.name !== 'githubLink' && input.name !== 'accessToken' ? ' required' : '') + '>';
+                        }
+                        
+                        inputHTML += '</div>';
+                        formHTML += inputHTML;
+                    });
+                    
+                    formHTML += '<div class="dialog-buttons">' +
                         '<button type="submit" class="submit-btn">Submit</button>' +
                         '<button type="button" class="cancel-btn">Cancel</button>' +
                         '</div></form></div>';
-
+                    
+                    dialog.innerHTML = formHTML;
                     document.body.appendChild(dialog);
 
                     return new Promise((resolve) => {
                         const form = dialog.querySelector('#inputForm');
                         const cancelBtn = dialog.querySelector('.cancel-btn');
 
+                        // Set up toggle listeners for conditional fields
+                        inputs.forEach(input => {
+                            if (input.type === 'toggle') {
+                                const toggle = form.querySelector('#' + input.name);
+                                const conditionalFields = form.querySelectorAll('[data-depends-on="' + input.name + '"]');
+                                
+                                toggle.addEventListener('change', () => {
+                                    conditionalFields.forEach(field => {
+                                        if (toggle.checked) {
+                                            field.style.display = 'block';
+                                            // Make conditional field required when shown
+                                            const conditionalInput = field.querySelector('input');
+                                            if (conditionalInput && input.name === 'isPrivateRepo') {
+                                                conditionalInput.required = true;
+                                            }
+                                        } else {
+                                            field.style.display = 'none';
+                                            // Remove required when hidden
+                                            const conditionalInput = field.querySelector('input');
+                                            if (conditionalInput) {
+                                                conditionalInput.required = false;
+                                                conditionalInput.value = '';
+                                            }
+                                        }
+                                    });
+                                });
+                                
+                                // Trigger initial state
+                                toggle.dispatchEvent(new Event('change'));
+                            }
+                        });
+
                         form.onsubmit = (e) => {
                             e.preventDefault();
                             const formData = {};
                             inputs.forEach(input => {
-                                formData[input.name] = form.querySelector('#' + input.name).value;
+                                if (input.type === 'toggle') {
+                                    formData[input.name] = form.querySelector('#' + input.name).checked;
+                                } else {
+                                    formData[input.name] = form.querySelector('#' + input.name).value;
+                                }
                             });
                             dialog.remove();
                             resolve(formData);

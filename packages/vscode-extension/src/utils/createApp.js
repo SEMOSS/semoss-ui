@@ -11,16 +11,41 @@ import { processGithubAssets } from "./githubAssets.js";
 
 export async function createNewApp(context, getSecretsWithValidation, args) {
     try {
-        let appName, description, githubLink;
+        let appName, description, githubLink, isPrivateRepo = false, accessToken = '';
         if (args && args.appName) {
             appName = args.appName;
             description = args.description || '';
             githubLink = args.githubLink || '';
+            isPrivateRepo = args.isPrivateRepo || false;
+            accessToken = args.accessToken || '';
         } else {
             appName = await vscode.window.showInputBox({ prompt: 'Enter app name' });
             if (!appName) return;
             description = await vscode.window.showInputBox({ prompt: 'Enter app description (optional)' });
             githubLink = await vscode.window.showInputBox({ prompt: 'GitHub link for assets (optional)' });
+
+            // Ask about private repository if GitHub link is provided
+            if (githubLink) {
+                const privateRepoChoice = await vscode.window.showQuickPick(
+                    ['No', 'Yes'],
+                    {
+                        placeHolder: 'Is this a private repository?',
+                        ignoreFocusOut: true
+                    }
+                );
+
+                if (privateRepoChoice === 'Yes') {
+                    isPrivateRepo = true;
+                    accessToken = await vscode.window.showInputBox({
+                        prompt: 'Enter GitHub access token (required for private repositories)',
+                        password: true
+                    });
+                    if (!accessToken) {
+                        vscode.window.showErrorMessage('Access token is required for private repositories');
+                        return;
+                    }
+                }
+            }
         }
 
         // 2. Select download folder
@@ -73,7 +98,7 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
                 );
                 vscode.window.showInformationMessage('Placeholder asset (index.html) added to the project.');
             } catch (err) {
-               throw new Error('Failed to add placeholder asset: ' + ( err.message || 'Unknown error'));
+                throw new Error('Failed to add placeholder asset: ' + (err.message || 'Unknown error'));
             }
         }
         // Export project
@@ -151,7 +176,13 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
         // Process GitHub assets if a link was provided
         if (githubLink) {
             vscode.window.showInformationMessage(`Processing GitHub assets from: ${githubLink}`);
-            await processGithubAssets(githubLink, downloadsDir, appName, unzipDir);
+            const githubSuccess = await processGithubAssets(githubLink, downloadsDir, appName, unzipDir, isPrivateRepo, accessToken);
+
+            if (!githubSuccess) {
+                throw new Error('Failed to process GitHub assets. App creation aborted.');
+            }
+
+            vscode.window.showInformationMessage('GitHub assets processed successfully. Continuing with app setup...');
         }
 
         // Open the folder in VS Code
@@ -161,7 +192,7 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
         await zipProject(unzipDir); // Pass the folder path explicitly
         zipOutputPath = path.join(unzipDir, 'assets.zip');
         vscode.window.showInformationMessage(`GitHub App zipped to ${zipOutputPath}`);
-            
+
 
         // Deploy the zipped app using your deploy logic
         setDeployConfig({

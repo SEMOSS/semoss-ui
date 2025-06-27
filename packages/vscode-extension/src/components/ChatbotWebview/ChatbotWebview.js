@@ -189,7 +189,17 @@ class SemossChatbotViewProvider {
                                     }
                                     return;
                                 } case 'semoss.createNewApp': {
-                                    const { appName, description, githubLink } = msg.inputs;
+                                    const { appName, description, githubLink, isPrivateRepo, accessToken } = msg.inputs;
+
+                                    // Debug logging to confirm values are passed correctly
+                                    console.log('ChatbotWebview received inputs:', {
+                                        appName,
+                                        description,
+                                        githubLink,
+                                        isPrivateRepo,
+                                        accessToken: accessToken ? 'PROVIDED' : 'NOT_PROVIDED'
+                                    });
+
                                     try {
                                         const secrets = await getSecrets(this._context);
                                         if (!secrets) {
@@ -197,7 +207,7 @@ class SemossChatbotViewProvider {
                                             webviewView.webview.postMessage({ type: 'response', status: 'error', text: resultMsg, hideLoading: true });
                                             return;
                                         }
-                                        const result = await createNewApp(this._context, async () => secrets, { appName, description, githubLink });
+                                        const result = await createNewApp(this._context, async () => secrets, { appName, description, githubLink, isPrivateRepo, accessToken });
                                         if (result === false) {
                                             resultMsg = `Cancelled: No folder selected.`;
                                             webviewView.webview.postMessage({ type: 'response', status: 'warning', text: resultMsg, hideLoading: true });

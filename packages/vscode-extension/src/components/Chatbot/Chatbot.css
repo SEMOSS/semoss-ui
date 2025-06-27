@@ -74,15 +74,21 @@ body {
     border-top: none;
     padding: 5px;
     overflow-y: auto;
+    overflow-x: hidden;
     min-height: 200px;
     max-height: 400px;
     /* Limit chat height so options don't get pushed down */
+    word-wrap: break-word;
+    box-sizing: border-box;
 }
 
 .message {
     margin-bottom: 12px;
     display: flex;
     align-items: flex-end;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .user {
@@ -100,16 +106,25 @@ body {
     font-size: 12px;
     background: #2d2d2d;
     color: #d4d4d4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    white-space: pre-wrap;
+    box-sizing: border-box;
 }
 
 .user .bubble {
     background: #0e639c;
     color: #fff;
+    word-break: break-all;
+    overflow-wrap: anywhere;
 }
 
 .bot .bubble {
     background: #2d2d2d;
     color: #d4d4d4;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .error .bubble {
@@ -217,6 +232,8 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.20);
     box-sizing: border-box;
     margin: 0 2vw;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .dialog-content h3 {
@@ -225,10 +242,16 @@ body {
     color: #3794ff;
     font-size: 12px;
     font-weight: 600;
+    word-wrap: break-word;
+    hyphens: auto;
 }
 
 .input-group {
-    margin-bottom: 14px;
+    margin-bottom: 16px;
+}
+
+.input-group:has(.toggle-label) {
+    margin-bottom: 8px;
 }
 
 .input-group label {
@@ -237,6 +260,8 @@ body {
     color: #d4d4d4;
     font-size: 14px;
     font-weight: 500;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .input-group input {
@@ -253,45 +278,102 @@ body {
     transition: border 0.18s;
     margin: 0;
     display: block;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .input-group input:focus {
     border: 1px solid #3794ff;
 }
 
-.dialog-buttons {
+.toggle-label {
     display: flex;
-    gap: 10px;
-    margin-top: 12px;
-    justify-content: center;
-}
-
-.submit-btn,
-.cancel-btn {
-    padding: 8px 18px;
-    border-radius: 4px;
-    border: none;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
     cursor: pointer;
-    font-size: 14px;
+    width: 100%;
+}
+
+.toggle-text {
+    font-size: 13px;
     font-weight: 500;
-}
-
-.submit-btn {
-    background: #3794ff;
-    color: #fff;
-}
-
-.submit-btn:hover {
-    background: #1177bb;
-}
-
-.cancel-btn {
-    background: #333;
     color: #d4d4d4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
-.cancel-btn:hover {
-    background: #232323;
+.toggle-description {
+    font-size: 11px;
+    color: #b3b3b3;
+    margin-top: 4px;
+    font-style: italic;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.3;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #4a4a4a;
+    transition: 0.3s;
+    border-radius: 24px;
+    border: 1px solid #666;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #d4d4d4;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+.toggle-switch input:checked+.toggle-slider {
+    background-color: #3794ff;
+    border-color: #3794ff;
+}
+
+.toggle-switch input:focus+.toggle-slider {
+    box-shadow: 0 0 1px #3794ff;
+}
+
+.toggle-switch input:checked+.toggle-slider:before {
+    transform: translateX(26px);
+    background-color: white;
+}
+
+/* Conditional field styling */
+.conditional-field {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.conditional-field.hidden {
+    opacity: 0.5;
 }
 
 #loader {
@@ -349,6 +431,47 @@ body {
     100% {
         transform: rotate(360deg);
     }
+}
+
+/* Dialog buttons */
+.dialog-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.submit-btn,
+.cancel-btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, border 0.2s;
+    border: 1px solid;
+}
+
+.submit-btn {
+    background: #0e639c;
+    color: #fff;
+    border-color: #0e639c;
+}
+
+.submit-btn:hover {
+    background: #1177bb;
+    border-color: #1177bb;
+}
+
+.cancel-btn {
+    background: transparent;
+    color: #d4d4d4;
+    border-color: #666;
+}
+
+.cancel-btn:hover {
+    background: #404040;
+    border-color: #888;
 }
 
 @media (max-width: 480px) {
