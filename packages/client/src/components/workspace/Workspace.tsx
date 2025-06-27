@@ -142,36 +142,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
 
     // build the model from the layout
     const model = workspace.selectedLayout?.model;
-    const rawModel = workspace.selectedLayout?.model;
-
-    // useEffect(() => {
-    //     if (!rawModel) return;
-
-    //     const modelJson = rawModel.toJson();
-
-    //     if (!modelJson) {
-    //         setModel(rawModel);
-    //         return;
-    //     }
-
-    //     // List of notebooks tied to app
-    //     const validNotebookIds = new Set(notebook.queriesList.map((q) => q.id));
-
-    //     const root = modelJson.layout.children?.[0];
-    //     if (!root || !Array.isArray(root.children)) return;
-
-    //     // Remove notebooks that are on react flow model but not actually saved in state
-    //     const filteredLayoutArray = root.children.filter((layout: any) => {
-    //         const isNotebook = layout.component === 'notebook-viewer';
-    //         const layoutId = layout.config?.id;
-    //         return !isNotebook || validNotebookIds.has(layoutId);
-    //     });
-
-    //     root.children = filteredLayoutArray;
-    //     root['selected'] = filteredLayoutArray.length - 1;
-
-    //     setModel(Model.fromJson(modelJson));
-    // }, [notebook.queriesList, rawModel]);
 
     useEffect(() => {
         const handler = (e: CustomEvent) => {
