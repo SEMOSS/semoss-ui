@@ -9,194 +9,204 @@ import {
 import { Alpha08BlockData } from "./Alpha08DBloxkata";
 import { Alpha04BlockData } from "./Alpha04BlockData";
 
-describe("Migration Manager starting from Alpha 04", () => {
-    // let migrationManager: MigrationManager;
-    let currentState: MigrationState = Alpha08BlockData;
-    // let currentState: MigrationState = migrationDemoData;
+const testsData = [
+    {
+        name: "Alpha.4",
+        data: Alpha04BlockData,
+    },
+    { name: "Alpha.8", data: Alpha08BlockData },
+];
 
-    beforeEach(() => {
-        // vi.doMock("@/store/state/migration/StateVersion", () => {
-        //     return {
-        //         STATE_VERSION: "1.0.0-alpha.9",
-        //     };
-        // });
-        // migrationManager = new MigrationManager();
-        // currentState = migrationDemoData;
-        // vi.resetAllMocks();
-    });
-    afterEach(() => {
-        vi.resetModules();
-    });
+for (const testData of testsData) {
+    describe("Migration Manager starting from " + testData.name, () => {
+        // let migrationManager: MigrationManager;
+        let currentState: MigrationState = testData.data;
+        // let currentState: MigrationState = migrationDemoData;
 
-    it("should migrate from 1.0.0-alpha.4 to 1.0.0-alpha.5", async ({
-        skip,
-    }) => {
-        // skip test if the starting currentState version does not match the test version condition
-        if (currentState.version !== "1.0.0-alpha.4") {
-            skip();
-        }
-        // const version = "1.0.0-alpha.9";
-        vi.doMock("@/store/state/migration/StateVersion", () => {
-            return {
-                STATE_VERSION: "1.0.0-alpha.5", // mock latest state version
-            };
+        beforeEach(() => {
+            // vi.doMock("@/store/state/migration/StateVersion", () => {
+            //     return {
+            //         STATE_VERSION: "1.0.0-alpha.9",
+            //     };
+            // });
+            // migrationManager = new MigrationManager();
+            // currentState = migrationDemoData;
+            // vi.resetAllMocks();
         });
-        const { MigrationManager } = await import(
-            "@/store/state/migration/MigrationManager"
-        );
-        const { STATE_VERSION } = await import(
-            "@/store/state/migration/StateVersion"
-        );
-
-        const migrationManager = new MigrationManager();
-
-        // expect initial version before migration
-        expect(currentState.version).toBe("1.0.0-alpha.4");
-
-        currentState = await migrationManager.run(currentState);
-
-        expect(currentState.version).toBe("1.0.0-alpha.5");
-    });
-    it("should migrate from 1.0.0-alpha.5 to 1.0.0-alpha.6", async ({
-        skip,
-    }) => {
-        // skip test if the starting currentState version does not match the test version condition
-        if (currentState.version !== "1.0.0-alpha.5") {
-            skip();
-        }
-
-        // const version = "1.0.0-alpha.9";
-        vi.doMock("@/store/state/migration/StateVersion", () => {
-            return {
-                STATE_VERSION: "1.0.0-alpha.6", // mock latest state version
-            };
+        afterEach(() => {
+            vi.resetModules();
         });
-        const { MigrationManager } = await import(
-            "@/store/state/migration/MigrationManager"
-        );
-        const { STATE_VERSION } = await import(
-            "@/store/state/migration/StateVersion"
-        );
 
-        const migrationManager = new MigrationManager();
+        it("should migrate from 1.0.0-alpha.4 to 1.0.0-alpha.5", async ({
+            skip,
+        }) => {
+            // skip test if the starting currentState version does not match the test version condition
+            if (currentState.version !== "1.0.0-alpha.4") {
+                skip();
+            }
+            // const version = "1.0.0-alpha.9";
+            vi.doMock("@/store/state/migration/StateVersion", () => {
+                return {
+                    STATE_VERSION: "1.0.0-alpha.5", // mock latest state version
+                };
+            });
+            const { MigrationManager } = await import(
+                "@/store/state/migration/MigrationManager"
+            );
+            const { STATE_VERSION } = await import(
+                "@/store/state/migration/StateVersion"
+            );
 
-        // expect initial version before migration
-        expect(currentState.version).toBe("1.0.0-alpha.5");
+            const migrationManager = new MigrationManager();
 
-        currentState = await migrationManager.run(currentState);
+            // expect initial version before migration
+            expect(currentState.version).toBe("1.0.0-alpha.4");
 
-        expect(currentState.version).toBe("1.0.0-alpha.6");
-    });
-    it("should migrate from 1.0.0-alpha.6 to 1.0.0-alpha.7", async ({
-        skip,
-    }) => {
-        // skip test if the starting currentState version does not match the test version condition
-        if (currentState.version !== "1.0.0-alpha.6") {
-            skip();
-        }
-        // const version = "1.0.0-alpha.9";
-        vi.doMock("@/store/state/migration/StateVersion", () => {
-            return {
-                STATE_VERSION: "1.0.0-alpha.7", // mock latest state version
-            };
+            currentState = await migrationManager.run(currentState);
+
+            expect(currentState.version).toBe("1.0.0-alpha.5");
         });
-        const { MigrationManager } = await import(
-            "@/store/state/migration/MigrationManager"
-        );
-        const { STATE_VERSION } = await import(
-            "@/store/state/migration/StateVersion"
-        );
+        it("should migrate from 1.0.0-alpha.5 to 1.0.0-alpha.6", async ({
+            skip,
+        }) => {
+            // skip test if the starting currentState version does not match the test version condition
+            if (currentState.version !== "1.0.0-alpha.5") {
+                skip();
+            }
 
-        const migrationManager = new MigrationManager();
+            // const version = "1.0.0-alpha.9";
+            vi.doMock("@/store/state/migration/StateVersion", () => {
+                return {
+                    STATE_VERSION: "1.0.0-alpha.6", // mock latest state version
+                };
+            });
+            const { MigrationManager } = await import(
+                "@/store/state/migration/MigrationManager"
+            );
+            const { STATE_VERSION } = await import(
+                "@/store/state/migration/StateVersion"
+            );
 
-        // expect initial version before migration
-        expect(currentState.version).toBe("1.0.0-alpha.6");
+            const migrationManager = new MigrationManager();
 
-        currentState = await migrationManager.run(currentState);
+            // expect initial version before migration
+            expect(currentState.version).toBe("1.0.0-alpha.5");
 
-        expect(currentState.version).toBe("1.0.0-alpha.7");
-    });
-    it("should migrate from 1.0.0-alpha.7 to 1.0.0-alpha.8", async ({
-        skip,
-    }) => {
-        // skip test if the starting currentState version does not match the test version condition
-        if (currentState.version !== "1.0.0-alpha.7") {
-            skip();
-        }
-        // const version = "1.0.0-alpha.9";
-        vi.doMock("@/store/state/migration/StateVersion", () => {
-            return {
-                STATE_VERSION: "1.0.0-alpha.8", // mock latest state version
-            };
+            currentState = await migrationManager.run(currentState);
+
+            expect(currentState.version).toBe("1.0.0-alpha.6");
         });
-        const { MigrationManager } = await import(
-            "@/store/state/migration/MigrationManager"
-        );
-        const { STATE_VERSION } = await import(
-            "@/store/state/migration/StateVersion"
-        );
+        it("should migrate from 1.0.0-alpha.6 to 1.0.0-alpha.7", async ({
+            skip,
+        }) => {
+            // skip test if the starting currentState version does not match the test version condition
+            if (currentState.version !== "1.0.0-alpha.6") {
+                skip();
+            }
+            // const version = "1.0.0-alpha.9";
+            vi.doMock("@/store/state/migration/StateVersion", () => {
+                return {
+                    STATE_VERSION: "1.0.0-alpha.7", // mock latest state version
+                };
+            });
+            const { MigrationManager } = await import(
+                "@/store/state/migration/MigrationManager"
+            );
+            const { STATE_VERSION } = await import(
+                "@/store/state/migration/StateVersion"
+            );
 
-        const migrationManager = new MigrationManager();
+            const migrationManager = new MigrationManager();
 
-        // expect initial version before migration
-        expect(currentState.version).toBe("1.0.0-alpha.7");
+            // expect initial version before migration
+            expect(currentState.version).toBe("1.0.0-alpha.6");
 
-        currentState = await migrationManager.run(currentState);
+            currentState = await migrationManager.run(currentState);
 
-        expect(currentState.version).toBe("1.0.0-alpha.8");
-    });
-    it("should migrate from 1.0.0-alpha.8 to 1.0.0-alpha.9", async ({
-        skip,
-    }) => {
-        // skip test if the starting currentState version does not match the test version condition
-        if (currentState.version !== "1.0.0-alpha.8") {
-            skip();
-        }
-        // const version = "1.0.0-alpha.9";
-        vi.doMock("@/store/state/migration/StateVersion", () => {
-            return {
-                STATE_VERSION: "1.0.0-alpha.9", // default mock value
-            };
+            expect(currentState.version).toBe("1.0.0-alpha.7");
         });
-        const { MigrationManager } = await import(
-            "@/store/state/migration/MigrationManager"
-        );
-        const { STATE_VERSION } = await import(
-            "@/store/state/migration/StateVersion"
-        );
+        it("should migrate from 1.0.0-alpha.7 to 1.0.0-alpha.8", async ({
+            skip,
+        }) => {
+            // skip test if the starting currentState version does not match the test version condition
+            if (currentState.version !== "1.0.0-alpha.7") {
+                skip();
+            }
+            // const version = "1.0.0-alpha.9";
+            vi.doMock("@/store/state/migration/StateVersion", () => {
+                return {
+                    STATE_VERSION: "1.0.0-alpha.8", // mock latest state version
+                };
+            });
+            const { MigrationManager } = await import(
+                "@/store/state/migration/MigrationManager"
+            );
+            const { STATE_VERSION } = await import(
+                "@/store/state/migration/StateVersion"
+            );
 
-        const migrationManager = new MigrationManager();
+            const migrationManager = new MigrationManager();
 
-        expect(currentState.version).toBe("1.0.0-alpha.8");
+            // expect initial version before migration
+            expect(currentState.version).toBe("1.0.0-alpha.7");
 
-        currentState = await migrationManager.run(currentState);
+            currentState = await migrationManager.run(currentState);
 
-        expect(currentState.version).toBe("1.0.0-alpha.9");
-    });
-    it("should migrate from 1.0.0-alpha.9 to 1.0.0-alpha.10", async ({
-        skip,
-    }) => {
-        // skip test if the starting currentState version does not match the test version condition
-        if (currentState.version !== "1.0.0-alpha.9") {
-            skip();
-        }
-        vi.doMock("@/store/state/migration/StateVersion", () => {
-            return {
-                STATE_VERSION: "1.0.0-alpha.10", // default mock value
-            };
+            expect(currentState.version).toBe("1.0.0-alpha.8");
         });
-        const { MigrationManager } = await import(
-            "@/store/state/migration/MigrationManager"
-        );
-        const { STATE_VERSION } = await import(
-            "@/store/state/migration/StateVersion"
-        );
-        const migrationManager = new MigrationManager();
+        it("should migrate from 1.0.0-alpha.8 to 1.0.0-alpha.9", async ({
+            skip,
+        }) => {
+            // skip test if the starting currentState version does not match the test version condition
+            if (currentState.version !== "1.0.0-alpha.8") {
+                skip();
+            }
+            // const version = "1.0.0-alpha.9";
+            vi.doMock("@/store/state/migration/StateVersion", () => {
+                return {
+                    STATE_VERSION: "1.0.0-alpha.9", // default mock value
+                };
+            });
+            const { MigrationManager } = await import(
+                "@/store/state/migration/MigrationManager"
+            );
+            const { STATE_VERSION } = await import(
+                "@/store/state/migration/StateVersion"
+            );
 
-        expect(currentState.version).toBe("1.0.0-alpha.9");
+            const migrationManager = new MigrationManager();
 
-        currentState = await migrationManager.run(currentState);
+            expect(currentState.version).toBe("1.0.0-alpha.8");
 
-        expect(currentState.version).toBe("1.0.0-alpha.10");
+            currentState = await migrationManager.run(currentState);
+
+            expect(currentState.version).toBe("1.0.0-alpha.9");
+        });
+        it("should migrate from 1.0.0-alpha.9 to 1.0.0-alpha.10", async ({
+            skip,
+        }) => {
+            // skip test if the starting currentState version does not match the test version condition
+            if (currentState.version !== "1.0.0-alpha.9") {
+                skip();
+            }
+            vi.doMock("@/store/state/migration/StateVersion", () => {
+                return {
+                    STATE_VERSION: "1.0.0-alpha.10", // default mock value
+                };
+            });
+            const { MigrationManager } = await import(
+                "@/store/state/migration/MigrationManager"
+            );
+            const { STATE_VERSION } = await import(
+                "@/store/state/migration/StateVersion"
+            );
+            const migrationManager = new MigrationManager();
+
+            expect(currentState.version).toBe("1.0.0-alpha.9");
+
+            currentState = await migrationManager.run(currentState);
+
+            expect(currentState.version).toBe("1.0.0-alpha.10");
+        });
     });
-});
+}
