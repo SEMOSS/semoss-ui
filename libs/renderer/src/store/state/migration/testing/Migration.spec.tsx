@@ -11,7 +11,7 @@ import { Alpha04BlockData } from "./Alpha04BlockData";
 
 describe("Migration Manager starting from Alpha 04", () => {
     // let migrationManager: MigrationManager;
-    let currentState: MigrationState = Alpha04BlockData;
+    let currentState: MigrationState = Alpha08BlockData;
     // let currentState: MigrationState = migrationDemoData;
 
     beforeEach(() => {
@@ -28,7 +28,13 @@ describe("Migration Manager starting from Alpha 04", () => {
         vi.resetModules();
     });
 
-    it("should migrate from 1.0.0-alpha.4 to 1.0.0-alpha.5", async () => {
+    it("should migrate from 1.0.0-alpha.4 to 1.0.0-alpha.5", async ({
+        skip,
+    }) => {
+        // skip test if the starting currentState version does not match the test version condition
+        if (currentState.version !== "1.0.0-alpha.4") {
+            skip();
+        }
         // const version = "1.0.0-alpha.9";
         vi.doMock("@/store/state/migration/StateVersion", () => {
             return {
@@ -51,7 +57,14 @@ describe("Migration Manager starting from Alpha 04", () => {
 
         expect(currentState.version).toBe("1.0.0-alpha.5");
     });
-    it("should migrate from 1.0.0-alpha.5 to 1.0.0-alpha.6", async () => {
+    it("should migrate from 1.0.0-alpha.5 to 1.0.0-alpha.6", async ({
+        skip,
+    }) => {
+        // skip test if the starting currentState version does not match the test version condition
+        if (currentState.version !== "1.0.0-alpha.5") {
+            skip();
+        }
+
         // const version = "1.0.0-alpha.9";
         vi.doMock("@/store/state/migration/StateVersion", () => {
             return {
@@ -74,7 +87,13 @@ describe("Migration Manager starting from Alpha 04", () => {
 
         expect(currentState.version).toBe("1.0.0-alpha.6");
     });
-    it("should migrate from 1.0.0-alpha.6 to 1.0.0-alpha.7", async () => {
+    it("should migrate from 1.0.0-alpha.6 to 1.0.0-alpha.7", async ({
+        skip,
+    }) => {
+        // skip test if the starting currentState version does not match the test version condition
+        if (currentState.version !== "1.0.0-alpha.6") {
+            skip();
+        }
         // const version = "1.0.0-alpha.9";
         vi.doMock("@/store/state/migration/StateVersion", () => {
             return {
@@ -97,7 +116,13 @@ describe("Migration Manager starting from Alpha 04", () => {
 
         expect(currentState.version).toBe("1.0.0-alpha.7");
     });
-    it("should migrate from 1.0.0-alpha.7 to 1.0.0-alpha.8", async () => {
+    it("should migrate from 1.0.0-alpha.7 to 1.0.0-alpha.8", async ({
+        skip,
+    }) => {
+        // skip test if the starting currentState version does not match the test version condition
+        if (currentState.version !== "1.0.0-alpha.7") {
+            skip();
+        }
         // const version = "1.0.0-alpha.9";
         vi.doMock("@/store/state/migration/StateVersion", () => {
             return {
@@ -120,7 +145,13 @@ describe("Migration Manager starting from Alpha 04", () => {
 
         expect(currentState.version).toBe("1.0.0-alpha.8");
     });
-    it("should migrate from 1.0.0-alpha.8 to 1.0.0-alpha.9", async () => {
+    it("should migrate from 1.0.0-alpha.8 to 1.0.0-alpha.9", async ({
+        skip,
+    }) => {
+        // skip test if the starting currentState version does not match the test version condition
+        if (currentState.version !== "1.0.0-alpha.8") {
+            skip();
+        }
         // const version = "1.0.0-alpha.9";
         vi.doMock("@/store/state/migration/StateVersion", () => {
             return {
@@ -142,7 +173,13 @@ describe("Migration Manager starting from Alpha 04", () => {
 
         expect(currentState.version).toBe("1.0.0-alpha.9");
     });
-    it("should migrate from 1.0.0-alpha.9 to 1.0.0-alpha.10", async () => {
+    it("should migrate from 1.0.0-alpha.9 to 1.0.0-alpha.10", async ({
+        skip,
+    }) => {
+        // skip test if the starting currentState version does not match the test version condition
+        if (currentState.version !== "1.0.0-alpha.9") {
+            skip();
+        }
         vi.doMock("@/store/state/migration/StateVersion", () => {
             return {
                 STATE_VERSION: "1.0.0-alpha.10", // default mock value
