@@ -25,6 +25,8 @@ export const config: BlockConfig<JiraBlockDef> = {
         listAllTickets: false,
         listedTickets: false,
         userId: '',
+        jiraConnectionValue: '',
+        jiraActionValue: '',
     },
     listeners: {},
     slots: {},
@@ -37,7 +39,7 @@ export const config: BlockConfig<JiraBlockDef> = {
                 {
                     description: "Text",
                     render: ({ id }) => (
-                        <JiraSettings id={id} paths={['showCreateJiraForm','showCreatedJiraForm','listAllTickets','listedTickets']} userId="userId"/>
+                        <JiraSettings id={id} paths={['showCreateJiraForm','showCreatedJiraForm','listAllTickets','listedTickets']} userId="userId" connections={["jiraConnectionValue","jiraActionValue"]}/>
                     ),
                 },
             ],

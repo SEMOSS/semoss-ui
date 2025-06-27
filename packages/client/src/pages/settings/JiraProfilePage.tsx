@@ -17,6 +17,7 @@ import {
 
 import { useRootStore } from '@/hooks';
 import { useState, useEffect } from 'react';
+import { DeleteKeyModal } from './DeleteKeyModal';
 
 const StyledAccessTokensPaper = styled(Paper)(({ theme }) => ({
     padding: '40px 30px 20px 28px',
@@ -68,6 +69,7 @@ export const JiraProfilePage = () => {
 
     const [addModal, setAddModal] = useState(false);
     const [savedApiKeys, setSavedApiKeys] = useState([]);
+    const [deleteApiKey, setDeleteApiKey] = useState({});
 
     const { control, reset, setValue, handleSubmit, watch } =
         useForm<SaveAPIKeyForm>({
@@ -102,7 +104,7 @@ export const JiraProfilePage = () => {
             });
     };
     const SaveAPIKey = async (data: SaveAPIKeyForm) => {
-        const pixel = `META | JiraInsert(username="${data.USERID}",apikey="${data.APIKEY}",url="${data.URL}",alias="${data.NAME}")`;
+        const pixel = `META | JiraInsert(username="${data.USERID}",apikey="${data.APIKEY}",url="${data.URL}",keyname="${data.NAME}")`;
         monolithStore
             .runQuery(pixel)
             .then((response) => {
@@ -163,22 +165,6 @@ export const JiraProfilePage = () => {
         reset({});
     };
 
-    const copy = async (text: string) => {
-        try {
-            await navigator.clipboard.writeText(text);
-
-            notification.add({
-                color: 'success',
-                message: 'Successfully copied code',
-            });
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: 'Unable to copy code',
-            });
-        }
-    };
-
     return (
         <Stack gap={3} className="my-jira-profile-page">
             <StyledAccessTokensPaper>
@@ -209,9 +195,9 @@ export const JiraProfilePage = () => {
                                     Date Created
                                 </HeaderCell>
                                 <HeaderCell align={'left'}>
-                                    Last Used Created
+                                    Last Used
                                 </HeaderCell>
-                                <HeaderCell align={'left'}>UserId</HeaderCell>
+                                <HeaderCell align={'left'}>User Id</HeaderCell>
                                 <RightHeaderCell>&nbsp;</RightHeaderCell>
                             </Table.Row>
                         </Table.Head>
@@ -221,7 +207,7 @@ export const JiraProfilePage = () => {
                                       return (
                                           <Table.Row key={idx}>
                                               <Table.Cell align={'left'}>
-                                                  {k.alias}
+                                                  {k.keyName}
                                               </Table.Cell>
                                               <Table.Cell align={'left'}>
                                                   {k.url}
@@ -238,11 +224,9 @@ export const JiraProfilePage = () => {
                                               <Table.Cell align={'right'}>
                                                   <IconButton
                                                       title="Delete"
-                                                      onClick={() => {
-                                                          DeleteAPIKey(
-                                                              k.primaryId,
-                                                          );
-                                                      }}
+                                                      onClick={() =>
+                                                          setDeleteApiKey(k)
+                                                      }
                                                       data-testid={
                                                           'my-jira-profile-access-key-delete-btn'
                                                       }
@@ -393,6 +377,16 @@ export const JiraProfilePage = () => {
                     </Button>
                 </Modal.Actions>
             </Modal>
+            <DeleteKeyModal
+                isOpen={deleteApiKey}
+                close={() => {
+                    setDeleteApiKey('');
+                }}
+                deleteJob={() => {
+                    DeleteAPIKey(deleteApiKey['primaryId']);
+                    setDeleteApiKey('');
+                }}
+            />
         </Stack>
     );
 };

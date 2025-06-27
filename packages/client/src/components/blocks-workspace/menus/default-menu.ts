@@ -1451,6 +1451,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 listAllTickets: false,
                 listedTickets: false,
                 userId: '',
+                jiraConnectionValue: '',
+                jiraActionValue: '',
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },

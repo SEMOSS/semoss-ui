@@ -46,6 +46,8 @@ export interface JiraBlockDef extends BlockDef<"jiratext"> {
         listAllTickets: boolean;
         listedTickets: boolean;
         userId: string;
+        jiraConnectionValue: string;
+        jiraActionValue: string;
     };
     slots: never;
     listeners: never;
@@ -280,7 +282,7 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                                         disabled={false}
                                         onClick={() => reset()}
                                     >
-                                        Cancel
+                                        Reset
                                     </StyledButton>
                                     <StyledButton
                                         type="submit"
@@ -342,7 +344,7 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                                     disabled={false}
                                     onClick={() => reset1()}
                                 >
-                                    Cancel
+                                    Reset
                                 </StyledButton>
                                 <StyledButton
                                     type="submit"
