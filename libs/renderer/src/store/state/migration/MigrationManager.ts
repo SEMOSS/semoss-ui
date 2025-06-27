@@ -11,13 +11,12 @@ import migrate__1_0_0_alpha_6_to_1_0_0_alpha_7 from "./migrate__1_0_0_alpha_6__t
 import migrate__1_0_0_alpha_7_to_1_0_0_alpha_8 from "./migrate__1_0_0_alpha_7__to___1_0_0_alpha_8_";
 import migrate__1_0_0_alpha_8_to_1_0_0_alpha_9 from "./migrate__1_0_0_alpha_8__to___1_0_0_alpha_9_";
 import migrate__1_0_0_alpha_9_to_1_0_0_alpha_10 from "./migrate__1_0_0_alpha_9__to___1_0_0_alpha_10_";
-
+import { STATE_VERSION } from "./StateVersion";
 
 // TODO: ANYTIME VERSION CHANGES
 // 1. Update Template Apps
 // 2. Update Agent Builder
 
-export const STATE_VERSION = "1.0.0-alpha.10";
 
 export class MigrationManager {
     /**

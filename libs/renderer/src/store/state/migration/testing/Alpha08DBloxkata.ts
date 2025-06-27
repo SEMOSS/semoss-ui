@@ -1,4 +1,4 @@
-export const migrationDemoData = {
+export const Alpha08BlockData = {
     queries: {
         "get-databases": {
             id: "get-databases",
