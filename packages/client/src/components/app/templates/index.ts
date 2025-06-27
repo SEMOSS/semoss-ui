@@ -9,3 +9,4 @@ export { LandingPageTemplate } from './LandingPageTemplate';
 export { UpdateDiabetesRecordTemplate } from './UpdateDiabetesRecordTemplate';
 export { ReadDiabetesRecordTemplate } from './ReadDiabetesRecordTemplate';
 export { MultiPageTemplate } from './MultiPageTemplate';
+export { VisualizeCSVTemplate } from './VisualizeCSVTemplate';
