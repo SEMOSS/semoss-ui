@@ -17,6 +17,6 @@ export const TextToSqlCellConfig: CellConfig<TextToSqlCellDef> = {
     },
     toPixel: ({ frameVariableName, userQuery, model }) => {
         // console.log("FilterDataCellConfig toPixel", filterQuery);
-        return `NLPQuery3(command='${userQuery}', tokenÇount=${userQuery.length}, frame='${frameVariableName}', engine='${model}');`;
+        return `NLPQuery3(command=["${userQuery}"], json=true, tokenCount=["${userQuery.length}"],  frame = [${frameVariableName}], allFrames = [""], dialect = [""], engine=["${model}"])`;
     },
 };
