@@ -177,6 +177,24 @@ for (const testData of testsData) {
 
             currentState = await migrationManager.run(currentState);
 
+            for (const block of Object.values(currentState.blocks)) {
+                for (const listener of Object.keys(block.listeners)) {
+                    // currentState.blocks[block.id].listeners
+                    console.log({
+                        widget: currentState.blocks[block.id].widget,
+                        type: currentState.blocks[block.id].listeners[listener]
+                            .type,
+                        order: currentState.blocks[block.id].listeners[listener]
+                            .order,
+                    });
+                    const type =
+                        currentState.blocks[block.id].listeners[listener].type;
+                    // const order =
+                    //     currentState.blocks[block.id].listeners[listener].order;
+                    expect(type).toBe("sync");
+                }
+            }
+
             expect(currentState.version).toBe("1.0.0-alpha.6");
         });
         it("should migrate from 1.0.0-alpha.6 to 1.0.0-alpha.7", async ({
