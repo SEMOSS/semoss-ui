@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { Add, Delete, Edit } from '@mui/icons-material';
+import { Add, Delete, Edit, Filter } from '@mui/icons-material';
 import SearchIcon from '@mui/icons-material/Search';
 import { AxiosResponse } from 'axios';
 
@@ -27,6 +27,7 @@ import { permissionPriorityMapper } from '@/utility/general';
 import { MembersDeleteOverlay } from './MembersDeleteOverlay';
 import { MembersAddOverlay } from './MembersAddOverlay';
 import { UserPopover } from './UserPopover';
+import FilteredIcon from '@/assets/img/FilteredIcon.png';
 const AvatarWrapper = styled('div')({
     display: 'inline-block',
     width: '50px',
@@ -39,6 +40,9 @@ const StyledMemberContent = styled('div')({
     alignItems: 'flex-start',
     gap: '25px',
     flexShrink: '0',
+    border: '1px solid #C4C4C4',
+    borderRadius: '12px',
+    borderBottom: 'none',
 });
 
 const StyledMemberInnerContent = styled('div')({
@@ -147,6 +151,10 @@ const StyledNoMembersDiv = styled('div')(({ theme }) => ({
     justifyContent: 'center',
     alignItems: 'center',
 }));
+
+const StyledSelectedTableRow = styled(Table.Row)({
+    backgroundColor: '#e3f0ff', // light blue, adjust as needed
+});
 
 const StyledTableCell = styled(Table.Cell)({
     paddingLeft: '16px',
@@ -662,7 +670,7 @@ export const MembersTable = (props: MembersTableProps) => {
                 <StyledTableContainer>
                     <StyledTableTitleContainer>
                         <StyledTableTitleDiv>
-                            <Typography variant={'h6'}>Members</Typography>
+                            <Typography variant={'h6'}>Permissions</Typography>
                         </StyledTableTitleDiv>
                         <StyledTableTitleMemberContainer>
                             {Avatars.length > 0 ? (
@@ -682,12 +690,18 @@ export const MembersTable = (props: MembersTableProps) => {
                             <StyledTableTitleMemberCountContainer>
                                 <StyledTableTitleMemberCount>
                                     <Typography variant={'caption'}>
-                                        {totalMembers} Members
+                                        {totalMembers} member
                                     </Typography>
                                 </StyledTableTitleMemberCount>
                             </StyledTableTitleMemberCountContainer>
                         </StyledTableTitleMemberContainer>
-
+                        <IconButton
+                            onClick={() => {
+                                //setIsSearch(!isSearch);
+                            }}
+                        >
+                            <img src={FilteredIcon} alt="Filter" />
+                        </IconButton>
                         <StyledSearchButtonContainer>
                             {isSearch ? (
                                 <Search
@@ -857,8 +871,11 @@ export const MembersTable = (props: MembersTableProps) => {
                                             }
 
                                             if (user) {
+                                                const RowComponent = isSelected
+                                                    ? StyledSelectedTableRow
+                                                    : Table.Row;
                                                 return (
-                                                    <Table.Row key={user.id}>
+                                                    <RowComponent key={user.id}>
                                                         <StyledTableCell
                                                             size="medium"
                                                             padding="checkbox"
@@ -1102,7 +1119,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                 <Delete></Delete>
                                                             </IconButton>
                                                         </Table.Cell>
-                                                    </Table.Row>
+                                                    </RowComponent>
                                                 );
                                             }
 

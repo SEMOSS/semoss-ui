@@ -14,6 +14,8 @@ export interface appDependency {
     engine_name: string;
     engine_subtype: string;
     engine_type: string;
+    permission_name: string;
+    description: string;
 }
 
 export interface modelledDependency {
@@ -23,6 +25,7 @@ export interface modelledDependency {
     userPermission: Role | '';
     isPublic: boolean;
     isDiscoverable: boolean;
+    description: string;
 }
 
 export interface engine {
@@ -43,6 +46,7 @@ export interface engine {
     low_database_name: string;
     permission: number;
     user_permission: Role;
+    description: string;
 }
 
 export interface AppDetailsRef {

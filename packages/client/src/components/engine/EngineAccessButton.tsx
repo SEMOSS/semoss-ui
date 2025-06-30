@@ -22,7 +22,11 @@ const StyledCard = styled(Card)({
     borderRadius: '12px',
 });
 
-export const EngineAccessButton = () => {
+type EngineAccessButtonProps = {
+    fromApp?: boolean;
+};
+
+export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
     const { id, type, role } = useEngine();
 
     const { monolithStore } = useRootStore();
@@ -79,22 +83,22 @@ export const EngineAccessButton = () => {
     };
 
     // cannot request access if the owner
-    if (role === 'OWNER') {
+    if (role === 'OWNER' && !fromApp) {
         return null;
     }
 
     return (
         <>
             <Button
-                startIcon={<Add />}
+                startIcon={!fromApp ? <Add /> : undefined}
                 variant="outlined"
                 onClick={() => setOpen(true)}
+                sx={fromApp ? { borderRadius: 10, px: 2, py: 0.5 } : undefined}
+                size={fromApp ? 'small' : undefined}
             >
-                {role === 'DISCOVERABLE' ? (
-                    <>Request Access</>
-                ) : (
-                    <>Change Access</>
-                )}
+                {role === 'DISCOVERABLE' || !role
+                    ? 'Request Access'
+                    : 'Change Access'}
             </Button>
             <Modal
                 open={open}
@@ -275,7 +279,7 @@ export const EngineAccessButton = () => {
                             requestAccess();
                         }}
                     >
-                        Request
+                        {fromApp ? 'Submit' : 'Request'}
                     </Button>
                 </Modal.Actions>
             </Modal>

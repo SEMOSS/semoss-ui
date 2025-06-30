@@ -3,16 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import {
-    Add,
-    Edit,
-    HdrAuto,
-    MoreVert,
-    Share,
-    EditLocation,
-    RemoveRedEyeRounded,
     SimCardDownload,
+    EditOutlined,
+    Settings,
+    LockReset,
 } from '@mui/icons-material';
-
+import UpdateIcon from '@mui/icons-material/Update';
 import {
     Breadcrumbs,
     Button,
@@ -25,6 +21,9 @@ import {
     Modal,
     Stack,
     CircularProgress,
+    Box,
+    ToggleTabsGroup,
+    Grid,
 } from '@semoss/ui';
 import { Env } from '@semoss/sdk/react';
 
@@ -52,16 +51,22 @@ import {
     determineUserPermission,
     DetailsForm,
     AppDetailsRef,
+    AppSettings,
 } from '@/components/app';
+import { Overview } from './AppDetailTabs/Overview';
+import { AccessControl } from './AppDetailTabs/AccessControl';
+import { SettingsTab } from './AppDetailTabs/Settings';
+import { Dependencies } from './AppDetailTabs/Dependencies';
+import { Role } from '@/types';
 
 const OuterContainer = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
-    display: 'flex',
-    flexDirection: 'column',
+    // display: 'flex',
+    // flexDirection: 'column',
     height: '100%',
     justifyContent: 'center',
     overflow: 'scroll',
-    padding: `${theme.spacing(6)} 1rem 0`,
+    paddingTop: '40px',
     width: '100%',
 }));
 
@@ -96,7 +101,7 @@ const ActionBar = styled('div')(({ theme }) => ({
 }));
 
 const PageBody = styled('div')(({ theme }) => ({
-    marginLeft: '200px',
+    //marginLeft: '200px',
     display: 'flex',
     flexDirection: 'column',
 }));
@@ -110,13 +115,16 @@ const SectionHeading = styled(Typography)(({ theme }) => ({
 const TitleSection = styled('section')(({ theme }) => ({
     display: 'flex',
     gap: theme.spacing(2),
-    paddingBottom: theme.spacing(6),
+    paddingBottom: theme.spacing(2),
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
 }));
 
 const TitleSectionImg = styled('img')(({ theme }) => ({
     borderRadius: theme.spacing(0.75),
-    height: '135px',
-    width: '160px',
+    height: '64px',
+    width: '64px',
     overflow: 'hidden',
 }));
 
@@ -151,12 +159,47 @@ const DependenciesHeadingWrapper = styled('div')({
     position: 'relative',
 });
 
-const StyledMenuItem = styled(Menu.Item)(({ theme }) => ({
-    color: theme.palette.secondary.dark,
+const StyledContentContainer = styled(Box)(({ theme }) => ({
+    width: '100% !important',
     display: 'flex',
-    gap: theme.spacing(0.5),
+    flexDirection: 'column',
+    gap: theme.spacing(3),
+    color: theme.palette.secondary.light,
+    '&.MuiBox-root': {
+        width: '100%',
+    },
+}));
+
+const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
+    minHeight: '42px',
+    color: theme.palette.secondary.light,
+    //borderRadius: theme.shape.borderRadius,
     alignItems: 'center',
-    height: '48px',
+    padding: '0px 3px',
+    display: 'flex',
+    justifyContent: 'flex-start', // or 'flex-start' if you want left alignment
+    borderBottomRadius: '0px',
+}));
+
+const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
+    height: '38px',
+    padding: '8px 11px',
+    '&.MuiTab-root': {
+        borderRadius: theme.shape.borderRadius,
+    },
+    '&.Mui-selected': {
+        boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.05)',
+    },
+}));
+const StyledTabsSection = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    width: '100%',
+    flexWrap: 'wrap',
+    gap: theme.spacing(3),
+    padding: '2px',
+    backgroundColor: 'white',
+    boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.05)',
 }));
 
 export const AppDetailPage = () => {
@@ -166,11 +209,12 @@ export const AppDetailPage = () => {
     const markdown = watch('markdown');
     const tags = watch('tag');
     const appInfo = watch('appInfo');
+    console.log('appInfo', appInfo);
     const userRole = watch('userRole');
     const permission = watch('permission');
     const dependencies = watch('dependencies');
     const detailsForm = watch('detailsForm');
-
+    console.log(dependencies, ' dependencies');
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
     const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
     const [isChangeAccessModalOpen, setIsChangeAccessModalOpen] =
@@ -178,7 +222,7 @@ export const AppDetailPage = () => {
     const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
     const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
         useState(false);
-
+    const [responseStatus, setResponseStatus] = useState(false);
     const [values, setValues] = useState<DetailsForm>(
         AppDetailsFormValues.detailsForm,
     );
@@ -345,11 +389,13 @@ export const AppDetailPage = () => {
             name: dep.engine_name ? dep.engine_name.replace(/_/g, ' ') : '',
             id: dep.engine_id,
             type: dep.engine_type,
-            userPermission: '', // TODO: no value currently available in the payload
+            userPermission: dep.permission_name as Role, // TODO: no value currently available in the payload
             isPublic: !!dep.engine_global,
             isDiscoverable: !!dep.engine_discoverable,
+            description: dep.description,
         }));
     };
+    console.log('modelledDependencies', modelDependencies);
 
     const emitMessage = (isError: boolean, message: string) => {
         notification.add({
@@ -464,13 +510,16 @@ export const AppDetailPage = () => {
         // copy over the defined keys
         const meta = {} as AppDetailsFormTypes['detailsForm'];
         let imageMeta = [] as File[];
-        if (data.detailsForm) {
-            for (const key in data.detailsForm) {
-                if (data.detailsForm[key] !== undefined && key !== 'appImage') {
-                    meta[key] = data.detailsForm[key];
+        if (data?.detailsForm) {
+            for (const key in data?.detailsForm) {
+                if (
+                    data?.detailsForm[key] !== undefined &&
+                    key !== 'appImage'
+                ) {
+                    meta[key] = data?.detailsForm[key];
                 }
                 if (key === 'appImage') {
-                    imageMeta = data.detailsForm[key] as File[];
+                    imageMeta = data?.detailsForm[key] as File[];
                 }
             }
         }
@@ -526,21 +575,52 @@ export const AppDetailPage = () => {
             });
     });
 
+    const handleAccessRequested = () => {
+        setResponseStatus(true);
+    };
+    const [selectedTab, setSelectedTab] = useState('Overview');
+
+    const TABS_BY_PERMISSION: Record<string, string[]> = {
+        author: ['Overview', 'Access Control', 'Dependencies', 'Settings'],
+        editor: ['Overview', 'Access Control'],
+        readOnly: ['Overview'],
+        discoverable: ['Overview'],
+    };
+
+    const visibleTabs = TABS_BY_PERMISSION[permission] || ['Overview'];
+
     return (
         <OuterContainer>
             <InnerContainer>
-                <Breadcrumbs separator="/">
-                    <StyledLink to="../../..">
-                        <StyledCrumb variant="body1">App Library</StyledCrumb>
-                    </StyledLink>
-                    <StyledCrumb variant="body1" disabled>
-                        {appInfo?.project_name}
-                    </StyledCrumb>
-                </Breadcrumbs>
+                <PageBody>
+                    <Breadcrumbs separator="/">
+                        <StyledLink to="../../..">
+                            <StyledCrumb variant="body1">App</StyledCrumb>
+                        </StyledLink>
+                        <StyledCrumb variant="body1" disabled>
+                            {appInfo?.project_name}
+                        </StyledCrumb>
+                    </Breadcrumbs>
 
-                <div>
-                    <Sidebar permission={permission} refs={detailRefs} />
-                    <PageBody>
+                    <TitleSection>
+                        <>
+                            <TitleSectionImg
+                                src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
+                                alt="App Image"
+                            />
+                            <TitleSectionBodyWrapper>
+                                <Typography
+                                    sx={{
+                                        fontSize: '34px',
+                                        fontWeight: '400',
+                                    }}
+                                    variant="h6"
+                                >
+                                    {appInfo?.project_name}
+                                </Typography>
+                            </TitleSectionBodyWrapper>
+                        </>
+
                         <ActionBar>
                             {permission === 'author' ? (
                                 <Button
@@ -560,283 +640,194 @@ export const AppDetailPage = () => {
                                 </Button>
                             ) : (
                                 <Button
-                                    startIcon={<Add />}
-                                    variant="outlined"
+                                    startIcon={
+                                        responseStatus ? (
+                                            <UpdateIcon
+                                                sx={{ color: 'grey.500' }}
+                                            />
+                                        ) : permission === 'discoverable' ? (
+                                            <LockReset
+                                                sx={{ color: 'white' }}
+                                            />
+                                        ) : null
+                                    }
+                                    disabled={responseStatus}
+                                    variant={
+                                        responseStatus
+                                            ? 'outlined'
+                                            : permission === 'discoverable'
+                                            ? 'contained'
+                                            : 'outlined'
+                                    }
                                     onClick={() =>
                                         setIsChangeAccessModalOpen(true)
                                     }
                                     sx={{ fontWeight: 'bold' }}
                                     data-testid={'app-detail-access-btn'}
                                 >
-                                    {permission === 'discoverable' ? (
-                                        <>Request Access</>
-                                    ) : (
-                                        <>Change Access</>
-                                    )}
+                                    {responseStatus
+                                        ? 'Pending Access'
+                                        : permission === 'discoverable'
+                                        ? 'Request Access'
+                                        : 'Change Access'}
                                 </Button>
                             )}
-
-                            <Button
-                                variant="contained"
-                                onClick={() => navigate(`/app/${appId}`)}
-                                data-testid={'app-detail-open-btn'}
-                            >
-                                Open
-                            </Button>
-
-                            <IconButton
-                                onClick={(event) =>
-                                    setMoreVertAnchorEl(event.currentTarget)
-                                }
-                                data-testid={'app-detail-more-btn'}
-                            >
-                                <MoreVert />
-                            </IconButton>
-
-                            <Menu
-                                anchorEl={moreVertAnchorEl}
-                                open={Boolean(moreVertAnchorEl)}
-                                onClose={() => setMoreVertAnchorEl(null)}
-                                anchorOrigin={{
-                                    vertical: 'bottom',
-                                    horizontal: 'right',
-                                }}
-                                transformOrigin={{
-                                    vertical: 'top',
-                                    horizontal: 'right',
-                                }}
-                                sx={{ borderRadius: '4px' }}
-                            >
-                                {permission === 'author' && (
-                                    <StyledMenuItem
+                            {permission !== 'discoverable' &&
+                                permission !== 'readOnly' && (
+                                    <Button
+                                        variant="contained"
+                                        startIcon={
+                                            <EditOutlined fontSize="inherit" />
+                                        }
                                         onClick={() => {
                                             setIsEditDetailsModalOpen(true);
                                             setMoreVertAnchorEl(null);
                                         }}
-                                        value={null}
+                                        data-testid="app-detail-open-btn"
                                     >
-                                        <Edit fontSize="small" />
-                                        <Typography variant="caption">
-                                            Edit App Details
-                                        </Typography>
-                                    </StyledMenuItem>
+                                        Edit
+                                    </Button>
                                 )}
-
-                                <StyledMenuItem
-                                    value={null}
-                                    onClick={() => setIsShareOverlayOpen(true)}
-                                >
-                                    <Share fontSize="small" />
-                                    <Typography variant="caption">
-                                        Share
-                                    </Typography>
-                                </StyledMenuItem>
-                            </Menu>
                         </ActionBar>
+                    </TitleSection>
+                    <Grid
+                        container
+                        spacing={2}
+                        sx={{
+                            paddingBottom: 2,
+                            alignItems: 'flex-start', // align both columns to top
+                        }}
+                    >
+                        <Grid item xs={12} md={8}>
+                            <Typography
+                                sx={{ paddingBottom: '16px' }}
+                                variant="body1"
+                            >
+                                {appInfo?.description ||
+                                    'No description available'}
+                            </Typography>
+                        </Grid>
 
-                        <TitleSection>
-                            <TitleSectionImg
-                                src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
-                                alt="App Image"
+                        <Grid
+                            item
+                            xs={12}
+                            md={4}
+                            sx={{
+                                display: 'flex',
+                                justifyContent: 'flex-end', // push content to the right
+                            }}
+                        >
+                            <Typography
+                                variant="body1"
+                                sx={{
+                                    fontSize: '14px',
+                                    color: 'gray',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'flex-end', // right-align the text itself
+                                    gap: '4px',
+                                }}
+                            >
+                                <span>
+                                    Published by:{' '}
+                                    {appInfo?.project_created_by || 'Unknown'}
+                                </span>
+                                Updated{' '}
+                                {appInfo?.project_date_created
+                                    ? new Date(
+                                          appInfo?.project_date_created,
+                                      ).toLocaleString('en-US', {
+                                          month: 'long',
+                                          day: '2-digit',
+                                          year: 'numeric',
+                                          hour: 'numeric',
+                                          minute: '2-digit',
+                                          hour12: true,
+                                      })
+                                    : 'N/A'}
+                            </Typography>
+                        </Grid>
+                    </Grid>
+
+                    <Typography sx={{ paddingBottom: '16px' }} variant="body1">
+                        {tags ? (
+                            <TagsBodyWrapper>
+                                {tags.map((tag, idx) => (
+                                    <Chip
+                                        key={`tag-${tag}-${idx}`}
+                                        label={tag}
+                                    />
+                                ))}
+                            </TagsBodyWrapper>
+                        ) : (
+                            <Typography variant="body1">
+                                No tags available
+                            </Typography>
+                        )}
+                    </Typography>
+
+                    <StyledContentContainer>
+                        <StyledToggleTabsGroup
+                            value={selectedTab}
+                            boxSx={{
+                                width: '100%',
+                                borderBottomLeftRadius: '0px',
+                                borderBottomRightRadius: '0px',
+                            }}
+                            onChange={(e, val) => setSelectedTab(String(val))}
+                        >
+                            {visibleTabs.includes('Overview') && (
+                                <StyledToggleTabsGroupItem
+                                    label="Overview"
+                                    value="Overview"
+                                />
+                            )}
+                            {visibleTabs.includes('Access Control') && (
+                                <StyledToggleTabsGroupItem
+                                    label="Access Control"
+                                    value="Access Control"
+                                />
+                            )}
+                            {visibleTabs.includes('Dependencies') && (
+                                <StyledToggleTabsGroupItem
+                                    label="Dependencies"
+                                    value="Dependencies"
+                                />
+                            )}
+                            {visibleTabs.includes('Settings') && (
+                                <StyledToggleTabsGroupItem
+                                    label="Settings"
+                                    value="Settings"
+                                />
+                            )}
+                        </StyledToggleTabsGroup>
+                    </StyledContentContainer>
+                    <StyledTabsSection>
+                        {selectedTab === 'Overview' && (
+                            <Overview appInfo={appInfo} />
+                        )}
+                        {selectedTab === 'Access Control' && (
+                            <AccessControl
+                                appInfo={appInfo}
+                                appId={appId}
+                                fetchUserSpecificData={fetchUserSpecificData}
+                                permission={permission}
                             />
-                            <TitleSectionBodyWrapper>
-                                <Typography variant="h6">
-                                    {appInfo?.project_name}
-                                </Typography>
-                                <TitleSectionBody variant="body1">
-                                    {permission === 'author' ? (
-                                        <HdrAuto />
-                                    ) : permission === 'editor' ? (
-                                        <EditLocation />
-                                    ) : permission === 'discoverable' ? (
-                                        <RemoveRedEyeRounded />
-                                    ) : null}
-                                    {`${formatPermission(userRole)} Access`}
-                                </TitleSectionBody>
-                                <TitleSectionBody variant="body1">
-                                    {appInfo?.description
-                                        ? appInfo?.description
-                                        : 'No description available'}
-                                </TitleSectionBody>
-                            </TitleSectionBodyWrapper>
-                        </TitleSection>
-
-                        <StyledSection ref={markdownRef}>
-                            <SectionHeading variant="h2">
-                                Main uses
-                            </SectionHeading>
-                            <Typography variant="body1">{markdown}</Typography>
-                        </StyledSection>
-
-                        <StyledSection ref={tagsRef}>
-                            <SectionHeading variant="h2">Tags</SectionHeading>
-                            {tags ? (
-                                <TagsBodyWrapper>
-                                    {tags.map((tag, idx) => (
-                                        <Chip
-                                            key={`tag-${tag}-${idx}`}
-                                            label={tag}
-                                        />
-                                    ))}
-                                </TagsBodyWrapper>
-                            ) : (
-                                <Typography variant="body1">
-                                    No tags available
-                                </Typography>
-                            )}
-                        </StyledSection>
-                        <>
-                            {createRefs.map((k) => {
-                                if (
-                                    values[k.metakey] === undefined ||
-                                    !Array.isArray(values[k.metakey])
-                                ) {
-                                    return null;
-                                }
-
-                                return (
-                                    <StyledSection key={k.metakey} ref={k.ref}>
-                                        <SectionHeading variant="h2">
-                                            {k.display}
-                                        </SectionHeading>
-                                        <TagsBodyWrapper>
-                                            {k.display_options ===
-                                                'multi-checklist' ||
-                                            k.display_options ===
-                                                'multi-select' ||
-                                            k.display_options ===
-                                                'multi-typeahead' ||
-                                            k.display_options ===
-                                                'select-box' ? (
-                                                <Stack
-                                                    direction={'row'}
-                                                    spacing={1}
-                                                    flexWrap={'wrap'}
-                                                >
-                                                    {(
-                                                        detailsForm[
-                                                            k.metakey
-                                                        ] as string[]
-                                                    ).map((tag) => {
-                                                        return (
-                                                            <Chip
-                                                                key={tag}
-                                                                label={tag}
-                                                            ></Chip>
-                                                        );
-                                                    })}
-                                                </Stack>
-                                            ) : (
-                                                (detailsForm[
-                                                    k.metakey
-                                                ] as string)
-                                            )}
-                                        </TagsBodyWrapper>
-                                    </StyledSection>
-                                );
-                            })}
-                        </>
-
-                        {permission && permission !== 'discoverable' && (
-                            <StyledSection ref={dependenciesRef}>
-                                <DependenciesHeadingWrapper>
-                                    <SectionHeading variant="h2">
-                                        Dependencies
-                                    </SectionHeading>
-                                    {permission === 'author' && (
-                                        <IconButton
-                                            onClick={() =>
-                                                setIsEditDependenciesModalOpen(
-                                                    true,
-                                                )
-                                            }
-                                            sx={{
-                                                position: 'absolute',
-                                                right: 0,
-                                                top: '-0.4rem',
-                                            }}
-                                            data-testid={'app-detail-edit-btn'}
-                                        >
-                                            <Edit />
-                                        </IconButton>
-                                    )}
-                                </DependenciesHeadingWrapper>
-
-                                {dependencies.length > 0 ? (
-                                    <DependencyTable
-                                        dependencies={dependencies}
-                                        permission={permission}
-                                    />
-                                ) : (
-                                    <Typography variant="body1">
-                                        No dependencies
-                                    </Typography>
-                                )}
-                            </StyledSection>
                         )}
-
-                        {permission === 'author' && (
-                            <StyledSection ref={appAccessRef}>
-                                <SectionHeading variant="h2">
-                                    App Access
-                                </SectionHeading>
-                                <SettingsContext.Provider
-                                    value={{
-                                        adminMode: false,
-                                    }}
-                                >
-                                    <SettingsTiles
-                                        type={'APP'}
-                                        direction="row"
-                                        name={appInfo?.project_name || 'app'}
-                                        id={appId}
-                                        onDelete={() => {
-                                            navigate('/settings/app');
-                                        }}
-                                    />
-                                </SettingsContext.Provider>
-                            </StyledSection>
+                        {selectedTab === 'Dependencies' && (
+                            <Dependencies dependencies={dependencies} />
                         )}
-
-                        {permission &&
-                            permission !== 'discoverable' &&
-                            permission !== 'readOnly' && (
-                                <StyledSection ref={memberAccessRef}>
-                                    <SectionHeading variant="h2">
-                                        Member Access
-                                    </SectionHeading>
-                                    <SettingsContext.Provider
-                                        value={{
-                                            adminMode: false,
-                                        }}
-                                    >
-                                        <Stack direction="column" spacing={2}>
-                                            <PendingMembersTable
-                                                type={'APP'}
-                                                id={appId}
-                                            />
-                                            <MembersTable
-                                                type={'APP'}
-                                                id={appId}
-                                                onChange={() => {
-                                                    fetchUserSpecificData();
-                                                }}
-                                            />
-                                        </Stack>
-                                    </SettingsContext.Provider>
-                                </StyledSection>
-                            )}
-
-                        {(permission === 'discoverable' ||
-                            permission === 'readOnly') && (
-                            <StyledSection ref={similarAppsRef}>
-                                <SectionHeading variant="h2">
-                                    Similar Apps
-                                </SectionHeading>
-                            </StyledSection>
+                        {selectedTab === 'Settings' && (
+                            <SettingsContext.Provider
+                                value={{
+                                    adminMode: false,
+                                }}
+                            >
+                                <SettingsTab id={appId} />
+                            </SettingsContext.Provider>
                         )}
-                    </PageBody>
-                </div>
+                    </StyledTabsSection>
+                </PageBody>
             </InnerContainer>
 
             <Modal
@@ -855,6 +846,9 @@ export const AppDetailPage = () => {
                 onClose={handleCloseChangeAccessModal}
                 control={control}
                 getValues={getValues}
+                dependencies={dependencies}
+                onSuccess={handleAccessRequested}
+                permission={permission}
             />
 
             <EditDetailsModal
@@ -863,128 +857,6 @@ export const AppDetailPage = () => {
                 control={control}
                 onSubmit={onSubmit}
             />
-
-            <EditDependenciesModal
-                isOpen={isEditDependenciesModalOpen}
-                onClose={handleCloseDependenciesModal}
-                control={control}
-                getValues={getValues}
-                setValue={setValue}
-                watch={watch}
-            />
         </OuterContainer>
-    );
-};
-
-const StyledSidebar = styled('div')(({ theme }) => ({
-    width: '145px',
-    borderRight: `1px solid ${theme.palette.secondary.main}`,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing(0.5),
-    position: 'fixed',
-    paddingRight: theme.spacing(1),
-}));
-
-const StyledSidebarItem = styled(Button)(({ theme }) => ({
-    justifyContent: 'flex-start',
-    whiteSpace: 'nowrap',
-}));
-
-interface SidebarProps {
-    permission: string;
-    refs: { ref: React.MutableRefObject<HTMLElement>; display: string }[];
-}
-
-const Sidebar = ({ permission, refs }: SidebarProps) => {
-    const [
-        mainUsesRef,
-        tagsRef,
-        dependenciesRef,
-        appAccessRef,
-        memberAccessRef,
-        similarAppsRef,
-        ...dynamicRefs
-    ] = refs;
-
-    const scrollIntoView = (ref: React.MutableRefObject<HTMLElement>) => {
-        ref.current.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    const canEdit =
-        permission &&
-        permission !== 'discoverable' &&
-        permission !== 'readOnly';
-
-    return (
-        <StyledSidebar>
-            <StyledSidebarItem
-                variant="text"
-                color="secondary"
-                onClick={() => scrollIntoView(mainUsesRef.ref)}
-                value={null}
-            >
-                Main Uses
-            </StyledSidebarItem>
-            <StyledSidebarItem
-                variant="text"
-                color="secondary"
-                onClick={() => scrollIntoView(tagsRef.ref)}
-                value={null}
-            >
-                Tags
-            </StyledSidebarItem>
-            {dynamicRefs?.map((ref) => (
-                <StyledSidebarItem
-                    variant="text"
-                    color="secondary"
-                    onClick={() => scrollIntoView(ref.ref)}
-                    value={null}
-                    key={ref.display}
-                >
-                    {ref.display}
-                </StyledSidebarItem>
-            ))}
-            {permission !== 'discoverable' && (
-                <StyledSidebarItem
-                    variant="text"
-                    color="secondary"
-                    onClick={() => scrollIntoView(dependenciesRef.ref)}
-                    value={null}
-                >
-                    Dependencies
-                </StyledSidebarItem>
-            )}
-            {permission === 'author' && (
-                <StyledSidebarItem
-                    variant="text"
-                    color="secondary"
-                    onClick={() => scrollIntoView(appAccessRef.ref)}
-                    value={null}
-                >
-                    App Access
-                </StyledSidebarItem>
-            )}
-            {canEdit && (
-                <StyledSidebarItem
-                    variant="text"
-                    color="secondary"
-                    onClick={() => scrollIntoView(memberAccessRef.ref)}
-                    value={null}
-                >
-                    Member Access
-                </StyledSidebarItem>
-            )}
-            {!canEdit && (
-                <StyledSidebarItem
-                    variant="text"
-                    color="secondary"
-                    onClick={() => scrollIntoView(similarAppsRef.ref)}
-                    value={null}
-                >
-                    Similar Apps
-                </StyledSidebarItem>
-            )}
-        </StyledSidebar>
     );
 };

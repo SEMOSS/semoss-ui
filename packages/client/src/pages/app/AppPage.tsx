@@ -96,6 +96,16 @@ export const AppPage = observer(() => {
                     </Typography>
                 </Stack>
                 <Stack flex={1}>&nbsp;</Stack>
+                <Button
+                    variant="text"
+                    size={'small'}
+                    color="primary"
+                    component={Link}
+                    //@ts-expect-error this is expected. props are forwarded
+                    to={`/app/${appId}/detail`}
+                >
+                    Go To App Details
+                </Button>
 
                 <Tooltip title={'Share App'}>
                     <IconButton

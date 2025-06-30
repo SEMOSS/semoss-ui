@@ -29,6 +29,8 @@ import { ALL_TYPES } from '@/types';
 import { LoadingScreen } from '@/components/ui';
 
 import { SETTINGS_ROLE, SETTINGS_PENDING_USER } from './settings.types';
+import SearchIcon from '@mui/icons-material/Search';
+import FilteredIcon from '@/assets/img/FilteredIcon.png';
 
 const StyledMemberLoading = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -45,6 +47,8 @@ const StyledMemberContent = styled('div')({
     alignItems: 'flex-start',
     gap: '25px',
     flexShrink: '0',
+    border: '1px solid #C4C4C4',
+    borderRadius: '12px',
 });
 
 const StyledMemberInnerContent = styled('div')({
@@ -153,8 +157,8 @@ const permissionMapper = {
 
 const StyledNoPendingReqs = styled('div')(({ theme }) => ({
     width: '100%',
-    height: '503px',
     display: 'flex',
+    padding: '10px 24px 10px 8px',
     flexDirection: 'column',
     gap: theme.spacing(1),
     justifyContent: 'center',
@@ -464,13 +468,13 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 
                         <StyledSearchButtonContainer>
                             <IconButton>
-                                {/* <SearchOutlined></SearchOutlined> */}
+                                <SearchIcon />
                             </IconButton>
                         </StyledSearchButtonContainer>
 
                         <StyledFilterButtonContainer>
                             <IconButton>
-                                {/* <FilterAltRounded></FilterAltRounded> */}
+                                <img src={FilteredIcon} alt="Filter" />
                             </IconButton>
                         </StyledFilterButtonContainer>
 

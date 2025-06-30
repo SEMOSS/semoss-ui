@@ -10,16 +10,16 @@ import {
     Stack,
     Menu,
     useNotification,
+    Tooltip,
 } from '@semoss/ui';
 import {
     AccessTime,
-    MoreVert,
     Bookmark,
     BookmarkBorder,
-    OpenInNewOutlined,
     DashboardRounded,
     CodeRounded,
     BarChartRounded,
+    ContentCopy,
 } from '@mui/icons-material';
 import { AppMetadata } from './app.types';
 import { APP_IMAGES } from './app.images';
@@ -38,7 +38,7 @@ const StyledTileCard = styled(Card, {
     shouldForwardProp: (prop) => prop !== 'disabled',
 })<{ disabled: boolean }>(({ disabled, theme }) => ({
     width: '280px',
-    height: '412px',
+    height: 'fit-content',
     '&:hover': {
         cursor: disabled ? 'default' : 'pointer',
     },
@@ -148,7 +148,7 @@ const StyledOpenButton = styled(IconButton)(({ theme }) => ({
     alignItems: 'center',
     fontWeight: '600',
     '&:hover': {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'transparent',
     },
 }));
 
@@ -224,21 +224,8 @@ export const AppTileCard = (props: AppTileCardProps) => {
     } = props;
 
     const notification = useNotification();
-    const navigate = useNavigate();
 
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const [isUploadOpen, setIsUploadOpen] = useState(false);
-    const [isAppDeleteModalOpen, setIsAppDeleteModalOpen] = useState(false);
-
-    const open = Boolean(anchorEl);
-
-    const navigateApp = (appId: string) => {
-        if (!appId) {
-            return;
-        }
-
-        navigate(`/workspace/${appId}`);
-    };
+    const [hoveredCard, setHoveredCard] = useState<string | null>(null);
     const copyProjectId = (projectId: string) => {
         try {
             navigator.clipboard.writeText(projectId);
@@ -378,186 +365,131 @@ export const AppTileCard = (props: AppTileCardProps) => {
                     </StyledOverlayContent>
                 </StyledContainer>
             )}
-            <Link
-                href={href}
-                rel="noopener noreferrer"
-                color="inherit"
-                underline="none"
+            <div
+                onMouseEnter={() => setHoveredCard(app.project_id)}
+                onMouseLeave={() => setHoveredCard(null)}
+                style={{ position: 'relative' }}
             >
-                <StyledTileCardMedia src="img" image={image ? image : ''} />
-                <StyledCardHeader
-                    title={
-                        <StyledName variant={'body1'}>
-                            {removeUnderscores(app.project_name)}
-                        </StyledName>
-                    }
-                    subheader={appDetails && appDetails}
-                />
-                <Card.Content>
-                    <StyledCardDescription variant={'body2'}>
-                        {app.description
-                            ? app.description
-                            : 'No description available'}
-                    </StyledCardDescription>
-                    <Stack
-                        direction="row"
-                        alignItems="center"
-                        spacing={0.5}
-                        minHeight="32px"
-                    >
-                        {app.tag !== undefined &&
-                            (Array.isArray(app.tag) ? (
-                                <>
-                                    {app.tag.map((tag, i) => {
-                                        if (i <= 2) {
-                                            return (
-                                                <StyledTagChip
-                                                    key={`${app.project_id}${i}`}
-                                                    maxWidth={
-                                                        app.tag.length === 2
-                                                            ? '100px'
-                                                            : app.tag.length ===
-                                                              1
-                                                            ? '200px'
-                                                            : '75px'
-                                                    }
-                                                    label={tag}
-                                                />
-                                            );
-                                        }
-                                    })}
-                                    {app.tag.length > 3 ? (
-                                        <Typography variant="caption">
-                                            +{app.tag.length - 3}
-                                        </Typography>
-                                    ) : (
-                                        <></>
-                                    )}
-                                </>
-                            ) : (
-                                <StyledTagChip
-                                    key={`${app.project_id}0`}
-                                    label={app.tag}
-                                />
-                            ))}
-                    </Stack>
-                    {createdDate && (
-                        <StyledPublishedByContainer>
-                            <StyledAccessTimeIcon />
-                            <StyledPublishedByLabel variant={'body2'}>
-                                {createdDate}
-                            </StyledPublishedByLabel>
-                        </StyledPublishedByContainer>
-                    )}
-                    {lastEditedDate && (
-                        <StyledPublishedByContainer>
-                            <StyledAccessTimeIcon />
-                            <StyledPublishedByLabel variant={'body2'}>
-                                {lastEditedDate}
-                            </StyledPublishedByLabel>
-                        </StyledPublishedByContainer>
-                    )}
-                    {systemApp && !appDetails && <StyledPlaceholder />}
-                </Card.Content>
-                <StyledCardActions>
-                    {!href ? (
-                        <StyledOpenButton onClick={onAction}>
-                            <p>Open</p>
-                            <OpenInNewOutlined fontSize="small" />
-                        </StyledOpenButton>
-                    ) : (
-                        <Link
-                            href={href}
-                            rel="noopener noreferrer"
-                            color="inherit"
-                            underline="none"
-                            target="_blank"
-                        >
-                            <StyledOpenButton>
-                                <p>Open</p>
-                                <OpenInNewOutlined fontSize="small" />
-                            </StyledOpenButton>
-                        </Link>
-                    )}
-                    {app.project_created_by !== 'SYSTEM' ? (
-                        <IconButton
-                            onClick={(e) => {
-                                e.preventDefault();
-                                setAnchorEl(e.currentTarget);
-                            }}
-                        >
-                            <MoreVert />
-                        </IconButton>
-                    ) : (
-                        <></>
-                    )}
-                </StyledCardActions>
-            </Link>
-            <Menu
-                anchorEl={anchorEl}
-                open={open}
-                onClose={() => {
-                    setAnchorEl(null);
-                }}
-            >
-                <Menu.Item
-                    value="copy"
-                    onClick={() => {
-                        copyProjectId(app.project_id);
-                        setAnchorEl(null);
-                    }}
+                <Link
+                    href={href}
+                    rel="noopener noreferrer"
+                    color="inherit"
+                    underline="none"
                 >
-                    Copy App ID
-                </Menu.Item>
-                {app?.user_permission && app.user_permission < 2 && (
-                    <Menu.Item
-                        value="clone"
-                        onClick={() => {
-                            setIsUploadOpen(true);
-                        }}
-                    >
-                        Clone This App
-                    </Menu.Item>
-                )}
-                {app?.user_permission && app.user_permission < 2 && (
-                    <Menu.Item
-                        value="delete"
-                        onClick={() => {
-                            setIsAppDeleteModalOpen(true);
-                        }}
-                    >
-                        Delete App
-                    </Menu.Item>
-                )}
-            </Menu>
-
-            <AppDeleteModal
-                isOpen={isAppDeleteModalOpen}
-                onClose={() => {
-                    setIsAppDeleteModalOpen(false);
-                    setAnchorEl(null);
-                }}
-                appId={app.project_id}
-                onDelete={() => {
-                    onDelete();
-                }}
-            />
-            {isUploadOpen ? (
-                <AddAppCloneModal
-                    open={isUploadOpen}
-                    appId={app.project_id}
-                    handleClose={(appId) => {
-                        console.log('ok');
-                        // if there is an appId navigate to it
-                        if (appId) {
-                            navigateApp(appId);
+                    <StyledTileCardMedia src="img" image={image ? image : ''} />
+                    <StyledCardHeader
+                        title={
+                            <StyledName variant={'body1'}>
+                                {removeUnderscores(app.project_name)}
+                            </StyledName>
                         }
-
-                        // close it
-                        setIsUploadOpen(false);
-                    }}
-                />
-            ) : null}
+                        subheader={appDetails && appDetails}
+                    />
+                    <Card.Content>
+                        <StyledCardDescription variant={'body2'}>
+                            {app.description
+                                ? app.description
+                                : 'No description available'}
+                        </StyledCardDescription>
+                        <Stack
+                            direction="row"
+                            alignItems="center"
+                            spacing={0.5}
+                            minHeight="32px"
+                        >
+                            {app.tag !== undefined &&
+                                (Array.isArray(app.tag) ? (
+                                    <>
+                                        {app.tag.map((tag, i) => {
+                                            if (i <= 2) {
+                                                return (
+                                                    <StyledTagChip
+                                                        key={`${app.project_id}${i}`}
+                                                        maxWidth={
+                                                            app.tag.length === 2
+                                                                ? '100px'
+                                                                : app.tag
+                                                                      .length ===
+                                                                  1
+                                                                ? '200px'
+                                                                : '75px'
+                                                        }
+                                                        label={tag}
+                                                    />
+                                                );
+                                            }
+                                        })}
+                                        {app.tag.length > 3 ? (
+                                            <Typography variant="caption">
+                                                +{app.tag.length - 3}
+                                            </Typography>
+                                        ) : (
+                                            <></>
+                                        )}
+                                    </>
+                                ) : (
+                                    <StyledTagChip
+                                        key={`${app.project_id}0`}
+                                        label={app.tag}
+                                    />
+                                ))}
+                        </Stack>
+                        {createdDate && (
+                            <StyledPublishedByContainer>
+                                <StyledAccessTimeIcon />
+                                <StyledPublishedByLabel variant={'body2'}>
+                                    {createdDate}
+                                </StyledPublishedByLabel>
+                            </StyledPublishedByContainer>
+                        )}
+                        {lastEditedDate && (
+                            <StyledPublishedByContainer>
+                                <StyledAccessTimeIcon />
+                                <StyledPublishedByLabel variant={'body2'}>
+                                    {lastEditedDate}
+                                </StyledPublishedByLabel>
+                            </StyledPublishedByContainer>
+                        )}
+                        {systemApp && !appDetails && <StyledPlaceholder />}
+                    </Card.Content>
+                    <StyledCardActions>
+                        {!href ? (
+                            <StyledOpenButton onClick={onAction}>
+                                <p>Learn More</p>
+                            </StyledOpenButton>
+                        ) : (
+                            <Link
+                                href={href}
+                                rel="noopener noreferrer"
+                                color="inherit"
+                                underline="none"
+                                target="_blank"
+                            >
+                                <StyledOpenButton>
+                                    <p>Learn More</p>
+                                </StyledOpenButton>
+                            </Link>
+                        )}
+                        {hoveredCard === app.project_id &&
+                            app.project_created_by !== 'SYSTEM' && (
+                                <Tooltip title="Copy App ID" arrow>
+                                    <IconButton
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            event.preventDefault(); // prevents <Link> navigation
+                                            copyProjectId(app.project_id);
+                                        }}
+                                        sx={{
+                                            color: 'primary.main',
+                                        }}
+                                    >
+                                        <ContentCopy fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
+                    </StyledCardActions>
+                </Link>
+            </div>
         </StyledTileCard>
     );
 };
