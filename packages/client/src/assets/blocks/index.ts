@@ -76,12 +76,12 @@ export { default as SLIDER_ACTIVE } from './Slider_Active.png';
 export { default as SLIDER_HOVER } from './Slider_Hover.png';
 export { default as RATING_ACTIVE } from './Rating_Active.png';
 export { default as RATING_HOVER } from './Rating_Hover.png';
-export { default as SWITCH_ACTIVE } from './Switch - Active.png';
-export { default as SWITCH_HOVER } from './Switch - Hover.png';
+export { default as SWITCH_ACTIVE } from './Switch_Active.png';
+export { default as SWITCH_HOVER } from './Switch_Hover.png';
 export { default as VEGA_ACTIVE } from './Vega_Active.png';
 export { default as VEGA_HOVER } from './Vega_Hover.png';
-export { default as TIME_PICKER_ACTIVE } from './Timepicker - Active.png';
-export { default as TIME_PICKER_HOVER } from './Timepicker - Hover.png';
+export { default as TIME_PICKER_ACTIVE } from './Timepicker_Active.png';
+export { default as TIME_PICKER_HOVER } from './Timepicker_Hover.png';
 
 // CHARTS
 export { default as AREA_CHART_ACTIVE } from './Area_Chart_Active.png';
