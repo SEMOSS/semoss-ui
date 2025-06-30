@@ -2,7 +2,7 @@ import React from 'react';
 import { Icon, TreeView, styled } from '@semoss/ui';
 import { ExpandMore, ChevronRight } from '@mui/icons-material';
 
-import { usePixel } from '@/hooks';
+import { useEngine, usePixel } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
 import { FileExplorerItem } from './FileExplorerItem';
@@ -70,11 +70,9 @@ export const FileExplorer = (props: FileExplorerProps) => {
     //     insightId,
     // );
 
-    
-    const query = `Storage(storage = "8be5fb68-ffab-47bd-af2a-cd409b51e732") | ListStoragePathDetails(storagePath='/');`;
-    const getFileDetails = usePixel<FileExplorerProps[]>(query);
-    console.log("at FileExplorer Fetching data" ,getFileDetails.status);
-    console.log("at FileExplorer  Fetching data" ,getFileDetails.data);
+    const { id } = useEngine();
+    const query = `Storage(storage = '${id}') | ListStoragePath(storagePath='/');`;
+    console.log("at FileExplorer query inside" ,query);
     const getAssets = usePixel<
         {
             metadata: Record<string, any>;
@@ -96,8 +94,8 @@ export const FileExplorer = (props: FileExplorerProps) => {
 
     const initLoadComplete = getAssets.status === 'SUCCESS';
     console.log("at FileExplorer type" ,type)
-    console.log("at FileExplorer  Fetching assets 8" ,getAssets.status);
-    console.log("at FileExplorer  Fetching assets 8" ,getAssets.data);
+    console.log("at FileExplorer  Fetching assets 9" ,getAssets.status);
+    console.log("at FileExplorer  Fetching assets 9" ,getAssets.data);
     
 
     const [expanded, setExpanded] = React.useState<string[]>([]);

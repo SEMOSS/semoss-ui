@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button, Table, styled, Typography } from '@semoss/ui';
-import { useEngine } from '@/hooks';
+import { useEngine, useRootStore } from '@/hooks';
 import { FileTable } from '@/components/settings';
 import StorageTest from './StorageTest';
 import { FileExplorerPanel } from '@/components/workspace';
 import { Layout, Model, TabNode } from 'flexlayout-react';
 import { FileExplorer } from '@/components/common/File/FileExplorer';
-import { DesignerStore, WorkspaceOptions } from '@/stores';
+import { DesignerStore, WorkspaceOptions, WorkspaceStore } from '@/stores';
 import * as FlexLayout from 'flexlayout-react';
 import { DesignerContext, WorkspaceContext } from '@/contexts';
 import { StateStore } from '@semoss/renderer';
+import { config } from 'process';
 
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -120,17 +121,21 @@ const layout = new Layout({
 // }, [state]);
 // const layout = createTestLayout();
 
+console.log("EngineFilePage");
 
+export const EngineFilePage = () => {
+    //Grabbing Engine Id for document creation
+//     const { id } = useEngine();
+// const { monolithStore, configStore } = useRootStore();
+// const insightID = configStore.store.insightID;
+// // const insightID = monolithStore.getInsightId(id);
+// console.log("at EngineFilePage insightID" ,insightID);
+// console.log("at EngineFilePage id" ,id);
+// console.log("at EngineFilePage monolithStore" ,monolithStore.config);
+// console.log("at EngineFilePage configStore" ,configStore.store);
 const mockWorkspace = {
-    workspace: {
-        appId: 'demo-app-id',
-        insightId: '',
-        // add other properties/methods your WorkspaceStore expects (this is a mock)
-      } as any, // 👈 You may use `as any` for mocking or define a proper mock WorkspaceStore
-    
-      options: {
-      },
-    
+    workspace: {} as WorkspaceStore, 
+    options: {},
       factory: (node: TabNode, layout: Layout) => {
         const component = node.getComponent();
         if (component === 'file-explorer') {
@@ -141,11 +146,7 @@ const mockWorkspace = {
   };
 
 
-console.log("EngineFilePage");
 
-export const EngineFilePage = () => {
-    //Grabbing Engine Id for document creation
-    const { id } = useEngine();
 
     return (
         <StyledContainer>
@@ -166,9 +167,8 @@ export const EngineFilePage = () => {
                 </DesignerContext.Provider> */}
 
 
-
                 <WorkspaceContext.Provider value={mockWorkspace}>
-                <FileExplorerPanel layout={layout} />
+                    <FileExplorerPanel layout={layout} />
                 </WorkspaceContext.Provider>
 
                 {/* <FileExplorer
