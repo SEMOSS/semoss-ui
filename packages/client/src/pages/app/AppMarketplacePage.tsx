@@ -62,7 +62,7 @@ export const AppMarketplacePage = () => {
             return;
         }
 
-        navigate(`/workspace/${appId}`);
+        navigate(`/app/${appId}/edit`);
     };
     return (
         <>

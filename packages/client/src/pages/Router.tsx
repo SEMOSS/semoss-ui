@@ -27,7 +27,6 @@ import { SharePage } from './SharePage';
 import { CookieNotice } from './legal/CookieNotice';
 import { PrivacyNotice } from './legal/PrivacyNotice';
 
-import { PlatformMessages } from '../components/shared';
 import { LandingPage } from './LandingPage';
 
 export const Router = observer(() => {
@@ -44,9 +43,9 @@ export const Router = observer(() => {
     return (
         <Routes>
             <Route path="/" element={<AuthenticatedLayout />}>
+                <Route path="s/:appId/*" element={<SharePage />} />
                 <Route path="*" element={<PageLayout />}>
                     <Route index element={<LandingPage />} />
-
                     <Route path="app/*">
                         <Route index element={<AppCatalogPage />} />
                         <Route path="new" element={<CreateAppPage />} />
@@ -61,33 +60,12 @@ export const Router = observer(() => {
                         <Route path=":appId" element={<AppDetailPage />} />
                         <Route path=":appId/view/*" element={<ViewAppPage />} />
                         <Route path=":appId/edit/*" element={<EditAppPage />} />
-                        <Route
-                            path="*"
-                            element={<Navigate to={`/`} replace />}
-                        />
                     </Route>
                     <Route path="engine/*" element={<EngineRouter />} />
                     <Route path="prompt/*" element={<PromptRouter />} />
                     <Route path="settings/*" element={<SettingsRouter />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>
-
-                <Route
-                    path="workspace/:appId/*"
-                    element={
-                        <PlatformMessages>
-                            <EditAppPage />
-                        </PlatformMessages>
-                    }
-                />
-                <Route
-                    path="s/:appId/*"
-                    element={
-                        <PlatformMessages>
-                            <SharePage />
-                        </PlatformMessages>
-                    }
-                />
-                <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
             {showCookieNotice && (
                 <Route path="/cookie-notice" element={<CookieNotice />} />

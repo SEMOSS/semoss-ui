@@ -37,7 +37,7 @@ export const DeveloperUserScreen = observer(() => {
             return;
         }
 
-        navigate(`/workspace/${appId}`);
+        navigate(`/app/${appId}/edit`);
     };
 
     const isRestricted = !configStore.isEngineOperationAvailable('APP', 'add');

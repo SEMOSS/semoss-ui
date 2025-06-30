@@ -3,12 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRootStore } from '@/hooks/';
 import { Button, Modal } from '@semoss/ui';
 
-interface PlatformMessagesProps {
-    children?: React.ReactNode;
-}
-
-export const PlatformMessages = observer((props: PlatformMessagesProps) => {
-    const { children } = props;
+export const PlatformMessages: React.FC = observer(() => {
     const { configStore } = useRootStore();
     const [acceptedTerms, setAcceptedTerms] = useState<boolean | null>(null);
 

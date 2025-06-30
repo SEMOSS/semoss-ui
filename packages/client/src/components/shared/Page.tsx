@@ -4,7 +4,6 @@ import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
 import { PlatformMessages } from './PlatformMessages';
 import { observer } from 'mobx-react-lite';
-import { usePage } from '@/hooks';
 
 const StyledPage = styled('div')(() => ({
     position: 'relative',
@@ -42,8 +41,6 @@ export interface PageProps {
 }
 
 export const Page: React.FC<PageProps> = observer(({ children }) => {
-    const { page } = usePage();
-
     return (
         <StyledPage>
             <Sidebar />

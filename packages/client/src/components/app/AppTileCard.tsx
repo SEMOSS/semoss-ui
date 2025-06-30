@@ -388,7 +388,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
             return;
         }
 
-        navigate(`/workspace/${appId}`);
+        navigate(`/app/${appId}/edit`);
     };
     const copyProjectId = (projectId: string) => {
         try {
