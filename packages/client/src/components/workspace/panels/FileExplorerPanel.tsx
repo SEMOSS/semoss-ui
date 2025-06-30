@@ -12,7 +12,7 @@ import {
     CoffeeOutlined,
 } from '@mui/icons-material';
 
-import { useRootStore, useWorkspace } from '@/hooks';
+import { usePixel, useRootStore, useWorkspace } from '@/hooks';
 import {
     FileExplorer,
     AddFileOverlay,
@@ -464,6 +464,16 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
         }
     };
 
+    console.log("FileExplorerPanel");
+
+
+//     const query = `Storage(storage = "8be5fb68-ffab-47bd-af2a-cd409b51e732") | ListStoragePath(storagePath='/');`;
+//   const getFileDetails = usePixel<FileExplorerPanelProps[]>(query);
+//   console.log("at FileExplorerPanel Fetching data" ,getFileDetails.status);
+//   console.log("at FileExplorerPanel Fetching data" ,getFileDetails.data);
+
+
+
     return (
         <Panel
             actions={
@@ -545,8 +555,8 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
         >
             <FileExplorer
                 key={counter}
-                type={EXPLORER_TYPE}
-                space={workspace.appId}
+                type='storage-catalog'
+                space="/"
                 insightId={workspace.insightId}
                 onSelect={(path) => {
                     handleOnSelect(path);

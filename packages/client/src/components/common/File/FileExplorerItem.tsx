@@ -44,7 +44,7 @@ const StyledTypography = styled(Typography)(() => ({
 
 interface FileExplorerItemProps {
     /** Type of file opened */
-    type: 'app' | 'insight';
+    type: 'app' | 'insight' | 'storage-catalog';
 
     /** Space where the file is located */
     space: string;

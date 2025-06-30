@@ -279,7 +279,6 @@ export const FileTable = ({ id, mode, storagePath = '/' }: FileTableProps) => {
                 <TreeView
                     aria-label="file system navigator"
                     defaultCollapseIcon={<ExpandMoreIcon />}
-                    defaultExpandAll={false}
                     defaultExpanded={expandedFolders}
                     onNodeToggle={handleNodeToggle}
                     multiSelect

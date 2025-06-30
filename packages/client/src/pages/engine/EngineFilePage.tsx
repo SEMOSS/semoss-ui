@@ -1,8 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button, Table, styled, Typography } from '@semoss/ui';
 import { useEngine } from '@/hooks';
 import { FileTable } from '@/components/settings';
 import StorageTest from './StorageTest';
+import { FileExplorerPanel } from '@/components/workspace';
+import { Layout, Model, TabNode } from 'flexlayout-react';
+import { FileExplorer } from '@/components/common/File/FileExplorer';
+import { DesignerStore, WorkspaceOptions } from '@/stores';
+import * as FlexLayout from 'flexlayout-react';
+import { DesignerContext, WorkspaceContext } from '@/contexts';
+import { StateStore } from '@semoss/renderer';
+
 
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
@@ -26,6 +34,115 @@ const StyledTopDiv = styled('div')(() => ({
     justifyContent: 'space-between',
 }));
 
+// test FileExplorePanel
+
+const emptyModel = Model.fromJson({
+    global: {},
+    layout: {
+      type: 'row',
+      children: [],
+    },
+  });
+  
+
+const json = {
+    global: {
+        tabEnableClose: true,
+    },
+    layout: {
+        type: 'row',
+        weight: 100,
+        children: [
+            {
+                type: 'tabset',
+                weight: 100,
+                id: 'main-tabset',
+                children: [],
+            },
+        ],
+    },
+};
+
+
+const model = Model.fromJson(json);
+
+const layout = new Layout({
+    model,
+    factory: (node) => <div>{node.getName()}</div>,
+});
+
+// const createTestLayoutModel = () => {
+//     const json = {
+//         global: {
+//             tabEnableClose: true,
+//         },
+//         layout: {
+//             type: 'row',
+//             weight: 100,
+//             children: [
+//                 {
+//                     type: 'tabset',
+//                     id: 'main-tabset',
+//                     weight: 100,
+//                     children: [],
+//                 },
+//             ],
+//         },
+//     };
+
+//     return Model.fromJson(json);
+// };
+
+// const createTestLayout = () => {
+//     const model = createTestLayoutModel();
+
+//     // Define a simple factory function
+//     const factory = (node) => {
+//         const name = node.getName();
+//         return <div>{name}</div>;
+//     };
+
+//     return new Layout({
+//         model,
+//         factory,
+//     });
+// };
+
+// const [state, setState] = useState<StateStore>();
+
+// const designer = useMemo(() => {
+//     // return the store
+//     if (state) {
+//         return new DesignerStore(state, {
+//             rendered: 'page-1',
+//         });
+//     }
+// }, [state]);
+// const layout = createTestLayout();
+
+
+const mockWorkspace = {
+    workspace: {
+        appId: 'demo-app-id',
+        insightId: '',
+        // add other properties/methods your WorkspaceStore expects (this is a mock)
+      } as any, // 👈 You may use `as any` for mocking or define a proper mock WorkspaceStore
+    
+      options: {
+      },
+    
+      factory: (node: TabNode, layout: Layout) => {
+        const component = node.getComponent();
+        if (component === 'file-explorer') {
+          return <FileExplorerPanel layout={layout} />;
+        }
+        return <div>Unknown Component: {component}</div>;
+      },
+  };
+
+
+console.log("EngineFilePage");
+
 export const EngineFilePage = () => {
     //Grabbing Engine Id for document creation
     const { id } = useEngine();
@@ -37,8 +154,32 @@ export const EngineFilePage = () => {
             </StyledTopDiv>
 
             <StyledTableContainer>
-                <FileTable id={id} mode='storage'/>
+                {/* <FileTable id={id} mode='storage'/> */}
                 {/* <StorageTest id={id}/> */}
+
+                {/* <DesignerContext.Provider
+                    value={{
+                        designer: designer,
+                    }}
+                >
+                    <FileExplorerPanel layout={layout} />
+                </DesignerContext.Provider> */}
+
+
+
+                <WorkspaceContext.Provider value={mockWorkspace}>
+                <FileExplorerPanel layout={layout} />
+                </WorkspaceContext.Provider>
+
+                {/* <FileExplorer
+                    type="insight"
+                    space="/"
+                    onSelect={(path) => console.log('Selected:', path)}
+                    onDragStart={(e, path) => console.log('Drag Start:', path)}
+                    onDragEnd={(e, path) => console.log('Drag End:', path)}
+                    onTrashClick={(e, path) => console.log('Trash Clicked:', path)}
+                /> */}
+ 
             </StyledTableContainer>
         </StyledContainer>
     );

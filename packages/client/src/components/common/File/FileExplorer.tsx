@@ -19,7 +19,7 @@ const StyledTreeView = styled(TreeView)(({ theme }) => ({
 
 interface FileExplorerProps {
     /** Type of file opened */
-    type: 'app' | 'insight';
+    type: 'app' | 'insight' | 'storage-catalog' ;
 
     /** Space where the file is located */
     space: string;
@@ -43,6 +43,7 @@ interface FileExplorerProps {
     ) => void;
 }
 
+
 export const FileExplorer = (props: FileExplorerProps) => {
     const {
         type,
@@ -54,22 +55,50 @@ export const FileExplorer = (props: FileExplorerProps) => {
         onTrashClick = () => null,
     } = props;
 
+    // const getAssets = usePixel<
+    //     {
+    //         lastModified: string;
+    //         name: string;
+    //         path: string;
+    //         type: 'directory' | 'file';
+    //     }[]
+    // >(
+    //     type === 'app'
+    //         ? `BrowseAsset(filePath=["version/assets"], space=["${space}"]);`
+    //         : '',
+    //     {},
+    //     insightId,
+    // );
+
+    
+    const query = `Storage(storage = "8be5fb68-ffab-47bd-af2a-cd409b51e732") | ListStoragePathDetails(storagePath='/');`;
+    const getFileDetails = usePixel<FileExplorerProps[]>(query);
+    console.log("at FileExplorer Fetching data" ,getFileDetails.status);
+    console.log("at FileExplorer  Fetching data" ,getFileDetails.data);
     const getAssets = usePixel<
         {
-            lastModified: string;
-            name: string;
-            path: string;
-            type: 'directory' | 'file';
+            metadata: Record<string, any>;
+            size: number;
+            etag: string;
+            lastModified: {
+            seconds: number;
+            nanos: number;
+            };
+            key: string;
         }[]
-    >(
-        type === 'app'
-            ? `BrowseAsset(filePath=["version/assets"], space=["${space}"]);`
-            : '',
+        >(
+        query,
         {},
-        insightId,
-    );
+        insightId
+        );
+
+
 
     const initLoadComplete = getAssets.status === 'SUCCESS';
+    console.log("at FileExplorer type" ,type)
+    console.log("at FileExplorer  Fetching assets 8" ,getAssets.status);
+    console.log("at FileExplorer  Fetching assets 8" ,getAssets.data);
+    
 
     const [expanded, setExpanded] = React.useState<string[]>([]);
     const [selected, setSelected] = React.useState<string[]>([]);
@@ -128,16 +157,22 @@ export const FileExplorer = (props: FileExplorerProps) => {
                 getAssets.status === 'LOADING' ? (
                     <LoadingScreen.Trigger />
                 ) : getAssets.status === 'SUCCESS' ? (
-                    getAssets.data.map((n) => {
+                    getAssets.data?.map((n) => {
+
+                        const name = n.key.split('/').pop() || n.key;
+                        const path = n.key;
+                        const isDirectory = !n.key.includes('.'); // fallback check, or use metadata if available
+                        const lastModified = new Date(n.lastModified.seconds * 1000).toISOString();
+                
                         return (
                             <FileExplorerItem
-                                key={n.path}
+                                key={path}
                                 type={type}
                                 space={space}
-                                name={n.name}
-                                path={n.path}
-                                isDirectory={n.type === 'directory'}
-                                lastModified={n.lastModified}
+                                name={name}
+                                path={path}
+                                isDirectory={isDirectory}
+                                lastModified={lastModified}
                                 expanded={expanded}
                                 selected={selected}
                                 onDragStart={(e, path) => {

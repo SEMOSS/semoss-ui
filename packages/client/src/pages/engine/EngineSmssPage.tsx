@@ -6,7 +6,7 @@ import { useEngine } from '@/hooks';
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
     display: 'flex',
-    alignSelf: 'stretch',
+    alignSelf: 'stretch', 
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: theme.spacing(3),

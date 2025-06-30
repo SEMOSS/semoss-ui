@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNotification } from '@semoss/ui';
-
 import { useRootStore } from './useRootStore';
 
 interface PixelState<D> {

@@ -19,6 +19,7 @@ import { EngineQAPage } from './EngineQAPage';
 // import { EngineReplaceDataPage } from './EngineReplaceDataPage';
 import { EngineUsagePage } from './EngineUsagePage';
 import { EngineSmssPage } from './EngineSmssPage';
+// import StorageTest from './StorageTest';
 
 export const ENGINE_ROUTES: {
     /** Name of the route */
@@ -251,6 +252,12 @@ export const ENGINE_ROUTES: {
                 path: 'smss',
                 component: EngineSmssPage,
                 restrict: ['OWNER'],
+            },
+            {
+                name: 'Files',
+                path: 'files',
+                component: EngineFilePage,
+                restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
             },
         ],
     },
