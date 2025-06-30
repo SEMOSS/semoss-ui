@@ -69,6 +69,84 @@ for (const testData of testsData) {
 
             currentState = await migrationManager.run(currentState);
 
+            for (const keyValue of Object.entries(currentState.blocks)) {
+                const widgets = [
+                    "accordion",
+                    "container",
+                    "flip-card",
+                    "popover",
+                    "modal",
+                    "sidebar",
+                    "iteration",
+                    "link",
+                    "logs",
+                    "markdown",
+                    "text",
+                    "audio-input",
+                    "audio-player",
+                    "button",
+                    "checkbox",
+                    "input",
+                    "radio",
+                    "select",
+                    "slider",
+                    "switch",
+                    "timepicker",
+                    "toggle-button",
+                    "upload",
+                    "chip",
+                    "divider",
+                    "iframe",
+                    "image",
+                    "pdfViewer",
+                    "progress",
+                    "ratings",
+                ];
+                const block = keyValue[1];
+                // console.log({ block: block.widget });
+
+                if (widgets.includes(block.widget)) {
+                    // console.log({ block });
+                    switch (block.widget) {
+                        case "popover": {
+                            expect(block.listeners.onOpen.length).toBe(0);
+                            expect(block.listeners.onClose.length).toBe(0);
+                            expect(block.listeners).not.toHaveProperty(
+                                "onClick",
+                            );
+                        }
+                        case "modal": {
+                            expect(block.listeners.preProcess.length).toBe(0);
+                            expect(block.listeners.onClose.length).toBe(0);
+                            expect(block.listeners).not.toHaveProperty(
+                                "onSubmit",
+                            );
+                            break;
+                        }
+                        case "sidebar": {
+                            expect(block.listeners.preProcess.length).toBe(0);
+                            expect(block.listeners.postProcess.length).toBe(0);
+                            break;
+                        }
+                        case "audio-input": {
+                            expect(block.listeners.preProcess.length).toBe(0);
+                            expect(block.listeners.onComplete.length).toBe(0);
+                            break;
+                        }
+                        case "switch":
+                        case "toggle-button": {
+                            // console.log({ block: block.widget });
+                            expect(block.listeners.preProcess.length).toBe(0);
+                            expect(block.listeners.onChange.length).toBe(0);
+                            break;
+                        }
+                        default: {
+                            expect(block.listeners.preProcess.length).toBe(0);
+                        }
+                    }
+                }
+            }
+            // console.log({currentState: Object.entries(currentState.blocks)})
             expect(currentState.version).toBe("1.0.0-alpha.5");
         });
         it("should migrate from 1.0.0-alpha.5 to 1.0.0-alpha.6", async ({
