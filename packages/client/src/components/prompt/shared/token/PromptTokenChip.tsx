@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
-import { blue, green } from '@mui/material/colors';
-import { styled, Chip } from '@semoss/ui';
+import { blue, green, styled, Chip } from '@semoss/ui';
 import { THEME } from '@/constants';
 
 interface ChipRootProps {
@@ -8,7 +7,6 @@ interface ChipRootProps {
     disableHover: boolean;
     hovered: boolean;
 }
-const primaryLight = THEME.name === 'SEMOSS' ? blue[50] : green[50];
 export const StyledPromptTokenChip = styled(Chip, {
     shouldForwardProp: (prop) =>
         prop !== 'isChipSelected' &&
@@ -20,10 +18,8 @@ export const StyledPromptTokenChip = styled(Chip, {
     margin: '0 1px 2px',
 
     ...((!hovered || disableHover) && {
-        backgroundColor: isChipSelected
-            ? theme.palette.primary.main
-            : primaryLight,
-        color: isChipSelected ? primaryLight : theme.palette.primary.main,
+        backgroundColor: isChipSelected ? theme.palette.primary.main : blue[50],
+        color: isChipSelected ? blue[50] : theme.palette.primary.main,
     }),
 }));
 
