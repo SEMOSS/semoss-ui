@@ -29,6 +29,10 @@ export const Router = observer(() => {
 
     // don't load anything if it is pending
     if (configStore.store.status === 'INITIALIZING') {
+        configStore.login('', '').catch((error) => {
+            console.log(error.message);
+            console.log('Unable to login, redirecting to login page');
+        });
         return <LoadingScreen.Trigger message={'Initializing'} />;
     }
 
