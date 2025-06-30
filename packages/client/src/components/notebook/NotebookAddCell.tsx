@@ -86,6 +86,7 @@ interface AddCellOption {
     options?: {
         display: string;
         defaultCellType: DefaultCellDefinitions['widget'];
+        disabled?: boolean;
     }[];
     disabled?: boolean;
 }
@@ -105,8 +106,13 @@ const DataImportDropdownOptions = [
         defaultCellType: null,
     },
     {
+        display: 'Custom Import (SQL)',
+        defaultCellType: 'query-import',
+    },
+    {
         display: 'From CSV',
         defaultCellType: null,
+        disabled: true,
     },
 ];
 
@@ -116,18 +122,15 @@ const OtherOptions = [
         defaultCellType: 'send-email',
     },
 ];
+
 const DataOptions = [
     {
         display: 'Filter Data',
         defaultCellType: 'filter-data',
     },
     {
-        display: 'UnFilter Data',
+        display: 'Unfilter Data',
         defaultCellType: `unfilter-data`,
-    },
-    {
-        display: 'Custom Import',
-        defaultCellType: 'query-import',
     },
 ];
 
@@ -137,8 +140,14 @@ const AddCellOptions: Record<string, AddCellOption> = {
         defaultCellType: 'code',
         icon: <Code />,
     },
+    'import-data': {
+        display: 'Import Data',
+        icon: <ImportExport />,
+        options: DataImportDropdownOptions,
+        disabled: false,
+    },
     data: {
-        display: 'Data',
+        display: 'Data Filters',
         icon: (
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -182,17 +191,6 @@ const AddCellOptions: Record<string, AddCellOption> = {
         ),
         options: Transformations,
     },
-    'import-data': {
-        display: 'Import Data',
-        icon: <ImportExport />,
-        options: DataImportDropdownOptions,
-        disabled: false,
-    },
-    text: {
-        display: 'Text',
-        icon: <TextFields />,
-        disabled: true,
-    },
     llm: {
         display: 'LLM',
         defaultCellType: 'llm',
@@ -216,6 +214,9 @@ export const NotebookAddCell = observer(
         const { state, notebook } = useBlocks();
         const [searchQuery, setSearchQuery] = useState('');
 
+        /**
+         * @description - organizes transformation menu in a ds to map
+         */
         const TransformationCategories = useMemo(() => {
             const categories = {
                 Text: [],
@@ -251,6 +252,9 @@ export const NotebookAddCell = observer(
             return categories;
         }, [TransformationCells]);
 
+        /**
+         * filters transformations based on search term
+         */
         const filteredCategories = Object.entries(TransformationCategories)
             .map(([category, transformations]) => {
                 const filteredTransformations = searchQuery
@@ -268,15 +272,25 @@ export const NotebookAddCell = observer(
             })
             .filter(({ transformations }) => transformations.length > 0);
 
+        /**
+         * @description - sets search term in state
+         * @param event
+         */
         const handleSearchChange = (event) => {
             setSearchQuery(event.target.value);
         };
 
+        /**
+         * @description - clears search term in state
+         */
         const clearSearch = () => {
             setSearchQuery('');
         };
 
-        /** Create a New Cell and Add to Notebook */
+        /**
+         * @description - Create a New Cell and Add to Notebook
+         *
+         */
         const appendCell = (widget: string) => {
             try {
                 const config: NewCellAction['payload']['config'] = {
@@ -336,8 +350,6 @@ export const NotebookAddCell = observer(
 
         return (
             <>
-                {/* Dropdown for All Add Cell Option Sets */}
-
                 <Stack
                     direction={'row'}
                     alignItems={'center'}
@@ -543,16 +555,25 @@ export const NotebookAddCell = observer(
                                 {Array.from(
                                     AddCellOptions[selectedAddCell]?.options ||
                                         [],
-                                    ({ display }, index) => {
+                                    (
+                                        { display, defaultCellType, disabled },
+                                        index,
+                                    ) => {
                                         return (
                                             <StyledMenuItem
                                                 key={index}
                                                 value={display}
-                                                disabled={display == 'From CSV'} // temporary
+                                                disabled={disabled}
                                                 onClick={() => {
-                                                    setIsDataImportModalOpen(
-                                                        true,
-                                                    );
+                                                    if (!defaultCellType) {
+                                                        setIsDataImportModalOpen(
+                                                            true,
+                                                        );
+                                                    } else {
+                                                        appendCell(
+                                                            defaultCellType,
+                                                        );
+                                                    }
                                                     setAnchorEl(null);
                                                 }}
                                             >
