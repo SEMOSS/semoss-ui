@@ -85,15 +85,10 @@ export function useQueryExecution(engineId: string, options: QueryExecutionOptio
     try {
       const queryType = detectQueryType(query);
       console.log('Detected query type:', queryType);
-      let pixel;
+
       const cleanedQuery = removeComments(query).replaceAll('`','');
 
-      if (queryType === 'SELECT') {
-        pixel = `Database(database=["${engineId}"]) | Query("<encode>${cleanedQuery}</encode>") | Collect(${PREVIEW_LIMIT});`;
-      } else {
-        pixel = `Database(database=["${engineId}"]) | Query("<encode>${cleanedQuery}</encode>") | ExecQuery(commit=[true]);`;
-      }
-      console.log('Executing pixel:', pixel);
+      let pixel = `SqlQuery(database=["${engineId}"], query=["<encode>${removeComments(query).replaceAll('`','')}</encode>"], limit=[${PREVIEW_LIMIT}]);`;
       
       const response = await monolithStore.runQuery(pixel);
       console.log('Full response:', response);
