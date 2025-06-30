@@ -8,13 +8,18 @@ import {
 
 import { Alpha08BlockData } from "./Alpha08DBloxkata";
 import { Alpha04BlockData } from "./Alpha04BlockData";
+import { Alpha04BlockData2 } from "./Alpha04BlockData2";
 
 const testsData = [
     {
-        name: "Alpha.4",
+        name: "1.0.0-alpha.4",
         data: Alpha04BlockData,
     },
-    { name: "Alpha.8", data: Alpha08BlockData },
+    {
+        name: "1.0.0-alpha.4(v2)",
+        data: Alpha04BlockData2,
+    },
+    { name: "1.0.0-alpha.8", data: Alpha08BlockData },
 ];
 
 for (const testData of testsData) {
@@ -164,7 +169,7 @@ for (const testData of testsData) {
             // const version = "1.0.0-alpha.9";
             vi.doMock("@/store/state/migration/StateVersion", () => {
                 return {
-                    STATE_VERSION: "1.0.0-alpha.9", // default mock value
+                    STATE_VERSION: "1.0.0-alpha.9", // mock latest state version
                 };
             });
             const { MigrationManager } = await import(
@@ -191,7 +196,7 @@ for (const testData of testsData) {
             }
             vi.doMock("@/store/state/migration/StateVersion", () => {
                 return {
-                    STATE_VERSION: "1.0.0-alpha.10", // default mock value
+                    STATE_VERSION: "1.0.0-alpha.10", // mock latest state version
                 };
             });
             const { MigrationManager } = await import(
