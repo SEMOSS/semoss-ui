@@ -68,7 +68,7 @@ export const GoogleSpreadsheetPage = () => {
     const [addModal, setAddModal] = useState(false);
     const [savedApiKeys, setSavedApiKeys] = useState([]);
 
-    const { control, reset, setValue, handleSubmit, watch } =
+    const { control, reset, setValue, handleSubmit, watch, getValues } =
         useForm<SaveAPIKeyForm>({
             defaultValues: {
                 NAME: '',
@@ -100,7 +100,7 @@ export const GoogleSpreadsheetPage = () => {
             });
     };
     const SaveAPIKey = async (data: SaveAPIKeyForm) => {
-        const pixel = `META | JiraInsert()`;
+        const pixel = `META | SaveGoogleProfile(nmae="", spreadsheetId="${data.SPREADSHEET_ID}", serviceJson="${data.SERVICEJSON}")`;
         monolithStore
             .runQuery(pixel)
             .then((response) => {

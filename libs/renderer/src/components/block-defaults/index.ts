@@ -99,6 +99,11 @@ import {
 } from "./vega-visualization-block";
 import { config as VisualizationFilterBlockConfig, VisualizationFilterBlockDef } from "./visualization-filter-block";
 
+import {
+    config as SpreadsheetBlockConfig,
+    SpreadsheetBlockDef,
+} from "./spreadsheet-block";
+
 // import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
 // import { config as BodyBlockConfig, BodyBlockDef } from "./body-block";
 // import { config as QueryBlockConfig, QueryBlockDef } from "./query-block";
@@ -149,6 +154,7 @@ export type DefaultBlockDefinitions =
     | RadioBlockDef
     | TimePickerBlockDef
     | VisualizationFilterBlockDef
+    | SpreadsheetBlockDef
 // | BodyBlockDef
 // | DividerBlockDef
 // | FooterBlockDef
@@ -199,6 +205,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [VisualizationFilterBlockConfig.widget]: VisualizationFilterBlockConfig,
+    [SpreadsheetBlockConfig.widget]: SpreadsheetBlockConfig,
     // [StepperBlockConfig.widget]: StepperBlockConfig,
     // [QueryBlockConfig.widget]: QueryBlockConfig,
 };
@@ -242,4 +249,5 @@ export {
     TimePickerBlockConfig,
     FlipCardBlockConfig,
     VisualizationFilterBlockConfig,
+    SpreadsheetBlockConfig,
 };

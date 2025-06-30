@@ -14,6 +14,8 @@ const SECTION_CHARTS = 'Data Charts';
 const SECTION_MISC = 'Miscellaneous';
 const SECTION_GROUPED = 'Grouped Blocks';
 
+const SECTION_SPREADSHEET = 'Spreadsheet';
+
 export const SECTION_ORDER = [
     SECTION_LAYOUT,
     SECTION_TEXT,
@@ -23,6 +25,7 @@ export const SECTION_ORDER = [
     SECTION_MISC,
     SECTION_CHARTS,
     SECTION_GROUPED,
+    SECTION_SPREADSHEET,
 ];
 
 // Development Environment Blocks
@@ -1435,6 +1438,39 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             listeners: {
                 preProcess: { type: 'sync', order: [] },
             },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_SPREADSHEET,
+        name: 'SPREADSHEET',
+        helperText: 'Create a spreadsheet for data manipulation',
+        activeImage: BLOCK_IMAGES['PARAGRAPH_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PARAGRAPH_HOVER'],
+        json: {
+            widget: 'spreadsheet',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Spreadsheet Block',
+                variant: 'p',
+                show: 'true',
+                showReadSheetForm: false,
+                showReadForm: false,
+                showWriteSheetForm: false,
+                showWriteForm: false,
+                showUpdateSheetForm: false,
+                showUpdateForm: false,
+                listAllTickets: false,
+                listedTickets: false,
+                userId: '',
+                jiraConnectionValue: '',
+                jiraActionValue: '',
+            },
+            listeners: {},
             slots: {} as BlockJSON['slots'],
         },
     },
