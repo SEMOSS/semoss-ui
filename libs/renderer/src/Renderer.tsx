@@ -131,21 +131,8 @@ export const Renderer = observer((props: RendererProps) => {
 
                 // set it
                 setStateStore(store);
-
-                if (stateFilter) {
-                    // notification.add({
-                    //     color: "warning",
-                    //     message:
-                    //         "Please be mindful this may not represent the current state of the app, due to the filters present in the URL",
-                    // });
-                }
             })
             .catch((e) => {
-                // notification.add({
-                //     color: "error",
-                //     message: e.message,
-                // });
-
                 console.log(e);
             })
             .finally(() => {
@@ -196,7 +183,7 @@ export const Renderer = observer((props: RendererProps) => {
 
 const getCurrentPageId = (state: SerializedState) => {
     const URLroute = window.location.href;
-    const match = URLroute.match(/([^/]+)$/)
+    const match = URLroute.match(/([^/]+)$/);
     const currentRoute = match ? match[1] : "";
 
     let activePageID = "";
@@ -207,7 +194,7 @@ const getCurrentPageId = (state: SerializedState) => {
     }
     Object?.entries(blocks).forEach(([_, block]) => {
         if (block?.widget === "page") {
-            console.log('match', match)
+            console.log("match", match);
             if (currentRoute === block?.data.route) {
                 activePageID = block?.id;
             }

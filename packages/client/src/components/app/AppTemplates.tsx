@@ -13,19 +13,21 @@ import {
     UpdateDiabetesRecordTemplate,
     ReadDiabetesRecordTemplate,
     MultiPageTemplate,
+    VisualizeCSVTemplate,
 } from './templates';
 import { BrowseTemplateTileCard } from './BrowseTempateTitleCard';
 
 const DEFAULT_TEMPLATE = [
     LandingPageTemplate,
     AskLLMTemplate,
-    AskCSVTemplate,
+    VisualizeCSVTemplate,
     BlocksGuideTemplate,
     MultiPageTemplate,
     CreateDiabetesRecordTemplate,
     ReadDiabetesRecordTemplate,
     UpdateDiabetesRecordTemplate,
     DeleteDiabetesRecordTemplate,
+    // AskCSVTemplate,
 ];
 
 const StyledContainer = styled('div')(({ theme }) => ({

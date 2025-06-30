@@ -227,105 +227,99 @@ export const AppDetailPage = () => {
     }
 
     const fetchAppData = async (id: string) => {
-        Promise.allSettled([
+        await getPermission();
+        const permission = getValues('permission');
+        const promises: Promise<any>[] = [
             fetchAppInfo(
                 monolithStore,
                 id,
                 configStore.store.config.projectMetaKeys.map((a) => a.metakey),
             ),
             fetchMainUses(monolithStore, id),
-            fetchDependencies(monolithStore, id),
-        ]).then((results) =>
-            results.forEach((res, idx) => {
-                if (res.status === 'rejected') {
-                    emitMessage(true, res.reason);
-                } else {
-                    if (idx === 0) {
-                        if (res.value.type === 'error') {
-                            emitMessage(true, res.value.output);
-                        } else {
-                            setValue('appInfo', res.value.output);
-                            const output = res.value.output;
+        ];
+        if (permission !== 'discoverable') {
+            promises.push(fetchDependencies(monolithStore, id));
+        }
+        const results = await Promise.allSettled(promises);
+        results.forEach((res, idx) => {
+            if (res.status === 'rejected') {
+                emitMessage(true, res.reason);
+            } else {
+                if (idx === 0) {
+                    if (res.value.type === 'error') {
+                        emitMessage(true, res.value.output);
+                    } else {
+                        setValue('appInfo', res.value.output);
+                        const output = res.value.output;
 
-                            const projectMetaKeys =
-                                configStore.store.config.projectMetaKeys;
-                            // Keep only relevant project keys defined for app details
-                            const parsedMeta = projectMetaKeys
-                                .map((k) => k.metakey)
-                                .reduce((prev, curr) => {
-                                    // tag, domain, and etc either come in as a string or a string[], format it to correct type
-                                    const found = projectMetaKeys.find(
-                                        (obj) => obj.metakey === curr,
-                                    );
+                        const projectMetaKeys =
+                            configStore.store.config.projectMetaKeys;
+                        // Keep only relevant project keys defined for app details
+                        const parsedMeta = projectMetaKeys
+                            .map((k) => k.metakey)
+                            .reduce((prev, curr) => {
+                                // tag, domain, and etc either come in as a string or a string[], format it to correct type
+                                const found = projectMetaKeys.find(
+                                    (obj) => obj.metakey === curr,
+                                );
 
-                                    if (curr === 'tag') {
-                                        if (typeof output[curr] === 'string') {
-                                            prev[curr] = [output[curr]];
-                                        } else {
-                                            prev[curr] = output[curr];
-                                        }
-                                    } else if (
-                                        found.display_options ===
-                                            'single-typeahead' ||
-                                        found.display_options ===
-                                            'select-box' ||
-                                        found.display_options ===
-                                            'multi-typeahead'
-                                    ) {
-                                        if (typeof output[curr] === 'string') {
-                                            prev[curr] = [output[curr]];
-                                        } else {
-                                            prev[curr] = output[curr];
-                                        }
+                                if (curr === 'tag') {
+                                    if (typeof output[curr] === 'string') {
+                                        prev[curr] = [output[curr]];
                                     } else {
                                         prev[curr] = output[curr];
                                     }
+                                } else if (
+                                    found.display_options ===
+                                        'single-typeahead' ||
+                                    found.display_options === 'select-box' ||
+                                    found.display_options === 'multi-typeahead'
+                                ) {
+                                    if (typeof output[curr] === 'string') {
+                                        prev[curr] = [output[curr]];
+                                    } else {
+                                        prev[curr] = output[curr];
+                                    }
+                                } else {
+                                    prev[curr] = output[curr];
+                                }
 
-                                    return prev;
-                                }, {}) as AppDetailsFormTypes['detailsForm'];
-                            setValue('detailsForm', parsedMeta);
-                            setValue('tag', parsedMeta.tag);
-                            setValue('markdown', parsedMeta.markdown);
-                            setValue(
-                                'detailsForm.markdown',
-                                parsedMeta.markdown,
-                            );
+                                return prev;
+                            }, {}) as AppDetailsFormTypes['detailsForm'];
+                        setValue('detailsForm', parsedMeta);
+                        setValue('tag', parsedMeta.tag);
+                        setValue('markdown', parsedMeta.markdown);
+                        setValue('detailsForm.markdown', parsedMeta.markdown);
+                        setValues((prev) => ({
+                            ...prev,
+                            markdown: parsedMeta.markdown || '',
+                        }));
+                        setValues((prev) => ({ ...prev, ...parsedMeta }));
+                    }
+                } else if (idx === 1) {
+                    if (res.value.type === 'error') {
+                        emitMessage(true, res.value.output);
+                    } else {
+                        if (res.value.output !== null) {
+                            setValue('markdown', res.value.output);
+                            setValue('detailsForm.markdown', res.value.output);
                             setValues((prev) => ({
                                 ...prev,
-                                markdown: parsedMeta.markdown || '',
+                                markdown: res.value.output || '',
                             }));
-                            setValues((prev) => ({ ...prev, ...parsedMeta }));
-                        }
-                    } else if (idx === 1) {
-                        if (res.value.type === 'error') {
-                            emitMessage(true, res.value.output);
-                        } else {
-                            if (res.value.output !== null) {
-                                setValue('markdown', res.value.output);
-                                setValue(
-                                    'detailsForm.markdown',
-                                    res.value.output,
-                                );
-                                setValues((prev) => ({
-                                    ...prev,
-                                    markdown: res.value.output || '',
-                                }));
-                            }
-                        }
-                    } else if (idx === 2) {
-                        if (res.value.type === 'error') {
-                            emitMessage(true, res.value.output);
-                        } else {
-                            const modelled = modelDependencies(
-                                res.value.output,
-                            );
-                            setValue('dependencies', modelled);
-                            setValue('selectedDependencies', modelled);
                         }
                     }
+                } else if (idx === 2) {
+                    if (res.value.type === 'error') {
+                        emitMessage(true, res.value.output);
+                    } else {
+                        const modelled = modelDependencies(res.value.output);
+                        setValue('dependencies', modelled);
+                        setValue('selectedDependencies', modelled);
+                    }
                 }
-            }),
-        );
+            }
+        });
     };
 
     const fetchSimilarApps = () => {
