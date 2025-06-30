@@ -92,7 +92,6 @@ export const EngineModelTestPage = () => {
     const [error, setError] = useState('');
     const [messages, setMessages] = useState<Message[]>([]);
     
-    // Model selection and parameters
     const [selectedModel, setSelectedModel] = useState<Model>({
         database_id: id,
         database_name: '',
@@ -133,23 +132,9 @@ export const EngineModelTestPage = () => {
         createNewInsight(); // Get a new insightId from backend
     }, [id]);
 
-    const validateTokenLimit = (prompt: string): boolean => {
-        // Basic token estimation (rough approximation: 1 token ≈ 4 characters)
-        const estimatedTokens = Math.ceil(prompt.length / 4);
-        const modelTokenLimit = 4096; // Default limit, should be fetched from model metadata
-
-        if (estimatedTokens > modelTokenLimit) {
-            setError(`Prompt is larger than the token limit, please shorten/break it into multiple prompts`);
-            return false;
-        }
-        return true;
-    };
-
     const sendMessage = async (data: { prompt: string }) => {
         if (!data.prompt.trim()) return;
-        if (!validateTokenLimit(data.prompt)) {
-            return;
-        }
+
         setError('');
         setIsLoading(true);
         const userMessage: Message = {
@@ -210,7 +195,7 @@ export const EngineModelTestPage = () => {
                                     size="small"
                                     onClick={() => {
                                         setMessages([]);
-                                        createNewInsight(); // Get a new insightId from backend
+                                        createNewInsight();
                                     }}
                                     disabled={isLoading || isInsightLoading}
                                 >
