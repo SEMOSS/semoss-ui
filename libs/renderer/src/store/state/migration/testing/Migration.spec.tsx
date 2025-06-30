@@ -179,14 +179,13 @@ for (const testData of testsData) {
 
             for (const block of Object.values(currentState.blocks)) {
                 for (const listener of Object.keys(block.listeners)) {
-                    // currentState.blocks[block.id].listeners
-                    console.log({
-                        widget: currentState.blocks[block.id].widget,
-                        type: currentState.blocks[block.id].listeners[listener]
-                            .type,
-                        order: currentState.blocks[block.id].listeners[listener]
-                            .order,
-                    });
+                    // console.log({
+                    //     widget: currentState.blocks[block.id].widget,
+                    //     type: currentState.blocks[block.id].listeners[listener]
+                    //         .type,
+                    //     order: currentState.blocks[block.id].listeners[listener]
+                    //         .order,
+                    // });
                     const type =
                         currentState.blocks[block.id].listeners[listener].type;
                     // const order =
