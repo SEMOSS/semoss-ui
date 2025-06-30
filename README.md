@@ -20,11 +20,9 @@
     NODE_ENV=development
 ```
 
-**If you are coming from another client project (within SEMOSS)**, MODULE within the `.env.local` as well as `.packages/legacy/app.constants` may have to be adjusted for that client-specific endpoint; consult with your client project lead for details on that endpoint.
-
 1. Run `pnpm install` in root directory.
 
-2. Build legacy and client, run `pnpm run build`.
+2. Build the client, run `pnpm run build`.
 
 3. For local development on our new ui (./packages/client) and the component library (./libs)  run `pnpm run dev:client`
 
@@ -32,13 +30,8 @@ Application will be accesible at: `http://localhost:9090/semoss-ui/packages/clie
 
 4. Component library development through storybook. Change directories into libs `cd .\libs\` and run `pnpm run storybook`
 
-5. For local development on the legacy application, run `pnpm run dev:legacy`
-
-Legacy application will be accesible at: `http://localhost:9090/semoss-ui/#!/`
-
 ## Common Errors
  1. The following issue may error may appear if nx does not build correctly: Cannot find module '@semoss/sdk/react' or its corresponding type declarations. To fix, cd directly into .\libs\sdk and run `pnpm run build`.
- 2. `404` on REST calls to the BE, usually points to an issue with the MODULE you have specified in your `.env.local` and/or `.packages/legacy/app.constants` file.  Ask your client project lead what endpoint you hit to ensure you have the right pointer specified for MODULE.
 
  ### Must be on a version of Node 18
 1. We use a node version manager to handle swapping between different versions.  https://github.com/coreybutler/nvm-windows, Most members are on version `18.16.0`
@@ -73,7 +66,6 @@ The scope should be the name of the package affected along with the overlying is
 The following is the list of supported scopes:
 
 * **(client):**
-* **(legacy):**
 * **(playsheet):**
 * **(sdk):**
 * **(ui):**
