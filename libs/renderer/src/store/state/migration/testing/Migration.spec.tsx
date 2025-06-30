@@ -224,6 +224,18 @@ for (const testData of testsData) {
 
             currentState = await migrationManager.run(currentState);
 
+            for (const blocks of Object.entries(currentState.blocks)) {
+                const block = blocks[1];
+
+                if (block.widget === "e-chart") {
+                    const preProcessListener = block.listeners.preProcess;
+                    expect(preProcessListener).toMatchObject({
+                        type: "sync",
+                        order: [],
+                    });
+                }
+            }
+
             expect(currentState.version).toBe("1.0.0-alpha.7");
         });
         it("should migrate from 1.0.0-alpha.7 to 1.0.0-alpha.8", async ({
