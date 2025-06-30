@@ -126,6 +126,35 @@ jobs:
             #           index.html
             #       key: ${{ github.ref_name }}
 
+            - name: Delete contents of legacy folder
+              run: |
+                  echo "Remove and recreate the legacy folder"
+                  rm -rf legacy
+                  mkdir legacy
+                  ls -als
+
+            - name: Download contents of SEMOSS/bi project
+              run: |
+                  echo "Download SEMOSS/bi as a zip file"
+                  mkdir -p tmp
+                  curl -L -u "${{ secrets.SEMOSS_GITHUB_USERNAME }}:${{ secrets.SEMOSS_GITHUB_PAT }}" -o tmp/main.zip https://github.com/SEMOSS/bi/archive/refs/heads/main.zip
+                  echo "Unzip contents of the SEMOSS/bi to the tmp folder"
+                  unzip tmp/main.zip -d tmp/
+                  echo "Delete the playsheet folder from semoss/bi files"
+                  rm -rf tmp/bi-main/playsheet/
+                  ls -als tmp/bi-main/
+                  echo "Remove zip file"
+                  rm tmp/main.zip
+            
+            - name: Move SEMOSS/bi files into the legacy folder
+              run: |
+                  echo "Move contents of SEMOSS/bi into legacy folder"
+                  cp -r tmp/bi-main/. legacy/
+                  echo "Delete tmp folder"
+                  rm -rf tmp/
+                  echo "list files under legacy folder"
+                  ls -als legacy
+
             - name: Install dependencies
               run: |
                   echo "Event Name: ${{ github.event_name }}"
