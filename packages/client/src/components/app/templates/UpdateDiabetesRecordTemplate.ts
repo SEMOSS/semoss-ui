@@ -18,7 +18,7 @@ export const UpdateDiabetesRecordTemplate: Template = {
                 id: 'update-diabetes-record',
                 cells: [
                     {
-                        id: '59072',
+                        id: '72352',
                         widget: 'query-import',
                         parameters: {
                             frameVariableName: 'FRAME_59072',
@@ -28,7 +28,7 @@ export const UpdateDiabetesRecordTemplate: Template = {
                         },
                     },
                     {
-                        id: '27239',
+                        id: '72353',
                         widget: 'code',
                         parameters: {
                             code: 'from gaas_gpt_database import DatabaseEngine;databaseEngine = DatabaseEngine(engine_id = "950eb187-e352-444d-ad6a-6476ed9390af", insight_id = \'${i}\');a = FRAME_59072.columns.to_list();a.remove("DIABETES_UNIQUE_ROW_ID");selectedID={{selected-id}};col_floating = ", ".join(a);inputValues = ["{{DRUG}}","{{LOCATION}}",float({{GLYHB}}),float({{BP_1D}}),float({{BP_2D}}),float({{WAIST}}),float({{RATIO}}),float({{HEIGHT}}),"{{FRAME}}",float({{HIP}}),float({{HDL}}),float({{BP_1S}}),float({{BP_2S}}),float({{STAB_GLU}}),"{{GENDER}}",float({{ID}}),float({{TIME_PPN}}),float({{WEIGHT}}),float({{CHOL}}),float({{AGE}})];filtered_columns = [];filtered_values = [];filtered_columns, filtered_values = zip(*[(col, f"\'{val}\'") if isinstance(val, str) and val else (col, val) for col, val in zip(a, inputValues) if val]);set_clause = ", ".join([f"{col} = {val}" for col, val in zip(filtered_columns, filtered_values)]);QS = f\'UPDATE diabetes SET {set_clause} WHERE DIABETES_UNIQUE_ROW_ID = {{selected-id}}\';',
@@ -49,7 +49,7 @@ export const UpdateDiabetesRecordTemplate: Template = {
                 id: 'on-page-load',
                 cells: [
                     {
-                        id: '51891',
+                        id: '90922',
                         widget: 'query-import',
                         parameters: {
                             frameVariableName: 'FRAME_51891',
@@ -67,7 +67,7 @@ export const UpdateDiabetesRecordTemplate: Template = {
                         },
                     },
                     {
-                        id: '71095',
+                        id: '90923',
                         widget: 'code',
                         parameters: {
                             code: 'unique_row_id',
@@ -125,7 +125,12 @@ export const UpdateDiabetesRecordTemplate: Template = {
                         gap: '8px',
                     },
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'container',
             },
             'input--6320': {
@@ -158,6 +163,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                 },
                 listeners: {
                     onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
+                    preProcess: {
                         type: 'sync',
                         order: [],
                     },
@@ -197,6 +206,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                         type: 'sync',
                         order: [],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--4121',
             },
@@ -224,6 +237,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                                 message: ActionMessages.RUN_QUERY,
                             },
                         ],
+                    },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
                     },
                 },
                 id: 'submit',
@@ -261,6 +278,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                         type: 'sync',
                         order: [],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--7858',
             },
@@ -280,7 +301,12 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     },
                     text: 'Update Diabetes Record',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'description',
             },
             'input--3855': {
@@ -313,6 +339,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                 },
                 listeners: {
                     onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
+                    preProcess: {
                         type: 'sync',
                         order: [],
                     },
@@ -352,6 +382,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                         type: 'sync',
                         order: [],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--3118',
             },
@@ -385,6 +419,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                 },
                 listeners: {
                     onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
+                    preProcess: {
                         type: 'sync',
                         order: [],
                     },
@@ -424,6 +462,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                         type: 'sync',
                         order: [],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--6721',
             },
@@ -457,6 +499,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                 },
                 listeners: {
                     onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
+                    preProcess: {
                         type: 'sync',
                         order: [],
                     },
@@ -496,6 +542,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                         type: 'sync',
                         order: [],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--2187',
             },
@@ -529,6 +579,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                 },
                 listeners: {
                     onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
+                    preProcess: {
                         type: 'sync',
                         order: [],
                     },
@@ -568,6 +622,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                         type: 'sync',
                         order: [],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--2903',
             },
@@ -604,6 +662,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                         type: 'sync',
                         order: [],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--5617',
             },
@@ -624,7 +686,12 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     },
                     text: ' {{db-response.output}} ',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--4905',
             },
             'page-1': {
@@ -697,6 +764,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                         type: 'sync',
                         order: [],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--1536',
             },
@@ -730,6 +801,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                 },
                 listeners: {
                     onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
+                    preProcess: {
                         type: 'sync',
                         order: [],
                     },
@@ -769,6 +844,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                         type: 'sync',
                         order: [],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--7685',
             },
@@ -802,6 +881,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                 },
                 listeners: {
                     onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
+                    preProcess: {
                         type: 'sync',
                         order: [],
                     },
@@ -841,6 +924,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                         type: 'sync',
                         order: [],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--4018',
             },
@@ -874,6 +961,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                 },
                 listeners: {
                     onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
+                    preProcess: {
                         type: 'sync',
                         order: [],
                     },
@@ -913,6 +1004,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                         type: 'sync',
                         order: [],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--1422',
             },
@@ -946,6 +1041,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                 },
                 listeners: {
                     onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
+                    preProcess: {
                         type: 'sync',
                         order: [],
                     },
@@ -985,6 +1084,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                         type: 'sync',
                         order: [],
                     },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'input--1200',
             },
@@ -1006,7 +1109,12 @@ export const UpdateDiabetesRecordTemplate: Template = {
                     },
                     text: 'Select a Unique Id and update the record.',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--2516',
             },
             'select--6891': {
@@ -1038,6 +1146,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                 },
                 listeners: {
                     onChange: {
+                        type: 'sync',
+                        order: [],
+                    },
+                    preProcess: {
                         type: 'sync',
                         order: [],
                     },
@@ -1123,7 +1235,7 @@ export const UpdateDiabetesRecordTemplate: Template = {
             'load-unique-id': {
                 to: 'on-page-load',
                 type: 'cell',
-                cellId: '71095',
+                cellId: '90923',
             },
             dtype: {
                 to: 'input--6721',
@@ -1145,6 +1257,10 @@ export const UpdateDiabetesRecordTemplate: Template = {
                 to: 'select--6891',
                 type: 'block',
             },
+            'page-load-query': {
+                to: 'on-page-load',
+                type: 'query',
+            },
             BP_2S: {
                 to: 'input--1154',
                 type: 'block',
@@ -1153,9 +1269,30 @@ export const UpdateDiabetesRecordTemplate: Template = {
                 to: 'input--437',
                 type: 'block',
             },
-            'page-load-query': {
-                type: 'query',
+            'update-diabetes-record--72352': {
+                type: 'cell',
+                to: 'update-diabetes-record',
+                cellId: '72352',
+            },
+            'update-diabetes-record--72353': {
+                type: 'cell',
+                to: 'update-diabetes-record',
+                cellId: '72353',
+            },
+            'update-diabetes-record--72351': {
+                type: 'cell',
+                to: 'update-diabetes-record',
+                cellId: '72351',
+            },
+            'on-page-load--90922': {
+                type: 'cell',
                 to: 'on-page-load',
+                cellId: '90922',
+            },
+            'on-page-load--90921': {
+                type: 'cell',
+                to: 'on-page-load',
+                cellId: '90921',
             },
         },
         executionOrder: [
@@ -1163,6 +1300,6 @@ export const UpdateDiabetesRecordTemplate: Template = {
             'on-page-load',
             'update-diabetes-record',
         ],
-        version: '1.0.0-alpha.4',
+        version: '1.0.0-alpha.10',
     },
 };
