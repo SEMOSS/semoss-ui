@@ -11,6 +11,7 @@ import { useStepper } from './useStepper';
 import { useWorkspace } from './useWorkspace';
 import { useDebounce } from './useDebounce';
 import { useDebounceValue } from './useDebounceValue';
+import { usePage } from './usePage';
 
 export {
     useAPI,
@@ -26,4 +27,5 @@ export {
     useWorkspace,
     useDebounce,
     useDebounceValue,
+    usePage,
 };

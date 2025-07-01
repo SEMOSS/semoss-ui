@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Button, Table, styled, Typography } from '@semoss/ui';
+import { Table, styled, Typography } from '@semoss/ui';
 import { useEngine } from '@/hooks';
 import { FileTable } from '@/components/settings';
 
@@ -27,7 +26,7 @@ const StyledTopDiv = styled('div')(() => ({
 
 export const EngineFilePage = () => {
     //Grabbing Engine Id for document creation
-    const { id } = useEngine();
+    const { active } = useEngine();
 
     return (
         <StyledContainer>
@@ -36,7 +35,7 @@ export const EngineFilePage = () => {
             </StyledTopDiv>
 
             <StyledTableContainer>
-                <FileTable id={id} />
+                <FileTable id={active.id} />
             </StyledTableContainer>
         </StyledContainer>
     );

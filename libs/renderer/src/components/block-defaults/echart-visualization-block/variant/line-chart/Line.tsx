@@ -144,8 +144,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
                 resultData["xAxis"]["data"] = valuesDataSet.map((x) => x[0]);
                 valuesDataSet.map((x) => x.shift());
                 headersDataSet.shift();
-                const yAxisListLength =
-                    resultData["_state"]["fields"]["yAxis"].length;
+                const yAxisListLength = resultData["_state"]?.["fields"]?.["yAxis"].length;
                 for (let index = 0; index < yAxisListLength; index++) {
                     resultData["series"][index]["data"] = valuesDataSet.map(
                         (x) => {
