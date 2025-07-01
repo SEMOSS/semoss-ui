@@ -14,17 +14,18 @@ import {
 
 import { runPixelTwo } from '../../runPixelTwo';
 import { WorkspaceStore, DesignerStore, WorkspaceOptions } from '@/stores';
-import { DesignerContext } from '@/contexts';
-import { LoadingScreen } from '@/components/ui';
-import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
+import { DesignerContext } from '../../contexts';
+import { LoadingScreen } from '../../components/ui';
 import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
+import { DEFAULT_MENU } from './menus/default-menu';
+import { GraphPanel } from '../workspace/panels/GraphPanel';
 import {
     Workspace,
     SettingsPanel,
     FileExplorerPanel,
     FileEditorPanel,
     TerminalPanel,
-} from '@/components/workspace';
+} from '../../components/workspace';
 import {
     VariablesPanel,
     BlocksMenuPanel,
@@ -34,16 +35,13 @@ import {
     NotebookExplorerPanel,
     NotebookViewerPanel,
 } from './panels';
-import { DEFAULT_MENU } from './menus/default-menu';
-import { GraphPanel } from '../workspace/panels/GraphPanel';
+import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 
 const DEFAULT_BORDER_SIZE = 300;
 
 const DEFAULT_OPTIONS: WorkspaceOptions = {
     version: '',
-    drawer: {
-        isOpen: false,
-    },
+
     layout: {
         selected: 'main',
         available: {
@@ -321,9 +319,9 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                 }}
             >
                 <Workspace
+                    navbarActions={<BlocksWorkspaceActions />}
                     options={DEFAULT_OPTIONS}
                     workspace={workspace}
-                    endTopbar={<BlocksWorkspaceActions />}
                     factory={FACTORY}
                 />
                 <BlocksWorkspaceDev />

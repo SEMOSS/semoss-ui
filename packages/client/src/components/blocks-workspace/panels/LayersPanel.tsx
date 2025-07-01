@@ -1062,7 +1062,7 @@ export const LayersPanel = observer(
                 }
 
                 // get the model
-                const model = workspace.selectedLayout?.model;
+                const model = workspace.model;
                 if (!model) {
                     throw new Error('Missing model');
                 }
@@ -1176,7 +1176,7 @@ export const LayersPanel = observer(
                 let selectedNode: TabNode | null = null;
 
                 // get the model
-                const model = workspace.selectedLayout?.model;
+                const model = workspace.model;
                 if (!model) {
                     throw new Error('Missing model');
                 }
@@ -1241,7 +1241,7 @@ export const LayersPanel = observer(
                 let selectedNode: TabNode | null = null;
 
                 // get the model
-                const model = workspace.selectedLayout?.model;
+                const model = workspace.model;
                 if (!model) {
                     throw new Error('Missing model');
                 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { InfoOutlined, Menu, RestartAlt } from '@mui/icons-material';
@@ -33,20 +33,12 @@ const StyledViewport = styled('div')(() => ({
     display: 'flex',
     flexDirection: 'column',
 }));
-
-const StyledMain = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'drawerOpen',
-})<{
-    drawerOpen: boolean;
-}>(({ drawerOpen }) => ({
+const StyledMain = styled('div')(() => ({
     position: 'relative',
-    flex: '1',
     height: '100%',
+    width: '100%',
     display: 'flex',
     flexDirection: 'column',
-    width: drawerOpen ? 'calc(100% - 240px)' : '100%',
-    marginLeft: drawerOpen ? '240px' : '0',
-    transition: 'margin 0.3s ease, width 0.3s ease',
     overflow: 'hidden',
 }));
 
@@ -116,14 +108,8 @@ const StyledHeaderStack = styled(Stack)(({ theme }) => ({
     borderBottom: `1px solid ${theme.palette.divider}`,
 }));
 type WorkspaceProps = {
-    /** End items to render in the top bar */
-    endTopbar?: React.ReactNode;
-
-    /** Alert to display in topbar */
-    alert?: React.ReactNode;
-
-    /** Footer to render */
-    footer?: React.ReactNode;
+    /** Actions to render in the navbar */
+    navbarActions?: React.ReactNode;
 
     /** Workspace to render */
     workspace: WorkspaceStore;
@@ -136,14 +122,7 @@ type WorkspaceProps = {
 };
 
 export const Workspace = observer((props: WorkspaceProps) => {
-    const {
-        endTopbar = null,
-        alert,
-        footer = null,
-        workspace,
-        options,
-        factory = () => null,
-    } = props;
+    const { workspace, options, factory = () => null } = props;
 
     const { configStore } = useRootStore();
     const accordionRefs = useRef({});
@@ -153,53 +132,23 @@ export const Workspace = observer((props: WorkspaceProps) => {
     const [layoutRefeshKey, setLayoutRefeshKey] = useState(0);
     const layoutRef = useRef<Layout | null>(null);
     const [settingsCehcked, setSettingsChecked] = useState(false);
+    const model = workspace.model;
     // build the model from the layout
-    const model = workspace.selectedLayout?.model;
-    const rawModel = workspace.selectedLayout?.model;
-
-    // useEffect(() => {
-    //     if (!rawModel) return;
-
-    //     const modelJson = rawModel.toJson();
-
-    //     if (!modelJson) {
-    //         setModel(rawModel);
-    //         return;
-    //     }
-
-    //     // List of notebooks tied to app
-    //     const validNotebookIds = new Set(notebook.queriesList.map((q) => q.id));
-
-    //     const root = modelJson.layout.children?.[0];
-    //     if (!root || !Array.isArray(root.children)) return;
-
-    //     // Remove notebooks that are on react flow model but not actually saved in state
-    //     const filteredLayoutArray = root.children.filter((layout: any) => {
-    //         const isNotebook = layout.component === 'notebook-viewer';
-    //         const layoutId = layout.config?.id;
-    //         return !isNotebook || validNotebookIds.has(layoutId);
-    //     });
-
-    //     root.children = filteredLayoutArray;
-    //     root['selected'] = filteredLayoutArray.length - 1;
-
-    //     setModel(Model.fromJson(modelJson));
-    // }, [notebook.queriesList, rawModel]);
-
     useEffect(() => {
         const handler = (e: CustomEvent) => {
             const { destinationType, destination } = e.detail;
             if (destinationType === 'App Page') {
-                const layoutModel = workspace.selectedLayout?.model;
-                let selectedNode: TabNode | null = null;
+                const model = workspace.model;
 
                 // get the model
-                if (!layoutModel) {
+                if (!model) {
                     throw new Error('Missing model');
                 }
 
+                let selectedNode: TabNode | null = null;
+
                 // visit the notes, and see if it exists
-                layoutModel.visitNodes((node) => {
+                model.visitNodes((node) => {
                     // check if it is a tabNode
                     if (node instanceof TabNode) {
                         // it needs to be a notebook-viewer
@@ -225,12 +174,12 @@ export const Workspace = observer((props: WorkspaceProps) => {
 
                     // where to add the node
                     const addId =
-                        layoutModel.getActiveTabset()?.getId() ||
-                        layoutModel.getRoot().getChildren()[0]?.getId() ||
+                        model.getActiveTabset()?.getId() ||
+                        model.getRoot().getChildren()[0]?.getId() ||
                         '';
 
                     // create and select the panel
-                    layoutModel.doAction(
+                    model.doAction(
                         Actions.addNode(
                             {
                                 type: 'tab',
@@ -250,7 +199,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
                 }
 
                 const selectedNodeId = selectedNode.getId();
-                layoutModel.doAction(Actions.selectTab(selectedNodeId));
+                model.doAction(Actions.selectTab(selectedNodeId));
             }
         };
         window.addEventListener('OPEN_EVENT', handler as EventListener);
@@ -328,7 +277,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
     const openTab = () => {
         const layout = layoutRef.current;
         if (!layout) return;
-        const model = workspace.selectedLayout?.model;
+        const model = workspace.model;
         const tabId = getIdByName(model['idMap'], 'Block Settings');
         model.doAction(Actions.selectTab(tabId));
     };
@@ -352,19 +301,11 @@ export const Workspace = observer((props: WorkspaceProps) => {
      */
     const resetWorkspace = () => {
         try {
-            // reset only the selected one
-            const selected = workspace.selectedLayout.id;
-            if (!selected) {
-                return;
-            }
-
             // copy the optoins
-            const layout = JSON.parse(
-                JSON.stringify(options.layout.available[selected]),
-            );
+            const layout = JSON.parse(JSON.stringify(options.layout));
 
             // update the layout
-            workspace.updateLayout(selected, layout);
+            workspace.updateLayout(layout);
         } catch (e) {
             //noop
         }
@@ -453,7 +394,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
             let selectedNode: TabNode | null = null;
 
             // get the model
-            const model = workspace.selectedLayout?.model;
+            const model = workspace.model;
             if (!model) {
                 throw new Error('Missing model');
             }
@@ -484,7 +425,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
             }
 
             // get the model
-            const model = workspace.selectedLayout?.model;
+            const model = workspace.model;
             if (!model) {
                 throw new Error('Missing model');
             }
@@ -549,7 +490,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
         >
             <WorkspaceOverlay />
             <StyledViewport>
-                <StyledMain drawerOpen={workspace.drawer.isOpen}>
+                <StyledMain>
                     <StyledHeaderStack direction={'row'} alignItems={'center'}>
                         <Breadcrumbs separator=" /">
                             <StyledHeaderLogo to={'/'}>
@@ -591,9 +532,9 @@ export const Workspace = observer((props: WorkspaceProps) => {
                             justifyContent={'center'}
                             overflow={'hidden'}
                         >
-                            <div>{alert || <>&nbsp;</>}</div>
+                            {/* <div>{alert || <>&nbsp;</>}</div> */}
                         </Stack>
-                        {endTopbar}
+                        {/* {endTopbar} */}
                     </StyledHeaderStack>
                     <StyledContent>
                         <WorkspaceLoading />
@@ -674,7 +615,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
                             ) : null}
                         </StyledSpacer>
                     </StyledContent>
-                    {footer}
+                    {/* {footer} */}
                 </StyledMain>
             </StyledViewport>
         </WorkspaceContext.Provider>
