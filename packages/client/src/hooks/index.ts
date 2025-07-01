@@ -11,6 +11,7 @@ import { useStepper } from './useStepper';
 import { useWorkspace } from './useWorkspace';
 import { useDebounce } from './useDebounce';
 import { useDebounceValue } from './useDebounceValue';
+import { usePage } from './usePage';
 import { useDatabaseStructure } from './useDatabaseStructure';
 import { useQueryExecution } from './useDatabaseQueryExecution';
 import { useQueryEditor } from './useDatabaseQueryEditor';
@@ -30,6 +31,7 @@ export {
     useWorkspace,
     useDebounce,
     useDebounceValue,
+    usePage,
     useDatabaseStructure,
     useQueryExecution,
     useQueryEditor,

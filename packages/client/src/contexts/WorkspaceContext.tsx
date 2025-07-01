@@ -5,7 +5,7 @@ import { WorkspaceStore } from '@/stores';
 /**
  * Value
  */
-export type WorkspaceContextProps = {
+export type WorkspaceContextType = {
     /** Widgets available to all of the blocks */
     workspace: WorkspaceStore;
 };
@@ -13,6 +13,6 @@ export type WorkspaceContextProps = {
 /**
  * Context
  */
-export const WorkspaceContext = createContext<
-    WorkspaceContextProps | undefined
->(undefined);
+export const WorkspaceContext = createContext<WorkspaceContextType | undefined>(
+    undefined,
+);
