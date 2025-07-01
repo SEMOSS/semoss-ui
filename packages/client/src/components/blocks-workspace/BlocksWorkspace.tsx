@@ -104,7 +104,10 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                     name: 'Settings',
                                     component: 'settings',
                                     config: {},
+                                    minWidth: 0,
+                                    maxWidth: 0,
                                     helpText: 'Settings',
+                                    enableDrag: false,
                                 },
                             ],
                         },
@@ -145,6 +148,22 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                             id: 'page-1',
                                         },
                                         enableClose: true,
+                                    },
+                                ],
+                            },
+                            {
+                                type: 'tabset',
+                                id: 'settings-tabset',
+                                weight: 0,
+                                selected: 0,
+                                enableMaximize: true,
+                                enableTabStrip: false,
+                                children: [
+                                    {
+                                        type: 'tab',
+                                        name: 'Settings',
+                                        component: 'settingsPanel',
+                                        enableClose: false,
                                     },
                                 ],
                             },
@@ -263,10 +282,6 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
             return <DesignerPanel id={config.id} />;
         } else if (component === 'variables') {
             return <VariablesPanel title={'Variables'} />;
-        } else if (component === 'settingspanel') {
-            return <SettingsPanel />;
-        } else if (component === 'settings') {
-            return <SettingsPanel />;
         } else if (component === 'layers') {
             return <LayersPanel title={'Layers'} />;
         } else if (component === 'selected') {
@@ -291,10 +306,13 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
             return <TerminalPanel />;
         } else if (component === 'graph') {
             return <GraphPanel />;
+        } else if (component === 'settingsPanel') {
+            return <SettingsPanel />;
+        } else if (component === 'settings') {
+            return null;
         }
         return <>{component}</>;
     };
-
     return (
         <Blocks state={state} registry={DefaultBlocks}>
             <DesignerContext.Provider

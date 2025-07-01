@@ -81,12 +81,6 @@ Main Content tabs
 .flexlayout__tabset_tab_divider {
     width: 0px;
 }
-.flexlayout__row {
-    
-    border-radius: var(--Shape-borderRadiusLg, 12px);
-    background: var(--Background-Paper1, #fff);
-    box-shadow: 0px 1px 2px 0px rgba(255, 4, 4, 0.08);
-}
 .flexlayout__tab_moveable {
     margin-left: 5px;
 }
@@ -114,6 +108,10 @@ Main Content tabs
     align-items: center;
     gap: 4px;
     flex: 1 0 0;
+}
+.flexlayout__tabset_container{
+    border-radius: var(--Shape-borderRadiusLg, 12px);
+    background: var(--Background-Paper1, #fff);
 }
 .flexlayout__tabset-selected {
     background-color: transparent;

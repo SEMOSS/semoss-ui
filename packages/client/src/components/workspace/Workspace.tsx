@@ -103,10 +103,6 @@ const StyledHeaderLogo = styled(Link)(({ theme }) => ({
     },
 }));
 
-const StyledHeaderLogoImg = styled('img')(({ theme }) => ({
-    width: theme.spacing(3),
-}));
-
 const StyledActions = styled(Stack)(({ theme }) => ({
     position: 'absolute',
     bottom: '8px',
@@ -114,7 +110,11 @@ const StyledActions = styled(Stack)(({ theme }) => ({
     width: '32px', // from flexlayout
     zIndex: 1,
 }));
-
+const StyledHeaderStack = styled(Stack)(({ theme }) => ({
+    paddingBottom: '0px',
+    marginBottom: '8px',
+    borderBottom: `1px solid ${theme.palette.divider}`,
+}));
 type WorkspaceProps = {
     /** End items to render in the top bar */
     endTopbar?: React.ReactNode;
@@ -152,8 +152,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
     const notification = useNotification();
     const [layoutRefeshKey, setLayoutRefeshKey] = useState(0);
     const layoutRef = useRef<Layout | null>(null);
-
-    // const [model, setModel] = useState<Model | null>(null);
+    const [settingsCehcked, setSettingsChecked] = useState(false);
     // build the model from the layout
     const model = workspace.selectedLayout?.model;
     const rawModel = workspace.selectedLayout?.model;
@@ -259,7 +258,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
             window.removeEventListener('OPEN_EVENT', handler as EventListener);
         };
     }, []);
-    //const [model,setModel] = useState(workspace.selectedLayout?.model)
     useEffect(() => {
         // default options if not loaded from cache
         const defaultOptions = JSON.parse(JSON.stringify(options));
@@ -270,6 +268,48 @@ export const Workspace = observer((props: WorkspaceProps) => {
             workspace.load(defaultOptions);
         }
     }, [options]);
+    useEffect(() => {
+        if (model) {
+            if (settingsCehcked) {
+                model
+                    .getBorderSet()
+                    .getBorders()
+                    .forEach((border) => {
+                        border.setSelected(-1);
+                    });
+                model.visitNodes((node) => {
+                    if (node.getId() === 'settings') {
+                        model.doAction(Actions.selectTab(node.getId()));
+                    }
+                    if (node.getType() === 'tabset') {
+                        const newWeight =
+                            node.getId() === 'settings-tabset' ? 100 : 0;
+                        model.doAction(
+                            Actions.updateNodeAttributes(node.getId(), {
+                                weight: newWeight,
+                            }),
+                        );
+                    }
+                });
+            } else {
+                if (
+                    model?.getNodeById('main-tabset')?.getAttr('weight') === 0
+                ) {
+                    model.visitNodes((node) => {
+                        if (node.getType() === 'tabset') {
+                            const newWeight =
+                                node.getId() === 'settings-tabset' ? 0 : 100;
+                            model.doAction(
+                                Actions.updateNodeAttributes(node.getId(), {
+                                    weight: newWeight,
+                                }),
+                            );
+                        }
+                    });
+                }
+            }
+        }
+    }, [settingsCehcked]);
     useEffect(() => {
         openTab();
     }, [designer.selected]);
@@ -510,12 +550,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
             <WorkspaceOverlay />
             <StyledViewport>
                 <StyledMain drawerOpen={workspace.drawer.isOpen}>
-                    <Stack
-                        direction={'row'}
-                        alignItems={'center'}
-                        padding={1}
-                        spacing={1}
-                    >
+                    <StyledHeaderStack direction={'row'} alignItems={'center'}>
                         <Breadcrumbs separator=" /">
                             <StyledHeaderLogo to={'/'}>
                                 <Stack direction={'row'} alignItems={'center'}>
@@ -559,7 +594,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
                             <div>{alert || <>&nbsp;</>}</div>
                         </Stack>
                         {endTopbar}
-                    </Stack>
+                    </StyledHeaderStack>
                     <StyledContent>
                         <WorkspaceLoading />
                         <StyledSpacer>
@@ -582,6 +617,17 @@ export const Workspace = observer((props: WorkspaceProps) => {
                                         onRenderTabSet={handleRenderTabSet}
                                         onModelChange={() => {
                                             workspace.saveToCache();
+                                        }}
+                                        onAction={(action) => {
+                                            if (
+                                                action.data.tabNode ===
+                                                'settings'
+                                            ) {
+                                                setSettingsChecked(true);
+                                            } else {
+                                                setSettingsChecked(false);
+                                            }
+                                            return action;
                                         }}
                                         onRenderTab={(
                                             tabNode,
