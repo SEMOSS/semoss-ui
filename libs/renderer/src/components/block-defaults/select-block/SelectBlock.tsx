@@ -2,7 +2,6 @@ import { useMemo, CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import {
     Autocomplete,
-    LinearProgress,
     Stack,
     TextField,
     Typography,
@@ -11,7 +10,7 @@ import {
 
 import { CircularProgress, InputAdornment } from "@semoss/ui";
 
-import { useBlock, useDebounce } from "../../../hooks";
+import { useBlock } from "../../../hooks";
 import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { debounced } from "../../../utility";
 
@@ -75,6 +74,10 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
             }
         } else {
             arr = data.options;
+        }
+        const foundValue = arr.find((value) => value.toString() === data.value);
+        if (data.value && data.value.length > 0 && !foundValue) {
+            setData("value", "");
         }
         return arr.map((option) => {
             if (typeof option !== "string") {
