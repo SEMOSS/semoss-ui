@@ -87,7 +87,7 @@ export function useQueryExecution(engineId: string, options: QueryExecutionOptio
 
       const cleanedQuery = removeComments(query).replaceAll('`','');
 
-      let pixel = `SqlQuery(database=["${engineId}"], query=["<encode>${removeComments(query).replaceAll('`','')}</encode>"], limit=[${limit}]);`;
+      let pixel = `SqlQuery(database=["${engineId}"], query=["<encode>${removeComments(query).replaceAll('`','')}</encode>"], limit=[${limit}], commit = [true]);`;
       
       const response = await monolithStore.runQuery(pixel);
       console.log('Full response:', response);

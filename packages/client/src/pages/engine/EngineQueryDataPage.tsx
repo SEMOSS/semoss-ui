@@ -59,7 +59,7 @@ const StyledRight = styled('div')(({ theme }) => ({
 }));
 
 export const EngineQueryDataPage = observer(() => {
-    const { id } = useEngine();
+    const { active } = useEngine();
     const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
     
     const handleRefresh = () => {
@@ -80,7 +80,7 @@ export const EngineQueryDataPage = observer(() => {
         isLoading,
         error,
         refreshDatabaseStructure
-    } = useDatabaseStructure(id || '');
+    } = useDatabaseStructure(active.id || '');
 
     const {
         query,
@@ -92,7 +92,7 @@ export const EngineQueryDataPage = observer(() => {
         executeQuery: executeQueryInternal,
         limit,
         setLimit
-    } = useQueryExecution(id || '', {
+    } = useQueryExecution(active.id || '', {
         onSchemaChange: () => {
             setRefreshMessage('Database schema changed. Refreshing structure...');
             refreshDatabaseStructure();
