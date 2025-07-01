@@ -9,6 +9,8 @@ export interface VizBlockContextMenuProps {
     id: string;
     /** Frame that the user is interacting with */
     frame: ReturnType<typeof useFrame>;
+    /**Name of the frame */
+    frameName: string;
     /** Context Menu */
     contextMenu: {
         mouseX: number;
@@ -19,7 +21,13 @@ export interface VizBlockContextMenuProps {
     onClose: () => void;
 }
 export const CustomContextMenu: React.FC<VizBlockContextMenuProps> = observer(
-    ({ id = "", frame = null, contextMenu = null, onClose = () => null }) => {
+    ({
+        id = "",
+        frame = null,
+        frameName = "",
+        contextMenu = null,
+        onClose = () => null,
+    }) => {
         const { data } = useBlock<EchartVisualizationBlockDef>(id);
         return (
             <Menu
@@ -40,7 +48,7 @@ export const CustomContextMenu: React.FC<VizBlockContextMenuProps> = observer(
                         dense={true}
                         value={"unfilter"}
                         onClick={() => {
-                            frame.unfilter();
+                            frame.unfilter(frameName);
                             onClose();
                         }}
                     >

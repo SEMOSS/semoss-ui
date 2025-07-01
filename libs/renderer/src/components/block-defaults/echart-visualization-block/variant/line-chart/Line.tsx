@@ -319,6 +319,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
                 <CustomContextMenu
                     id={id}
                     frame={frame}
+                    frameName={data?.frame?.name}
                     contextMenu={contextMenu}
                     onClose={() => setContextMenu(null)}
                 />

@@ -88,7 +88,6 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
         selector: buildDynamicQuery(Object.entries(data?.aggregate ?? {})),
     });
 
-
     /**
      * @description Trying out different approach for TrendLine, work in progress
      */
@@ -228,6 +227,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
                 <CustomContextMenu
                     id={id}
                     frame={frame}
+                    frameName={data?.frame?.name}
                     contextMenu={contextMenu}
                     onClose={() => setContextMenu(null)}
                 />

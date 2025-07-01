@@ -11,6 +11,9 @@ export interface GridBlockContextMenuProps {
     /** Frame that the user is interacting with */
     frame: ReturnType<typeof useFrame>;
 
+    // Name of the frame
+    frameName: string;
+
     /** Context Menu */
     contextMenu: {
         mouseX: number;
@@ -23,8 +26,16 @@ export interface GridBlockContextMenuProps {
 }
 
 export const CustomContextMenu: React.FC<GridBlockContextMenuProps> = observer(
-    ({ id = "", frame = null, contextMenu = null, onClose = () => null }) => {
+    ({
+        id = "",
+        frame = null,
+        frameName = "",
+        contextMenu = null,
+        onClose = () => null,
+    }) => {
         const { data } = useBlock<GridBlockDef>(id);
+
+        console.log(data, "data");
         return (
             <Menu
                 open={contextMenu !== null}
@@ -44,7 +55,7 @@ export const CustomContextMenu: React.FC<GridBlockContextMenuProps> = observer(
                         dense={true}
                         value={"unfilter"}
                         onClick={() => {
-                            frame.unfilter();
+                            frame.unfilter(frameName);
                             onClose();
                         }}
                     >

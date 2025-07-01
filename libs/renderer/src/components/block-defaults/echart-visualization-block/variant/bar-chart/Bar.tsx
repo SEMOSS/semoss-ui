@@ -83,8 +83,9 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
     };
 
     const selector = buildDynamicQuery(Object.entries(data?.aggregate ?? {}));
+
     //frame object
-    const frameData = useFrame(data.frame.name, {
+    const frameData = useFrame(data?.frame?.name, {
         selector: selector,
     });
     const chartOperationData = useRef({
@@ -287,6 +288,7 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
                 <ChartContextMenu
                     id={id}
                     frame={frameData}
+                    frameName={data?.frame?.name}
                     contextMenu={contextMenu}
                     chartInstance={chartOperationData.current.chartInstance}
                     onClose={() => {

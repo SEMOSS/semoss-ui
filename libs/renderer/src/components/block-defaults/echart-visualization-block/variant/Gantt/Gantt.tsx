@@ -878,6 +878,7 @@ export const Gantt = observer(
                     <VizBlockContextMenu
                         id={id}
                         frame={frame}
+                        frameName={data?.frame?.name}
                         contextMenu={contextMenu}
                         onClose={() => setContextMenu(null)}
                     />

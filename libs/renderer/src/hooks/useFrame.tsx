@@ -81,26 +81,29 @@ export function useFrame(
      *
      * @param - filterPixel
      */
-    const unfilterFrame = useCallback(async (): Promise<boolean> => {
-        try {
-            setIsLoading(true);
+    const unfilterFrame = useCallback(
+        async (frameName?: string): Promise<boolean> => {
+            try {
+                setIsLoading(true);
 
-            // filter the frame
-            const response = await state.runSideEffect(
-                `META | UnfilterFrame(${frame});`,
-            );
+                // filter the frame
+                const response = await state.runSideEffect(
+                    `META | UnfilterFrame(${frameName || frame});`,
+                );
 
-            console.group(response);
+                console.group(response);
 
-            return true;
-        } catch (e) {
-            // log the error
-            console.error(e);
-            return false;
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+                return true;
+            } catch (e) {
+                // log the error
+                console.error(e);
+                return false;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [],
+    );
 
     /**
      * Get the data

@@ -714,6 +714,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
                 <ChartContextMenu
                     id={id}
                     frame={frame}
+                    frameName={data?.frame?.name}
                     contextMenu={contextMenu}
                     chartInstance={chartOperationData.current.chartInstance}
                     onClose={() => {

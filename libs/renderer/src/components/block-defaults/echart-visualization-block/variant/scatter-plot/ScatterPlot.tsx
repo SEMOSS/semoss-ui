@@ -142,6 +142,7 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                     <VizBlockContextMenu
                         id={id}
                         frame={frame}
+                        frameName={data?.frame?.name}
                         contextMenu={contextMenu}
                         onClose={() => setContextMenu(null)}
                     />
@@ -195,6 +196,7 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                 <VizBlockContextMenu
                     id={id}
                     frame={frame}
+                    frameName={data?.frame?.name}
                     contextMenu={contextMenu}
                     onClose={() => setContextMenu(null)}
                 />

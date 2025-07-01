@@ -9,6 +9,7 @@ import { useBlock, useFrame } from "../../../../../hooks";
 export interface ChartContextMenuProps {
     id: string;
     frame: ReturnType<typeof useFrame>;
+    frameName: string;
     contextMenu: {
         mouseX: number;
         mouseY: number;
@@ -19,7 +20,7 @@ export interface ChartContextMenuProps {
 }
 //Open this contextmenu when right click event is triggered
 export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
-    ({ id, frame, contextMenu, chartInstance, onClose }) => {
+    ({ id, frame, frameName = "", contextMenu, chartInstance, onClose }) => {
         const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
         const currentOperation = useRef({
             unfilterActive: false,
@@ -131,7 +132,7 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                         dense={true}
                         value={"unfilter"}
                         onClick={() => {
-                            frame.unfilter();
+                            frame.unfilter(frameName);
                             let optionUp = data.option;
                             const reUpdate = data.option["series"];
                             optionUp = {
