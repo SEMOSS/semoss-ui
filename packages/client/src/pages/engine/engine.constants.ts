@@ -256,7 +256,7 @@ export const ENGINE_ROUTES: {
                 name: 'Files',
                 path: 'files',
                 component: EngineFilePage,
-                restrict:  ['EDIT', 'OWNER', 'READ_ONLY'],
+                restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
             },
         ],
     },

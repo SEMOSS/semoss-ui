@@ -32,15 +32,13 @@ const StyledTopDiv = styled('div')(() => ({
     justifyContent: 'space-between',
 }));
 
-
 const emptyModel = Model.fromJson({
     global: {},
     layout: {
-      type: 'row',
-      children: [],
+        type: 'row',
+        children: [],
     },
-  });
-
+});
 
 const json = {
     global: {
@@ -68,28 +66,28 @@ const layout = new Layout({
 });
 
 const { monolithStore, configStore } = useRootStore();
-const insightId=configStore.store.insightID;
+const insightId = configStore.store.insightID;
 console.log('insightId', insightId);
 
 const mockWorkspace = {
     workspace: {
         appId: '',
         insightId: insightId, // Using the insightId from configStore
-      } as any, 
+    } as any,
 
-      options: {
-      },
+    options: {},
 
-      overlay: {
+    overlay: {
         open: false,
         options: {
             maxWidth: 'sm',
         },
         content: () => null,
-    }
-    };
+    },
+};
+
 export const EngineFilePage = () => {
-    //Grabbing Engine Id for document creation
+    // Grabbing Engine Id for document creation
     const { id } = useEngine();
 
     return (
@@ -100,9 +98,9 @@ export const EngineFilePage = () => {
 
             <StyledTableContainer>
                 {/* <FileTable id={id} /> */}
-            <WorkspaceContext.Provider value={mockWorkspace}>
-                <FileExplorerPanel layout={layout}/>
-            </WorkspaceContext.Provider>
+                <WorkspaceContext.Provider value={mockWorkspace}>
+                    <FileExplorerPanel layout={layout} />
+                </WorkspaceContext.Provider>
             </StyledTableContainer>
         </StyledContainer>
     );
