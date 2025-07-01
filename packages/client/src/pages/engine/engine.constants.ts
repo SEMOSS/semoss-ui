@@ -252,6 +252,12 @@ export const ENGINE_ROUTES: {
                 component: EngineSmssPage,
                 restrict: ['OWNER'],
             },
+            {
+                name: 'Files',
+                path: 'files',
+                component: EngineFilePage,
+                restrict:  ['EDIT', 'OWNER', 'READ_ONLY'],
+            },
         ],
     },
 ];
