@@ -133,9 +133,25 @@ export const EngineShell = (props: EngineShellProps) => {
             const output = response.pixelReturn[0].output,
                 insightId = response.insightId;
 
-            monolithStore.download(insightId, output);
+            monolithStore
+                .download(insightId, output)
+                .then(() => {
+                    if (output && response.errors.length === 0) {
+                        notification.add({
+                            color: 'success',
+                            message: `${type} downloaded successfully`,
+                        });
+                    }
+                    setExportLoading(false);
+                })
+                .catch(() => {
+                    notification.add({
+                        color: 'error',
+                        message: `${type} download failed`,
+                    });
+                    setExportLoading(false);
+                });
         });
-        setExportLoading(false);
     };
 
     // show a loading screen when it is pending
