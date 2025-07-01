@@ -125,16 +125,19 @@ console.log("EngineFilePage");
 
 export const EngineFilePage = () => {
     //Grabbing Engine Id for document creation
-//     const { id } = useEngine();
-// const { monolithStore, configStore } = useRootStore();
-// const insightID = configStore.store.insightID;
-// // const insightID = monolithStore.getInsightId(id);
-// console.log("at EngineFilePage insightID" ,insightID);
-// console.log("at EngineFilePage id" ,id);
-// console.log("at EngineFilePage monolithStore" ,monolithStore.config);
-// console.log("at EngineFilePage configStore" ,configStore.store);
+    const { id } = useEngine();
+const { monolithStore, configStore } = useRootStore();
+const insightID = configStore.store.insightID;
+// const insightID = monolithStore.getInsightId(id);
+console.log("at EngineFilePage insightID" ,insightID);
+console.log("at EngineFilePage id" ,id);
+console.log("at EngineFilePage monolithStore" ,monolithStore.config);
+console.log("at EngineFilePage configStore" ,configStore.store);
 const mockWorkspace = {
-    workspace: {} as WorkspaceStore, 
+    workspace: {
+        appId: '',
+        insightId: insightID, // Use the insightID from the store
+    } as WorkspaceStore, 
     options: {},
       factory: (node: TabNode, layout: Layout) => {
         const component = node.getComponent();

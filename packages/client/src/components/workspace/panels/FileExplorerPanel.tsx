@@ -45,9 +45,9 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 
     // set the uploadPath based on the selected item
     useEffect(() => {
-        let path = 'version/assets/';
+        console.log('FileExplorerPanel useEffect', selectedPath);
+        let path = '/';
 
-        // if selected, get the directory
         if (selectedPath) {
             if (selectedPath.slice(-1) === '/') {
                 path = selectedPath;
@@ -464,7 +464,8 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
         }
     };
 
-    console.log("FileExplorerPanel");
+    console.log("FileExplorerPanel", workspace.appId, fileUploadPath);
+    console.log("InsightId", workspace.insightId);
 
     return (
         <Panel

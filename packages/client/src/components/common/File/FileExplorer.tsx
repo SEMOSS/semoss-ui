@@ -2,7 +2,7 @@ import React from 'react';
 import { Icon, TreeView, styled } from '@semoss/ui';
 import { ExpandMore, ChevronRight } from '@mui/icons-material';
 
-import { useEngine, usePixel } from '@/hooks';
+import { useEngine, usePixel, useRootStore, useWorkspace } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
 import { FileExplorerItem } from './FileExplorerItem';
@@ -71,8 +71,9 @@ export const FileExplorer = (props: FileExplorerProps) => {
     // );
 
     const { id } = useEngine();
-    const query = `Storage(storage = '${id}') | ListStoragePath(storagePath='/');`;
-    console.log("at FileExplorer query inside" ,query);
+    const query = `Storage(storage = '${id}') | ListStoragePathDetails(storagePath='/');`;
+    console.log("at FileExplorer query 4" ,query);
+    
     const getAssets = usePixel<
         {
             metadata: Record<string, any>;
@@ -94,13 +95,15 @@ export const FileExplorer = (props: FileExplorerProps) => {
 
     const initLoadComplete = getAssets.status === 'SUCCESS';
     console.log("at FileExplorer type" ,type)
-    console.log("at FileExplorer  Fetching assets 9" ,getAssets.status);
-    console.log("at FileExplorer  Fetching assets 9" ,getAssets.data);
-    
+    console.log("at FileExplorer  Fetching assets 12",getAssets.status);
+    console.log("at FileExplorer  Fetching assets 12" ,getAssets.data);
 
     const [expanded, setExpanded] = React.useState<string[]>([]);
     const [selected, setSelected] = React.useState<string[]>([]);
 
+    const { monolithStore, configStore } = useRootStore();
+    const insightIdFromStore = configStore.store.insightID;
+    console.log("at FileExplorer insightIdFromStore" ,insightIdFromStore);
     /**
      * Triggered when a node is selected
      * @param selected - newly selected values
@@ -160,8 +163,10 @@ export const FileExplorer = (props: FileExplorerProps) => {
                         const name = n.key.split('/').pop() || n.key;
                         const path = n.key;
                         const isDirectory = !n.key.includes('.'); // fallback check, or use metadata if available
-                        const lastModified = new Date(n.lastModified.seconds * 1000).toISOString();
-                
+                        const lastModified = new Date(
+                            n.lastModified.seconds * 1000 +
+                                n.lastModified.nanos / 1000000,
+                        ).toLocaleString();
                         return (
                             <FileExplorerItem
                                 key={path}
