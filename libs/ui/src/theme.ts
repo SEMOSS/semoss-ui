@@ -277,7 +277,7 @@ export const lightTheme: CustomThemeOptions = {
     },
     shape: {
         borderRadiusNone: 0,
-        borderRadius: 12,
+        borderRadius: 8,
         borderRadiusSm: 4,
         borderRadiusLg: 20,
         borderRadiusCircle: 64,
@@ -388,7 +388,7 @@ export const lightTheme: CustomThemeOptions = {
         },
         h5: {
             /* Typography/H5 */
-            fontSize: "24px",
+            fontSize: "4px",
             fontStyle: "normal",
             fontWeight: "500",
             lineHeight: "133.4%",
@@ -411,6 +411,9 @@ export const lightTheme: CustomThemeOptions = {
     components: {
         MuiCssBaseline: {
             styleOverrides: (themeParam) => ({
+                body: {
+                    overflow: "hidden",
+                },
                 "*::-webkit-scrollbar": {
                     width: "8px",
                     height: "8px",
@@ -419,7 +422,7 @@ export const lightTheme: CustomThemeOptions = {
 
                 "*::-webkit-scrollbar-thumb": {
                     // -webkit-border-radius: '4px',
-                    borderRadius: "4px",
+                    borderRadius: "8px",
                     height: "18px",
                     background: "#bdbdbd",
                     backgroundClip: "padding-box",
@@ -663,7 +666,7 @@ export const darkTheme: CustomThemeOptions = {
     },
     shape: {
         borderRadiusNone: 0,
-        borderRadius: 12,
+        borderRadius: 8,
         borderRadiusSm: 4,
         borderRadiusLg: 20,
         borderRadiusCircle: 64,
@@ -805,7 +808,7 @@ export const darkTheme: CustomThemeOptions = {
 
                 "*::-webkit-scrollbar-thumb": {
                     // -webkit-border-radius: '4px',
-                    borderRadius: "4px",
+                    borderRadius: "8px",
                     height: "18px",
                     background: "#bdbdbd",
                     backgroundClip: "padding-box",

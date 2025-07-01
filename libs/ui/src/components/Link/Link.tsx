@@ -1,5 +1,9 @@
 import React from "react";
-import { Link as MuiLink, SxProps } from "@mui/material";
+import {
+    Link as MuiLink,
+    LinkProps as MuiLinkProps,
+    SxProps,
+} from "@mui/material";
 
 export interface LinkProps {
     /**
@@ -8,16 +12,7 @@ export interface LinkProps {
     children?: React.ReactNode;
 
     //** color of link */
-    color?:
-        | "inherit"
-        | "action"
-        | "disabled"
-        | "secondary"
-        | "primary"
-        | "error"
-        | "info"
-        | "success"
-        | "warning";
+    color?: MuiLinkProps["color"];
 
     /**
      * Link

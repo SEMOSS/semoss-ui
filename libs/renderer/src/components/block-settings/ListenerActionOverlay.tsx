@@ -1,7 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { styled, Stack, TextField, Modal, Button, Select } from "@semoss/ui";
+import {
+    styled,
+    Stack,
+    TextField,
+    Modal,
+    Button,
+    Select,
+    Typography,
+} from "@semoss/ui";
 import { Controller, useForm } from "react-hook-form";
 
 import { useBlockSettings, useBlocks } from "../../hooks";
@@ -45,11 +53,18 @@ type ListenerActionForm = ListenerActions;
 
 export const ListenerActionOverlay = observer(
     <D extends BlockDef = BlockDef>(props: ActionOverlayProps<D>) => {
-        const { id, type, listener, actionIdx = -1, onClose = () => null } = props;
+        const {
+            id,
+            type,
+            listener,
+            actionIdx = -1,
+            onClose = () => null,
+        } = props;
 
         const { state } = useBlocks();
         const { listeners, setListener } = useBlockSettings(id);
 
+        const destinationTypes = ["External", "Internal"];
         // get the queries as an array
         const queries = computed(() => {
             return Object.values(state.queries).sort((a, b) => {
@@ -71,28 +86,40 @@ export const ListenerActionOverlay = observer(
 
         // TODO: Refactor Code
         // Each listener have its own useForm
-        const lis = listeners[listener][actionIdx];
-        
+        const lis = listeners[listener].order[actionIdx];
+
         // create a new form
         const { control, handleSubmit, reset, watch, setValue } =
             useForm<ListenerActionForm>(
                 lis
-                    ? lis.message === ActionMessages.RUN_CELL ? {
-                          defaultValues: {
-                              message: ActionMessages.RUN_CELL,
-                              payload: {
-                                  queryId: "",
-                                  cellId: "",
+                    ? lis.message === ActionMessages.RUN_CELL
+                        ? {
+                              defaultValues: {
+                                  message: ActionMessages.RUN_CELL,
+                                  payload: {
+                                      queryId: "",
+                                      cellId: "",
+                                  },
                               },
-                          },
-                      } : {
-                        defaultValues: {
-                            message: ActionMessages.RUN_QUERY,
-                            payload: {
-                                queryId: "",
-                            },
-                        },
-                    }
+                          }
+                        : lis.message === ActionMessages.DISPATCH_OPEN_EVENT
+                        ? {
+                              defaultValues: {
+                                  message: ActionMessages.DISPATCH_OPEN_EVENT,
+                                  payload: {
+                                      destinationType: "",
+                                      destination: "",
+                                  },
+                              },
+                          }
+                        : {
+                              defaultValues: {
+                                  message: ActionMessages.RUN_QUERY,
+                                  payload: {
+                                      queryId: "",
+                                  },
+                              },
+                          }
                     : {
                           defaultValues: {
                               message: ActionMessages.RUN_QUERY,
@@ -105,27 +132,30 @@ export const ListenerActionOverlay = observer(
 
         // the type
         const message = watch("message");
+        const distinationType = watch("payload.destinationType");
+
+        const pages = useMemo(() => {
+            return state.getAllBlocksOfType("page").map((page) => {
+                return { id: page.id, route: page.data.route };
+            });
+        }, [distinationType]);
 
         // TODO: can we make each action type its own component.  So we don't have to do this
         const queryId = watch("payload.queryId");
 
+        console.log(state.queries[queryId]);
         // get the queries as an array
         const cells = computed(() => {
             if (queryId) {
-                return Object.values(state.queries[queryId].cells).sort(
-                    (a, b) => {
-                        const aId = a.id.toLowerCase(),
-                            bId = b.id.toLowerCase();
+                const li = [];
 
-                        if (aId < bId) {
-                            return -1;
-                        }
-                        if (aId > bId) {
-                            return 1;
-                        }
-                        return 0;
-                    },
-                );
+                state.queries[queryId].list.forEach((iD) => {
+                    li.push(state.queries[queryId].cells[iD]);
+                });
+
+                return li;
+
+                return Object.values(state.queries[queryId].cells);
             }
             return [];
         }).get();
@@ -134,7 +164,9 @@ export const ListenerActionOverlay = observer(
          * Allow user to submit the data
          */
         const onSubmit = handleSubmit((a: ListenerActionForm) => {
-            const updated = listeners[listener] ? [...listeners[listener].order] : [];
+            const updated = listeners[listener].order
+                ? [...listeners[listener].order]
+                : [];
 
             if (actionIdx === -1) {
                 // add the new one
@@ -163,7 +195,7 @@ export const ListenerActionOverlay = observer(
             };
 
             if (actionIdx !== -1) {
-                form = listeners[listener][actionIdx];
+                form = listeners[listener].order[actionIdx];
             }
 
             reset(form);
@@ -173,9 +205,9 @@ export const ListenerActionOverlay = observer(
         // reset whenever the message changes
         useEffect(() => {
             if (message === ActionMessages.RUN_QUERY) {
-                if (listeners[listener][actionIdx]) {
+                if (listeners[listener].order[actionIdx]) {
                     if (
-                        listeners[listener][actionIdx].message !==
+                        listeners[listener].order[actionIdx].message !==
                         ActionMessages.RUN_QUERY
                     ) {
                         setValue("payload", {
@@ -192,9 +224,9 @@ export const ListenerActionOverlay = observer(
             } else if (message === ActionMessages.DISPATCH_OUTPUTS_EVENT) {
                 setValue("payload", {});
             } else if (message === ActionMessages.RUN_CELL) {
-                if (listeners[listener][actionIdx]) {
+                if (listeners[listener].order[actionIdx]) {
                     if (
-                        listeners[listener][actionIdx].message !==
+                        listeners[listener].order[actionIdx].message !==
                         ActionMessages.RUN_CELL
                     ) {
                         setValue("payload", {
@@ -203,6 +235,19 @@ export const ListenerActionOverlay = observer(
                         });
                     }
                     setValue("message", ActionMessages.RUN_CELL);
+                }
+            } else if (message === ActionMessages.DISPATCH_OPEN_EVENT) {
+                if (listeners[listener].order[actionIdx]) {
+                    if (
+                        listeners[listener].order[actionIdx].message !==
+                        ActionMessages.DISPATCH_OPEN_EVENT
+                    ) {
+                        setValue("payload", {
+                            destinationType: "",
+                            destination: "",
+                        });
+                    }
+                    setValue("message", ActionMessages.DISPATCH_OPEN_EVENT);
                 }
             }
         }, [message]);
@@ -231,6 +276,7 @@ export const ListenerActionOverlay = observer(
                                             ActionMessages.RUN_CELL,
                                             ActionMessages.DISPATCH_EVENT,
                                             ActionMessages.DISPATCH_OUTPUTS_EVENT,
+                                            ActionMessages.DISPATCH_OPEN_EVENT,
                                         ].map((a, aIdx) => (
                                             <Select.Item key={aIdx} value={a}>
                                                 {ACTIONS_DISPLAY[a]}
@@ -281,7 +327,7 @@ export const ListenerActionOverlay = observer(
                                     render={({ field }) => {
                                         return (
                                             <Select
-                                                label="Query"
+                                                label="Notebook"
                                                 value={
                                                     field.value
                                                         ? field.value
@@ -309,7 +355,7 @@ export const ListenerActionOverlay = observer(
                                     render={({ field }) => {
                                         return (
                                             <Select
-                                                label="Cell Id"
+                                                label="Cell"
                                                 value={
                                                     field.value
                                                         ? field.value
@@ -319,14 +365,28 @@ export const ListenerActionOverlay = observer(
                                                     field.onChange(value)
                                                 }
                                             >
-                                                {cells.map((q) => (
-                                                    <Select.Item
-                                                        key={q.id}
-                                                        value={q.id}
-                                                    >
-                                                        {q.id}
-                                                    </Select.Item>
-                                                ))}
+                                                {cells.map((c) => {
+                                                    const variableName =
+                                                        state.getAlias(
+                                                            queryId,
+                                                            c.id,
+                                                        );
+
+                                                    return (
+                                                        <Select.Item
+                                                            key={c.id}
+                                                            value={c.id}
+                                                        >
+                                                            <Typography
+                                                                variant={
+                                                                    "body2"
+                                                                }
+                                                            >
+                                                                {variableName}
+                                                            </Typography>
+                                                        </Select.Item>
+                                                    );
+                                                })}
                                             </Select>
                                         );
                                     }}
@@ -378,6 +438,100 @@ export const ListenerActionOverlay = observer(
                                         );
                                     }}
                                 /> */}
+                            </>
+                        ) : null}
+
+                        {message === ActionMessages.DISPATCH_OPEN_EVENT ? (
+                            <>
+                                <Controller
+                                    name={"payload.destinationType"}
+                                    control={control}
+                                    render={({ field }) => {
+                                        return (
+                                            <Select
+                                                label="Destination"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ""
+                                                }
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                            >
+                                                {destinationTypes.map(
+                                                    (q, i) => (
+                                                        <Select.Item
+                                                            key={q + i + "--id"}
+                                                            value={q}
+                                                        >
+                                                            {q}
+                                                        </Select.Item>
+                                                    ),
+                                                )}
+                                            </Select>
+                                        );
+                                    }}
+                                />
+                                {distinationType && (
+                                    <Controller
+                                        name={"payload.destination"}
+                                        control={control}
+                                        render={({ field }) => {
+                                            return (
+                                                <>
+                                                    {distinationType ===
+                                                    "External" ? (
+                                                        <TextField
+                                                            label="URL"
+                                                            value={
+                                                                field.value
+                                                                    ? field.value
+                                                                    : ""
+                                                            }
+                                                            onChange={(value) =>
+                                                                field.onChange(
+                                                                    value,
+                                                                )
+                                                            }
+                                                        />
+                                                    ) : (
+                                                        <Select
+                                                            label="Page"
+                                                            value={
+                                                                field.value
+                                                                    ? field.value
+                                                                    : ""
+                                                            }
+                                                            onChange={(value) =>
+                                                                field.onChange(
+                                                                    value,
+                                                                )
+                                                            }
+                                                        >
+                                                            {pages.map(
+                                                                (q, i) => (
+                                                                    <Select.Item
+                                                                        key={
+                                                                            q.id +
+                                                                            i +
+                                                                            "--id"
+                                                                        }
+                                                                        value={
+                                                                            q.route
+                                                                        }
+                                                                    >
+                                                                        {q.route as string}
+                                                                    </Select.Item>
+                                                                ),
+                                                            )}
+                                                        </Select>
+                                                    )}
+                                                </>
+                                            );
+                                        }}
+                                    />
+                                )}
                             </>
                         ) : null}
                     </Stack>

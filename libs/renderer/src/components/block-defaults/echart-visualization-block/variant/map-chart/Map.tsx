@@ -43,6 +43,7 @@ export interface EchartVisualizationBlockDef {
         };
         variation: undefined | string;
         columns: EChartColumns[];
+        aggregate: Record<string, any>;
         contextMenu: {
             hideUnfilter: boolean;
             hideFilter: boolean;
@@ -63,7 +64,7 @@ export const Map: BlockComponent = observer(({ id }) => {
         value: unknown;
     } | null>(null);
     const frame = useFrame(data?.frame?.name, {
-        selector: getSelector(data),
+        selector: getSelector(data, data?.aggregate),
     });
     const updatedOption =
         mapRef.current && typeof mapRef.current.getOption === "function"

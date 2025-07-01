@@ -14,7 +14,7 @@ export interface PixelConfig<D> {
     /** Initial Data */
     data: D;
 
-    /** Mangually process errors. Does not throw notifications */
+     /** Mangually process errors. Does not throw notifications */
     silent: boolean;
 }
 
@@ -37,8 +37,6 @@ export function usePixel<D>(
     config?: Partial<PixelConfig<D>>,
     insightId?: string,
 ): usePixel<D> {
-    // const notification = useNotification();
-
     // store the initial config options
     const options: PixelConfig<D> = useMemo(() => {
         return {
@@ -99,6 +97,7 @@ export function usePixel<D>(
 
         setState({
             status: "LOADING",
+            data: options.data,
         });
 
         runPixel(pixel, insightId)
@@ -122,6 +121,8 @@ export function usePixel<D>(
                     status: "SUCCESS",
                     data: output as D,
                 });
+
+                // options.onSuccess(output);
             })
             .catch((error) => {
                 // ignore if its cancelled
@@ -129,7 +130,7 @@ export function usePixel<D>(
                     return;
                 }
 
-                if (!options.silent) {
+                 if (!options.silent) {
                     // notification.add({
                     //     color: "error",
                     //     message: error.message,
@@ -141,9 +142,10 @@ export function usePixel<D>(
 
                 setState({
                     status: "ERROR",
+                    data: options.data,
                     error: error,
                 });
-            });
+            })
 
         return () => {
             isCancelled = true;

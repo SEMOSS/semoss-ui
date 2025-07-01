@@ -1,7 +1,5 @@
 import {
-    Functions,
     Inventory2Outlined,
-    Polyline,
     SwitchAccessShortcutOutlined,
     TokenOutlined,
 } from '@mui/icons-material';
@@ -10,7 +8,7 @@ import { ENGINE_TYPES, Role } from '@/types';
 import { ModelBrain } from '@/assets/img/ModelBrain';
 import { Database } from '@/assets/img/Database';
 
-import { EngineIndexPage } from './EngineIndexPage';
+import { EngineOverviewPage } from './EngineOverviewPage';
 import { EngineMetadataPage } from './EngineMetadataPage';
 import { EngineSettingsPage } from './EngineSettingsPage';
 import { EngineFilePage } from './EngineFilePage';
@@ -49,10 +47,7 @@ export const ENGINE_ROUTES: {
         restrict: Role[] | false;
 
         /** Component to render */
-        component: React.FunctionComponent<{
-            /** Type of the engine */
-            type: ENGINE_TYPES;
-        }>;
+        component: React.FunctionComponent;
     }[];
 }[] = [
     {
@@ -66,7 +61,7 @@ export const ENGINE_ROUTES: {
             {
                 name: 'Overview',
                 path: '',
-                component: EngineIndexPage,
+                component: EngineOverviewPage,
                 restrict: false,
             },
             {
@@ -100,7 +95,7 @@ export const ENGINE_ROUTES: {
             {
                 name: 'Overview',
                 path: '',
-                component: EngineIndexPage,
+                component: EngineOverviewPage,
                 restrict: false,
             },
             {
@@ -140,7 +135,7 @@ export const ENGINE_ROUTES: {
             {
                 name: 'Overview',
                 path: '',
-                component: EngineIndexPage,
+                component: EngineOverviewPage,
                 restrict: false,
             },
             {
@@ -192,7 +187,7 @@ export const ENGINE_ROUTES: {
             {
                 name: 'Overview',
                 path: '',
-                component: EngineIndexPage,
+                component: EngineOverviewPage,
                 restrict: false,
             },
             {
@@ -238,7 +233,7 @@ export const ENGINE_ROUTES: {
             {
                 name: 'Overview',
                 path: '',
-                component: EngineIndexPage,
+                component: EngineOverviewPage,
                 restrict: false,
             },
             {

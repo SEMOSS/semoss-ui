@@ -1,6 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
-import { ReportRounded } from '@mui/icons-material';
+import {
+    DeleteOutline,
+    ReportRounded,
+    InfoOutlined,
+} from '@mui/icons-material';
+import html2canvas from 'html2canvas';
 
 import { ActionMessages, INPUT_BLOCK_TYPES, useBlocks } from '@semoss/renderer';
 import {
@@ -11,9 +16,12 @@ import {
     Typography,
     useNotification,
     Icon,
+    Button,
+    IconButton,
+    Box,
 } from '@semoss/ui';
 
-import { useDesigner } from '@/hooks';
+import { useDesigner, useRootStore } from '@/hooks';
 import { BlockCardContent, blockCardWidth } from './BlockMenuCardContent';
 import {
     BlockLocalStorageData,
@@ -37,16 +45,26 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
 export interface AddBlocksMenuItemProps {
     /** Item that can be dragged onto the block */
     item: DesignerMenuItem;
+
+    /** Determined for snapshot code */
+    isCommunity: boolean;
+
+    /** Handle the trash click */
+    handleOnTrashClick: (blockId: string, blockName: string) => void;
 }
 
 /**
  * Individaul block that can be dragged onto the UI
  */
 export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
-    const { item } = props;
+    const { item, isCommunity, handleOnTrashClick } = props;
     const { state } = useBlocks();
     const { designer } = useDesigner();
     const notification = useNotification();
+    const { configStore } = useRootStore();
+
+    const ref = useRef(null);
+    const [imageSrc, setImageSrc] = useState(null);
 
     // track if it is this one that is dragging
     const [local, setLocal] = useState(false);
@@ -233,6 +251,9 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         // clear the selected
         designer.setSelected(id ? id : '');
 
+        // clear the selectedBlocks
+        designer.addBlockToSelected('clear');
+
         // set as active
         setLocal(false);
     }, [
@@ -257,6 +278,20 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         };
     }, [designer.drag.active, local, handleDocumentMouseUp]);
 
+    // useEffect(() => {
+    //     if (isClient) {
+    //         if (ref.current) {
+    //             html2canvas(ref.current).then((canvas) => {
+    //                 setImageSrc(canvas.toDataURL('image/png'));
+    //             });
+    //         }
+    //     }
+    // }, [isClient]);
+
+    // const randomColor = () => {
+    //     return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+    // };
+
     return (
         <Stack
             spacing={1}
@@ -264,6 +299,28 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
             height="100%"
             justifyContent="flex-end"
         >
+            {/* So we can snapshot picture for client */}
+            {/* {isClient && (
+                <div
+                    ref={ref}
+                    style={{ position: 'absolute', left: '-9999px', top: 0 }}
+                >
+                    <Stack padding={4}>
+                        <StyledTypography variant="body2">
+                            Show snapshot
+                        </StyledTypography>
+                        <button
+                            style={{
+                                backgroundColor: randomColor(),
+                                color: '#fff',
+                            }}
+                        >
+                            {item.name}
+                        </button>
+                    </Stack>
+                </div>
+            )} */}
+
             <StyledTypography
                 variant="body2"
                 fontWeight="medium"
@@ -276,6 +333,16 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                     justifyContent={'center'}
                 >
                     {item.name}
+                    {item.recentChanges && (
+                        <Tooltip
+                            title={item.recentChanges}
+                            children={
+                                <Icon color={'info'} fontSize="small">
+                                    <InfoOutlined />
+                                </Icon>
+                            }
+                        />
+                    )}
                     {item.isBeta && (
                         <Tooltip
                             title={'This block is currently in beta'}
@@ -296,11 +363,43 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                     onOpen={() => setHovered(true)}
                     onClose={() => setHovered(false)}
                 >
-                    <div>
+                    <div style={{ position: 'relative' }}>
                         <BlockCardContent
-                            image={hovered ? item.hoverImage : item.activeImage}
+                            image={
+                                isCommunity
+                                    ? imageSrc
+                                    : hovered
+                                    ? item.hoverImage
+                                    : item.activeImage
+                            }
                             name={item.name}
                         />
+                        {hovered &&
+                            isCommunity &&
+                            configStore.store.user.admin && (
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        top: '-5px',
+                                        right: '-5px',
+                                        zIndex: 1000,
+                                    }}
+                                >
+                                    <IconButton
+                                        size="small"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOnTrashClick(
+                                                item['id'],
+                                                item.name,
+                                            );
+                                        }}
+                                        color="error"
+                                    >
+                                        <DeleteOutline />
+                                    </IconButton>
+                                </Box>
+                            )}
                     </div>
                 </Tooltip>
             </StyledCard>
