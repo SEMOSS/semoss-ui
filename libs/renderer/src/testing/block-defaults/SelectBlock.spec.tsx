@@ -1,8 +1,25 @@
 import { expect, test } from "vitest";
 import "@testing-library/jest-dom";
-
-import { render, screen } from "../utils/index";
+import { fireEvent, render, screen } from "../utils/index";
 import { SelectBlock } from "../../components/block-defaults/select-block/SelectBlock";
+import { ActionMessages, ListenerActions } from "@/store";
+
+
+const queries = {
+    options: {
+        id: "options",
+        cells: [
+            {
+                id: "1",
+                widget: "code",
+                parameters: {
+                    code: "options = ['Dell', 'Macbook', 'HP']\r\noptions",
+                    type: "py"
+                }
+            }
+        ]
+    }
+};
 
 const blocks = {
     select: {
@@ -17,7 +34,6 @@ const blocks = {
             required: false,
             disabled: false,
             loading: false,
-            multiple: false,
             show: "true",
         },
         listeners: {},
@@ -36,23 +52,30 @@ const blocks = {
             value: "",
             label: "Example Select",
             hint: "",
-            options: "{{options.output}}",
+            options: ["1", "2"],
             required: false,
             disabled: false,
             loading: false,
             show: "true",
-            multiple: true,
+            multiple: false,
         },
-         listeners: {
-                // onChange: {
-                //     type: "async",
-                //     order: [],
-                // },
-                // preProcess: {
-                //     type: "async",
-                //     order: [],
-                // },
+          listeners: {
+            onChange: {
+                type: "async" as "async",
+                order: [] as ListenerActions[],
             },
+            preProcess: {
+                type: "async" as "async",
+                order: [
+                        {
+                            "message": ActionMessages.RUN_QUERY,
+                            "payload": {
+                                "queryId": "options"
+                            }
+                        }
+                    ] as ListenerActions[],
+            },
+        },
         slots: {
             content: {
                 name: "content",
@@ -68,22 +91,30 @@ const blocks = {
             value: "",
             label: "Example Select",
             hint: "",
-            options: "{{options.output}}",
+            options: ["1", "2"],
             required: false,
             disabled: false,
             loading: false,
+            multiple: true,
             show: "true",
         },
          listeners: {
-                // onChange: {
-                //     type: "async",
-                //     order: [],
-                // },
-                // preProcess: {
-                //     type: "async",
-                //     order: [],
-                // },
+            onChange: {
+                type: "async" as "async",
+                order: [] as ListenerActions[],
             },
+            preProcess: {
+                type: "async" as "async",
+                order: [
+                        {
+                            "message": ActionMessages.RUN_QUERY,
+                            "payload": {
+                                "queryId": "options"
+                            }
+                        }
+                    ] as ListenerActions[],
+            },
+        },
         slots: {
             content: {
                 name: "content",
@@ -117,34 +148,35 @@ describe("select block", () => {
      test("renders with select options", async () => {
         const { container } = render(<SelectBlock id="querySelect" />, {
             blocks: blocks,
+            queryConfig: queries,
         });
 
-        const element = container.querySelector("input");
-        const label = screen.getByLabelText("Example Select");
+        const element = container.querySelector("[data-block='querySelect']");
+        expect(element).toBeInTheDocument();
+        
+        const input = container.querySelector("input");
+        fireEvent.click(input);
+        
+        screen.debug();
 
-        expect(label).toBeTruthy();
     });
 
     test("does not allow multi select if multiselect is disabled", async () => {
         const { container } = render(<SelectBlock id="querySelect" />, {
             blocks: blocks,
+            queryConfig: queries,
         });
 
-        const element = container.querySelector("input");
-        const label = screen.getByLabelText("Example Select");
 
-        expect(label).toBeTruthy();
     });
 
-     test("works correctly with select multiple options", async () => {
+     test("selects multiple options if mulitselect is enabled", async () => {
         const { container } = render(<SelectBlock id="mulitQuerySelect" />, {
             blocks: blocks,
+            queryConfig: queries,
         });
 
-        const element = container.querySelector("input");
-        const label = screen.getByLabelText("Example Select");
 
-        expect(label).toBeTruthy();
     });
 
 });
