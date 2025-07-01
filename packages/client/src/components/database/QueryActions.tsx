@@ -3,6 +3,8 @@ import {
     Button,
     styled,
     Box,
+    TextField,
+    Typography,
 } from '@semoss/ui';
 
 const StyledActions = styled('div')(({ theme }) => ({
@@ -25,6 +27,8 @@ interface QueryActionsProps {
     executeQuery: () => void;
     previewLoading: boolean;
     query: string;
+    limit: number;
+    setLimit: (limit: number) => void;
 }
 
 export const QueryActions: React.FC<QueryActionsProps> = ({
@@ -32,9 +36,34 @@ export const QueryActions: React.FC<QueryActionsProps> = ({
     executeQuery,
     previewLoading,
     query,
+    limit,
+    setLimit,
 }) => {
+    const handleLimitChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = parseInt(event.target.value, 10);
+        if (!isNaN(value) && value > 0) {
+            setLimit(value);
+        }
+    };
+
     return (
         <StyledActions>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    Limit:
+                </Typography>
+                <TextField
+                    type="number"
+                    size="small"
+                    value={limit}
+                    onChange={handleLimitChange}
+                    inputProps={{ min: 1, style: { width: '80px' } }}
+                    variant="outlined"
+                />
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    rows
+                </Typography>
+            </Box>
             <Box sx={{ display: 'flex', gap: 1 }}>
                 <Button
                     variant="text"

@@ -90,7 +90,8 @@ export const EngineQueryDataPage = observer(() => {
         clearQuery: clearQueryInternal,
         clearResults,
         executeQuery: executeQueryInternal,
-        PREVIEW_LIMIT
+        limit,
+        setLimit
     } = useQueryExecution(id || '', {
         onSchemaChange: () => {
             setRefreshMessage('Database schema changed. Refreshing structure...');
@@ -159,7 +160,7 @@ export const EngineQueryDataPage = observer(() => {
                 previewData={previewData}
                 previewLoading={previewLoading}
                 clearResults={clearResults}
-                previewLimit={PREVIEW_LIMIT}
+                previewLimit={limit}
             />
 
             <QueryActions
@@ -167,6 +168,8 @@ export const EngineQueryDataPage = observer(() => {
                 executeQuery={executeQuery}
                 previewLoading={previewLoading}
                 query={query}
+                limit={limit}
+                setLimit={setLimit}
             />
         </StyledContainer>
     );

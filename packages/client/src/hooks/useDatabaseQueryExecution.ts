@@ -63,8 +63,7 @@ export function useQueryExecution(engineId: string, options: QueryExecutionOptio
   const [query, setQuery] = useState('');
   const [previewData, setPreviewData] = useState<QueryResult | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
-  
-  const PREVIEW_LIMIT = 100;
+  const [limit, setLimit] = useState(500);
 
   const clearQuery = () => {
     setQuery('');
@@ -88,7 +87,7 @@ export function useQueryExecution(engineId: string, options: QueryExecutionOptio
 
       const cleanedQuery = removeComments(query).replaceAll('`','');
 
-      let pixel = `SqlQuery(database=["${engineId}"], query=["<encode>${removeComments(query).replaceAll('`','')}</encode>"], limit=[${PREVIEW_LIMIT}]);`;
+      let pixel = `SqlQuery(database=["${engineId}"], query=["<encode>${removeComments(query).replaceAll('`','')}</encode>"], limit=[${limit}]);`;
       
       const response = await monolithStore.runQuery(pixel);
       console.log('Full response:', response);
@@ -137,6 +136,7 @@ export function useQueryExecution(engineId: string, options: QueryExecutionOptio
     clearQuery,
     clearResults,
     executeQuery,
-    PREVIEW_LIMIT
+    limit,
+    setLimit
   };
 }
