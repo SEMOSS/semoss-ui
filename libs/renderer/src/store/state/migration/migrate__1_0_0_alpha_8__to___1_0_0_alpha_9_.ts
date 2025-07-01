@@ -18,7 +18,7 @@ const config: Migration = {
             const q = keyValue[1]
 
             // First get the cell with the highest number to get a starting point
-            let highestExistingId = 1
+            let highestExistingId = Number.NEGATIVE_INFINITY
             console.log("migration 9", q.cells)
             q.cells.forEach((c) => {
                 const parsedId = parseInt(c.id)
@@ -34,7 +34,7 @@ const config: Migration = {
 
             q.cells.forEach((c) => {
                 // to reference in variable reassign below
-                if(c.id < highestExistingId) {
+                if(c.id <= highestExistingId) {
                     const idBeforeChange = c.id;
     
                     // reassign id

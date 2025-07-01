@@ -264,8 +264,17 @@ for (const testData of testsData) {
 
             currentState = await migrationManager.run(currentState);
 
+            for (const keyValue of Object.entries(currentState.blocks)) {
+                const block = keyValue[1];
+                if (block.widget === "upload") {
+                    expect(block.listeners).not.toHaveProperty("onClick");
+                    expect(block.listeners).toHaveProperty("onChange");
+                }
+            }
+
             expect(currentState.version).toBe("1.0.0-alpha.8");
         });
+
         it("should migrate from 1.0.0-alpha.8 to 1.0.0-alpha.9", async ({
             skip,
         }) => {
@@ -294,6 +303,71 @@ for (const testData of testsData) {
 
             expect(currentState.version).toBe("1.0.0-alpha.9");
         });
+
+        it("should migrate from 1.0.0-alpha.8 to 1.0.0-alpha.9 with custom test data", async ({
+            skip,
+        }) => {
+            const initialState = {
+                queries: {
+                    q1: {
+                        id: "q1",
+                        cells: [
+                            { id: "1", content: "Cell 1" },
+                            { id: "2", content: "Cell 2" },
+                        ],
+                    },
+                },
+                variables: [
+                    { to: "q1", cellId: "1", value: "Value 1" },
+                    { to: "q1", cellId: "2", value: "Value 2" },
+                ],
+                version: "1.0.0-alpha.8",
+            };
+
+            const expectedState = {
+                queries: {
+                    q1: {
+                        id: "q1",
+                        cells: [
+                            { id: "3", content: "Cell 1" },
+                            { id: "4", content: "Cell 2" },
+                        ],
+                    },
+                },
+                variables: [
+                    { to: "q1", cellId: "3", value: "Value 1" },
+                    { to: "q1", cellId: "4", value: "Value 2" },
+                ],
+                version: "1.0.0-alpha.9",
+            };
+            // skip test if the starting currentState version does not match the test version condition
+            if (initialState.version !== "1.0.0-alpha.8") {
+                skip();
+            }
+            // const version = "1.0.0-alpha.9";
+            vi.doMock("@/store/state/migration/StateVersion", () => {
+                return {
+                    STATE_VERSION: "1.0.0-alpha.9", // mock latest state version
+                };
+            });
+            const { MigrationManager } = await import(
+                "@/store/state/migration/MigrationManager"
+            );
+            const { STATE_VERSION } = await import(
+                "@/store/state/migration/StateVersion"
+            );
+
+            const migrationManager = new MigrationManager();
+
+            expect(initialState.version).toBe("1.0.0-alpha.8");
+
+            const newState = await migrationManager.run(initialState);
+
+            expect(newState).toStrictEqual(expectedState);
+
+            expect(newState.version).toBe("1.0.0-alpha.9");
+        });
+
         it("should migrate from 1.0.0-alpha.9 to 1.0.0-alpha.10", async ({
             skip,
         }) => {
