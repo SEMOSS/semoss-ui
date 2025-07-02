@@ -87,13 +87,13 @@ interface Model {
 }
 
 export const EngineModelTestPage = () => {
-    const { id } = useEngine();
+    const { active } = useEngine();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [messages, setMessages] = useState<Message[]>([]);
     
     const [selectedModel, setSelectedModel] = useState<Model>({
-        database_id: id,
+        database_id: active.id,
         database_name: '',
     });
     const [temperature, setTemperature] = useState<number>(0.1);
@@ -125,12 +125,12 @@ export const EngineModelTestPage = () => {
 
     useEffect(() => {
         setSelectedModel({
-            database_id: id,
+            database_id: active.id,
             database_name: '',
         });
         setMessages([]);
         createNewInsight(); // Get a new insightId from backend
-    }, [id]);
+    }, [active.id]);
 
     const sendMessage = async (data: { prompt: string }) => {
         if (!data.prompt.trim()) return;
