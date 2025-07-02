@@ -1,6 +1,6 @@
-import { styled } from '@semoss/ui';
+import { blue, green, styled } from '@semoss/ui';
+
 import { THEME } from '@/constants';
-import { blue, green } from '@mui/material/colors';
 
 interface HoverButtonRootProps {
     disableHover: boolean;
@@ -22,10 +22,6 @@ export const PromptTokenTextButton = styled('button', {
     cursor: disableHover ? 'default' : 'pointer',
     outline: 'inherit',
     '&:hover': {
-        backgroundColor: disableHover
-            ? 'unset'
-            : THEME.name === 'SEMOSS'
-            ? blue[50]
-            : green[50],
+        backgroundColor: disableHover ? 'unset' : blue[50],
     },
 }));

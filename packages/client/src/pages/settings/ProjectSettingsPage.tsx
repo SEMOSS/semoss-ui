@@ -117,7 +117,7 @@ export const ProjectSettingsPage = () => {
     const [offset, setOffset] = useState(0);
 
     //** amount of items to be loaded */
-    const limit = 15;
+    const limit = 30;
 
     // To focus when getting new results
     const searchbarRef = useRef(null);

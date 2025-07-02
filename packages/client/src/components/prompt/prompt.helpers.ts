@@ -700,5 +700,5 @@ export async function setBlocksAndOpenUIBuilder(
         })}])`,
     );
 
-    navigate(`/app/${appId}`);
+    navigate(`/app/${appId}/view`);
 }

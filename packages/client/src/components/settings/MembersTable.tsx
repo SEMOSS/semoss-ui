@@ -312,8 +312,20 @@ export const MembersTable = (props: MembersTableProps) => {
         ];
     }
 
+    // Update userDetails to AUTHOR if ADMIN
     const getMembers = useAPI(getMembersApi);
-    const userDetails = useAPI(getUserDataApi);
+    const userDetails = !adminMode
+        ? useAPI(getUserDataApi)
+        : {
+              data: {
+                  permission: 'OWNER',
+              },
+              status: 'SUCCESS',
+          };
+
+    // TODO: NEEDS FIX ^
+    console.log('userDetails', userDetails);
+
     const allAuthorsResponse = useAPI(getAllAuthorsApi);
     const [allAuthors, setAllAuthors] = useState<SETTINGS_PROVISIONED_USER[]>(
         [],
@@ -995,62 +1007,65 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     value="Author"
                                                                     label="Author"
                                                                     disabled={
-                                                                        !configStore.isEngineOperationAvailable(
+                                                                        (!configStore.isEngineOperationAvailable(
                                                                             type,
                                                                             'access',
                                                                         ) ||
-                                                                        permissionPriorityMapper(
-                                                                            userPermission,
-                                                                        )
-                                                                            .priority >
-                                                                            1
+                                                                            permissionPriorityMapper(
+                                                                                userPermission,
+                                                                            )
+                                                                                .priority >
+                                                                                1) &&
+                                                                        !adminMode
                                                                     }
                                                                 />
                                                                 <RadioGroup.Item
                                                                     value="Editor"
                                                                     label="Editor"
                                                                     disabled={
-                                                                        isLastAuthor(
+                                                                        (isLastAuthor(
                                                                             user,
                                                                         ) ||
-                                                                        (userPermission ===
-                                                                            'Editor' &&
-                                                                            user.permission ===
-                                                                                'OWNER') ||
-                                                                        !configStore.isEngineOperationAvailable(
-                                                                            type,
-                                                                            'access',
-                                                                        ) ||
-                                                                        permissionPriorityMapper(
-                                                                            userPermission,
-                                                                        )
-                                                                            ?.priority >
-                                                                            2
+                                                                            (userPermission ===
+                                                                                'Editor' &&
+                                                                                user.permission ===
+                                                                                    'OWNER') ||
+                                                                            !configStore.isEngineOperationAvailable(
+                                                                                type,
+                                                                                'access',
+                                                                            ) ||
+                                                                            permissionPriorityMapper(
+                                                                                userPermission,
+                                                                            )
+                                                                                ?.priority >
+                                                                                2) &&
+                                                                        !adminMode
                                                                     }
                                                                 />
                                                                 <RadioGroup.Item
                                                                     value="Read-Only"
                                                                     label="Read-Only"
                                                                     disabled={
-                                                                        isLastAuthor(
+                                                                        (isLastAuthor(
                                                                             user,
                                                                         ) ||
-                                                                        (userPermission ===
-                                                                            'Editor' &&
-                                                                            user.permission ===
-                                                                                'OWNER') ||
-                                                                        !configStore.isEngineOperationAvailable(
-                                                                            type,
-                                                                            'access',
-                                                                        ) ||
-                                                                        permissionPriorityMapper(
-                                                                            userPermission,
-                                                                        )
-                                                                            ?.priority >=
-                                                                            3 ||
-                                                                        readOnlyRestricted(
-                                                                            user,
-                                                                        )
+                                                                            (userPermission ===
+                                                                                'Editor' &&
+                                                                                user.permission ===
+                                                                                    'OWNER') ||
+                                                                            !configStore.isEngineOperationAvailable(
+                                                                                type,
+                                                                                'access',
+                                                                            ) ||
+                                                                            permissionPriorityMapper(
+                                                                                userPermission,
+                                                                            )
+                                                                                ?.priority >=
+                                                                                3 ||
+                                                                            readOnlyRestricted(
+                                                                                user,
+                                                                            )) &&
+                                                                        !adminMode
                                                                     }
                                                                 />
                                                             </RadioGroup>

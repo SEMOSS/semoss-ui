@@ -46,7 +46,8 @@ export interface TypographyProps {
         | "success"
         | "error"
         | "info"
-        | "warning";
+        | "warning"
+        | "disabled";
     noWrap?: MuiTypographyProps["noWrap"];
     title?: MuiTypographyProps["title"];
     id?: string;
@@ -71,6 +72,8 @@ export const Typography = (props: TypographyProps) => {
                     ? "primary.main"
                     : color === "secondary"
                     ? "text.secondary"
+                    : color === "disabled"
+                    ? "text.disabled"
                     : color
             }
             {...otherProps}
