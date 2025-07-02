@@ -6,7 +6,6 @@
     "version": "0.0.1",
     "license": "UNLICENSED",
     "private": true,
-    "type": "module",
     "engines": {
         "vscode": "^1.90.0"
     },
@@ -16,7 +15,7 @@
     "activationEvents": [
         "onStartupFinished"
     ],
-    "main": "./extension.js",
+    "main": "./out/main.js",
     "contributes": {
         "commands": [
             {
@@ -103,10 +102,11 @@
         "pretest": "npm run lint",
         "test": "node ./test/runTest.js",
         "vscode:prepublish": "npm run esbuild-base -- --minify",
-        "esbuild-base": "esbuild ./extension.js --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node",
+        "esbuild-base": "esbuild ./extension.js --bundle --outfile=out/main.js --external:vscode --external:util --external:fs --external:path --external:os --external:crypto --external:http --external:https --external:stream --external:zlib --external:buffer --format=cjs --platform=node --metafile=out/meta.json",
         "esbuild": "npm run esbuild-base -- --sourcemap",
         "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
-        "test-compile": "tsc -p ./"
+        "test-compile": "tsc -p ./",
+        "package": "vsce package --no-dependencies"
     },
     "devDependencies": {
         "@aws-sdk/client-s3": "^3.832.0",
@@ -127,6 +127,7 @@
         "@aws-sdk/client-s3": "^3.832.0",
         "archiver": "^7.0.1",
         "axios": "^1.3.4",
+        "form-data": "^4.0.0",
         "ncp": "^2.0.0",
         "unzipper": "^0.12.3"
     }

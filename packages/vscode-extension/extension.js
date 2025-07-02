@@ -1,14 +1,14 @@
-// ES6 module imports
-import * as vscode from "vscode";
-import fs from "fs";
-import { storeSecrets, getSecrets, selectInstance, removeInstance, storeInstance, getStoredInstances } from './src/utils/secrets.js';
-import { setFolderPaths, getProjectId } from './src/utils/projectUtils.js';
-import { setDeployConfig, deployProject } from './src/utils/deploy.js';
-import { zipProject } from './src/utils/zip.js';
-import { createNewApp } from './src/utils/createApp.js';
-import { initStatusBar, updateStatusBar } from './src/utils/statusBar.js';
-import { handleChatbotAction } from './src/components/Chatbot/Chatbot.js';
-import { registerChatbotWebview } from './src/components/ChatbotWebview/ChatbotWebview.js';
+// CommonJS imports
+const vscode = require("vscode");
+const fs = require("fs");
+const { storeSecrets, getSecrets, selectInstance, removeInstance, storeInstance, getStoredInstances } = require('./src/utils/secrets.js');
+const { setFolderPaths, getProjectId } = require('./src/utils/projectUtils.js');
+const { setDeployConfig, deployProject } = require('./src/utils/deploy.js');
+const { zipProject } = require('./src/utils/zip.js');
+const { createNewApp } = require('./src/utils/createApp.js');
+const { initStatusBar, updateStatusBar } = require('./src/utils/statusBar.js');
+const { handleChatbotAction } = require('./src/components/Chatbot/Chatbot.js');
+const { registerChatbotWebview } = require('./src/components/ChatbotWebview/ChatbotWebview.js');
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -306,4 +306,4 @@ async function activate(context) {
 // This method is called when your extension is deactivated
 function deactivate() { }
 
-export { activate, deactivate };
+module.exports = { activate, deactivate };

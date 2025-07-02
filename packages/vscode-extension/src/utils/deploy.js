@@ -1,7 +1,7 @@
-import * as vscode from "vscode";
-import * as fs from "fs";
-import axios from "axios";
-import FormData from 'form-data';
+const vscode = require("vscode");
+const fs = require("fs");
+const axios = require("axios");
+const FormData = require('form-data');
 
 let SEMOSS_URL = "";
 let headers = {};
@@ -16,7 +16,7 @@ let outputFilePath = "";
  * @param {string} config.base64Encoded - The base64 encoded credentials
  * @param {string} config.outputPath - The output file path
  */
-export function setDeployConfig(config) {
+function setDeployConfig(config) {
     SEMOSS_URL = config.semossUrl;
     headers = config.authHeaders;
     encoded = config.base64Encoded;
@@ -28,7 +28,7 @@ export function setDeployConfig(config) {
  * @param {string} projectId - The project ID
  * @returns {Promise<void>}
  */
-export async function deployProject(projectId) {
+async function deployProject(projectId) {
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: "Deploying Project",
@@ -179,3 +179,8 @@ export async function deployProject(projectId) {
         vscode.window.showInformationMessage('Project deployed successfully!');
     });
 }
+
+module.exports = {
+    setDeployConfig,
+    deployProject
+};
