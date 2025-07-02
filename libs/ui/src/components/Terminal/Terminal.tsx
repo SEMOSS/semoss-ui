@@ -19,7 +19,6 @@ const StyledTerminal = styled("div")(({ theme }) => ({
 // prompt for new input
 const PROMPT = `\x1b[1;30m> \x1b[0m`;
 const PROMPT_LENGTH = 2;
-
 export interface TerminalProps {
     /** Default command to display */
     defaultCommand?: string;
@@ -204,8 +203,13 @@ export const Terminal: React.FC<TerminalProps> = ({
             switch (key) {
                 // Enter
                 case "\r": {
-                    // run the command
-                    await onRun();
+                    if (updatedBuffer.command.trim() === "") {
+                        // If command is empty, just print a new prompt and move to next line
+                        terminalInstance.write(`\n\r${PROMPT}`);
+                    } else {
+                        // run the command
+                        await onRun();
+                    }
 
                     // clear it
                     updatedBuffer = {
@@ -215,7 +219,6 @@ export const Terminal: React.FC<TerminalProps> = ({
 
                     break;
                 }
-
                 // Backspace
                 case "\x7F": {
                     if (updatedBuffer.position > 0) {
