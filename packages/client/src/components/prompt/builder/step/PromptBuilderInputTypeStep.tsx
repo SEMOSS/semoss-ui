@@ -140,7 +140,7 @@ export const PromptBuilderInputTypeStep = (props: {
     return (
         <StyledStepPaper elevation={2} square>
             <StyledBox>
-                <Typography variant="h5">Define Input Types</Typography>
+                <Typography variant="h6">Define Input Types</Typography>
                 <Typography variant="body1">
                     Use the dropdowns to define the input types for each of your
                     inputs.

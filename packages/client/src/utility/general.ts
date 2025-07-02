@@ -3,8 +3,6 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Env } from '@semoss/sdk/react';
 
 import { Role } from '@/types';
-import { ENGINE_IMAGES } from '@/pages/import';
-import BRAIN from '@/assets/img/BRAIN.png';
 
 /**
  * @desc splits a string at the period
@@ -90,30 +88,6 @@ export const formatPermission = (permission: Role | ''): string => {
         default:
             return errorString;
     }
-};
-
-/**
- * @name getEngineImage
- * @params appType & appSubType
- * @returns image link for associated engine
- */
-export const getEngineImage = (
-    appType: string,
-    appSubType: string,
-    ignoreNotFound = false,
-) => {
-    const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name == appSubType);
-
-    if (!obj) {
-        if (ignoreNotFound) {
-            return null;
-        } else {
-            console.warn('No image found:', appType, appSubType);
-            return BRAIN;
-        }
-    }
-
-    return obj.icon;
 };
 
 /**
