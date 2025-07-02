@@ -17,7 +17,7 @@ import {
 
 import { PathValue } from "../../../types";
 
-const StyledButton = styled(Button)(({ theme }) => ({
+const StyledButton = styled(Button)(() => ({
     marginTop: '20px !important',
 }));
 
@@ -90,7 +90,6 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                 const outputIssues = response.pixelReturn[0].output;
                 const type = response.pixelReturn[0].operationType;
                 if (type.indexOf('ERROR') === -1) {
-                    console.log("Response from JiraGetIssues:", response);
                     setIssueTypes(Array.isArray(outputIssues) ? outputIssues : [outputIssues]);
                 } else {
                     throw new Error(response.errors[0]);
@@ -103,7 +102,7 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
     },[data.userId]);
 
     if (!data.isStreaming) displayTxt = textContent;
-    const { getValues, handleSubmit, control, watch,reset } = useForm<CreateNewJiraForm>({
+    const { getValues, handleSubmit, control,reset } = useForm<CreateNewJiraForm>({
             defaultValues: {
                 JIRA_SUMMARY: '',
                 JIRA_DESCRIPTION: '',
@@ -299,7 +298,6 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                             <h3>Jira Issue Created Successfully!</h3>   
                             <p> {showcreatedJiraData.split(',')[0]}</p>
                             <p>{showcreatedJiraData.split(',')[1]}</p>
-                            <p><strong>Project:</strong> {showcreatedJiraData['self']}</p>
                         </div>
                     )}
                     {data.listAllTickets && (

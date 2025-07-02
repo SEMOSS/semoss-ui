@@ -1,7 +1,7 @@
 import { Button, Modal, Typography } from '@semoss/ui';
 
 export const DeleteKeyModal = (props: {
-    isOpen: { [key: string]: any }; // Changed type to object
+    isOpen: { [key: string]: any };
     close: () => void;
     deleteJob: () => void;
 }) => {

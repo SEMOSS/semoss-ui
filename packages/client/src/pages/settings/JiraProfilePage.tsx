@@ -12,37 +12,36 @@ import {
     TextField,
     Paper,
     Modal,
-    Grid,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
 import { useState, useEffect } from 'react';
 import { DeleteKeyModal } from './DeleteKeyModal';
 
-const StyledAccessTokensPaper = styled(Paper)(({ theme }) => ({
+const StyledAccessTokensPaper = styled(Paper)(() => ({
     padding: '40px 30px 20px 28px',
 }));
 
-const HeaderCell = styled(Table.Cell)(({ theme }) => ({
+const HeaderCell = styled(Table.Cell)(() => ({
     backgroundColor: '#f3f3f3',
     borderBottom: '1px solid #ccc',
 }));
 
-const LeftHeaderCell = styled(Table.Cell)(({ theme }) => ({
+const LeftHeaderCell = styled(Table.Cell)(() => ({
     backgroundColor: '#f3f3f3',
     borderBottom: '1px solid #ccc',
     borderRadius: '20px 0 0 0',
     textAlign: 'center',
 }));
 
-const RightHeaderCell = styled(Table.Cell)(({ theme }) => ({
+const RightHeaderCell = styled(Table.Cell)(() => ({
     backgroundColor: '#f3f3f3',
     borderBottom: '1px solid #ccc',
     borderRadius: '0 20px 0 0',
     textAlign: 'center',
 }));
 
-const MessageDiv = styled('div')(({ theme }) => ({
+const MessageDiv = styled('div')(() => ({
     textAlign: 'center',
     marginTop: '100px',
     fontSize: '13px',
@@ -52,7 +51,7 @@ const MessageDiv = styled('div')(({ theme }) => ({
     margin: '75px auto 85px',
 }));
 
-const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
+const StyledTableContainer = styled(Table.Container)(() => ({
     marginTop: '20px',
 }));
 
@@ -71,15 +70,14 @@ export const JiraProfilePage = () => {
     const [savedApiKeys, setSavedApiKeys] = useState([]);
     const [deleteApiKey, setDeleteApiKey] = useState({});
 
-    const { control, reset, setValue, handleSubmit, watch } =
-        useForm<SaveAPIKeyForm>({
-            defaultValues: {
-                APIKEY: '',
-                USERID: '',
-                URL: '',
-                NAME: '',
-            },
-        });
+    const { control, reset, handleSubmit } = useForm<SaveAPIKeyForm>({
+        defaultValues: {
+            APIKEY: '',
+            USERID: '',
+            URL: '',
+            NAME: '',
+        },
+    });
 
     useEffect(() => {
         getSavedApiKeysQuery();
@@ -92,7 +90,6 @@ export const JiraProfilePage = () => {
             .then((response) => {
                 const type = response.pixelReturn[0].operationType;
                 const output = response.pixelReturn[0].output;
-                console.log('output', output);
                 if (type.indexOf('ERROR') === -1 && output.length > 0) {
                     setSavedApiKeys(output);
                 } else {
