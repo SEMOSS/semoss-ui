@@ -269,16 +269,16 @@ export const SizeSpacingSettings = observer(
                             bottom: amount,
                         });
                         v =
-                            parsed.top +
+                            amount +
                             unit +
                             " " +
                             parsed.right +
                             unit +
                             " " +
-                            parsed.bottom +
+                            amount +
                             unit +
                             " " +
-                            amount +
+                            parsed.left +
                             unit;
                         break;
                     case "left":
@@ -315,6 +315,18 @@ export const SizeSpacingSettings = observer(
                     left: parsed.left,
                     right: parsed.right,
                 });
+                v =
+                    parsed.top +
+                    unit +
+                    " " +
+                    parsed.right +
+                    unit +
+                    " " +
+                    parsed.bottom +
+                    unit +
+                    " " +
+                    parsed.left +
+                    unit;
             }
 
             // clear the old timeout
@@ -429,11 +441,11 @@ export const SizeSpacingSettings = observer(
                     <>
                         <TextField
                             fullWidth
-                            value={parsed.left}
-                            id={label + "-leftRight"}
+                            value={parsed.top}
+                            id={label + "-topBottom "}
                             onChange={(e) => {
                                 // sync the data on change
-                                onChange(e.target.value, "left", parsed.unit);
+                                onChange(e.target.value, "top", parsed.unit);
                             }}
                             size="small"
                             variant="outlined"
@@ -450,11 +462,11 @@ export const SizeSpacingSettings = observer(
                         />
                         <TextField
                             fullWidth
-                            value={parsed.top}
-                            id={label + "-topBottom"}
+                            value={parsed.left}
+                            id={label + "-leftRight"}
                             onChange={(e) => {
                                 // sync the data on change
-                                onChange(e.target.value, "top", parsed.unit);
+                                onChange(e.target.value, "left", parsed.unit);
                             }}
                             size="small"
                             variant="outlined"

@@ -39,7 +39,7 @@ export const TeamSettingsDetailPage = () => {
     return (
         <StyledContainer>
             <StyledContent>
-                {!type ? (
+                {type === 'CUSTOM' ? (
                     <TeamMembersTable groupId={id} name="MEMBERS" />
                 ) : (
                     <TeamMembersProviderBanner type={type} />

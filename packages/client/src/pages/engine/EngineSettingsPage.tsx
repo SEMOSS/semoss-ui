@@ -19,7 +19,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
 }));
 
 export const EngineSettingsPage = () => {
-    const { id, name, type } = useEngine();
+    const { name, path, type, active } = useEngine();
     const navigate = useNavigate();
 
     return (
@@ -31,15 +31,15 @@ export const EngineSettingsPage = () => {
             <StyledContainer>
                 <SettingsTiles
                     type={type}
-                    id={id}
+                    id={active.id}
                     name={name}
                     direction="row"
                     onDelete={() => {
-                        navigate(`/engine/${type.toLowerCase()}`);
+                        navigate(`/engine/${path}`);
                     }}
                 />
-                <PendingMembersTable type={type} id={id} />
-                <MembersTable type={type} id={id} />
+                <PendingMembersTable type={type} id={active.id} />
+                <MembersTable type={type} id={active.id} />
             </StyledContainer>
         </SettingsContext.Provider>
     );

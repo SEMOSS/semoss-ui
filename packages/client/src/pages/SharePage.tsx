@@ -8,6 +8,7 @@ import { LoadingScreen } from '@/components/ui';
 import { CodeRenderer } from '@/components/code-workspace';
 
 import { AppType, AppMetadata } from '@/components/app';
+import { PlatformMessages } from '@/components/shared';
 
 import { Renderer } from '@semoss/renderer';
 import { runPixelTwo } from '../runPixelTwo';
@@ -104,6 +105,7 @@ export const SharePage = observer(() => {
             {type === 'BLOCKS' ? (
                 <Renderer appId={appId} insightId={insightId} />
             ) : null}
+            <PlatformMessages />
         </StyledViewport>
     );
 });

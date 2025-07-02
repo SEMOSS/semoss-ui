@@ -922,7 +922,9 @@ export const LayersPanel = observer((): JSX.Element => {
                 onMouseOver={(e) => setPageHovered(block.id)}
                 onMouseLeave={(e) => setPageHovered('')}
             >
-                <Typography variant="subtitle1">/{id}</Typography>
+                <Typography variant="subtitle1">
+                    /{block.data.route as string}
+                </Typography>
                 {id == 'page-1' ? (
                     <StyledTreeItemIcon>
                         <Home />
@@ -982,7 +984,7 @@ export const LayersPanel = observer((): JSX.Element => {
             }
 
             // get the model
-            const model = workspace.selectedLayout?.model;
+            const model = workspace.model;
             if (!model) {
                 throw new Error('Missing model');
             }
@@ -1096,7 +1098,7 @@ export const LayersPanel = observer((): JSX.Element => {
             let selectedNode: TabNode | null = null;
 
             // get the model
-            const model = workspace.selectedLayout?.model;
+            const model = workspace.model;
             if (!model) {
                 throw new Error('Missing model');
             }
@@ -1161,7 +1163,7 @@ export const LayersPanel = observer((): JSX.Element => {
             let selectedNode: TabNode | null = null;
 
             // get the model
-            const model = workspace.selectedLayout?.model;
+            const model = workspace.model;
             if (!model) {
                 throw new Error('Missing model');
             }

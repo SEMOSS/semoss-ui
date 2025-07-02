@@ -11,7 +11,6 @@ import { useLLMComparison } from "./useLLMComparison";
 
 // import { useAPI } from "./useAPI";
 // import { useCacheState } from "./useCacheState";
-// import { useEngine } from "./useEngine";
 // import { useLLM } from "./useLLM";
 // import { useMetamodel } from "./useMetamodel";
 // import { useRootStore } from "./useRootStore";
@@ -34,7 +33,6 @@ export {
     useLLMComparison,
     // useAPI,
     // useCacheState,
-    // useEngine,
     // useLLM,
     // useMetamodel,
     // useRootStore,
