@@ -40,7 +40,7 @@ import { ConnectDb } from '@/assets/img/ConnectDb';
 import { CopyDb } from '@/assets/img/CopyDb';
 import { ConnectStorage } from '@/assets/img/ConnectStorage';
 
-import { useStepper } from '@/hooks';
+import { useStepper ,useRootStore } from '@/hooks';
 import { useNavigate } from 'react-router-dom';
 
 import { CONNECTION_OPTIONS } from './import.constants';
@@ -270,6 +270,7 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
     const scrollToTopRef = useRef(null);
 
     const isModelPage = steps.length > 0 && steps[0].data === 'MODEL';
+    const { configStore } = useRootStore();
 
     const ModelCard = ({ model, setSteps, steps }) => {
         const textRef = useRef<HTMLParagraphElement>(null);
@@ -481,10 +482,113 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
         setIsLoading(true);
         await assignUniqueIds(CONNECTION_OPTIONS);
         setIsLoading(false);
-
-        setConnectionOptions(CONNECTION_OPTIONS);
+        if ( configStore.store.config.adminOnlyNonApprovedFlag === true) {
+          getFilterObj();
+        } else { 
+          setConnectionOptions(CONNECTION_OPTIONS);
+        }
     };
+    const  getFilterObj = ()=> {
+       setConnectionOptions(filterNonProdItem(CONNECTION_OPTIONS));
+              
+    }
+   const filterNonProdItem = (obj)=> {
+      const nonApprovedProductList = configStore.store.config.nonApprovedList;
+        if ( 
+            obj?.MODEL?.['Commercially Hosted'] && (
+                'OpenAI' in obj.MODEL['Commercially Hosted'])
+        ) {
+            delete obj.MODEL['Commercially Hosted'].OpenAI;
+            delete obj.MODEL['Commercially Hosted']['AWS Bedrock'];
+            delete obj.MODEL['Commercially Hosted']['NVIDIA NIM Models'];
 
+        }
+        if (
+            obj?.MODEL?.['Locally Hosted']) {
+            delete obj.MODEL['Locally Hosted'];
+        }
+        if (obj?.MODEL?.['File Uploads']) {
+            delete obj.MODEL['File Uploads'];
+        }
+      
+         if (
+            obj?.MODEL?.['Embedded'] ) {
+                for(let k=0;k<=obj.MODEL['Embedded'].length;k++){
+                    if(!(obj.MODEL['Embedded'][k]?.name  === "AWS TITAN TEXT EMBEDDINGS")){
+
+                     delete obj.MODEL['Embedded'][k];
+                    }
+                  
+                }
+        }
+       
+        //Function
+       if (obj.FUNCTION.Function.length > 0) {
+             for (let k = 0; k <= obj.FUNCTION.Function.length; k++) {
+                for(let m=0;m<configStore.store.config.nonApprovedList.FUNCTION.length;m++){
+                    if (obj.FUNCTION.Function[k]?.name === configStore.store.config.nonApprovedList.FUNCTION[m]) {
+                        delete obj.FUNCTION.Function[k];
+                    }
+
+                }
+             }  
+        }
+       //Vector
+
+       if(obj.VECTOR.Connections.length>0){
+             for (let k = 0; k <= obj.VECTOR.Connections.length; k++) {
+                for(let n=0;n<configStore.store.config.nonApprovedList.VECTOR.length;n++){
+                if (obj.VECTOR.Connections[k]?.name === configStore.store.config.nonApprovedList.VECTOR[n]) {
+                    delete obj.VECTOR.Connections[k];
+                }
+                
+               }
+           }
+        }
+
+        
+         //Storage 
+        if (obj.STORAGE.Storage.length > 0) {
+              for (let k = 0; k <= obj.STORAGE.Storage.length; k++) {
+                for (let l = 0; l < configStore.store.config.nonApprovedList.STORAGE.length; l++) {
+                    if (obj.STORAGE.Storage[k]?.name === configStore.store.config.nonApprovedList.STORAGE[l]) {
+                        delete obj.STORAGE.Storage[k];
+                    }
+                }
+
+            }
+        }
+         if (obj?.STORAGE?.['File Uploads']) {
+              delete obj.STORAGE['File Uploads'];
+          }
+        //DataBase 
+         if (obj?.DATABASE?.Connections.length > 0) {
+            for (let i = 0; i < obj.DATABASE.Connections.length; i++) {
+                for (let r = 0; r < configStore.store.config.nonApprovedList.DATABASE.length; r++) {
+                    if (obj.DATABASE.Connections[i]?.name === configStore.store.config.nonApprovedList.DATABASE[r]) {
+                        delete obj.DATABASE.Connections[i];
+                    }
+                }
+            }
+              
+        }
+          
+        //DataBase file Uploads
+
+           if(obj?.DATABASE?.['File Uploads'].length>0){ 
+             for(let i=0;i<obj.DATABASE['File Uploads'].length;i++){
+                for(let b=0;b<configStore.store.config.nonApprovedList.DATABASE.length;b++){
+               if(obj.DATABASE['File Uploads'][i]?.name === configStore.store.config.nonApprovedList.DATABASE[b]){
+                    delete obj.DATABASE['File Uploads'][i];
+                }
+               }
+            }
+         }
+       
+        console.log("After Function Removal",obj);
+        return obj; 
+    }
+    /**
     /**
      * Assigns unique IDs for each connection type
      * @param obj
