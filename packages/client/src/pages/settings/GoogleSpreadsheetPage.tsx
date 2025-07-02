@@ -109,7 +109,8 @@ export const GoogleSpreadsheetPage = () => {
                 if (type.indexOf('ERROR') === -1 && output === true) {
                     notification.add({
                         color: 'success',
-                        message: 'Successfully inserted Jira credentials.',
+                        message:
+                            'Successfully inserted Google Spreadsheet credentials.',
                     });
 
                     getSavedApiKeysQuery();

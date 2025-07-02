@@ -74,15 +74,15 @@ export const SpreadsheetSettings = observer(
 
             useEffect(() => {
                 // Restore persisted values for dropdowns when the block is selected again
-                const persistedConnectionValue  = data.jiraConnectionValue;
-                const persistedActionValue = data.jiraActionValue;
+                const persistedConnectionValue  = data.sheetConnectionValue;
+                const persistedActionValue = data.sheetActionValue;
                 if (persistedConnectionValue) {
                     setConnectionValue(persistedConnectionValue as string);
                 }
                 if (persistedActionValue) {
                     setActionValue(persistedActionValue as string);
                 }
-            }, [data.jiraConnectionValue, data.jiraActionValue]);
+            }, [data.sheetConnectionValue, data.sheetActionValue]);
             
 
             const { getValues, handleSubmit, control, watch,reset } = useForm<SpreadsheetSettingsForm>({

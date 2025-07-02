@@ -65,11 +65,9 @@ export interface SpreadsheetBlockDef extends BlockDef<"spreadsheet"> {
         showUpdateForm: boolean;
         showDeleteSheetForm: boolean;
         showDeleteForm: boolean;
-        listAllTickets: boolean;
-        listedTickets: boolean;
         userId: string;
-        jiraConnectionValue: string;
-        jiraActionValue: string;
+        sheetConnectionValue: string;
+        sheetActionValue: string;
     };
     slots: never;
     listeners: never;
@@ -166,10 +164,9 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
         });
 
     const onReadSubmit = handleReadSubmit(async (readData: showReadSheetForm) => {
-        const readValues = getReadValues();
         try{
             const response = await runPixel<[string]>(
-                `META | GoogleSheet(command = "read",userid="${data.userId}",rowno="${readValues.ROW_NUMBER}",colno="${readValues.COLUMN_NUMBER},sheetName="${readValues.SHEET_NAME}");`,
+                `META | GoogleSheet(command = "read",userid="${data.userId}",rowno="${readData.ROW_NUMBER}",colno="${readData.COLUMN_NUMBER},sheetName="${readData.SHEET_NAME}");`,
             );
             const outputRead = response.pixelReturn[0].output;
             const type = response.pixelReturn[0].operationType;
@@ -188,10 +185,9 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
     });
 
     const onWriteSubmit = handleWriteSubmit(async (writeData: showWriteSheetForm) => {
-        const writeValues = getWriteValues();
         try{
             const response = await runPixel<[string]>(
-                `META | GoogleSheet(command = "write",userid="${data.userId}",rowno="${writeValues.ROW_NUMBER}",colno="${writeValues.COLUMN_NUMBER},data="${writeValues.CONTENT},"sheetName="${writeValues.SHEET_NAME}");`,
+                `META | GoogleSheet(command = "write",userid="${data.userId}",rowno="${writeData.ROW_NUMBER}",colno="${writeData.COLUMN_NUMBER},data="${writeData.CONTENT},"sheetName="${writeData.SHEET_NAME}");`,
             );
             const outputWrite = response.pixelReturn[0].output;
             const type = response.pixelReturn[0].operationType;
@@ -213,7 +209,7 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
         const updateValues = getUpdateValues();
         try{
             const response = await runPixel<[string]>(
-                `META | GoogleSheet(command = "update",userid="${data.userId}",rowno="${updateValues.ROW_NUMBER}",colno="${updateValues.COLUMN_NUMBER},data="${updateValues.CONTENT},"sheetName="${updateValues.SHEET_NAME}");`,
+                `META | GoogleSheet(command = "update",userid="${data.userId}",rowno="${updatedata.ROW_NUMBER}",colno="${updatedata.COLUMN_NUMBER},data="${updatedata.CONTENT},"sheetName="${updatedata.SHEET_NAME}");`,
             );
             const outputUpdate = response.pixelReturn[0].output;
             const type = response.pixelReturn[0].operationType;
