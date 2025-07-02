@@ -1,12 +1,14 @@
 // Required modules and project imports
 const vscode = require("vscode");
-const { storeSecrets, getSecrets, selectInstance, removeInstance } = require('./src/secrets');
-const { setFolderPaths, getProjectId, getOutputFilePath } = require('./src/projectUtils');
-const { setDeployConfig, deployProject } = require('./src/deploy');
-const { zipProject } = require('./src/zip');
-const { createNewApp } = require('./src/createApp');
-const { handleChatbotAction } = require('./src/components/Chatbot/Chatbot');
-const { registerChatbotWebview } = require('./src/components/ChatbotWebview/ChatbotWebview');
+const fs = require("fs");
+const { storeSecrets, getSecrets, selectInstance, removeInstance, storeInstance, getStoredInstances } = require('./src/utils/secrets.js');
+const { setFolderPaths, getProjectId } = require('./src/utils/projectUtils.js');
+const { setDeployConfig, deployProject } = require('./src/utils/deploy.js');
+const { zipProject } = require('./src/utils/zip.js');
+const { createNewApp } = require('./src/utils/createApp.js');
+const { initStatusBar, updateStatusBar } = require('./src/utils/statusBar.js');
+const { handleChatbotAction } = require('./src/components/ChatbotWebview/ChatbotSeparateManager.js');
+const { registerChatbotWebview } = require('./src/components/ChatbotWebview/ChatbotWebview.js');
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -223,7 +225,7 @@ async function activate(context) {
 
 
         async (action, options = {}) => {
-             if (action === 'removeInstance') {
+            if (action === 'removeInstance') {
                 const { getStoredInstances } = require('./src/secrets');
                 const instances = await getStoredInstances(context);
                 const aliases = Object.keys(instances);
@@ -274,7 +276,7 @@ async function activate(context) {
 
     // Check if credentials are available and show status
     const secrets = await getSecrets(context);
-    
+
     if (secrets && secrets.semossUrl && secrets.accessKey && secrets.privateKey) {
         vscode.window.showInformationMessage(`Semoss: Connected to "${secrets.alias || 'Default'}" (${secrets.semossUrl})`);
         context.subscriptions.push(disposable1, disposable2, disposable3, disposable4, disposable5, disposable6);

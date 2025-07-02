@@ -7,3 +7,38 @@ vsc-extension-quickstart.md
 **/jsconfig.json
 **/*.map
 **/.eslintrc.json
+.eslintrc.*
+.prettierrc.*
+.editorconfig
+.npmrc
+.nvmrc
+.nycrc
+tsconfig.json
+webpack.config.js
+yarn.lock
+package-lock.json
+.gitattributes
+.nyc_output/**
+.nycrc
+.npmignore
+coverage/**
+src/**/*.test.js
+**/*.test.js
+.history/**
+logs/**
+*.log
+**/.DS_Store
+**/.editorconfig
+
+# Source files since we're bundling
+src/**
+# But keep the Chatbot-ui files
+!src/components/Chatbot-ui/**
+# Only include bundled files from out directory
+!out/main.js
+.yarn/**
+.pnp.*
+*.vsix
+# Make sure user manual is included
+!assets/docs/**
+CHANGELOG.md

@@ -1,18 +1,13 @@
-// src/components/ChatbotWebview/ChatbotWebview.js
-// (Stub for ChatbotWebview component logic)
-const vscode = require('vscode');
-const path = require('path');
-const { getChatbotHtml, mapMessageToCommand } = require('../Chatbot/Chatbot');
-const { getSecrets, getStoredInstances, storeInstance } = require('../../secrets');
-const { createNewApp } = require('../../createApp');
+import * as vscode from "vscode";
+import path from "path";
+import { getSeparateChatbotHtml, mapMessageToCommand } from "./ChatbotSeparateManager.js";
+import { getSecrets, getStoredInstances, storeInstance } from "../../utils/secrets.js";
+import { createNewApp } from "../../utils/createApp.js";
+import fs from "fs";
 
-function getWebviewContent(webview) {
-    // Get the URI for the CSS file in a way the webview can load
-    const cssPath = vscode.Uri.file(
-        path.join(__dirname, '..', 'Chatbot', 'Chatbot.css')
-    );
-    const cssUri = webview.asWebviewUri(cssPath);
-    return getChatbotHtml(cssUri);
+function getWebviewContent(webview, context) {
+    // Always use the new implementation
+    return getSeparateChatbotHtml(webview, context);
 }
 
 class SemossChatbotViewProvider {
@@ -30,15 +25,65 @@ class SemossChatbotViewProvider {
         webviewView.webview.options = {
             enableScripts: true,
             localResourceRoots: [
-                vscode.Uri.file(path.join(__dirname, '..', 'Chatbot'))
+                vscode.Uri.file(path.join(this._context.extensionPath, 'src', 'components', 'Chatbot')),
+                vscode.Uri.file(path.join(this._context.extensionPath, 'src', 'components', 'Chatbot-ui'))
             ]
 
         };
 
+        webviewView.webview.html = getWebviewContent(webviewView.webview, this._context);
 
+        // Restore chat history and state when webview becomes visible
+        webviewView.onDidChangeVisibility(() => {
+            if (webviewView.visible) {
+                this._restoreChatState();
+            }
+        });
 
-        webviewView.webview.html = getWebviewContent(webviewView.webview);
+        // Initial restore when webview is first created
+        this._restoreChatState();
+
         webviewView.webview.onDidReceiveMessage(async (msg) => {
+            // Handle history-related messages
+            if (msg.type === 'saveMessage') {
+                this._addMessageToHistory(msg.message.text, msg.message.from, msg.status);
+                return;
+            }
+
+            if (msg.type === 'saveState') {
+                this._currentState = msg.state;
+                return;
+            }
+
+            if (msg.type === 'getHistory') {
+                webviewView.webview.postMessage({
+                    type: 'restoreHistory',
+                    history: this._chatHistory,
+                    state: this._currentState
+                });
+                return;
+            }
+
+            if (msg.type === 'clearHistory') {
+                this._chatHistory = [];
+                this._currentState = 'start';
+                return;
+            }
+
+            if (msg.type === 'openExternalResource' && msg.resource === 'user-manual') {
+                // Get the path to the user manual PDF
+                const userManualPath = vscode.Uri.file(
+                    path.join(this._context.extensionPath, 'assets', 'docs', 'semoss_user_manual.pdf')
+                );
+
+                // Open the PDF in the default PDF viewer
+                vscode.env.openExternal(userManualPath);
+
+                // Log that the manual was accessed
+                this._addMessageToHistory('User manual downloaded', 'bot', 'success');
+                return;
+            }
+
             if (msg.type === 'getInstanceAliases') {
                 // Fetch aliases and send to webview, including URLs
                 const instances = await getStoredInstances(this._context);
