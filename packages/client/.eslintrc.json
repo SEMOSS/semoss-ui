@@ -62,8 +62,17 @@
             "error",
             {
                 "name": "@mui/material",
-                "message": "Please reference mui components directly from @semoss/ui"
+                "message": "Please reference mui components directly from @semoss/ui" 
             }
         ]
     }
 }
+
+// {
+//                 "patterns": [
+//                     {
+//                         "group": ["@mui/material", "@mui/material/*"],
+//                         "message": "Please reference mui components directly from @semoss/ui"
+//                     }
+//                 ]
+//             }

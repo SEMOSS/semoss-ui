@@ -11,9 +11,7 @@ import {
     Typography,
     Breadcrumbs,
     Stack,
-    ToggleButton,
     Tooltip,
-    Paper,
     IconButton,
     Chip,
     Button,
@@ -21,7 +19,6 @@ import {
 
 import { useRootStore } from '@/hooks';
 import { SettingsContext } from '@/contexts';
-import { Page } from '@/components/ui/';
 import { SETTINGS_ROUTES } from './settings.constants';
 import { observer } from 'mobx-react-lite';
 import {
@@ -29,6 +26,7 @@ import {
     ContentCopyOutlined,
 } from '@mui/icons-material';
 import { PrivacyPreferenceCenterModal } from '@/components/cookies/PrivacyPreferenceCenterModal';
+import { NavbarLeft, NavbarHeader } from '../../components/shared';
 
 const StyledHeader = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -120,29 +118,53 @@ export const SettingsLayout = observer(() => {
     };
 
     return (
-        <SettingsContext.Provider
-            value={{
-                adminMode: adminMode,
-            }}
-        >
-            <Page
-                header={
+        <>
+            <NavbarLeft>
+                <NavbarHeader />
+            </NavbarLeft>
+            <SettingsContext.Provider
+                value={{
+                    adminMode: adminMode,
+                }}
+            >
+                <Stack direction="column" gap={2}>
                     <Stack>
                         {matchedRoute.path && (
                             <StyledHeader>
                                 <Breadcrumbs separator="/">
-                                    <StyledLink to={'.'}>Settings</StyledLink>
-                                    {matchedRoute.history.map((link, i) => {
+                                    <Breadcrumbs.Item
+                                        //@ts-expect-error: TODO FIX Type
+                                        as={Link}
+                                        to={`..`}
+                                        underline="none"
+                                        color="inherit"
+                                        variant="body1"
+                                    >
+                                        Settings
+                                    </Breadcrumbs.Item>
+                                    {matchedRoute.history.map((link, idx) => {
                                         return (
-                                            <StyledLink
+                                            <Breadcrumbs.Item
+                                                //@ts-expect-error: TODO FIX Type
+                                                as={Link}
+                                                key={idx + link}
                                                 to={link.replace('<id>', id)}
-                                                key={i + link}
+                                                underline="none"
+                                                color={
+                                                    matchedRoute.history
+                                                        .length -
+                                                        1 ===
+                                                    idx
+                                                        ? 'text.disabled'
+                                                        : 'inherit'
+                                                }
+                                                variant="body1"
                                                 state={{ ...state }}
                                             >
                                                 {link.includes('<id>')
                                                     ? id
                                                     : matchedRoute.title}
-                                            </StyledLink>
+                                            </Breadcrumbs.Item>
                                         );
                                     })}
                                 </Breadcrumbs>
@@ -220,15 +242,14 @@ export const SettingsLayout = observer(() => {
                                 : matchedRoute.adminDescription}
                         </Typography>
                     </Stack>
-                }
-            >
-                <Outlet />
+                    <Outlet />
 
-                <PrivacyPreferenceCenterModal
-                    isOpen={privacyCenterOpen}
-                    onClose={() => setPrivacyCenterOpen(false)}
-                />
-            </Page>
-        </SettingsContext.Provider>
+                    <PrivacyPreferenceCenterModal
+                        isOpen={privacyCenterOpen}
+                        onClose={() => setPrivacyCenterOpen(false)}
+                    />
+                </Stack>
+            </SettingsContext.Provider>
+        </>
     );
 });
