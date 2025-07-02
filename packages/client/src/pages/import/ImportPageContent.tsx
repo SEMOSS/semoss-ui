@@ -477,15 +477,12 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
     }, [steps.length]);
 
     useEffect(() => {
-       if (configStore.store.config.adminOnlyNonApprovedFlag) {
-           getFilterObj();
-        } else {
+       
            setUniqueIdsOnConnectionOptions();
-        }
+        
     }, []);
    const  getFilterObj = ()=> {
        setConnectionOptions(filterNonProdItem(CONNECTION_OPTIONS));
-              
     }
    const filterNonProdItem = (obj)=> {
       const nonApprovedProductList = configStore.store.config.nonApprovedList;
@@ -587,8 +584,12 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
         setIsLoading(true);
         await assignUniqueIds(CONNECTION_OPTIONS);
         setIsLoading(false);
-
-        setConnectionOptions(CONNECTION_OPTIONS);
+        if ( configStore.store.config.adminOnlyNonApprovedFlag === true) {
+          getFilterObj();
+        } else { 
+          setConnectionOptions(CONNECTION_OPTIONS);
+        }
+       
     };
 
     /**
