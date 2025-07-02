@@ -43,135 +43,135 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
     version: '',
 
     layout: {
-        selected: 'main',
-        available: {
-            main: {
-                id: 'main',
-                name: 'Main Layout',
-                data: {
-                    global: { tabEnableClose: false },
-                    borders: [
-                        {
-                            type: 'border',
-                            location: 'left',
-                            size: DEFAULT_BORDER_SIZE,
-                            children: [
-                                {
-                                    type: 'tab',
-                                    id: 'blocks',
-                                    name: 'Blocks',
-                                    component: 'blocks',
-                                    config: {},
-                                    helpText: 'Blocks',
-                                },
-                                {
-                                    type: 'tab',
-                                    id: 'layers',
-                                    name: 'Layers',
-                                    component: 'layers',
-                                    config: {},
-                                    helpText: 'Layers',
-                                },
-                                {
-                                    type: 'tab',
-                                    id: 'variables',
-                                    name: 'Variables',
-                                    component: 'variables',
-                                    config: {},
-                                    helpText: 'Variables',
-                                },
-                                {
-                                    type: 'tab',
-                                    id: 'filexplorer',
-                                    name: 'Files',
-                                    component: 'file-explorer',
-                                    config: {},
-                                    helpText: 'Files',
-                                },
-                                {
-                                    type: 'tab',
-                                    id: 'notebook-explorer',
-                                    name: 'Notebooks',
-                                    component: 'notebook-explorer',
-                                    config: {},
-                                    helpText: 'Notebooks',
-                                },
-                                {
-                                    type: 'tab',
-                                    id: 'settings',
-                                    name: 'Settings',
-                                    component: 'settings',
-                                    config: {},
-                                    minWidth: 0,
-                                    maxWidth: 0,
-                                    helpText: 'Settings',
-                                    enableDrag: false,
-                                },
-                            ],
+        // selected: 'main',
+        // available: {
+        //     main: {
+        //         id: 'main',
+        //         name: 'Main Layout',
+        //         data: {
+        global: { tabEnableClose: false },
+        borders: [
+            {
+                type: 'border',
+                location: 'left',
+                size: DEFAULT_BORDER_SIZE,
+                children: [
+                    {
+                        type: 'tab',
+                        id: 'blocks',
+                        name: 'Blocks',
+                        component: 'blocks',
+                        config: {},
+                        helpText: 'Blocks',
+                    },
+                    {
+                        type: 'tab',
+                        id: 'layers',
+                        name: 'Layers',
+                        component: 'layers',
+                        config: {},
+                        helpText: 'Layers',
+                    },
+                    {
+                        type: 'tab',
+                        id: 'variables',
+                        name: 'Variables',
+                        component: 'variables',
+                        config: {},
+                        helpText: 'Variables',
+                    },
+                    {
+                        type: 'tab',
+                        id: 'filexplorer',
+                        name: 'Files',
+                        component: 'file-explorer',
+                        config: {},
+                        helpText: 'Files',
+                    },
+                    {
+                        type: 'tab',
+                        id: 'notebook-explorer',
+                        name: 'Notebooks',
+                        component: 'notebook-explorer',
+                        config: {},
+                        helpText: 'Notebooks',
+                    },
+                    {
+                        type: 'tab',
+                        id: 'settings',
+                        name: 'Settings',
+                        component: 'settings',
+                        config: {},
+                        minWidth: 0,
+                        maxWidth: 0,
+                        helpText: 'Settings',
+                        enableDrag: false,
+                    },
+                ],
+            },
+            {
+                type: 'border',
+                location: 'right',
+                size: DEFAULT_BORDER_SIZE,
+                children: [
+                    {
+                        type: 'tab',
+                        id: 'block-settings',
+                        name: 'Block Settings',
+                        component: 'selected',
+                        config: {
+                            className: 'selected_block',
                         },
+                        helpText: 'Block Settings',
+                    },
+                ],
+            },
+        ],
+        layout: {
+            type: 'row',
+            weight: 0,
+            children: [
+                {
+                    type: 'tabset',
+                    id: 'main-tabset',
+                    weight: 100,
+                    selected: 0,
+                    enableMaximize: true,
+                    children: [
                         {
-                            type: 'border',
-                            location: 'right',
-                            size: DEFAULT_BORDER_SIZE,
-                            children: [
-                                {
-                                    type: 'tab',
-                                    id: 'block-settings',
-                                    name: 'Block Settings',
-                                    component: 'selected',
-                                    config: {
-                                        className: 'selected_block',
-                                    },
-                                    helpText: 'Block Settings',
-                                },
-                            ],
+                            type: 'tab',
+                            name: 'page-1',
+                            component: 'designer',
+                            config: {
+                                id: 'page-1',
+                            },
+                            enableClose: true,
                         },
                     ],
-                    layout: {
-                        type: 'row',
-                        weight: 0,
-                        children: [
-                            {
-                                type: 'tabset',
-                                id: 'main-tabset',
-                                weight: 100,
-                                selected: 0,
-                                enableMaximize: true,
-                                children: [
-                                    {
-                                        type: 'tab',
-                                        name: 'page-1',
-                                        component: 'designer',
-                                        config: {
-                                            id: 'page-1',
-                                        },
-                                        enableClose: true,
-                                    },
-                                ],
-                            },
-                            {
-                                type: 'tabset',
-                                id: 'settings-tabset',
-                                weight: 0,
-                                selected: 0,
-                                enableMaximize: true,
-                                enableTabStrip: false,
-                                children: [
-                                    {
-                                        type: 'tab',
-                                        name: 'Settings',
-                                        component: 'settingsPanel',
-                                        enableClose: false,
-                                    },
-                                ],
-                            },
-                        ],
-                    },
                 },
-            },
+                {
+                    type: 'tabset',
+                    id: 'settings-tabset',
+                    weight: 0,
+                    selected: 0,
+                    enableMaximize: true,
+                    enableTabStrip: false,
+                    children: [
+                        {
+                            type: 'tab',
+                            name: 'Settings',
+                            component: 'settingsPanel',
+                            enableClose: false,
+                        },
+                    ],
+                },
+            ],
         },
     },
 };
+//         },
+//     },
+// };
 
 const ACTIVE = 'page-1';
 
