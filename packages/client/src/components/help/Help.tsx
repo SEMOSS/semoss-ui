@@ -37,7 +37,7 @@ export const Help = observer((): JSX.Element => {
         setAnchorEl(null);
     };
 
-    return (
+     return (
         <StyledContainer>
             <StyledButton
                 // aria-controls={open ? 'help-menu' : undefined}
