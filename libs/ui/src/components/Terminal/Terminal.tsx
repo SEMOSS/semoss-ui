@@ -205,10 +205,16 @@ export const Terminal: React.FC<TerminalProps> = ({
                 case "\r": {
                     if (updatedBuffer.command.trim() === "") {
                         // If command is empty, just print a new prompt and move to next line
-                        terminalInstance.write(`\n\r${PROMPT}`);
+                        terminalInstance.write(`\r\n${PROMPT}`);
                     } else {
-                        // run the command
-                        await onRun();
+                        // run the command with error handling
+                        try {
+                            await onRun();
+                        } catch (error) {
+                            terminalInstance.writeln(
+                                `\r\n[Error]: ${error?.message || error}`,
+                            );
+                        }
                     }
 
                     // clear it
