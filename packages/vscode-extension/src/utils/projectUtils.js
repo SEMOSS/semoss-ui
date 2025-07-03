@@ -22,6 +22,9 @@ export function getProjectId() {
     let projectId = "";
     const projectFolderPath = assetsFolderPath.replace(/\\assets|\/assets/g, "");
     const smssFile = fs.readdirSync(projectFolderPath).find((file) => file.endsWith('.smss'));
+    if (!smssFile) {
+        throw new Error(`No .smss file found in project folder: ${projectFolderPath}`);
+    }
 
     if (!smssFile) {
         throw new Error('No .smss file found in the project folder');

@@ -138,12 +138,7 @@ async function activate(context) {
                 if (!secrets) return;
 
                 setFolderPaths(uri);
-                const projectId = getProjectId();
 
-                if (!projectId) {
-                    vscode.window.showErrorMessage('Unable to find project id in the smss file');
-                    return;
-                }
 
                 // Zip the project (json, smss, assets as assets.zip)
                 await zipProject();
@@ -160,7 +155,12 @@ async function activate(context) {
                     outputPath: outputZip
                 });
 
-                // Deploy the project
+                // Retrieve and use the current project ID
+                const projectId = await getProjectId(context);
+                if (!projectId) {
+                    vscode.window.showErrorMessage('Unable to find project id in the smss file');
+                    return;
+                }
                 await deployProject(projectId);
             } catch (error) {
                 vscode.window.showErrorMessage(`Error in zip and deploy: ${error.message}`);
@@ -213,8 +213,9 @@ async function activate(context) {
                 if (!secrets) return;
 
                 setFolderPaths(uri);
-                const projectId = getProjectId();
 
+                // Retrieve and use the current project ID
+                const projectId = await getProjectId(context);
                 if (!projectId) {
                     vscode.window.showErrorMessage('Unable to find project id in the smss file');
                     return;

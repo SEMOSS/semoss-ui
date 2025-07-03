@@ -75,7 +75,7 @@ export async function processGithubAssets(
 
         // For private repositories, use the GitHub API zipball URL instead of the public archive URL
         let zipUrl;
-        const shouldUsePrivateUrl = (isPrivateRepo && accessToken) || (!isPrivateRepo && accessToken && accessToken.startsWith('ghp_'));
+        const shouldUsePrivateUrl = Boolean(accessToken);
 
         if (shouldUsePrivateUrl) {
             // Use the same format as your working PowerShell command
@@ -83,6 +83,7 @@ export async function processGithubAssets(
         } else {
             zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/${usedBranch}.zip`;
         }
+        fs.mkdirSync(downloadsDir, { recursive: true });
         zipPath = path.join(downloadsDir, `${appName}_github.zip`);
         extractPath = path.join(
             downloadsDir,
@@ -272,7 +273,7 @@ const downloadZipWithRedirect = (url, dest, accessToken = null) => {
 
         https
             .get(url, { headers }, (res) => {
-                if (res.statusCode === 302 && res.headers.location) {
+                if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
                     // For redirects, preserve the authorization header if present
                     https
                         .get(res.headers.location, { headers }, (res2) => {
