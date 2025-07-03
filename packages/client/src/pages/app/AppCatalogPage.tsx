@@ -381,16 +381,16 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
                         {mode != 'System' && favoritedApps.length > 0 ? (
                             <StyledSection>
-                                {favoritedApps.map((app, i) => {
+                                {favoritedApps.map((app) => {
                                     return (
                                         <AppTileCard
-                                            key={i}
+                                            key={app.project_id}
                                             app={app}
                                             systemApp={false}
                                             href={
                                                 mode === 'Discoverable'
                                                     ? `#/app/${app.project_id}/detail`
-                                                    : `#/app/${app.project_id}`
+                                                    : `#/app/${app.project_id}/view`
                                             }
                                             onAction={() => {
                                                 if (mode === 'Discoverable') {
@@ -399,7 +399,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
                                                     );
                                                 } else {
                                                     navigate(
-                                                        `/app/${app.project_id}`,
+                                                        `/app/${app.project_id}/view`,
                                                     );
                                                 }
                                             }}
