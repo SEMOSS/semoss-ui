@@ -1,9 +1,9 @@
 // ChatbotSeparateManager.js
 // This is a utility file to manage the separate chatbot implementation
 
-import * as vscode from "vscode";
-import * as path from "path";
-import * as fs from "fs";
+const vscode = require("vscode");
+const path = require("path");
+const fs = require("fs");
 
 /**
  * Get the HTML content for the separate chatbot implementation
@@ -11,7 +11,7 @@ import * as fs from "fs";
  * @param {vscode.ExtensionContext} context - The extension context
  * @returns {string} HTML content for the webview
  */
-export function getSeparateChatbotHtml(webview, context) {
+function getSeparateChatbotHtml(webview, context) {
     // Use the extension's file system path
     const extensionPath = context.extensionPath;
 
@@ -51,7 +51,7 @@ export function getSeparateChatbotHtml(webview, context) {
  * @param {vscode.ExtensionContext} context - The extension context
  * @returns {string} Path to user manual PDF
  */
-export function getUserManualPath(context) {
+function getUserManualPath(context) {
     return path.join(context.extensionPath, 'assets', 'docs', 'semoss_user_manual.pdf');
 }
 
@@ -118,7 +118,7 @@ function getErrorHtml(error) {
 /**
  * Exports the original getChatbotHtml and handleChatbotAction functions for backward compatibility
  */
-export function handleChatbotAction(action, options) {
+function handleChatbotAction(action, options) {
     console.log('handleChatbotAction called with:', action, options);
     // Implementation can be added here if needed
 }
@@ -128,7 +128,7 @@ export function handleChatbotAction(action, options) {
  * @param {object} msg - The chat message object
  * @returns {string|null} The command string or null if not recognized
  */
-export function mapMessageToCommand(msg) {
+function mapMessageToCommand(msg) {
     if (!msg || !msg.text) return null;
     const text = msg.text.toLowerCase();
 
@@ -143,3 +143,10 @@ export function mapMessageToCommand(msg) {
 
     return null;
 }
+
+module.exports = { 
+    getSeparateChatbotHtml, 
+    getUserManualPath, 
+    handleChatbotAction, 
+    mapMessageToCommand 
+};

@@ -37,7 +37,7 @@ async function deployProject(projectId) {
         progress.report({ increment: 10 });
 
         let response, params, insightId = "";
-        
+
         // Create new insight
         try {
             params = new URLSearchParams();
