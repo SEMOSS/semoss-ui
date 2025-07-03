@@ -2,7 +2,7 @@ import { BlockConfig } from "../../../store";
 import { TableChart } from "@mui/icons-material";
 import { BLOCK_TYPE_DATA } from "../block-defaults.constants";
 import { GridBlockMenu } from "./GridBlockMenu";
-import { GridBlockDef, GridBlockDuplicate } from "./GridBlockDuplicate";
+import { GridBlockDef, GridBlock } from "./GridBlock";
 
 // export the config for the block
 export const config: BlockConfig<GridBlockDef> = {
@@ -36,7 +36,7 @@ export const config: BlockConfig<GridBlockDef> = {
 
     listeners: {},
     slots: {},
-    render: GridBlockDuplicate,
+    render: GridBlock,
     icon: TableChart,
     menu: GridBlockMenu,
 };
