@@ -121,7 +121,7 @@ const layout = new Layout({
 // }, [state]);
 // const layout = createTestLayout();
 
-console.log("EngineFilePage");
+console.log("EngineFilePage 5");
 
 export const EngineFilePage = () => {
     //Grabbing Engine Id for document creation
@@ -132,7 +132,7 @@ const insightID = configStore.store.insightID;
 console.log("at EngineFilePage insightID" ,insightID);
 console.log("at EngineFilePage id" ,id);
 console.log("at EngineFilePage monolithStore" ,monolithStore.config);
-console.log("at EngineFilePage configStore" ,configStore.store);
+console.log("at EngineFilePage configStore 11111" ,configStore.store);
 const mockWorkspace = {
     workspace: {
         appId: '',
@@ -171,7 +171,7 @@ const mockWorkspace = {
 
 
                 <WorkspaceContext.Provider value={mockWorkspace}>
-                    <FileExplorerPanel layout={layout} />
+                    <FileExplorerPanel layout={layout} mode='storage'/>
                 </WorkspaceContext.Provider>
 
                 {/* <FileExplorer

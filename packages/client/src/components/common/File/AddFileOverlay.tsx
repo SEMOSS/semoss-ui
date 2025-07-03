@@ -12,7 +12,7 @@ import { useRootStore } from '@/hooks';
 
 interface AddFileOverlayProps {
     /** Type of file opened */
-    type: 'app' | 'insight';
+    type: 'app' | 'insight' | 'storage';
 
     /** Space where the file is located */
     space: string;
@@ -21,7 +21,7 @@ interface AddFileOverlayProps {
     uploadPath: string;
 
     /** Callback that is triggered onClose */
-    onClose: (success: boolean, uploadPath: string) => void;
+    onClose: (success: boolean, uploadPath: string, file?: File) => void;
 }
 
 export const AddFileOverlay = (props: AddFileOverlayProps) => {

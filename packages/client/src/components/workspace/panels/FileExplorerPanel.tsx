@@ -8,11 +8,9 @@ import {
     FileUpload,
     Refresh,
     PublishedWithChangesOutlined,
-    CoffeeRounded,
     CoffeeOutlined,
 } from '@mui/icons-material';
-
-import { usePixel, useRootStore, useWorkspace } from '@/hooks';
+import { usePixel, useWorkspace, useEngine } from '@/hooks';
 import {
     FileExplorer,
     AddFileOverlay,
@@ -21,316 +19,204 @@ import {
 } from '@/components/common';
 import { Panel } from './Panel';
 
-const EXPLORER_TYPE = 'app';
+// Define supported mode
+type ExplorerMode = 'app' | 'storage';
 
 interface FileExplorerPanelProps {
-    /** Current layoutobject */
     layout: Layout;
+    mode?: ExplorerMode; // Optional prop to determine behavior
 }
-
+interface FileExplorerProps {
+    fileName: string;
+    fileSize: number;
+    lastModified: string;
+    key?: string; // only used in storage mode
+}
 export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
-    const { layout } = props;
-
+    const { layout, mode = 'app' } = props; // Default to app mode
     const { workspace } = useWorkspace();
-    const { monolithStore } = useRootStore();
-
     const notification = useNotification();
 
-    // files to add
     const [selectedPath, setSelectedPath] = useState<string>('');
     const [fileUploadPath, setFileUploadPath] = useState<string>('');
+    const [counter, setCounter] = useState(0); // Used for refresh workaround
+    const [overlayContent, setOverlayContent] = useState<React.ReactNode>(null);
 
-    // temporary fix for dead refresh button should be removed
-    const [counter, setCounter] = useState(0);
 
-    // set the uploadPath based on the selected item
+    // Set upload path based on selected path
     useEffect(() => {
-        console.log('FileExplorerPanel useEffect', selectedPath);
         let path = '/';
-
         if (selectedPath) {
             if (selectedPath.slice(-1) === '/') {
                 path = selectedPath;
             } else {
-                // try to remove the file name and get the directory
                 path = selectedPath.split('/').slice(0, -1).join('/');
             }
         }
-
         setFileUploadPath(path);
     }, [selectedPath]);
 
-    /**
-     * Refresh the files
-     */
     const refreshFiles = () => {
-        // increment the counter
-        setCounter(counter + 1);
+        setCounter((prev) => prev + 1);
     };
 
-    /**
-     * Publish the app
-     */
-    const publishApp = async () => {
-        try {
-            // turn on loading
-            workspace.setLoading(true);
-
-            const response = await monolithStore.runQuery(
-                `PublishProject(project='${workspace.appId}', release=true);`,
-            );
-
-            const output = response.pixelReturn[0].output,
-                type = response.pixelReturn[0].operationType[0];
-
-            if (type.indexOf('ERROR') > -1) {
-                notification.add({
-                    color: 'error',
-                    message: output,
-                });
-
-                throw new Error(output.join(''));
-            }
-
-            notification.add({
-                color: 'success',
-                message: 'Successfully published',
-            });
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: e.message,
-            });
-        } finally {
-            // turn off loading
-            workspace.setLoading(false);
-        }
+    const closeOverlay = () => {
+        setOverlayContent(null);
     };
 
-    /**
-     * Recompile the app
-     */
-    const recompileApp = async () => {
-        try {
-            // turn on loading
-            workspace.setLoading(true);
-
-            const response = await monolithStore.runQuery(
-                `ReloadInsightClasses(project='${workspace.appId}', release=false);`,
-            );
-
-            const output = response.pixelReturn[0].output,
-                type = response.pixelReturn[0].operationType[0];
-
-            if (type.indexOf('ERROR') > -1) {
-                notification.add({
-                    color: 'error',
-                    message: output,
-                });
-
-                throw new Error(output.join(''));
-            }
-
-            notification.add({
-                color: 'success',
-                message:
-                    'Successfully recompiled reactors. Remember to publish changes.',
-            });
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: e.message,
-            });
-        } finally {
-            // turn off loading
-            workspace.setLoading(false);
-        }
-    };
-
-    /**
-     * Open the add modal
-     */
+    // Handle Upload
     const handleOpenAddFile = () => {
-        workspace.openOverlay(() => (
+        setOverlayContent(
             <AddFileOverlay
-                type={EXPLORER_TYPE}
+                type="app"
                 space={workspace.appId}
-                onClose={(success, uploadPath) => {
-                    if (success) {
-                        // create the panel
-                        createPanel(uploadPath);
-
-                        // refresh the content
-                        refreshFiles();
+                onClose={async (success, uploadPath, file) => {
+                    if (!success || !file) {
+                        closeOverlay();
+                        return;
                     }
 
-                    // close the overlay
-                    workspace.closeOverlay();
+                    if (mode !== 'storage') {
+                        createPanel(uploadPath);
+                        refreshFiles();
+                        closeOverlay();
+                        return;
+                    }
+
+                    try {
+                        const engineId = useEngine();
+                        if (!engineId) throw new Error('Engine not found');
+
+                        const localFilePath = `/tmp/${file.name}`;
+
+                        const query = `PushToStorage(storagePath='${uploadPath}', filePath='${localFilePath}', metadata=[{name:'${file.name}'}, {size:${file.size}}]);`;
+
+                        // Log the query
+                        console.log('Running Pixel Query:', query);
+
+                        // Run pixel query
+                        const responsedata = usePixel<FileExplorerProps[]>(query);
+
+                        // Log full response for debugging
+                        console.log('Pixel Response:', responsedata);
+
+                        notification.add({
+                            color: 'success',
+                            message: `Successfully pushed ${file.name} to storage.`,
+                        });
+
+                        refreshFiles();
+                    } catch (e: any) {
+                        notification.add({ color: 'error', message: e.message });
+                    } finally {
+                        closeOverlay();
+                    }
                 }}
                 uploadPath={fileUploadPath}
             />
-        ));
+        );
     };
 
-    /**
-     * Open the create file modal
-     */
-    const handleOpenCreateFile = (
-        /** Mode of add file */
-        mode: 'directory' | 'file',
-    ) => {
-        workspace.openOverlay(() => (
+    // Handle Create File/Folder (only available in app mode)
+    const handleOpenCreateFile = (modeType: 'directory' | 'file') => {
+        if (mode !== 'app') return;
+
+        setOverlayContent(
             <CreateFileOverlay
-                type={EXPLORER_TYPE}
+                type="app"
                 space={workspace.appId}
                 onClose={(success, uploadPath) => {
                     if (success) {
-                        // create the panel
                         createPanel(uploadPath);
-
-                        // refresh the content
                         refreshFiles();
                     }
-
-                    // close the overlay
-                    workspace.closeOverlay();
+                    closeOverlay();
                 }}
                 uploadPath={fileUploadPath}
-                mode={mode}
+                mode={modeType}
             />
-        ));
+        );
     };
 
-    /**
-     * Select a panel and create one if it doesn't exist
-     *
-     * path - path to file
-     */
+    // Handle Trash/Delete (only available in app mode)
+    const handleOnTrashClick = (fileDeletePath: string) => {
+        if (mode !== 'app') return;
+
+        setOverlayContent(
+            <DeleteFileOverlay
+                type="app"
+                space={workspace.appId}
+                onClose={(success) => {
+                    if (success) {
+                        removePanel(fileDeletePath);
+                        refreshFiles();
+                    }
+                    closeOverlay();
+                }}
+                fileDeletePath={fileDeletePath}
+            />
+        );
+    };
+
+    // Select file and open editor tab
     const handleOnSelect = (path: string) => {
-        // try to select a panel, if it doesn't exist create it. Save the path
         const IsSelected = selectPanel(path);
         if (!IsSelected) {
             createPanel(path);
         }
-
-        // set the path
         setSelectedPath(path);
     };
 
-    /**
-     * Open the delete modal
-     */
-    const handleOnTrashClick = (fileDeletePath: string) => {
-        workspace.openOverlay(() => (
-            <DeleteFileOverlay
-                type={EXPLORER_TYPE}
-                space={workspace.appId}
-                onClose={(success) => {
-                    if (success) {
-                        // trigger the delete file callback if successful
-                        removePanel(fileDeletePath);
-
-                        // refresh the content
-                        refreshFiles();
-                    }
-                    // close the overlay
-                    workspace.closeOverlay();
-                }}
-                fileDeletePath={fileDeletePath}
-            />
-        ));
-    };
-
-    /**
-     * Handle dragging of an item
-     *
-     * event - drag event
-     * path - path of the file
-     */
+    // Drag & Drop (only available in app mode)
     const handleOnItemDragStart = (
         event: React.DragEvent<HTMLDivElement>,
         path: string,
     ) => {
+        if (mode !== 'app') return;
+
         try {
-            // can can only drag in files into the workspace
-            if (path.slice(-1) === '/') {
-                return;
-            }
+            if (path.slice(-1) === '/') return;
 
-            // get the model
             const model = workspace.selectedLayout?.model;
-            if (!model) {
-                throw new Error('Missing model');
-            }
+            if (!model) throw new Error('Missing model');
 
-            // TODO: altKey key needs to be down for now. event.altKey=false is reserved for panel-to-panel interactions
-            if (!event.altKey) {
-                return;
-            }
+            if (!event.altKey) return;
 
-            // get the name
             const name = path.split('/').pop();
-
-            // add to layout
             layout.addTabWithDragAndDrop(event as unknown as DragEvent, {
                 type: 'tab',
                 name: name,
                 component: 'file-editor',
-                config: {
-                    path: path,
-                },
+                config: { path },
                 enableClose: true,
             });
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: e,
-            });
+        } catch (e: any) {
+            notification.add({ color: 'error', message: e.message });
         }
     };
 
-    /** Helpers */
-    /**
-     * Create a new panel and highlight it
-     *
-     * path - path to file
-     */
+    // Helper Functions
+
     const createPanel = (path: string): boolean => {
         try {
-            if (!path) {
-                return false;
-            }
+            if (!path || path.slice(-1) === '/') return false;
 
-            // can can only create panels for files
-            if (path.slice(-1) === '/') {
-                return false;
-            }
-
-            // get the model
             const model = workspace.selectedLayout?.model;
-            if (!model) {
-                throw new Error('Missing model');
-            }
+            if (!model) throw new Error('Missing model');
 
-            // where to add the node
             const addId =
                 model.getActiveTabset()?.getId() ||
                 model.getRoot().getChildren()[0]?.getId() ||
                 '';
 
-            // get the name
             const name = path.split('/').pop();
-
-            // create and select the panel
             model.doAction(
                 Actions.addNode(
                     {
                         type: 'tab',
                         name: name,
                         component: 'file-editor',
-                        config: {
-                            path: path,
-                        },
+                        config: { path },
                         enableClose: true,
                     },
                     addId,
@@ -339,228 +225,214 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
                     true,
                 ),
             );
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: e,
-            });
-
+        } catch (e: any) {
+            notification.add({ color: 'error', message: e.message });
             return false;
         }
-
         return true;
     };
 
-    /**
-     * Select a panel if it is there. Return false if not selected.
-     *
-     * path - path to file
-     */
     const selectPanel = (path: string): boolean => {
         try {
-            if (!path) {
-                return false;
-            }
+            if (!path || path.slice(-1) === '/') return false;
 
-            // can can only select files
-            if (path.slice(-1) === '/') {
-                return false;
-            }
+            const model = workspace.selectedLayout?.model;
+            if (!model) throw new Error('Missing model');
 
             let selectedNode: TabNode | null = null;
 
-            // get the model
-            const model = workspace.selectedLayout?.model;
-            if (!model) {
-                throw new Error('Missing model');
-            }
-
-            // visit the notes, and see if it exists
             model.visitNodes((node) => {
-                // check if it is a tabNode
-                if (node instanceof TabNode) {
-                    // it needs to be a file-editor
-                    const component = node.getComponent();
-                    if (component !== 'file-editor') {
-                        return;
-                    }
-
-                    // path and space need to match
+                if (node instanceof TabNode && node.getComponent() === 'file-editor') {
                     const config = node.getConfig();
-                    if (path !== config.path) {
-                        return;
+                    if (config.path === path) {
+                        selectedNode = node;
                     }
-
-                    selectedNode = node;
                 }
             });
 
-            // create a new panel if there is no node
-            if (!selectedNode) {
-                return false;
-            }
+            if (!selectedNode) return false;
 
             const selectedNodeId = selectedNode.getId();
             model.doAction(Actions.selectTab(selectedNodeId));
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: e,
-            });
-
+        } catch (e: any) {
+            notification.add({ color: 'error', message: e.message });
             return false;
         }
-
         return true;
     };
 
-    /**
-     * Remove a panel
-     */
     const removePanel = (path: string) => {
         try {
-            if (!path) {
-                return;
-            }
+            const model = workspace.selectedLayout?.model;
+            if (!model) throw new Error('Missing model');
 
             const nodesToBeRemoved: TabNode[] = [];
 
-            // get the model
-            const model = workspace.selectedLayout?.model;
-            if (!model) {
-                throw new Error('Missing model');
-            }
-
-            // visit the notes, and see if it exists
             model.visitNodes((node) => {
-                // check if it is a tabNode
-                if (node instanceof TabNode) {
-                    // it needs to be a file-editor
-                    const component = node.getComponent();
-                    if (component !== 'file-editor') {
-                        return;
-                    }
-
-                    // path and space need to match
+                if (node instanceof TabNode && node.getComponent() === 'file-editor') {
                     const config = node.getConfig();
-                    if (config.path.indexOf(path) !== 0) {
-                        return;
+                    if (config.path.indexOf(path) === 0) {
+                        nodesToBeRemoved.push(node);
                     }
-
-                    nodesToBeRemoved.push(node);
                 }
             });
 
-            // delete the tabs
             for (const n of nodesToBeRemoved) {
-                const id = n.getId();
-                model.doAction(Actions.deleteTab(id));
+                model.doAction(Actions.deleteTab(n.getId()));
             }
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: e,
-            });
+        } catch (e: any) {
+            notification.add({ color: 'error', message: e.message });
         }
     };
 
-    console.log("FileExplorerPanel", workspace.appId, fileUploadPath);
-    console.log("InsightId", workspace.insightId);
+    // App-specific actions only work in app mode
+    const publishApp = async () => {
+        if (mode !== 'app') return;
+        try {
+            workspace.setLoading(true);
+            const response = await runPixel(
+                `PublishProject(project='${workspace.appId}', release=true);`
+            );
+
+
+            notification.add({ color: 'success', message: 'Successfully published' });
+        } catch (e: any) {
+            notification.add({ color: 'error', message: e.message });
+        } finally {
+            workspace.setLoading(false);
+        }
+    };
+
+    const recompileApp = async () => {
+        if (mode !== 'app') return;
+        try {
+            workspace.setLoading(true);
+            const response = await runPixel(
+                `ReloadInsightClasses(project='${workspace.appId}', release=false);`
+            );
+
+            notification.add({
+                color: 'success',
+                message: 'Successfully recompiled reactors. Remember to publish changes.',
+            });
+        } catch (e: any) {
+            notification.add({ color: 'error', message: e.message });
+        } finally {
+            workspace.setLoading(false);
+        }
+    };
 
     return (
-        <Panel
-            actions={
-                <>
-                    <IconButton
-                        size={'small'}
-                        color={'default'}
-                        title={'Refresh'}
-                        onClick={() => {
-                            refreshFiles();
-                        }}
-                    >
-                        <Refresh fontSize="inherit" />
-                    </IconButton>
-                    <Stack flex={1}>&nbsp;</Stack>
-                    <Tooltip title={`Publish files`}>
+        <>
+            <Panel
+                actions={
+                    <>
+                        {/* Always show refresh */}
                         <IconButton
                             size={'small'}
                             color={'default'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                publishApp();
-                            }}
+                            title={'Refresh'}
+                            onClick={() => refreshFiles()}
                         >
-                            <PublishedWithChangesOutlined fontSize="inherit" />
+                            <Refresh fontSize="inherit" />
                         </IconButton>
-                    </Tooltip>
-                    <Tooltip title={`Recompile reactors`}>
-                        <IconButton
-                            size={'small'}
-                            color={'default'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                recompileApp();
-                            }}
-                        >
-                            <CoffeeOutlined fontSize="inherit" />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title={`Upload file(s) to ${fileUploadPath}`}>
-                        <IconButton
-                            size={'small'}
-                            color={'default'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenAddFile();
-                            }}
-                        >
-                            <FileUpload fontSize="inherit" />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title={`Create new file at ${fileUploadPath}`}>
-                        <IconButton
-                            title={`Create new file at ${fileUploadPath}`}
-                            size={'small'}
-                            color={'default'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenCreateFile('file');
-                            }}
-                        >
-                            <NoteAddOutlined fontSize="inherit" />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title={`Create new folder at ${fileUploadPath}`}>
-                        <IconButton
-                            size={'small'}
-                            color={'default'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenCreateFile('directory');
-                            }}
-                        >
-                            <CreateNewFolderOutlined fontSize="inherit" />
-                        </IconButton>
-                    </Tooltip>
-                </>
-            }
-        >
-            <FileExplorer
-                key={counter}
-                type='storage-catalog'
-                space="/"
-                insightId={workspace.insightId}
-                onSelect={(path) => {
-                    handleOnSelect(path);
-                }}
-                onTrashClick={(e, path) => {
-                    handleOnTrashClick(path);
-                }}
-                onDragStart={(e, path) => {
-                    handleOnItemDragStart(e, path);
-                }}
-            />
-        </Panel>
+
+                        <Stack flex={1}>&nbsp;</Stack>
+
+                        {/* App-specific actions */}
+                        {mode === 'app' && (
+                            <>
+                                <Tooltip title={`Publish files`}>
+                                    <IconButton
+                                        size={'small'}
+                                        color={'default'}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            publishApp();
+                                        }}
+                                    >
+                                        <PublishedWithChangesOutlined fontSize="inherit" />
+                                    </IconButton>
+                                </Tooltip>
+
+                                <Tooltip title={`Recompile reactors`}>
+                                    <IconButton
+                                        size={'small'}
+                                        color={'default'}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            recompileApp();
+                                        }}
+                                    >
+                                        <CoffeeOutlined fontSize="inherit" />
+                                    </IconButton>
+                                </Tooltip>
+
+                                <Tooltip title={`Create new file at ${fileUploadPath}`}>
+                                    <IconButton
+                                        size={'small'}
+                                        color={'default'}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenCreateFile('file');
+                                        }}
+                                    >
+                                        <NoteAddOutlined fontSize="inherit" />
+                                    </IconButton>
+                                </Tooltip>
+
+                                <Tooltip title={`Create new folder at ${fileUploadPath}`}>
+                                    <IconButton
+                                        size={'small'}
+                                        color={'default'}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenCreateFile('directory');
+                                        }}
+                                    >
+                                        <CreateNewFolderOutlined fontSize="inherit" />
+                                    </IconButton>
+                                </Tooltip>
+                            </>
+                        )}
+
+                        {/* Upload always available */}
+                        <Tooltip title={`Upload file(s) to ${fileUploadPath}`}>
+                            <IconButton
+                                size={'small'}
+                                color={'default'}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenAddFile();
+                                }}
+                            >
+                                <FileUpload fontSize="inherit" />
+                            </IconButton>
+                        </Tooltip>
+                    </>
+                }
+            >
+                <FileExplorer
+                    key={counter}
+                    type={mode === 'storage' ? 'storage-catalog' : 'app'}
+                    space="/"
+                    insightId={workspace.insightId}
+                    onSelect={(path) => handleOnSelect(path)}
+                    onTrashClick={(e, path) => handleOnTrashClick(path)}
+                    onDragStart={(e, path) => handleOnItemDragStart(e, path)}
+                />
+            </Panel>
+
+            {/* Overlay Modal */}
+            {overlayContent && (
+                <div className="overlay-backdrop">
+                    <div className="overlay-modal">{overlayContent}</div>
+                </div>
+            )}
+        </>
     );
 };
+
+function runPixel(query: string) {
+    throw new Error('Function not implemented.');
+}
