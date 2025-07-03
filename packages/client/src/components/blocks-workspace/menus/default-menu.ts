@@ -1061,6 +1061,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 src: '',
                 title: '',
                 show: 'true',
+                file: null,
+                unavailable: '',
+                placeholderText: '',
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },

@@ -11,6 +11,7 @@ import {
     buildShowField,
     buildListener,
 } from "../block-defaults.shared";
+import GeneralSettings from "./GeneralSettings";
 
 export const config: BlockConfig<ImageBlockDef> = {
     widget: "image",
@@ -29,6 +30,9 @@ export const config: BlockConfig<ImageBlockDef> = {
         src: "",
         title: "",
         show: "true",
+        file: null,
+        unavailable: "",
+        placeholderText: "",
     },
     listeners: {
         preProcess: {
@@ -44,23 +48,29 @@ export const config: BlockConfig<ImageBlockDef> = {
             name: "General",
             children: [
                 {
-                    description: "Image Source",
-                    render: ({ id }) => (
-                        <InputSettings id={id} label="Image URL" path="src" />
-                    ),
-                },
-                {
-                    description: "Description",
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Description"
-                            path="title"
-                        />
-                    ),
+                    description: "",
+                    render: ({ id }) => <GeneralSettings id={id} />,
                 },
             ],
         },
+        // children: [
+        //     {
+        //         description: "Image Source",
+        //         render: ({ id }) => (
+        //             <InputSettings id={id} label="Image URL" path="src" />
+        //         ),
+        //     },
+        //     {
+        //         description: "Description",
+        //         render: ({ id }) => (
+        //             <InputSettings
+        //                 id={id}
+        //                 label="Description"
+        //                 path="title"
+        //             />
+        //         ),
+        //     },
+        // ],
         {
             name: "Conditional",
             children: [...buildShowField()],

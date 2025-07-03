@@ -15,6 +15,8 @@ interface useBlockReturn<D extends BlockDef = BlockDef> {
     /** Data for the block  */
     data: Block<D>["data"];
 
+    insightId: string;
+
     /** Listeners on the block  */
     listeners: Record<
         keyof Block<D>["listeners"],
@@ -53,7 +55,11 @@ interface useBlockReturn<D extends BlockDef = BlockDef> {
      * Upload a file to the insight
      * @param file - file(s) to upload to the insight
      */
-    uploadFile: (file: File | File[]) => Promise<
+    uploadFile: (
+        file: File | File[],
+        projectId?: string,
+        path?: string,
+    ) => Promise<
         | {
               fileName: string;
               fileLocation: string;
@@ -138,6 +144,8 @@ export const useBlock = <D extends BlockDef = BlockDef>(
     const uploadFile = useCallback(
         async (
             file: File | File[],
+            projectId = "",
+            path = "",
         ): Promise<
             | {
                   fileName: string;
@@ -146,14 +154,14 @@ export const useBlock = <D extends BlockDef = BlockDef>(
             | false
         > => {
             // ignore if static
-            if (state.mode === "static") {
-                return false;
-            }
-
+            // if (state.mode === "static") {
+            //     return false;
+            // }
+            console.log("state.mode ", state.mode);
             const f = Array.isArray(file) ? file : [file];
 
             // upload the file
-            return await upload(f, state.insightId, "", "");
+            return await upload(f, state.insightId, projectId, path);
         },
         [],
     );
@@ -224,6 +232,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
         attrs: {
             "data-block": block.id,
         },
+        insightId: state.insightId || "",
         setData: setData,
         deleteData: deleteData,
         uploadFile: uploadFile,

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Stack, styled, ToggleTabsGroup } from "@semoss/ui";
-import { useBlock } from "../../../hooks";
+import { useBlock, useBlocksPixel } from "../../../hooks";
 import { BlockComponent } from "../../../store";
 import { GridBlockColumnSettings } from "../grid-block/GridBlockColumnSettings";
 import { GridBlockTool } from "./GridBlockTool";
@@ -66,7 +66,10 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
 
 export const GridBlockMenu: BlockComponent = ({ id }) => {
     const { data } = useBlock(id);
-
+    const getFrames = useBlocksPixel<string[]>("GetFrames();", {
+        data: [],
+    });
+    console.log(getFrames, " grid block Menu getFrames ");
     const [selectedTab, setSelectedTab] = useState("Tools");
 
     return (
