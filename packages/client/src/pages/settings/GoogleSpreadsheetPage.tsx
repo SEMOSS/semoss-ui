@@ -13,6 +13,7 @@ import {
     Paper,
     Modal,
     Grid,
+    TextArea,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
@@ -55,9 +56,9 @@ const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
     marginTop: '20px',
 }));
 
-interface SaveAPIKeyForm {
+interface SaveSheetDataForm {
     NAME: string;
-    SPREADSHEET_ID: string;
+    USERID: string;
     SERVICEJSON: string;
 }
 
@@ -68,27 +69,25 @@ export const GoogleSpreadsheetPage = () => {
     const [addModal, setAddModal] = useState(false);
     const [savedApiKeys, setSavedApiKeys] = useState([]);
 
-    const { control, reset, setValue, handleSubmit, watch, getValues } =
-        useForm<SaveAPIKeyForm>({
-            defaultValues: {
-                NAME: '',
-                SPREADSHEET_ID: '',
-                SERVICEJSON: '',
-            },
-        });
+    const { control, reset, handleSubmit } = useForm<SaveSheetDataForm>({
+        defaultValues: {
+            NAME: '',
+            USERID: '',
+            SERVICEJSON: '',
+        },
+    });
 
     useEffect(() => {
-        getSavedApiKeysQuery();
+        getSavedSheetDatasQuery();
     }, []);
 
-    const getSavedApiKeysQuery = async () => {
-        const pixel = `META | JiraGet()`;
+    const getSavedSheetDatasQuery = async () => {
+        const pixel = `META | GetGoogleProfile()`;
         monolithStore
             .runQuery(pixel)
             .then((response) => {
                 const type = response.pixelReturn[0].operationType;
                 const output = response.pixelReturn[0].output;
-                console.log('output', output);
                 if (type.indexOf('ERROR') === -1 && output.length > 0) {
                     setSavedApiKeys(output);
                 } else {
@@ -99,8 +98,8 @@ export const GoogleSpreadsheetPage = () => {
                 console.error('Error making pixel call:', error);
             });
     };
-    const SaveAPIKey = async (data: SaveAPIKeyForm) => {
-        const pixel = `META | SaveGoogleProfile(nmae="", spreadsheetId="${data.SPREADSHEET_ID}", serviceJson="${data.SERVICEJSON}")`;
+    const SaveSheetData = async (data: SaveSheetDataForm) => {
+        const pixel = `META | SaveGoogleProfile(name='${data.NAME}', serviceJson='${data.SERVICEJSON}', username='${data.USERID}')`;
         monolithStore
             .runQuery(pixel)
             .then((response) => {
@@ -110,10 +109,10 @@ export const GoogleSpreadsheetPage = () => {
                     notification.add({
                         color: 'success',
                         message:
-                            'Successfully inserted Google Spreadsheet credentials.',
+                            'Successfully inserted Google Spreadsheet data.',
                     });
 
-                    getSavedApiKeysQuery();
+                    getSavedSheetDatasQuery();
                     setAddModal(false);
                     reset({});
                 } else {
@@ -144,7 +143,7 @@ export const GoogleSpreadsheetPage = () => {
                         message: 'Successfully deleted the API key.',
                     });
 
-                    getSavedApiKeysQuery();
+                    getSavedSheetDatasQuery();
                 } else {
                     throw new Error(response.errors[0]);
                 }
@@ -182,7 +181,7 @@ export const GoogleSpreadsheetPage = () => {
         <Stack gap={3} className="my-jira-profile-page">
             <StyledAccessTokensPaper>
                 <Stack direction="row" justifyContent={'space-between'} mb={1}>
-                    <Typography variant="h6">Personal API Keys</Typography>
+                    <Typography variant="h6">Sheet Connections</Typography>
 
                     <Button
                         variant="contained"
@@ -192,7 +191,7 @@ export const GoogleSpreadsheetPage = () => {
                         }}
                         data-testid={'my-jira-profile-new-key-btn'}
                     >
-                        Add Key
+                        Add User
                     </Button>
                 </Stack>
 
@@ -203,16 +202,10 @@ export const GoogleSpreadsheetPage = () => {
                                 <LeftHeaderCell align={'left'}>
                                     Name
                                 </LeftHeaderCell>
-                                <HeaderCell align={'left'}>
-                                    Spreadsheet Id
-                                </HeaderCell>
+                                <HeaderCell align={'left'}>User Id</HeaderCell>
                                 <HeaderCell align={'left'}>
                                     Date Created
                                 </HeaderCell>
-                                <HeaderCell align={'left'}>
-                                    Last Used Created
-                                </HeaderCell>
-                                <HeaderCell align={'left'}>UserId</HeaderCell>
                                 <RightHeaderCell>&nbsp;</RightHeaderCell>
                             </Table.Row>
                         </Table.Head>
@@ -221,20 +214,14 @@ export const GoogleSpreadsheetPage = () => {
                                 ? savedApiKeys.map((k, idx) => {
                                       return (
                                           <Table.Row key={idx}>
-                                              <Table.Cell align={'left'}>
-                                                  {k.alias}
-                                              </Table.Cell>
-                                              <Table.Cell align={'left'}>
-                                                  {k.url}
-                                              </Table.Cell>
-                                              <Table.Cell align={'left'}>
-                                                  {k.dateCreated}
-                                              </Table.Cell>
-                                              <Table.Cell align={'left'}>
-                                                  {k.dateLastUsed}
+                                              <Table.Cell align={'center'}>
+                                                  {k.userName}
                                               </Table.Cell>
                                               <Table.Cell align={'left'}>
                                                   {k.userId}
+                                              </Table.Cell>
+                                              <Table.Cell align={'left'}>
+                                                  {k.createdAt}
                                               </Table.Cell>
                                               <Table.Cell align={'right'}>
                                                   <IconButton
@@ -260,9 +247,9 @@ export const GoogleSpreadsheetPage = () => {
                 </StyledTableContainer>
                 {savedApiKeys.length === 0 && (
                     <MessageDiv>
-                        No Personal API Keys to display at this time
+                        No Sheet Connections to display at this time
                         <br />
-                        Click Save Key to save a new Personal API Key
+                        Click Add User to save a new sheet COnnection.
                     </MessageDiv>
                 )}
             </StyledAccessTokensPaper>
@@ -276,7 +263,7 @@ export const GoogleSpreadsheetPage = () => {
                         style={{ paddingTop: '10px' }}
                     >
                         <form
-                            onSubmit={handleSubmit(SaveAPIKey)}
+                            onSubmit={handleSubmit(SaveSheetData)}
                             className="my-jira-profile-page__generate-key-form"
                         >
                             <Stack direction="column" spacing={2}>
@@ -288,7 +275,7 @@ export const GoogleSpreadsheetPage = () => {
                                         return (
                                             <TextField
                                                 required
-                                                label="Name"
+                                                label="User Name"
                                                 value={
                                                     field.value
                                                         ? field.value
@@ -304,14 +291,14 @@ export const GoogleSpreadsheetPage = () => {
                                 />
 
                                 <Controller
-                                    name={'SPREADSHEET_ID'}
+                                    name={'USERID'}
                                     control={control}
                                     rules={{ required: true }}
                                     render={({ field }) => {
                                         return (
                                             <TextField
                                                 required
-                                                label="Spreadsheet Id"
+                                                label="Sheet Name"
                                                 value={
                                                     field.value
                                                         ? field.value
@@ -332,9 +319,9 @@ export const GoogleSpreadsheetPage = () => {
                                     rules={{ required: true }}
                                     render={({ field }) => {
                                         return (
-                                            <TextField
-                                                required
+                                            <TextArea
                                                 label="Service JSON"
+                                                variant="outlined"
                                                 value={
                                                     field.value
                                                         ? field.value
@@ -343,8 +330,8 @@ export const GoogleSpreadsheetPage = () => {
                                                 onChange={(value) =>
                                                     field.onChange(value)
                                                 }
-                                                inputProps={{ maxLength: 255 }}
-                                            ></TextField>
+                                                rows={3}
+                                            />
                                         );
                                     }}
                                 />

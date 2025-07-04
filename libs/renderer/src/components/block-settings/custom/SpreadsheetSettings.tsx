@@ -61,11 +61,11 @@ export const SpreadsheetSettings = observer(
 
             useEffect(()=>{
                 async function fetchData() {
-                    const pixelCommand = `META | JiraGet()`;
+                    const pixelCommand = `META | GetGoogleProfile()`;
                     const response = await state.runSideEffect(pixelCommand);
                     const output1 = response.pixelReturn[0].output as { userId: string }[];
-                    const userData = output1.map((item: any) => item.keyName);
-                    const userDataId = output1.map((item: any) => item.primaryId);
+                    const userData = output1.map((item: any) => item.userName);
+                    const userDataId = output1.map((item: any) => item.id);
                     const finalData = userData.map((userId, index) => ({ user: userId, id: userDataId[index] }));
                     setJiraData(finalData);
                 }
