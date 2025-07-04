@@ -1,14 +1,14 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { useBlock, useBlockSettings, useFrame } from "../../../../../hooks";
-import { BlockComponent } from "../../../../../store";
 import { styled } from "@mui/material";
+import EChartsReact from "echarts-for-react";
 import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";
 import { CanvasRenderer } from "echarts/renderers";
 import { TooltipComponent } from "echarts/components";
-import EChartsReact from "echarts-for-react";
+import { useBlock, useBlockSettings, useFrame } from "../../../../../hooks";
+import { BlockComponent } from "../../../../../store";
 import fetchWorldMap from "./map-utility";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { getSelector } from "./MapSelector";
 import { processData } from "./MapChartProcessData";
 import { formatdatapoints } from "./MapChartTooltipData";
@@ -43,6 +43,7 @@ export interface EchartVisualizationBlockDef {
         };
         variation: undefined | string;
         columns: EChartColumns[];
+        aggregate: Record<string, any>;
         contextMenu: {
             hideUnfilter: boolean;
             hideFilter: boolean;
@@ -55,7 +56,7 @@ export interface EchartVisualizationBlockDef {
 
 export const Map: BlockComponent = observer(({ id }) => {
     const { data } = useBlock<EchartVisualizationBlockDef>(id);
-    let mapRef: any = useRef({});
+    const mapRef: any = useRef({});
     echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
@@ -63,7 +64,7 @@ export const Map: BlockComponent = observer(({ id }) => {
         value: unknown;
     } | null>(null);
     const frame = useFrame(data?.frame?.name, {
-        selector: getSelector(data),
+        selector: getSelector(data, data?.aggregate),
     });
     const updatedOption =
         mapRef.current && typeof mapRef.current.getOption === "function"
@@ -86,7 +87,7 @@ export const Map: BlockComponent = observer(({ id }) => {
 
     const echartsLoaded = debounce((chart) => {
         mapRef.current = chart;
-        let option = data.option;
+        const option = data.option;
         data.option = option;
 
         chart.setOption(option);
@@ -95,9 +96,9 @@ export const Map: BlockComponent = observer(({ id }) => {
             onClickChart(chart, params);
         });
         chart.on("brushselected", (params) => {
-            let selectedData = params.batch[0]?.selected[0]?.dataIndex;
+            const selectedData = params.batch[0]?.selected[0]?.dataIndex;
             const currentOption = chart.getOption();
-            let labelData = currentOption.series[0]?.data;
+            const labelData = currentOption.series[0]?.data;
             const filteredLabels = selectedData?.map(
                 (index) => labelData[index]?.label?.formatter,
             );
@@ -150,7 +151,7 @@ export const Map: BlockComponent = observer(({ id }) => {
         // mapRef.current?.setOption(option);
     }, []);
 
-    let processedFrameData = processData(frame.data, data);
+    const processedFrameData = processData(frame.data, data);
     if (processedFrameData && processedFrameData.length > 0) {
         data.option["series"][0]["data"] = processedFrameData;
     }
@@ -254,7 +255,7 @@ export const Map: BlockComponent = observer(({ id }) => {
     const onClickChart = (chart, params) => {
         if (params.data) {
             const currentOption = chart.getOption();
-            let labelName = currentOption["_state"]["fields"]["label"];
+            const labelName = currentOption["_state"]["fields"]["label"];
             setContextMenu(
                 contextMenu === null
                     ? {

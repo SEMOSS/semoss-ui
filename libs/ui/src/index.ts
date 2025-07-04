@@ -7,6 +7,7 @@ export * from "./theme";
 
 export * from "./components/Accordion";
 export * from "./components/Alert";
+export * from "./components/AppBar";
 export * from "./components/Autocomplete";
 export * from "./components/Avatar";
 export * from "./components/AvatarGroup";
@@ -21,6 +22,8 @@ export * from "./components/Checkbox";
 export * from "./components/Checklist";
 export * from "./components/Chip";
 export * from "./components/CircularProgress";
+export * from "./components/Code";
+export * from "./components/CodeBlock";
 export * from "./components/Collapse";
 // export * from "./components/Colorpicker";
 export * from "./components/Container";
@@ -36,6 +39,7 @@ export * from "./components/LinearProgress";
 export * from "./components/Link";
 export * from "./components/List";
 export * from "./components/LoadingScreen";
+export * from "./components/Markdown";
 export * from "./components/Menu";
 export * from "./components/Modal";
 export * from "./components/Notification";
@@ -53,15 +57,19 @@ export * from "./components/Stack";
 export * from "./components/Switch";
 export * from "./components/Table";
 export * from "./components/Tabs";
+export * from "./components/Terminal";
 export * from "./components/ToggleButton";
 export * from "./components/ToggleButtonGroup";
 export * from "./components/ToggleTabsGroup";
+export * from "./components/Toolbar";
 export * from "./components/Tooltip";
 export * from "./components/Typography";
 export * from "./components/ThemeProvider";
 export * from "./components/TextArea";
 export * from "./components/TextField";
 export * from "./components/TreeView";
+export * from "./components/SelectStack";
+export * from "./components/TextFieldStack";
 
 // TODO: fix miscellaneous mui components/functions
 import {
@@ -88,5 +96,7 @@ export {
     Chip as ChipTwo,
     Autocomplete as AutocompleteTwo,
 };
+
+export { blue, green } from "@mui/material/colors";
 
 export type { TooltipProps as TooltipPropsTwo };

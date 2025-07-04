@@ -14,9 +14,6 @@ import { ModelBrain } from "../../../../assets/ModelBrain";
 import { TypeLlmConfig } from "../../../../types";
 import { useLLMComparison } from "../hooks";
 
-// import { getEngineImage } from '@/utility';
-// import ImageSkeleton from '@/assets/img/ImageSkeleton.png';
-
 const StyledCard = styled(Card)(({ theme }) => ({
     padding: theme.spacing(2),
     display: "flex",
@@ -99,17 +96,6 @@ export const LlmCard = observer((props: LlmCardProps) => {
             <StyledCard>
                 <StyledCardHeader>
                     <Stack direction={"row"} gap={2} alignItems="center">
-                        {/* <StyledCardImg
-                            src="img"
-                            image={
-                                database_type
-                                    ? getEngineImage(
-                                          database_type,
-                                          database_subtype,
-                                      )
-                                    : ImageSkeleton
-                            }
-                        /> */}
                         <ModelBrain />
                         <StyledTypography variant="body1">
                             {database_name || "Model"}

@@ -1,10 +1,8 @@
 import { expect } from "vitest";
 import "@testing-library/jest-dom";
-
 import { fireEvent, render, screen } from "../utils";
 import { ButtonBlock } from "../../components/block-defaults/button-block/ButtonBlock";
 
-// mock data for default button component
 const blocks = {
     button: {
         data: {
@@ -24,9 +22,7 @@ const blocks = {
         id: "button",
         widget: "button",
         slots: {},
-        listeners: {
-            onClick: [],
-        },
+        listeners: {},
     },
 
     styledButton: {
@@ -49,15 +45,12 @@ const blocks = {
         id: "styledButton",
         widget: "button",
         slots: {},
-        listeners: {
-            onClick: [],
-        },
+        listeners: {},
     },
 };
 
 describe("button block", () => {
-    // checks button exists with correct label
-    it("should render button block with label", async () => {
+    it("renders button block with correct label", async () => {
         const { container } = render(<ButtonBlock id="button" />, {
             blocks: blocks,
         });
@@ -68,8 +61,7 @@ describe("button block", () => {
         expect(screen.getByText("Button Test")).toBeInTheDocument();
     });
 
-    // checks button styles
-    it("has correct color, variant, dimensions", async () => {
+    it("renders button with correct color, variant, dimensions", async () => {
         const { container } = render(<ButtonBlock id="styledButton" />, {
             blocks: blocks,
         });

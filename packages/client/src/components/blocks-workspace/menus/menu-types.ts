@@ -39,6 +39,16 @@ export interface DesignerMenuItem {
      *  Hover Image of block
      */
     hoverImage?: string;
+
+    /**
+     * is the block fully fleshed out
+     */
+    isBeta?: boolean;
+
+    /**
+     * Recent changes
+     */
+    recentChanges?: string;
 }
 
 export interface FilterCategory {

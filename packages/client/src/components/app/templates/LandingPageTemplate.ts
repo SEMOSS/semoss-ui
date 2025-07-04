@@ -26,7 +26,12 @@ export const LandingPageTemplate: Template = {
                     },
                     text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique.',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--584',
             },
             'text--1255': {
@@ -44,7 +49,12 @@ export const LandingPageTemplate: Template = {
                     },
                     text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique.',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--1255',
             },
             'text--5552': {
@@ -64,7 +74,12 @@ export const LandingPageTemplate: Template = {
                     },
                     text: 'Landing Page Title',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--5552',
             },
             'container--651': {
@@ -96,7 +111,12 @@ export const LandingPageTemplate: Template = {
                         width: '280px',
                     },
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'container--651',
             },
             'text--8225': {
@@ -114,7 +134,12 @@ export const LandingPageTemplate: Template = {
                     },
                     text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique.',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--8225',
             },
             'link--5585': {
@@ -133,7 +158,12 @@ export const LandingPageTemplate: Template = {
                     href: '',
                     text: 'Navigate',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'link--5585',
             },
             'image--8616': {
@@ -157,7 +187,12 @@ export const LandingPageTemplate: Template = {
                     },
                     title: '',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'image--8616',
             },
             'container--2367': {
@@ -182,11 +217,15 @@ export const LandingPageTemplate: Template = {
                         width: '872px',
                     },
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'container--2367',
             },
             'page-1': {
-                parent: null,
                 slots: {
                     content: {
                         children: ['container--2367', 'container--2846'],
@@ -206,7 +245,10 @@ export const LandingPageTemplate: Template = {
                     },
                 },
                 listeners: {
-                    onPageLoad: [],
+                    onPageLoad: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'page-1',
             },
@@ -225,7 +267,12 @@ export const LandingPageTemplate: Template = {
                     },
                     text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique.',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--2926',
             },
             'link--5302': {
@@ -244,7 +291,12 @@ export const LandingPageTemplate: Template = {
                     href: '',
                     text: 'Navigate',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'link--5302',
             },
             'link--3046': {
@@ -263,7 +315,12 @@ export const LandingPageTemplate: Template = {
                     href: '',
                     text: 'Navigate',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'link--3046',
             },
             'container--2846': {
@@ -292,7 +349,12 @@ export const LandingPageTemplate: Template = {
                         width: '872px',
                     },
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'container--2846',
             },
             'container--2406': {
@@ -324,7 +386,12 @@ export const LandingPageTemplate: Template = {
                         width: '280px',
                     },
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'container--2406',
             },
             'container--6803': {
@@ -356,7 +423,12 @@ export const LandingPageTemplate: Template = {
                         width: '280px',
                     },
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'container--6803',
             },
             'text--6096': {
@@ -374,7 +446,12 @@ export const LandingPageTemplate: Template = {
                     },
                     text: 'Drag and drop your content below to start populating your page.  Add images, text, and links to customize your landing page and make it your own.  Whether you are setting up a portfolio, a business page, or a personal blog, this is the first step to creating something unique and engaging.  Make your vision come to life!',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--6096',
             },
             'text--6031': {
@@ -393,7 +470,12 @@ export const LandingPageTemplate: Template = {
                     },
                     text: 'Resource 1',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--6031',
             },
             'text--9344': {
@@ -413,7 +495,12 @@ export const LandingPageTemplate: Template = {
                     },
                     text: 'Resources',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--9344',
             },
             'link--1766': {
@@ -432,7 +519,12 @@ export const LandingPageTemplate: Template = {
                     href: '',
                     text: 'Explore',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'link--1766',
             },
             'text--4050': {
@@ -450,7 +542,12 @@ export const LandingPageTemplate: Template = {
                     },
                     text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique.',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--4050',
             },
             'text--6236': {
@@ -469,7 +566,12 @@ export const LandingPageTemplate: Template = {
                     },
                     text: 'Resource 3',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--6236',
             },
             'image--1722': {
@@ -493,7 +595,12 @@ export const LandingPageTemplate: Template = {
                     },
                     title: '',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'image--1722',
             },
             'text--6474': {
@@ -512,7 +619,12 @@ export const LandingPageTemplate: Template = {
                     },
                     text: 'Resource 4',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--6474',
             },
             'text--2234': {
@@ -531,7 +643,12 @@ export const LandingPageTemplate: Template = {
                     },
                     text: 'Resource 6',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--2234',
             },
             'container--9691': {
@@ -563,7 +680,12 @@ export const LandingPageTemplate: Template = {
                         width: '280px',
                     },
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'container--9691',
             },
             'text--2158': {
@@ -582,7 +704,12 @@ export const LandingPageTemplate: Template = {
                     },
                     text: 'Resource 5',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--2158',
             },
             'text--6477': {
@@ -600,7 +727,12 @@ export const LandingPageTemplate: Template = {
                     },
                     text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique.',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--6477',
             },
             'link--4120': {
@@ -619,7 +751,12 @@ export const LandingPageTemplate: Template = {
                     href: '',
                     text: 'Navigate',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'link--4120',
             },
             'image--3397': {
@@ -643,7 +780,12 @@ export const LandingPageTemplate: Template = {
                     },
                     title: '',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'image--3397',
             },
             'image--4342': {
@@ -667,7 +809,12 @@ export const LandingPageTemplate: Template = {
                     },
                     title: '',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'image--4342',
             },
             'link--5550': {
@@ -686,7 +833,12 @@ export const LandingPageTemplate: Template = {
                     href: '',
                     text: 'Navigate',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'link--5550',
             },
             'text--2539': {
@@ -705,7 +857,12 @@ export const LandingPageTemplate: Template = {
                     },
                     text: 'Resource 2',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--2539',
             },
             'image--2421': {
@@ -729,7 +886,12 @@ export const LandingPageTemplate: Template = {
                     },
                     title: '',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'image--2421',
             },
             'container--8339': {
@@ -760,7 +922,12 @@ export const LandingPageTemplate: Template = {
                         gap: '8px',
                     },
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'container--8339',
             },
             'container--6798': {
@@ -792,7 +959,12 @@ export const LandingPageTemplate: Template = {
                         width: '280px',
                     },
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'container--6798',
             },
             'text--3906': {
@@ -810,7 +982,12 @@ export const LandingPageTemplate: Template = {
                     },
                     text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--3906',
             },
             'image--3010': {
@@ -834,7 +1011,12 @@ export const LandingPageTemplate: Template = {
                     },
                     title: '',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'image--3010',
             },
             'container--7869': {
@@ -866,7 +1048,12 @@ export const LandingPageTemplate: Template = {
                         width: '280px',
                     },
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'container--7869',
             },
             'link--6225': {
@@ -885,12 +1072,17 @@ export const LandingPageTemplate: Template = {
                     href: '',
                     text: 'Navigate',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'link--6225',
             },
         },
         variables: {},
         executionOrder: [],
-        version: '1.0.0-alpha.4',
+        version: '1.0.0-alpha.10',
     },
 };

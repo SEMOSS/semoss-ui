@@ -1,9 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { ConstructionOutlined } from '@mui/icons-material';
 
-import { useNotification, styled, Typography, Stack } from '@semoss/ui';
-import { Env, InsightProvider } from '@semoss/sdk';
+import { useNotification } from '@semoss/ui';
 import {
     StateStore,
     Blocks,
@@ -14,18 +12,20 @@ import {
     STATE_VERSION,
 } from '@semoss/renderer';
 
-import { runPixel } from '@/api';
+import { runPixelTwo } from '../../runPixelTwo';
 import { WorkspaceStore, DesignerStore, WorkspaceOptions } from '@/stores';
-import { DesignerContext } from '@/contexts';
-import { LoadingScreen } from '@/components/ui';
-import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
+import { DesignerContext } from '../../contexts';
+import { LoadingScreen } from '../../components/ui';
 import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
+import { DEFAULT_MENU } from './menus/default-menu';
+import { GraphPanel } from '../workspace/panels/GraphPanel';
 import {
     Workspace,
     SettingsPanel,
     FileExplorerPanel,
     FileEditorPanel,
-} from '@/components/workspace';
+    TerminalPanel,
+} from '../../components/workspace';
 import {
     VariablesPanel,
     BlocksMenuPanel,
@@ -35,140 +35,118 @@ import {
     NotebookExplorerPanel,
     NotebookViewerPanel,
 } from './panels';
-import { DEFAULT_MENU } from './menus/default-menu';
+import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 
 const DEFAULT_BORDER_SIZE = 300;
 
 const DEFAULT_OPTIONS: WorkspaceOptions = {
     version: '',
-    drawer: {
-        isOpen: false,
-    },
     layout: {
-        selected: 'dev',
-        available: {
-            dev: {
-                id: 'dev',
-                name: 'Dev',
-                data: {
-                    global: { tabEnableClose: false },
-                    borders: [
+        global: { tabEnableClose: false },
+        borders: [
+            {
+                type: 'border',
+                location: 'left',
+                size: DEFAULT_BORDER_SIZE,
+                children: [
+                    {
+                        type: 'tab',
+                        name: 'Blocks',
+                        component: 'blocks',
+                        config: {},
+                        helpText:
+                            'UI components that can be used to display for your app',
+                    },
+                    {
+                        type: 'tab',
+                        name: 'Layers',
+                        component: 'layers',
+                        config: {},
+                        helpText:
+                            'Hierarchy for UI elements within the designer',
+                    },
+                    {
+                        type: 'tab',
+                        name: 'Variables',
+                        component: 'variables',
+                        config: {},
+                        helpText:
+                            'Parameters that are used within blocks and notebooks',
+                    },
+                    {
+                        type: 'tab',
+                        name: 'Files',
+                        component: 'file-explorer',
+                        config: {},
+                        helpText: 'Files that are stored at app level',
+                    },
+                    {
+                        type: 'tab',
+                        name: 'Notebooks',
+                        component: 'notebook-explorer',
+                        config: {},
+                        helpText: 'Notebooks associated with the app',
+                    },
+                ],
+            },
+            {
+                type: 'border',
+                location: 'right',
+                size: DEFAULT_BORDER_SIZE,
+                children: [
+                    {
+                        type: 'tab',
+                        name: 'Block Settings',
+                        component: 'selected',
+                        config: {},
+                        helpText: 'Settings for UI component you have selected',
+                        // icon: '@/assets/favicon.svg',
+                    },
+                ],
+            },
+            {
+                type: 'border',
+                location: 'bottom',
+                size: DEFAULT_BORDER_SIZE,
+                children: [
+                    {
+                        id: 'settings',
+                        type: 'tab',
+                        name: 'Settings',
+                        component: 'settings',
+                        config: {},
+                    },
+                ],
+            },
+        ],
+        layout: {
+            type: 'row',
+            weight: 100,
+            children: [
+                {
+                    type: 'tabset',
+                    weight: 100,
+                    selected: 0,
+                    children: [
                         {
-                            type: 'border',
-                            location: 'left',
-                            size: DEFAULT_BORDER_SIZE,
-                            children: [
-                                {
-                                    type: 'tab',
-                                    name: 'Blocks',
-                                    component: 'blocks',
-                                    config: {},
-                                    helpText:
-                                        'UI components that can be used to display for your app',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Layers',
-                                    component: 'layers',
-                                    config: {},
-                                    helpText:
-                                        'Hierarchy for UI elements within the designer',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Variables',
-                                    component: 'variables',
-                                    config: {},
-                                    helpText:
-                                        'Parameters that are used within blocks and notebooks',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Files',
-                                    component: 'file-explorer',
-                                    config: {},
-                                    helpText:
-                                        'Files that are stored at app level',
-                                },
-                                {
-                                    type: 'tab',
-                                    name: 'Notebooks',
-                                    component: 'notebook-explorer',
-                                    config: {},
-                                    helpText:
-                                        'Notebooks associated with the app',
-                                },
-                            ],
+                            type: 'tab',
+                            name: 'page-1',
+                            component: 'designer',
+                            config: {
+                                id: 'page-1',
+                            },
+                            enableClose: true,
                         },
-                        {
-                            type: 'border',
-                            location: 'right',
-                            size: DEFAULT_BORDER_SIZE,
-                            children: [
-                                {
-                                    type: 'tab',
-                                    name: 'Block Settings',
-                                    component: 'selected',
-                                    config: {},
-                                    helpText:
-                                        'Settings for UI component you have selected',
-                                    // icon: '@/assets/favicon.svg',
-                                },
-                            ],
-                        },
+                        // {
+                        //     type: 'tab',
+                        //     name: 'Dependency Graph',
+                        //     component: 'graph',
+                        //     config: {},
+                        //     helpText: 'How your app is connected',
+                        // },
                     ],
-                    layout: {
-                        type: 'row',
-                        weight: 100,
-                        children: [
-                            {
-                                type: 'tabset',
-                                weight: 100,
-                                selected: 0,
-                                children: [
-                                    {
-                                        type: 'tab',
-                                        name: 'page-1',
-                                        component: 'designer',
-                                        config: {
-                                            id: 'page-1',
-                                        },
-                                        enableClose: true,
-                                    },
-                                ],
-                            },
-                        ],
-                    },
                 },
-            },
-            settings: {
-                id: 'settings',
-                name: 'Settings',
-                data: {
-                    global: { tabEnableClose: false },
-                    borders: [],
-                    layout: {
-                        type: 'row',
-                        weight: 100,
-                        children: [
-                            {
-                                type: 'tabset',
-                                weight: 100,
-                                selected: 0,
-                                enableTabStrip: false,
-                                children: [
-                                    {
-                                        type: 'tab',
-                                        name: 'Settings',
-                                        component: 'settings',
-                                        config: {},
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                },
-            },
+            ],
         },
     },
 };
@@ -200,17 +178,12 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
         return <NotebookExplorerPanel layout={layout} />;
     } else if (component === 'notebook-viewer') {
         return <NotebookViewerPanel id={config.id} />;
+    } else if (component === 'terminal') {
+        return <TerminalPanel />;
+    } else if (component === 'graph') {
+        return <GraphPanel />;
     }
 
-    // TODO: Clean out session storage for old workspaces
-    // else if (component === 'viz') {
-    //     return (
-    //         <BlocksMenuPanel
-    //             title={'Add Visualization'}
-    //             items={VISUALIZATION_MENU}
-    //         />
-    //     );
-    // }
     return <>{component}</>;
 };
 
@@ -230,14 +203,30 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 
     const [state, setState] = useState<StateStore>();
 
+    //to throw a warning when the user tried to reload the page
+    // this is to prevent the user from losing their work
+    useEffect(() => {
+        if (process.env.NODE_ENV !== 'development') {
+            const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+                e.preventDefault();
+                e.returnValue = '';
+            };
+            window.addEventListener('beforeunload', handleBeforeUnload);
+
+            return () => {
+                window.removeEventListener('beforeunload', handleBeforeUnload);
+            };
+        }
+    }, []);
+
     useEffect(() => {
         // start the loading screen
         workspace.setLoading(true);
 
         // load the app
-        runPixel<[SerializedState]>(
+        runPixelTwo<[SerializedState]>(
             `GetAppBlocksJson ( project=["${workspace.appId}"]);`,
-            'new',
+            workspace.insightId ? workspace.insightId : 'new',
         )
             .then(async ({ pixelReturn, errors, insightId }) => {
                 if (errors.length) {
@@ -266,18 +255,6 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 
                 // set it
                 setState(s);
-
-                const { errors: errs } = await runPixel(
-                    `SetContext("${workspace.appId}");`,
-                    insightId,
-                );
-
-                if (errs.length) {
-                    notification.add({
-                        color: 'error',
-                        message: errs.join(''),
-                    });
-                }
             })
             .catch((e) => {
                 notification.add({
@@ -308,30 +285,21 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         return <LoadingScreen.Trigger />;
     }
 
-    /**
-     * Initialize insight for app building
-     */
-    Env.update({
-        MODULE: process.env.MODULE || '',
-    });
-
     return (
-        <InsightProvider>
-            <Blocks state={state} registry={DefaultBlocks}>
-                <DesignerContext.Provider
-                    value={{
-                        designer: designer,
-                    }}
-                >
-                    <Workspace
-                        options={DEFAULT_OPTIONS}
-                        workspace={workspace}
-                        endTopbar={<BlocksWorkspaceActions />}
-                        factory={FACTORY}
-                    />
-                    <BlocksWorkspaceDev />
-                </DesignerContext.Provider>
-            </Blocks>
-        </InsightProvider>
+        <Blocks state={state} registry={DefaultBlocks}>
+            <DesignerContext.Provider
+                value={{
+                    designer: designer,
+                }}
+            >
+                <Workspace
+                    navbarActions={<BlocksWorkspaceActions />}
+                    options={DEFAULT_OPTIONS}
+                    workspace={workspace}
+                    factory={FACTORY}
+                />
+                <BlocksWorkspaceDev />
+            </DesignerContext.Provider>
+        </Blocks>
     );
 });

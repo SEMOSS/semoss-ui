@@ -32,6 +32,8 @@ export interface TypographyProps {
         | "subtitle2"
         | "body1"
         | "body2"
+        | "body3"
+        | "body4"
         | "caption"
         | "button"
         | "overline";
@@ -44,10 +46,13 @@ export interface TypographyProps {
         | "success"
         | "error"
         | "info"
-        | "warning";
+        | "warning"
+        | "disabled";
     noWrap?: MuiTypographyProps["noWrap"];
     title?: MuiTypographyProps["title"];
     id?: string;
+    component?: React.ElementType;
+    gutterBottom?: MuiTypographyProps["gutterBottom"];
 }
 
 export const Typography = (props: TypographyProps) => {
@@ -67,6 +72,8 @@ export const Typography = (props: TypographyProps) => {
                     ? "primary.main"
                     : color === "secondary"
                     ? "text.secondary"
+                    : color === "disabled"
+                    ? "text.disabled"
                     : color
             }
             {...otherProps}

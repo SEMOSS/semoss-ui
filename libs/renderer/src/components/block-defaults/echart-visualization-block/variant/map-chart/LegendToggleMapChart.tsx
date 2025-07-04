@@ -1,11 +1,11 @@
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import { styled, Switch, Typography } from "@semoss/ui";
 import { useBlockSettings } from "../../../../../hooks";
 import { Block, BlockDef } from "../../../../../store";
 import { Paths, PathValue } from "../../../../../types";
 import { getValueByPath } from "../../../../../utility";
-import { styled, Switch, Typography } from "@semoss/ui";
-import { computed } from "mobx";
-import { observer } from "mobx-react-lite";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
@@ -62,7 +62,7 @@ export const LegendToggleMapChart = observer(
         };
         //Handle the change event for the toggle switch
         const handleLegend = (e) => {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             setShowLegend(!showLegend);
             option["legend"]["show"] = e.target.checked;
             setData(path, option as PathValue<D["data"], typeof path>);

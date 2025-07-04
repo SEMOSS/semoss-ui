@@ -59,17 +59,17 @@ export const GanttFrameSection = observer(
                 width: undefined,
             };
         });
-        let columnsSelected = data.columns;
+        const columnsSelected = data.columns;
         //retain the frame section component with state data
         useEffect(() => {
-            let optionData = data.option;
+            const optionData = data.option;
             if (
                 optionData.hasOwnProperty("customSettings") &&
                 optionData["customSettings"].hasOwnProperty("columnDetails")
             ) {
-                let columnDetails =
+                const columnDetails =
                     optionData["customSettings"]["columnDetails"] || {};
-                let fieldsState = { ...framesData };
+                const fieldsState = { ...framesData };
                 Object.keys(columnDetails).forEach((item, index) => {
                     if (
                         typeof columnDetails[item] === "object" &&
@@ -99,23 +99,23 @@ export const GanttFrameSection = observer(
                 columns.length
             ) {
                 let columnsToSet = [];
-                let columnsObject = {};
+                const columnsObject = {};
 
-                let columnsTask = columns.find(
+                const columnsTask = columns.find(
                     (item) => item.selector === framesData.task,
                 );
                 if (columnsTask.hasOwnProperty("name")) {
                     columnsToSet.push(columnsTask);
                     columnsObject["task"] = columnsTask;
                 }
-                let columnsStartDate = columns.find(
+                const columnsStartDate = columns.find(
                     (item) => item.selector === framesData.startdate,
                 );
                 if (columnsStartDate.hasOwnProperty("name")) {
                     columnsToSet.push(columnsStartDate);
                     columnsObject["startdate"] = columnsStartDate;
                 }
-                let columnsEndDate = columns.find(
+                const columnsEndDate = columns.find(
                     (item) => item.selector === framesData.enddate,
                 );
                 if (columnsEndDate.hasOwnProperty("name")) {
@@ -123,7 +123,7 @@ export const GanttFrameSection = observer(
                     columnsObject["enddate"] = columnsEndDate;
                 }
                 if (framesData?.taskgroup !== "") {
-                    let columnsTaskGroup = columns.find(
+                    const columnsTaskGroup = columns.find(
                         (item) => item.selector === framesData.taskgroup,
                     );
                     if (
@@ -135,7 +135,7 @@ export const GanttFrameSection = observer(
                     }
                 }
                 if (framesData?.taskprogress !== "") {
-                    let columnsTaskProgress = columns.find(
+                    const columnsTaskProgress = columns.find(
                         (item) => item.selector === framesData.taskprogress,
                     );
                     if (
@@ -147,7 +147,7 @@ export const GanttFrameSection = observer(
                     }
                 }
                 if (framesData.milestone !== "") {
-                    let columnsMileStone = columns.find(
+                    const columnsMileStone = columns.find(
                         (item) => item.selector === framesData.milestone,
                     );
                     if (
@@ -159,7 +159,7 @@ export const GanttFrameSection = observer(
                     }
                 }
                 if (framesData?.tooltip?.length) {
-                    let columnsToolTip = columns.filter((item) =>
+                    const columnsToolTip = columns.filter((item) =>
                         framesData.tooltip.includes(item.selector),
                     );
                     if (columnsToolTip.length) {
@@ -167,9 +167,9 @@ export const GanttFrameSection = observer(
                         columnsObject["tooltip"] = columnsToolTip;
                     }
                 }
-                let tempDataSet = new Set(columnsToSet);
+                const tempDataSet = new Set(columnsToSet);
                 columnsToSet = Array.from(tempDataSet);
-                let columnsIndexToSet = getColumnIndexToSetData(
+                const columnsIndexToSet = getColumnIndexToSetData(
                     columnsObject,
                     columnsToSet,
                 );
@@ -202,7 +202,7 @@ export const GanttFrameSection = observer(
         }, [framesData]);
         //get the columns index, to use in selector for fetching the records from backend
         function getColumnIndexToSetData(columnsObject, columnsToSet) {
-            let colIndex = {};
+            const colIndex = {};
             Object.keys(columnsObject).forEach((item, index) => {
                 if (
                     typeof columnsObject[item] === "object" &&
@@ -210,7 +210,7 @@ export const GanttFrameSection = observer(
                 ) {
                     colIndex[item] = [];
                     columnsObject[item].forEach((colObjItem, colObjIndex) => {
-                        let indexToUpdate = columnsToSet.findIndex(
+                        const indexToUpdate = columnsToSet.findIndex(
                             (colSetItem, colSetIndex) =>
                                 colSetItem.selector === colObjItem.selector,
                         );

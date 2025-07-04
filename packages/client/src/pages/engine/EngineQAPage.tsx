@@ -10,11 +10,11 @@ import {
     Typography,
     Paper,
     CircularProgress,
+    Markdown,
 } from '@semoss/ui';
 import { useForm, Controller } from 'react-hook-form';
 import { EngineQASidebar } from '@/components/settings';
 import { useEngine, useRootStore } from '@/hooks';
-import { Markdown } from '@/components/common';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     maxWidth: '1000px',
@@ -54,7 +54,7 @@ export interface VectorContext {
 }
 
 export const EngineQAPage = () => {
-    const { id } = useEngine();
+    const { active } = useEngine();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [isAnswered, setIsAnswered] = useState(false);
@@ -94,7 +94,7 @@ export const EngineQAPage = () => {
         }
         try {
             let pixel = `
-            VectorDatabaseQuery(engine="${id}" , command='<encode>${data.QUESTION}</encode>', limit=${limit})
+            VectorDatabaseQuery(engine="${active.id}" , command='<encode>${data.QUESTION}</encode>', limit=${limit})
             `;
 
             const response = await monolithStore.runQuery(pixel);
@@ -237,6 +237,7 @@ export const EngineQAPage = () => {
                                                 <></>
                                             )
                                         }
+                                        data-testid={'engine-qa-generate-btn'}
                                     >
                                         Generate Answer
                                     </Button>
@@ -272,7 +273,7 @@ export const EngineQAPage = () => {
                                         Conclusion:
                                     </Typography>
                                     <Box sx={{ mb: 2, overflow: 'auto' }}>
-                                        <Markdown content={answer.conclusion} />
+                                        <Markdown>{answer.conclusion}</Markdown>
                                     </Box>
                                 </Stack>
                             )}

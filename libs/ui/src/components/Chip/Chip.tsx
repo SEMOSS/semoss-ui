@@ -243,11 +243,13 @@ export interface ChipProps {
 
     /**
      * The variant to use.
-     * DEV note: only the "filled" variant should be used according to design.
      * @default 'filled'
      */
-    variant?: "filled";
+    variant?: "filled" | "outlined";
 
+    /**
+     * Title to add to the component
+     */
     title?: string;
 }
 

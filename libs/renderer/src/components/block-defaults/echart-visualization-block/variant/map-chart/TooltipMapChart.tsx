@@ -1,6 +1,6 @@
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
 
 import { styled, Switch, Typography } from "@semoss/ui";
 
@@ -87,7 +87,7 @@ export const TooltipMapChart = observer(
          * @param e The switch change event.
          */
         const showTooltip = (e) => {
-            let option = JSON.parse(value);
+            const option = JSON.parse(value);
             setShowTooltip(!showTooltips);
             option["tooltip"]["show"] = e.target.checked;
             setData(path, option as PathValue<D["data"], typeof path>);

@@ -6,6 +6,7 @@ import { TableFooter, TableFooterProps } from "./TableFooter";
 import { TableHead, TableHeadProps } from "./TableHead";
 import { TablePagination, TablePaginationProps } from "./TablePagination";
 import { TableRow, TableRowProps } from "./TableRow";
+import { TableSortLabel, TableSortProps } from "./TableSortLabel";
 
 import { tableCellClasses } from "@mui/material";
 
@@ -17,6 +18,7 @@ const TableNameSpace = Object.assign(BaseTable, {
     Head: TableHead,
     Pagination: TablePagination,
     Row: TableRow,
+    Sort: TableSortLabel,
 });
 
 export type {
@@ -28,6 +30,7 @@ export type {
     TableHeadProps,
     TablePaginationProps,
     TableRowProps,
+    TableSortProps,
 };
 
 export { tableCellClasses };

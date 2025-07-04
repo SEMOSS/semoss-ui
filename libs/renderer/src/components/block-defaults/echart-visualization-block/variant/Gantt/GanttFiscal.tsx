@@ -2,11 +2,13 @@ import { useState, useEffect, ChangeEvent, useMemo, useRef } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { Button, Select, styled, Switch, TextField } from "@semoss/ui";
-import { getValueByPath } from "@/utility";
+
+import { getValueByPath } from "../../../../../utility";
 import { PathValue } from "@/types";
 import { useBlock, useBlockSettings } from "../../../../../hooks";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { BlockDef } from "../../../../../store";
+
 //Main container with padding and border
 const StyledMainContainer = styled("div")(() => ({
     padding: "0.75rem",
@@ -120,8 +122,8 @@ export const GanttFiscal = observer(
         }
         //retain the selected values into fiscal component
         useEffect(() => {
-            let option = JSON.parse(computedValue);
-            let fiscalDataForUpdate = fiscalData;
+            const option = JSON.parse(computedValue);
+            const fiscalDataForUpdate = fiscalData;
             if (
                 option["customSettings"]?.["gantttools"]?.["enableFiscalAxis"]
             ) {
@@ -166,7 +168,7 @@ export const GanttFiscal = observer(
                 },
             };
             if (fiscalData.fiscalYearStart != "") {
-                let seriesIndex = option["series"].findIndex((item) =>
+                const seriesIndex = option["series"].findIndex((item) =>
                     item.hasOwnProperty("chartrendered"),
                 );
 
@@ -184,11 +186,11 @@ export const GanttFiscal = observer(
                 seriesEndData = seriesEndData.sort(
                     (a, b) => new Date(a).getTime() - new Date(b).getTime(),
                 );
-                let monthDigit =
+                const monthDigit =
                     monthData.find(
                         (item) => item.value == fiscalData.fiscalYearStart,
                     ).monthDigit || "-1";
-                let monthYear =
+                const monthYear =
                     seriesStartData
                         .find(
                             (item) =>

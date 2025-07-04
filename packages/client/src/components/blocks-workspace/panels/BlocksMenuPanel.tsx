@@ -13,10 +13,15 @@ import {
     Divider,
     InputAdornment,
     IconButton,
+    useNotification,
+    Skeleton,
+    Modal,
+    Button,
 } from '@semoss/ui';
 
+import { runPixelTwo } from '../../../runPixelTwo';
 import { Panel } from '@/components/workspace';
-import { CLIENT_BLOCKS_MENU, SECTION_ORDER } from '../menus/default-menu';
+import { SECTION_ORDER } from '../menus/default-menu';
 import { AddBlocksMenuCard } from '@/components/designer';
 import { BlocksMenuPanelFilterMenu } from './BlocksMenuPanelFilterMenu';
 import {
@@ -24,7 +29,7 @@ import {
     DesignerMenuItem,
     FilterCategory,
 } from '../menus/menu-types';
-import { runPixel } from '@/api';
+import { useWorkspace } from '@/hooks';
 
 const StyledTitle = styled('div')(({ theme }) => ({
     paddingTop: theme.spacing(1.5),
@@ -85,7 +90,7 @@ const StyledTypography = styled(Typography)({
     userSelect: 'none',
 });
 
-type MODE = 'CLIENT' | 'SYSTEM';
+type MODE = 'COMMUNITY' | 'SYSTEM';
 export interface AddBlocksMenuProps {
     /** Title to render in the menu */
     title: string;
@@ -101,9 +106,12 @@ const defaultSection = 'Miscellaneous';
  */
 export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
     const { title, items } = props;
+    const notification = useNotification();
+    const { workspace } = useWorkspace();
 
     const [search, setSearch] = useState('');
-    const [clientBlock, setClientBlock] = useState([]);
+    const [communityBlock, setCommunityBlock] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [mode, setMode] = useState<MODE>('SYSTEM');
 
     const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -123,38 +131,113 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
      * TODO: REPLACE WITH A CALL TO THE BACKEND
      */
     const getClientBlocks = async () => {
-        runPixel('1+1').then((res) => {
-            setClientBlock(CLIENT_BLOCKS_MENU);
+        setLoading(true);
+        runPixelTwo('GetClientBlocks()').then((res) => {
+            const { pixelReturn, errors } = res;
+            if (errors.length) {
+                notification.add({
+                    color: 'error',
+                    message: errors.join(''),
+                });
+                setLoading(false);
+            } else {
+                const { output } = pixelReturn[0];
+                const res = (output as DesignerMenuItem[]).map((item) => {
+                    return {
+                        ...item,
+                        json: JSON.parse(JSON.stringify(item.json)),
+                    };
+                });
+                setCommunityBlock(output as DesignerMenuItem[]);
+                setLoading(false);
+            }
         });
     };
 
-    useEffect(() => {
-        if (mode === 'CLIENT') {
-            getClientBlocks();
-        }
-    }, [mode]);
+    /**
+     * Deletes a block by its ID and closes the overlay.
+     *
+     * @param blockId - The unique identifier of the block to be deleted.
+     */
+    const deleteBlock = (blockId: string) => {
+        setCommunityBlock(
+            communityBlock.filter((item) => item['id'] !== blockId),
+        );
+        runPixelTwo(
+            `DeleteBlock(blockId = "${blockId}", hardDelete = true)`,
+        ).then((res) => {
+            const { errors } = res;
+            if (errors.length) {
+                notification.add({
+                    color: 'error',
+                    message: errors.join(''),
+                });
+            } else {
+                notification.add({
+                    color: 'success',
+                    message: 'Block deleted successfully',
+                });
+            }
+        });
+        workspace.closeOverlay();
+    };
+
+    /**
+     * Open the delete modal
+     */
+    const handleOnTrashClick = (blockId: string, blockName: string) => {
+        workspace.openOverlay(() => (
+            <>
+                <Modal.Title>Are you sure?</Modal.Title>
+                <Modal.Content>
+                    <Typography variant="body2">
+                        This will delete <b>{blockName}</b>
+                    </Typography>
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button
+                        variant={'outlined'}
+                        onClick={() => workspace.closeOverlay()}
+                    >
+                        Close
+                    </Button>
+                    <Button
+                        color={'error'}
+                        variant={'contained'}
+                        onClick={() => deleteBlock(blockId)}
+                    >
+                        Delete
+                    </Button>
+                </Modal.Actions>
+            </>
+        ));
+    };
 
     const sortedItems = useMemo(() => {
-        // Use Client Block when mode is CLIENT otherwise use items from the props
-        const dataToProcess = mode === 'CLIENT' ? clientBlock : items;
+        // Use community Block when mode is COMMUNITY otherwise use items from the props
+        const dataToProcess = mode === 'COMMUNITY' ? communityBlock : items;
         const sectionRecord: Record<string, DesignerMenuItem[]> = {};
-
+        const newSectionOrder: string[] = [...SECTION_ORDER];
         // Group items by section
         dataToProcess.forEach((item) => {
             const currentSection = item.section ?? defaultSection;
+            if (newSectionOrder.indexOf(currentSection) === -1)
+                newSectionOrder.push(currentSection);
             if (!sectionRecord[currentSection])
                 sectionRecord[currentSection] = [];
             sectionRecord[currentSection].push(item);
         });
 
         // Sort sections based on sectionOrder
-        return SECTION_ORDER.map((section) => {
-            const sectionItems = sectionRecord[section] || [];
-            return sectionItems.sort((a, b) =>
-                a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
-            );
-        }).filter((section) => section.length > 0);
-    }, [items, mode, clientBlock, SECTION_ORDER]);
+        return newSectionOrder
+            .map((section) => {
+                const sectionItems = sectionRecord[section] || [];
+                return sectionItems.sort((a, b) =>
+                    a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
+                );
+            })
+            .filter((section) => section.length > 0);
+    }, [items, mode, communityBlock, SECTION_ORDER]);
 
     // get the rendered items
     const renderedItems: DesignerMenuItem[][] = useMemo(() => {
@@ -248,6 +331,8 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
         });
     }, [items]);
 
+    const isCommunity = mode === 'COMMUNITY';
+
     return (
         <Panel>
             <Stack height="100%">
@@ -291,7 +376,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                         value={mode}
                         onChange={(e: React.SyntheticEvent, val) => {
                             setMode(val as MODE);
-                            if (val === 'CLIENT') {
+                            if (val === 'COMMUNITY') {
                                 getClientBlocks();
                             }
                         }}
@@ -301,8 +386,8 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                             value={'SYSTEM'}
                         />
                         <StyledToggleTabsGroupItem
-                            label="Client Blocks"
-                            value={'CLIENT'}
+                            label="Community Blocks"
+                            value={'COMMUNITY'}
                         />
                     </StyledToggleTabsGroup>
                 </Stack>
@@ -339,6 +424,10 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                                             <Grid item key={block.name}>
                                                 <AddBlocksMenuCard
                                                     item={block}
+                                                    isCommunity={isCommunity}
+                                                    handleOnTrashClick={
+                                                        handleOnTrashClick
+                                                    }
                                                 />
                                             </Grid>
                                         ))}
@@ -349,9 +438,21 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                     </StyledMenu>
                 ) : (
                     <Stack padding={2}>
-                        <Typography variant="subtitle2">
-                            No items found
-                        </Typography>
+                        {loading ? (
+                            <Grid container gap={2} width="100%">
+                                {[1, 2, 3].map((n) => (
+                                    <Skeleton
+                                        variant="rectangular"
+                                        height={133}
+                                        width={133}
+                                    />
+                                ))}
+                            </Grid>
+                        ) : (
+                            <Typography variant="subtitle2">
+                                No items found
+                            </Typography>
+                        )}
                     </Stack>
                 )}
             </Stack>

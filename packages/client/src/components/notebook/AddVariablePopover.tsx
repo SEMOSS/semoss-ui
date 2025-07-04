@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, Suspense, lazy } from 'react';
+import { useEffect, useMemo, useState, Suspense, lazy } from 'react';
 import { MoreSharp, WarningRounded } from '@mui/icons-material';
 import { JsonViewer } from '@textea/json-viewer';
 import { observer } from 'mobx-react-lite';
@@ -37,9 +37,7 @@ import {
     capitalizeFirstLetter,
     isOutputJSON,
     splitAtPeriod,
-    // getEngineImage,
 } from '../../utility';
-import { InsightProvider } from '@semoss/sdk';
 
 const Editor = lazy(() => import('@monaco-editor/react'));
 
@@ -429,7 +427,10 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                                     },
                                 },
                                 listeners: {
-                                    onPageLoad: [],
+                                    onPageLoad: {
+                                        type: 'sync',
+                                        order: [],
+                                    },
                                 },
                                 slots: {
                                     content: {
@@ -449,11 +450,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                         },
                     };
 
-                    return (
-                        <InsightProvider>
-                            <Renderer state={s} />
-                        </InsightProvider>
-                    );
+                    return <Renderer state={s} />;
                 } else if (variableType === 'query') {
                     const query = state.getQuery(variablePointer);
 

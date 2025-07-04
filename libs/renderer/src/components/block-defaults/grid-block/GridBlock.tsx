@@ -1,63 +1,64 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
+import { styled } from "@mui/material";
+import { DataGrid, GridToolbarContainer } from "@mui/x-data-grid";
 
-import { useBlock, useFrame } from "../../../hooks";
+import { useBlock, useFrame, useFrameHeaders } from "../../../hooks";
 import { BlockComponent, BlockDef } from "../../../store";
-import {
-    styled,
-    LinearProgress,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-} from "@mui/material";
 
 import { GridBlockColumn } from "./grid-block.types";
 import { GridBlockContextMenu } from "./GridBlockContextMenu";
 
 const DEFAULT_HEIGHT = "300px";
 const DEFAULT_WIDTH = "500px";
-const DEFAULT_COLUMN_WIDTH = "160px";
 
 const StyledBlock = styled("div")(() => ({
     display: "flex",
     flexDirection: "column",
     height: DEFAULT_HEIGHT,
     width: DEFAULT_WIDTH,
-    overflow: "hidden",
 }));
 
-const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
-    flex: "1",
-    background: theme.palette.background.paper,
+const StyledTitle = styled("div")(() => ({
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
 }));
 
-const StyledTableHeadRow = styled(TableRow)(() => ({
-    color: "inherit",
-    backgroundColor: "inherit",
-}));
+export interface HeaderBackgroundSettings {
+    backgroundColor: string;
+    fontSize: string;
+    fontColor: string;
+    selectedColumn: string[];
+}
 
-const StyledTableHeadCell = styled(TableCell)(({ theme }) => ({
-    textTransform: "capitalize",
-    fontWeight: 700,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-    background: theme.palette.background.paper,
-}));
+export interface CellBackgroundSettings {
+    backgroundColor: string;
+    fontSize: string;
+    fontColor: string;
+    selectedColumn: string[];
+}
 
-const StyledTableCell = styled(TableCell)(() => ({
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-}));
+export interface ChartTitleSettings {
+    chartTitle: string;
+    fontSize: string;
+    fontColor: string;
+}
 
-const StyledTablePagination = styled(TablePagination)(({ theme }) => ({
-    background: theme.palette.background.paper,
-}));
+export interface WrapTextSettings {
+    selectedColumn: string[];
+    textWrap: boolean;
+}
+
+export interface ColorRule {
+    id: string;
+    column: string;
+    comparator: string;
+    value: string;
+    valueColumn: string;
+    color: string;
+    colorEntireRow: boolean;
+}
 
 export interface GridBlockDef extends BlockDef<"grid"> {
     widget: "grid";
@@ -73,7 +74,25 @@ export interface GridBlockDef extends BlockDef<"grid"> {
         columns: GridBlockColumn[];
 
         /** */
-        style: Pick<React.CSSProperties, "height" | "width">;
+        style: {
+            height: string | undefined;
+            width: string | undefined;
+            display: string | undefined;
+            flexDirection: string | undefined;
+            padding: string | undefined;
+            gap: string | undefined;
+            flexWrap: string | undefined;
+        };
+        option: {
+            headerBackgroundSettings?: HeaderBackgroundSettings;
+            cellBackgroundSettings?: CellBackgroundSettings;
+            chartTitleSettings?: ChartTitleSettings;
+            wrapTextSettings?: WrapTextSettings;
+            rowSpanning?: boolean;
+            colorByValue?: ColorRule[];
+        };
+        variation: undefined | string;
+        show: boolean;
 
         /** Context Menu */
         contextMenu?: {
@@ -94,9 +113,11 @@ export interface GridBlockDef extends BlockDef<"grid"> {
 }
 
 export const GridBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data } = useBlock<GridBlockDef>(id);
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(50);
+    const { attrs, data, setData } = useBlock<GridBlockDef>(id);
+    const [paginationModel, setPaginationModel] = useState({
+        page: 0,
+        pageSize: 50,
+    });
 
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
@@ -119,30 +140,41 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
     // get the frame
     const frame = useFrame(data.frame.name, {
         selector: selector,
-        offset: rowsPerPage * page,
-        limit: rowsPerPage,
+        offset: paginationModel.page * paginationModel.pageSize,
+        limit: paginationModel.pageSize,
         enableCount: true,
     });
 
-    // get the headers as as a map (header -> idx)
-    const headerMap: Record<string, number> = frame.data.headers.reduce(
-        (acc, val, idx) => {
-            acc[val] = idx;
+    // When headers come from user upload
+    const frameHeaders = useFrameHeaders(data.frame.name);
 
-            return acc;
-        },
-        {},
-    );
-
-    // get the total width of the table based on the columns
-    const tableWidth: number = data.columns.reduce((acc, val) => {
-        // if it is a number, add it
-        if (!isNaN(Number(val.width))) {
-            return acc + Number(val.width);
+    /**
+     * Anytime our Frame Headers, we need to sync our column block data with our source of truth ^
+     */
+    useEffect(() => {
+        if (data.columns.length === 0 && !frameHeaders.isLoading) {
+            // If no columns are defined, fetch the frame headers
+            if (frameHeaders.data.list.length > 0) {
+                syncBlockDataColumns(frameHeaders);
+            }
         }
+    }, [frameHeaders.data.list]);
 
-        return acc + parseInt(DEFAULT_COLUMN_WIDTH);
-    }, 0);
+    /**
+     * Updates data.columns
+     * @param synData
+     */
+    const syncBlockDataColumns = (cols) => {
+        const columns: GridBlockColumn[] = cols.data.list.map((h) => {
+            return {
+                name: h.alias,
+                width: undefined,
+                selector: h.header,
+            };
+        });
+        // update the data
+        setData("columns", columns);
+    };
 
     /**
      * Handle the callback for the context menu
@@ -174,120 +206,267 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
         );
     };
 
+    function evaluate(
+        cellValue: string,
+        comparator: string,
+        target: string,
+    ): boolean {
+        const a =
+            typeof cellValue === "number" ? cellValue : parseFloat(cellValue);
+        const b = typeof target === "number" ? target : parseFloat(target);
+        switch (comparator) {
+            case "==":
+                return a == b;
+            case "!=":
+                return a != b;
+            case ">":
+                return a > b;
+            case "<":
+                return a < b;
+            case ">=":
+                return a >= b;
+            case "<=":
+                return a <= b;
+            default:
+                return false;
+        }
+    }
+
+    const columns = data.columns.map((col) => ({
+        field: col.name,
+        headerName: col.name,
+        sortable: false,
+        renderHeader: () => (
+            <div
+                style={{
+                    // Apply style if the column is selected
+                    backgroundColor: headerSettings.selectedColumn.includes(
+                        col.name,
+                    )
+                        ? headerSettings.backgroundColor
+                        : "inherit",
+                    color: headerSettings.selectedColumn.includes(col.name)
+                        ? headerSettings.fontColor
+                        : "inherit",
+                    fontSize: headerSettings.selectedColumn.includes(col.name)
+                        ? `${headerSettings.fontSize}px`
+                        : "inherit",
+                    padding: "8px",
+                    width: "100%",
+                    whiteSpace:
+                        wrapTextSettings.textWrap &&
+                        wrapTextSettings.selectedColumn.includes(col.name)
+                            ? "normal"
+                            : "nowrap",
+                    wordBreak:
+                        wrapTextSettings.textWrap &&
+                        wrapTextSettings.selectedColumn.includes(col.name)
+                            ? "break-word"
+                            : "normal",
+                }}
+            >
+                {col.name}
+            </div>
+        ),
+
+        renderCell: (params) => {
+            const isWrapEnabled =
+                wrapTextSettings.textWrap &&
+                wrapTextSettings.selectedColumn.includes(col.name);
+
+            const origionalStyle: React.CSSProperties = {
+                // Apply style if the column is selected
+                backgroundColor: cellSettings.selectedColumn.includes(col.name)
+                    ? cellSettings.backgroundColor
+                    : "inherit",
+                color: cellSettings.selectedColumn.includes(col.name)
+                    ? cellSettings.fontColor
+                    : "inherit",
+                fontSize: cellSettings.selectedColumn.includes(col.name)
+                    ? `${cellSettings.fontSize}px`
+                    : "inherit",
+                padding: "8px",
+                width: "100%",
+                lineHeight: isWrapEnabled ? "1.5" : "normal",
+                whiteSpace:
+                    wrapTextSettings.textWrap &&
+                    wrapTextSettings.selectedColumn.includes(col.name)
+                        ? "normal"
+                        : "nowrap",
+                wordBreak:
+                    wrapTextSettings.textWrap &&
+                    wrapTextSettings.selectedColumn.includes(col.name)
+                        ? "break-word"
+                        : "normal",
+            };
+
+            const matchingRowRules = colorRules.filter((rule) => {
+                return evaluate(
+                    params.row[rule.column],
+                    rule.comparator,
+                    rule.value,
+                );
+            });
+
+            let style = { ...origionalStyle };
+            for (let rule of matchingRowRules) {
+                if (rule.colorEntireRow) {
+                    style.backgroundColor = rule.color;
+                    style.color = "#fff";
+                    break;
+                }
+
+                if (rule.valueColumn === col.name) {
+                    style.backgroundColor = rule.color;
+                    style.color = "#fff";
+                    break;
+                }
+            }
+
+            return (
+                <div
+                    onContextMenu={(e) =>
+                        handleTableCellOnContextMenu(e, col, params.value)
+                    }
+                    style={{
+                        ...style,
+                    }}
+                >
+                    {params.value}
+                </div>
+            );
+        },
+    }));
+
+    const rows = frame.data.values.map((r, idx) => {
+        const obj: Record<string, any> = { id: idx };
+        columns.forEach((c, cIdx) => {
+            obj[c.field] = r[cIdx];
+        });
+        return obj;
+    });
+
+    const handlePaginationModalChange = (newmodel) => {
+        // if the page size has changed reset the page
+        if (newmodel.pageSize !== paginationModel.pageSize) {
+            setPaginationModel({
+                page: 0,
+                pageSize: newmodel.pageSize,
+            });
+        } else {
+            setPaginationModel(newmodel);
+        }
+    };
+
+    const headerSettings = {
+        fontSize: "16",
+        fontColor: "#000000",
+        selectedColumn: [],
+        backgroundColor: "white",
+        ...data.option?.headerBackgroundSettings,
+    };
+
+    const cellSettings = {
+        fontSize: "16",
+        fontColor: "#000000",
+        selectedColumn: [],
+        backgroundColor: "white",
+        ...data.option?.cellBackgroundSettings,
+    };
+
+    const titleSettings = data.option?.chartTitleSettings || {
+        chartTitle: "",
+        fontSize: "16",
+        fontColor: "#000000",
+    };
+
+    const wrapTextSettings = {
+        selectedColumn: [],
+        textWrap: false,
+        ...data.option?.wrapTextSettings,
+    };
+
+    const colorRules: ColorRule[] = data.option?.colorByValue || [];
+
+    const getRowHeight = (params: any) => {
+        if (data.option?.rowSpanning) {
+            return 50;
+        }
+        return "auto";
+    };
+
+    const GridToolbar = () => {
+        return (
+            <GridToolbarContainer sx={{ justifyContent: "center" }}>
+                <StyledTitle
+                    sx={{
+                        fontSize: `${titleSettings.fontSize}px`,
+                        color: titleSettings.fontColor,
+                    }}
+                >
+                    {titleSettings.chartTitle}
+                </StyledTitle>
+            </GridToolbarContainer>
+        );
+    };
+
     return (
         <StyledBlock sx={data.style} {...attrs}>
-            <StyledTableContainer>
-                <Table
-                    size="small"
-                    stickyHeader={true}
-                    sx={{ minWidth: tableWidth }}
-                >
-                    <TableHead>
-                        <StyledTableHeadRow>
-                            {data.columns.map((c, cIdx) => {
-                                return (
-                                    <StyledTableHeadCell
-                                        component={"th"}
-                                        key={cIdx}
-                                        align="left"
-                                        title={c.name}
-                                        sx={{
-                                            //This component is weird because it is a table / has a special layout, you have to either use minWidth or maxWidth
-                                            maxWidth: !isNaN(Number(c.width))
-                                                ? c.width
-                                                : DEFAULT_COLUMN_WIDTH,
-                                        }}
-                                    >
-                                        {c.name}
-                                    </StyledTableHeadCell>
-                                );
-                            })}
-                        </StyledTableHeadRow>
-                    </TableHead>
-                    <TableBody>
-                        {frame.isLoading ? (
-                            <LinearProgress />
-                        ) : (
-                            frame.data.values.map((r, rIdx) => {
-                                return (
-                                    <TableRow key={rIdx}>
-                                        {data.columns.map((c, cIdx) => {
-                                            let headerExists = false;
-                                            // check if the header exists
-                                            if (
-                                                Object.prototype.hasOwnProperty.call(
-                                                    headerMap,
-                                                    c.name,
-                                                )
-                                            ) {
-                                                headerExists = true;
-                                            }
-
-                                            // get the value
-                                            const value = r[headerMap[c.name]];
-
-                                            // str for rendering and title
-                                            const str =
-                                                typeof value !== "string"
-                                                    ? JSON.stringify(value)
-                                                    : value;
-
-                                            return (
-                                                <StyledTableCell
-                                                    key={cIdx}
-                                                    align="left"
-                                                    title={str}
-                                                    sx={{
-                                                        //This component is weird because it is a table / has a special layout, you have to either use minWidth or maxWidth
-                                                        maxWidth: !isNaN(
-                                                            Number(c.width),
-                                                        )
-                                                            ? c.width
-                                                            : DEFAULT_COLUMN_WIDTH,
-                                                    }}
-                                                    onContextMenu={(e) => {
-                                                        // don't open context menu
-                                                        if (!headerExists) {
-                                                            return;
-                                                        }
-
-                                                        handleTableCellOnContextMenu(
-                                                            e,
-                                                            c,
-                                                            value,
-                                                        );
-                                                    }}
-                                                >
-                                                    {str}
-                                                </StyledTableCell>
-                                            );
-                                        })}
-                                    </TableRow>
-                                );
-                            })
-                        )}
-                    </TableBody>
-                </Table>
-            </StyledTableContainer>
+            <div
+                style={{
+                    flex: 1,
+                    width: "100%",
+                    height: "100%",
+                }}
+            >
+                <DataGrid
+                    rows={rows}
+                    columns={columns}
+                    pagination
+                    density="compact"
+                    paginationMode="server"
+                    rowCount={frame.count}
+                    paginationModel={paginationModel}
+                    onPaginationModelChange={handlePaginationModalChange}
+                    pageSizeOptions={[10, 50, 100, 500]}
+                    getRowHeight={getRowHeight}
+                    columnHeaderHeight={50}
+                    disableColumnMenu
+                    disableRowSelectionOnClick
+                    disableColumnSorting
+                    slots={{
+                        toolbar: titleSettings.chartTitle && GridToolbar,
+                    }}
+                    showCellVerticalBorder={
+                        data.option?.rowSpanning ? true : false
+                    }
+                    showColumnVerticalBorder={
+                        data.option?.rowSpanning ? true : false
+                    }
+                    unstable_rowSpanning={data.option?.rowSpanning}
+                    sx={{
+                        borderRadius: "0",
+                        "& .MuiDataGrid-columnHeaderTitleContainer": {
+                            fontWeight: "bold",
+                        },
+                        "& .MuiDataGrid-columnHeader": {
+                            padding: "0px",
+                        },
+                        "& .MuiDataGrid-columnHeaderTitleContainerContent": {
+                            width: "100%",
+                        },
+                        "& .MuiDataGrid-cell": {
+                            padding: "0px",
+                        },
+                    }}
+                />
+            </div>
             <GridBlockContextMenu
                 id={id}
                 frame={frame}
                 contextMenu={contextMenu}
                 onClose={() => setContextMenu(null)}
             />
-            {data.view?.pagination && (
-                <StyledTablePagination
-                    rowsPerPageOptions={[10, 50, 100, 500]}
-                    count={frame.count}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={(_, newPage) => setPage(newPage)}
-                    onRowsPerPageChange={(e) => {
-                        setRowsPerPage(parseInt(e.target.value));
-                        setPage(0);
-                    }}
-                />
-            )}
         </StyledBlock>
     );
 });
