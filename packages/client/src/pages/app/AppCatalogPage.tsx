@@ -70,6 +70,7 @@ const initialState = {
     favoritedApps: [],
     apps: [],
 };
+const SKELETON_CARD_COUNT = 6;
 
 const reducer = (state, action) => {
     switch (action.type) {
@@ -451,6 +452,20 @@ export const AppCatalogPage = observer((): JSX.Element => {
                                 )}
                             </StyledSection>
                         )}
+                        {mode != 'System' && getApps.status !== 'SUCCESS' ? (
+                            <StyledSection>
+                                {Array.from({ length: SKELETON_CARD_COUNT }).map((_, i) => (
+                                    <AppTileCard
+                                        key={`skeleton-${i}`}
+                                        app={TERMINAL_APP}
+                                        systemApp={false}
+                                        isDiscoverable={mode !== 'Mine'}
+                                        isLoading={true}
+                                        showSkeleton={true}
+                                    />
+                                ))}
+                            </StyledSection>
+                        ) : null}
                         {mode != 'System' && apps.length > 0 ? (
                             <StyledSectionLabel variant="subtitle1">
                                 All Apps
@@ -505,7 +520,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
                                                     removeApp(app);
                                                 }}
                                                 isLoading={true}
-                                                showSkeleton={true}
+                                                showSkeleton={false}
                                             />
                                         );
                                     })}
