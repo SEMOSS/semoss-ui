@@ -8,6 +8,7 @@ import {
     FolderOutlined,
     InsertDriveFileOutlined,
 } from '@mui/icons-material';
+import DuplicateIcon from '../../../assets/img/Duplicate.svg';
 import {
     Menu,
     MenuItem,
@@ -194,8 +195,9 @@ const FolderContextMenu = ({
                 alignSelf: 'stretch',
             }}
         >
-            <ContentCopyOutlined
-                fontSize="small"
+            <img
+                src={DuplicateIcon}
+                alt="Duplicate Icon"
                 style={{
                     minWidth: 28,
                     display: 'flex',
@@ -203,6 +205,8 @@ const FolderContextMenu = ({
                     alignItems: 'flex-start',
                     paddingRight: 8,
                     opacity: 0.8,
+                    width: '20px',
+                    height: '20px',
                 }}
             />
             Duplicate
