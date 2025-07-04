@@ -6,7 +6,7 @@ import {
 
 export const DateDifferenceTransformationCellConfig: CellConfig<DateDifferenceTransformationCellDef> =
     {
-        name: "Date Diference",
+        name: "Date Difference",
         widget: "date-difference-transformation",
         view: DateDifferenceTransformationCell,
         parameters: {

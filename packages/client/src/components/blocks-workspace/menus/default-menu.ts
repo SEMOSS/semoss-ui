@@ -22,7 +22,7 @@ export const SECTION_ORDER = [
     SECTION_ELEMENT,
     SECTION_MISC,
     SECTION_CHARTS,
-    SECTION_GROUPED,
+    // SECTION_GROUPED,
 ];
 
 // Development Environment Blocks
@@ -614,7 +614,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_INPUT,
         name: 'Switch',
-        helperText: 'Toggle between two states',
+        helperText: 'Switch between multiple options',
+        activeImage: BLOCK_IMAGES['SWITCH_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['SWITCH_HOVER'],
         json: {
             widget: 'switch',
             data: {
@@ -648,6 +650,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_INPUT,
         name: 'Time Picker',
         helperText: 'Select a time from a time picker',
+        activeImage: BLOCK_IMAGES['TIME_PICKER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['TIME_PICKER_HOVER'],
         json: {
             widget: 'timepicker',
             data: {
@@ -2607,7 +2611,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_CHARTS,
         name: 'Vega',
-        helperText: '',
+        helperText: 'Paste JSON to make a custom chart',
+        activeImage: BLOCK_IMAGES['VEGA_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['VEGA_HOVER'],
         json: {
             widget: 'vega',
             data: {
