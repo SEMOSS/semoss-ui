@@ -1,54 +1,72 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
+import { useParams } from "react-router-dom";
+import { observer } from "mobx-react-lite";
 import {
+    styled,
     Select,
     Tab,
     Tabs,
-    FormControl,
     Box,
     Typography,
-    MenuItem,
     Stack,
     FileDropzone,
     Tooltip,
     ListItemText,
-    List,
     IconButton,
-    Autocomplete,
     TextField,
     useNotification,
 } from "@semoss/ui";
-import { runPixel, usePixel } from "@semoss/sdk/react";
-import { BaseSettingSection, InputSettings } from "../../block-settings";
+import { usePixel } from "@semoss/sdk/react";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useBlockSettings, useBlock } from "../../../hooks";
-import { observer } from "mobx-react-lite";
-import { useParams } from "react-router-dom";
-import { computed } from "mobx";
-// import { useRootStore, monolithStore } from "@/hooks";
+import { BaseSettingSection, InputSettings } from "../../block-settings";
+import { useBlock } from "../../../hooks";
 
 const imageTypes = ["jpg", "jpeg", "png", "gif", "webp", "svg", "avif"];
 
 const imageExtensions = imageTypes.map((ext) => `.${ext}`);
 
+function getImageFiles(data: any) {
+    return Array.isArray(data)
+        ? data.filter(
+              (file) =>
+                  typeof file.type === "string" &&
+                  imageTypes.includes(file.type.toLowerCase()),
+          )
+        : [];
+}
+
 interface GeneralSettingsProps {
     id: string;
-    data?: any;
 }
 
 type TabRenderProps = {
     id: string;
     data: any;
-    setData: Function;
+    setData: (path: string, value: any) => void;
     uploadFile?: (file: File, appId: string, path: string) => Promise<any>;
     appId: string;
     insightId?: string;
 };
 
+const StyledInfo = styled(Typography)(({ theme }) => ({
+    color: theme.palette.text.disabled,
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(1),
+    marginTop: 0,
+}));
+
+const StyledListItem = styled(Box)(({ theme }) => ({
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(1),
+}));
+
 const SelectedItem = ({ file, setData }) => {
     return file ? (
-        <List>
-            <List.Item>
+        <Box>
+            <StyledListItem>
                 <ListItemText>{file.fileName}</ListItemText>
                 <IconButton
                     edge="end"
@@ -59,40 +77,63 @@ const SelectedItem = ({ file, setData }) => {
                 >
                     <DeleteIcon color="error" />
                 </IconButton>
-            </List.Item>
-        </List>
+            </StyledListItem>
+            <StyledInfo variant="caption">
+                <InfoOutlinedIcon sx={{ fontSize: 16 }} />
+                Delete current file to upload a new one.
+            </StyledInfo>
+        </Box>
     ) : null;
+};
+
+const SelectImage = ({ data, imageFiles, setData }) => {
+    const onImageChange = (e) => {
+        const selectedName = e.target.value;
+        const selectedFile = imageFiles.find((f) => f.name === selectedName);
+        if (selectedFile) {
+            setData("src", "");
+            setData("title", "");
+            setData("file", {
+                fileLocation: selectedFile.path,
+                fileName: selectedFile.name,
+            });
+        }
+    };
+    return (
+        <BaseSettingSection label="">
+            <Select
+                label="Select Image"
+                size="small"
+                fullWidth
+                value={(data.file?.fileName ?? "") as string}
+                onChange={onImageChange}
+            >
+                {imageFiles?.map((file) => (
+                    <Select.Item key={file.name} value={file.name}>
+                        <ListItemText>{file.name}</ListItemText>
+                    </Select.Item>
+                ))}
+            </Select>
+        </BaseSettingSection>
+    );
 };
 
 const AppImageTab = ({ id, data, setData, appId }) => {
     const { uploadFile } = useBlock(id);
-    const getAssetsApp = usePixel<{ status: string; data: any }>(
-        `BrowseAppAssets(project=["${appId}"], filePath=["/"]);`, // portals
-    );
-    // .then((res) => {
-    //     console.log("getAssetsApp: ", res);
-    // });
-    let imageFiles = [];
-    if (getAssetsApp.status === "SUCCESS") {
-        imageFiles = Array.isArray(getAssetsApp.data)
-            ? getAssetsApp.data.filter(
-                  (file) =>
-                      typeof file.type === "string" &&
-                      imageTypes.includes(file.type.toLowerCase()),
-              )
-            : [];
-    }
-    console.log("getAssetsApp: ", getAssetsApp);
     const notification = useNotification();
-    // const { monolithStore, configStore } = useRootStore();
     const [isLoading, setIsLoading] = useState(false);
-    console.log("GeneralSettings data: ", data);
+    const getAssetsApp = usePixel<{ status: string; data: any }>(
+        `BrowseAppAssets(project=["${appId}"], filePath=["/"]);`,
+    );
+    const imageFiles =
+        getAssetsApp.status === "SUCCESS"
+            ? getImageFiles(getAssetsApp.data)
+            : [];
     const addFile = async (file: File) => {
         try {
             setIsLoading(true);
 
             let upload = null;
-            //  if (type === "app") {
             upload = await uploadFile(file, appId, "version/assets/"); // portals
             setData("src", "");
             setData("title", "");
@@ -102,10 +143,8 @@ const AppImageTab = ({ id, data, setData, appId }) => {
                 message: "Image uploaded successfully",
             });
             if (!upload) {
-                throw new Error("Error missing uploading app");
+                throw new Error("Error missing uploading image");
             }
-
-            // const path = `${uploadPath}${upload[0].fileName}`;
         } catch (e) {
             notification.add({
                 color: "error",
@@ -116,123 +155,47 @@ const AppImageTab = ({ id, data, setData, appId }) => {
             setIsLoading(false);
         }
     };
+    if (isLoading) {
+        return <Typography variant="body1">Loading...</Typography>;
+    }
+    if (data.file) {
+        return <SelectedItem file={data.file} setData={setData} />;
+    }
     return (
         <>
-            {isLoading ? (
-                <Typography variant="body1">Loading...</Typography>
-            ) : data.file ? (
-                <SelectedItem file={data.file} setData={setData} />
-            ) : (
-                <>
-                    <BaseSettingSection label="">
-                        <Select
-                            label="Select Image"
-                            size="small"
-                            fullWidth
-                            value={(data.file?.fileName ?? "") as string}
-                            onChange={(e) => {
-                                const selectedName = e.target.value;
-                                const selectedFile = imageFiles.find(
-                                    (f) => f.name === selectedName,
-                                );
-                                if (selectedFile) {
-                                    setData("src", "");
-                                    setData("title", "");
-                                    setData("file", {
-                                        fileLocation: selectedFile.path,
-                                        fileName: selectedFile.name,
-                                    });
-                                }
-                            }}
-                        >
-                            {imageFiles?.map((file) => (
-                                <Select.Item key={file.name} value={file.name}>
-                                    <ListItemText>{file.name}</ListItemText>
-                                </Select.Item>
-                            ))}
-                        </Select>
-                    </BaseSettingSection>
-                    <Typography variant="body1" align="center">
-                        Or
-                    </Typography>
-                    <FileDropzone
-                        description="Upload your image here"
-                        extensions={[
-                            ".jpg",
-                            ".jpeg",
-                            ".png",
-                            ".gif",
-                            ".webp",
-                            ".svg",
-                            ".avif",
-                        ]}
-                        multiple={false}
-                        value={data.file}
-                        id={`upload_image_${id}`}
-                        onChange={(file: File) => {
-                            if (addFile) addFile(file);
-                        }}
-                    />
-                </>
-            )}
+            <SelectImage
+                imageFiles={imageFiles}
+                data={data}
+                setData={setData}
+            />
+            <Typography variant="body1" align="center">
+                Or
+            </Typography>
+            <FileDropzone
+                description="Upload your image here"
+                extensions={imageExtensions}
+                multiple={false}
+                value={data.file}
+                id={`upload_image_${id}`}
+                onChange={addFile}
+            />
         </>
     );
 };
 
-const InsightImageTab = ({
-    insightId,
-    data,
-    setData,
-    appId,
-}: TabRenderProps) => {
+const InsightImageTab = ({ insightId, data, setData }: TabRenderProps) => {
     const getAssetsApp = usePixel<{ status: string; data: any }>(
-        `BrowseAsset(filePath=["/"] );`, // portals
+        `BrowseAsset(filePath=["/"] );`,
         {},
         insightId,
     );
-    // BrowseAsset(space=["8205b8c5-8068-47ab-8068-9bbe10d2a245"], filePath=["/"]);
-    // `BrowseAsset(insightId="${insightId}", filePath=["/"] )
-    console.log("getAssetsApp insifghts : ", getAssetsApp);
-    let imageFiles = [];
-    if (getAssetsApp.status === "SUCCESS") {
-        imageFiles = Array.isArray(getAssetsApp.data)
-            ? getAssetsApp.data.filter(
-                  (file) =>
-                      typeof file.type === "string" &&
-                      imageTypes.includes(file.type.toLowerCase()),
-              )
+    const imageFiles =
+        getAssetsApp.status === "SUCCESS"
+            ? getImageFiles(getAssetsApp.data)
             : [];
-    }
-    console.log("InsightImageTab params: ", appId);
+
     return !data?.file ? (
-        <BaseSettingSection label="">
-            <Select
-                label="Select Image"
-                size="small"
-                fullWidth
-                value={(data.file?.fileName ?? "") as string}
-                onChange={(e) => {
-                    const selectedName = e.target.value;
-                    const selectedFile = imageFiles.find(
-                        (f) => f.name === selectedName,
-                    );
-                    if (selectedFile) {
-                        setData("src", "");
-                        setData("title", "");
-                        setData("file", {
-                            fileLocation: selectedFile.path,
-                            fileName: selectedFile.name,
-                        });
-                    }
-                }}
-            >
-                {imageFiles?.map((file) => (
-                    <Select.Item key={file.name} value={file.name}>
-                        <ListItemText>{file.name}</ListItemText>
-                    </Select.Item>
-                ))}
-            </Select>
-        </BaseSettingSection>
+        <SelectImage imageFiles={imageFiles} data={data} setData={setData} />
     ) : (
         <SelectedItem file={data.file} setData={setData} />
     );
@@ -263,7 +226,6 @@ const tabConfig = [
                                 fullWidth
                                 value={data.src ?? ""}
                                 onChange={(e) => {
-                                    // sync the data on change
                                     setData("src", e.target.value);
                                 }}
                                 type={"text"}
@@ -282,10 +244,6 @@ const tabConfig = [
                                 fullWidth
                                 value={data.unavailable ?? ""}
                                 onChange={(e) => {
-                                    console.log(
-                                        "Selected value:",
-                                        e.target.value,
-                                    );
                                     const value = e.target.value as string;
                                     setData("unavailable", value);
                                 }}
@@ -302,7 +260,7 @@ const tabConfig = [
                         </BaseSettingSection>
                     </>
                 )}
-                {data.file && data.unavailable === "placeholder" && (
+                {!data.file && data.unavailable === "placeholder" && (
                     <InputSettings
                         id={id}
                         label="Enter Placeholder Text"
@@ -315,25 +273,8 @@ const tabConfig = [
 ];
 
 const GeneralSettings: React.FC<GeneralSettingsProps> = observer(({ id }) => {
-    // const { insightId } = useBlockSettings(id);
     const { data, setData: setBlockData, insightId } = useBlock(id);
-    // const computedValue = useMemo(() => {
-    //     return computed(() => {
-    //         if (!data) {
-    //             return {};
-    //         }
-    //         // const v = getValueByPath(data, path);
-    //         // if (typeof v === "undefined") {
-    //         //     return "";
-    //         // } else if (typeof v === "string") {
-    //         //     return v;
-    //         // }
-    //         return data;
-    //     });
-    // }, [data]).get();
-    // console.log("GeneralSettings computedValue: ", computedValue);
     const { appId } = useParams();
-    console.log("GeneralSettings params: ", data, appId, insightId);
     const [value, setValue] = useState(0);
     const handleChange = (_: React.SyntheticEvent, newValue: number) => {
         setValue(newValue);
@@ -348,12 +289,15 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = observer(({ id }) => {
             <Tabs
                 value={value}
                 onChange={handleChange}
-                centered
+                sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    minHeight: 36,
+                }}
                 TabIndicatorProps={{
                     sx: {
                         top: "inherit",
                         bottom: "unset",
-                        justifyContent: "space-evenly",
                     },
                 }}
             >
@@ -362,16 +306,16 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = observer(({ id }) => {
                         key={tab.label}
                         label={tab.label}
                         iconPosition="end"
-                        sx={{ minHeight: 30, px: 2, py: 1 }}
+                        sx={{ minHeight: 30, px: 2, py: 1, flex: 1 }}
                         icon={
                             <Tooltip title={tab.tooltip} placement="top">
-                                <InfoOutlinedIcon fontSize="small" />
+                                <InfoOutlinedIcon sx={{ fontSize: 16 }} />
                             </Tooltip>
                         }
                     />
                 ))}
             </Tabs>
-            <Stack sx={{ mt: 2 }} gap={2} flexDirection={"column"}>
+            <Stack flexDirection={"column"} marginTop={2}>
                 {tabConfig[value].render({
                     id,
                     data,

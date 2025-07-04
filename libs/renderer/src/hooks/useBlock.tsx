@@ -154,10 +154,9 @@ export const useBlock = <D extends BlockDef = BlockDef>(
             | false
         > => {
             // ignore if static
-            // if (state.mode === "static") {
-            //     return false;
-            // }
-            console.log("state.mode ", state.mode);
+            if (state.mode === "static") {
+                return false;
+            }
             const f = Array.isArray(file) ? file : [file];
 
             // upload the file
