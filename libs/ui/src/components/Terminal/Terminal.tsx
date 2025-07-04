@@ -203,7 +203,7 @@ export const Terminal: React.FC<TerminalProps> = ({
             switch (key) {
                 // Enter
                 case "\r": {
-                    if (updatedBuffer.command.trim() === "") {
+                    if (updatedBuffer?.command?.trim() === "") {
                         // If command is empty, just print a new prompt and move to next line
                         terminalInstance.write(`\r\n${PROMPT}`);
                     } else {

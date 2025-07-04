@@ -239,7 +239,7 @@ export const TerminalPanel: React.FC = observer(() => {
                         variant="contained"
                         size={'small'}
                         onClick={() => runCommand()}
-                        disabled={command.trim() === ''}
+                        disabled={command?.trim() === ''}
                     >
                         Run
                     </Button>
