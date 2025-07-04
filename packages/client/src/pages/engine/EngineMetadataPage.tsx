@@ -229,6 +229,7 @@ export const EngineMetadataPage = observer(() => {
                                 startIcon={<ArrowCircleDown />}
                                 variant="outlined"
                                 onClick={printMeta}
+                                data-testid={'engine-metadata-print-btn'}
                             >
                                 Print Metadata
                             </Button>
