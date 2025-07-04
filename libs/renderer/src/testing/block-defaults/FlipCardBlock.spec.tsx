@@ -19,7 +19,7 @@ const blocks = {
                 whiteSpace: "pre-line",
                 textOverflow: "ellipsis",
             },
-            text: "Hello world",
+            text: "Front",
             variant: "p",
         },
         listeners: {},
@@ -38,7 +38,7 @@ const blocks = {
                 whiteSpace: "pre-line",
                 textOverflow: "ellipsis",
             },
-            text: "Backside",
+            text: "Back",
             variant: "p",
         },
         listeners: {},
@@ -53,9 +53,13 @@ const blocks = {
                 flexDirection: "column",
                 padding: "4px",
                 gap: "8px",
+                width: "400px",
+                height: "200px",
+                border: "5px solid #000000",
+                "border-radius": "5px"
             },
-            frontBgColor: "#ffffff",
-            backBgColor: "#ffffff",
+            frontBgColor: "#ffb3b3",
+            backBgColor: "#775ef3",
             isFlipped: false,
             show: "true",
         },
@@ -91,14 +95,6 @@ describe("Flip Card Block", () => {
 
         const element = container.querySelector("[data-block='flip-card']");
         expect(element).toBeInTheDocument();
-        screen.debug();
-    });
-
-    test("renders with correct styling", async () => {
-        const { container } = render(<FlipCardBlock id="flip-card" />, {
-            blocks: blocks,
-        });
-
     });
 
      test("flip with correct text on both sides", async () => {
@@ -106,6 +102,32 @@ describe("Flip Card Block", () => {
             blocks: blocks,
         });
 
+        const element = container.querySelector("[data-block='flip-card']");
+
+        expect(element).toHaveTextContent("Front");
+        fireEvent.mouseEnter(element);
+        expect(element).toHaveTextContent("Back");
 
     });
+
+    test("renders with correct styling", async () => {
+        const { container } = render(<FlipCardBlock id="flip-card" />, {
+            blocks: blocks,
+        });
+
+        screen.debug();
+
+        const element = container.querySelector('div.MuiPaper-root');
+
+        expect(element).toHaveStyle({border: '5px solid #000000'});
+        //expect(element).toHaveStyle({ width: '400px', height: '200px'});
+        expect(element).toHaveStyle({borderRadius: '5px'});
+        expect(element).toHaveStyle({backgroundColor: '#ffb3b3'});
+
+        fireEvent.mouseEnter(element);
+
+        //expect(element).toHaveStyle({backgroundColor: '#775ef3'});
+
+    });
+
 });
