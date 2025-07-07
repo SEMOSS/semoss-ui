@@ -838,6 +838,11 @@ export class StateStore {
             block.data.route = id;
         }
 
+        // only for community blocks, need to save the source id for future references
+        if (json.id) {
+            block.referenceId = json.id;
+        }
+
         // add the listeners
         block.listeners = json.listeners;
 

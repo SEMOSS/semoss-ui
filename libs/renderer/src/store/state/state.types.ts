@@ -140,6 +140,8 @@ export type Block<D extends BlockDef = BlockDef> = D extends D
                   children: string[];
               }
           >;
+          /** For community block reference purpose */
+          referenceId?: string;
       }
     : never;
 
@@ -245,6 +247,9 @@ export type BlockJSON<
           /** Slot information */
 
           slots: Record<keyof T["slots"], BlockJSON<A, A>[]>;
+
+          /** Source ID of the community block */
+          id?: string;
       }
     : never;
 

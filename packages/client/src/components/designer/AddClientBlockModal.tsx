@@ -47,6 +47,13 @@ interface AddAsClientBlockTypes {
     block_json: any;
 }
 
+type Dict<T = any> = Record<string, T>;
+
+interface ScanResult {
+    queries: Dict;
+    variables: Dict;
+}
+
 export const AddAsClientBlock: AddAsClientBlockTypes = {
     name: '',
     section: '',
@@ -60,7 +67,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
     const { monolithStore, configStore } = useRootStore();
     const { registry, state } = useBlocks();
     const notification = useNotification();
-    const allowedKeys = ['widget', 'data', 'listeners', 'slots'];
+    const allowedKeys = ['widget', 'data', 'listeners', 'slots', 'id'];
 
     /**
      * Recursively processes the slots of a block to retain only the allowed keys.
@@ -100,6 +107,99 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
         }
     };
 
+    const scanBlocks = (
+        blocks: any,
+        allQueries: Dict,
+        allVariables: Dict,
+    ): ScanResult => {
+        const qIds = new Set<string>();
+        const vIds = new Set<string>();
+
+        const mustacheRE = /{{\s*([^{}\s]+?)\s*}}/g;
+
+        /** push-based walk = no recursion, cycle-safe */
+        function walk(root: any) {
+            const seen = new WeakSet<object>();
+            const stack: any[] = [root];
+
+            while (stack.length) {
+                const node = stack.pop();
+                if (node == null) continue;
+
+                /* ---------- arrays ---------- */
+                if (Array.isArray(node)) {
+                    for (let i = node.length - 1; i >= 0; --i)
+                        stack.push(node[i]);
+                    continue;
+                }
+
+                /* ---------- objects ---------- */
+                if (typeof node === 'object') {
+                    // avoid revisiting the same object (break cycles)
+                    if (seen.has(node)) continue;
+                    seen.add(node);
+
+                    // RUN_QUERY or bare { queryId: "…" }
+                    const maybeId =
+                        (node as any).payload?.queryId ??
+                        (node as any).queryId ??
+                        (node as any).id; // <- adjust if your schema differs
+                    if (typeof maybeId === 'string') qIds.add(maybeId);
+
+                    // enqueue own enumerable values
+                    for (const v of Object.values(node)) stack.push(v);
+                    continue;
+                }
+
+                /* ---------- strings ---------- */
+                if (typeof node === 'string') {
+                    let m: RegExpExecArray | null;
+                    while ((m = mustacheRE.exec(node))) {
+                        const rootId = m[1].split('.')[0]; // trim .prop chain
+                        if (rootId in allQueries) qIds.add(rootId);
+                        if (rootId in allVariables) vIds.add(rootId);
+                    }
+                }
+            }
+        }
+
+        /* pass #1 – widget tree */
+        walk(blocks);
+
+        /* pass #2 – transitive scan of every used query */
+        const processed = new Set<string>();
+        const queue = Array.from(qIds);
+
+        while (queue.length) {
+            const qId = queue.pop()!;
+            if (processed.has(qId)) continue;
+            processed.add(qId);
+
+            const qObj = allQueries[qId];
+            if (!qObj) continue; // missing def – ignore
+
+            walk(qObj); // scan its internals
+
+            // if walk() encountered further queries, they’re now in qIds
+            for (const id of qIds) {
+                if (!processed.has(id)) queue.push(id);
+            }
+        }
+
+        /* shape the result */
+        const queries: Dict = {};
+        const variables: Dict = {};
+
+        qIds.forEach((id) => {
+            if (allQueries[id]) queries[id] = allQueries[id];
+        });
+        vIds.forEach((id) => {
+            if (allVariables[id]) variables[id] = allVariables[id];
+        });
+
+        return { queries, variables };
+    };
+
     /**
      * This function is a wrapper around the useForm's handleSubmit function.
      * It processes the block's slots to remove any unnecessary keys and
@@ -115,12 +215,23 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
     const handleAddAsClientBlock = handleSubmit(
         async (data: AddAsClientBlockTypes) => {
             const block = state.blocks[selected];
-            const newClientBlock = {
+            let newClientBlock = {
                 widget: block.widget,
                 data: block.data,
                 listeners: block.listeners,
                 slots: processSlots(block.slots, state.blocks),
+                id: block.id,
             };
+            const result = scanBlocks(
+                newClientBlock,
+                state.queries,
+                state.variables,
+            );
+            newClientBlock = {
+                ...newClientBlock,
+                queries: result.queries,
+                variables: result.variables,
+            } as typeof newClientBlock & { queries: Dict; variables: Dict };
 
             const response = await monolithStore.runQuery<[true]>(
                 `AddBlock(name=["${data.name}"], section=["${
