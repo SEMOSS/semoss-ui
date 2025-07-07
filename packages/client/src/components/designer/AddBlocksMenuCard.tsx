@@ -149,7 +149,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                         continue;
                     }
 
-                    /* Replace fields like { queryId: "form-submit" } */
                     if (key === 'queryId' && value === target) {
                         result[key] = replacement;
                     } else {
@@ -178,6 +177,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         let generatedQueries: string[] = [];
         Object.entries(queries).forEach(([key, value]) => {
             let newQuery = {
+                isDependent: true, // Mark the query as dependent
                 queryId: key,
                 config: value as QueryStateConfig,
             };

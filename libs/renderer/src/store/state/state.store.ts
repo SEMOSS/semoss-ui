@@ -420,9 +420,9 @@ export class StateStore {
 
                 this.setListener(id, listener, actions, type);
             } else if (ActionMessages.NEW_QUERY === action.message) {
-                const { queryId, config } = action.payload;
+                const { queryId, config, isDependent } = action.payload;
 
-                this.newQuery(queryId, config);
+                this.newQuery(queryId, config, isDependent);
             } else if (ActionMessages.DELETE_QUERY === action.message) {
                 const { queryId } = action.payload;
 
@@ -1466,6 +1466,7 @@ export class StateStore {
     private newQuery = (
         queryId: string,
         config: Omit<QueryStateConfig, "id">,
+        isDependent?: boolean
     ): string => {
         this._store.queries[queryId] = new QueryState(
             {
@@ -1488,19 +1489,21 @@ export class StateStore {
             },
         });
 
-        Object.entries(this._store.queries[queryId].cells).forEach((c) => {
-            // Automate variable creation for notebook and new cell
-            const cId = c[0];
-            this.dispatch({
-                message: ActionMessages.ADD_VARIABLE,
-                payload: {
-                    id: `${queryId}--${cId}`,
-                    type: "cell",
-                    to: queryId,
-                    cellId: cId,
-                },
+        if(!isDependent) {
+            Object.entries(this._store.queries[queryId].cells).forEach((c) => {
+                // Automate variable creation for notebook and new cell
+                const cId = c[0];
+                this.dispatch({
+                    message: ActionMessages.ADD_VARIABLE,
+                    payload: {
+                        id: `${queryId}--${cId}`,
+                        type: "cell",
+                        to: queryId,
+                        cellId: cId,
+                    },
+                });
             });
-        });
+        }
 
         this._store.executionOrder.push(queryId);
 
