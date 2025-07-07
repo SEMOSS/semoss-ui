@@ -9,10 +9,50 @@ import {
     Divider,
     Modal,
     ModalContent,
+    styled,
 } from '@semoss/ui';
 import { ModalTitle } from '@semoss/ui/src/components/Modal/ModalTitle';
 import { ModalActions } from '@semoss/ui/src/components/Modal/ModalActions';
 
+const StyledModalPaper = styled(Modal)({
+    '& .MuiDialog-paper': {
+        width: '600px',
+        height: '760px',
+    },
+});
+const ScrollContainer = styled('div')({
+    border: '1px solid #ccc',
+    borderRadius: 4,
+    paddingLeft: '20px',
+    paddingRight: '20px',
+    height: '440px',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'auto',
+});
+const StyledFormControlLabel = styled(FormControlLabel)({
+    marginLeft: 0,
+    marginRight: 0,
+    marginTop: 0,
+    '& .MuiFormControlLabel-label': {
+        fontSize: '12px',
+    },
+    '& .MuiTypography-root': {
+        fontSize: '12px',
+    },
+    '& .MuiFormControlLabel-root': {
+        margin: '0px',
+    },
+    '& .MuiButtonBase-root': {
+        padding: '5px',
+    },
+});
+const StickyLabel = styled('div')`
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #fff;
+`;
 interface SyncChangesModalProps {
     open: boolean;
     onClose: () => void;
@@ -65,17 +105,12 @@ export const SyncChangesModal: React.FC<SyncChangesModalProps> = ({
     const allViewsSelected = selectedViews.length === views.length;
 
     return (
-        <Modal
+        <StyledModalPaper
+            data-testid="sync-changes-modal"
             open={open}
             onClose={onClose}
             maxWidth={'sm'}
             fullWidth
-            sx={{
-                '& .MuiDialog-paper': {
-                    width: '550px',
-                    height: '760px',
-                },
-            }}
         >
             <ModalTitle>Sync Changes</ModalTitle>
             <ModalContent>
@@ -90,101 +125,149 @@ export const SyncChangesModal: React.FC<SyncChangesModalProps> = ({
                 <Divider sx={{ my: 2 }} />
 
                 <Stack direction="row" spacing={2}>
+                    {/* Tables */}
                     <Stack flex={1} spacing={1}>
                         <Typography variant="subtitle2">
                             Select Tables:
                         </Typography>
                         <TextField
+                            data-testid="table-search-input"
                             placeholder="Search..."
                             size="small"
                             value={tableSearch}
                             onChange={(e) => setTableSearch(e.target.value)}
                         />
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={allTablesSelected}
-                                    onChange={() =>
-                                        setSelectedTables(
-                                            allTablesSelected ? [] : tables,
-                                        )
-                                    }
-                                />
-                            }
-                            label="(Select searched items)"
-                        />
-                        <Stack sx={{ maxHeight: 390, overflowY: 'auto' }}>
-                            {filteredTables.map((t) => (
-                                <FormControlLabel
-                                    key={t}
-                                    control={
-                                        <Checkbox
-                                            checked={selectedTables.includes(t)}
-                                            onChange={() =>
-                                                toggleSelection(
-                                                    t,
-                                                    selectedTables,
-                                                    setSelectedTables,
-                                                )
-                                            }
-                                        />
-                                    }
-                                    label={t}
-                                />
-                            ))}
-                        </Stack>
+                        <ScrollContainer>
+                            {[
+                                { id: 'select-all', label: '(Select all)' },
+                                ...filteredTables.map((t) => ({
+                                    id: t,
+                                    label: t,
+                                })),
+                            ].map((item, index) => {
+                                const checkboxLabel = (
+                                    <StyledFormControlLabel
+                                        key={item.id}
+                                        data-testid={
+                                            item.id === 'select-all'
+                                                ? 'select-all-tables-checkbox'
+                                                : `table-checkbox-${index}`
+                                        }
+                                        control={
+                                            <Checkbox
+                                                checked={
+                                                    item.id === 'select-all'
+                                                        ? allTablesSelected
+                                                        : selectedTables.includes(
+                                                              item.id,
+                                                          )
+                                                }
+                                                onChange={() =>
+                                                    item.id === 'select-all'
+                                                        ? setSelectedTables(
+                                                              allTablesSelected
+                                                                  ? []
+                                                                  : tables,
+                                                          )
+                                                        : toggleSelection(
+                                                              item.id,
+                                                              selectedTables,
+                                                              setSelectedTables,
+                                                          )
+                                                }
+                                            />
+                                        }
+                                        label={item.label}
+                                    />
+                                );
+
+                                return item.id === 'select-all' ? (
+                                    <StickyLabel key="select-all-tables-sticky">
+                                        {checkboxLabel}
+                                    </StickyLabel>
+                                ) : (
+                                    checkboxLabel
+                                );
+                            })}
+                        </ScrollContainer>
                     </Stack>
+                    {/* Views */}
                     <Stack flex={1} spacing={1}>
                         <Typography variant="subtitle2">
                             Select Views:
                         </Typography>
                         <TextField
+                            data-testid="view-search-input"
                             placeholder="Search..."
                             size="small"
                             value={viewSearch}
                             onChange={(e) => setViewSearch(e.target.value)}
                         />
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={allViewsSelected}
-                                    onChange={() =>
-                                        setSelectedViews(
-                                            allViewsSelected ? [] : views,
-                                        )
-                                    }
-                                />
-                            }
-                            label="(Select all)"
-                        />
-                        <Stack sx={{ maxHeight: 200, overflowY: 'auto' }}>
-                            {filteredViews.map((v) => (
-                                <FormControlLabel
-                                    key={v}
-                                    control={
-                                        <Checkbox
-                                            checked={selectedViews.includes(v)}
-                                            onChange={() =>
-                                                toggleSelection(
-                                                    v,
-                                                    selectedViews,
-                                                    setSelectedViews,
-                                                )
-                                            }
-                                        />
-                                    }
-                                    label={v}
-                                />
-                            ))}
-                        </Stack>
+                        <ScrollContainer>
+                            {[
+                                { id: 'select-all', label: '(Select all)' },
+                                ...filteredViews.map((v) => ({
+                                    id: v,
+                                    label: v,
+                                })),
+                            ].map((item, index) => {
+                                const checkboxLabel = (
+                                    <StyledFormControlLabel
+                                        key={item.id}
+                                        data-testid={
+                                            item.id === 'select-all'
+                                                ? 'select-all-views-checkbox'
+                                                : `view-checkbox-${index}`
+                                        }
+                                        control={
+                                            <Checkbox
+                                                checked={
+                                                    item.id === 'select-all'
+                                                        ? allViewsSelected
+                                                        : selectedViews.includes(
+                                                              item.id,
+                                                          )
+                                                }
+                                                onChange={() =>
+                                                    item.id === 'select-all'
+                                                        ? setSelectedViews(
+                                                              allViewsSelected
+                                                                  ? []
+                                                                  : views,
+                                                          )
+                                                        : toggleSelection(
+                                                              item.id,
+                                                              selectedViews,
+                                                              setSelectedViews,
+                                                          )
+                                                }
+                                            />
+                                        }
+                                        label={item.label}
+                                    />
+                                );
+                                return item.id === 'select-all' ? (
+                                    <StickyLabel key="select-all-sticky">
+                                        {checkboxLabel}
+                                    </StickyLabel>
+                                ) : (
+                                    checkboxLabel
+                                );
+                            })}
+                        </ScrollContainer>
                     </Stack>
                 </Stack>
             </ModalContent>
             <ModalActions>
-                <Button onClick={onClose} variant="text">
+                <Button
+                    onClick={onClose}
+                    variant="text"
+                    data-testid="cancel-button"
+                >
                     Cancel
                 </Button>
                 <Button
+                    data-testid="apply-button"
                     onClick={() => onApply(selectedTables, selectedViews)}
                     disabled={
                         selectedTables.length === 0 &&
@@ -195,6 +278,6 @@ export const SyncChangesModal: React.FC<SyncChangesModalProps> = ({
                     Apply
                 </Button>
             </ModalActions>
-        </Modal>
+        </StyledModalPaper>
     );
 };
