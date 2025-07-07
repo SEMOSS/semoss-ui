@@ -177,7 +177,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         let generatedQueries: string[] = [];
         Object.entries(queries).forEach(([key, value]) => {
             let newQuery = {
-                isDependent: true, // Mark the query as dependent
                 queryId: key,
                 config: value as QueryStateConfig,
             };

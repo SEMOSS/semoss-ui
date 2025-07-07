@@ -176,7 +176,6 @@ export interface NewQueryAction extends Action {
     payload: {
         queryId: string;
         config: Omit<QueryStateConfig, "id">;
-        isDependent?: boolean; // Optional flag to indicate if the query is dependent
     };
 }
 
