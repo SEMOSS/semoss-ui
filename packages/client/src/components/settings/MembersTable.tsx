@@ -761,6 +761,7 @@ export const MembersTable = (props: MembersTableProps) => {
                     ) : (
                         <>
                             {hasMembers ? (
+                                <>
                                 <StyledMemberTable>
                                     <Table.Head>
                                         <Table.Row>
@@ -1133,7 +1134,8 @@ export const MembersTable = (props: MembersTableProps) => {
                                             />
                                         </Table.Row>
                                     </Table.Footer>
-                                    <UserPopover
+                                </StyledMemberTable>
+                                <UserPopover
                                         hoveredUser={
                                             hoveredUser
                                                 ? {
@@ -1151,7 +1153,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                         anchorEl={anchorEl}
                                         handlePopoverClose={handlePopoverClose}
                                     />
-                                </StyledMemberTable>
+                                </>
                             ) : (
                                 <StyledNoMembersDiv>
                                     <Typography variant={'body2'}>
