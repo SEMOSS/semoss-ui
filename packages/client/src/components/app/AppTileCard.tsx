@@ -870,7 +870,10 @@ export const AppTileCard = (props: AppTileCardProps) => {
                             ) : (
                                 <StyledFooter>
                                     <StyledOpenButton
-                                        onClick={() => {
+                                        onClick={(e) => {
+                                            e.preventDefault(); // Prevent <Link> navigation
+                                            e.stopPropagation(); // Prevent bubbling to <Link>
+
                                             if (href) {
                                                 window.open(
                                                     href,
