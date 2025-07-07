@@ -869,13 +869,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
                                 </StyledFooter>
                             ) : (
                                 <StyledFooter>
-                                    {/* <Link
-                                        href={href}
-                                        rel="noopener noreferrer"
-                                        color="inherit"
-                                        underline="none"
-                                        target="_blank"
-                                    > */}
                                     <StyledOpenButton
                                         onClick={() => {
                                             if (href) {
@@ -895,7 +888,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
                                             />
                                         </StyledFooterDiv>
                                     </StyledOpenButton>
-                                    {/* </Link> */}
                                 </StyledFooter>
                             )}
                             {app.project_created_by !== 'SYSTEM' ? (

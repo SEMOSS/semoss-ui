@@ -32,9 +32,7 @@ export const EngineOverviewPage = observer(() => {
     return (
         <StyledPage>
             <Section>
-                <Section.Header>
-                   Details
-                </Section.Header>
+                <Section.Header>Details</Section.Header>
                 {active.metadata.markdown ? (
                     <StyledMarkdownContainer>
                         <Markdown>
@@ -56,7 +54,7 @@ export const EngineOverviewPage = observer(() => {
                 return (
                     <Section key={k.metakey}>
                         <Section.Header>
-                                {removeUnderscores(k.metakey)}
+                            {removeUnderscores(k.metakey)}
                         </Section.Header>
                         {k.display_options === 'multi-checklist' ||
                         k.display_options === 'multi-select' ||
@@ -87,9 +85,7 @@ export const EngineOverviewPage = observer(() => {
             })}
             {type === 'DATABASE' && (
                 <Section>
-                    <Section.Header>
-                        Statistics
-                    </Section.Header>
+                    <Section.Header>Statistics</Section.Header>
                     <DatabaseStatistics id={active.id} />
                 </Section>
             )}

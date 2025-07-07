@@ -137,7 +137,7 @@ export const App = () => {
             }
             const envElement = document.getElementById('semoss-env');
             const envText = envElement?.textContent || '';
-        if (envText) {
+            if (envText) {
                 const env = JSON.parse(envText) as { MODULE: string };
                 // update the environment variables with the module
                 if (env) {
