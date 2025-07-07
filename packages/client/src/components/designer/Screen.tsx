@@ -19,7 +19,7 @@ import { Ghost } from './Ghost';
 import { DeleteDuplicateMask } from './DeleteDuplicateMask';
 import { BlockSettingsMask } from './BlockSettingsMask';
 
-import { useBlocks } from '@semoss/renderer';
+import { ActionMessages, useBlocks } from '@semoss/renderer';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -102,6 +102,26 @@ export const Screen = observer((props: ScreenProps) => {
         event.preventDefault();
 
         designer.setSelected(designer.hovered);
+    };
+
+    const handleMultipleSelection = (event) => {
+        if (!designer.hovered || designer.hovered === designer.selected) {
+            return;
+        }
+        const id = getNearestBlock(event.target as Element);
+
+        // prevent events for elements until selected
+        event.stopPropagation();
+        event.preventDefault();
+        if (designer.selectedBlocks.includes(id)) {
+            return; // Do nothing if the id is already selected
+        }
+
+        designer.setSelected(id);
+        designer.addBlockToSelected(id);
+        if (designer.selectedBlocks.length > 1) {
+            designer.setSelected('');
+        }
     };
 
     /**
@@ -252,11 +272,59 @@ export const Screen = observer((props: ScreenProps) => {
         return designer.hovered == designer.selected;
     }, [designer.hovered, designer.selected, handleMouseOver]);
 
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (
+                (event.ctrlKey || event.metaKey) &&
+                event.shiftKey &&
+                (event.key === 'x' || event.key === 'X')
+            ) {
+                if (designer.selected) {
+                    // Prevent deletion if id contains 'page'
+                    if (designer.selected.includes('page')) {
+                        return;
+                    }
+                    // Delete the selected block
+                    state.dispatch({
+                        message: ActionMessages.REMOVE_BLOCK,
+                        payload: {
+                            id: designer.selected,
+                            keep: false,
+                        },
+                    });
+                    designer.setSelected('');
+                } else if (designer.selectedBlocks.length > 0) {
+                    // Delete all multiselected blocks
+                    designer.selectedBlocks.forEach((id: string) => {
+                        if (!id.includes('page')) {
+                            state.dispatch({
+                                message: ActionMessages.REMOVE_BLOCK,
+                                payload: {
+                                    id: id,
+                                    keep: false,
+                                },
+                            });
+                        }
+                    });
+                    designer.addBlockToSelected('clear');
+                }
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [designer]);
+
     return (
         <StyledContainer ref={eleRef}>
             {eleRef.current ? (
                 <>
-                    {designer.selected && (
+                    {(designer.selected ||
+                        designer.selectedBlocks.length > 1) && (
                         <SelectedMask screenEle={eleRef.current} />
                     )}
                     {designer.hovered && (
@@ -279,7 +347,16 @@ export const Screen = observer((props: ScreenProps) => {
                     <StyledContentInner
                         onMouseOver={handleMouseOver}
                         isHoveredOverSelectedBlock={isHoveredOverSelectedBlock}
-                        onClickCapture={handleClickCapture}
+                        onClickCapture={(e) => {
+                            if (e.ctrlKey || e.metaKey || e.shiftKey) {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                handleMultipleSelection(e);
+                            } else {
+                                designer.addBlockToSelected('clear');
+                                handleClickCapture(e);
+                            }
+                        }}
                     >
                         {children}
                     </StyledContentInner>

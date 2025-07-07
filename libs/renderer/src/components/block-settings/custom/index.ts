@@ -16,3 +16,5 @@ export { ChipSettings } from "./ChipSettings";
 export { ChildBlockSettings } from "./ChildBlockSettings";
 export { ContainerLayoutSettings } from "./ContainerLayoutSettings";
 export { SizeSpacingSettings } from "./SizeSpacingSettings";
+
+export * from "./data-grid";

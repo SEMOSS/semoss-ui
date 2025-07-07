@@ -36,6 +36,7 @@
 		<project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>cp1252</project.reporting.outputEncoding>
 	</properties>
+	<!-- legacy
 	<distributionManagement>
 		<snapshotRepository>
 			<id>ossrh</id>
@@ -46,6 +47,7 @@
 			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
 		</repository>
 	</distributionManagement>
+	-->
 	<build>
 		<sourceDirectory>dist</sourceDirectory>
 	</build>
@@ -167,6 +169,7 @@
 							</packagingExcludes>
 						</configuration>
 					</plugin>
+					<!-- legacy
 					<plugin>
 						<groupId>org.sonatype.plugins</groupId>
 						<artifactId>nexus-staging-maven-plugin</artifactId>
@@ -175,10 +178,11 @@
 						<configuration>
 							<serverId>ossrh</serverId>
 							<nexusUrl>https://oss.sonatype.org/</nexusUrl>
-							<!-- set to true to disable manual review of release -->
 							<autoReleaseAfterClose>false</autoReleaseAfterClose>
 						</configuration>
 					</plugin>
+					-->
+					<!-- legacy 
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
@@ -192,13 +196,13 @@
 								</goals>
 								<configuration>
 									<gpgArguments>
-										<arg>--pinentry-mode</arg>
 										<arg>loopback</arg>
 									</gpgArguments> 
 								</configuration>
 							</execution>
 						</executions>
 					</plugin>
+					-->
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-source-plugin</artifactId>
@@ -227,6 +231,15 @@
 								</configuration>
 							</execution>
 						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.sonatype.central</groupId>
+						<artifactId>central-publishing-maven-plugin</artifactId>
+						<version>0.8.0</version>
+						<extensions>true</extensions>
+						<configuration>
+						<publishingServerId>central</publishingServerId>
+						</configuration>
 					</plugin>
 				</plugins>
 			</build>

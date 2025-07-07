@@ -61,34 +61,31 @@ export const PrivacyPreferenceCenterModal = (
     const [selectedTab, setTab] = useState<string | number>(0);
 
     useEffect(() => {
-        const theme = configStore.store.config.theme;
-        if (theme && theme['THEME_MAP']) {
-            try {
-                const map = JSON.parse(theme['THEME_MAP'] as string);
+        const theme = configStore.theme;
 
-                const order = map['cookiePolicyOrderReact']
-                    ? map['cookiePolicyOrderReact']
-                    : [];
-                setCookiePolicyOrder(order);
-                const policies = map['cookiePoliciesReact']
-                    ? map['cookiePoliciesReact']
-                    : {};
-                setCookiePolicies(policies);
-                const body = map['cookiePolicyModalBodyReact']
-                    ? map['cookiePolicyModalBodyReact']
-                    : '';
-                setCookiePolicyModalBody(body);
-                const header = map['cookiePolicyModalHeaderReact']
-                    ? map['cookiePolicyModalHeaderReact']
-                    : 'Privacy Preference Center';
-                setCookiePolicyModalHeader(header);
-            } catch {
-                console.error(
-                    'Unable to parse theme for Privacy Preference Center',
-                );
-            }
+        try {
+            const order = theme['cookiePolicyOrderReact']
+                ? theme['cookiePolicyOrderReact']
+                : [];
+            setCookiePolicyOrder(order);
+            const policies = theme['cookiePoliciesReact']
+                ? theme['cookiePoliciesReact']
+                : {};
+            setCookiePolicies(policies);
+            const body = theme['cookiePolicyModalBodyReact']
+                ? theme['cookiePolicyModalBodyReact']
+                : '';
+            setCookiePolicyModalBody(body);
+            const header = theme['cookiePolicyModalHeaderReact']
+                ? theme['cookiePolicyModalHeaderReact']
+                : 'Privacy Preference Center';
+            setCookiePolicyModalHeader(header);
+        } catch {
+            console.error(
+                'Unable to parse theme for Privacy Preference Center',
+            );
         }
-    }, [Object.keys(configStore.store.config).length]);
+    }, [configStore.theme]);
 
     return (
         <Modal open={isOpen} fullWidth maxWidth="lg" onClose={onClose}>

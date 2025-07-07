@@ -113,6 +113,13 @@ export const ImportConnectionPage = () => {
             return;
         } else if (values.type === 'VECTOR') {
             /** Vector Database: START */
+            const meta = {};
+            if (values.fields['DESCRIPTION']) {
+                meta['description'] = values.fields['DESCRIPTION'];
+            }
+            if (values.fields['TAGS']) {
+                meta['tag'] = values.fields['TAGS'];
+            }
             const pixel = `
                 CreateVectorDatabaseEngine ( 
                     database=["${values.name}"], 
@@ -164,13 +171,35 @@ export const ImportConnectionPage = () => {
                                     : 'success',
                             message: secondaryPixelOutput,
                         });
-
-                        navigate(`/engine/vector/${output.database_id}`);
                     });
                 } else {
                     setIsLoading(false);
-                    navigate(`/engine/vector/${output.database_id}`);
                 }
+                if (Object.keys(meta).length !== 0) {
+                    const thirdPixel = `SetEngineMetadata(engine=["${
+                        output.database_id
+                    }"], meta=[${JSON.stringify(meta)}], jsonCleanup=[true])`;
+                    monolithStore.runQuery(thirdPixel).then((response) => {
+                        const thirdPixelOutput = response.pixelReturn[0].output,
+                            operationType =
+                                response.pixelReturn[0].operationType;
+
+                        if (operationType.indexOf('ERROR') > -1) {
+                            notification.add({
+                                color: 'error',
+                                message: thirdPixelOutput,
+                            });
+                        } else {
+                            notification.add({
+                                color: 'success',
+                                message:
+                                    response.pixelReturn[0].additionalOutput[0]
+                                        .output,
+                            });
+                        }
+                    });
+                }
+                navigate(`/engine/vector/${output.database_id}`);
             });
 
             return;
