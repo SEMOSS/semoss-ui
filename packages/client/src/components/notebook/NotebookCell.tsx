@@ -275,7 +275,7 @@ export const NotebookCell = observer(
         const cell = query.getCell(cellId);
 
         const variableName = state.getAlias(queryId, cellId);
-
+        console.log('cell Operation', cell.operation, cell.output, cell);
         useEffect(() => {
             if (cardContentRef.current) {
                 const cardContentHeight = cardContentRef.current.offsetHeight; // Consider offsetHeight for borders
@@ -490,6 +490,18 @@ export const NotebookCell = observer(
 
         const generateWithAIHandler = () => {
             console.log('generateWithAIHandler');
+        };
+
+        const getCellOutput = (operation) => {
+            console.log('operation get output', operation, cell.parameters);
+            if (typeof operation === 'string' && operation === 'TASK_DATA') {
+                return {
+                    name: cell.parameters?.dataFrameId || '',
+                    type: 'GRID',
+                    query: cell.parameters?.dataFrameQuery || '',
+                };
+            }
+            return cell.output;
         };
 
         return (
@@ -956,9 +968,9 @@ export const NotebookCell = observer(
                                                                                       operation={
                                                                                           o
                                                                                       }
-                                                                                      output={
-                                                                                          cell.output
-                                                                                      }
+                                                                                      output={getCellOutput(
+                                                                                          o,
+                                                                                      )}
                                                                                   />
                                                                               );
                                                                           },

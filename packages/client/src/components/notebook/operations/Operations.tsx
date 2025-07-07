@@ -55,6 +55,33 @@ export const Operation = observer((props: OperationProps): JSX.Element => {
                 }
             />
         );
+    } else if (
+        operation === 'TASK_DATA' &&
+        output.hasOwnProperty('name') &&
+        output['name']
+    ) {
+        // only show frame operation data when frame name is available
+        const { query, ...outputObj } = output as {
+            name: string;
+            type: 'NATIVE' | 'PY' | 'GRID' | 'R';
+            query: string;
+        };
+        return (
+            <FrameOperation
+                output={
+                    outputObj as {
+                        name: string;
+                        type: 'NATIVE' | 'PY' | 'GRID' | 'R';
+                    }
+                }
+                fetchAllResults={true} // Fetch all results for the task data
+                queryToRun={
+                    query !== ''
+                        ? `Query("<encode>${query}</encode>")`
+                        : `QueryAll()`
+                } // Custom query to run
+            />
+        );
     }
 
     return <DefaultOperation output={output} />;

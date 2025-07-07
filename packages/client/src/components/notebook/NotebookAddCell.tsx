@@ -147,6 +147,11 @@ const AddCellOptions: Record<string, AddCellOption> = {
         options: DataImportDropdownOptions,
         disabled: false,
     },
+    'text-to-sql': {
+        display: 'Text to SQL',
+        icon: <ImportExport />,
+        defaultCellType: 'text-to-sql',
+    },
     data: {
         display: 'Data Filters',
         icon: (

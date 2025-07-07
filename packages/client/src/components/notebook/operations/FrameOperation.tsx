@@ -20,10 +20,12 @@ export interface FrameOperationProps {
         /** Type of the frame */
         type: 'NATIVE' | 'PY' | 'GRID' | 'R';
     };
+    fetchAllResults?: boolean; // Optional prop to fetch all results
+    queryToRun?: string; // Optional prop to run a custom query
 }
 
 export const FrameOperation = observer((props: FrameOperationProps) => {
-    const { output } = props;
+    const { output, fetchAllResults = false, queryToRun } = props;
 
     // get the data from the frame
     const getData = useBlocksPixel<{
@@ -31,11 +33,17 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
             values: (string | number | boolean)[][];
             headers: string[];
         };
-    }>(`Frame(frame=[${output.name}] )|QueryAll()|Limit(20)|CollectAll();`);
+    }>(
+        `Frame(frame=[${output.name}] )|${
+            queryToRun ? queryToRun + '|' : 'QueryAll()|'
+        }${fetchAllResults ? '' : 'Limit(20) | '}CollectAll();`,
+    );
 
     // get the count of data in the frame
     const getCount = useBlocksPixel<number>(
-        `Frame(frame=[${output.name}] )|QueryAll()|QueryRowCount();`,
+        `Frame(frame=[${output.name}] )|${
+            queryToRun ? queryToRun + '|' : 'QueryAll()|'
+        }QueryRowCount();`,
     );
 
     // get the statuses
