@@ -111,7 +111,7 @@ const StyledUserTextField = styled(TextField)(({ theme }) => ({
  */
 const StyledTypography = styled(Typography)(({ theme }) => ({
     color: theme.palette.text.secondary,
-    fontFeatureettings: "'liga' off, 'clig' off",
+    fontFeatureSettings: "'liga' off, 'clig' off",
 }));
 /**
  * Wrapper for typography field
@@ -147,7 +147,7 @@ const SvgTextFieldsIcon = () => {
             <path
                 d="M2.08594 4.58594C2.08594 5.2776 2.64427 5.83594 3.33594 5.83594H6.2526V14.5859C6.2526 15.2776 6.81094 15.8359 7.5026 15.8359C8.19427 15.8359 8.7526 15.2776 8.7526 14.5859V5.83594H11.6693C12.3609 5.83594 12.9193 5.2776 12.9193 4.58594C12.9193 3.89427 12.3609 3.33594 11.6693 3.33594H3.33594C2.64427 3.33594 2.08594 3.89427 2.08594 4.58594ZM16.6693 7.5026H11.6693C10.9776 7.5026 10.4193 8.06094 10.4193 8.7526C10.4193 9.44427 10.9776 10.0026 11.6693 10.0026H12.9193V14.5859C12.9193 15.2776 13.4776 15.8359 14.1693 15.8359C14.8609 15.8359 15.4193 15.2776 15.4193 14.5859V10.0026H16.6693C17.3609 10.0026 17.9193 9.44427 17.9193 8.7526C17.9193 8.06094 17.3609 7.5026 16.6693 7.5026Z"
                 fill="black"
-                fill-opacity="0.54"
+                fillOpacity="0.54"
             />
         </svg>
     );
@@ -284,12 +284,12 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
         });
         let gridQuery =
             columnNames.length > 0
-                ? "Select (" +
+                ? sanitizeQuery("Select (" +
                   columnNames.join(",") +
                   ") .as ([" +
                   columnAlias.join(",") +
-                  "])"
-                : `Query("<encode>SELECT * FROM ${databaseDetails.dbName}</encode>")`;
+                  "])")
+                : sanitizeQuery(`Query("<encode>SELECT * FROM ${databaseDetails.dbName}</encode>")`);
         const insightId = state.insightId;
         let query = `Database( database=["${databaseDetails.dbId}"] ) | ${gridQuery} | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "${cell.parameters.frameVariableName}" ] ) ] )`;
         runPixel(query, insightId).then((res) => {});
@@ -316,7 +316,7 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
                         queryId: cell.query.id,
                         cellId: cell.id,
                         path: "parameters.dataFrameQuery",
-                        value: output.Query,
+                        value: sanitizeQuery(output.Query),
                     },
                 });
                 state.dispatch({
@@ -353,6 +353,14 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
                 value: "",
             },
         });
+    }
+    // Remove script tags and encode angle brackets
+    function sanitizeQuery(query: string): string {
+    return query
+        .replace(/<script.*?>.*?<\/script>/gi, "") // Remove script tags
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, '\\"'); // Escape double quotes
     }
     return (
         <StyledContent>
