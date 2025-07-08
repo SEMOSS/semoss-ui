@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     Button,
@@ -33,7 +33,7 @@ const StyledTableContainer = styled(Table.Container)(() => ({
 }));
 
 export const EngineMetadataPage = observer(() => {
-    const { id } = useEngine();
+    const { active } = useEngine();
     const { monolithStore } = useRootStore();
 
     const [selectedNode, setSelectedNode] = useState(null);
@@ -65,7 +65,7 @@ export const EngineMetadataPage = observer(() => {
         descriptions: Record<string, string>;
         additionalDataTypes: Record<string, 'INT' | 'FLOAT' | 'VARCHAR(2000)'>;
     }>(
-        `GetDatabaseMetamodel( database=["${id}"], options=["dataTypes","additionalDataTypes","logicalNames","descriptions","positions"]); `,
+        `GetDatabaseMetamodel( database=["${active.id}"], options=["dataTypes","additionalDataTypes","logicalNames","descriptions","positions"]); `,
     );
 
     // get the data if a table is selected
@@ -85,7 +85,9 @@ export const EngineMetadataPage = observer(() => {
         numCollected: number;
     }>(
         selectedNode && selectedNode.data.properties.length > 0
-            ? `Database(database=["${id}"]) | Select(${selectedNode.data.properties
+            ? `Database(database=["${
+                  active.id
+              }"]) | Select(${selectedNode.data.properties
                   .map((p) => p.id)
                   .join(', ')}) | Collect(100);`
             : '',
@@ -139,7 +141,7 @@ export const EngineMetadataPage = observer(() => {
     const [viewdata, setViewdata] = useState<string[]>([]);
 
     const refreshData = () => {
-        const pixel = `ExternalUpdateJdbcTablesAndViews(database=["${id}"]);`;
+        const pixel = `ExternalUpdateJdbcTablesAndViews(database=["${active.id}"]);`;
         monolithStore.runQuery(pixel).then((response) => {
             const output = response.pixelReturn[0].output;
             setTabledata(output.tables ?? []);
@@ -153,7 +155,7 @@ export const EngineMetadataPage = observer(() => {
         selectedViews: string[],
     ) => {
         const filters = JSON.stringify([...selectedTables, ...selectedViews]);
-        const pixel = `ExternalUpdateJdbcSchema(database=["${id}"], filters=${filters});`;
+        const pixel = `ExternalUpdateJdbcSchema(database=["${active.id}"], filters=${filters});`;
 
         monolithStore.runQuery(pixel).then((response) => {
             const output = response.pixelReturn[0]?.output;
@@ -208,7 +210,7 @@ export const EngineMetadataPage = observer(() => {
         : [];
 
     const printMeta = () => {
-        const pixel = `META|DatabaseMetadataToPdf(database=["${id}"]);`;
+        const pixel = `META|DatabaseMetadataToPdf(database=["${active.id}"]);`;
         monolithStore.runQuery(pixel).then((response) => {
             const output = response.pixelReturn[0].output;
             const insightId = response.insightId;
