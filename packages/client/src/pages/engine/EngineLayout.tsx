@@ -8,67 +8,60 @@ import {
     matchPath,
     useNavigate,
 } from 'react-router-dom';
-import { styled, ToggleTabsGroup } from '@semoss/ui';
+import { Stack, styled, ToggleTabsGroup } from '@semoss/ui';
+import { usePixel } from '@semoss/sdk/react';
 
-import { ENGINE_TYPES } from '@/types';
 import { EngineContext } from '@/contexts';
-import { usePixel, useAPI, useRootStore, useSettings } from '@/hooks';
+import { useAPI, useRootStore, useSettings } from '@/hooks';
 
 import { LoadingScreen } from '@/components/ui';
-import { EngineShell } from '@/components/engine';
+import { EngineHeader } from '@/components/engine';
 
 import { ENGINE_ROUTES } from './engine.constants';
+import { removeUnderscores } from '@/utility';
 
-const StyledDocument = styled('div')(({ theme }) => ({
-    width: '100%',
-    padding: theme.spacing(2),
-    backgroundColor: theme.palette.background.default,
-}));
-
-const StyledToggleTabsGroup = styled(ToggleTabsGroup)(() => ({
-    borderRadius: '12px 12px 0px 0px',
-    height: '42px',
+const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
     alignItems: 'center',
     padding: '0px 3px',
-}));
-
-const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(() => ({
-    height: '38px',
-}));
-
-const StyledDiv = styled('div')(() => ({
+    height: '42px',
     width: '100%',
-    borderRadius: '12px 12px 0px 0px',
+    borderTopLeftRadius: theme.shape.borderRadiusLg,
+    borderTopRightRadius: theme.shape.borderRadiusLg,
+    borderBottomRightRadius: 0,
+    borderBottomLeftRadius: 0,
+    background: theme.palette.primary.selected,
+}));
+
+const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
+    height: '38px',
+    '&.Mui-selected': {
+        boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.05)',
+        borderRadius: '12px',
+    },
+}));
+
+
+const StyledContent = styled('div')(({ theme }) => ({
+    width: '100%',
+    padding: theme.spacing(2),
+    background: theme.palette.background.paper,
 }));
 
 interface EngineLayoutProps {
-    /** Type of the engine to render */
-    type: ENGINE_TYPES;
+    /** Rotue to render */
+    route: (typeof ENGINE_ROUTES)[number];
 }
 
 /**
  * Wrap the engine routes and add additional funcitonality
  */
-export const EngineLayout = (props: EngineLayoutProps) => {
-    const { type } = props;
-
-    const { id } = useParams();
+export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
+    const { engineId } = useParams();
     const { configStore } = useRootStore();
     const resolvedPath = useResolvedPath('');
     const { pathname } = useLocation();
     const navigate = useNavigate();
     const { adminMode } = useSettings();
-
-    // get the matching route
-    const route: (typeof ENGINE_ROUTES)[number] | null = useMemo(() => {
-        for (const r of ENGINE_ROUTES) {
-            if (r.type === type) {
-                return r;
-            }
-        }
-
-        return null;
-    }, [type]);
 
     // filter metakeys to the ones we want
     const engineMetaKeys = configStore.store.config.databaseMetaKeys.filter(
@@ -89,31 +82,32 @@ export const EngineLayout = (props: EngineLayoutProps) => {
     ];
 
     // get the metadata
-    const {
-        status: engineMetaStatus,
-        data: engineMetaData,
-        refresh: engineMetaRefresh,
-    } = usePixel<{
+    const getEngineMetadata = usePixel<{
+        database_name?: string;
+        database_discoverable?: boolean;
+        database_created_by?: string;
+        database_date_created?: string;
+        last_updated?: string;
+        description?: string;
+        database_type?: string;
+        DATEADDED?: string;
+        PERMISSIONGRANTEDBY?: string;
         markdown?: string;
         tags?: string[];
     }>(
-        `GetEngineMetadata(engine=["${id}"], metaKeys=${JSON.stringify([
-            metaKeys,
-        ])}); `,
-    );
-
-    const { data: llmModels } = usePixel<
+        engineId
+            ? `GetEngineMetadata(engine=["${engineId}"], metaKeys=${JSON.stringify(
+                  [metaKeys],
+              )}); `
+            : '',
         {
-            database_name: string;
-            database_id: string;
-        }[]
-    >(
-        `MyEngines( metaKeys = ["tag","domain","data classification","data restrictions","description"] , metaFilters = [ {} ] , filterWord=[""], userT = [true], engineTypes=['MODEL'],  offset=[0], limit=[15]) ;`,
+            data: {},
+        },
     );
 
     // convert the data into an object
     const values = useMemo(() => {
-        if (engineMetaStatus !== 'SUCCESS') {
+        if (getEngineMetadata.status !== 'SUCCESS') {
             return {};
         }
 
@@ -128,23 +122,27 @@ export const EngineLayout = (props: EngineLayoutProps) => {
                     found.display_options === 'select-box' ||
                     found.display_options === 'multi-typeahead'
                 ) {
-                    if (typeof engineMetaData[curr] === 'string') {
-                        prev[curr] = [engineMetaData[curr]];
+                    if (typeof getEngineMetadata?.data[curr] === 'string') {
+                        prev[curr] = [getEngineMetadata?.data[curr]];
                     } else {
-                        prev[curr] = engineMetaData[curr];
+                        prev[curr] = getEngineMetadata?.data[curr];
                     }
                 }
             } else {
-                prev[curr] = engineMetaData[curr];
+                prev[curr] = getEngineMetadata?.data[curr];
             }
 
             return prev;
         }, {});
-    }, [engineMetaStatus, engineMetaData, JSON.stringify(metaKeys)]);
+    }, [
+        getEngineMetadata.status,
+        getEngineMetadata?.data,
+        JSON.stringify(metaKeys),
+    ]);
 
     // get the user's role
     const getUserEnginePermission =
-        !adminMode && useAPI(['getUserEnginePermission', id]);
+        !adminMode && engineId && useAPI(['getUserEnginePermission', engineId]);
 
     // get the tabs based on permission
     const tabs = useMemo(() => {
@@ -196,7 +194,7 @@ export const EngineLayout = (props: EngineLayoutProps) => {
     }, [route, tabs, resolvedPath, pathname]);
 
     // if the engine isn't found, navigate to the Home Page
-    if (!id || getUserEnginePermission.status === 'ERROR') {
+    if (!engineId || getUserEnginePermission.status === 'ERROR') {
         return <Navigate to={`${route.path}`} replace />;
     }
 
@@ -205,24 +203,34 @@ export const EngineLayout = (props: EngineLayoutProps) => {
         return <LoadingScreen.Trigger description="Checking Access" />;
     }
 
+    // show a loading screen when it is pending
+    if (getEngineMetadata.status !== 'SUCCESS') {
+        return <LoadingScreen.Trigger description="Opening Engine" />;
+    }
+
     return (
         <EngineContext.Provider
             value={{
-                id: id,
                 type: route.type,
+                path: route.path,
                 name: route.name,
-                role: getUserEnginePermission.data.permission,
-                refresh: engineMetaRefresh,
-                metaVals: values, // Needed so edit button can be in header
-                llmModels: llmModels,
+                active: {
+                    id: engineId,
+                    role: getUserEnginePermission.data.permission,
+                    name: removeUnderscores(
+                        (getEngineMetadata.data?.database_name as string) || '',
+                    ),
+                    metadata: values,
+                    refresh: getEngineMetadata.refresh,
+                },
             }}
         >
-            <EngineShell>
-                {tabs.length > 0 && (
-                    <StyledDiv>
+            <Stack direction="column" spacing={2}>
+                <EngineHeader />
+                <Stack direction="column" spacing={0}>
+                    {tabs.length > 0 && (
                         <StyledToggleTabsGroup
                             boxSx={{
-                                borderRadius: '12px 12px 0px 0px',
                                 width: '100%',
                             }}
                             value={activeTabIdx}
@@ -234,22 +242,21 @@ export const EngineLayout = (props: EngineLayoutProps) => {
                                 navigate(`${r.path}`);
                             }}
                         >
-                            {tabs.map((t) => {
+                            {tabs.map((t, tIdx) => {
                                 return (
                                     <StyledToggleTabsGroupItem
                                         key={t.path}
                                         label={t.name}
-                                    ></StyledToggleTabsGroupItem>
+                                    />
                                 );
                             })}
                         </StyledToggleTabsGroup>
-                    </StyledDiv>
-                )}
-
-                <StyledDocument>
-                    <Outlet />
-                </StyledDocument>
-            </EngineShell>
+                    )}
+                    <StyledContent>
+                        <Outlet />
+                    </StyledContent>
+                </Stack>
+            </Stack>
         </EngineContext.Provider>
     );
 };

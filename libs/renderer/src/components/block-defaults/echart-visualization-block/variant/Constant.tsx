@@ -15,17 +15,17 @@ export const Bar = [
 
 export const Pie = [
     {
-        name: "Value",
-        multiLabel: false,
-        label: "Value",
-        aggregate: false,
-    },
-    {
         name: "Label",
         multiLabel: false,
         label: "Label",
-        aggregate: true,
+        aggregate: false,
     },
+    {
+        name: "Value",
+        multiLabel: false,
+        label: "Value",
+        aggregate: true,
+    }
 ];
 
 export const ScatterPlot = [
@@ -193,7 +193,7 @@ export const Gantt = [
     },
     {
         name: "Tooltip",
-        multiLabel: false,
+        multiLabel: true,
         label: "tooltip",
         aggregate: true,
     },

@@ -158,7 +158,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
         const handleOnDragStart = (event: React.MouseEvent, id: string) => {
             try {
                 // get the model
-                const model = workspace.selectedLayout?.model;
+                const model = workspace.model;
                 if (!model) {
                     throw new Error('Missing model');
                 }
@@ -202,7 +202,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
                 }
 
                 // get the model
-                const model = workspace.selectedLayout?.model;
+                const model = workspace.model;
                 if (!model) {
                     throw new Error('Missing model');
                 }
@@ -260,7 +260,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
                 let selectedNode: TabNode | null = null;
 
                 // get the model
-                const model = workspace.selectedLayout?.model;
+                const model = workspace.model;
                 if (!model) {
                     throw new Error('Missing model');
                 }
@@ -318,7 +318,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
                 const nodesToBeRemoved: TabNode[] = [];
 
                 // get the model
-                const model = workspace.selectedLayout?.model;
+                const model = workspace.model;
                 if (!model) {
                     throw new Error('Missing model');
                 }
