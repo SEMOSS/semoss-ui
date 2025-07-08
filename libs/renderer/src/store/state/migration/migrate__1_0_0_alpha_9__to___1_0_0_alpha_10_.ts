@@ -29,7 +29,6 @@ const config: Migration = {
                 // create a variable for cells that arent already there
                 // console.log({ found, query: q.id, cell: c.id });
                 if (!found) {
-                    console.log({ found, query: q.id, cell: c.id });
                     const variableConfig = {
                         type: "cell",
                         to: q.id,
@@ -40,11 +39,6 @@ const config: Migration = {
                     const baseKey = `${q.id}--${c.id}`;
                     let variableKey = baseKey;
                     let attemptCount = 0;
-
-                    console.log({
-                        beforeVariableKey: newState.variables[variableKey],
-                        variables: newState.variables,
-                    });
 
                     while (newState.variables[variableKey]) {
                         const randomSuffix = Math.floor(Math.random() * 100000);
@@ -61,9 +55,6 @@ const config: Migration = {
                     }
 
                     newState.variables[`${q.id}--${c.id}`] = variableConfig;
-                    console.log({
-                        after: newState.variables[`${q.id}--${c.id}`],
-                    });
                 }
             }
         }
