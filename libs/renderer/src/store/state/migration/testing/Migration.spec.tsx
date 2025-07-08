@@ -9,6 +9,7 @@ import {
 import { Alpha08BlockData } from "./Alpha08BlockData";
 import { Alpha04BlockData } from "./Alpha04BlockData";
 import { Alpha04BlockData2 } from "./Alpha04BlockData2";
+import { Alpha09BlockData } from "./Alpha09BlockData";
 
 const testsData = [
     {
@@ -20,6 +21,7 @@ const testsData = [
         data: Alpha04BlockData2,
     },
     { name: "1.0.0-alpha.8", data: Alpha08BlockData },
+    { name: "1.0.0-alpha.9", data: Alpha09BlockData },
 ];
 
 for (const testData of testsData) {
