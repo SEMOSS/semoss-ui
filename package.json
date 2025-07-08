@@ -27,7 +27,6 @@
     "author": "",
     "license": "Apache-2.0",
     "devDependencies": {
-        "@commitlint/cli": "^17.7.0",
         "@commitlint/config-conventional": "^17.7.0",
         "@nx/cypress": "20.2.2",
         "@nx/eslint": "20.2.2",
@@ -41,11 +40,6 @@
         "@nx/web": "20.2.2",
         "@nx/webpack": "20.2.2",
         "@nx/workspace": "20.2.2",
-        "@rollup/plugin-url": "^8.0.2",
-        "@svgr/rollup": "^8.1.0",
-        "@swc-node/register": "~1.9.1",
-        "@swc/core": "~1.5.7",
-        "@swc/helpers": "~0.5.11",
         "@testing-library/jest-dom": "^6.6.3",
         "@types/jest": "^29.5.14",
         "@types/node": "18.16.9",
@@ -67,24 +61,14 @@
         "nx": "20.2.2",
         "prettier": "^2.6.2",
         "rollup": "^4.14.0",
-        "tslib": "^2.3.0",
         "typescript": "~5.5.2",
         "vite": "^5.0.0",
         "vitest": "^1.3.1",
         "webpack-cli": "^5.1.4"
     },
     "dependencies": {
-        "@storybook/addon-interactions": "8.4.6",
-        "@mui/x-date-pickers": "6.8.0",
-        "dayjs": "^1.11.13",
-        "@testing-library/react": "^16.2.0",
-        "mermaid": "^10.9.1",
         "react": "18.3.1",
-        "react-color": "^2.19.3",
-        "react-dom": "18.3.1",
-        "storybook": "^8.2.8",
-        "vite-tsconfig-paths": "^5.1.4",
-        "vitest-canvas-mock": "^0.3.3"
+        "react-dom": "18.3.1"
     },
     "engines": {
         "pnpm": ">=10.10.0"
