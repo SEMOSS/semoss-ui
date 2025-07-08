@@ -292,10 +292,10 @@ class SemossChatbot {
         message.aliases.forEach(alias => {
             // Create label with URL if available
             let label = alias;
-            if (window.semossInstanceUrls?.[alias]) {
+            if (window.semossInstanceUrls && window.semossInstanceUrls[alias]) {
                 label = `${alias} (${window.semossInstanceUrls[alias]})`;
             }
-            
+
             const btn = this.createOptionButton(label, () => {
                 this.showRemoveInstanceConfirmation(alias);
             });
@@ -313,7 +313,7 @@ class SemossChatbot {
             this.showOptions();
         });
         this.elements.optionsArea.appendChild(backBtn);
-        
+
         // Apply viewport-specific adjustments
         this.adjustOptionsForViewport();
     }
@@ -554,12 +554,12 @@ class SemossChatbot {
         }
 
         this.elements.startArea.style.display = 'none';
-        
+
         // Reset options area completely
         this.elements.optionsArea.style.display = 'flex';
         this.elements.optionsArea.innerHTML = '';
         this.elements.optionsArea.className = 'options-container';
-        
+
         // Add responsive classes based on viewport
         if (this.state.viewport.isMobile) {
             this.elements.optionsArea.classList.add('mobile-view');
@@ -578,14 +578,14 @@ class SemossChatbot {
     renderOptions(options) {
         // Clear any existing options
         this.elements.optionsArea.innerHTML = '';
-        
+
         // If there are multiple options, use grid layout for larger screens
         if (options.length > 1) {
             this.elements.optionsArea.classList.add('options-grid');
         } else {
             this.elements.optionsArea.classList.remove('options-grid');
         }
-        
+
         options.forEach(opt => {
             const btn = this.createOptionButton(opt.label, async () => {
                 await this.handleOptionClick(opt);
@@ -605,7 +605,7 @@ class SemossChatbot {
 
             this.elements.optionsArea.appendChild(btn);
         });
-        
+
         // Apply viewport-specific adjustments to the options
         this.adjustOptionsForViewport();
     }
@@ -617,12 +617,12 @@ class SemossChatbot {
         const { isMobile, isSmallPhone, width } = this.state.viewport;
         const options = this.elements.optionsArea;
         const buttons = options.querySelectorAll('.option-btn');
-        
+
         // For very small screens, apply compact styling
         if (isSmallPhone) {
             buttons.forEach(btn => {
                 btn.classList.add('compact');
-                
+
                 // Simplify content if it has URL parts
                 const sublabel = btn.querySelector('.option-sublabel');
                 if (sublabel && sublabel.textContent.length > 20) {
@@ -632,15 +632,15 @@ class SemossChatbot {
                     sublabel.title = url; // Keep full URL as tooltip
                 }
             });
-            
+
             // Force vertical layout on very small screens
             options.classList.remove('options-grid');
-        } 
+        }
         // For mobile but not tiny screens
         else if (isMobile) {
             buttons.forEach(btn => {
                 btn.classList.remove('compact');
-                
+
                 // Truncate very long URLs but show more than on tiny screens
                 const sublabel = btn.querySelector('.option-sublabel');
                 if (sublabel && sublabel.textContent.length > 40) {
@@ -649,7 +649,7 @@ class SemossChatbot {
                     sublabel.title = url;
                 }
             });
-            
+
             // Use grid only if we have 3 or fewer options on mobile
             if (buttons.length > 3) {
                 options.classList.remove('options-grid');
@@ -658,7 +658,7 @@ class SemossChatbot {
         // For tablets and desktops
         else {
             buttons.forEach(btn => btn.classList.remove('compact'));
-            
+
             // Use grid for multiple options
             if (buttons.length > 1) {
                 options.classList.add('options-grid');
@@ -782,10 +782,10 @@ class SemossChatbot {
         aliases.forEach(alias => {
             // Create label with URL if available
             let label = alias;
-            if (window.semossInstanceUrls?.[alias]) {
+            if (window.semossInstanceUrls && window.semossInstanceUrls[alias]) {
                 label = `${alias} (${window.semossInstanceUrls[alias]})`;
             }
-            
+
             const btn = this.createOptionButton(label, () => {
                 this.appendMessage(`Switch to instance: ${alias}`, 'user');
                 this.showLoading();
@@ -806,7 +806,7 @@ class SemossChatbot {
             this.showOptions();
         });
         this.elements.optionsArea.appendChild(backBtn);
-        
+
         // Apply viewport-specific adjustments
         this.adjustOptionsForViewport();
     }
@@ -1040,7 +1040,7 @@ class SemossChatbot {
         // Create a button row container for better responsiveness
         const buttonRow = document.createElement('div');
         buttonRow.className = 'button-row';
-        
+
         const yesBtn = this.createOptionButton('Yes', () => {
             this.showLoading();
             this.vscode.postMessage({ type: 'removeInstanceByAlias', alias });
@@ -1065,26 +1065,26 @@ class SemossChatbot {
         btn.className = `option-btn ${extraClasses}`.trim();
         btn.onclick = onClick;
         btn.setAttribute('role', 'menuitem');
-        
+
         // Check if the text contains URL-like content in parentheses
         if (typeof text === 'string' && text.includes('(') && text.includes(')')) {
             // Extract the main label and URL parts
             const parts = text.split('(');
             const mainLabel = parts[0].trim();
             const urlPart = `(${parts.slice(1).join('(')}`;
-            
+
             // Create structured content with label and sublabel
             const contentDiv = document.createElement('div');
             contentDiv.className = 'option-content';
-            
+
             const labelSpan = document.createElement('div');
             labelSpan.className = 'option-label';
             labelSpan.textContent = mainLabel;
-            
+
             const urlSpan = document.createElement('div');
             urlSpan.className = 'option-sublabel';
             urlSpan.textContent = urlPart;
-            
+
             contentDiv.appendChild(labelSpan);
             contentDiv.appendChild(urlSpan);
             btn.appendChild(contentDiv);
@@ -1092,7 +1092,7 @@ class SemossChatbot {
             // Standard text content
             btn.textContent = text;
         }
-        
+
         return btn;
     }
 
@@ -1175,7 +1175,7 @@ class SemossChatbot {
 
         // Apply all viewport-specific adjustments
         this.applyViewportAdjustments();
-        
+
         // Specifically adjust options if they're visible
         if (this.elements.optionsArea.style.display !== 'none') {
             this.adjustOptionsForViewport();

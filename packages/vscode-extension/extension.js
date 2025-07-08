@@ -93,18 +93,24 @@ async function activate(context) {
         "semoss.createNewApp",
         async (args) => {
             // If called from chatbot, use args; otherwise, prompt
-            if (args && args.appName) {
-                const getSecretsWithValidation = async (context) => {
-                    const secrets = await getSecrets(context);
-                    if (!secrets || !secrets.semossUrl || !secrets.accessKey || !secrets.privateKey) {
-                        vscode.window.showErrorMessage('No instance configured. Please authorize an instance first.');
-                        return null;
-                    }
-                    return secrets;
-                };
-                await createNewApp(context, getSecretsWithValidation, args);
-            } else {
-                await createNewApp(context, getSecretsWithValidation);
+            const getSecretsWithValidation = async (context) => {
+                const secrets = await getSecrets(context);
+                if (!secrets || !secrets.semossUrl || !secrets.accessKey || !secrets.privateKey) {
+                    vscode.window.showErrorMessage('No instance configured. Please authorize an instance first.');
+                    return null;
+                }
+                return secrets;
+            };
+
+            try {
+                if (args && args.appName) {
+                    await createNewApp(context, getSecretsWithValidation, args);
+                } else {
+                    await createNewApp(context, getSecretsWithValidation);
+                }
+            } catch (error) {
+                vscode.window.showErrorMessage(`App creation failed: ${error.message}`);
+                console.error('Error in createNewApp:', error);
             }
         }
     );
