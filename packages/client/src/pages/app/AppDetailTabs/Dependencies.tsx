@@ -168,14 +168,17 @@ export const Dependencies = ({
                                     <EngineContext.Provider
                                         value={{
                                             type: dep.type as ENGINE_TYPES,
-                                            id: dep.id,
                                             name: dep.name,
-                                            role: dep.userPermission as Role,
-                                            refresh: () => {
-                                                // Refresh function
+                                            path: '', // Provide the correct path if available
+                                            active: {
+                                                id: dep.id,
+                                                role: dep.userPermission as Role,
+                                                name: dep.name,
+                                                metadata: {},
+                                                refresh: () => {
+                                                    // no-op
+                                                },
                                             },
-                                            metaVals: {},
-                                            llmModels: [],
                                         }}
                                     >
                                         <EngineAccessButton fromApp={true} />

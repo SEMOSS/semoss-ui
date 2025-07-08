@@ -11,6 +11,7 @@ import {
     DashboardRounded,
     CodeRounded,
     BarChartRounded,
+    ContentCopy,
 } from '@mui/icons-material';
 
 import { Env } from '@semoss/sdk/react';
@@ -26,6 +27,7 @@ import {
     useNotification,
     CardProps,
     Skeleton,
+    Tooltip,
 } from '@semoss/ui';
 
 import { AppMetadata } from './app.types';
@@ -152,8 +154,8 @@ const StyledCardHeader = styled(Card.Header)(({ theme }) => ({
 }));
 
 const ButtonName = styled('p')(({ theme }) => ({
-    fontSize: '13px',
-    color: '#fff',
+    fontSize: '14px',
+    color: '#0471F0',
     fontFamily: 'Inter',
     fontStyle: 'normal',
     fontWeight: '500',
@@ -215,9 +217,14 @@ const StyledIconButton = styled(IconButton)({
 
 const StyledOpenButton = styled(IconButton)(({ theme }) => ({
     display: 'flex',
-    alignItems: 'center',
     '&.MuiIconButton-root': {
         padding: '0px',
+    },
+    '&:hover': {
+        backgroundColor: '#FFFFFF',
+        $icon: {
+            color: 'red',
+        },
     },
 }));
 
@@ -285,10 +292,8 @@ const StyledFooterDiv = styled('div')(({ theme }) => ({
     height: '30px',
     width: '123px',
     gap: '8px',
-    justifyContent: 'center',
     flex: '1 0 0',
     borderRadius: '12px',
-    background: '#0471F0',
 }));
 
 interface AppTileCardProps {
@@ -380,6 +385,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
     const cardRef = useRef<HTMLDivElement>(null);
     const [isInView, setIsInView] = useState(false);
     const [hasDownloaded, setHasDownloaded] = useState(false);
+    const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
     const open = Boolean(anchorEl);
 
@@ -770,145 +776,151 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         </StyledOverlayContent>
                     </StyledContainer>
                 )}
-                <Link
-                    href={href}
-                    rel="noopener noreferrer"
-                    color="inherit"
-                    underline="none"
+                <div
+                    onMouseEnter={() => setHoveredCard(app.project_id)}
+                    onMouseLeave={() => setHoveredCard(null)}
+                    style={{ position: 'relative' }}
                 >
-                    {isLoading ? (
-                        <StyledTileCardMedia
-                            src="img"
-                            image={base64Image ? base64Image : ''}
-                        />
-                    ) : (
-                        <StyledTileCardMedia
-                            src="img"
-                            image={image ? image : ''}
-                        />
-                    )}
-                    <StyledContent>
-                        <StyledCardHeader
-                            title={
-                                <StyledName variant={'body2'}>
-                                    {removeUnderscores(app.project_name)}
-                                </StyledName>
-                            }
-                        />
-                        <StyledCardContent>
-                            <StyledCardDescription variant={'caption'}>
-                                {app.description
-                                    ? app.description
-                                    : 'No description available'}
-                            </StyledCardDescription>
-                            <Stack
-                                direction="row"
-                                alignItems="center"
-                                spacing={0.5}
-                                height={'24px'}
-                            >
-                                {app.tag !== undefined &&
-                                    (Array.isArray(app.tag) ? (
-                                        <>
-                                            {app.tag.map((tag, i) => {
-                                                if (i <= 2) {
-                                                    return (
-                                                        <StyledTagChip
-                                                            key={`${app.project_id}${i}`}
-                                                            maxWidth={
-                                                                app.tag
-                                                                    .length ===
-                                                                2
-                                                                    ? '100px'
-                                                                    : app.tag
-                                                                          .length ===
-                                                                      1
-                                                                    ? '200px'
-                                                                    : '75px'
-                                                            }
-                                                            label={tag}
-                                                        />
-                                                    );
-                                                }
-                                            })}
-                                            {app.tag.length > 3 ? (
-                                                <Typography variant="caption">
-                                                    +{app.tag.length - 3}
-                                                </Typography>
-                                            ) : (
-                                                <></>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <StyledTagChip
-                                            key={`${app.project_id}0`}
-                                            label={app.tag}
-                                        />
-                                    ))}
-                            </Stack>
-                            <StyledPublishedByContainer>
-                                <StyledAccessTimeIcon />
-                                <StyledPublishedByLabel variant={'body2'}>
-                                    {createdDate}
-                                </StyledPublishedByLabel>
-                            </StyledPublishedByContainer>
-                            {systemApp && !appDetails && <StyledPlaceholder />}
-                        </StyledCardContent>
-                        <StyledCardActions>
-                            {!href ? (
-                                <StyledFooter>
-                                    <StyledOpenButton onClick={onAction}>
-                                        <StyledFooterDiv>
-                                            <ButtonName>Open App</ButtonName>
-                                            <OpenInNewOutlined
-                                                fontSize="small"
-                                                style={{ color: '#fff' }}
+                    <Link
+                        href={href}
+                        rel="noopener noreferrer"
+                        color="inherit"
+                        underline="none"
+                    >
+                        {isLoading ? (
+                            <StyledTileCardMedia
+                                src="img"
+                                image={base64Image ? base64Image : ''}
+                            />
+                        ) : (
+                            <StyledTileCardMedia
+                                src="img"
+                                image={image ? image : ''}
+                            />
+                        )}
+                        <StyledContent>
+                            <StyledCardHeader
+                                title={
+                                    <StyledName variant={'body2'}>
+                                        {removeUnderscores(app.project_name)}
+                                    </StyledName>
+                                }
+                            />
+                            <StyledCardContent>
+                                <StyledCardDescription variant={'caption'}>
+                                    {app.description
+                                        ? app.description
+                                        : 'No description available'}
+                                </StyledCardDescription>
+                                <Stack
+                                    direction="row"
+                                    alignItems="center"
+                                    spacing={0.5}
+                                    height={'24px'}
+                                >
+                                    {app.tag !== undefined &&
+                                        (Array.isArray(app.tag) ? (
+                                            <>
+                                                {app.tag.map((tag, i) => {
+                                                    if (i <= 2) {
+                                                        return (
+                                                            <StyledTagChip
+                                                                key={`${app.project_id}${i}`}
+                                                                maxWidth={
+                                                                    app.tag
+                                                                        .length ===
+                                                                    2
+                                                                        ? '100px'
+                                                                        : app
+                                                                              .tag
+                                                                              .length ===
+                                                                          1
+                                                                        ? '200px'
+                                                                        : '75px'
+                                                                }
+                                                                label={tag}
+                                                            />
+                                                        );
+                                                    }
+                                                })}
+                                                {app.tag.length > 3 ? (
+                                                    <Typography variant="caption">
+                                                        +{app.tag.length - 3}
+                                                    </Typography>
+                                                ) : (
+                                                    <></>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <StyledTagChip
+                                                key={`${app.project_id}0`}
+                                                label={app.tag}
                                             />
-                                        </StyledFooterDiv>
-                                    </StyledOpenButton>
-                                </StyledFooter>
-                            ) : (
-                                <StyledFooter>
-                                    <Link
-                                        href={href}
-                                        rel="noopener noreferrer"
-                                        color="inherit"
-                                        underline="none"
-                                        target="_blank"
-                                    >
-                                        <StyledOpenButton>
+                                        ))}
+                                </Stack>
+                                <StyledPublishedByContainer>
+                                    <StyledAccessTimeIcon />
+                                    <StyledPublishedByLabel variant={'body2'}>
+                                        {createdDate}
+                                    </StyledPublishedByLabel>
+                                </StyledPublishedByContainer>
+                                {systemApp && !appDetails && (
+                                    <StyledPlaceholder />
+                                )}
+                            </StyledCardContent>
+                            <StyledCardActions>
+                                {!href ? (
+                                    <StyledFooter>
+                                        <StyledOpenButton onClick={onAction}>
                                             <StyledFooterDiv>
                                                 <ButtonName>
-                                                    Open App
+                                                    Learn More
                                                 </ButtonName>
-                                                <OpenInNewOutlined
-                                                    fontSize="small"
-                                                    style={{ color: '#fff' }}
-                                                />
                                             </StyledFooterDiv>
                                         </StyledOpenButton>
-                                    </Link>
-                                </StyledFooter>
-                            )}
-                            {app.project_created_by !== 'SYSTEM' ? (
-                                <IconButton
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        setAnchorEl(
-                                            e.currentTarget.closest(
-                                                '.MuiCard-root',
-                                            ) as HTMLElement | null,
-                                        ); // Set the card as the anchor element
-                                    }}
-                                >
-                                    <MoreVert />
-                                </IconButton>
-                            ) : (
-                                <></>
-                            )}
-                        </StyledCardActions>
-                    </StyledContent>
-                </Link>
+                                    </StyledFooter>
+                                ) : (
+                                    <StyledFooter>
+                                        <Link
+                                            href={href}
+                                            rel="noopener noreferrer"
+                                            color="inherit"
+                                            underline="none"
+                                            target="_blank"
+                                        >
+                                            <StyledOpenButton>
+                                                <StyledFooterDiv>
+                                                    <ButtonName>
+                                                        Learn More
+                                                    </ButtonName>
+                                                </StyledFooterDiv>
+                                            </StyledOpenButton>
+                                        </Link>
+                                    </StyledFooter>
+                                )}
+                                {hoveredCard === app.project_id &&
+                                    app.project_created_by !== 'SYSTEM' && (
+                                        <Tooltip title="Copy App ID" arrow>
+                                            <IconButton
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    event.preventDefault();
+                                                    copyProjectId(
+                                                        app.project_id,
+                                                    );
+                                                }}
+                                                sx={{
+                                                    color: 'primary.main',
+                                                }}
+                                            >
+                                                <ContentCopy fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    )}
+                            </StyledCardActions>
+                        </StyledContent>
+                    </Link>
+                </div>
                 <Menu
                     anchorEl={anchorEl}
                     open={open}

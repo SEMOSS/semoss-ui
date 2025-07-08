@@ -91,6 +91,16 @@ export const ViewAppPage = observer(() => {
                 />
             </NavbarLeft>
             <NavbarRight>
+                <Button
+                    variant="text"
+                    size={'small'}
+                    color="primary"
+                    component={Link}
+                    //@ts-expect-error this is expected. props are forwarded
+                    to={`/app/${appId}`}
+                >
+                    Go To App Details
+                </Button>
                 <Tooltip title={'Share App'}>
                     <IconButton
                         size="small"

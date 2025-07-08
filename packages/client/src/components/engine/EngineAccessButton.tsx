@@ -22,7 +22,11 @@ const StyledCard = styled(Card)({
     borderRadius: '12px',
 });
 
-export const EngineAccessButton = () => {
+type EngineAccessButtonProps = {
+    fromApp?: boolean;
+};
+
+export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
     const { type, active } = useEngine();
 
     const { monolithStore } = useRootStore();
@@ -30,19 +34,19 @@ export const EngineAccessButton = () => {
 
     // track if open
     const [open, setOpen] = useState(false);
-    const [requestedRole, setRequestedRole] = useState<Role>(active.role);
+    const [requestedRole, setRequestedRole] = useState<Role>(active?.role);
 
     const [comment, setComment] = useState<string>('');
 
     // close when the id changes
     useEffect(() => {
         setOpen(false);
-    }, [active.id]);
+    }, [active?.id]);
 
     // update the requested whenever the role changes
     useEffect(() => {
-        setRequestedRole(active.role);
-    }, [active.role]);
+        setRequestedRole(active?.role);
+    }, [active?.role]);
 
     /**
      * Request the new access
@@ -51,7 +55,7 @@ export const EngineAccessButton = () => {
         try {
             const response = await monolithStore.runQuery(
                 `META | RequestEngine(engine=['${
-                    active.id
+                    active?.id
                 }'], permission=['${requestedRole}']${
                     comment && `, comment=['${comment}']`
                 })`,
@@ -81,7 +85,7 @@ export const EngineAccessButton = () => {
     };
 
     // cannot request access if the owner
-    if (active.role === 'OWNER') {
+    if (active?.role === 'OWNER' && !fromApp) {
         return null;
     }
 
@@ -94,11 +98,9 @@ export const EngineAccessButton = () => {
                 sx={fromApp ? { borderRadius: 10, px: 2, py: 0.5 } : undefined}
                 size={fromApp ? 'small' : undefined}
             >
-                {active.role === 'DISCOVERABLE' ? (
-                    <>Request Access</>
-                ) : (
-                    <>Change Access</>
-                )}
+                {active?.role === 'DISCOVERABLE'
+                    ? 'Request Access'
+                    : 'Change Access'}
             </Button>
             <Modal
                 open={open}
@@ -109,14 +111,14 @@ export const EngineAccessButton = () => {
                 }}
             >
                 <Modal.Title>
-                    {active.role === 'DISCOVERABLE'
+                    {active?.role === 'DISCOVERABLE'
                         ? 'Request Access'
                         : 'Change Access'}
                 </Modal.Title>
                 <Modal.Content>
                     <RadioGroup
                         label={''}
-                        defaultValue={active.role}
+                        defaultValue={active?.role}
                         onChange={(e) => {
                             setRequestedRole(e.target.value as Role);
                         }}
@@ -275,7 +277,7 @@ export const EngineAccessButton = () => {
                     <Button
                         variant={'contained'}
                         disabled={
-                            !requestedRole || requestedRole === active.role
+                            !requestedRole || requestedRole === active?.role
                         }
                         onClick={() => {
                             requestAccess();

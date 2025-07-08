@@ -10,7 +10,6 @@ import {
 } from '@mui/icons-material';
 import UpdateIcon from '@mui/icons-material/Update';
 import {
-    Box,
     Breadcrumbs,
     Button,
     IconButton,
@@ -54,6 +53,11 @@ import {
     AppDetailsRef,
     AppSettings,
 } from '@/components/app';
+import { Overview } from './AppDetailTabs/Overview';
+import { AccessControl } from './AppDetailTabs/AccessControl';
+import { SettingsTab } from './AppDetailTabs/Settings';
+import { Dependencies } from './AppDetailTabs/Dependencies';
+import { Role } from '@/types';
 import { NavbarLeft, NavbarHeader } from '../../components/shared';
 
 const OuterContainer = styled('div')(({ theme }) => ({
@@ -75,6 +79,7 @@ const InnerContainer = styled('div')(({ theme }) => ({
     margin: 'auto',
     maxWidth: '79rem',
     width: '100%',
+    padding: theme.spacing(4),
 }));
 
 const ActionBar = styled('div')(({ theme }) => ({
@@ -603,143 +608,169 @@ export const AppDetailPage = () => {
                     </Breadcrumbs>
 
                     <div>
-                        <Sidebar permission={permission} refs={detailRefs} />
                         <PageBody>
-                            <ActionBar>
-                                {permission === 'author' ? (
-                                    <Button
-                                        disabled={exportLoading}
-                                        startIcon={
-                                            exportLoading ? (
-                                                <CircularProgress size="1em" />
-                                            ) : (
-                                                <SimCardDownload />
-                                            )
-                                        }
-                                        variant="outlined"
-                                        onClick={() => exportApp()}
-                                        data-testid={'app-detail-export-btn'}
-                                    >
-                                        Export
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        startIcon={<Add />}
-                                        variant="outlined"
-                                        onClick={() =>
-                                            setIsChangeAccessModalOpen(true)
-                                        }
-                                        sx={{ fontWeight: 'bold' }}
-                                        data-testid={'app-detail-access-btn'}
-                                    >
-                                        {permission === 'discoverable' ? (
-                                            <>Request Access</>
-                                        ) : (
-                                            <>Change Access</>
-                                        )}
-                                    </Button>
-                                )}
-
-                                <Button
-                                    variant="contained"
-                                    onClick={() => navigate(`/app/${appId}`)}
-                                    data-testid={'app-detail-open-btn'}
-                                >
-                                    Open
-                                </Button>
-
-                                <IconButton
-                                    onClick={(event) =>
-                                        setMoreVertAnchorEl(event.currentTarget)
-                                    }
-                                    data-testid={'app-detail-more-btn'}
-                                >
-                                    <MoreVert />
-                                </IconButton>
-
-                                <Menu
-                                    anchorEl={moreVertAnchorEl}
-                                    open={Boolean(moreVertAnchorEl)}
-                                    onClose={() => setMoreVertAnchorEl(null)}
-                                    anchorOrigin={{
-                                        vertical: 'bottom',
-                                        horizontal: 'right',
-                                    }}
-                                    transformOrigin={{
-                                        vertical: 'top',
-                                        horizontal: 'right',
-                                    }}
-                                    sx={{ borderRadius: '4px' }}
-                                >
-                                    {permission === 'author' && (
-                                        <StyledMenuItem
-                                            onClick={() => {
-                                                setIsEditDetailsModalOpen(true);
-                                                setMoreVertAnchorEl(null);
-                                            }}
-                                            value={null}
-                                        >
-                                            <Edit fontSize="small" />
-                                            <Typography variant="caption">
-                                                Edit App Details
-                                            </Typography>
-                                        </StyledMenuItem>
-                                    )}
-
-                                    <StyledMenuItem
-                                        value={null}
-                                        onClick={() =>
-                                            setIsShareOverlayOpen(true)
-                                        }
-                                    >
-                                        <Share fontSize="small" />
-                                        <Typography variant="caption">
-                                            Share
-                                        </Typography>
-                                    </StyledMenuItem>
-                                </Menu>
-                            </ActionBar>
-
                             <TitleSection>
-                                <TitleSectionImg
-                                    src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
-                                    alt="App Image"
-                                />
-                                <TitleSectionBodyWrapper>
-                                    <Typography variant="h6">
-                                        {appInfo?.project_name}
-                                    </Typography>
-                                    <TitleSectionBody variant="body1">
-                                        {permission === 'author' ? (
-                                            <HdrAuto />
-                                        ) : permission === 'editor' ? (
-                                            <EditLocation />
-                                        ) : permission === 'discoverable' ? (
-                                            <RemoveRedEyeRounded />
-                                        ) : null}
-                                        {`${formatPermission(userRole)} Access`}
-                                    </TitleSectionBody>
-                                    <TitleSectionBody variant="body1">
-                                        {appInfo?.description
-                                            ? appInfo?.description
-                                            : 'No description available'}
-                                    </TitleSectionBody>
-                                </TitleSectionBodyWrapper>
+                                <>
+                                    <TitleSectionImg
+                                        src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
+                                        alt="App Image"
+                                    />
+                                    <TitleSectionBodyWrapper>
+                                        <Typography
+                                            sx={{
+                                                fontSize: '34px',
+                                                fontWeight: '400',
+                                            }}
+                                            variant="h6"
+                                        >
+                                            {appInfo?.project_name}
+                                        </Typography>
+                                    </TitleSectionBodyWrapper>
+                                </>
+
+                                <ActionBar>
+                                    {permission === 'author' ? (
+                                        <Button
+                                            disabled={exportLoading}
+                                            startIcon={
+                                                exportLoading ? (
+                                                    <CircularProgress size="1em" />
+                                                ) : (
+                                                    <SimCardDownload />
+                                                )
+                                            }
+                                            variant="outlined"
+                                            onClick={() => exportApp()}
+                                            data-testid={
+                                                'app-detail-export-btn'
+                                            }
+                                        >
+                                            Export
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            startIcon={
+                                                responseStatus ? (
+                                                    <UpdateIcon
+                                                        sx={{
+                                                            color: 'grey.500',
+                                                        }}
+                                                    />
+                                                ) : permission ===
+                                                  'discoverable' ? (
+                                                    <LockReset
+                                                        sx={{ color: 'white' }}
+                                                    />
+                                                ) : null
+                                            }
+                                            disabled={responseStatus}
+                                            variant={
+                                                responseStatus
+                                                    ? 'outlined'
+                                                    : permission ===
+                                                      'discoverable'
+                                                    ? 'contained'
+                                                    : 'outlined'
+                                            }
+                                            onClick={() =>
+                                                setIsChangeAccessModalOpen(true)
+                                            }
+                                            sx={{ fontWeight: 'bold' }}
+                                            data-testid={
+                                                'app-detail-access-btn'
+                                            }
+                                        >
+                                            {responseStatus
+                                                ? 'Pending Access'
+                                                : permission === 'discoverable'
+                                                ? 'Request Access'
+                                                : 'Change Access'}
+                                        </Button>
+                                    )}
+                                    {permission !== 'discoverable' &&
+                                        permission !== 'readOnly' && (
+                                            <Button
+                                                variant="contained"
+                                                startIcon={
+                                                    <EditOutlined fontSize="inherit" />
+                                                }
+                                                onClick={() => {
+                                                    setIsEditDetailsModalOpen(
+                                                        true,
+                                                    );
+                                                    setMoreVertAnchorEl(null);
+                                                }}
+                                                data-testid="app-detail-open-btn"
+                                            >
+                                                Edit
+                                            </Button>
+                                        )}
+                                </ActionBar>
                             </TitleSection>
+                            <Grid
+                                container
+                                spacing={2}
+                                sx={{
+                                    paddingBottom: 2,
+                                    alignItems: 'flex-start', // align both columns to top
+                                }}
+                            >
+                                <Grid item xs={12} md={8}>
+                                    <Typography
+                                        sx={{ paddingBottom: '16px' }}
+                                        variant="body1"
+                                    >
+                                        {appInfo?.description ||
+                                            'No description available'}
+                                    </Typography>
+                                </Grid>
 
-                            <StyledSection ref={markdownRef}>
-                                <SectionHeading variant="h2">
-                                    Main uses
-                                </SectionHeading>
-                                <Typography variant="body1">
-                                    {markdown}
-                                </Typography>
-                            </StyledSection>
+                                <Grid
+                                    item
+                                    xs={12}
+                                    md={4}
+                                    sx={{
+                                        display: 'flex',
+                                        justifyContent: 'flex-end', // push content to the right
+                                    }}
+                                >
+                                    <Typography
+                                        variant="body1"
+                                        sx={{
+                                            fontSize: '14px',
+                                            color: 'gray',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'flex-end', // right-align the text itself
+                                            gap: '4px',
+                                        }}
+                                    >
+                                        <span>
+                                            Published by:{' '}
+                                            {appInfo?.project_created_by ||
+                                                'Unknown'}
+                                        </span>
+                                        Updated{' '}
+                                        {appInfo?.project_date_created
+                                            ? new Date(
+                                                  appInfo?.project_date_created,
+                                              ).toLocaleString('en-US', {
+                                                  month: 'long',
+                                                  day: '2-digit',
+                                                  year: 'numeric',
+                                                  hour: 'numeric',
+                                                  minute: '2-digit',
+                                                  hour12: true,
+                                              })
+                                            : 'N/A'}
+                                    </Typography>
+                                </Grid>
+                            </Grid>
 
-                            <StyledSection ref={tagsRef}>
-                                <SectionHeading variant="h2">
-                                    Tags
-                                </SectionHeading>
+                            <Typography
+                                sx={{ paddingBottom: '16px' }}
+                                variant="body1"
+                            >
                                 {tags ? (
                                     <TagsBodyWrapper>
                                         {tags.map((tag, idx) => (
@@ -754,167 +785,73 @@ export const AppDetailPage = () => {
                                         No tags available
                                     </Typography>
                                 )}
-                            </StyledSection>
-                            <>
-                                {createRefs.map((k) => {
-                                    if (
-                                        values[k.metakey] === undefined ||
-                                        !Array.isArray(values[k.metakey])
-                                    ) {
-                                        return null;
+                            </Typography>
+
+                            <StyledContentContainer>
+                                <StyledToggleTabsGroup
+                                    value={selectedTab}
+                                    boxSx={{
+                                        width: '100%',
+                                        borderBottomLeftRadius: '0px',
+                                        borderBottomRightRadius: '0px',
+                                    }}
+                                    onChange={(e, val) =>
+                                        setSelectedTab(String(val))
                                     }
-
-                                    return (
-                                        <StyledSection
-                                            key={k.metakey}
-                                            ref={k.ref}
-                                        >
-                                            <SectionHeading variant="h2">
-                                                {k.display}
-                                            </SectionHeading>
-                                            <TagsBodyWrapper>
-                                                {k.display_options ===
-                                                    'multi-checklist' ||
-                                                k.display_options ===
-                                                    'multi-select' ||
-                                                k.display_options ===
-                                                    'multi-typeahead' ||
-                                                k.display_options ===
-                                                    'select-box' ? (
-                                                    <Stack
-                                                        direction={'row'}
-                                                        spacing={1}
-                                                        flexWrap={'wrap'}
-                                                    >
-                                                        {(
-                                                            detailsForm[
-                                                                k.metakey
-                                                            ] as string[]
-                                                        ).map((tag) => {
-                                                            return (
-                                                                <Chip
-                                                                    key={tag}
-                                                                    label={tag}
-                                                                ></Chip>
-                                                            );
-                                                        })}
-                                                    </Stack>
-                                                ) : (
-                                                    (detailsForm[
-                                                        k.metakey
-                                                    ] as string)
-                                                )}
-                                            </TagsBodyWrapper>
-                                        </StyledSection>
-                                    );
-                                })}
-                            </>
-
-                            {permission && permission !== 'discoverable' && (
-                                <StyledSection ref={dependenciesRef}>
-                                    <DependenciesHeadingWrapper>
-                                        <SectionHeading variant="h2">
-                                            Dependencies
-                                        </SectionHeading>
-                                        {permission === 'author' && (
-                                            <IconButton
-                                                onClick={() =>
-                                                    setIsEditDependenciesModalOpen(
-                                                        true,
-                                                    )
-                                                }
-                                                sx={{
-                                                    position: 'absolute',
-                                                    right: 0,
-                                                    top: '-0.4rem',
-                                                }}
-                                                data-testid={
-                                                    'app-detail-edit-btn'
-                                                }
-                                            >
-                                                <Edit />
-                                            </IconButton>
-                                        )}
-                                    </DependenciesHeadingWrapper>
-
-                                    {dependencies.length > 0 ? (
-                                        <DependencyTable
-                                            dependencies={dependencies}
-                                            permission={permission}
+                                >
+                                    {visibleTabs.includes('Overview') && (
+                                        <StyledToggleTabsGroupItem
+                                            label="Overview"
+                                            value="Overview"
                                         />
-                                    ) : (
-                                        <Typography variant="body1">
-                                            No dependencies
-                                        </Typography>
                                     )}
-                                </StyledSection>
-                            )}
-
-                            {permission === 'author' && (
-                                <StyledSection ref={appAccessRef}>
-                                    <SectionHeading variant="h2">
-                                        App Access
-                                    </SectionHeading>
+                                    {visibleTabs.includes('Access Control') && (
+                                        <StyledToggleTabsGroupItem
+                                            label="Access Control"
+                                            value="Access Control"
+                                        />
+                                    )}
+                                    {visibleTabs.includes('Dependencies') && (
+                                        <StyledToggleTabsGroupItem
+                                            label="Dependencies"
+                                            value="Dependencies"
+                                        />
+                                    )}
+                                    {visibleTabs.includes('Settings') && (
+                                        <StyledToggleTabsGroupItem
+                                            label="Settings"
+                                            value="Settings"
+                                        />
+                                    )}
+                                </StyledToggleTabsGroup>
+                            </StyledContentContainer>
+                            <StyledTabsSection>
+                                {selectedTab === 'Overview' && (
+                                    <Overview appInfo={appInfo} />
+                                )}
+                                {selectedTab === 'Access Control' && (
+                                    <AccessControl
+                                        appInfo={appInfo}
+                                        appId={appId}
+                                        fetchUserSpecificData={
+                                            fetchUserSpecificData
+                                        }
+                                        permission={permission}
+                                    />
+                                )}
+                                {selectedTab === 'Dependencies' && (
+                                    <Dependencies dependencies={dependencies} />
+                                )}
+                                {selectedTab === 'Settings' && (
                                     <SettingsContext.Provider
                                         value={{
                                             adminMode: false,
                                         }}
                                     >
-                                        <SettingsTiles
-                                            type={'APP'}
-                                            direction="row"
-                                            name={
-                                                appInfo?.project_name || 'app'
-                                            }
-                                            id={appId}
-                                            onDelete={() => {
-                                                navigate('/settings/app');
-                                            }}
-                                        />
+                                        <SettingsTab id={appId} />
                                     </SettingsContext.Provider>
-                                </StyledSection>
-                            )}
-
-                            {permission &&
-                                permission !== 'discoverable' &&
-                                permission !== 'readOnly' && (
-                                    <StyledSection ref={memberAccessRef}>
-                                        <SectionHeading variant="h2">
-                                            Member Access
-                                        </SectionHeading>
-                                        <SettingsContext.Provider
-                                            value={{
-                                                adminMode: false,
-                                            }}
-                                        >
-                                            <Stack
-                                                direction="column"
-                                                spacing={2}
-                                            >
-                                                <PendingMembersTable
-                                                    type={'APP'}
-                                                    id={appId}
-                                                />
-                                                <MembersTable
-                                                    type={'APP'}
-                                                    id={appId}
-                                                    onChange={() => {
-                                                        fetchUserSpecificData();
-                                                    }}
-                                                />
-                                            </Stack>
-                                        </SettingsContext.Provider>
-                                    </StyledSection>
                                 )}
-
-                            {(permission === 'discoverable' ||
-                                permission === 'readOnly') && (
-                                <StyledSection ref={similarAppsRef}>
-                                    <SectionHeading variant="h2">
-                                        Similar Apps
-                                    </SectionHeading>
-                                </StyledSection>
-                            )}
+                            </StyledTabsSection>
                         </PageBody>
                     </div>
                 </InnerContainer>
@@ -935,6 +872,9 @@ export const AppDetailPage = () => {
                     onClose={handleCloseChangeAccessModal}
                     control={control}
                     getValues={getValues}
+                    dependencies={dependencies}
+                    onSuccess={handleAccessRequested}
+                    permission={permission}
                 />
 
                 <EditDetailsModal
