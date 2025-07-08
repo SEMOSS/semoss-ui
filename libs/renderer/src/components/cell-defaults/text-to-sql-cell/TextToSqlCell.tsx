@@ -14,18 +14,43 @@ import {
     InputAdornment,
     Typography,
 } from "@semoss/ui";
-import { ActionMessages, CellComponent, CellDef } from "../../../store";
 import { TransformationTargetCell } from "../shared";
+import { ActionMessages, CellComponent, CellDef } from "../../../store";
 import { useBlocks } from "../../../hooks";
 
-const StyledContent = styled("div")(({ theme }) => ({
+const StyledContent = styled("div")(({}) => ({
     position: "relative",
     width: "100%",
 }));
 /**
  * Styled select component for the database selection
  */
-const StyledSelect = styled(Select)(({ theme }) => ({
+const StyledDatabaseSelect = styled(Select)(({ theme }) => ({
+    "& .MuiInputBase-root": {
+        padding: "0px 12px",
+        height: "40px",
+        // width: "240px",
+    },
+    "& .MuiSelect-select": {
+        color: theme.palette.text.secondary,
+        display: "flex",
+        gap: theme.spacing(1),
+        alignItems: "center",
+        textOverflow: "ellipsis",
+        overflow: "hidden",
+        whiteSpace: "nowrap",
+        "&:focus": {
+            backgroundColor: "inherit !important",
+        },
+    },
+}));
+
+const StyledModelSelect = styled(Select)(({ theme }) => ({
+    "&.MuiFormControl-root":{
+        margin: "0px",
+        minWidth:"200px",
+        maxWidth:"300px"
+    },
     "& .MuiInputBase-root": {
         padding: "0px 12px",
         height: "40px",
@@ -131,7 +156,35 @@ const StyledNumberSection = styled("div")(({}) => ({
     alignItems: "center",
     justifyContent: "flex-start",
 }));
-
+/**
+ * Styled user input section
+ */
+const StackUserInputSection = styled(Stack)(({ theme }) => ({
+    display:"flex",
+    flexDirection:"row",
+    gap:"8px",
+    background: theme.palette.primary.selected,
+}));
+/**
+ * Styled user input component
+ */
+const StackUserInput = styled(Stack)(({}) => ({
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    width: "100%",
+}));
+/**
+ * Styled stack component for frame and model section
+ */
+const StackFrameModel = styled(Stack)(({}) => ({
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: "16px",
+    padding: "0px 16px",
+}));
 /**
  * A text fields icon, used for the text-to-sql cell.
  */
@@ -364,12 +417,12 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
     }
     return (
         <StyledContent>
-            <Stack direction="column" spacing={1}>
+            <Stack direction={"column"} spacing={1}>
                 <Stack direction={"column"}>
-                    <Stack direction="row" justifyContent={"space-between"}>
-                        <StyledSelect
+                    <Stack direction={"row"} justifyContent={"space-between"}>
+                        <StyledDatabaseSelect
                             size={"small"}
-                            variant="standard"
+                            variant={"standard"}
                             disabled={cell.isLoading}
                             title={"Select Database"}
                             value={cell.parameters.databaseId}
@@ -407,7 +460,7 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
                                     </StyledSelectItem>
                                 ),
                             )}
-                        </StyledSelect>
+                        </StyledDatabaseSelect>
                     </Stack>
                 </Stack>
                 {
@@ -415,21 +468,9 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
                 Show fields when the cell is expanded
                 */
                 isExpanded && (
-                    <Stack
-                        display={"flex"}
-                        flexDirection={"row"}
-                        gap={"8px"}
-                        style={{
-                            background: " #EBF4FE",
-                        }}
-                    >
+                    <StackUserInputSection>
                         <StyledNumberSection>1</StyledNumberSection>
-                        <Stack
-                            display={"flex"}
-                            flexDirection={"column"}
-                            gap={"8px"}
-                            width={"100%"}
-                        >
+                        <StackUserInput>
                             <StyledTypographySection>
                                 <StyledTypography variant="body2">
                                     Type your query in natural language
@@ -479,19 +520,13 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
                                     });
                                 }}
                             />
-                        </Stack>
-                    </Stack>
+                        </StackUserInput>
+                    </StackUserInputSection>
                 )}
                 {
                 /* show fields when the cell is expanded */
                 isExpanded && (
-                    <Stack
-                        direction="row"
-                        alignItems={"center"}
-                        justifyContent={"flex-start"}
-                        gap={"16px"}
-                        padding={"0px 16px"}
-                    >
+                    <StackFrameModel>
                         <StyledTextField
                             title="Set Frame Variable Name"
                             size="medium"
@@ -515,8 +550,7 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
                                 });
                             }}
                         />
-                        <StyledSelect
-                            fullWidth
+                        <StyledModelSelect
                             size={"medium"}
                             disabled={cell.isLoading}
                             title={"Select Model"}
@@ -524,10 +558,6 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
                             data-testid={`model-user-${cell.id}`}
                             SelectProps={{
                                 IconComponent: KeyboardArrowDown,
-                                style: {
-                                    height: "40px",
-                                    width: "240px",
-                                },
                                 startAdornment: (
                                     <InputAdornment position="start">
                                         <CropFree />
@@ -566,8 +596,8 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
                                         {model.app_name}
                                     </StyledSelectItem>
                                 ))}
-                        </StyledSelect>
-                    </Stack>
+                        </StyledModelSelect>
+                    </StackFrameModel>
                 )}
                 {
                 /*
