@@ -53,10 +53,8 @@ const blocks = {
                 flexDirection: "column",
                 padding: "4px",
                 gap: "8px",
-                width: "400px",
-                height: "200px",
                 border: "5px solid #000000",
-                "border-radius": "5px"
+                borderRadius: "5px",
             },
             frontBgColor: "#ffb3b3",
             backBgColor: "#775ef3",
@@ -115,18 +113,20 @@ describe("Flip Card Block", () => {
             blocks: blocks,
         });
 
-        screen.debug();
+        const element = container.querySelectorAll('div.MuiCard-root');
 
-        const element = container.querySelector('div.MuiPaper-root');
+        const frontCard = element[0];
+        const backCard = element[1];
 
-        expect(element).toHaveStyle({border: '5px solid #000000'});
-        //expect(element).toHaveStyle({ width: '400px', height: '200px'});
-        expect(element).toHaveStyle({borderRadius: '5px'});
-        expect(element).toHaveStyle({backgroundColor: '#ffb3b3'});
+        expect(frontCard).toHaveStyle({border: '5px solid #000000'});
+        expect(frontCard).toHaveStyle({borderRadius: '5px'});
+        expect(frontCard).toHaveStyle({backgroundColor: '#ffb3b3'});
 
-        fireEvent.mouseEnter(element);
+        fireEvent.mouseEnter(frontCard);
 
-        //expect(element).toHaveStyle({backgroundColor: '#775ef3'});
+        expect(backCard).toHaveStyle({border: '5px solid #000000'});
+        expect(backCard).toHaveStyle({borderRadius: '5px'});
+        expect(backCard).toHaveStyle({backgroundColor: '#775ef3'});
 
     });
 
