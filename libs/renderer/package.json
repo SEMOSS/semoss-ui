@@ -31,7 +31,10 @@
         "@dnd-kit/modifiers": "^9.0.0",
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
-        "@mui/x-data-grid": "^7.28.3"
+        "@mui/x-data-grid": "^7.28.3",
+        "@mui/x-date-pickers": "6.8.0",
+        "dayjs": "1.11.8",
+        "mermaid": "^10.9.1"
     },
     "devDependencies": {
         "@monaco-editor/react": "^4.5.1",

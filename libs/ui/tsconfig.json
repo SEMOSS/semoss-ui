@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         /* Lang and Env */
-        "lib": ["es6", "dom", "ES2015"],
+        "lib": ["ES2022", "dom"],
         "target": "es5",
         "jsx": "react-jsx",
 

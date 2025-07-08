@@ -25,7 +25,6 @@
         "@semoss/sdk": "workspace:*",
         "adm-zip": "^0.5.10",
         "dotenv": "^16.0.1",
-        "force": "^0.0.3",
         "glob": "^10.3.10",
         "listr": "^0.14.3"
     },
@@ -37,7 +36,6 @@
         "eslint": "^8.21.0",
         "eslint-config-prettier": "^8.5.0",
         "eslint-plugin-prettier": "^4.2.1",
-        "oclif": "^4.0.3",
         "prettier": "2.4.1",
         "shx": "^0.3.4",
         "ts-node": "^10.9.1",

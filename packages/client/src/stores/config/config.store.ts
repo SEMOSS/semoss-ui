@@ -290,8 +290,8 @@ export class ConfigStore {
         } catch {}
 
         return {
-            ...customTheme,
             ...defaultTheme,
+            ...customTheme,
         };
     }
 
