@@ -1,2 +1,2 @@
-const STATE_VERSION = "1.0.0-alpha.10";
+const STATE_VERSION = "1.0.0-alpha.11";
 export { STATE_VERSION };

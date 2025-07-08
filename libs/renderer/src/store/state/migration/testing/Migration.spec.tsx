@@ -396,5 +396,32 @@ for (const testData of testsData) {
 
             expect(currentState.version).toBe("1.0.0-alpha.10");
         });
+
+        it("should migrate from 1.0.0-alpha.10 to 1.0.0-alpha.11", async ({
+            skip,
+        }) => {
+            // skip test if the starting currentState version does not match the test version condition
+            if (currentState.version !== "1.0.0-alpha.10") {
+                skip();
+            }
+            vi.doMock("@/store/state/migration/StateVersion", () => {
+                return {
+                    STATE_VERSION: "1.0.0-alpha.11", // mock latest state version
+                };
+            });
+            const { MigrationManager } = await import(
+                "@/store/state/migration/MigrationManager"
+            );
+            const { STATE_VERSION } = await import(
+                "@/store/state/migration/StateVersion"
+            );
+            const migrationManager = new MigrationManager();
+
+            expect(currentState.version).toBe("1.0.0-alpha.10");
+
+            currentState = await migrationManager.run(currentState);
+
+            expect(currentState.version).toBe("1.0.0-alpha.11");
+        });
     });
 }
