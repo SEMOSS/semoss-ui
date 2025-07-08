@@ -8,7 +8,10 @@ import {
     QueryInputSettings,
 } from "../../block-settings";
 import { useBlock } from "../../../hooks";
-import { DEFAULT_TRUE_VARIABLE, DEFAULT_FALSE_VARIABLE } from "../block-defaults.constants";
+import {
+    DEFAULT_TRUE_VARIABLE,
+    DEFAULT_FALSE_VARIABLE,
+} from "../block-defaults.constants";
 import { useState } from "react";
 
 const trueSegment = DEFAULT_TRUE_VARIABLE;
@@ -19,7 +22,7 @@ const StyledAccordionTrigger = styled(Accordion.Trigger)(() => ({
         transform: "rotate(180deg)",
     },
 }));
-const StyledSpan = styled('span')(() => ({
+const StyledSpan = styled("span")(() => ({
     fontSize: "14px",
     fontStyle: "normal",
     lineHeight: "143%",
@@ -40,9 +43,7 @@ export const VegaVisualizationBlockMenu: BlockComponent = ({ id }) => {
                 }
             >
                 <StyledAccordionTrigger expandIcon={<ExpandMoreIcon />}>
-                    <StyledSpan>
-                        CONDITIONAL
-                    </StyledSpan>
+                    <StyledSpan>CONDITIONAL</StyledSpan>
                 </StyledAccordionTrigger>
                 <Accordion.Content>
                     <QueryInputSettings
