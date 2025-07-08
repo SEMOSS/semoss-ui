@@ -275,7 +275,6 @@ export const NotebookCell = observer(
         const cell = query.getCell(cellId);
 
         const variableName = state.getAlias(queryId, cellId);
-        console.log('cell Operation', cell.operation, cell.output, cell);
         useEffect(() => {
             if (cardContentRef.current) {
                 const cardContentHeight = cardContentRef.current.offsetHeight; // Consider offsetHeight for borders
@@ -492,8 +491,12 @@ export const NotebookCell = observer(
             console.log('generateWithAIHandler');
         };
 
+        /**
+         * Retrieves the output data for a cell based on the specified operation.
+         * @param operation - The type of operation to determine if a specific output format is needed.
+         * @returns The cell output, or a formatted object with the cell's data frame ID and query if the operation type is 'TASK_DATA'.
+         */
         const getCellOutput = (operation) => {
-            console.log('operation get output', operation, cell.parameters);
             if (typeof operation === 'string' && operation === 'TASK_DATA') {
                 return {
                     name: cell.parameters?.dataFrameId || '',

@@ -17,7 +17,7 @@ export const TextToSqlCellConfig: CellConfig<TextToSqlCellDef> = {
             frameVariableName: "",
         },
     },
-    toPixel: ({ databaseId, frameVariableName, userQuery, model, dataFrameId, dataFrameQuery }) => {
+    toPixel: ({ frameVariableName, userQuery, model, dataFrameId, dataFrameQuery }) => {
         if(dataFrameId !== ""){
             return `Frame(frame=[${dataFrameId}]) | Query("<encode>${dataFrameQuery}</encode>") | CollectAll()`;
         }
