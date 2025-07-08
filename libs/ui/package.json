@@ -12,15 +12,11 @@
     ],
     "scripts": {
         "start": "pnpm run storybook",
-        "dev": "run-p build:dev storybook",
+        "dev": "rollup -c",
         "build": "rollup -c",
-        "build:dev": "rollup -w -c",
         "storybook": "storybook dev -p 6006",
-        "lint": "eslint --quiet .",
-        "lint:fix": "eslint . --fix",
+        "lint": "eslint . --fix",
         "format": "prettier . --check --plugin-search-dir=.",
-        "format:fix": "prettier . --write --plugin-search-dir=.",
-        "fix": "run-s format:fix lint:fix",
         "build-storybook": "storybook build"
     },
     "keywords": [],

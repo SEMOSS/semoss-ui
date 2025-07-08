@@ -60,13 +60,6 @@ export const ChildBlockSettings = (props: ChildBlockSettingsProps) => {
     //     return <>Loading...</>;
     // }
 
-    // /**
-    //  * Initialize insight for app building
-    //  */
-    // Env.update({
-    //     MODULE: process.env.MODULE || "",
-    // });
-
     return (
         <Stack>
             <Stack direction={"row"}>

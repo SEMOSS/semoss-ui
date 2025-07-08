@@ -1,34 +1,29 @@
 {
     "compilerOptions": {
-        "baseUrl": ".",
-        "paths": {
-            "@/*": ["./src/*"],
-            "@semoss/ui": ["../../libs/ui/src/index.ts"],
-            "@semoss/renderer": ["../../libs/renderer/src/index.ts"],
-            "@semoss/sdk": ["../../libs/sdk/src/index.ts"]
-        },
+        /* Lang and Env */
+        "lib": ["es6", "dom"],
         "target": "es6",
-        "lib": ["dom", "dom.iterable", "esnext"],
-        "allowJs": true,
-        "skipLibCheck": true,
-        "strict": false,
-        "forceConsistentCasingInFileNames": true,
-        "esModuleInterop": true,
+        "jsx": "react-jsx",
+        "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom/vitest"],
+
+        /* Modules */
         "module": "esnext",
         "moduleResolution": "bundler",
+        "allowSyntheticDefaultImports": true,
+        "allowImportingTsExtensions": true,
         "resolveJsonModule": true,
+
+        /* Skip */
+        "skipLibCheck": true,
+        "allowJs": true,
+        "esModuleInterop": true,
         "isolatedModules": true,
-        "jsx": "react-jsx",
-        "incremental": true,
-        "experimentalDecorators": true,
-        "outDir": "./dist",
-        "types": ["vitest/globals", "@testing-library/jest-dom/vitest"]
+
+        /* Lang and Env */
+        "paths": {
+            "@/*": ["./src/*"],
+        }
     },
-    "include": ["./src", "./global.d.ts", "./src/testing"],
-    "exclude": [
-        "./plugins/**/*",
-        "./typings/**/*",
-        "./dist/**/*",
-        "../../libs/renderer/src/store/state/migration"
-    ]
+    "include": ["src"],
+    "exclude": ["dist", "node_modules", "**/*.spec.ts*"]
 }

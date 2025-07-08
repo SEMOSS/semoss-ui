@@ -22,7 +22,10 @@ export const config: BlockConfig<StepperBlockDef> = {
         activeStep: 0,
     },
     listeners: {
-        onChange: [],
+        onChange: {
+            order: [],
+            type: "async",
+        },
     },
     slots: {
         content: [],

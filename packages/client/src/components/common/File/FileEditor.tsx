@@ -20,7 +20,7 @@ import { runPixelTwo } from '../../../runPixelTwo';
 
 const Editor = lazy(() => import('@monaco-editor/react'));
 
-const IS_PRODUCTION = process.env.NODE_ENV == 'production';
+const IS_PRODUCTION = !import.meta.env.DEV;
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',

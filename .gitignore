@@ -15,5 +15,4 @@ index.html.gz
 !packages/**/index.html
 !packages/**/index.html.gz
 
-.nx/cache
-.nx/workspace-data
+.turbo

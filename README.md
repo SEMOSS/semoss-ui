@@ -30,12 +30,6 @@ Application will be accesible at: `http://localhost:9090/semoss-ui/packages/clie
 
 4. Component library development through storybook. Change directories into libs `cd .\libs\` and run `pnpm run storybook`
 
-## Common Errors
- 1. The following issue may error may appear if nx does not build correctly: Cannot find module '@semoss/sdk/react' or its corresponding type declarations. To fix, cd directly into .\libs\sdk and run `pnpm run build`.
-
- ### Must be on a version of Node 18
-1. We use a node version manager to handle swapping between different versions.  https://github.com/coreybutler/nvm-windows, Most members are on version `18.16.0`
-
 # Contributions and Standardized Commits 
 
 ## Overview

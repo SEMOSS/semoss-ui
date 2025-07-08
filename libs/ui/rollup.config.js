@@ -45,4 +45,7 @@ export default defineConfig({
         "@emotion/react",
         "@emotion/styled",
     ],
+    watch: {
+        clearScreen: false,
+    },
 });

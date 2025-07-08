@@ -30,4 +30,7 @@ export default defineConfig({
         postcss(),
     ],
     external: ["react"],
+    watch: {
+        clearScreen: false,
+    },
 });
