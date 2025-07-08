@@ -28,6 +28,7 @@ import { useAPI, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { useState } from 'react';
 import { getSDKSnippet } from '@/utility';
+import EventHistory from './EventHistory';
 const StyledAvatar = styled(Avatar)(({ theme }) => ({
     display: 'flex',
     alignContent: 'center',
@@ -216,6 +217,50 @@ export const MyProfilePage = () => {
     const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
     const [isPySdkOpen, setIsPySdkOpen] = useState(false);
 
+    const logs = [
+        {
+            time: '2025-07-05T10:05:43.000Z',
+            type: 'USER_TEXT',
+            label: 'USER_PROMPT',
+            responsetime: '2.0',
+            result: 'hello',
+        },
+        {
+            time: '2025-07-05T11:05:44.000Z',
+            type: 'RESPONSE_TEXT',
+            label: 'RESPONSE',
+            responsetime: '2.0',
+            result: '"Hello! How can I assist you today?"',
+        },
+        {
+            time: '2025-07-05T12:06:41.000Z',
+            type: 'USER_TEXT',
+            label: 'USER_PROMPT',
+            responsetime: '5.0',
+            result: 'tell me about spain',
+        },
+        {
+            time: '2025-07-05T13:06:42.000Z',
+            type: 'RESPONSE_TEXT',
+            label: 'RESPONSE',
+            responsetime: '5.0',
+            result: '"Spain, officially known as the Kingdom of Spain, is a country located in Southwestern Europe. It occupies most of the Iberian Peninsula..."',
+        },
+        {
+            time: '2025-07-05T14:06:41.000Z',
+            type: 'USER_TEXT',
+            label: 'USER_PROMPT',
+            responsetime: '3.0',
+            result: 'whats its capital',
+        },
+        {
+            time: '2025-07-05T15:06:42.000Z',
+            type: 'RESPONSE_TEXT',
+            label: 'RESPONSE',
+            responsetime: '3.0',
+            result: '"The capital of Spain is Madrid. It is the largest city in the country and serves as the political, economic, and cultural center of Spain..."',
+        },
+    ];
     /**
      * Submit edit profile info
      */
@@ -751,7 +796,9 @@ export const MyProfilePage = () => {
                         </MessageDiv>
                     )}
             </StyledAccessTokensPaper>
-
+            <StyledPaper>
+                <EventHistory logs={logs} height={300} />
+            </StyledPaper>
             <Modal open={addModal} onClose={() => closeModel()} maxWidth="lg">
                 <Modal.Title>Generate Key</Modal.Title>
                 <Modal.Content>
